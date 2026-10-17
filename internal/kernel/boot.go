@@ -93,6 +93,10 @@ type BootOptions struct {
 	// it false: workers would requeue the server's running jobs as stale
 	// and duplicate its cron ticks. Jobs enqueued meanwhile wait for the
 	// server's workers.
+	//
+	// A process that starts job workers first takes the exclusive
+	// data-directory lock (<data>/gorun.lock, see LockDataDir) and refuses
+	// to boot when another process holds it; App.Close releases it.
 	StartJobs bool
 }
 
@@ -113,20 +117,32 @@ func BootWithOptions(ctx context.Context, cfg config.Config, mods []Module, opts
 	if err := validateModules(mods); err != nil {
 		return nil, err
 	}
+	var lock *DataLock
+	if opts.StartJobs {
+		var err error
+		if lock, err = LockDataDir(cfg.DataDir); err != nil {
+			return nil, err
+		}
+	}
+	fail := func(d *sql.DB, err error) (*App, error) {
+		if d != nil {
+			d.Close()
+		}
+		_ = lock.Release()
+		return nil, err
+	}
 	d, err := db.Open(cfg.DBPath())
 	if err != nil {
-		return nil, err
+		return fail(nil, err)
 	}
 	all := mods // disabled add-ons' applied migrations are still known
 	mods, err = enabledModules(ctx, d, mods)
 	if err != nil {
-		d.Close()
-		return nil, err
+		return fail(d, err)
 	}
 	deps, err := wire(ctx, d, cfg, mods, all)
 	if err != nil {
-		d.Close()
-		return nil, err
+		return fail(d, err)
 	}
 	collector, _ := Get[*diagnostics.Collector](deps, diagnostics.ServiceName)
 	collector.Start()
@@ -146,6 +162,9 @@ func BootWithOptions(ctx context.Context, cfg config.Config, mods []Module, opts
 			collector.Close()
 			if err := d.Close(); err != nil {
 				deps.Log.Error("close db", "err", err)
+			}
+			if err := lock.Release(); err != nil {
+				deps.Log.Error("release data directory lock", "err", err)
 			}
 		})
 	}
@@ -299,7 +318,7 @@ func assemble(deps *Deps) http.Handler {
 	r, d := deps.Router, deps.DB
 	root := chi.NewRouter()
 	proxies, _ := deps.Config.TrustedProxyNetworks() // validated before boot
-	root.Use(httpx.RequestID, httpx.RealIPWithTrustedProxies(proxies), httpx.Logger(deps.Log), httpx.Recover(deps.Log),
+	root.Use(httpx.RequestID, httpx.RealIPWithTrustedProxies(proxies), httpx.WarnUntrustedForwarding(deps.Log), httpx.Logger(deps.Log), httpx.Recover(deps.Log),
 		httpx.SecurityHeaders())
 	root.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { plain(w, http.StatusOK, "ok") })
 	root.Get("/readyz", func(w http.ResponseWriter, req *http.Request) {

@@ -34,7 +34,14 @@ const (
 	defaultMaxAttempts  = 5
 	defaultPollInterval = time.Second
 	defaultTickInterval = 30 * time.Second
-	listLimitMax        = 500
+	// defaultHeartbeat is how often a worker refreshes locked_at of the job
+	// it is running; defaultStaleAfter is how old locked_at must be before
+	// recovery treats a running job as abandoned (four missed heartbeats).
+	// Stored timestamps have second precision, so staleAfter must exceed the
+	// heartbeat by more than a second.
+	defaultHeartbeat  = 30 * time.Second
+	defaultStaleAfter = 2 * time.Minute
+	listLimitMax      = 500
 )
 
 // ErrNotFound is returned by Retry when no retryable job has the given id.
@@ -67,6 +74,8 @@ type Queue struct {
 	now          func() time.Time
 	pollInterval time.Duration
 	tickInterval time.Duration
+	heartbeat    time.Duration
+	staleAfter   time.Duration
 	wg           sync.WaitGroup
 }
 
@@ -106,6 +115,8 @@ func New(d *sql.DB, log *slog.Logger) *Queue {
 		now:          time.Now,
 		pollInterval: defaultPollInterval,
 		tickInterval: defaultTickInterval,
+		heartbeat:    defaultHeartbeat,
+		staleAfter:   defaultStaleAfter,
 	}
 }
 

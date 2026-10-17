@@ -23,16 +23,15 @@ func backoff(attempts int) time.Duration {
 	return time.Duration(math.Pow(2, float64(attempts))) * time.Second
 }
 
-// Start requeues jobs left running by a previous process, then launches
-// workers goroutines and the cron scheduler. It returns immediately; cancel
-// ctx to stop and call Wait to block until every goroutine has exited.
+// Start requeues jobs abandoned by a previous process (see recoverStale),
+// then launches workers goroutines and the cron scheduler, which repeats the
+// recovery on every tick. It returns immediately; cancel ctx to stop and call
+// Wait to block until every goroutine has exited.
 func (q *Queue) Start(ctx context.Context, workers int) {
 	if workers < 1 {
 		workers = 1
 	}
-	if err := q.requeueStale(ctx); err != nil {
-		q.log.Error("jobs: requeue stale", "err", err)
-	}
+	q.recover(ctx)
 	host, _ := os.Hostname()
 	for i := 0; i < workers; i++ {
 		id := fmt.Sprintf("%s-%d-w%d", host, os.Getpid(), i)
@@ -52,12 +51,55 @@ func (q *Queue) Start(ctx context.Context, workers int) {
 // Wait blocks until all goroutines started by Start have exited.
 func (q *Queue) Wait() { q.wg.Wait() }
 
-// requeueStale resets jobs a crashed process left in 'running'. Only one
-// GoRun process owns a database, so every running job at Start is stale.
-func (q *Queue) requeueStale(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, `UPDATE jobs SET status = 'queued', locked_by = NULL, locked_at = NULL,
-		updated_at = ? WHERE status = 'running'`, db.FormatTime(q.now()))
-	return err
+// recover runs recoverStale and logs its outcome.
+func (q *Queue) recover(ctx context.Context) {
+	n, err := q.recoverStale(ctx)
+	if err != nil {
+		if ctx.Err() == nil {
+			q.log.Error("jobs: recover stale", "err", err)
+		}
+		return
+	}
+	if n > 0 {
+		q.log.Warn("jobs: requeued abandoned running jobs", "count", n, "stale_after", q.staleAfter.String())
+	}
+}
+
+// recoverStale requeues running jobs whose worker stopped heartbeating: no
+// locked_at, or locked_at older than staleAfter. A live worker refreshes
+// locked_at every heartbeat interval, so jobs still being executed (by this
+// or any other process) are left alone. Attempts are not counted.
+func (q *Queue) recoverStale(ctx context.Context) (int64, error) {
+	now := q.now()
+	cutoff := db.FormatTime(now.Add(-q.staleAfter))
+	res, err := q.db.ExecContext(ctx, `UPDATE jobs SET status = 'queued', locked_by = NULL, locked_at = NULL,
+		updated_at = ? WHERE status = 'running' AND (locked_at IS NULL OR locked_at = '' OR locked_at <= ?)`,
+		db.FormatTime(now), cutoff)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
+// keepAlive refreshes locked_at of job id every heartbeat interval until
+// done is closed, so recoverStale never mistakes it for abandoned.
+func (q *Queue) keepAlive(ctx context.Context, id, workerID string, done <-chan struct{}) {
+	t := time.NewTicker(q.heartbeat)
+	defer t.Stop()
+	for {
+		select {
+		case <-done:
+			return
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			now := db.FormatTime(q.now())
+			if _, err := q.db.ExecContext(ctx, `UPDATE jobs SET locked_at = ?, updated_at = ?
+				WHERE id = ? AND status = 'running' AND locked_by = ?`, now, now, id, workerID); err != nil && ctx.Err() == nil {
+				q.log.Warn("jobs: heartbeat", "id", id, "err", err)
+			}
+		}
+	}
 }
 
 func (q *Queue) work(ctx context.Context, workerID string) {
@@ -92,7 +134,15 @@ func (q *Queue) runOnce(ctx context.Context, workerID string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("claim: %w", err)
 	}
+	done := make(chan struct{})
+	beat := make(chan struct{})
+	go func() {
+		defer close(beat)
+		q.keepAlive(ctx, id, workerID, done)
+	}()
 	runErr := q.execute(ContextWithAttempt(ctx, attempts+1, maxAttempts), kind, json.RawMessage(payload))
+	close(done)
+	<-beat
 	// Record the outcome even though ctx may be cancelled by now.
 	wctx := context.WithoutCancel(ctx)
 	if runErr != nil && ctx.Err() != nil {
