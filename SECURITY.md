@@ -32,8 +32,14 @@ you. Please give us a reasonable time to ship the fix before publishing details.
 - Passwords are hashed with Argon2id. Login attempts are rate-limited (more than 5 per 15 minutes per IP + email are refused, counted in
   the database so lockouts survive restarts). A separate limit allows 30 attempts per IP per 15 minutes, including successful logins; at most four Argon2 login checks run concurrently across the process.
 - Sessions use a random token in the `gp_session` cookie (`HttpOnly`, `SameSite=Lax`, `Secure` when the request
-  is https, i.e. TLS or `X-Forwarded-Proto: https` from a private/loopback proxy, else when `GORUN_BASE_URL` is
+  is https, i.e. TLS or `X-Forwarded-Proto: https` from a peer listed in `GORUN_TRUSTED_PROXIES`, else when `GORUN_BASE_URL` is
   https; never from the `site.base_url` setting, so a wrong value cannot lock admins out); only its SHA-256 is stored. Sessions slide over 14 days.
+- Forwarding headers are trusted from **no** peer by default, including loopback and private networks. Only
+  addresses or networks listed in `GORUN_TRUSTED_PROXIES` (or `trusted_proxies` in `gorun.toml`) may set the
+  client IP (`X-Forwarded-For`, walked right to left through trusted hops) and https (`X-Forwarded-Proto`);
+  `Forwarded`, `X-Real-IP` and provider headers such as `CF-Connecting-IP` are never read. Behind an
+  unlisted reverse proxy every visitor shares the proxy's address for the login limits and audit, and the
+  server logs a warning (at most hourly). See [docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md).
 - Every unsafe request through the admin and the public forms carries a CSRF token (double-submit with the
   `gp_csrf` cookie, `_csrf` field or `X-CSRF-Token` header): the public POSTs are `/forms/contact`,
   `/checkout/{slug}`, `/account/login` and `/account/open/{entitlement}`. API calls made with a session need
