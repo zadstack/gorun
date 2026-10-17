@@ -50,6 +50,9 @@ func subprocessQueue(t *testing.T, root string) *Queue {
 	}
 	q := New(d, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	q.pollInterval, q.tickInterval = 5*time.Millisecond, 10*time.Millisecond
+	// Timestamps have second precision, so staleAfter must exceed the
+	// heartbeat by more than a second for live jobs to never look stale.
+	q.heartbeat, q.staleAfter = 20*time.Millisecond, 1100*time.Millisecond
 	return q
 }
 
@@ -226,7 +229,7 @@ func TestJobsSubprocessHelper(t *testing.T) {
 		t.Fatal("invalid owned subprocess fixture", err)
 	}
 	q := subprocessQueue(t, root)
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 	defer cancel()
 	q.Register("subprocess_fixture", func(ctx context.Context, raw json.RawMessage) error {
 		var p subprocessPayload
