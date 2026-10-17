@@ -299,7 +299,7 @@ func assemble(deps *Deps) http.Handler {
 	r, d := deps.Router, deps.DB
 	root := chi.NewRouter()
 	proxies, _ := deps.Config.TrustedProxyNetworks() // validated before boot
-	root.Use(httpx.RequestID, httpx.RealIPWithTrustedProxies(proxies), httpx.Logger(deps.Log), httpx.Recover(deps.Log),
+	root.Use(httpx.RequestID, httpx.RealIPWithTrustedProxies(proxies), httpx.WarnUntrustedForwarding(deps.Log), httpx.Logger(deps.Log), httpx.Recover(deps.Log),
 		httpx.SecurityHeaders())
 	root.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { plain(w, http.StatusOK, "ok") })
 	root.Get("/readyz", func(w http.ResponseWriter, req *http.Request) {
