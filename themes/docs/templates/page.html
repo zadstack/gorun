@@ -1,0 +1,43 @@
+{{/* Docs page: section sidebar, the article with its breadcrumb and previous/next pages, and an "on this page" list. */}}
+{{part "header" .}}
+{{$pages := query (dict "type" "page" "order" "menu_order" "per_page" 100)}}
+<div class="docs-layout">
+  <aside class="docs-aside">{{part "sidebar" .}}</aside>
+  <details class="docs-aside-mobile"><summary>{{t "docs.contents"}}</summary>{{part "sidebar" .}}</details>
+  {{with .Content}}{{$doc := .}}{{$t := toc .}}
+  <article class="docs-article">
+    <nav aria-label="{{t "docs.breadcrumb"}}" class="docs-breadcrumb"><a href="{{url "/"}}">{{$.Site.Title}}</a>{{with .ParentID}}{{with content .}}<span aria-hidden="true">/</span><a href="{{url .}}">{{.Title}}</a>{{end}}{{end}}<span aria-hidden="true">/</span><span aria-current="page">{{.Title}}</span></nav>
+    <h1>{{.Title}}</h1>
+    <p class="docs-meta">{{with .UpdatedAt}}{{t "docs.updated"}} <time datetime="{{.}}">{{date .}}</time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
+    {{if gt (len $t.Items) 1}}
+    <details class="docs-toc-mobile"><summary>{{t "docs.on_this_page"}}</summary><ul>{{range $t.Items}}<li class="docs-toc-l{{.Level}}"><a href="#{{.ID}}">{{.Text}}</a></li>{{end}}</ul></details>
+    {{end}}
+    <div class="prose-gp docs-prose">{{$t.Body}}</div>
+    {{/* Previous and next follow the sidebar order: each top-level page, then its children and theirs. */}}
+    {{$prev := false}}{{$next := false}}{{$found := false}}
+    {{range $pages.Items}}{{if not .ParentID}}{{$top := .}}
+      {{if $found}}{{if not $next}}{{$next = .}}{{end}}{{else if eq .ID $doc.ID}}{{$found = true}}{{else}}{{$prev = .}}{{end}}
+      {{range $pages.Items}}{{if eq .ParentID $top.ID}}{{$mid := .}}
+        {{if $found}}{{if not $next}}{{$next = .}}{{end}}{{else if eq .ID $doc.ID}}{{$found = true}}{{else}}{{$prev = .}}{{end}}
+        {{range $pages.Items}}{{if eq .ParentID $mid.ID}}
+          {{if $found}}{{if not $next}}{{$next = .}}{{end}}{{else if eq .ID $doc.ID}}{{$found = true}}{{else}}{{$prev = .}}{{end}}
+        {{end}}{{end}}
+      {{end}}{{end}}
+    {{end}}{{end}}
+    {{if not $found}}{{$prev = false}}{{end}}
+    {{if or $prev $next}}
+    <nav aria-label="{{t "docs.pager"}}" class="docs-pager">
+      {{with $prev}}<a class="docs-pager-prev" href="{{url .}}"><span>{{t "docs.prev"}}</span><strong>{{.Title}}</strong></a>{{end}}
+      {{with $next}}<a class="docs-pager-next" href="{{url .}}"><span>{{t "docs.next"}}</span><strong>{{.Title}}</strong></a>{{end}}
+    </nav>
+    {{end}}
+  </article>
+  {{if gt (len $t.Items) 1}}
+  <aside class="docs-toc" aria-labelledby="docs-toc-title">
+    <p id="docs-toc-title">{{t "docs.on_this_page"}}</p>
+    <ul>{{range $t.Items}}<li class="docs-toc-l{{.Level}}"><a href="#{{.ID}}">{{.Text}}</a></li>{{end}}</ul>
+  </aside>
+  {{end}}
+  {{end}}
+</div>
+{{part "footer" .}}

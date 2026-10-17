@@ -1,0 +1,33 @@
+{{define "partials/sidebar"}}
+<link rel="stylesheet" href="{{asset "dashboard-pins.css"}}">
+<link rel="stylesheet" href="{{asset "sidebar-brand.css"}}">
+<script defer src="{{asset "dashboard-pins.js"}}"></script>
+<div hidden data-dashboard-pin-config data-csrf="{{csrf}}" data-saving="{{t "dashboardpins.saving"}}" data-error="{{t "dashboardpins.error"}}" data-stale="{{t "dashboardpins.stale"}}" data-saved="{{t "dashboardpins.saved"}}" data-reload="{{t "dashboardpins.reload"}}"></div>
+<aside x-ref="sidebar" id="admin-sidebar" class="admin-sidebar w-60 shrink-0 border-e border-line bg-panel hidden md:flex md:flex-col"
+       :class="sidebarOpen && '!flex flex-col fixed inset-y-0 start-0 z-40'"
+       aria-label="{{t "core.nav.dashboard"}}">
+  <div class="admin-brand-header h-14 px-4 flex items-center justify-between border-b border-line">
+    {{$brand := sidebarBrand}}<a href="/admin" class="admin-site-brand" data-sidebar-brand title="{{if $brand.Title}}{{$brand.Title}}{{else if $brand.LogoPath}}{{t "core.nav.dashboard"}}{{else}}{{t "core.app.name"}}{{end}}">{{if $brand.LogoPath}}<img src="{{$brand.LogoPath}}" alt="" width="32" height="32" x-init="if ($el.complete &amp;&amp; !$el.naturalWidth) $el.hidden = true" @error="$el.hidden = true">{{end}}<span>{{if $brand.Title}}{{$brand.Title}}{{else if $brand.LogoPath}}{{t "core.nav.dashboard"}}{{else}}{{t "core.app.name"}}{{end}}</span></a>
+    <button type="button" class="md:hidden p-1 rounded border border-transparent hover:border-line" @click="toggleSidebar()" aria-label="{{t "core.action.close"}}">{{icon "x"}}</button>
+  </div>
+  <nav data-admin-navigation class="flex-1 overflow-y-auto p-2">
+    {{range nav}}
+      {{if .Label}}<p class="px-2 pt-4 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted">{{.Label}}</p>{{end}}
+      <ul class="space-y-0.5">
+        {{range .Items}}
+        <li {{if ne .ID "dashboard"}}class="dashboard-pinnable" data-nav-id="{{.ID}}"{{end}}>
+          <a href="{{.Href}}" {{if ne .ID "dashboard"}}draggable="true" data-sidebar-pin-drag{{end}}
+             class="admin-nav-link {{if active .Href}}is-active{{end}}"
+             {{if active .Href}}aria-current="page"{{end}}>
+            {{icon .Icon}}<span>{{t .LabelKey}}</span>
+          </a>
+          {{if ne .ID "dashboard"}}<button type="button" class="dashboard-pin-add" data-sidebar-pin-add aria-label="{{t "dashboardpins.add"}}: {{t .LabelKey}}" title="{{t "dashboardpins.add"}}">＋</button>{{end}}
+        </li>
+        {{end}}
+      </ul>
+    {{end}}
+  </nav>
+  <div class="admin-sidebar-footer"><a href="/admin/navigation" class="admin-nav-link {{if active "/admin/navigation"}}is-active{{end}}" {{if active "/admin/navigation"}}aria-current="page"{{end}}>{{icon "sliders-horizontal"}}<span>{{t "auth.navigation.title"}}</span></a></div>
+</aside>
+<div x-show="sidebarOpen" x-cloak class="[&[x-cloak]]:hidden fixed inset-0 z-30 bg-[rgba(20,24,22,0.2)] md:hidden" @click="toggleSidebar()"></div>
+{{end}}

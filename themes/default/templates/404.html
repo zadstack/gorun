@@ -1,0 +1,13 @@
+{{part "header" .}}
+<section class="mx-auto max-w-xl rounded border border-line bg-panel p-8 text-center">
+  <p class="font-mono text-[13px] uppercase tracking-wide text-muted">404</p>
+  <h1 class="mt-2 text-[22px] font-bold">{{t "not_found_title"}}</h1>
+  <p class="mt-2 text-muted">{{t "not_found_body"}}</p>
+  <form action="{{url "/search"}}" method="get" role="search" class="mt-6 flex gap-2">
+    <label for="nf-q" class="sr-only">{{t "search"}}</label>
+    <input id="nf-q" name="q" type="search" placeholder="{{t "search_placeholder"}}" class="h-9 min-w-0 flex-1 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <button type="submit" class="h-9 rounded bg-green px-4 font-medium text-on-accent hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "search"}}</button>
+  </form>
+  <a href="{{url "/"}}" class="mt-4 inline-block text-blue hover:text-blue-hover underline underline-offset-2">{{t "back_home"}}</a>
+</section>
+{{part "footer" .}}

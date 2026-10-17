@@ -1,0 +1,11 @@
+{{/* Data: []quickAction{LabelKey, Label, Href, Icon} */}}
+{{define "content"}}
+<div data-widget="quick_actions">
+  <h2 class="text-base font-bold mb-3">{{t "admin.dashboard.quick_actions"}}</h2>
+  <ul class="flex flex-wrap gap-2">
+    {{range .}}
+    <li><a href="{{.Href}}" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon .Icon}}<span>{{if .LabelKey}}{{t .LabelKey}}{{else}}{{t "admin.dashboard.new_item" .Label}}{{end}}</span></a></li>
+    {{end}}
+  </ul>
+</div>
+{{end}}

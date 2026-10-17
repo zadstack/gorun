@@ -1,0 +1,2 @@
+{{/* Usage: {{template "partials/field_errors" (index .Fields "email")}} with an i18n key or a message. */}}
+{{define "partials/field_errors"}}{{if .}}<p class="field-error mt-1 text-xs text-red">{{t .}}</p>{{end}}{{end}}

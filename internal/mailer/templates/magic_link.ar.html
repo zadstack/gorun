@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<body style="margin:0;padding:24px;background:#f3f5f2;color:#141816;font-family:system-ui,-apple-system,Tahoma,sans-serif;font-size:14px;">
+  <div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #cbd3ce;border-radius:6px;padding:24px;">
+    <p style="margin:0 0 12px;">مرحبًا {{.Name}}،</p>
+    <p style="margin:0 0 16px;">استخدم هذا الرابط لتسجيل الدخول إلى {{.SiteTitle}}. يعمل مرة واحدة وتنتهي صلاحيته خلال {{.TTLMinutes}} دقيقة.</p>
+    <p style="margin:0 0 16px;"><a href="{{.Link}}" style="display:inline-block;background:#167252;color:#ffffff;text-decoration:none;padding:8px 16px;border-radius:6px;">تسجيل الدخول</a></p>
+    <p style="margin:0 0 8px;color:#637069;font-size:12px;">أو انسخ هذا العنوان في المتصفح:</p>
+    <p dir="ltr" style="margin:0 0 16px;font-family:ui-monospace,monospace;font-size:12px;word-break:break-all;">{{.Link}}</p>
+    <p style="margin:0;color:#637069;font-size:12px;">إذا لم تطلب هذه الرسالة يمكنك تجاهلها.</p>
+  </div>
+</body>
+</html>

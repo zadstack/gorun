@@ -1,0 +1,78 @@
+{{/* Data: mcp.approvalsData. Args and results are JSON shown as escaped text. */}}
+{{define "title"}}{{t "mcp.approvals.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-1">{{t "mcp.approvals.title"}}</h1>
+<p class="text-muted mb-4 max-w-3xl">{{t "mcp.approvals.help"}}</p>
+{{if .Notice}}<div role="status" class="mb-4 rounded border px-3 py-2 {{if eq .Notice "mcp.approvals.already_decided"}}border-blue bg-blue-soft text-blue{{else}}border-green bg-green-soft text-green{{end}}">{{t .Notice}}</div>{{end}}
+
+<section aria-labelledby="ap-pending" class="mb-6">
+  <h2 id="ap-pending" class="text-base font-bold mb-2">{{t "mcp.approvals.pending"}} <span class="font-mono text-xs text-muted">({{len .Pending}})</span></h2>
+  {{if .Pending}}
+  <ul class="space-y-3">
+    {{range .Pending}}
+    <li class="rounded border border-line bg-panel" data-approval="{{.ID}}">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 border-b border-line">
+        <span class="inline-flex items-center gap-1.5 font-mono text-xs font-medium">{{icon "wrench" "w-4 h-4 text-muted"}}{{.Tool}}</span>
+        <span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px] font-mono">{{t "mcp.approvals.status_pending"}}</span>
+        <span class="text-xs text-muted">{{t "mcp.approvals.key"}}: <span class="text-ink">{{.KeyName}}</span></span>
+        <span class="text-xs text-muted">{{t "mcp.approvals.requester"}}: <span class="text-ink">{{.Requester}}</span></span>
+        <time class="text-xs font-mono text-muted" datetime="{{.RequestedAt}}">{{date .RequestedAt}}</time>
+        <span class="ms-auto text-xs font-mono text-muted">{{t "mcp.approvals.expires" (date .ExpiresAt)}}</span>
+      </div>
+      <div class="p-4 space-y-3">
+        <div>
+          <h3 class="font-mono text-[11px] uppercase tracking-wide text-muted mb-1">{{t "mcp.approvals.args"}}</h3>
+          <pre class="rounded bg-panel-dark text-panel-2 p-3 text-xs overflow-x-auto max-h-80" dir="ltr">{{.ArgsPretty}}</pre>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <form method="post" action="/admin/agents/approvals/{{.ID}}/approve" hx-post="/admin/agents/approvals/{{.ID}}/approve" hx-target="#main" hx-swap="innerHTML"
+                hx-confirm="{{t "mcp.approvals.approve_confirm" .Tool}}">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-green text-green bg-green-soft hover:border-green-hover hover:text-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "check"}}<span>{{t "mcp.approvals.approve"}}</span></button>
+          </form>
+          <form method="post" action="/admin/agents/approvals/{{.ID}}/deny" hx-post="/admin/agents/approvals/{{.ID}}/deny" hx-target="#main" hx-swap="innerHTML"
+                hx-confirm="{{t "mcp.approvals.deny_confirm" .Tool}}">
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-red text-red bg-red-soft hover:border-red focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "x"}}<span>{{t "mcp.approvals.deny"}}</span></button>
+          </form>
+        </div>
+      </div>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="rounded border border-line bg-panel px-4 py-3 text-muted">{{t "mcp.approvals.empty"}}</p>
+  {{end}}
+</section>
+
+<section aria-labelledby="ap-recent">
+  <h2 id="ap-recent" class="text-base font-bold mb-2">{{t "mcp.approvals.recent"}}</h2>
+  {{if .Recent}}
+  <ul class="space-y-2">
+    {{range .Recent}}
+    <li class="rounded border border-line bg-panel" data-approval="{{.ID}}">
+      <details>
+        <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-3 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">
+          {{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}
+          <span class="font-mono text-xs font-medium">{{.Tool}}</span>
+          <span class="inline-flex rounded-chip border {{if eq .Status "approved"}}border-green bg-green-soft text-green{{else if or (eq .Status "denied") (eq .Status "failed")}}border-red bg-red-soft text-red{{else}}border-line bg-panel-2 text-muted{{end}} px-1.5 py-0.5 text-[11px] font-mono">{{t (printf "mcp.approvals.status_%s" .Status)}}</span>
+          <span class="text-xs text-muted">{{.KeyName}} · {{.Requester}}</span>
+          <time class="ms-auto font-mono text-[11px] text-muted" datetime="{{.DecidedAt}}">{{date .DecidedAt}}</time>
+        </summary>
+        <div class="border-t border-line p-3 space-y-2">
+          <h3 class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "mcp.approvals.args"}}</h3>
+          <pre class="rounded bg-panel-dark text-panel-2 p-3 text-xs overflow-x-auto max-h-60" dir="ltr">{{.ArgsPretty}}</pre>
+          {{if .ResultPretty}}
+          <h3 class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "mcp.approvals.result"}}</h3>
+          <pre class="rounded bg-panel-dark text-panel-2 p-3 text-xs overflow-x-auto max-h-60" dir="ltr">{{.ResultPretty}}</pre>
+          {{end}}
+        </div>
+      </details>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="rounded border border-line bg-panel px-4 py-3 text-muted">{{t "mcp.approvals.empty_recent"}}</p>
+  {{end}}
+</section>
+{{end}}

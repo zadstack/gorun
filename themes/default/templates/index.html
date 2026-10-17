@@ -1,0 +1,12 @@
+{{/* Fallback for every kind: a single item when .Content is set, else a listing. */}}
+{{part "header" .}}
+{{with .Content}}
+<article class="mx-auto max-w-3xl">
+  <h1 class="text-[22px] font-bold leading-snug">{{.Title}}</h1>
+  <div class="prose-gp mt-6">{{safe .Body}}</div>
+</article>
+{{else}}
+{{with .Extra.title}}<h1 class="text-[22px] font-bold mb-6">{{.}}</h1>{{end}}
+{{component "list" .}}
+{{end}}
+{{part "footer" .}}

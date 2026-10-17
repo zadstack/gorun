@@ -1,0 +1,228 @@
+{{define "title"}}{{if .IsNew}}{{t "content.types.new"}}{{else}}{{t "content.types.edit"}}{{end}}{{end}}
+{{define "content"}}
+<script nonce="{{nonce}}">
+// Content-type fields builder: Alpine state for the fields repeater, serialized to the hidden fields_json input.
+window.gpTypeBuilder = function (initial, errors) {
+  const blank = () => ({ key: '', label: { en: '', ar: '' }, help: { en: '', ar: '' }, type: 'text', required: false, indexed: false,
+    multiple: false, optionsText: '', min: '', max: '', step: '', target_type: '', mime: '', sub_fields: [], open: true });
+  const toState = (f) => ({ ...blank(), ...f, label: { en: '', ar: '', ...(f.label || {}) }, help: { en: '', ar: '', ...(f.help || {}) },
+    optionsText: (f.options || []).map((o) => [o.value, (o.label || {}).en || '', (o.label || {}).ar || ''].join(' | ')).join('\n'),
+    min: f.min ?? '', max: f.max ?? '', step: f.step ?? '', target_type: f.target_type || '', mime: (f.mime || []).join(', '),
+    sub_fields: (f.sub_fields || []).map(toState), open: false });
+  const clean = (m) => Object.fromEntries(Object.entries(m || {}).filter(([, v]) => v && String(v).trim()));
+  const scalar = ['text', 'number', 'date', 'datetime', 'boolean', 'select'];
+  const toJSON = (f) => {
+    const o = { key: f.key.trim(), label: clean(f.label), type: f.type, required: !!f.required };
+    if (f.indexed && scalar.includes(f.type)) o.indexed = true;
+    if (f.multiple) o.multiple = true;
+    const help = clean(f.help);
+    if (Object.keys(help).length) o.help = help;
+    if (f.type === 'select' || f.type === 'multiselect') {
+      o.options = f.optionsText.split('\n').map((l) => l.split('|').map((s) => s.trim())).filter((p) => p[0])
+        .map((p) => ({ value: p[0], label: clean({ en: p[1] || '', ar: p[2] || '' }) }));
+    }
+    if (f.type === 'number') {
+      ['min', 'max', 'step'].forEach((k) => { if (f[k] !== '' && !isNaN(Number(f[k]))) o[k] = Number(f[k]); });
+    }
+    if (f.type === 'relationship') o.target_type = f.target_type;
+    if ((f.type === 'image' || f.type === 'file') && f.mime.trim()) o.mime = f.mime.split(',').map((s) => s.trim()).filter(Boolean);
+    if (f.type === 'repeater') o.sub_fields = f.sub_fields.map(toJSON);
+    return o;
+  };
+  return {
+    fields: (initial || []).map(toState), errors: errors || {}, scalar,
+    add(list) { list.push(blank()); },
+    remove(list, i) { list.splice(i, 1); },
+    move(list, i, d) { const j = i + d; if (j < 0 || j >= list.length) return; const [x] = list.splice(i, 1); list.splice(j, 0, x); },
+    keyify(f) { if (!f.key && f.label.en) f.key = f.label.en.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').replace(/^([0-9])/, 'f_$1'); },
+    err(path) { return this.errors[path] || ''; },
+    get json() { return JSON.stringify(this.fields.map(toJSON)); },
+    get pretty() { return JSON.stringify(this.fields.map(toJSON), null, 2); },
+  };
+};
+</script>
+<div class="mb-4">
+  <a href="/admin/types" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "arrow-left" "w-4 h-4 rtl:rotate-180"}}<span>{{t "content.types.title"}}</span></a>
+  <h1 class="text-[22px] font-bold mt-1">{{if .IsNew}}{{t "content.types.new"}}{{else}}{{t "content.types.edit"}} <span class="font-mono text-base text-muted">{{.Type.Slug}}</span>{{end}}</h1>
+</div>
+{{with .FormError}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
+<form method="post" action="{{.Action}}" class="space-y-4" novalidate
+      x-data="gpTypeBuilder(JSON.parse($el.dataset.fields), JSON.parse($el.dataset.errors))" data-fields="{{.FieldsJSON}}" data-errors="{{.ErrorsJSON}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="fields_json" :value="json" value="{{.FieldsJSON}}">
+  <section class="rounded border border-line bg-panel p-4 space-y-4">
+    <h2 class="text-base font-bold mb-3">{{t "content.types.basics"}}</h2>
+    <div class="grid gap-3 md:grid-cols-3">
+      <div>
+        <label for="slug" class="block font-medium mb-1">{{t "content.types.slug"}}</label>
+        <input id="slug" name="slug" type="text" value="{{.Type.Slug}}" dir="ltr" {{if not .IsNew}}readonly aria-readonly="true"{{end}} aria-describedby="slug-help"
+               class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono {{if not .IsNew}}bg-panel-2{{end}}">
+        <p id="slug-help" class="mt-1 text-xs text-muted">{{t "content.types.slug_help"}}</p>
+        {{template "partials/field_errors" (index .Errors "slug")}}
+      </div>
+      <div>
+        <label for="icon" class="block font-medium mb-1">{{t "content.types.icon"}}</label>
+        <input id="icon" name="icon" type="text" value="{{.Type.Icon}}" dir="ltr" placeholder="file-text" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+      </div>
+      <div>
+        <label for="menu_position" class="block font-medium mb-1">{{t "content.types.menu_position"}}</label>
+        <input id="menu_position" name="menu_position" type="number" step="1" value="{{.Type.MenuPosition}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+      </div>
+    </div>
+    <div class="grid gap-3 md:grid-cols-2">
+      {{range $k := .NameKeys}}
+      <div>
+        <label for="{{$k.ID}}" class="block font-medium mb-1">{{t $k.Label}}</label>
+        <input id="{{$k.ID}}" name="{{$k.ID}}" type="text" value="{{$k.Value}}" dir="{{$k.Dir}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      </div>
+      {{end}}
+    </div>
+    {{template "partials/field_errors" (index .Errors "name")}}
+    <div class="flex flex-wrap gap-x-6 gap-y-2">
+      <label class="inline-flex items-center gap-2"><input type="checkbox" name="public" value="1" {{if .Type.Public}}checked{{end}} class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "content.types.public"}}</span></label>
+      <label class="inline-flex items-center gap-2"><input type="checkbox" name="has_archive" value="1" {{if .Type.HasArchive}}checked{{end}} class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "content.types.has_archive"}}</span></label>
+      <label class="inline-flex items-center gap-2"><input type="checkbox" name="hierarchical" value="1" {{if .Type.Hierarchical}}checked{{end}} class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "content.types.hierarchical"}}</span></label>
+    </div>
+    <div class="grid gap-3 md:grid-cols-3">
+      <div>
+        <label for="archive_slug" class="block font-medium mb-1">{{t "content.types.archive_slug"}}</label>
+        <input id="archive_slug" name="archive_slug" type="text" value="{{.Type.ArchiveSlug}}" dir="auto" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+      </div>
+      <div>
+        <label for="taxonomies" class="block font-medium mb-1">{{t "content.types.taxonomies"}}</label>
+        <input id="taxonomies" name="taxonomies" type="text" value="{{.Taxonomies}}" dir="ltr" aria-describedby="taxonomies-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+        <p id="taxonomies-help" class="mt-1 text-xs text-muted">{{t "content.types.comma_help"}}</p>
+      </div>
+      <div>
+        <label for="templates" class="block font-medium mb-1">{{t "content.types.templates"}}</label>
+        <input id="templates" name="templates" type="text" value="{{.Templates}}" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+      </div>
+    </div>
+    <fieldset>
+      <legend class="block font-medium mb-1">{{t "content.types.supports"}}</legend>
+      <div class="flex flex-wrap gap-x-5 gap-y-2">
+        {{range .Supports}}<label class="inline-flex items-center gap-2"><input type="checkbox" name="supports" value="{{.Value}}" {{if .Selected}}checked{{end}} class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t (printf "content.supports.%s" .Value)}}</span></label>{{end}}
+      </div>
+      {{template "partials/field_errors" (index .Errors "supports")}}
+    </fieldset>
+  </section>
+
+  <section class="rounded border border-line bg-panel p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-base font-bold">{{t "content.types.fields"}}</h2>
+      <button type="button" @click="add(fields)" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center justify-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "content.types.add_field"}}</span></button>
+    </div>
+    {{template "partials/field_errors" (index .Errors "fields")}}
+    <p x-show="!fields.length" class="text-muted text-sm">{{t "content.types.no_fields"}}</p>
+    <ol class="space-y-3">
+      <template x-for="(f, i) in fields" :key="i">
+        <li class="rounded border border-line bg-bg">
+          <div class="flex items-center gap-2 px-3 py-2">
+            <button type="button" @click="f.open = !f.open" :aria-expanded="f.open.toString()" class="flex-1 text-start inline-flex items-center gap-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">
+              <span class="font-mono text-xs text-muted" x-text="i + 1"></span>
+              <span class="font-medium" x-text="f.label.en || f.label.ar || f.key || '…'"></span>
+              <span class="font-mono text-xs rounded-chip border border-line bg-panel-2 px-1.5" x-text="f.type"></span>
+              <span class="font-mono text-xs text-muted" x-text="f.key"></span>
+              <span class="text-xs text-red" x-show="Object.keys(errors).some(k => k.startsWith('fields.' + i + '.'))">{{t "content.types.has_errors"}}</span>
+            </button>
+            <button type="button" @click="move(fields, i, -1)" class="h-8 px-2 rounded border border-line bg-panel inline-flex items-center justify-center gap-1 text-xs hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft" aria-label="{{t "content.types.move_up"}}">{{icon "arrow-up" "w-3.5 h-3.5"}}</button>
+            <button type="button" @click="move(fields, i, 1)" class="h-8 px-2 rounded border border-line bg-panel inline-flex items-center justify-center gap-1 text-xs hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft" aria-label="{{t "content.types.move_down"}}">{{icon "arrow-down" "w-3.5 h-3.5"}}</button>
+            <button type="button" @click="remove(fields, i)" class="h-8 px-2 rounded border border-line bg-panel inline-flex items-center justify-center gap-1 text-xs hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft text-red hover:border-red" aria-label="{{t "content.types.remove_field"}}">{{icon "trash-2" "w-3.5 h-3.5"}}</button>
+          </div>
+          <div x-show="f.open" class="border-t border-line p-3 space-y-3">
+            <div class="grid gap-3 md:grid-cols-4">
+              <div>
+                <label class="block font-medium mb-1" :for="'f-' + i + '-label-en'">{{t "content.types.label_en"}}</label>
+                <input type="text" :id="'f-' + i + '-label-en'" x-model="f.label.en" @blur="keyify(f)" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+              </div>
+              <div>
+                <label class="block font-medium mb-1" :for="'f-' + i + '-label-ar'">{{t "content.types.label_ar"}}</label>
+                <input type="text" :id="'f-' + i + '-label-ar'" x-model="f.label.ar" dir="rtl" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+              </div>
+              <div>
+                <label class="block font-medium mb-1" :for="'f-' + i + '-key'">{{t "content.types.key"}}</label>
+                <input type="text" :id="'f-' + i + '-key'" x-model="f.key" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+                <p class="field-error mt-1 text-xs text-red" x-show="err('fields.' + i + '.key')" x-text="err('fields.' + i + '.key')"></p>
+              </div>
+              <div>
+                <label class="block font-medium mb-1" :for="'f-' + i + '-type'">{{t "content.types.type"}}</label>
+                <select :id="'f-' + i + '-type'" x-model="f.type" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+                  {{range .FieldTypes}}<option value="{{.}}">{{t (printf "content.field_type.%s" .)}}</option>{{end}}
+                </select>
+                <p class="field-error mt-1 text-xs text-red" x-show="err('fields.' + i + '.type')" x-text="err('fields.' + i + '.type')"></p>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-x-5 gap-y-2">
+              <label class="inline-flex items-center gap-2"><input type="checkbox" x-model="f.required" class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "content.types.required"}}</span></label>
+              <label class="inline-flex items-center gap-2" x-show="scalar.includes(f.type)"><input type="checkbox" x-model="f.indexed" class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "content.types.indexed"}}</span></label>
+              <label class="inline-flex items-center gap-2" x-show="['relationship', 'image', 'file'].includes(f.type)"><input type="checkbox" x-model="f.multiple" class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "content.types.multiple"}}</span></label>
+            </div>
+            <p class="field-error text-xs text-red" x-show="err('fields.' + i + '.indexed')" x-text="err('fields.' + i + '.indexed')"></p>
+            <div x-show="f.type === 'select' || f.type === 'multiselect'">
+              <label class="block font-medium mb-1" :for="'f-' + i + '-options'">{{t "content.types.options"}}</label>
+              <textarea :id="'f-' + i + '-options'" x-model="f.optionsText" rows="4" dir="auto" placeholder="value | English | العربية"
+                        class="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></textarea>
+              <p class="mt-1 text-xs text-muted">{{t "content.types.options_help"}}</p>
+              <p class="field-error mt-1 text-xs text-red" x-show="err('fields.' + i + '.options')" x-text="err('fields.' + i + '.options')"></p>
+            </div>
+            <div class="grid gap-3 md:grid-cols-3" x-show="f.type === 'number'">
+              <div><label class="block font-medium mb-1" :for="'f-' + i + '-min'">{{t "content.types.min"}}</label><input type="number" step="any" :id="'f-' + i + '-min'" x-model="f.min" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono"></div>
+              <div><label class="block font-medium mb-1" :for="'f-' + i + '-max'">{{t "content.types.max"}}</label><input type="number" step="any" :id="'f-' + i + '-max'" x-model="f.max" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono"></div>
+              <div><label class="block font-medium mb-1" :for="'f-' + i + '-step'">{{t "content.types.step"}}</label><input type="number" step="any" :id="'f-' + i + '-step'" x-model="f.step" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono"></div>
+            </div>
+            <div x-show="f.type === 'relationship'">
+              <label class="block font-medium mb-1" :for="'f-' + i + '-target'">{{t "content.types.target_type"}}</label>
+              <select :id="'f-' + i + '-target'" x-model="f.target_type" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+                <option value="">{{t "content.editor.choose"}}</option>
+                {{range .TypeSlugs}}<option value="{{.}}">{{.}}</option>{{end}}
+              </select>
+              <p class="field-error mt-1 text-xs text-red" x-show="err('fields.' + i + '.target_type')" x-text="err('fields.' + i + '.target_type')"></p>
+            </div>
+            <div x-show="f.type === 'image' || f.type === 'file'">
+              <label class="block font-medium mb-1" :for="'f-' + i + '-mime'">{{t "content.types.mime"}}</label>
+              <input type="text" :id="'f-' + i + '-mime'" x-model="f.mime" dir="ltr" placeholder="image/*" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+            </div>
+            <div class="grid gap-3 md:grid-cols-2">
+              <div><label class="block font-medium mb-1" :for="'f-' + i + '-help-en'">{{t "content.types.help_en"}}</label><input type="text" :id="'f-' + i + '-help-en'" x-model="f.help.en" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+              <div><label class="block font-medium mb-1" :for="'f-' + i + '-help-ar'">{{t "content.types.help_ar"}}</label><input type="text" :id="'f-' + i + '-help-ar'" x-model="f.help.ar" dir="rtl" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+            </div>
+            <div x-show="f.type === 'repeater'" class="rounded border border-line bg-panel p-3">
+              <div class="flex items-center justify-between mb-2">
+                <p class="font-medium">{{t "content.types.sub_fields"}}</p>
+                <button type="button" @click="add(f.sub_fields)" class="h-8 px-2 rounded border border-line bg-panel inline-flex items-center justify-center gap-1 text-xs hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus" "w-3.5 h-3.5"}}<span>{{t "content.types.add_field"}}</span></button>
+              </div>
+              <p class="field-error mb-2 text-xs text-red" x-show="err('fields.' + i + '.sub_fields')" x-text="err('fields.' + i + '.sub_fields')"></p>
+              <template x-for="(s, j) in f.sub_fields" :key="j">
+                <div class="grid gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto_auto] items-end mb-2">
+                  <div><label class="sr-only" :for="'f-' + i + '-' + j + '-en'">{{t "content.types.label_en"}}</label><input type="text" :id="'f-' + i + '-' + j + '-en'" x-model="s.label.en" @blur="keyify(s)" placeholder="{{t "content.types.label_en"}}" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+                  <div><label class="sr-only" :for="'f-' + i + '-' + j + '-ar'">{{t "content.types.label_ar"}}</label><input type="text" :id="'f-' + i + '-' + j + '-ar'" x-model="s.label.ar" placeholder="{{t "content.types.label_ar"}}" dir="rtl" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+                  <div><label class="sr-only" :for="'f-' + i + '-' + j + '-key'">{{t "content.types.key"}}</label><input type="text" :id="'f-' + i + '-' + j + '-key'" x-model="s.key" placeholder="{{t "content.types.key"}}" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono"></div>
+                  <div><label class="sr-only" :for="'f-' + i + '-' + j + '-type'">{{t "content.types.type"}}</label>
+                    <select :id="'f-' + i + '-' + j + '-type'" x-model="s.type" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+                      {{range .FieldTypes}}{{if ne (printf "%s" .) "repeater"}}<option value="{{.}}">{{t (printf "content.field_type.%s" .)}}</option>{{end}}{{end}}
+                    </select></div>
+                  <label class="inline-flex items-center gap-1.5 h-9"><input type="checkbox" x-model="s.required" class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span class="text-xs">{{t "content.types.required"}}</span></label>
+                  <button type="button" @click="remove(f.sub_fields, j)" class="h-8 px-2 rounded border border-line bg-panel inline-flex items-center justify-center gap-1 text-xs hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft text-red hover:border-red h-9" aria-label="{{t "content.types.remove_field"}}">{{icon "trash-2" "w-3.5 h-3.5"}}</button>
+                </div>
+              </template>
+            </div>
+          </div>
+        </li>
+      </template>
+    </ol>
+    <details class="mt-4">
+      <summary class="cursor-pointer text-sm text-muted">{{t "content.types.json_preview"}}</summary>
+      <pre class="mt-2 rounded bg-panel-dark text-[#e9eeea] p-3 text-xs font-mono overflow-x-auto" dir="ltr" x-text="pretty"></pre>
+    </details>
+  </section>
+  <div class="flex justify-end">
+    <button type="submit" class="h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center justify-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "save"}}<span>{{t "content.types.save"}}</span></button>
+  </div>
+</form>
+{{if and (not .IsNew) (not .Type.System)}}
+<form method="post" action="{{.Action}}/delete" class="mt-6" data-confirm="{{t "content.types.delete_confirm"}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <button type="submit" class="h-9 px-3 rounded border border-red text-red bg-red-soft inline-flex items-center gap-1.5 hover:border-red focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2"}}<span>{{t "content.types.delete"}}</span></button>
+</form>
+{{end}}
+{{end}}

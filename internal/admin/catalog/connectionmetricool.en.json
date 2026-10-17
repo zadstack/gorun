@@ -1,0 +1,8 @@
+{
+  "scope": "An integration for this website, managed separately from named MCP, AI and S3 profiles.",
+  "pass": "Brand access passed the last check. This does not confirm publishing or draft delivery.",
+  "fail": "The last brand-access check failed. Review the saved connection in its settings.",
+  "setup": "Configure or test brand access from Metricool settings. Opening this page does not contact Metricool.",
+  "profiles": "Saved MCP, AI and S3 connections",
+  "empty_profiles": "No named MCP, AI or S3 connections yet."
+}

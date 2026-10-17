@@ -1,0 +1,11 @@
+{
+  "comment": "Golden vector for the mcp-billing/v1 request signature (class-mcbb-client.php 0.3.1). expected_* were computed independently (Python hashlib/hmac) from the inputs; the Go test recomputes them step by step with the standard library and checks the client against them.",
+  "secret": "secret",
+  "time": "1700000000",
+  "nonce": "abcdefghijklmnopqrstuvwxyz012345",
+  "method": "POST",
+  "target": "/mcp-billing/v1/accounts",
+  "body": "{\"a\":1}",
+  "expected_body_sha256": "015abd7f5cc57a2dd94b7590f04ad8084273905ee33ec5cebeae62276a97f862",
+  "expected_signature": "741d5808562352237a024a82eb5938edaaaf24469a056377d52e5ae496647177"
+}

@@ -1,0 +1,61 @@
+{{define "title"}}{{t "seo.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "seo.title"}}</h1>
+<p class="text-muted mb-4">{{t "seo.intro"}}</p>
+<a href="/admin/settings/seo/audit" class="inline-flex mb-4 min-h-11 items-center px-3 rounded border border-line bg-panel">{{t "seoaudit.title"}}</a>
+<form method="post" action="/admin/settings/seo" class="max-w-3xl space-y-4" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <section class="rounded border border-line bg-panel p-4 space-y-4">
+    <div>
+      <label for="title_template" class="block font-medium mb-1">{{t "seo.field.title_template"}}</label>
+      <input id="title_template" name="title_template" type="text" dir="auto" value="{{.Form.TitleTemplate}}" aria-describedby="tt-help tt-error"
+             {{with index .Fields "title_template"}}aria-invalid="true"{{end}}
+             class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <p id="tt-help" class="mt-1 text-xs text-muted">{{t "seo.field.title_template_help"}}</p>
+      <div id="tt-error">{{template "partials/field_errors" (index .Fields "title_template")}}</div>
+    </div>
+    <div>
+      <label for="default_description" class="block font-medium mb-1">{{t "seo.field.default_description"}}</label>
+      <textarea id="default_description" name="default_description" rows="3" maxlength="500" aria-describedby="dd-help dd-error"
+                {{with index .Fields "default_description"}}aria-invalid="true"{{end}}
+                class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Form.DefaultDescription}}</textarea>
+      <p id="dd-help" class="mt-1 text-xs text-muted">{{t "seo.field.default_description_help"}}</p>
+      <div id="dd-error">{{template "partials/field_errors" (index .Fields "default_description")}}</div>
+    </div>
+    <div x-data="{ url: $el.dataset.url }" data-url="{{.Form.DefaultOGImage}}"
+         @media:selected.window="if ($event.detail.target === 'seo_og_image') url = $event.detail.url">
+      <span id="og-label" class="block font-medium mb-1">{{t "seo.field.default_og_image"}}</span>
+      <input type="hidden" name="default_og_image" :value="url" value="{{.Form.DefaultOGImage}}">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex h-20 w-36 items-center justify-center overflow-hidden rounded border border-line bg-panel-2">
+          <img x-show="url" :src="url" alt="" class="h-full w-full object-cover" {{if .Form.DefaultOGImage}}src="{{.Form.DefaultOGImage}}"{{else}}x-cloak{{end}}>
+          <span x-show="!url" class="px-2 text-center text-xs text-muted">{{t "seo.image.none"}}</span>
+        </div>
+        {{if .CanPickMedia}}
+        <button type="button" aria-describedby="og-label" @click="$dispatch('media:open', { target: 'seo_og_image' })"
+                class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "image"}}{{t "seo.image.choose"}}</button>
+        {{end}}
+        <button type="button" x-show="url" @click="url = ''" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "seo.image.remove"}}</button>
+      </div>
+      <p class="mt-1 text-xs text-muted">{{t "seo.field.default_og_image_help"}}</p>
+      {{template "partials/field_errors" (index .Fields "default_og_image")}}
+    </div>
+  </section>
+  <section class="rounded border border-line bg-panel p-4 space-y-3">
+    <div>
+      <label for="robots_txt" class="block font-medium mb-1">{{t "seo.field.robots_txt"}}</label>
+      <textarea id="robots_txt" name="robots_txt" rows="6" dir="ltr" spellcheck="false" aria-describedby="rb-help rb-error"
+                {{with index .Fields "robots_txt"}}aria-invalid="true"{{end}}
+                class="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Form.RobotsTxt}}</textarea>
+      <p id="rb-help" class="mt-1 text-xs text-muted">{{t "seo.field.robots_txt_help"}}</p>
+      <div id="rb-error">{{template "partials/field_errors" (index .Fields "robots_txt")}}</div>
+    </div>
+    <div>
+      <p class="font-mono text-[11px] uppercase tracking-wide text-muted mb-1">{{t "seo.robots.default"}}</p>
+      <pre class="rounded bg-panel-dark text-[#dcefe7] p-3 font-mono text-xs overflow-x-auto" dir="ltr">{{.RobotsDefault}}</pre>
+    </div>
+  </section>
+  <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "seo.save"}}</button>
+</form>
+{{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}
+{{end}}

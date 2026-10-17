@@ -1,0 +1,6 @@
+{{define "title"}}{{t "site.intake.admin_title"}}{{end}}
+{{define "content"}}
+<div class="max-w-5xl space-y-5"><header><h1 class="text-2xl font-bold">{{t "site.intake.admin_title"}}</h1><p class="mt-2 text-muted">{{t "site.intake.admin_intro"}}</p></header>
+{{template "partials/form_directory" .Sources}}
+<div class="divide-y divide-line border border-line">{{range .Rows}}<article class="p-4 flex flex-wrap justify-between gap-3"><div class="min-w-0"><a href="/admin/reports/{{.ID}}" class="font-mono underline break-all" dir="ltr">{{.ID}}</a><p class="mt-2">{{if eq .Kind "follow-up"}}{{t "site.intake.follow_up"}}{{else}}{{t "site.intake.incident"}}{{end}} · {{t (printf "site.intake.status_%s" .Status)}}</p>{{template "partials/form_source" .Source}}</div><time dir="ltr" class="text-sm text-muted">{{.CreatedAt}}</time></article>{{else}}<p class="p-4 text-muted">{{t "site.intake.empty"}}</p>{{end}}</div>
+<nav class="flex flex-wrap gap-4" aria-label="{{t "site.intake.pages"}}">{{if .Previous}}<a href="?page={{.Previous}}" class="underline">{{t "site.intake.previous"}}</a>{{end}}{{if .Next}}<a href="?page={{.Next}}" class="underline">{{t "site.intake.next"}}</a>{{end}}</nav></div>{{end}}

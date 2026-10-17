@@ -1,0 +1,9 @@
+{
+  "title": "Site identity",
+  "saved": "Site identity saved and applied.",
+  "colors_invalid": "Use valid colors in #RRGGBB format.",
+  "font_invalid": "Choose a font from the list.",
+  "width_invalid": "Choose a page width from the list.",
+  "text_contrast": "Choose text and background colors with greater contrast.",
+  "button_contrast": "Choose a darker button color so white labels remain readable."
+}

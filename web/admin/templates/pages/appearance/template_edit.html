@@ -1,0 +1,39 @@
+{{define "title"}}{{t "theme.editor.title" .Name}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "template-editor.css"}}">
+<script type="module" src="{{asset "template-editor.js"}}"></script>
+<div class="mb-4">
+  <a href="/admin/appearance/templates" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "theme.editor.back"}}</a>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <h1 class="text-[22px] font-bold">{{t "theme.editor.title" ""}} <span class="font-mono" dir="ltr">{{.Name}}</span></h1>
+  <div class="flex flex-wrap gap-2">
+    {{with .Source}}<span class="rounded-chip border border-line bg-panel-2 text-muted px-2 text-[12px]">{{t (print "theme.templates.source." .)}}</span>{{end}}
+    {{if .HasDraft}}<span class="rounded-chip border border-amber bg-amber-soft text-amber-text px-2 text-[12px]">{{t "theme.templates.draft"}}</span>{{end}}
+  </div>
+</div>
+{{if .HasDraft}}<p role="status" class="mb-4 rounded border border-amber bg-amber-soft text-amber-text px-3 py-2">{{t "theme.editor.draft_notice"}}</p>{{end}}
+{{with .Error}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2"><p class="font-medium">{{t .}}</p>{{with $.Detail}}<pre class="mt-1 whitespace-pre-wrap font-mono text-[12px]" dir="ltr">{{.}}</pre>{{end}}</div>{{end}}
+<form method="post" action="/admin/appearance/templates/edit?name={{.Name}}"
+      x-data="{ lines: 1 }" x-init="$nextTick(() => lines = Math.max(1, $refs.src.value.split('\n').length))">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <label for="template-body" class="sr-only">{{t "theme.editor.body"}}</label>
+  <div data-code-editor class="flex rounded border border-line bg-panel focus-within:border-green focus-within:ring-[3px] focus-within:ring-green-soft overflow-hidden" dir="ltr">
+    <pre data-code-gutter aria-hidden="true" x-ref="gutter" class="select-none border-e border-line bg-panel-2 px-2 py-2 text-end font-mono text-[12px] leading-5 text-muted overflow-hidden" x-text="Array.from({length: lines}, (_, i) => i + 1).join('\n')">1</pre>
+    <textarea data-code-source data-language="html" data-label="{{t "theme.editor.body"}}" data-fallback="{{if eq (locale) "ar"}}المحرر النصي متاح؛ تعذّر تحميل محرر الكود.{{else}}Code editor unavailable; plain text editing is ready.{{end}}" id="template-body" name="body" x-ref="src" rows="28" spellcheck="false" wrap="off"
+              @input="lines = Math.max(1, $event.target.value.split('\n').length)" @scroll="$refs.gutter.scrollTop = $event.target.scrollTop"
+              class="flex-1 min-h-[480px] resize-y bg-panel px-3 py-2 font-mono text-[12px] leading-5 focus:outline-none">{{.Body}}</textarea>
+  </div>
+  <div class="mt-4 flex flex-wrap items-center gap-2">
+    <button data-code-exit type="submit" name="action" value="publish" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.editor.publish"}}</button>
+    <button type="submit" name="action" value="draft" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.editor.save_draft"}}</button>
+    <a href="{{.PreviewURL}}" target="_blank" rel="noopener" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong text-blue focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "external-link"}}<span>{{t "theme.editor.preview"}}</span></a>
+    {{if or .HasOverride .HasDraft}}
+    <button type="submit" name="action" value="delete" formnovalidate class="ms-auto h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.editor.delete"}}</button>
+    {{end}}
+  </div>
+  <p class="mt-2 text-[12px] text-muted">{{t "theme.editor.help"}}</p>
+  <p id="code-editor-help" class="mt-2 text-[12px] text-muted">{{if eq (locale) "ar"}}Ctrl/Cmd+F للبحث داخل الكود. Tab للتنقل بين الأدوات. Escape للخروج من المحرر.{{else}}Ctrl/Cmd+F to search code. Tab moves between controls. Escape leaves the editor.{{end}}</p>
+  <p data-code-status role="status" class="text-[12px] text-muted"></p>
+</form>
+{{end}}

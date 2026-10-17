@@ -1,0 +1,92 @@
+{{/* Data: wpmigrate.page (Steps, M, Preview, Error) — step 5 */}}
+{{define "title"}}{{t "wpmigrate.step.preview"}} · {{t "wpmigrate.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "wpmigrate.preview.title"}}</h1>
+<p class="text-muted mb-3">{{t "wpmigrate.preview.intro"}}</p>
+<nav aria-label="{{t "wpmigrate.steps"}}" class="mb-4 overflow-x-auto">
+  <ol class="flex gap-1 min-w-max">
+    {{range .Steps}}
+    <li>
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-green bg-green-soft text-green{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+        <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
+      </a>
+    </li>
+    {{end}}
+  </ol>
+</nav>
+{{with .Error}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
+<div class="rounded border border-line bg-panel p-4 mb-4 flex flex-wrap items-center gap-3">
+  <p class="text-xs text-muted">{{t "wpmigrate.preview.dry_help"}}</p>
+  <form method="post" action="/admin/migrations/{{.M.ID}}/preview" class="ms-auto">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "flask-conical"}}<span>{{if .Preview}}{{t "wpmigrate.preview.rerun"}}{{else}}{{t "wpmigrate.preview.run"}}{{end}}</span></button>
+  </form>
+</div>
+{{with .Preview}}
+<div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+  {{range $kind, $actions := .Counts}}
+  <div class="rounded border border-line bg-panel p-3">
+    <h2 class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t (print "wpmigrate.kind." $kind)}}</h2>
+    <ul class="mt-1 space-y-0.5">{{range $action, $n := $actions}}<li class="flex justify-between gap-2"><span>{{t (print "wpmigrate.action." $action)}}</span><span class="font-mono">{{$n}}</span></li>{{end}}</ul>
+  </div>
+  {{end}}
+  <div class="rounded border border-line bg-panel p-3">
+    <h2 class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.preview.media"}}</h2>
+    <p class="font-mono">{{.MediaCount}} · {{.MediaBytes}} B</p>
+  </div>
+</div>
+{{with .Notes}}<ul class="mb-4 space-y-1">{{range .}}<li class="rounded border border-amber bg-amber-soft text-amber-text px-3 py-2">{{t .}}</li>{{end}}</ul>{{end}}
+{{with .ContentStateCounts}}
+<section class="rounded border border-line bg-panel p-4 mb-4" data-content-state-counts aria-labelledby="state-counts-title">
+  <h2 id="state-counts-title" class="font-bold">{{t "wpmigrate.content_states.preview_title"}}</h2>
+  <p class="text-xs text-muted my-2">{{t "wpmigrate.content_states.preview_help"}}</p>
+  <div class="overflow-x-auto"><table class="w-full">
+    <thead><tr><th scope="col" class="text-start p-2">{{t "wpmigrate.content_states.type"}}</th><th scope="col" class="text-start p-2">{{t "wpmigrate.preview.source_status"}}</th><th scope="col" class="text-start p-2">{{t "wpmigrate.content_states.count"}}</th></tr></thead>
+    <tbody>{{range $type, $states := .}}{{range $state, $count := $states}}<tr class="border-t border-line" data-source-type="{{$type}}" data-source-state="{{$state}}" data-readable-count="{{$count}}"><td class="p-2 font-mono text-xs">{{$type}}</td><td class="p-2">{{if or (eq $state "publish") (eq $state "draft") (eq $state "pending") (eq $state "future") (eq $state "private")}}{{t (print "wpmigrate.content_states." $state)}}{{else}}{{$state}}{{end}}</td><td class="p-2 font-mono text-xs">{{$count}}</td></tr>{{end}}{{end}}</tbody>
+  </table></div>
+</section>
+{{end}}
+{{with .ContentStates}}
+<details class="rounded border border-line bg-panel p-4 mb-4" data-content-state-plan>
+  <summary class="font-bold cursor-pointer">{{t "wpmigrate.preview.content_states"}} · {{len .}}</summary>
+  <p class="text-xs text-muted my-2">{{t "wpmigrate.preview.content_states_help"}}</p>
+  <div class="overflow-x-auto max-h-96"><table class="w-full">
+    <thead><tr><th scope="col" class="text-start p-2">{{t "wpmigrate.preview.source_item"}}</th><th scope="col" class="text-start p-2">{{t "wpmigrate.preview.source_status"}}</th><th scope="col" class="text-start p-2">{{t "wpmigrate.preview.local_status"}}</th><th scope="col" class="text-start p-2">{{t "wpmigrate.preview.publish_at"}}</th></tr></thead>
+    <tbody>{{range .}}<tr class="border-t border-line"><td class="p-2 font-mono text-xs">{{.Type}}/{{.WPID}}</td><td class="p-2 font-mono text-xs">{{.SourceStatus}}</td><td class="p-2 font-mono text-xs">{{.LocalStatus}}</td><td class="p-2 font-mono text-xs" dir="ltr">{{.SourceDate}}</td></tr>{{end}}</tbody>
+  </table></div>
+</details>
+{{end}}
+<section class="rounded border border-line bg-panel mb-4 overflow-x-auto" aria-labelledby="pv-conflicts">
+  <h2 id="pv-conflicts" class="px-4 py-3 border-b border-line text-base font-bold">{{t "wpmigrate.preview.conflicts"}}</h2>
+  {{if .SlugConflicts}}
+  <table class="w-full">
+    <thead class="bg-panel-2"><tr>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.preview.slug"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.preview.final_slug"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.preview.reason"}}</th>
+    </tr></thead>
+    <tbody>
+      {{range .SlugConflicts}}
+      <tr class="border-t border-line"><td class="px-3 py-2 font-mono text-xs">{{.Type}}/{{.Slug}}</td><td class="px-3 py-2 font-mono text-xs">{{.FinalSlug}}</td><td class="px-3 py-2 text-xs">{{t (print "wpmigrate.conflict." .Reason)}}</td></tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="p-4 text-muted">{{t "wpmigrate.bucket.none"}}</p>{{end}}
+</section>
+<div class="grid gap-3 md:grid-cols-2 mb-4">
+  <section class="rounded border border-line bg-panel p-4">
+    <h2 class="text-base font-bold mb-2">{{t "wpmigrate.preview.shortcodes"}}</h2>
+    {{if .Shortcodes}}<ul class="flex flex-wrap gap-1">{{range $tag, $n := .Shortcodes}}<li class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-[11px]">[{{$tag}}] ×{{$n}}</li>{{end}}</ul>{{else}}<p class="text-muted">{{t "wpmigrate.bucket.none"}}</p>{{end}}
+  </section>
+  <section class="rounded border border-line bg-panel p-4">
+    <h2 class="text-base font-bold mb-2">{{t "wpmigrate.preview.unknown_blocks"}}</h2>
+    {{if .UnknownBlocks}}<ul class="flex flex-wrap gap-1">{{range $b, $n := .UnknownBlocks}}<li class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-[11px]">{{$b}} ×{{$n}}</li>{{end}}</ul>{{else}}<p class="text-muted">{{t "wpmigrate.bucket.none"}}</p>{{end}}
+  </section>
+</div>
+<div class="flex justify-end">
+  <a href="/admin/migrations/{{$.M.ID}}/import" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "wpmigrate.next.import"}}</span>{{icon "arrow-right" "w-4 h-4 rtl:rotate-180"}}</a>
+</div>
+{{else}}
+<p class="rounded border border-line bg-panel p-6 text-center text-muted">{{t "wpmigrate.preview.empty"}}</p>
+{{end}}
+{{end}}

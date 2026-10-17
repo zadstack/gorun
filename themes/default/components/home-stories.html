@@ -1,0 +1,20 @@
+{{/* Published entries only, supplied by the normal home query. No synthetic metrics or cards. */}}
+{{if .Items}}
+<section class="gr-home-stories" aria-labelledby="gr-stories-title">
+  <div class="gr-home-section-heading"><h2 id="gr-stories-title">{{t "latest_posts"}}</h2><span aria-hidden="true">↙</span></div>
+  <div class="gr-home-story-grid">
+  {{range $i, $item := .Items}}
+    <article class="gr-home-story{{if eq $i 0}} gr-home-story-lead{{end}}">
+      {{with media .FeaturedMediaID}}<a class="gr-home-story-image" href="{{url $item}}" tabindex="-1" aria-hidden="true">{{img . "large" "gr-home-cover"}}</a>{{end}}
+      <div class="gr-home-story-copy">
+        <div class="gr-home-story-meta">{{with .PublishedAt}}<time datetime="{{.}}">{{date .}}</time>{{end}}{{with terms . "category"}}{{range .}}<a href="{{url .}}">{{.Name}}</a>{{end}}{{end}}</div>
+        <h3><a href="{{url .}}">{{.Title}}</a></h3>
+        {{with excerpt . 32}}<p>{{.}}</p>{{end}}
+        <a class="gr-home-story-link" href="{{url .}}">{{t "read_more"}} <span aria-hidden="true">↗</span></a>
+      </div>
+    </article>
+  {{end}}
+  </div>
+  {{component "pagination" .}}
+</section>
+{{end}}

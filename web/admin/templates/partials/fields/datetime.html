@@ -1,0 +1,9 @@
+{{define "fields/datetime"}}
+<div class="gp-field" data-field-type="datetime" data-field-key="{{.Key}}">
+  {{template "fields/label" .}}
+  <input id="{{.ID}}" name="{{.Name}}" type="datetime-local" value="{{.Value}}" {{if .Required}}required{{end}} {{if .Error}}aria-invalid="true"{{end}} {{if .Help}}aria-describedby="{{.ID}}-help"{{end}}
+         class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+  <p class="mt-1 text-xs text-muted">{{t "content.editor.utc"}}</p>
+  {{template "fields/help" .}}
+</div>
+{{end}}

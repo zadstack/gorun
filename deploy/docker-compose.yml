@@ -1,0 +1,33 @@
+# Run from the repository root:  docker compose -f deploy/docker-compose.yml up -d
+services:
+  gorun:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: gorun:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      GORUN_DATA: /data
+      GORUN_SECRET_KEY: ${GORUN_SECRET_KEY:?set GORUN_SECRET_KEY (openssl rand -base64 32)}
+      # The public URL (https://your-site.example, no trailing slash); required in prod.
+      GORUN_BASE_URL: ${GORUN_BASE_URL:?set GORUN_BASE_URL (the public https URL)}
+      # 1 only for home-lab setups that fetch from private networks; leave unset in production.
+      GORUN_ALLOW_PRIVATE_NET: ${GORUN_ALLOW_PRIVATE_NET:-}
+      # Required by /admin/setup in prod (>= 16 chars); unset = create the admin with `gorun user create --admin`.
+      GORUN_SETUP_TOKEN: ${GORUN_SETUP_TOKEN:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    volumes:
+      - gorun-data:/data
+    healthcheck:
+      # distroless has no shell or curl; the binary probes its own /healthz.
+      test: ["CMD", "/app/gorun", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  gorun-data:

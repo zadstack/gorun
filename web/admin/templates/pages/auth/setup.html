@@ -1,0 +1,47 @@
+{{define "title"}}{{t "auth.setup.title"}}{{end}}
+{{define "content"}}
+<div class="rounded border border-line bg-panel p-6">
+  <h1 class="text-[22px] font-bold">{{t "auth.setup.title"}}</h1>
+  {{if .SetupBlocked}}
+  <div role="alert" class="rounded border border-amber bg-amber-soft p-3 text-amber-text">
+    <p class="mb-2">{{t "auth.setup.blocked"}}</p>
+    <ul class="list-disc ps-5 space-y-1">
+      <li>{{t "auth.setup.blocked_token"}} <code dir="ltr" class="font-mono text-xs">GORUN_SETUP_TOKEN</code></li>
+      <li>{{t "auth.setup.blocked_cli"}} <code dir="ltr" class="font-mono text-xs">gorun user create --admin --email … --password …</code></li>
+    </ul>
+  </div>
+  {{else}}
+  <p class="text-muted mb-4">{{t "auth.setup.intro"}}</p>
+  <form method="post" action="/admin/setup" class="space-y-4" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    {{if .NeedToken}}
+    <div>
+      <label for="setup_token" class="block font-medium mb-1">{{t "auth.setup.token"}}</label>
+      <input id="setup_token" name="setup_token" type="password" autocomplete="off" required dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+             aria-describedby="setup_token-help setup_token-error" {{with index .Fields "setup_token"}}aria-invalid="true"{{end}}>
+      <p id="setup_token-help" class="mt-1 text-xs text-muted">{{t "auth.setup.token_help"}}</p>
+      <div id="setup_token-error">{{template "partials/field_errors" (index .Fields "setup_token")}}</div>
+    </div>
+    {{end}}
+    <div>
+      <label for="name" class="block font-medium mb-1">{{t "auth.field.name"}}</label>
+      <input id="name" name="name" type="text" autocomplete="name" value="{{.Name}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    </div>
+    <div>
+      <label for="email" class="block font-medium mb-1">{{t "auth.field.email"}}</label>
+      <input id="email" name="email" type="email" autocomplete="username" required value="{{.Email}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+             {{with index .Fields "email"}}aria-invalid="true" aria-describedby="email-error"{{end}}>
+      <div id="email-error">{{template "partials/field_errors" (index .Fields "email")}}</div>
+    </div>
+    <div>
+      <label for="password" class="block font-medium mb-1">{{t "auth.field.password"}}</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" required minlength="10" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+             aria-describedby="password-help password-error" {{with index .Fields "password"}}aria-invalid="true"{{end}}>
+      <p id="password-help" class="mt-1 text-xs text-muted">{{t "auth.field.password_help"}}</p>
+      <div id="password-error">{{template "partials/field_errors" (index .Fields "password")}}</div>
+    </div>
+    <button type="submit" class="w-full h-9 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.setup.submit"}}</button>
+  </form>
+  {{end}}
+</div>
+{{end}}

@@ -1,0 +1,9 @@
+{{/* Usage: {{component "list" .}} — cards for .Items plus pagination. */}}
+{{if .Items}}
+<div class="default-content-grid grid gap-4 sm:grid-cols-2">
+  {{range .Items}}{{component "card" .}}{{end}}
+</div>
+{{component "pagination" .}}
+{{else}}
+<p class="default-empty rounded border border-line bg-panel p-6 text-muted">{{t "empty"}}</p>
+{{end}}

@@ -1,0 +1,95 @@
+package backup
+
+import (
+	"archive/tar"
+	"compress/gzip"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+func TestRestoreNewDirectoryAndRejectExistingState(t *testing.T) {
+	dir, path := backupSource(t)
+	if err := os.Mkdir(filepath.Join(dir, "media"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "media", "fixture.txt"), []byte("media"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	res, err := Create(dir, path, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	dest := filepath.Join(t.TempDir(), "restored")
+	if _, err := Restore(res.Manifest, dest); err != nil {
+		t.Fatal(err)
+	}
+	if data, err := os.ReadFile(filepath.Join(dest, "media", "fixture.txt")); err != nil || string(data) != "media" {
+		t.Fatal("media not restored", err)
+	}
+	if _, err := Restore(res.Manifest, dest); err == nil {
+		t.Fatal("existing destination accepted")
+	}
+	for _, suffix := range []string{"-wal", "-shm"} {
+		if _, err := os.Stat(filepath.Join(dest, "gorun.db") + suffix); !os.IsNotExist(err) {
+			t.Fatal("restore copied sidecar")
+		}
+	}
+	if err := os.WriteFile(filepath.Join(dest, "gorun.db-wal"), []byte("retain"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Restore(res.Manifest, dest); err == nil {
+		t.Fatal("destination with WAL accepted")
+	}
+	if data, err := os.ReadFile(filepath.Join(dest, "gorun.db-wal")); err != nil || string(data) != "retain" {
+		t.Fatal("existing state was modified")
+	}
+}
+
+func TestRestoreRejectsUnsafeArchivesBeforeWriting(t *testing.T) {
+	for _, name := range []string{"../escape", "/absolute", "media/../../escape", "media/link", "gorun.db-wal", "gorun.db-shm", "media\\evil"} {
+		t.Run(name, func(t *testing.T) {
+			dir, path := backupSource(t)
+			res, err := Create(dir, path, time.Now())
+			if err != nil {
+				t.Fatal(err)
+			}
+			f, err := os.Create(res.Files)
+			if err != nil {
+				t.Fatal(err)
+			}
+			gz := gzip.NewWriter(f)
+			tw := tar.NewWriter(gz)
+			h := &tar.Header{Name: name, Mode: 0600, Typeflag: tar.TypeReg}
+			if name == "media/link" {
+				h.Typeflag, h.Linkname = tar.TypeSymlink, "../../escape"
+			}
+			if err := tw.WriteHeader(h); err != nil {
+				t.Fatal(err)
+			}
+			if err := tw.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if err := gz.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Remove(res.Manifest); err != nil {
+				t.Fatal(err)
+			}
+			if err := writeManifest(res, nil, time.Now()); err != nil {
+				t.Fatal(err)
+			}
+			dest := filepath.Join(t.TempDir(), "restored")
+			if _, err := Restore(res.Manifest, dest); err == nil {
+				t.Fatal("unsafe archive restored")
+			}
+			if _, err := os.Stat(dest); !os.IsNotExist(err) {
+				t.Fatal("unsafe restore wrote destination")
+			}
+		})
+	}
+}

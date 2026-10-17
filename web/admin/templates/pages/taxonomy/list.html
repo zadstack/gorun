@@ -1,0 +1,74 @@
+{{define "title"}}{{t "taxonomy.list.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-4">{{t "taxonomy.list.title"}}</h1>
+<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+  <div class="rounded border border-line bg-panel overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-panel-2">
+        <tr>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.list.name"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.list.types"}}</th>
+          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted">{{t "taxonomy.list.terms"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Rows}}
+        <tr class="border-t border-line hover:bg-bg">
+          <td class="px-3 py-2">
+            <a href="/admin/taxonomies/{{.Slug}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a>
+            <div class="flex flex-wrap items-center gap-1 mt-0.5">
+              <span class="font-mono text-xs text-muted">{{.Slug}}</span>
+              {{if .Hierarchical}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 text-xs text-muted">{{t "taxonomy.list.hierarchical"}}</span>{{end}}
+              {{if .System}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 text-xs text-muted">{{t "taxonomy.list.system"}}</span>{{end}}
+            </div>
+          </td>
+          <td class="px-3 py-2 font-mono text-xs">{{range $i, $t := .Types}}{{if $i}}, {{end}}{{$t}}{{else}}—{{end}}</td>
+          <td class="px-3 py-2 text-end font-mono">{{.Terms}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <section class="rounded border border-line bg-panel p-4">
+    <h2 class="text-base font-bold mb-3">{{t "taxonomy.list.new"}}</h2>
+    {{with .Form.FormError}}<div role="alert" class="mb-3 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
+    {{template "taxonomy/settings_form" .Form}}
+  </section>
+</div>
+{{end}}
+
+{{define "taxonomy/settings_form"}}
+<form method="post" action="/admin/taxonomies" class="space-y-3" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  {{if .IsNew}}
+  <div>
+    <label for="tax-slug" class="block font-medium mb-1">{{t "taxonomy.field.slug"}}</label>
+    <input id="tax-slug" name="slug" type="text" value="{{.Taxonomy.Slug}}" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+    {{template "partials/field_errors" (index .Errors "slug")}}
+  </div>
+  {{else}}
+  <input type="hidden" name="slug" value="{{.Taxonomy.Slug}}"><input type="hidden" name="existing" value="1">
+  {{end}}
+  <div class="grid gap-3 sm:grid-cols-2">
+    <div><label for="tax-name-en" class="block font-medium mb-1">{{t "taxonomy.field.name_en"}}</label><input id="tax-name-en" name="name_en" type="text" value="{{index .Taxonomy.Name "en"}}" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+    <div><label for="tax-name-ar" class="block font-medium mb-1">{{t "taxonomy.field.name_ar"}}</label><input id="tax-name-ar" name="name_ar" type="text" value="{{index .Taxonomy.Name "ar"}}" dir="rtl" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+    <div><label for="tax-singular-en" class="block font-medium mb-1">{{t "taxonomy.field.singular_en"}}</label><input id="tax-singular-en" name="singular_en" type="text" value="{{index .Taxonomy.Singular "en"}}" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+    <div><label for="tax-singular-ar" class="block font-medium mb-1">{{t "taxonomy.field.singular_ar"}}</label><input id="tax-singular-ar" name="singular_ar" type="text" value="{{index .Taxonomy.Singular "ar"}}" dir="rtl" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+  </div>
+  {{template "partials/field_errors" (index .Errors "name")}}
+  <div class="flex flex-wrap gap-x-5 gap-y-2">
+    <label class="inline-flex items-center gap-2"><input type="checkbox" name="hierarchical" value="1" {{if .Taxonomy.Hierarchical}}checked{{end}} class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "taxonomy.field.hierarchical"}}</span></label>
+    <label class="inline-flex items-center gap-2"><input type="checkbox" name="public" value="1" {{if .Taxonomy.Public}}checked{{end}} class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "taxonomy.field.public"}}</span></label>
+  </div>
+  {{if .Types}}
+  <fieldset>
+    <legend class="block font-medium mb-1">{{t "taxonomy.field.types"}}</legend>
+    <div class="flex flex-wrap gap-x-5 gap-y-2">
+      {{range .Types}}<label class="inline-flex items-center gap-2"><input type="checkbox" name="types" value="{{.Value}}" {{if .Selected}}checked{{end}} class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{.Label}}</span></label>{{end}}
+    </div>
+    {{template "partials/field_errors" (index .Errors "types")}}
+  </fieldset>
+  {{end}}
+  <button type="submit" class="{{if .IsNew}}h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center justify-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft{{else}}h-9 px-3 rounded border border-line bg-panel inline-flex items-center justify-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft{{end}}">{{icon "save"}}<span>{{t "taxonomy.action.save"}}</span></button>
+</form>
+{{end}}

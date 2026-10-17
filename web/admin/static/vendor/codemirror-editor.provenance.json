@@ -1,0 +1,9 @@
+{
+  "source": "https://github.com/codemirror",
+  "registry": "https://registry.npmjs.org",
+  "build": "npm ci --prefix tools/template-editor && npm run build --prefix tools/template-editor",
+  "lockfile": "tools/template-editor/package-lock.json",
+  "sha256": "681e10e993abe78031ca8a8fc1e64556ca2d1835d5a9e41323ad8731b2a7591b",
+  "bytes": 568543,
+  "gzip_bytes": 194056
+}

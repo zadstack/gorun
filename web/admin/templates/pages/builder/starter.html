@@ -1,0 +1,63 @@
+{{define "title"}}{{t "starters.title"}}{{end}}
+{{define "content"}}
+{{$ar := eq locale "ar"}}
+<script defer src="{{asset "starter-theme.js"}}"></script>
+<link rel="stylesheet" href="{{asset "starter-theme.css"}}">
+<h1 class="text-[22px] font-bold mb-2">{{t "starters.title"}}</h1>
+<p class="text-muted mb-6">{{t "starters.intro"}}</p>
+<p class="mb-6 text-muted">{{if $ar}}اختر التصميم، ثم أضف ما تعرفه عن مشروعك. يمكنك ترك الحقول الاختيارية فارغة وتعديل كل صفحة لاحقًا. لن يتغيّر موقعك الحالي حتى تراجع الصفحات وتفعّل الموقع الجديد.{{else}}Choose a design, then add what you know about your project. Optional fields can stay empty; every page remains editable. Your current site stays unchanged until you review and activate the new site.{{end}}</p>
+{{if .Error}}<p role="alert" class="border border-red p-3 mb-4">{{.Error}}</p>{{end}}
+{{if .Run}}
+<section class="border border-line bg-panel p-4 space-y-4">
+<h2 class="text-lg font-bold">{{.Run.Title}}</h2>
+{{if .Run.Active}}<p role="status" class="text-green">{{t "starters.active"}}</p><a href="/" class="underline">{{t "starters.view_site"}}</a><a href="/admin/appearance/readiness" class="block underline">{{if $ar}}راجع جاهزية الموقع قبل الإطلاق{{else}}Check site readiness before launch{{end}}</a>{{else}}<p>{{t "starters.review"}}</p>{{end}}
+<ul class="divide-y divide-line">
+{{range .Pages}}<li class="flex flex-wrap items-center gap-4 py-3"><strong class="me-auto">{{.Title}}</strong><a href="/admin/builder/{{.ID}}" class="text-blue underline">{{t "starters.edit"}}</a><a href="{{.Preview}}" target="_blank" rel="noopener" class="underline">{{t "starters.preview"}}</a></li>{{end}}
+</ul>
+{{if not .Run.Active}}
+<p class="text-muted text-sm">{{t "starters.activation_notice"}}</p>
+<form method="post" action="/admin/site-builder/{{.Run.Token}}/activate"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="expected" value="{{.Expected}}"><button type="submit" class="starter-primary bg-green px-4 py-2 font-semibold">{{t "starters.activate"}}</button></form>
+{{end}}
+<a href="/admin/site-builder" class="block underline">{{t "starters.another"}}</a>
+</section>
+{{else}}
+<form method="post" action="/admin/site-builder" class="starter-form space-y-6 max-w-6xl">
+<input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="token" value="{{.Form.Token}}">
+<fieldset><legend class="font-bold mb-3">1 · {{t "starters.choose"}}</legend><div class="grid gap-3 md:grid-cols-3">{{range .Choices}}<label class="starter-design border border-line bg-panel cursor-pointer"><img src="{{.Preview}}" alt="{{.Name}}" loading="lazy" width="1280" height="800"><span class="starter-choice-body block p-4"><input data-identity="{{json .Identity}}" type="radio" name="starter" value="{{.ID}}" {{if eq $.Form.Starter .ID}}checked{{end}} required><strong class="block my-2">{{.Name}}</strong><span class="text-sm text-muted">{{.Description}}</span></span></label>{{end}}</div></fieldset>
+<fieldset class="border border-line p-4 space-y-4"><legend class="font-bold px-2">2 · {{if $ar}}عرّف بمشروعك{{else}}Introduce your project{{end}}</legend>
+<div class="grid gap-4 md:grid-cols-2">
+<label class="block">{{t "starters.name"}}<input name="title" required maxlength="200" value="{{.Form.Title}}" class="block w-full bg-panel border border-line px-3 py-2 mt-1"></label>
+<label class="block">{{t "starters.locale"}}<select name="locale" class="block w-full bg-panel border border-line px-3 py-2 mt-1"><option value="ar" {{if eq .Form.Locale "ar"}}selected{{end}}>العربية</option><option value="en" {{if eq .Form.Locale "en"}}selected{{end}}>English</option></select></label>
+<label class="block md:col-span-2">{{t "starters.tagline"}}<textarea name="tagline" maxlength="600" rows="2" class="block w-full bg-panel border border-line px-3 py-2 mt-1">{{.Form.Tagline}}</textarea></label>
+</div>
+<label class="block">{{if $ar}}وصف المشروع (اختياري){{else}}Project description (optional){{end}}<textarea name="description" maxlength="1600" rows="3" class="block w-full bg-panel border border-line px-3 py-2 mt-1" aria-describedby="starter-description-help">{{.Form.Description}}</textarea></label>
+<p id="starter-description-help" class="text-sm text-muted">{{if $ar}}ماذا تقدم ولمن؟ يظهر الوصف في الرئيسية ووصف الصفحة لمحركات البحث.{{else}}What do you offer, and to whom? This appears on the home page and in its search description.{{end}}</p>
+<label class="block">{{if $ar}}نبذة وقصة المشروع (اختياري){{else}}About your project (optional){{end}}<textarea name="about" maxlength="6000" rows="5" class="block w-full bg-panel border border-line px-3 py-2 mt-1">{{.Form.About}}</textarea></label>
+</fieldset>
+<fieldset class="border border-line p-4 space-y-3"><legend class="font-bold px-2">3 · {{if $ar}}الخدمات أو الموضوعات{{else}}Services or topics{{end}}</legend>
+<label class="block">{{if $ar}}اكتب من خدمة أو موضوع واحد إلى 6، كل منها في سطر (اختياري){{else}}List 1 to 6 services or topics, one per line (optional){{end}}<textarea name="services" rows="6" maxlength="800" class="block w-full bg-panel border border-line px-3 py-2 mt-1" aria-describedby="starter-services-help">{{.Form.Services}}</textarea></label>
+<p id="starter-services-help" class="text-sm text-muted">{{if $ar}}كل سطر يصبح عنوان خدمة. للمجلة، اكتب الموضوعات التي تغطيها. اتركه فارغًا للاحتفاظ بالأمثلة القابلة للتعديل.{{else}}Each line becomes an offering title. For a magazine, list the subjects you cover. Leave it empty to keep editable examples.{{end}}</p>
+</fieldset>
+<fieldset class="border border-line p-4 space-y-3"><legend class="font-bold px-2">4 · {{if $ar}}كيف يتواصل الزوار معك؟{{else}}How can visitors reach you?{{end}}</legend>
+<div class="grid gap-4 sm:grid-cols-2"><label class="block">{{if $ar}}البريد الإلكتروني (اختياري){{else}}Email address (optional){{end}}<input name="contact_email" type="email" maxlength="254" dir="ltr" autocomplete="email" value="{{.Form.ContactEmail}}" class="block w-full bg-panel border border-line px-3 py-2 mt-1"></label>
+<label class="block">{{if $ar}}الهاتف (اختياري){{else}}Phone (optional){{end}}<input name="contact_phone" type="tel" maxlength="32" dir="ltr" autocomplete="tel" value="{{.Form.ContactPhone}}" class="block w-full bg-panel border border-line px-3 py-2 mt-1"></label></div>
+<label class="block">{{if $ar}}العنوان أو المنطقة (اختياري){{else}}Address or location (optional){{end}}<textarea name="contact_address" maxlength="800" rows="2" class="block w-full bg-panel border border-line px-3 py-2 mt-1">{{.Form.ContactAddress}}</textarea></label>
+<p class="text-sm text-muted">{{if $ar}}تظهر هذه البيانات في صفحة التواصل بعد التفعيل. يُستخدم البريد كمستلم افتراضي لنموذج التواصل؛ أي مستلمين محددين في إعدادات النماذج لهم الأولوية. راجع إعدادات البريد واختبر الاستلام من شاشة الجاهزية. الحقول الفارغة لا تمسح إعداداتك الحالية.{{else}}These details appear on the contact page after activation. This email is the default contact form recipient; explicit recipients in form settings take priority. Review mail settings and verify receipt from the readiness screen. Empty fields preserve existing settings.{{end}}</p>
+</fieldset>
+<fieldset class="border border-line p-4 space-y-4"><legend class="font-bold px-2">5 · {{if $ar}}أضف صورك{{else}}Add your images{{end}}</legend>
+<p class="text-sm text-muted">{{if $ar}}اختر صورًا من مكتبة الوسائط أو ارفعها عبر زر اختيار الصورة. اترك الصورة الرئيسية فارغة لاستخدام الرسم الأصلي للقالب، واترك الشعار فارغًا للاحتفاظ بالشعار الحالي.{{else}}Choose images from the media library or upload through the image picker. Leave the hero empty to use the theme's original artwork, and leave the logo empty to preserve the current logo.{{end}}</p>
+<div class="grid gap-4 sm:grid-cols-2"><div><p class="font-medium mb-2">{{.Logo.Label}}</p>{{template "media_picker_slot" .Logo}}</div><div><p class="font-medium mb-2">{{.HeroImage.Label}}</p>{{template "media_picker_slot" .HeroImage}}</div></div>
+</fieldset>
+<fieldset class="border border-line p-4"><legend class="font-bold px-2">6 · {{t "starters.identity"}}</legend><div class="grid gap-4 sm:grid-cols-3">
+<label>{{t "starters.accent"}}<input name="accent" type="color" value="{{.Form.Accent}}" class="block mt-2 w-full h-10"></label>
+<label>{{t "starters.background"}}<input name="background" type="color" value="{{.Form.Background}}" class="block mt-2 w-full h-10"></label>
+<label>{{t "starters.text"}}<input name="text" type="color" value="{{.Form.Text}}" class="block mt-2 w-full h-10"></label>
+<label>{{t "starters.font"}}<select name="font" class="block w-full mt-2 bg-panel border border-line px-2 py-2"><option value="zad" {{if eq .Form.Font "zad"}}selected{{end}}>Zad · زاد</option><option value="system" {{if eq .Form.Font "system"}}selected{{end}}>{{t "starters.system"}}</option><option value="serif" {{if eq .Form.Font "serif"}}selected{{end}}>{{t "starters.serif"}}</option><option value="mono" {{if eq .Form.Font "mono"}}selected{{end}}>{{t "starters.mono"}}</option></select></label>
+<label>{{t "starters.width"}}<select name="width" class="block w-full mt-2 bg-panel border border-line px-2 py-2"><option value="narrow" {{if eq .Form.Width "narrow"}}selected{{end}}>{{t "starters.narrow"}}</option><option value="standard" {{if eq .Form.Width "standard"}}selected{{end}}>{{t "starters.standard"}}</option><option value="wide" {{if eq .Form.Width "wide"}}selected{{end}}>{{t "starters.wide"}}</option></select></label>
+</div></fieldset>
+<p class="text-muted text-sm">{{t "starters.draft_notice"}}</p>
+<button type="submit" class="starter-primary bg-green px-4 py-2 font-semibold">{{t "starters.create"}}</button>
+</form>
+{{if .Logo.CanPick}}{{template "partials/media_picker.html" .}}{{end}}
+{{end}}
+{{end}}

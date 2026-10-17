@@ -1,0 +1,1 @@
+{{component "page-content" .}}<div class="ed-contact"><div><p class="ed-eyebrow">{{t "ed.conversation"}}</p><h2>{{t "ed.contact_title"}}</h2><p>{{t "ed.contact_note"}}</p></div><div>{{with .Extra.form_flash}}<p role="status" class="ed-feedback">{{if eq . "ok"}}{{t "form_sent_body"}}{{else}}{{t "form_error_title"}}{{end}}</p>{{end}}{{component "contact-form" .}}</div></div>

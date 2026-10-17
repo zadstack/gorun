@@ -1,0 +1,113 @@
+{{define "title"}}{{t "redirects.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "redirects.title"}}</h1>
+<p class="text-muted mb-4">{{t "redirects.intro"}}</p>
+
+<form method="post" action="/admin/redirects" class="rounded border border-line bg-panel p-4 mb-4" novalidate>
+  <h2 class="text-base font-bold mb-3">{{t "redirects.add.title"}}</h2>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_200px_auto] md:items-start">
+    <div>
+      <label for="from_path" class="block font-medium mb-1">{{t "redirects.field.from"}}</label>
+      <input id="from_path" name="from_path" type="text" dir="ltr" required value="{{.Form.FromPath}}" placeholder="/old-page"
+             aria-describedby="from-help from-error" {{with index .Fields "from_path"}}aria-invalid="true"{{end}}
+             class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <p id="from-help" class="mt-1 text-xs text-muted">{{t "redirects.field.from_help"}}</p>
+      <div id="from-error">{{template "partials/field_errors" (index .Fields "from_path")}}</div>
+    </div>
+    <div>
+      <label for="to_url" class="block font-medium mb-1">{{t "redirects.field.to"}}</label>
+      <input id="to_url" name="to_url" type="text" dir="ltr" required value="{{.Form.ToURL}}" placeholder="/new-page"
+             aria-describedby="to-help to-error" {{with index .Fields "to_url"}}aria-invalid="true"{{end}}
+             class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <p id="to-help" class="mt-1 text-xs text-muted">{{t "redirects.field.to_help"}}</p>
+      <div id="to-error">{{template "partials/field_errors" (index .Fields "to_url")}}</div>
+    </div>
+    <div>
+      <label for="status" class="block font-medium mb-1">{{t "redirects.field.status"}}</label>
+      <select id="status" name="status" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        {{$sel := .Form.Status}}{{range .Statuses}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{t (print "redirects.status." .)}}</option>{{end}}
+      </select>
+      {{template "partials/field_errors" (index .Fields "status")}}
+    </div>
+    <button type="submit" class="md:mt-6 h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "redirects.add.submit"}}</button>
+  </div>
+</form>
+
+<details class="rounded border border-line bg-panel mb-4" {{if .Import}}open{{end}}>
+  <summary class="px-4 py-3 cursor-pointer font-bold focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">{{t "redirects.import.title"}}</summary>
+  <div class="px-4 pb-4">
+    <p class="text-muted text-xs mb-3">{{t "redirects.import.help"}}</p>
+    {{with .Import}}
+    <div role="status" class="mb-3 rounded border {{if .Errors}}border-amber bg-amber-soft text-amber-text{{else}}border-green bg-green-soft text-green{{end}} px-3 py-2">
+      <p>{{t "redirects.import.done" .Imported}}{{if .Errors}} · {{t "redirects.import.rejected" (len .Errors)}}{{end}}</p>
+      {{if .Errors}}<ul class="mt-1 list-disc ps-5 text-xs">{{range .Errors}}<li>{{if .Line}}<span class="font-mono">{{t "redirects.import.line" .Line}}</span>: {{end}}{{t .Key}}</li>{{end}}</ul>{{end}}
+    </div>
+    {{end}}
+    <form hx-post="/admin/redirects/import" hx-encoding="multipart/form-data" hx-target="#main" hx-swap="innerHTML" class="flex flex-wrap items-center gap-2">
+      <label for="csv-file" class="sr-only">{{t "redirects.import.title"}}</label>
+      <input id="csv-file" type="file" name="file" accept=".csv,text/csv" required class="text-sm file:me-2 file:h-9 file:px-3 file:rounded file:border file:border-line file:bg-panel file:text-ink hover:file:border-line-strong">
+      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "upload"}}{{t "redirects.import.submit"}}</button>
+    </form>
+  </div>
+</details>
+
+<div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+  <form role="search" method="get" action="/admin/redirects" class="w-full sm:w-80">
+    <label for="redirects-q" class="sr-only">{{t "redirects.search.label"}}</label>
+    <input id="redirects-q" name="q" type="search" value="{{.Q}}" placeholder="{{t "redirects.search.placeholder"}}"
+           class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  </form>
+  <span class="font-mono text-xs text-muted">{{.Page.Total}}</span>
+</div>
+<div class="rounded border border-line bg-panel overflow-x-auto">
+  {{if .Items}}
+  <table class="w-full">
+    <thead class="bg-panel-2">
+      <tr>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.from"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.to"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.status"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.hits"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.enabled"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.actions"}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Items}}
+      <tr class="border-t border-line hover:bg-bg {{if not .Enabled}}text-muted{{end}}">
+        <td class="px-3 py-2 font-mono text-xs break-all" dir="ltr">{{.FromPath}}</td>
+        <td class="px-3 py-2 font-mono text-xs break-all" dir="ltr">{{.ToURL}}</td>
+        <td class="px-3 py-2"><span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-xs">{{.Status}}</span></td>
+        <td class="px-3 py-2 text-end font-mono">{{.Hits}}</td>
+        <td class="px-3 py-2">{{if .Enabled}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "redirects.enabled"}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-xs">{{t "redirects.disabled"}}</span>{{end}}</td>
+        <td class="px-3 py-2">
+          <div class="flex justify-end gap-1">
+            <form method="post" action="/admin/redirects/{{.ID}}/toggle">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <button type="submit" class="h-8 px-2 rounded border border-line hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{if .Enabled}}{{t "redirects.action.disable"}}{{else}}{{t "redirects.action.enable"}}{{end}}</button>
+            </form>
+            <form method="post" action="/admin/redirects/{{.ID}}/delete" data-confirm="{{t "redirects.confirm.delete"}}">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <button type="submit" class="h-8 px-2 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-red-soft" aria-label="{{t "redirects.action.delete"}} {{.FromPath}}">{{icon "trash-2"}}</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="p-6 text-center text-muted">{{if .Q}}{{t "redirects.empty_search"}}{{else}}{{t "redirects.empty"}}{{end}}</p>
+  {{end}}
+</div>
+{{with .Page}}{{if gt .Pages 1}}
+<nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
+  <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+  <div class="flex gap-2">
+    {{if .HasPrev}}<a href="/admin/redirects?q={{$.Q}}&amp;page={{.Prev}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
+    {{if .HasNext}}<a href="/admin/redirects?q={{$.Q}}&amp;page={{.Next}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}
+  </div>
+</nav>
+{{end}}{{end}}
+{{end}}

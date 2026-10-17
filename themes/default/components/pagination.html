@@ -1,0 +1,11 @@
+{{/* Usage: {{component "pagination" .}} — the page context (uses .Pagination and ?q=). */}}
+{{$q := index .Query "q"}}
+{{with .Pagination}}{{if gt .Pages 1}}
+<nav class="default-pagination mt-8 flex items-center justify-between gap-3" aria-label="{{t "pagination"}}">
+  <span class="text-sm text-muted">{{t "page_of" .Page .Pages}}</span>
+  <div class="flex gap-2">
+    {{if .HasPrev}}<a href="?{{with $q}}q={{.}}&{{end}}page={{add .Page -1}}" rel="prev" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "prev"}}</a>{{end}}
+    {{if .HasNext}}<a href="?{{with $q}}q={{.}}&{{end}}page={{add .Page 1}}" rel="next" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "next"}}</a>{{end}}
+  </div>
+</nav>
+{{end}}{{end}}

@@ -1,0 +1,33 @@
+{{define "title"}}{{if eq (locale) "ar"}}إعداد استوديو المحتوى{{else}}Content studio setup{{end}}{{end}}
+{{define "content"}}
+<div class="max-w-4xl space-y-5">
+<h1 class="text-2xl font-bold">{{if eq (locale) "ar"}}مزوّدو الاستوديو والمهارات{{else}}Studio providers & skills{{end}}</h1>
+<p>{{if eq (locale) "ar"}}اربط عدة مزوّدين من صفحة الاتصالات، ثم اكتشف الأدوات وحدد الأداة المسموح بها لكل مهمة. هذه الإعدادات لا تُشغّل توليدًا. اختر أدوات المسودات والوسائط فقط، دون أدوات نشر أو دفع أو إرسال رسائل.{{else}}Connect multiple providers in Connections, then discover and allow the exact tool for each task. These settings do not generate anything. Allow draft and media tools only, never publishing, payment or messaging tools.{{end}}</p>
+<div class="flex flex-wrap gap-4"><a href="/admin/settings/connections" class="text-blue">{{if eq (locale) "ar"}}الاتصالات المشفرة{{else}}Encrypted connections{{end}}</a><a href="/admin/settings/ai" class="text-blue">{{if eq (locale) "ar"}}مزوّد الكتابة والصور{{else}}Writing & image provider{{end}}</a></div>
+<section class="border border-line rounded bg-panel p-4 space-y-3"><h2 class="font-bold">{{if eq (locale) "ar"}}اكتشاف أدوات MCP{{else}}Discover MCP tools{{end}}</h2><label class="block">{{if eq (locale) "ar"}}الاتصال{{else}}Connection{{end}}<select data-studio-connection class="w-full p-2 border border-line bg-panel rounded">{{range .Connections}}<option value="{{.ID}}">{{.Name}} · {{.ID}}</option>{{end}}</select></label><button type="button" data-studio-discover class="min-h-11 px-3 border border-line rounded">{{if eq (locale) "ar"}}اتصال وعرض الأدوات فقط{{else}}Connect & list tools only{{end}}</button><pre data-studio-tools dir="ltr" class="text-xs whitespace-pre-wrap break-all max-h-96 overflow-auto"></pre></section>
+<section class="border border-line rounded bg-panel p-4 space-y-3"><h2 class="font-bold">{{if eq (locale) "ar"}}عقود الأدوات والمهارات{{else}}Tool contracts & skills{{end}}</h2>
+<p>{{if eq (locale) "ar"}}الصق اسم الأداة من نتيجة الاكتشاف. القوالب بيانات JSON فقط. المتغيرات هي prompt وtitle وtext وjob_id داخل أقواس مزدوجة. لا تضع مفاتيح سرية هنا. image_model يفعّل الصور فقط لدى مزوّد OpenAI-compatible المهيأ الذي يدعم images/generations فعلًا. الفيديو والرندر يحتاجان أداة MCP مهيأة.{{else}}Copy tool names from discovery. Templates are JSON data only. Variables are prompt, title, text and job_id inside double braces. Never put secrets here. image_model enables images only with a configured OpenAI-compatible provider that actually supports images/generations. Video and render require a configured MCP tool.{{end}}</p>
+<details><summary class="cursor-pointer min-h-11">{{if eq (locale) "ar"}}مرجع الحقول{{else}}Field reference{{end}}</summary><pre class="text-xs whitespace-pre-wrap break-all" dir="ltr">{
+ "image_model": "",
+ "bindings": [{
+  "id": "my-video", "name": "My video provider", "kind": "video",
+  "connection_id": "COPY_CONNECTION_ID", "tool": "COPY_DISCOVERED_TOOL",
+  "arguments": {"prompt": "{{"{{prompt}}"}}", "source": "{{"{{text}}"}}"},
+  "url_path": "structuredContent.url"
+ }],
+ "presets": [{"id": "social", "name": "Social draft", "kind": "text", "prompt": "Create a factual social draft from the article."}]
+}
+Optional asynchronous contract:
+ job_path: structuredContent.job_id
+ status_tool: EXACT_DISCOVERED_STATUS_TOOL
+ status_arguments: {"job_id": "{{"{{job_id}}"}}"}
+ status_path: structuredContent.status
+ ready_value: EXACT_PROVIDER_READY_VALUE
+ failed_value: EXACT_PROVIDER_FAILED_VALUE
+ text_path: optional dot-separated string path for text results.
+Media URL: HTTPS public/signed download URL; no redirects or private network. MP4/PNG/JPEG/WebP only. Site upload limits apply.
+Schemas and paths must match your actual provider. No default video API is assumed.</pre></details>
+<label class="block">{{if eq (locale) "ar"}}الإعدادات{{else}}Configuration{{end}}<textarea data-studio-config rows="18" spellcheck="false" dir="ltr" class="mt-1 w-full text-xs font-mono p-3 rounded border border-line bg-panel">{{.Config}}</textarea></label><button type="button" data-studio-config-save class="min-h-11 px-4 rounded bg-green text-white">{{if eq (locale) "ar"}}حفظ الأدوات المسموح بها{{else}}Save allowed tools{{end}}</button></section>
+<p data-studio-config-status role="status" aria-live="polite"></p></div>
+<script defer src="{{asset "studio.js"}}"></script>
+{{end}}

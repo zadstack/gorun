@@ -1,0 +1,8 @@
+{{define "fields/json"}}
+<div class="gp-field" data-field-type="json" data-field-key="{{.Key}}">
+  {{template "fields/label" .}}
+  <textarea id="{{.ID}}" name="{{.Name}}" rows="6" dir="ltr" spellcheck="false" {{if .Required}}required{{end}} {{if .Error}}aria-invalid="true"{{end}} {{if .Help}}aria-describedby="{{.ID}}-help"{{end}}
+            class="w-full rounded border border-line bg-panel-dark text-[#e9eeea] font-mono text-xs px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Value}}</textarea>
+  {{template "fields/help" .}}
+</div>
+{{end}}

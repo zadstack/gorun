@@ -1,0 +1,33 @@
+{{/* Shared head and scripts for every layout. */}}
+{{define "head"}}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{csrf}}">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="{{asset "zad-font.css"}}">
+<link rel="stylesheet" href="{{asset "admin.css"}}">
+<script src="{{asset "vendor/tailwindcss-3.4.17.js"}}" integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K" crossorigin="anonymous"></script>
+<script nonce="{{nonce}}">
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: 'var(--bg)', panel: 'var(--panel)', 'panel-2': 'var(--panel-2)', 'panel-dark': 'var(--panel-dark)',
+        ink: 'var(--ink)', muted: 'var(--muted)', line: 'var(--line)', 'line-strong': 'var(--line-strong)',
+        green: { DEFAULT: 'var(--green)', hover: 'var(--green-hover)', soft: 'var(--green-soft)' },
+        blue: { DEFAULT: 'var(--blue)', hover: 'var(--blue-hover)', soft: 'var(--blue-soft)' },
+        amber: { DEFAULT: 'var(--amber)', text: 'var(--amber-text)', soft: 'var(--amber-soft)' },
+        red: { DEFAULT: 'var(--red)', soft: 'var(--red-soft)' },
+        purple: 'var(--purple)',
+      },
+      borderRadius: { DEFAULT: 'var(--radius)', chip: 'var(--radius-chip)' },
+      fontFamily: { sans: ['Zad', 'system-ui', '-apple-system', 'Segoe UI', 'Tahoma', 'sans-serif'] },
+    },
+  },
+};
+</script>
+<script defer src="{{asset "admin.js"}}"></script>
+<script defer src="{{asset "vendor/alpinejs-3.17.4.js"}}" integrity="sha384-5/joNqFnRyVWzXp99bHot6RHG+EksGp+USSgZwPar7T9SD9PKKER37n/8bXBAZGd" crossorigin="anonymous"></script>
+<script src="{{asset "vendor/htmx-org-2.0.11.js"}}" integrity="sha384-2OatzQy1H+Zd/IIrjr1TcuDGqLXeHhbooAyJY1KdQMKnr4LZ22k31GBLdYKHmVjg" crossorigin="anonymous"></script>
+<script defer src="{{asset "vendor/lucide-core-1.55.0.js"}}" integrity="sha384-bK9Knju/RHE6FGv/VC05FVEhRx8UZqXWAMxjuzLfya0bgVbDYk6/QkjxLPiFkEu0" crossorigin="anonymous" data-lucide-full="{{asset "vendor/lucide-1.55.0.js"}}" data-lucide-integrity="sha384-SZUFq9Dx112fyzY/iIBEjyd2gu3jY4XVhp+LUNXSpEMB2IEm/TOoMTNH4BHtQ6Hz"></script>
+{{end}}

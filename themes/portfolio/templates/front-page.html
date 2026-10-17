@@ -1,0 +1,1 @@
+{{part "header" .}}<link rel="stylesheet" href="{{asset "home-composition.css"}}"><section class="studio-shell studio-intro"><p class="studio-kicker">{{.Theme.Name}}</p><h1>{{.Site.Title}}</h1>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</section><section class="studio-shell studio-listing">{{component "home-stories" .}}</section>{{part "footer" .}}

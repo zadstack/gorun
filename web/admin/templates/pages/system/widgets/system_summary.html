@@ -1,0 +1,17 @@
+{{/* Data: systemSummary */}}
+{{define "content"}}
+<div data-widget="system_summary">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-base font-bold">{{t "admin.dashboard.system"}}</h2>
+    <a href="/admin/system/health" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>
+  </div>
+  <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+    <dt class="text-muted">{{t "admin.health.go_version"}}</dt><dd class="font-mono text-xs">{{.GoVersion}}</dd>
+    <dt class="text-muted">{{t "admin.health.db_size"}}</dt><dd class="font-mono text-xs">{{.DBSize}}</dd>
+    <dt class="text-muted">{{t "admin.health.wal_size"}}</dt><dd class="font-mono text-xs">{{.WALSize}}</dd>
+    <dt class="text-muted">{{t "admin.health.disk_free"}}</dt><dd class="font-mono text-xs">{{.DiskFree}}</dd>
+    <dt class="text-muted">{{t "admin.health.uptime"}}</dt><dd class="font-mono text-xs">{{.Uptime}}</dd>
+    <dt class="text-muted">{{t "admin.health.theme"}}</dt><dd class="font-mono text-xs">{{.Theme}}</dd>
+  </dl>
+</div>
+{{end}}

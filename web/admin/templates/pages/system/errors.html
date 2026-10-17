@@ -1,0 +1,27 @@
+{{define "title"}}{{t "errorinventory.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "error-inventory.css"}}">
+<div class="error-inventory">
+<header><h1>{{t "errorinventory.title"}}</h1><p>{{t "errorinventory.coverage"}}</p></header>
+<form method="get" action="/admin/system/errors" class="error-filters">
+<label>{{t "errorinventory.source"}}<select name="source"><option value="">{{t "errorinventory.all"}}</option>{{range .Sources}}<option value="{{.}}" {{if eq $.Filter.Source .}}selected{{end}}>{{t (printf "errorinventory.source_%s" .)}}</option>{{end}}</select></label>
+<label>{{t "errorinventory.category"}}<select name="category"><option value="">{{t "errorinventory.all"}}</option>{{range .Categories}}<option value="{{.}}" {{if eq $.Filter.Category .}}selected{{end}}>{{.}}</option>{{end}}</select></label>
+<label>{{t "errorinventory.status"}}<select name="status"><option value="">{{t "errorinventory.all"}}</option>{{range .Statuses}}<option value="{{.}}" {{if eq $.Filter.Status .}}selected{{end}}>{{t (printf "errorinventory.status_%s" .)}}</option>{{end}}</select></label>
+<label>{{t "errorinventory.http_status"}}<input type="number" name="http_status" min="500" max="599" value="{{if .Filter.HTTPStatus}}{{.Filter.HTTPStatus}}{{end}}" inputmode="numeric"></label>
+<label>{{t "errorinventory.since"}}<input type="date" name="since" value="{{.Filter.Since}}"></label>
+<label>{{t "errorinventory.until"}}<input type="date" name="until" value="{{.Filter.Until}}"></label>
+<button>{{t "errorinventory.filter"}}</button><a href="/admin/system/errors">{{t "errorinventory.reset"}}</a>
+</form>
+<p class="error-summary"><strong>{{.Total}}</strong> {{t "errorinventory.count_help"}}</p>
+{{if .CollectorAvailable}}<div class="error-warning" data-diagnostic-collector="available">
+<p>{{t "errorinventory.collector_source"}} · {{t "errorinventory.read_at"}}: <time data-collector-read-at dir="ltr" datetime="{{.CollectorReadAt}}">{{.CollectorReadAt}}</time></p>
+<p>{{t "errorinventory.last_write"}}: {{if .LastWriteAt}}<time data-collector-last-success dir="ltr" datetime="{{.LastWriteAt}}">{{.LastWriteAt}}</time>{{else}}{{t "errorinventory.no_successful_write"}}{{end}}</p>
+<p role="status">{{t "errorinventory.dropped"}}: <strong data-collector-dropped>{{.Dropped}}</strong> · {{t "errorinventory.storage_failures"}}: <strong data-collector-storage-failures>{{.StorageFailures}}</strong></p>
+</div>{{else}}<p class="error-warning">{{t "errorinventory.collector_unavailable"}}</p>{{end}}
+<div class="error-table" tabindex="0" role="region" aria-label="{{t "errorinventory.title"}}">
+<table><thead><tr><th>{{t "errorinventory.source"}}</th><th>{{t "errorinventory.category"}}</th><th>{{t "errorinventory.event"}}</th><th>{{t "errorinventory.status"}}</th><th>{{t "errorinventory.count"}}</th><th>{{t "errorinventory.first"}}</th><th>{{t "errorinventory.last"}}</th><th>{{t "errorinventory.open"}}</th></tr></thead><tbody>
+{{range .Rows}}<tr><td>{{t (printf "errorinventory.source_%s" .Source)}}</td><td><code>{{.Category}}</code></td><td>{{t (printf "errorinventory.code_%s" .Code)}}{{if .HTTPStatus}} <code>{{.HTTPStatus}}</code>{{end}}</td><td>{{t (printf "errorinventory.status_%s" .Status)}}</td><td>{{.Count}}</td><td><time dir="ltr">{{.FirstAt}}</time></td><td><time dir="ltr">{{.LastAt}}</time></td><td>{{if .Href}}<a href="{{.Href}}">{{t "errorinventory.open"}}</a>{{end}}</td></tr>{{else}}<tr><td colspan="8">{{t "errorinventory.empty"}}</td></tr>{{end}}
+</tbody></table></div>
+<p class="error-note">{{t "errorinventory.privacy"}}</p>
+</div>
+{{end}}

@@ -1,0 +1,115 @@
+{{/* Data: healthReport */}}
+{{define "title"}}{{t "admin.health.title"}}{{end}}
+{{define "content"}}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <h1 class="text-[22px] font-bold">{{t "admin.health.title"}}</h1>
+  <a href="/admin/system/health" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "refresh-cw"}}<span>{{t "admin.health.refresh"}}</span></a>
+</div>
+
+<section class="mb-4 rounded border border-line bg-panel p-4" aria-labelledby="h-checks">
+  <h2 id="h-checks" class="text-base font-bold mb-3">{{t "admin.health.checks"}}</h2>
+  <ul class="divide-y divide-line">
+    {{range .Checks}}
+    <li class="py-2 flex flex-wrap items-center gap-3" data-check="{{.Name}}" data-status="{{.Status}}">
+      {{if eq .Status "ok"}}<span class="inline-flex w-14 justify-center rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-[11px] font-mono uppercase">{{t "admin.health.status_ok"}}</span>
+      {{else if eq .Status "warn"}}<span class="inline-flex w-14 justify-center rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px] font-mono uppercase">{{t "admin.health.status_warn"}}</span>
+      {{else}}<span class="inline-flex w-14 justify-center rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-[11px] font-mono uppercase">{{t "admin.health.status_fail"}}</span>{{end}}
+      <span class="font-mono text-xs font-medium">{{.Name}}</span>
+      <span class="text-muted text-xs" dir="ltr">{{.Detail}}</span>
+    </li>
+    {{end}}
+  </ul>
+</section>
+
+<div class="grid gap-4 lg:grid-cols-2 mb-4">
+  <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-runtime">
+    <h2 id="h-runtime" class="text-base font-bold mb-3">{{t "admin.health.runtime"}}</h2>
+    <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+      <dt class="text-muted">{{t "admin.health.go_version"}}</dt><dd class="font-mono text-xs">{{.GoVersion}} · {{.OS}}/{{.Arch}}</dd>
+      <dt class="text-muted">{{t "admin.health.cpus"}}</dt><dd class="font-mono text-xs">{{.NumCPU}}</dd>
+      <dt class="text-muted">{{t "admin.health.goroutines"}}</dt><dd class="font-mono text-xs">{{.Goroutines}}</dd>
+      <dt class="text-muted">{{t "admin.health.heap"}}</dt><dd class="font-mono text-xs">{{.HeapAlloc}}</dd>
+      <dt class="text-muted">{{t "admin.health.uptime"}}</dt><dd class="font-mono text-xs">{{.Uptime}}</dd>
+      <dt class="text-muted">{{t "admin.health.started"}}</dt><dd class="font-mono text-xs">{{date .StartedAt}}</dd>
+      <dt class="text-muted">{{t "admin.health.theme"}}</dt><dd class="font-mono text-xs">{{.Theme}}</dd>
+    </dl>
+  </section>
+  <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-db">
+    <h2 id="h-db" class="text-base font-bold mb-3">{{t "admin.health.database"}}</h2>
+    <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+      <dt class="text-muted">{{t "admin.health.db_path"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.DBPath}}</dd>
+      <dt class="text-muted">{{t "admin.health.db_size"}}</dt><dd class="font-mono text-xs">{{.DBSize}}</dd>
+      <dt class="text-muted">{{t "admin.health.wal_size"}}</dt><dd class="font-mono text-xs">{{.WALSize}}</dd>
+      <dt class="text-muted">{{t "admin.health.job_rows"}}</dt><dd class="font-mono text-xs" data-stat="job-rows">{{.JobRows}}</dd>
+      <dt class="text-muted">{{t "admin.health.journal_mode"}}</dt><dd class="font-mono text-xs">{{.JournalMode}}</dd>
+      <dt class="text-muted">{{t "admin.health.last_migration"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{or .LastMigration "—"}}</dd>
+      <dt class="text-muted">{{t "admin.health.disk_free"}}</dt><dd class="font-mono text-xs">{{.DiskFree}} / {{.DiskTotal}}</dd>
+    </dl>
+  </section>
+</div>
+
+<section class="mb-4 rounded border border-line bg-panel p-4" aria-labelledby="h-jobs">
+  <div class="flex items-center justify-between mb-3">
+    <h2 id="h-jobs" class="text-base font-bold">{{t "admin.health.jobs"}}</h2>
+    <a href="/admin/system/jobs" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>
+  </div>
+  <dl class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+    <div class="rounded border border-line bg-bg p-2"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.status_queued"}}</dt><dd class="font-mono text-lg" data-stat="queued">{{.Jobs.Queued}}</dd></div>
+    <div class="rounded border border-line bg-bg p-2"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.status_running"}}</dt><dd class="font-mono text-lg" data-stat="running">{{.Jobs.Running}}</dd></div>
+    <div class="rounded border {{if .Jobs.Failed}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-bg{{end}} p-2"><dt class="font-mono text-[11px] uppercase tracking-wide {{if not .Jobs.Failed}}text-muted{{end}}">{{t "admin.jobs.status_failed"}}</dt><dd class="font-mono text-lg" data-stat="failed">{{.Jobs.Failed}}</dd></div>
+    <div class="rounded border {{if .Jobs.Dead}}border-red bg-red-soft text-red{{else}}border-line bg-bg{{end}} p-2"><dt class="font-mono text-[11px] uppercase tracking-wide {{if not .Jobs.Dead}}text-muted{{end}}">{{t "admin.jobs.status_dead"}}</dt><dd class="font-mono text-lg" data-stat="dead">{{.Jobs.Dead}}</dd></div>
+    <div class="rounded border border-line bg-bg p-2"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.status_done"}}</dt><dd class="font-mono text-lg" data-stat="done">{{.Jobs.Done}}</dd></div>
+  </dl>
+  <h3 class="font-bold mb-2">{{t "admin.health.failed_jobs"}}</h3>
+  {{if .FailedJobs}}
+  <div class="overflow-x-auto">
+    <table class="w-full text-start">
+      <thead class="border-b border-line"><tr>
+        <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.kind"}}</th>
+        <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.status"}}</th>
+        <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.last_error"}}</th>
+        <th scope="col" class="px-2 py-1.5"><span class="sr-only">{{t "admin.jobs.retry"}}</span></th>
+      </tr></thead>
+      <tbody class="divide-y divide-line">
+        {{range .FailedJobs}}
+        <tr data-job="{{.ID}}">
+          <td class="px-2 py-1.5 font-mono text-xs">{{.Kind}}<span class="block text-[11px] text-muted">{{.Attempts}}/{{.MaxAttempts}}</span></td>
+          <td class="px-2 py-1.5"><span class="inline-flex rounded-chip border {{if eq .Status "dead"}}border-red bg-red-soft text-red{{else}}border-amber bg-amber-soft text-amber-text{{end}} px-1.5 py-0.5 text-[11px] font-mono">{{if eq .Status "dead"}}{{t "admin.jobs.status_dead"}}{{else}}{{t "admin.jobs.status_failed"}}{{end}}</span></td>
+          <td class="px-2 py-1.5 text-xs text-muted max-w-md truncate" dir="ltr" title="{{.LastError}}">{{.LastError}}</td>
+          <td class="px-2 py-1.5 text-end">
+            <form method="post" action="/admin/system/jobs/{{.ID}}/retry">
+              <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="back" value="/admin/system/health">
+              <button type="submit" class="h-8 px-2.5 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "rotate-ccw"}}<span>{{t "admin.jobs.retry"}}</span></button>
+            </form>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="text-muted">{{t "admin.health.no_failed_jobs"}}</p>
+  {{end}}
+</section>
+
+<div class="grid gap-4 lg:grid-cols-3">
+  <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-modules">
+    <h2 id="h-modules" class="text-base font-bold mb-3">{{t "admin.health.modules"}}</h2>
+    <ul class="flex flex-wrap gap-1.5">{{range .Modules}}<li class="rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{.}}</li>{{end}}</ul>
+  </section>
+  <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-hooks">
+    <h2 id="h-hooks" class="text-base font-bold mb-3">{{t "admin.health.hooks"}}</h2>
+    {{if .Hooks}}<ul class="flex flex-wrap gap-1.5">{{range .Hooks}}<li class="rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{.}}</li>{{end}}</ul>
+    {{else}}<p class="text-muted">{{t "admin.health.no_hooks"}}</p>{{end}}
+  </section>
+  <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-config">
+    <h2 id="h-config" class="text-base font-bold mb-3">{{t "admin.health.config"}}</h2>
+    <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+      <dt class="text-muted">{{t "admin.health.env"}}</dt><dd class="font-mono text-xs">{{.Env}}</dd>
+      <dt class="text-muted">{{t "admin.settings.base_url"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.BaseURL}}</dd>
+      <dt class="text-muted">{{t "admin.health.data_dir"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.DataDir}}</dd>
+      <dt class="text-muted">{{t "admin.health.private_net"}}</dt><dd class="font-mono text-xs">{{if .AllowPrivate}}{{t "admin.common.yes"}}{{else}}{{t "admin.common.no"}}{{end}}</dd>
+    </dl>
+  </section>
+</div>
+{{end}}

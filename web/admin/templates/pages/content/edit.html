@@ -1,0 +1,232 @@
+{{define "title"}}{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{.Item.Title}}{{end}}{{end}}
+{{define "content"}}
+{{/* $ai: the AI writing helper is configured (a non-empty ai.provider is only saved with a model and a key)
+     and the type has a body to work from. */}}
+{{$ai := and .Supports.body (setting "ai.provider")}}
+<script src="{{asset "vendor/quill-2.0.3.js"}}" integrity="sha384-utBUCeG4SYaCm4m7GQZYr8Hy8Fpy3V4KGjBZaf4WTKOcwhCYpt/0PfeEe3HNlwx8" crossorigin="anonymous"></script>
+<div class="mb-4">
+  <a href="{{.ListURL}}" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "arrow-left" "w-4 h-4 rtl:rotate-180"}}<span>{{t "content.editor.back"}}</span></a>
+  <h1 class="text-[22px] font-bold mt-1" dir="auto">{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{t "content.editor.edit" .TypeName}}{{end}}</h1>
+</div>
+{{if and (not .IsNew) (eq .Type.Slug "page")}}<a href="/admin/builder/{{.Item.ID}}" class="inline-flex border border-line px-3 py-2 mb-4 text-blue">{{t "builder.open"}}</a>{{end}}
+{{with .FormError}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
+<form method="post" action="{{.Action}}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  {{if not .IsNew}}<input type="hidden" name="edit_token" value="{{.EditToken}}"><input type="hidden" name="terms_token" value="{{.TermsToken}}">{{end}}
+  <div class="space-y-4 min-w-0">
+    <section class="rounded border border-line bg-panel p-4 space-y-3">
+      <div {{if $ai}}x-data="gpAIField" data-action="title" data-target="title" data-error="{{t "content.ai.error"}}" data-empty="{{t "content.ai.empty_body"}}"{{end}}>
+        <div class="flex items-center justify-between gap-2 mb-1">
+          <label for="title" class="block font-medium">{{t "content.editor.title"}}</label>
+          {{if $ai}}{{template "content/ai_suggest" "content.ai.suggest_title"}}{{end}}
+        </div>
+        <input id="title" name="title" type="text" value="{{.Item.Title}}" dir="auto" {{if index .Errors "title"}}aria-invalid="true"{{end}}
+               class="w-full h-10 rounded border border-line bg-panel px-3 text-base focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        {{template "partials/field_errors" (index .Errors "title")}}
+        {{if $ai}}{{template "content/ai_suggestion"}}{{end}}
+      </div>
+      <div>
+        <label for="slug" class="block font-medium mb-1">{{t "content.editor.slug"}}</label>
+        <input id="slug" name="slug" type="text" value="{{.Item.Slug}}" dir="auto" aria-describedby="slug-help"
+               class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+        <p id="slug-help" class="mt-1 text-xs text-muted">{{t "content.editor.slug_help"}}</p>
+        {{template "partials/field_errors" (index .Errors "slug")}}
+      </div>
+    </section>
+
+    {{if .Supports.body}}<section class="rounded border border-line bg-panel p-4">{{template "fields/richtext" .Body}}</section>{{end}}
+
+    {{if .Supports.excerpt}}
+    <section class="rounded border border-line bg-panel p-4" {{if $ai}}x-data="gpAIField" data-action="excerpt" data-target="excerpt" data-error="{{t "content.ai.error"}}" data-empty="{{t "content.ai.empty_body"}}"{{end}}>
+      <div class="flex items-center justify-between gap-2 mb-1">
+        <label for="excerpt" class="block font-medium">{{t "content.editor.excerpt"}}</label>
+        {{if $ai}}{{template "content/ai_suggest" "content.ai.write_excerpt"}}{{end}}
+      </div>
+      <textarea id="excerpt" name="excerpt" rows="3" dir="auto" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Item.Excerpt}}</textarea>
+      {{if $ai}}{{template "content/ai_suggestion"}}{{end}}
+    </section>
+    {{end}}
+
+    {{if .Fields}}
+    <section class="rounded border border-line bg-panel p-4">
+      <h2 class="text-base font-bold mb-3">{{t "content.editor.fields"}}</h2>
+      <div class="space-y-4">{{range .Fields}}{{template "fields/field" .}}{{end}}</div>
+    </section>
+    {{end}}
+
+    {{if .Supports.seo}}
+    <section class="rounded border border-line bg-panel p-4 space-y-3" x-data="{ st: '', sd: '' }" x-init="st = $refs.st.value; sd = $refs.sd.value">
+      <h2 class="text-base font-bold mb-3">{{t "content.seo.title"}}</h2>
+      {{range .SEODrift}}<p class="rounded border border-line bg-bg px-3 py-2 text-sm" role="status" data-seo-drift="{{.}}">{{if eq . "title"}}{{t "content.seo.drift_title"}}{{else}}{{t "content.seo.drift_description"}}{{end}}</p>{{end}}
+      <div>
+        <label for="seo-title" class="block font-medium mb-1">{{t "content.seo.meta_title"}}</label>
+        <input x-ref="st" id="seo-title" name="seo[title]" type="text" value="{{.SEO.Title}}" dir="auto" @input="st = $event.target.value" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      </div>
+      <div>
+        <label for="seo-description" class="block font-medium mb-1">{{t "content.seo.description"}}</label>
+        <textarea x-ref="sd" id="seo-description" name="seo[description]" rows="2" dir="auto" @input="sd = $event.target.value"
+                  class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.SEO.Description}}</textarea>
+        <p class="mt-1 text-xs text-muted font-mono"><span x-text="sd.length"></span> / 160</p>
+      </div>
+      <div class="grid gap-3 md:grid-cols-2">
+        <div>
+          <label for="seo-canonical" class="block font-medium mb-1">{{t "content.seo.canonical"}}</label>
+          <input id="seo-canonical" name="seo[canonical]" type="url" value="{{.SEO.Canonical}}" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+        </div>
+        <div>
+          <label for="seo-robots" class="block font-medium mb-1">{{t "content.seo.robots"}}</label>
+          <select id="seo-robots" name="seo[robots]" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+            <option value="">{{t "content.seo.robots_default"}}</option>
+            {{range $r := .RobotsOptions}}<option value="{{$r}}" {{if eq $r $.SEO.Robots}}selected{{end}}>{{$r}}</option>{{end}}
+          </select>
+        </div>
+      </div>
+      <div>
+        <p class="block font-medium mb-1">{{t "content.seo.og_image"}}</p>
+        {{template "media_picker_slot" .OGImage}}
+      </div>
+      <div class="rounded border border-line bg-bg p-3" aria-label="{{t "content.seo.preview"}}">
+        <p class="font-mono text-[11px] uppercase text-muted mb-1">{{t "content.seo.preview"}}</p>
+        <p class="text-blue text-base" dir="auto" x-text="st || $root.closest('form').querySelector('#title').value"></p>
+        <p class="text-muted text-sm" dir="auto" x-text="sd"></p>
+      </div>
+    </section>
+    {{end}}
+  </div>
+
+  <aside class="space-y-4">
+    <section class="rounded border border-line bg-panel p-4 space-y-3">
+      <h2 class="text-base font-bold mb-3">{{t "content.publish.title"}}</h2>
+      <div>
+        <label for="status" class="block font-medium mb-1">{{t "content.list.status"}}</label>
+        <select id="status" name="status" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          {{range .Statuses}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{t (printf "content.status.%s" .Value)}}</option>{{end}}
+        </select>
+        {{template "partials/field_errors" (index .Errors "status")}}
+      </div>
+      <div>
+        <label for="publish_at" class="block font-medium mb-1">{{t "content.publish.publish_at"}}</label>
+        <input id="publish_at" name="publish_at" type="datetime-local" value="{{.PublishAtLocal}}" aria-describedby="publish-at-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+        <p id="publish-at-help" class="mt-1 text-xs text-muted">{{t "content.publish.publish_at_help"}}</p>
+        {{template "partials/field_errors" (index .Errors "publish_at")}}
+      </div>
+      {{if not .IsNew}}<p class="text-xs text-muted">{{t "content.publish.updated"}} <span class="font-mono">{{date .Item.UpdatedAt}}</span>{{if .Item.PublishedAt}} · {{t "content.publish.published"}} <span class="font-mono">{{date .Item.PublishedAt}}</span>{{end}}</p>{{end}}
+      <div class="flex flex-wrap gap-2 pt-1">
+        <button type="submit" name="intent" value="save" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center justify-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft flex-1">{{icon "save"}}<span>{{t "content.publish.save"}}</span></button>
+        {{if .CanPublish}}<button type="submit" name="intent" value="publish" class="h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center justify-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft flex-1">{{icon "send"}}<span>{{if eq .Item.Status "published"}}{{t "content.publish.update"}}{{else}}{{t "content.publish.publish"}}{{end}}</span></button>{{end}}
+      </div>
+      {{if and (not .IsNew) .CanDelete}}
+      <div class="pt-2 border-t border-line">
+        {{if eq .Item.Status "trash"}}
+        <button type="submit" formaction="{{.Action}}/delete" formnovalidate class="text-red hover:underline text-sm inline-flex items-center gap-1">{{icon "trash-2"}}<span>{{t "content.publish.delete"}}</span></button>
+        {{else}}
+        <button type="submit" formaction="{{.Action}}/trash" formnovalidate class="text-red hover:underline text-sm inline-flex items-center gap-1">{{icon "trash"}}<span>{{t "content.publish.trash"}}</span></button>
+        {{end}}
+      </div>
+      {{end}}
+    </section>
+
+    {{if or .Authors .Templates .Parent .Supports.menu_order}}
+    <section class="rounded border border-line bg-panel p-4 space-y-3">
+      <h2 class="text-base font-bold mb-3">{{t "content.editor.attributes"}}</h2>
+      {{if .Authors}}
+      <div>
+        <label for="author_id" class="block font-medium mb-1">{{t "content.editor.author"}}</label>
+        <select id="author_id" name="author_id" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          <option value="">{{t "content.editor.choose"}}</option>
+          {{range .Authors}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>{{end}}
+        </select>
+      </div>
+      {{end}}
+      {{if .Templates}}
+      <div>
+        <label for="template" class="block font-medium mb-1">{{t "content.editor.template"}}</label>
+        <select id="template" name="template" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          <option value="">{{t "content.editor.template_default"}}</option>
+          {{range .Templates}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>{{end}}
+        </select>
+      </div>
+      {{end}}
+      {{with .Parent}}
+      <div>
+        <label for="parent_id" class="block font-medium mb-1">{{t "content.editor.parent"}}</label>
+        {{template "fields/picker" .}}
+        <p class="mt-1 text-xs text-muted">{{t "content.editor.no_parent_help"}}</p>
+      </div>
+      {{end}}
+      {{template "partials/field_errors" (index .Errors "parent_id")}}
+      {{if .Supports.menu_order}}
+      <div>
+        <label for="menu_order" class="block font-medium mb-1">{{t "content.editor.menu_order"}}</label>
+        <input id="menu_order" name="menu_order" type="number" step="1" value="{{.Item.MenuOrder}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+      </div>
+      {{end}}
+    </section>
+    {{end}}
+
+    {{if .Supports.featured_image}}
+    <section class="rounded border border-line bg-panel p-4">
+      <h2 class="text-base font-bold mb-3">{{t "content.editor.featured_image"}}</h2>
+      {{template "media_picker_slot" .Featured}}
+    </section>
+    {{end}}
+
+    {{range .TermErrors}}<div role="alert" class="rounded border border-red bg-red-soft px-3 py-2">{{template "partials/field_errors" .}}</div>{{end}}
+    {{range .Pickers}}
+    <section class="rounded border border-line bg-panel p-4" hx-get="{{.URL}}" hx-trigger="load" hx-swap="innerHTML">
+      <p class="text-muted text-sm">{{t "content.editor.loading_terms"}}</p>
+    </section>
+    {{end}}
+
+    {{if .Translations}}
+    <section class="rounded border border-line bg-panel p-4">
+      <h2 class="text-base font-bold mb-3">{{t "content.translations.title"}}</h2>
+      <ul class="space-y-1.5 text-sm">
+        {{range .Translations}}
+        <li class="flex items-center justify-between gap-2">
+          <span class="font-medium">{{t (printf "admin.locale.%s" .Locale)}}</span>
+          {{if .Current}}<span class="text-xs text-muted">{{t "content.translations.current"}}</span>
+          {{else if .EditURL}}<a href="{{.EditURL}}" class="text-blue hover:text-blue-hover text-xs truncate max-w-[10rem]" dir="auto">{{or .Title (t "content.list.untitled")}}</a>
+          {{else if .CanCreate}}<button type="submit" name="locale" value="{{.Locale}}" formaction="{{$.Action}}/translations" formnovalidate class="text-blue hover:text-blue-hover text-xs">{{t "content.translations.create"}}</button>
+          {{else}}<span class="text-xs text-muted">{{t "content.translations.none"}}</span>{{end}}
+        </li>
+        {{end}}
+      </ul>
+      {{if .CanUnlink}}<button type="submit" formaction="{{.Action}}/translations/unlink" formnovalidate class="mt-3 text-xs text-blue hover:text-blue-hover">{{t "content.translations.unlink"}}</button>{{end}}
+    </section>
+    {{end}}
+
+    {{if .Revisions}}
+    <section class="rounded border border-line bg-panel p-4">
+      <h2 class="text-base font-bold mb-3">{{t "content.revisions.title"}}</h2>
+      <ul class="space-y-1.5 text-sm">
+        {{range $i, $r := .Revisions}}
+        <li class="flex items-center justify-between gap-2">
+          <span class="font-mono text-xs text-muted">{{date $r.CreatedAt}}</span>
+          {{if $i}}<button type="submit" formaction="{{$.Action}}/revisions/{{$r.ID}}/restore" formnovalidate class="text-blue hover:text-blue-hover text-xs">{{t "content.revisions.restore"}}</button>{{else}}<span class="text-xs text-muted">{{t "content.revisions.current"}}</span>{{end}}
+        </li>
+        {{end}}
+      </ul>
+    </section>
+    {{end}}
+  </aside>
+</form>
+{{if .Supports.body}}{{template "content/studio" .}}{{end}}
+{{/* Outside the form: the picker body has its own search and upload forms. */}}
+{{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}
+{{end}}
+
+{{/* AI suggestion button and preview for the title and excerpt (inside an x-data="gpAIField" block). */}}
+{{define "content/ai_suggest"}}
+<button type="button" @click="run()" :disabled="busy" class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-green-soft disabled:opacity-50">
+  {{icon "sparkles"}}<span x-show="!busy">{{t .}}</span><span x-show="busy" x-cloak class="[&[x-cloak]]:hidden" role="status">{{t "content.ai.busy"}}</span>
+</button>
+{{end}}
+{{define "content/ai_suggestion"}}
+<p x-show="error" x-cloak x-text="error" role="alert" class="[&[x-cloak]]:hidden mt-1 text-xs text-red"></p>
+<div x-show="result" x-cloak class="[&[x-cloak]]:hidden mt-2 flex flex-wrap items-center gap-2 rounded border border-line bg-panel-2 px-3 py-2">
+  <span x-text="result" dir="auto" class="flex-1 min-w-0"></span>
+  <button type="button" @click="use()" class="h-8 px-3 rounded border border-green text-green text-xs font-medium hover:bg-green-soft focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.ai.use"}}</button>
+  <button type="button" @click="result = ''" class="h-8 px-3 rounded border border-line bg-panel text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.cancel"}}</button>
+</div>
+{{end}}

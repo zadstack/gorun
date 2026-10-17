@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="{{locale}}" dir="{{dir}}">
+<head>
+{{template "head" .}}
+<title>{{block "title" .}}{{t "core.app.name"}}{{end}} · {{t "core.app.name"}}</title>
+</head>
+<body class="admin-workspace min-h-screen bg-bg text-ink text-sm font-sans antialiased" hx-headers='{"X-CSRF-Token": "{{csrf}}"}' x-data="gpShell" @keydown.window="sidebarKey($event)" @resize.window="if (innerWidth >= 768) sidebarOpen = false" :class="sidebarOpen && 'overflow-hidden md:overflow-auto'">
+<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-50 focus:bg-panel focus:border focus:border-line focus:rounded focus:px-3 focus:py-2">{{t "core.action.skip"}}</a>
+<div class="flex min-h-screen">
+  {{template "partials/sidebar" .}}
+  <div class="flex-1 min-w-0 flex flex-col" :inert="sidebarOpen">
+    {{template "partials/topbar" .}}
+    <main id="main" class="flex-1 p-4 md:p-6">
+      {{template "partials/flash" .}}
+      {{template "content" .}}
+    </main>
+  </div>
+</div>
+{{template "partials/confirm_modal" .}}
+<div class="fixed bottom-4 end-4 z-50 space-y-2" aria-live="polite" x-data>
+  <template x-for="t in $store.toasts.items" :key="t.id">
+    <div class="rounded border px-3 py-2 bg-panel" :class="{'border-green text-green': t.kind === 'success', 'border-red text-red': t.kind === 'error', 'border-line text-ink': t.kind === 'info'}" x-text="t.message"></div>
+  </template>
+</div>
+</body>
+</html>

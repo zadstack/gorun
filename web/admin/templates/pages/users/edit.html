@@ -1,0 +1,93 @@
+{{/* Data: userEditPage (.User is nil when creating) */}}
+{{define "title"}}{{if .User}}{{t "admin.users.edit"}}{{else}}{{t "admin.users.new"}}{{end}}{{end}}
+{{define "content"}}
+<nav class="mb-2 text-xs"><a href="/admin/users" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.users.back"}}</a></nav>
+<h1 class="text-[22px] font-bold mb-4">{{if .User}}{{t "admin.users.edit"}}{{else}}{{t "admin.users.new"}}{{end}}</h1>
+<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+  <form method="post" action="{{if .User}}/admin/users/{{.User.ID}}{{else}}/admin/users{{end}}" class="rounded border border-line bg-panel p-4 space-y-4" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div>
+      <label for="u-name" class="block font-medium mb-1">{{t "admin.users.name"}}</label>
+      <input id="u-name" name="name" value="{{.Form.Name}}" autocomplete="off" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      {{template "partials/field_errors" (index .Fields "name")}}
+    </div>
+    <div>
+      <label for="u-email" class="block font-medium mb-1">{{t "admin.users.email"}}</label>
+      <input id="u-email" name="email" type="email" dir="ltr" value="{{.Form.Email}}" required autocomplete="off" {{if index .Fields "email"}}aria-invalid="true"{{end}}
+             class="h-9 w-full rounded border {{if index .Fields "email"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      {{template "partials/field_errors" (index .Fields "email")}}
+    </div>
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div>
+        <label for="u-role" class="block font-medium mb-1">{{t "admin.users.role"}}</label>
+        <select id="u-role" name="role" {{if .IsSelf}}aria-describedby="u-self-help"{{end}} class="h-9 w-full rounded border {{if index .Fields "role"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          {{range .Roles}}<option value="{{.Slug}}" {{if eq .Slug $.Form.Role}}selected{{end}}>{{.Name}}</option>{{end}}
+        </select>
+        {{template "partials/field_errors" (index .Fields "role")}}
+      </div>
+      <div>
+        <label for="u-locale" class="block font-medium mb-1">{{t "admin.users.locale"}}</label>
+        <select id="u-locale" name="locale" class="h-9 w-full rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          {{range .Locales}}<option value="{{.}}" {{if eq . $.Form.Locale}}selected{{end}}>{{t (printf "admin.locale.%s" .)}}</option>{{end}}
+        </select>
+        {{template "partials/field_errors" (index .Fields "locale")}}
+      </div>
+      <div>
+        <label for="u-status" class="block font-medium mb-1">{{t "admin.users.status"}}</label>
+        <select id="u-status" name="status" class="h-9 w-full rounded border {{if index .Fields "status"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          {{range .Statuses}}<option value="{{.}}" {{if eq . $.Form.Status}}selected{{end}}>{{t (printf "admin.users.status_%s" .)}}</option>{{end}}
+        </select>
+        {{template "partials/field_errors" (index .Fields "status")}}
+      </div>
+    </div>
+    {{if .IsSelf}}<p id="u-self-help" class="text-xs text-muted">{{t "admin.users.self_help"}}</p>{{end}}
+    <div>
+      <label for="u-password" class="block font-medium mb-1">{{if .User}}{{t "admin.users.new_password"}}{{else}}{{t "admin.users.password"}}{{end}}</label>
+      <input id="u-password" name="password" type="password" autocomplete="new-password" aria-describedby="u-password-help"
+             class="h-9 w-full rounded border {{if index .Fields "password"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <p id="u-password-help" class="mt-1 text-xs text-muted">{{if .User}}{{t "admin.users.password_keep"}}{{else}}{{t "auth.field.password_help"}}{{end}}</p>
+      {{template "partials/field_errors" (index .Fields "password")}}
+    </div>
+    <div class="flex gap-2">
+      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{if .User}}{{t "core.action.save"}}{{else}}{{t "admin.users.create"}}{{end}}</button>
+      <a href="/admin/users" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.action.cancel"}}</a>
+    </div>
+  </form>
+  {{with .User}}
+  <aside class="space-y-4">
+    <section class="rounded border border-line bg-panel p-4">
+      <h2 class="text-base font-bold mb-2">{{t "admin.users.details"}}</h2>
+      <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+        <dt class="text-muted">{{t "admin.common.id"}}</dt><dd class="font-mono break-all">{{.ID}}</dd>
+        <dt class="text-muted">{{t "admin.users.created"}}</dt><dd class="font-mono">{{date .CreatedAt}}</dd>
+        <dt class="text-muted">{{t "admin.users.last_login"}}</dt><dd class="font-mono">{{date .LastLoginAt}}</dd>
+      </dl>
+    </section>
+    <section class="rounded border border-line bg-panel p-4">
+      <h2 class="text-base font-bold mb-2">{{t "admin.users.magic_title"}}</h2>
+      <p class="text-xs text-muted mb-3">{{t "admin.users.magic_help"}}</p>
+      {{if $.MagicLink}}
+      <div hx-history="false" role="status" class="mb-3 rounded border border-amber bg-amber-soft p-3">
+        <p class="text-xs text-amber-text mb-2">{{t "admin.users.magic_shown"}}</p>
+        <label for="magic-link" class="sr-only">{{t "admin.users.magic_title"}}</label>
+        <input id="magic-link" type="text" readonly value="{{$.MagicLink}}" dir="ltr" class="w-full h-9 px-2 rounded border border-line bg-panel font-mono text-xs focus:outline-none focus:ring-[3px] focus:ring-green-soft" x-data @focus="$el.select()">
+      </div>
+      {{end}}
+      <form method="post" action="/admin/users/{{.ID}}/magic-link">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "mail"}}<span>{{t "admin.users.magic_send"}}</span></button>
+      </form>
+    </section>
+    {{if not $.IsSelf}}
+    <section class="rounded border border-line bg-panel p-4">
+      <h2 class="text-base font-bold mb-2">{{t "admin.users.danger"}}</h2>
+      <form method="post" action="/admin/users/{{.ID}}/delete" data-confirm="{{t "admin.users.delete_confirm" .Email}}">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-red text-red bg-red-soft hover:border-red focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2"}}<span>{{t "core.action.delete"}}</span></button>
+      </form>
+    </section>
+    {{end}}
+  </aside>
+  {{end}}
+</div>
+{{end}}

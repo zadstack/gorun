@@ -1,0 +1,9 @@
+{{define "title"}}{{t "core.error.internal_title"}}{{end}}
+{{define "content"}}
+<div class="rounded border border-line bg-panel p-6">
+  <p class="font-mono text-[11px] uppercase tracking-wide text-muted">500</p>
+  <h1 class="text-[22px] font-bold mb-2">{{t "core.error.internal_title"}}</h1>
+  <p class="text-muted mb-4">{{t "core.error.internal"}}</p>
+  <a href="/admin" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "core.action.back_to_dashboard"}}</a>
+</div>
+{{end}}

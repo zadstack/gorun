@@ -1,0 +1,196 @@
+{{/* Data: ext.detailData. .Reveal is set only in the install response. */}}
+{{define "title"}}{{.X.DisplayName locale}} · {{t "ext.title"}}{{end}}
+{{define "ext_status"}}{{if eq . "active"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "ext.status.active"}}</span>{{else if eq . "error"}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-xs">{{t "ext.status.error"}}</span>{{else if eq . "disabled"}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-xs">{{t "ext.status.disabled"}}</span>{{else}}<span class="inline-flex rounded-chip border border-blue bg-blue-soft text-blue px-1.5 py-0.5 text-xs">{{t "ext.status.installed"}}</span>{{end}}{{end}}
+{{define "content"}}
+{{$x := .X}}
+<a href="/admin/extensions" class="inline-flex items-center gap-1 text-blue hover:text-blue-hover mb-2">{{icon "arrow-left" "rtl:rotate-180"}}{{t "ext.back"}}</a>
+<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-[22px] font-bold">{{$x.DisplayName locale}}</h1>
+    <p class="flex flex-wrap items-center gap-2 text-muted">
+      <span class="font-mono text-xs" dir="ltr">{{$x.Slug}} · v{{$x.Version}}</span>{{template "ext_status" $x.Status}}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    {{if eq $x.Status "active"}}
+    <form method="post" action="/admin/extensions/{{$x.Slug}}/deactivate">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "pause"}}{{t "ext.action.deactivate"}}</button>
+    </form>
+    {{else}}
+    <form method="post" action="/admin/extensions/{{$x.Slug}}/activate">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium inline-flex items-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "play"}}{{if eq $x.Status "error"}}{{t "ext.action.reactivate"}}{{else}}{{t "ext.action.activate"}}{{end}}</button>
+    </form>
+    {{end}}
+  </div>
+</div>
+
+{{with .Reveal}}
+<section role="status" class="mb-4 rounded border border-green bg-green-soft p-4" x-data="{ copied: '' }" data-reveal-secret hx-history="false">
+  <h2 class="text-base font-bold text-green mb-1">{{t "ext.reveal.title"}}</h2>
+  <p class="mb-3 text-ink">{{t "ext.reveal.help"}}</p>
+  <div class="grid gap-3">
+    <div>
+      <label class="block font-medium mb-1" for="ext-secret">{{t "ext.reveal.secret"}}</label>
+      <div class="flex flex-wrap gap-2">
+        <input id="ext-secret" x-ref="secret" readonly value="{{.Secret}}" dir="ltr" @focus="$el.select()"
+               class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <button type="button" @click="navigator.clipboard.writeText($refs.secret.value).then(() => copied = 'secret')"
+                class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "copy"}}<span x-text="copied === 'secret' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
+      </div>
+      <p class="mt-1 text-xs text-muted">{{t "ext.reveal.secret_help"}}</p>
+    </div>
+    {{if .APIKey}}
+    <div>
+      <label class="block font-medium mb-1" for="ext-key">{{t "ext.reveal.key"}}</label>
+      <div class="flex flex-wrap gap-2">
+        <input id="ext-key" x-ref="key" readonly value="{{.APIKey}}" dir="ltr" @focus="$el.select()"
+               class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <button type="button" @click="navigator.clipboard.writeText($refs.key.value).then(() => copied = 'key')"
+                class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "copy"}}<span x-text="copied === 'key' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
+      </div>
+      <p class="mt-1 text-xs text-muted">{{t "ext.reveal.key_help"}}</p>
+    </div>
+    {{end}}
+  </div>
+</section>
+{{end}}
+
+{{if eq $x.Status "error"}}
+<div role="alert" class="mb-4 rounded border border-red bg-red-soft px-4 py-3 text-red">
+  <p class="font-medium">{{t "ext.error.title" $x.Failures}}</p>
+  {{with $x.LastError}}<p class="mt-1 text-xs font-mono break-all" dir="ltr">{{.}}</p>{{end}}
+</div>
+{{end}}
+
+<div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
+  <div class="grid gap-4 content-start">
+    <section class="rounded border border-line bg-panel overflow-x-auto" aria-labelledby="ext-hooks">
+      <h2 id="ext-hooks" class="text-base font-bold p-4 pb-2">{{t "ext.hooks.title"}}</h2>
+      {{if $x.Manifest.Hooks}}
+      <table class="w-full">
+        <thead class="border-b border-line"><tr>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.hooks.name"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.hooks.kind"}}</th>
+          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.hooks.timeout"}}</th>
+        </tr></thead>
+        <tbody class="divide-y divide-line">
+          {{range $x.Manifest.Hooks}}
+          <tr><td class="px-3 py-2 font-mono text-xs" dir="ltr">{{.Name}}</td>
+            <td class="px-3 py-2"><span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-xs">{{t (print "ext.kind." .Kind)}}</span></td>
+            <td class="px-3 py-2 text-end text-xs">{{if eq .Kind "filter"}}<span class="font-mono" dir="ltr">{{.TimeoutMS}} ms</span>{{else}}<span class="text-muted">{{t "ext.hooks.async"}}</span>{{end}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+      {{else}}<p class="px-4 pb-4 text-muted">{{t "ext.hooks.none"}}</p>{{end}}
+    </section>
+
+    {{if .Settings}}
+    <section class="rounded border border-line bg-panel p-4" aria-labelledby="ext-settings">
+      <h2 id="ext-settings" class="text-base font-bold mb-3">{{t "ext.settings.title"}}</h2>
+      <form method="post" action="/admin/extensions/{{$x.Slug}}/settings" class="grid gap-3" novalidate>
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        {{$fields := .Fields}}
+        {{range .Settings}}{{$f := .Field}}
+        <div>
+          {{if eq (print $f.Type) "boolean"}}
+          <label class="inline-flex items-center gap-2"><input type="checkbox" name="{{$f.Key}}" value="1" {{if .Checked}}checked{{end}} class="h-4 w-4 accent-[var(--green)]"> {{with index $f.Label locale}}{{.}}{{else}}{{$f.Key}}{{end}}</label>
+          {{else}}
+          <label for="set-{{$f.Key}}" class="block font-medium mb-1">{{with index $f.Label locale}}{{.}}{{else}}{{$f.Key}}{{end}}</label>
+          {{if eq (print $f.Type) "textarea"}}
+          <textarea id="set-{{$f.Key}}" name="{{$f.Key}}" rows="3" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Value}}</textarea>
+          {{else if eq (print $f.Type) "select"}}
+          {{$v := .Value}}
+          <select id="set-{{$f.Key}}" name="{{$f.Key}}" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+            <option value=""></option>{{range $f.Options}}<option value="{{.Value}}" {{if eq .Value $v}}selected{{end}}>{{with index .Label locale}}{{.}}{{else}}{{.Value}}{{end}}</option>{{end}}
+          </select>
+          {{else}}
+          <input id="set-{{$f.Key}}" name="{{$f.Key}}" type="{{if eq (print $f.Type) "number"}}number{{else}}text{{end}}" value="{{.Value}}" {{if eq (print $f.Type) "number"}}step="any" dir="ltr"{{end}}
+                 class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          {{end}}
+          {{end}}
+          {{with index $f.Help locale}}<p class="mt-1 text-xs text-muted">{{.}}</p>{{end}}
+          {{template "partials/field_errors" (index $fields $f.Key)}}
+        </div>
+        {{end}}
+        <div><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "ext.settings.save"}}</button></div>
+      </form>
+    </section>
+    {{end}}
+
+    <section class="rounded border border-line bg-panel overflow-x-auto" aria-labelledby="ext-log">
+      <h2 id="ext-log" class="text-base font-bold p-4 pb-2">{{t "ext.log.title"}}</h2>
+      {{if .Deliveries}}
+      <table class="w-full">
+        <thead class="border-b border-line"><tr>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.when"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.hook"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.status"}}</th>
+          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.duration"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.error"}}</th>
+        </tr></thead>
+        <tbody class="divide-y divide-line">
+          {{range .Deliveries}}
+          <tr data-delivery-status="{{.Status}}">
+            <td class="px-3 py-2 font-mono text-xs whitespace-nowrap" dir="ltr">{{date .CreatedAt}}</td>
+            <td class="px-3 py-2 text-xs"><span class="font-mono" dir="ltr">{{.Hook}}</span> <span class="text-muted">({{t (print "ext.kind." .Kind)}})</span></td>
+            <td class="px-3 py-2">{{if eq .Status "ok"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "ext.log.ok"}}{{with .HTTPStatus}} · {{.}}{{end}}</span>{{else if eq .Status "timeout"}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-xs">{{t "ext.log.timeout"}}</span>{{else}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-xs">{{t "ext.log.failed"}}{{with .HTTPStatus}} · {{.}}{{end}}</span>{{end}}</td>
+            <td class="px-3 py-2 text-end font-mono text-xs" dir="ltr">{{.DurationMS}} ms</td>
+            <td class="px-3 py-2 font-mono text-[11px] text-muted break-all" dir="ltr">{{.Error}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+      {{else}}<p class="px-4 pb-4 text-muted">{{t "ext.log.empty"}}</p>{{end}}
+    </section>
+
+    <details class="rounded border border-line bg-panel">
+      <summary class="px-4 py-3 cursor-pointer font-bold rounded focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "ext.manifest.title"}}</summary>
+      <pre class="m-4 mt-0 overflow-x-auto rounded bg-panel-dark text-panel-2 p-3 font-mono text-xs" dir="ltr">{{.ManifestJSON}}</pre>
+    </details>
+  </div>
+
+  <aside class="grid gap-4 content-start">
+    <section class="rounded border border-line bg-panel p-4" aria-labelledby="ext-about">
+      <h2 id="ext-about" class="text-base font-bold mb-2">{{t "ext.about.title"}}</h2>
+      {{with index $x.Manifest.Description locale}}<p class="mb-3">{{.}}</p>{{else}}{{with index $x.Manifest.Description "en"}}<p class="mb-3">{{.}}</p>{{end}}{{end}}
+      <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-xs">
+        {{with $x.Manifest.Author}}<dt class="text-muted">{{t "ext.about.author"}}</dt><dd>{{.}}</dd>{{end}}
+        <dt class="text-muted">{{t "ext.about.endpoint"}}</dt><dd class="font-mono break-all" dir="ltr">{{with $x.EndpointURL}}{{.}}{{else}}—{{end}}</dd>
+        <dt class="text-muted">{{t "ext.about.installed"}}</dt><dd class="font-mono" dir="ltr">{{date $x.InstalledAt}}</dd>
+        {{with $x.ActivatedAt}}<dt class="text-muted">{{t "ext.about.activated"}}</dt><dd class="font-mono" dir="ltr">{{date .}}</dd>{{end}}
+        <dt class="text-muted">{{t "ext.about.failures"}}</dt><dd class="font-mono" dir="ltr">{{$x.Failures}} / {{$x.TotalFailures}}</dd>
+        <dt class="text-muted">{{t "ext.about.key"}}</dt><dd class="font-mono break-all" dir="ltr">{{with $x.APIKeyID}}{{.}}{{else}}—{{end}}</dd>
+      </dl>
+    </section>
+    <section class="rounded border border-line bg-panel p-4" aria-labelledby="ext-perms">
+      <h2 id="ext-perms" class="text-base font-bold mb-2">{{t "ext.perms.title"}}</h2>
+      {{if $x.Manifest.Permissions}}<ul class="flex flex-wrap gap-1.5">{{range $x.Manifest.Permissions}}<li class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-xs" dir="ltr">{{.}}</li>{{end}}</ul>
+      {{else}}<p class="text-muted text-xs">{{t "ext.perms.none"}}</p>{{end}}
+      <p class="mt-2 text-xs text-muted">{{t "ext.perms.help"}}</p>
+    </section>
+    {{if $x.Manifest.ContentTypes}}
+    <section class="rounded border border-line bg-panel p-4" aria-labelledby="ext-types">
+      <h2 id="ext-types" class="text-base font-bold mb-2">{{t "ext.types.title"}}</h2>
+      <ul class="grid gap-1">{{range $x.Manifest.ContentTypes}}<li><span>{{with index .Name locale}}{{.}}{{else}}{{index .Name "en"}}{{end}}</span> <span class="font-mono text-xs text-muted" dir="ltr">{{.Slug}}</span></li>{{end}}</ul>
+    </section>
+    {{end}}
+    {{if $x.Manifest.AdminNav}}
+    <section class="rounded border border-line bg-panel p-4" aria-labelledby="ext-links">
+      <h2 id="ext-links" class="text-base font-bold mb-2">{{t "ext.links.title"}}</h2>
+      <ul class="grid gap-1">{{range $x.Manifest.AdminNav}}<li><a href="{{.URL}}" rel="noopener noreferrer" target="_blank" class="inline-flex items-center gap-1 text-blue hover:text-blue-hover underline-offset-2 hover:underline">{{with index .Label locale}}{{.}}{{else}}{{index .Label "en"}}{{end}}{{icon "external-link"}}</a></li>{{end}}</ul>
+    </section>
+    {{end}}
+    <section class="rounded border border-red bg-panel p-4" aria-labelledby="ext-danger">
+      <h2 id="ext-danger" class="text-base font-bold text-red mb-2">{{t "ext.uninstall.title"}}</h2>
+      <p class="text-xs text-muted mb-3">{{t "ext.uninstall.help"}}</p>
+      <form method="post" action="/admin/extensions/{{$x.Slug}}/uninstall" data-confirm="{{t "ext.uninstall.confirm" $x.Slug}}" class="grid gap-3">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <label class="inline-flex items-start gap-2 text-xs"><input type="checkbox" name="purge" value="1" class="mt-0.5 h-4 w-4 accent-[var(--red)]"> <span>{{t "ext.uninstall.purge"}}</span></label>
+        <div><button type="submit" class="h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2"}}{{t "ext.uninstall.submit"}}</button></div>
+      </form>
+    </section>
+  </aside>
+</div>
+{{end}}

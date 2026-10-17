@@ -1,0 +1,23 @@
+{{part "head" .}}
+{{$shellHeader := setting (printf "theme.%s.header_style" .Theme.Slug)}}
+{{if not (or (eq $shellHeader "rail") (eq $shellHeader "framed") (eq $shellHeader "editorial"))}}{{$shellHeader = "native"}}{{end}}
+{{part "shell" .}}
+<header data-shell-header="{{$shellHeader}}" class="studio-header">
+ <div class="studio-shell studio-header-inner">
+  <a href="{{url "/"}}" class="studio-brand">{{with media (setting "site.logo")}}{{img . "thumbnail" "studio-logo"}}{{else}}<span class="studio-monogram" aria-hidden="true">✳</span>{{end}}<span>{{.Site.Title}}</span></a>
+  <div class="studio-desktop-navigation">
+    {{with menu "primary"}}<nav aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}
+    <form action="{{url "/search"}}" method="get" role="search"><label class="sr-only" for="studio-desktop-search">{{t "search"}}</label><input id="studio-desktop-search" type="search" name="q" placeholder="{{t "search_placeholder"}}"><button type="submit">{{t "search"}}</button></form>
+    {{range .Alternates}}{{if ne .Locale locale}}<a class="studio-locale" href="{{.URL}}" lang="{{.Locale}}" hreflang="{{.Locale}}">{{.Label}}</a>{{end}}{{end}}
+  </div>
+  <details class="studio-navigation">
+   <summary>{{t "menu"}} <span aria-hidden="true">+</span></summary>
+   <div class="studio-navigation-panel">
+    {{with menu "primary"}}<nav aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}
+    <form action="{{url "/search"}}" method="get" role="search"><label class="sr-only" for="studio-search">{{t "search"}}</label><input id="studio-search" type="search" name="q" placeholder="{{t "search_placeholder"}}"><button type="submit">{{t "search"}}</button></form>
+    {{range .Alternates}}{{if ne .Locale locale}}<a class="studio-locale" href="{{.URL}}" lang="{{.Locale}}" hreflang="{{.Locale}}">{{.Label}}</a>{{end}}{{end}}
+   </div>
+  </details>
+ </div>
+</header>
+<main id="main" tabindex="-1" class="studio-main">

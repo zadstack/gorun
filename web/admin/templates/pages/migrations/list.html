@@ -1,0 +1,65 @@
+{{/* Data: wpmigrate.page (Migrations, Sources) */}}
+{{define "title"}}{{t "wpmigrate.title"}}{{end}}
+{{define "content"}}
+<div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-[22px] font-bold">{{t "wpmigrate.title"}}</h1>
+    <p class="text-muted">{{t "wpmigrate.intro"}}</p>
+  </div>
+  <a href="/admin/migrations/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "wpmigrate.new"}}</span></a>
+</div>
+
+<section class="rounded border border-line bg-panel mb-4" aria-labelledby="mig-list-h">
+  <h2 id="mig-list-h" class="px-4 py-3 border-b border-line text-base font-bold">{{t "wpmigrate.list.migrations"}}</h2>
+  {{if .Migrations}}
+  <div class="overflow-x-auto">
+  <table class="w-full">
+    <thead class="bg-panel-2">
+      <tr>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.list.source"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.list.status"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.list.created"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.list.actions"}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Migrations}}
+      <tr class="border-t border-line hover:bg-bg">
+        <td class="px-3 py-2">
+          <div class="font-medium">{{.SourceName}}</div>
+          <div class="font-mono text-xs text-muted break-all" dir="ltr">{{if eq .SourceKind "wxr"}}WXR{{else}}{{.SourceURL}}{{end}}</div>
+        </td>
+        <td class="px-3 py-2"><span class="inline-flex rounded-chip border {{if and (or (eq .Status "validated") (eq .Status "completed")) (gt .Failed 0)}}border-amber bg-amber-soft text-amber-text{{else if or (eq .Status "validated") (eq .Status "completed")}}border-green bg-green-soft text-green{{else if eq .Status "failed"}}border-red bg-red-soft text-red{{else if or (eq .Status "running") (eq .Status "paused")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}} px-1.5 py-0.5 text-xs">{{if and (or (eq .Status "validated") (eq .Status "completed")) (gt .Failed 0)}}{{t "wpmigrate.status.done_with_failures" .Failed}}{{else}}{{t (print "wpmigrate.status." .Status)}}{{end}}</span></td>
+        <td class="px-3 py-2"><time class="font-mono text-xs text-muted" datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></td>
+        <td class="px-3 py-2 text-end">
+          {{$step := "scan"}}{{if or (eq .Status "mapped") (eq .Status "previewed")}}{{$step = "preview"}}{{else if or (eq .Status "running") (eq .Status "paused") (eq .Status "failed")}}{{$step = "import"}}{{else if or (eq .Status "completed") (eq .Status "validated")}}{{$step = "validate"}}{{end}}
+          <a href="/admin/migrations/{{.ID}}/{{$step}}" class="text-blue hover:text-blue-hover underline-offset-2 hover:underline">{{t "wpmigrate.list.open"}}</a>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  </div>
+  {{else}}
+  <p class="p-6 text-center text-muted">{{t "wpmigrate.list.empty"}}</p>
+  {{end}}
+</section>
+
+<section class="rounded border border-line bg-panel" aria-labelledby="mig-src-h">
+  <h2 id="mig-src-h" class="px-4 py-3 border-b border-line text-base font-bold">{{t "wpmigrate.list.sources"}}</h2>
+  {{if .Sources}}
+  <ul>
+    {{range .Sources}}
+    <li class="px-4 py-2 border-t border-line first:border-t-0 flex flex-wrap items-center gap-3">
+      <span class="font-medium">{{.Name}}</span>
+      <span class="font-mono text-xs text-muted break-all" dir="ltr">{{if eq .Kind "wxr"}}WXR{{else}}{{.URL}}{{end}}</span>
+      <span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-xs">{{if .HasPassword}}{{t "wpmigrate.auth.app_password"}}{{else if eq .Kind "wxr"}}{{t "wpmigrate.auth.wxr"}}{{else}}{{t "wpmigrate.auth.anonymous"}}{{end}}</span>
+      {{if .LastDiscoveryAt}}<time class="ms-auto font-mono text-[11px] text-muted" datetime="{{.LastDiscoveryAt}}">{{t "wpmigrate.list.scanned"}} {{date .LastDiscoveryAt}}</time>{{end}}
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="p-6 text-center text-muted">{{t "wpmigrate.list.no_sources"}}</p>
+  {{end}}
+</section>
+{{end}}

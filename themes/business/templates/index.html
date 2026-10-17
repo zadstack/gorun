@@ -1,0 +1,1 @@
+{{part "header" .}}{{with .Content}}<article class="sb-document"><header class="sb-title"><h1>{{.Title}}</h1></header><div class="prose-gp">{{safe .Body}}</div></article>{{else}}<section class="sb-archive"><header class="sb-title">{{with .Extra.title}}<h1>{{.}}</h1>{{end}}</header>{{component "list" .}}</section>{{end}}{{part "footer" .}}

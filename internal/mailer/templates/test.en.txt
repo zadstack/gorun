@@ -1,0 +1,3 @@
+{{define "subject"}}Test email from {{.SiteTitle}}{{end}}Hello {{.Name}},
+
+This is a test email from {{.SiteTitle}}. Your mail settings work.

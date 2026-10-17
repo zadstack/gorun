@@ -1,0 +1,7 @@
+{{define "fields/relationship"}}
+<div class="gp-field" data-field-type="relationship" data-field-key="{{.Key}}">
+  {{template "fields/label" .}}
+  {{template "fields/picker" .Picker}}
+  {{template "fields/help" .}}
+</div>
+{{end}}

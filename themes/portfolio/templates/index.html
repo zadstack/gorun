@@ -1,0 +1,1 @@
+{{part "header" .}}<section class="studio-shell studio-listing">{{with .Content}}<h1>{{.Title}}</h1><div class="prose-gp">{{safe .Body}}</div>{{else}}<h1>{{with .Extra.title}}{{.}}{{else}}{{$.Site.Title}}{{end}}</h1>{{component "list" .}}{{end}}</section>{{part "footer" .}}

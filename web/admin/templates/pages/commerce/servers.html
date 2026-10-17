@@ -1,0 +1,30 @@
+{{define "title"}}{{t "commerce.servers.title"}}{{end}}
+{{define "content"}}
+<div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+  <h1 class="text-[22px] font-bold">{{t "commerce.servers.title"}}</h1>
+  <a href="/admin/commerce/servers/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "commerce.servers.new"}}</span></a>
+</div>
+<p class="text-muted mb-4">{{t "commerce.servers.intro"}}</p>
+<div class="rounded border border-line bg-panel overflow-x-auto">
+  {{if .Servers}}
+  <table class="w-full">
+    <thead class="bg-panel-2"><tr>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.name"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.field.base_url"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.status"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.servers.last_check"}}</th>
+    </tr></thead>
+    <tbody>
+      {{range .Servers}}
+      <tr class="border-t border-line hover:bg-bg">
+        <td class="px-3 py-2"><a href="/admin/commerce/servers/{{.ID}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a></td>
+        <td class="px-3 py-2 font-mono text-xs break-all" dir="ltr">{{.BaseURL}}</td>
+        <td class="px-3 py-2"><span class="inline-flex rounded-chip border px-1.5 py-0.5 text-xs {{if eq .Status "ok"}}border-green bg-green-soft text-green{{else if eq .Status "error"}}border-red bg-red-soft text-red{{else}}border-line bg-panel-2{{end}}">{{t (print "commerce.server.status." .Status)}}</span>{{with .LastError}}<div class="mt-1 text-xs text-red break-all">{{.}}</div>{{end}}</td>
+        <td class="px-3 py-2 font-mono text-xs">{{if .LastCheckAt}}{{date .LastCheckAt}}{{else}}—{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="p-6 text-center text-muted">{{t "commerce.servers.empty"}}</p>{{end}}
+</div>
+{{end}}

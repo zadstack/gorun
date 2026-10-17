@@ -1,0 +1,17 @@
+{{/* Usage: {{part "sidebar" .}} — published pages grouped under their top-level page, in menu order; the current one marked. */}}
+{{$cur := ""}}{{with .Content}}{{$cur = .ID}}{{end}}
+{{$pages := query (dict "type" "page" "order" "menu_order" "per_page" 100)}}
+<nav aria-label="{{t "docs.contents"}}" class="docs-sidebar">
+  {{range $pages.Items}}{{if not .ParentID}}{{$top := .}}
+  <div class="docs-nav-group">
+    <a class="docs-nav-heading" href="{{url .}}"{{if eq .ID $cur}} aria-current="page"{{end}}>{{.Title}}</a>
+    <ul>
+      {{range $pages.Items}}{{if eq .ParentID $top.ID}}{{$mid := .}}
+      <li><a href="{{url .}}"{{if eq .ID $cur}} aria-current="page"{{end}}>{{.Title}}</a>
+        <ul>{{range $pages.Items}}{{if eq .ParentID $mid.ID}}<li><a href="{{url .}}"{{if eq .ID $cur}} aria-current="page"{{end}}>{{.Title}}</a></li>{{end}}{{end}}</ul>
+      </li>
+      {{end}}{{end}}
+    </ul>
+  </div>
+  {{end}}{{end}}
+</nav>

@@ -1,0 +1,90 @@
+{{/* Rich text: Quill 2 posting semantic HTML into the textarea; an "HTML" tab shows the raw textarea. Used by the body editor too.
+     The admin CSP blocks third-party stylesheets, so the toolbar and editor are styled with Tailwind arbitrary variants below
+     instead of quill.snow.css, and the toolbar avoids Quill's CSS-only pickers. The Quill instance lives on the editor
+     element (el.gpQuill), not in Alpine state: Alpine's reactive proxy breaks Quill's events. */}}
+{{define "fields/richtext"}}
+<div class="gp-field" data-field-type="richtext" data-field-key="{{.Key}}" {{if .StartHTML}}data-editor-start="html"{{end}}
+     data-warn="{{t "content.editor.visual_warning"}}"
+     x-data="{ tab: $el.dataset.editorStart || 'visual', confirmed: false,
+       boot() {
+         if (!window.Quill) { setTimeout(() => this.boot(), 60); return; }
+         const el = this.$refs.editor, src = this.$refs.src;
+         if (el.gpQuill) return;
+         const rtl = document.documentElement.dir === 'rtl';
+         const q = new Quill(el, { theme: 'snow', modules: { toolbar: [[{ header: 2 }, { header: 3 }], ['bold', 'italic', 'underline', 'link'], [{ list: 'ordered' }, { list: 'bullet' }], ['blockquote', 'code-block'], [{ direction: 'rtl' }, { align: '' }, { align: 'center' }, { align: 'right' }], ['clean']] } });
+         el.gpQuill = q;
+         q.root.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+         if (src.value.trim()) q.setContents(q.clipboard.convert({ html: src.value }), 'silent');
+         q.on('text-change', () => { src.value = q.getLength() <= 1 ? '' : q.getSemanticHTML().replace(/\u0026nbsp;/g, ' '); });
+       },
+       show(t) {
+         const q = this.$refs.editor.gpQuill;
+         const unsafe = /<(table|details|summary|figure|figcaption|iframe|video|audio|picture|pre)\b/i;
+         if (t === 'visual' && this.tab !== 'visual' && !this.confirmed && unsafe.test(this.$refs.src.value)) {
+           window.gp.confirm(this.$root.dataset.warn, () => { this.confirmed = true; this.show('visual'); });
+           return;
+         }
+         if (t === 'visual' && q) q.setContents(q.clipboard.convert({ html: this.$refs.src.value }), 'silent');
+         this.tab = t;
+       } }"
+     x-init="boot()">
+  {{template "fields/label" .}}
+  <div class="relative flex flex-wrap items-center gap-1 mb-1">
+  <div class="flex gap-1" role="tablist">
+    <button type="button" role="tab" :aria-selected="(tab === 'visual').toString()" @click="show('visual')"
+            class="h-8 px-3 rounded border text-xs focus:outline-none focus:ring-[3px] focus:ring-green-soft" :class="tab === 'visual' ? 'border-line-strong bg-panel-2 text-ink' : 'border-line text-muted hover:border-line-strong'">{{t "content.editor.visual"}}</button>
+    <button type="button" role="tab" :aria-selected="(tab === 'html').toString()" @click="show('html')"
+            class="h-8 px-3 rounded border text-xs font-mono focus:outline-none focus:ring-[3px] focus:ring-green-soft" :class="tab === 'html' ? 'border-line-strong bg-panel-2 text-ink' : 'border-line text-muted hover:border-line-strong'">{{t "content.editor.html"}}</button>
+  </div>
+  {{if setting "ai.provider"}}
+  <div class="ms-auto" x-data="gpAI" x-show="tab === 'visual'" @keydown.escape="open = false" @click.outside="open = false"
+       data-error="{{t "content.ai.error"}}" data-empty="{{t "content.ai.empty"}}">
+    <div class="relative">
+    <button type="button" @mousedown.prevent @click="toggle()" :disabled="busy || result !== ''" aria-haspopup="menu" :aria-expanded="open.toString()" aria-controls="{{.ID}}-ai-menu"
+            class="h-8 px-3 inline-flex items-center gap-1.5 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-green-soft disabled:opacity-50">
+      {{icon "sparkles"}}<span x-show="!busy">{{t "content.ai.menu"}}</span><span x-show="busy" x-cloak class="[&[x-cloak]]:hidden" role="status">{{t "content.ai.busy"}}</span>
+    </button>
+    <div id="{{.ID}}-ai-menu" role="menu" x-show="open" x-cloak class="[&[x-cloak]]:hidden absolute end-0 top-full z-20 mt-1 w-56 rounded border border-line bg-panel py-1">
+      <button type="button" role="menuitem" @mousedown.prevent @click="run('improve')" class="block w-full px-3 py-1.5 text-start text-xs hover:bg-panel-2 focus:outline-none focus:bg-panel-2">{{t "content.ai.action_improve"}}</button>
+      <button type="button" role="menuitem" @mousedown.prevent @click="run('shorten')" class="block w-full px-3 py-1.5 text-start text-xs hover:bg-panel-2 focus:outline-none focus:bg-panel-2">{{t "content.ai.action_shorten"}}</button>
+      <button type="button" role="menuitem" @mousedown.prevent @click="run('expand')" class="block w-full px-3 py-1.5 text-start text-xs hover:bg-panel-2 focus:outline-none focus:bg-panel-2">{{t "content.ai.action_expand"}}</button>
+      <button type="button" role="menuitem" @mousedown.prevent @click="run('fix')" class="block w-full px-3 py-1.5 text-start text-xs hover:bg-panel-2 focus:outline-none focus:bg-panel-2">{{t "content.ai.action_fix"}}</button>
+      <button type="button" role="menuitem" @mousedown.prevent @click="run('translate_en')" class="block w-full px-3 py-1.5 text-start text-xs hover:bg-panel-2 focus:outline-none focus:bg-panel-2">{{t "content.ai.action_translate_en"}}</button>
+      <button type="button" role="menuitem" @mousedown.prevent @click="run('translate_ar')" class="block w-full px-3 py-1.5 text-start text-xs hover:bg-panel-2 focus:outline-none focus:bg-panel-2">{{t "content.ai.action_translate_ar"}}</button>
+      <p class="border-t border-line mt-1 px-3 pt-1.5 pb-1 text-xs text-muted">{{t "content.ai.selection_hint"}}</p>
+    </div>
+    </div>
+    <p x-show="error" x-cloak x-text="error" role="alert" class="[&[x-cloak]]:hidden absolute inset-x-0 top-full z-20 mt-1 rounded border border-red bg-red-soft px-2 py-1 text-xs text-red"></p>
+    <div x-show="result" x-cloak role="dialog" aria-label="{{t "content.ai.preview"}}" class="[&[x-cloak]]:hidden absolute inset-x-0 top-full z-20 mt-1 rounded border border-line-strong bg-panel">
+      <p class="border-b border-line px-3 py-2 text-xs font-medium">{{t "content.ai.preview"}}</p>
+      <div x-html="result" dir="auto" class="max-h-80 overflow-auto px-3 py-2 leading-relaxed [&_p]:mb-2 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:font-bold [&_ul]:list-disc [&_ul]:ps-6 [&_ol]:list-decimal [&_ol]:ps-6 [&_a]:text-blue [&_a]:underline [&_blockquote]:border-s [&_blockquote]:border-line-strong [&_blockquote]:ps-3"></div>
+      <div class="flex flex-wrap gap-2 border-t border-line px-3 py-2">
+        <button type="button" @click="apply('replace')" class="h-8 px-3 rounded border border-green text-green text-xs font-medium hover:bg-green-soft focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.ai.replace"}}</button>
+        <button type="button" @click="apply('insert')" class="h-8 px-3 rounded border border-line text-xs hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.ai.insert_below"}}</button>
+        <button type="button" @click="cancel()" class="h-8 px-3 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.cancel"}}</button>
+      </div>
+    </div>
+  </div>
+  {{end}}
+  </div>
+  <p x-show="tab === 'html'" {{if not .StartHTML}}x-cloak{{end}} class="[&[x-cloak]]:hidden mb-1 rounded border border-amber bg-amber-soft px-2 py-1 text-xs text-amber-text">{{t "content.editor.html_notice"}}</p>
+  <div x-show="tab === 'visual'" {{if .StartHTML}}x-cloak{{end}} class="[&[x-cloak]]:hidden relative rounded border border-line bg-panel
+       [&_.ql-toolbar]:flex [&_.ql-toolbar]:flex-wrap [&_.ql-toolbar]:gap-2 [&_.ql-toolbar]:border-b [&_.ql-toolbar]:border-line [&_.ql-toolbar]:p-1.5
+       [&_.ql-formats]:inline-flex [&_.ql-formats]:gap-0.5
+       [&_.ql-toolbar_button]:inline-flex [&_.ql-toolbar_button]:h-7 [&_.ql-toolbar_button]:w-7 [&_.ql-toolbar_button]:items-center [&_.ql-toolbar_button]:justify-center [&_.ql-toolbar_button]:rounded [&_.ql-toolbar_button]:text-muted
+       [&_.ql-toolbar_button:hover]:bg-panel-2 [&_.ql-toolbar_button:hover]:text-ink [&_.ql-toolbar_button.ql-active]:bg-panel-2 [&_.ql-toolbar_button.ql-active]:text-green
+       [&_.ql-toolbar_svg]:h-[18px] [&_.ql-toolbar_svg]:w-[18px]
+       [&_.ql-stroke]:fill-none [&_.ql-stroke]:stroke-current [&_.ql-stroke]:[stroke-width:2] [&_.ql-stroke]:[stroke-linecap:round] [&_.ql-stroke]:[stroke-linejoin:round]
+       [&_.ql-stroke-miter]:fill-none [&_.ql-stroke-miter]:stroke-current [&_.ql-stroke-miter]:[stroke-width:2] [&_.ql-fill]:fill-current [&_.ql-even]:[fill-rule:evenodd] [&_.ql-thin]:[stroke-width:1] [&_.ql-transparent]:opacity-40
+       [&_.ql-hidden]:hidden [&_.ql-clipboard]:hidden [&_.ql-tooltip]:absolute [&_.ql-tooltip]:z-10 [&_.ql-tooltip]:rounded [&_.ql-tooltip]:border [&_.ql-tooltip]:border-line [&_.ql-tooltip]:bg-panel [&_.ql-tooltip]:p-2 [&_.ql-tooltip_input]:h-8 [&_.ql-tooltip_input]:rounded [&_.ql-tooltip_input]:border [&_.ql-tooltip_input]:border-line [&_.ql-tooltip_input]:px-2
+       [&_.ql-editor]:min-h-[12rem] [&_.ql-editor]:p-3 [&_.ql-editor]:outline-none [&_.ql-editor]:leading-relaxed [&_.ql-editor_p]:mb-2 [&_.ql-editor_h2]:text-lg [&_.ql-editor_h2]:font-bold [&_.ql-editor_h2]:mb-2 [&_.ql-editor_h3]:text-base [&_.ql-editor_h3]:font-bold [&_.ql-editor_h3]:mb-2
+       [&_.ql-editor_ol]:ps-6 [&_.ql-editor_ol]:mb-2 [&_.ql-editor_li[data-list=ordered]]:list-decimal [&_.ql-editor_li[data-list=bullet]]:list-disc [&_.ql-ui]:hidden
+       [&_.ql-editor_blockquote]:border-s [&_.ql-editor_blockquote]:border-line-strong [&_.ql-editor_blockquote]:ps-3 [&_.ql-editor_blockquote]:text-muted [&_.ql-editor_pre]:rounded [&_.ql-editor_pre]:bg-panel-dark [&_.ql-editor_pre]:p-2 [&_.ql-editor_pre]:font-mono [&_.ql-editor_pre]:text-xs [&_.ql-editor_pre]:text-[#e9eeea]
+       [&_.ql-editor_a]:text-blue [&_.ql-editor_a]:underline [&_.ql-align-center]:text-center [&_.ql-align-right]:text-right [&_.ql-align-justify]:text-justify [&_.ql-direction-rtl]:[direction:rtl]">
+    <div x-ref="editor" class="min-h-[12rem]"></div>
+  </div>
+  <textarea x-ref="src" id="{{.ID}}" name="{{.Name}}" rows="12" x-show="tab === 'html'" {{if not .StartHTML}}x-cloak{{end}} spellcheck="false" dir="ltr"
+            class="[&[x-cloak]]:hidden w-full rounded border border-line bg-panel-dark text-[#e9eeea] font-mono text-xs px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Value}}</textarea>
+  {{template "fields/help" .}}
+</div>
+{{end}}

@@ -1,0 +1,1 @@
+{{if .Items}}<div class="ed-story-grid">{{range .Items}}{{component "card" .}}{{end}}</div>{{component "pagination" .}}{{else}}<div class="ed-empty"><p>{{t "empty"}}</p><p>{{t "ed.empty_note"}}</p></div>{{end}}

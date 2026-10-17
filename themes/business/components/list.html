@@ -1,0 +1,1 @@
+<div class="sb-list">{{if .Items}}<div class="sb-card-grid">{{range .Items}}{{component "card" .}}{{end}}</div>{{component "pagination" .}}{{else}}<p class="sb-empty">{{t "empty"}}</p>{{end}}</div>

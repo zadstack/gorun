@@ -1,0 +1,50 @@
+{
+  "/wp-json/wp/v2/users/me?context=edit": {
+    "file": "users-me.json",
+    "status": 200
+  },
+  "/wp-json/wp/v2/users?context=edit": {
+    "file": "users-edit.json",
+    "status": 200,
+    "headers": {
+      "X-WP-Total": "2",
+      "X-WP-TotalPages": "1"
+    }
+  },
+  "/wp-json/wp/v2/pages?context=edit": {
+    "file": "pages-edit.json",
+    "status": 200,
+    "headers": {
+      "X-WP-Total": "27",
+      "X-WP-TotalPages": "1"
+    }
+  },
+  "/wp-json/wp/v2/menus": {
+    "file": "menus.json",
+    "status": 200,
+    "headers": {
+      "X-WP-Total": "1",
+      "X-WP-TotalPages": "1"
+    }
+  },
+  "/wp-json/wp/v2/menu-items?menus=50": {
+    "file": "menu-items.json",
+    "status": 200,
+    "headers": {
+      "X-WP-Total": "4",
+      "X-WP-TotalPages": "1"
+    }
+  },
+  "/wp-json/wc/v3/products": {
+    "file": "wc-v3-products.json",
+    "status": 200,
+    "headers": {
+      "X-WP-Total": "36",
+      "X-WP-TotalPages": "1"
+    }
+  },
+  "/wp-json/wp/v2/settings": {
+    "file": "settings.json",
+    "status": 200
+  }
+}

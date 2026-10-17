@@ -1,0 +1,1 @@
+<header class="ed-archive-heading"><p class="ed-eyebrow">{{t "ed.archive"}}</p><h1>{{with .Term}}{{.Name}}{{else}}{{with .Extra.title}}{{.}}{{else}}{{t "latest_posts"}}{{end}}{{end}}</h1>{{with .Term}}{{with .Description}}<p>{{.}}</p>{{end}}{{end}}</header>{{component "list" .}}

@@ -1,0 +1,36 @@
+{{/* Usage: {{component "contact-form" .}} — posts to /forms/contact (CSRF, honeypot, rate limited).
+     With contact.attachments on, the form is multipart and offers one file. */}}
+{{$f := .Extra.form}}{{$files := eq (setting "contact.attachments") "true"}}{{$mb := setting "contact.attachment_max_mb"}}{{if not $mb}}{{$mb = "5"}}{{end}}
+<form method="post" action="/forms/contact"{{if $files}} enctype="multipart/form-data"{{end}} class="space-y-4 rounded border border-line bg-panel p-6" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="_back" value="{{with $f}}{{.Back}}{{else}}{{.Request.URL.Path}}{{end}}">
+  <div class="hidden" aria-hidden="true">
+    <label for="cf-website">{{t "honeypot_label"}}</label>
+    <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off">
+  </div>
+  <div>
+    <label for="cf-name" class="block font-medium mb-1">{{t "contact_name"}}</label>
+    <input id="cf-name" name="name" type="text" required maxlength="200" autocomplete="name" value="{{with $f}}{{index .Values "name"}}{{end}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    {{with $f}}{{with index .Errors "name"}}<p class="mt-1 text-sm text-red">{{t .}}</p>{{end}}{{end}}
+  </div>
+  <div>
+    <label for="cf-email" class="block font-medium mb-1">{{t "contact_email"}}</label>
+    <input id="cf-email" name="email" type="email" required maxlength="254" autocomplete="email" dir="ltr" value="{{with $f}}{{index .Values "email"}}{{end}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    {{with $f}}{{with index .Errors "email"}}<p class="mt-1 text-sm text-red">{{t .}}</p>{{end}}{{end}}
+  </div>
+  <div>
+    <label for="cf-message" class="block font-medium mb-1">{{t "contact_message"}}</label>
+    <textarea id="cf-message" name="message" rows="6" required maxlength="5000" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{with $f}}{{index .Values "message"}}{{end}}</textarea>
+    {{with $f}}{{with index .Errors "message"}}<p class="mt-1 text-sm text-red">{{t .}}</p>{{end}}{{end}}
+  </div>
+  {{if $files}}
+  <div>
+    <label for="cf-attachment" class="block font-medium mb-1">{{t "contact_attachment"}}</label>
+    <input id="cf-attachment" name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.docx,.xlsx,.pptx" aria-describedby="cf-attachment-help"
+           class="block w-full text-sm text-muted file:me-3 file:h-9 file:rounded file:border file:border-line file:bg-panel-2 file:px-3 file:text-ink hover:file:border-line-strong">
+    <p id="cf-attachment-help" class="mt-1 text-sm text-muted">{{t "contact_attachment_help" $mb}}</p>
+    {{with $f}}{{with index .Errors "attachment"}}<p class="mt-1 text-sm text-red">{{t .}}</p>{{end}}{{end}}
+  </div>
+  {{end}}
+  <button type="submit" class="h-9 rounded bg-green px-4 font-medium text-on-accent hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "send"}}</button>
+</form>

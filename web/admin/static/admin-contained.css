@@ -1,0 +1,22 @@
+/* Local containment for the five audited admin destinations, not the shell. */
+.admin-contained{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%}
+.admin-contained :where(div,section,form,fieldset,.grid,.flex){min-width:0}
+.admin-contained :where(p,code,td,th,li){overflow-wrap:anywhere}
+.admin-contained .overflow-x-auto{position:relative;min-width:0;max-width:100%;overscroll-behavior-inline:contain}
+.admin-contained .overflow-x-auto:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.admin-contained input:not([type=checkbox]):not([type=radio]),.admin-contained select,.admin-contained textarea{max-width:100%;min-width:0}
+.admin-contained .admin-template-open{flex-wrap:wrap;max-width:100%}
+.admin-contained .admin-template-open>div{flex:1 1 12rem;min-width:0}
+.admin-contained .admin-template-open input{width:100%}
+.admin-contained .admin-template-open button{flex-shrink:0}
+.admin-contained input[type=file]{width:100%;overflow:hidden}
+.admin-contained input[type=file]::file-selector-button{min-height:44px}
+@media(max-width:767px){
+ .admin-workspace #main .admin-contained :is(button,input:not([type=checkbox]):not([type=radio]),select,a.h-8,a.h-9){min-height:44px}
+ .admin-contained td a{display:inline-flex;align-items:center;min-height:44px}
+ .admin-contained .overflow-x-auto table{min-width:25rem}
+ .admin-contained .admin-template-open{width:100%}
+ .admin-contained input[type=file]{font-size:12px}
+ .admin-contained label:has(input[type=checkbox]),.admin-contained label:has(input[type=radio]){min-height:44px}
+ .admin-contained .admin-template-open button{margin-bottom:0}
+}

@@ -1,0 +1,7 @@
+{{define "subject"}}Your sign-in link for {{.SiteTitle}}{{end}}Hello {{.Name}},
+
+Use this link to sign in to {{.SiteTitle}}. It works once and expires in {{.TTLMinutes}} minutes:
+
+{{.Link}}
+
+If you did not ask for this email, you can ignore it.

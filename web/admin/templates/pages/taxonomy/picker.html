@@ -1,0 +1,47 @@
+{{/* Content-editor term picker fragment (loaded with hx-get from the editor). */}}
+{{define "content"}}
+<h2 class="text-base font-bold mb-3">{{.Name}}</h2>
+<input type="hidden" name="terms_present[{{.Taxonomy.Slug}}]" value="1">
+{{if .Taxonomy.Hierarchical}}
+<fieldset>
+  <legend class="sr-only">{{.Name}}</legend>
+  {{if .Rows}}
+  <ul class="max-h-64 overflow-y-auto space-y-1">
+    {{$tax := .Taxonomy.Slug}}{{$sel := .Selector}}
+    {{range .Rows}}
+    <li class="{{.Indent}}">
+      <label class="inline-flex items-center gap-2">
+        <input type="checkbox" name="terms[{{$tax}}]" value="{{.Slug}}" {{if index $sel .Slug}}checked{{end}}
+               class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+        <span dir="auto">{{.Name}}</span>
+      </label>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}<p class="text-muted text-sm">{{t "taxonomy.picker.empty"}}</p>{{end}}
+  <a href="/admin/taxonomies/{{.Taxonomy.Slug}}" class="mt-2 inline-block text-xs text-blue hover:text-blue-hover">{{t "taxonomy.picker.manage"}}</a>
+</fieldset>
+{{else}}
+<div x-data="{ tags: JSON.parse($el.dataset.tags || 'null') || [], q: '',
+       add(v) { v = (v || '').trim(); if (v && !this.tags.includes(v)) this.tags.push(v); this.q = ''; },
+       remove(i) { this.tags.splice(i, 1); } }"
+     data-tags="{{json .Selected}}">
+  <template x-for="tag in tags" :key="tag"><input type="hidden" name="terms[{{.Taxonomy.Slug}}]" :value="tag"></template>
+  <ul class="flex flex-wrap gap-1.5 mb-2" aria-live="polite">
+    <template x-for="(tag, i) in tags" :key="tag">
+      <li class="inline-flex items-center gap-1 rounded-chip border border-line bg-panel-2 px-2 py-0.5 text-xs">
+        <span dir="auto" x-text="tag"></span>
+        <button type="button" @click="remove(i)" class="text-muted hover:text-red" data-label="{{t "taxonomy.picker.remove"}}" :aria-label="$el.dataset.label + ' ' + tag">{{icon "x" "w-3 h-3"}}</button>
+      </li>
+    </template>
+  </ul>
+  <label class="sr-only" for="tag-input-{{.Taxonomy.Slug}}">{{t "taxonomy.picker.add"}}</label>
+  <input id="tag-input-{{.Taxonomy.Slug}}" type="text" name="q" x-model="q" dir="auto" autocomplete="off" placeholder="{{t "taxonomy.picker.add"}}"
+         @keydown.enter.prevent="add(q)" @keydown.comma.prevent="add(q)"
+         hx-get="/admin/x/taxonomy/{{.Taxonomy.Slug}}/terms" hx-trigger="input changed delay:250ms" hx-target="next .gp-suggest" hx-swap="innerHTML"
+         class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  <div class="gp-suggest mt-1"></div>
+  <p class="mt-1 text-xs text-muted">{{t "taxonomy.picker.help"}}</p>
+</div>
+{{end}}
+{{end}}

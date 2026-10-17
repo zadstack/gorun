@@ -1,0 +1,7 @@
+{{define "title"}}{{t "readiness.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-2">{{t "readiness.title"}}</h1>
+<p class="text-muted mb-4">{{t "readiness.intro"}}</p>
+<p class="border-y border-line py-3 text-sm mb-6">{{.Note}}</p>
+{{range .Groups}}<section class="mb-8"><h2 class="font-bold text-lg mb-3">{{.Title}}</h2><ul class="divide-y divide-line border-y border-line">{{range .Checks}}<li data-readiness-check="{{.ID}}" data-status="{{.Status}}" class="py-4 flex flex-wrap items-start gap-3"><span class="text-sm font-mono border px-2 py-1 {{if eq .Status "fail"}}border-red text-red{{else if eq .Status "pass"}}border-green text-green{{else}}border-line text-muted{{end}}">{{if eq .Status "pass"}}{{t "readiness.pass"}}{{else if eq .Status "warn"}}{{t "readiness.warn"}}{{else if eq .Status "fail"}}{{t "readiness.fail"}}{{else}}{{t "readiness.unknown"}}{{end}}</span><div class="flex-1 min-w-0"><h3 class="font-semibold">{{.Title}}</h3><p class="text-sm text-muted mt-1 break-words">{{.Evidence}}</p></div><a class="text-blue underline text-sm" href="{{.Fix}}">{{t "readiness.fix"}}</a></li>{{end}}</ul></section>{{end}}
+{{end}}

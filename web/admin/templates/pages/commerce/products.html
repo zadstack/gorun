@@ -1,0 +1,46 @@
+{{define "title"}}{{t "commerce.products.title"}}{{end}}
+{{define "content"}}
+<div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+  <h1 class="text-[22px] font-bold">{{t "commerce.products.title"}}</h1>
+  <a href="/admin/commerce/products/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "commerce.products.new"}}</span></a>
+</div>
+<p class="text-muted mb-4">{{t "commerce.products.intro"}}</p>
+<div class="rounded border border-line bg-panel overflow-x-auto">
+  {{if .Products}}
+  <table class="w-full">
+    <thead class="bg-panel-2"><tr>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.name"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.group"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.kind"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.readiness"}}</th>
+      <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.price"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.status"}}</th>
+    </tr></thead>
+    <tbody>
+      {{range .Products}}
+      <tr class="border-t border-line hover:bg-bg">
+        <td class="px-3 py-2"><a href="/admin/commerce/products/{{.ID}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a><div class="font-mono text-xs text-muted" dir="ltr">/product/{{.Slug}}</div></td>
+        <td class="px-3 py-2">{{.GroupName}}</td>
+        <td class="px-3 py-2">
+          {{if eq .Kind "service"}}{{t "commerce.products.kind_service"}}
+          {{else if eq .Kind "digital"}}{{t "commerce.products.kind_digital"}}
+          {{else}}{{t "commerce.products.kind_provisioning"}}<div class="font-mono text-xs text-muted" dir="ltr">{{.PlanCode}} · {{.AccessMonths}}m</div>{{end}}
+        </td>
+        <td class="px-3 py-2 text-xs">
+          {{if eq .Kind "service"}}{{t "commerce.products.manual_service"}}
+          {{else if eq .Kind "digital"}}
+            {{if .DigitalReady}}<span class="text-green">{{t "commerce.products.digital_ready"}}</span><div class="text-muted">{{t "commerce.products.download_days" .DownloadDays}}</div>
+            {{else}}<span class="text-amber-text">{{t "commerce.products.digital_missing"}}</span>{{end}}
+          {{else}}{{if and .ServerName .PlanCode}}{{.ServerName}}{{else}}<span class="text-amber-text">{{t "commerce.products.unmapped"}}</span>{{end}}{{end}}
+        </td>
+        <td class="px-3 py-2 text-end font-mono" dir="ltr">{{.Price}}</td>
+        <td class="px-3 py-2">{{if .Active}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "commerce.products.active"}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-xs">{{t "commerce.products.inactive"}}</span>{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="p-6 text-center text-muted">{{t "commerce.products.empty"}}</p>
+  {{end}}
+</div>
+{{end}}

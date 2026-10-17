@@ -1,0 +1,21 @@
+{{define "title"}}{{t "auth.login.title"}}{{end}}
+{{define "content"}}
+<div class="rounded border border-line bg-panel p-6">
+  <h1 class="text-[22px] font-bold">{{t "auth.login.title"}}</h1>
+  <p class="text-muted mb-4">{{t "core.app.name"}}</p>
+  {{with .Error}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
+  <form method="post" action="/admin/login" class="space-y-4" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="next" value="{{.Next}}">
+    <div>
+      <label for="email" class="block font-medium mb-1">{{t "auth.field.email"}}</label>
+      <input id="email" name="email" type="email" autocomplete="username" required value="{{.Email}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    </div>
+    <div>
+      <label for="password" class="block font-medium mb-1">{{t "auth.field.password"}}</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    </div>
+    <button type="submit" class="w-full h-9 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.login.submit"}}</button>
+  </form>
+</div>
+{{end}}

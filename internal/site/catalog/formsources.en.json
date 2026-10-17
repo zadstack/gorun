@@ -1,0 +1,12 @@
+{
+  "directory": "Available forms",
+  "directory_help": "Public pages containing a form. Open a page to preview it.",
+  "contact": "Contact form",
+  "open": "Open form page",
+  "disabled": "Disabled in report settings",
+  "empty": "No published contact form pages found.",
+  "source": "Form page",
+  "unknown": "Source page was not recorded or is no longer available.",
+  "submitted_form": "Form",
+  "association_help": "Contact page associations come from the submitted page address; they are not verified visitor provenance."
+}

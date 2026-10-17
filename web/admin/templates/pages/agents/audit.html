@@ -1,0 +1,76 @@
+{{/* Data: auditPage */}}
+{{define "title"}}{{t "admin.audit.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-3">{{t "admin.audit.title"}}</h1>
+<form method="get" action="/admin/agents/audit" hx-get="/admin/agents/audit" hx-target="#main" hx-push-url="true"
+      class="mb-4 rounded border border-line bg-panel p-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end">
+  <div>
+    <label for="a-kind" class="block text-xs font-medium mb-1">{{t "admin.audit.actor_kind"}}</label>
+    <select id="a-kind" name="actor_kind" class="h-9 w-full rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <option value="">{{t "admin.audit.any"}}</option>
+      {{range .ActorKinds}}<option value="{{.}}" {{if eq . $.Filter.ActorKind}}selected{{end}}>{{t (printf "admin.audit.kind_%s" .)}}</option>{{end}}
+    </select>
+  </div>
+  <div>
+    <label for="a-actor" class="block text-xs font-medium mb-1">{{t "admin.audit.actor_id"}}</label>
+    <input id="a-actor" name="actor_id" value="{{.Filter.ActorID}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  </div>
+  <div>
+    <label for="a-action" class="block text-xs font-medium mb-1">{{t "admin.audit.action"}}</label>
+    <input id="a-action" name="action" value="{{.Filter.Action}}" dir="ltr" placeholder="content." class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  </div>
+  <div>
+    <label for="a-target" class="block text-xs font-medium mb-1">{{t "admin.audit.target_kind"}}</label>
+    <input id="a-target" name="target_kind" value="{{.Filter.TargetKind}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  </div>
+  <div>
+    <label for="a-since" class="block text-xs font-medium mb-1">{{t "admin.audit.since"}}</label>
+    <input id="a-since" name="since" type="date" value="{{.Filter.Since}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  </div>
+  <div>
+    <label for="a-until" class="block text-xs font-medium mb-1">{{t "admin.audit.until"}}</label>
+    <input id="a-until" name="until" type="date" value="{{.Filter.Until}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  </div>
+  <div class="flex gap-2 lg:col-span-2">
+    <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "filter"}}<span>{{t "admin.audit.filter"}}</span></button>
+    <a href="/admin/agents/audit" class="h-9 px-3 inline-flex items-center text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.audit.reset"}}</a>
+  </div>
+</form>
+{{if .BadDates}}<p role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t "admin.audit.error_date"}}</p>{{end}}
+{{if .Entries}}
+<ul class="rounded border border-line bg-panel divide-y divide-line">
+  {{range .Entries}}
+  <li data-audit="{{.ID}}">
+    <details>
+      <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+        {{if .HasMeta}}{{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}{{else}}<span class="w-4" aria-hidden="true"></span>{{end}}
+        <span class="font-mono text-xs font-medium">{{.Action}}</span>
+        <span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{t (printf "admin.audit.kind_%s" .Actor.Kind)}}</span>
+        <span class="text-xs">{{.Actor.Name}}</span>
+        {{if .TargetKind}}<span class="font-mono text-[11px] text-muted" dir="ltr">{{.TargetKind}}{{if .TargetID}}:{{.TargetID}}{{end}}</span>{{end}}
+        <time class="ms-auto font-mono text-[11px] text-muted" datetime="{{.At}}">{{date .At}}</time>
+      </summary>
+      <div class="border-t border-line p-3 space-y-2">
+        <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+          <dt class="text-muted">{{t "admin.audit.actor_id"}}</dt><dd class="font-mono break-all">{{or .Actor.ID "—"}}</dd>
+          <dt class="text-muted">{{t "admin.common.ip"}}</dt><dd class="font-mono">{{or .IP "—"}}</dd>
+        </dl>
+        {{if .HasMeta}}<pre class="rounded bg-panel-dark text-panel-2 p-3 text-xs overflow-x-auto" dir="ltr">{{.MetaPretty}}</pre>{{end}}
+      </div>
+    </details>
+  </li>
+  {{end}}
+</ul>
+{{else}}
+<div class="rounded border border-line bg-panel p-6 text-muted">{{t "admin.audit.empty"}}</div>
+{{end}}
+{{with .Pager}}{{if gt .Pages 1}}
+<nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
+  <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+  <div class="flex gap-2">
+    {{if .PrevURL}}<a href="{{.PrevURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
+    {{if .NextURL}}<a href="{{.NextURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}
+  </div>
+</nav>
+{{end}}{{end}}
+{{end}}

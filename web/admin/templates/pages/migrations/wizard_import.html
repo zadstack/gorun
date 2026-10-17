@@ -1,0 +1,24 @@
+{{/* Data: wpmigrate.page (Steps, M, Status, Kinds, Log, Can*) — step 6; the progress block polls /admin/x/migrations/{id}/progress */}}
+{{define "title"}}{{t "wpmigrate.step.import"}} · {{t "wpmigrate.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "wpmigrate.import.title"}}</h1>
+<p class="text-muted mb-3">{{t "wpmigrate.import.intro"}}</p>
+<nav aria-label="{{t "wpmigrate.steps"}}" class="mb-4 overflow-x-auto">
+  <ol class="flex gap-1 min-w-max">
+    {{range .Steps}}
+    <li>
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-green bg-green-soft text-green{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+        <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
+      </a>
+    </li>
+    {{end}}
+  </ol>
+</nav>
+<div id="mig-progress" hx-get="/admin/x/migrations/{{.M.ID}}/progress" hx-trigger="load" hx-swap="outerHTML" aria-live="polite">
+  <div class="rounded border border-line bg-panel p-4 flex flex-wrap items-center gap-3">
+    <span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-xs">{{t (print "wpmigrate.status." .Status.Status)}}</span>
+    <span class="font-mono">{{.Status.Percent}}%</span>
+    <a href="/admin/x/migrations/{{.M.ID}}/progress" class="ms-auto text-blue hover:text-blue-hover hover:underline">{{t "wpmigrate.import.details"}}</a>
+  </div>
+</div>
+{{end}}

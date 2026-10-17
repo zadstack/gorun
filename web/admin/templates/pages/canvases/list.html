@@ -1,0 +1,15 @@
+{{define "title"}}{{t "admin.canvas.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "canvas.css"}}">
+<link rel="stylesheet" href="{{asset "canvas-operations.css"}}">
+<section class="canvas-list">
+ <header class="admin-page-heading"><p class="admin-eyebrow">{{t "admin.canvas.private"}}</p><h1>{{t "admin.canvas.title"}}</h1><p class="text-muted">{{t "admin.canvas.description"}}</p></header>
+ {{if .Error}}<p role="alert" class="canvas-list-error">{{.Error}}</p>{{end}}
+ <form method="post" action="/admin/canvases" class="canvas-create">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <label for="canvas-preset">{{t "canvasops.preset"}}</label><select id="canvas-preset" name="preset"><option value="">{{t "canvasops.blank"}}</option><option value="ask-content">{{t "canvasops.ask-content"}}</option><option value="prepublish-review">{{t "canvasops.prepublish-review"}}</option><option value="social-drafts">{{t "canvasops.social-drafts"}}</option><option value="periodic-brief">{{t "canvasops.periodic-brief"}}</option><option value="evidence-worksheet">{{t "canvasops.evidence-worksheet"}}</option><option value="story-video">{{t "canvasops.story-video"}}</option></select><p class="canvas-preset-help">{{t "canvasops.preset_help"}}</p>
+  <label for="new-canvas-title">{{t "admin.canvas.board_title"}}</label><div><input id="new-canvas-title" name="title" maxlength="120" required autocomplete="off"><button type="submit" class="canvas-primary">＋ {{t "admin.canvas.create"}}</button></div>
+ </form>
+ {{if .Boards}}<ul class="canvas-board-list">{{range .Boards}}<li><a href="/admin/canvases/{{.ID}}"><span class="canvas-list-mark" aria-hidden="true">▦</span><span><strong>{{.Title}}</strong><small>{{t "admin.canvas.updated"}} · {{.UpdatedAt}}</small></span><span aria-hidden="true">↗</span></a></li>{{end}}</ul>{{else}}<p class="canvas-list-empty">{{t "admin.canvas.empty_list"}}</p>{{end}}
+</section>
+{{end}}

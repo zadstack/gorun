@@ -1,0 +1,32 @@
+{{/* Data: searchResults. Full page for /admin/search, dropdown fragment for /admin/x/search. */}}
+{{define "title"}}{{t "core.action.search"}}{{end}}
+{{define "content"}}
+{{if .Full}}
+<h1 class="text-[22px] font-bold mb-3">{{t "core.action.search"}}</h1>
+<form method="get" action="/admin/search" role="search" class="flex gap-2 mb-4 max-w-xl">
+  <label class="sr-only" for="search-page-q">{{t "core.action.search"}}</label>
+  <input id="search-page-q" name="q" type="search" value="{{.Query}}" class="h-9 min-w-0 flex-1 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.search"}}</button>
+</form>
+{{end}}
+<div id="search-results" class="{{if .Full}}rounded border border-line bg-panel max-w-xl{{end}}" data-search-results>
+  {{if .TooShort}}<p class="px-3 py-2 text-muted">{{t "admin.search.too_short"}}</p>
+  {{else if not .Query}}{{if .Full}}<p class="px-3 py-2 text-muted">{{t "admin.search.hint"}}</p>{{end}}
+  {{else if .Empty}}<p class="px-3 py-2 text-muted">{{t "admin.search.no_results"}}</p>
+  {{else}}
+    {{if .Content}}
+    <p class="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.search.content"}}</p>
+    <ul>{{range .Content}}<li><a href="{{.Href}}" class="flex items-center gap-2 px-3 py-1.5 hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{icon .Icon}}<span class="truncate">{{.Title}}</span><span class="ms-auto font-mono text-[11px] text-muted">{{.Sub}}</span></a></li>{{end}}</ul>
+    {{end}}
+    {{if .Users}}
+    <p class="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.search.users"}}</p>
+    <ul>{{range .Users}}<li><a href="{{.Href}}" class="flex items-center gap-2 px-3 py-1.5 hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{icon .Icon}}<span class="truncate">{{or .Title .Sub}}</span><span class="ms-auto text-xs text-muted" dir="ltr">{{.Sub}}</span></a></li>{{end}}</ul>
+    {{end}}
+    {{if .Pages}}
+    <p class="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.search.pages"}}</p>
+    <ul class="pb-1">{{range .Pages}}<li><a href="{{.Href}}" class="flex items-center gap-2 px-3 py-1.5 hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{icon .Icon}}<span>{{.Title}}</span></a></li>{{end}}</ul>
+    {{end}}
+  {{end}}
+  {{if and .Query (not .HasContent)}}<p class="px-3 py-2 border-t border-line text-xs text-muted">{{t "admin.search.no_content_module"}}</p>{{end}}
+</div>
+{{end}}

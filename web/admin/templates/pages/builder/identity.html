@@ -1,0 +1,25 @@
+{{define "title"}}{{if eq locale "ar"}}الهوية البصرية{{else}}Site identity{{end}}{{end}}
+{{define "content"}}
+{{$ar := eq locale "ar"}}
+<h1 class="text-[22px] font-bold">{{if $ar}}الهوية البصرية للموقع{{else}}Site identity{{end}}</h1>
+<p class="text-muted mt-2 mb-6">{{if $ar}}إعدادات موحّدة للألوان والخطوط وعرض الصفحات في القالب الافتراضي. التغييرات تظهر على الموقع عند الحفظ.{{else}}Shared colors, fonts and page width in the default theme. Saving applies changes to your site.{{end}}</p>
+{{if .Saved}}<p role="status" class="border border-green p-3 my-4">{{t "identity.saved"}}</p>{{end}}
+{{with .Error}}<p role="alert" class="border border-red text-red p-3 mb-4">{{.}}</p>{{end}}
+<form method="post" class="max-w-3xl space-y-5">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<label class="block">{{if $ar}}اسم الموقع{{else}}Site name{{end}}<input name="title" required maxlength="200" value="{{.Form.Title}}" class="block w-full border border-line bg-panel p-2 mt-1"></label>
+<label class="block">{{if $ar}}الوصف المختصر{{else}}Tagline{{end}}<input name="tagline" maxlength="500" value="{{.Form.Tagline}}" class="block w-full border border-line bg-panel p-2 mt-1"></label>
+{{template "media_picker_slot" .Logo}}
+<fieldset class="border border-line p-4"><legend class="px-2">{{if $ar}}ألوان الموقع{{else}}Site colors{{end}}</legend><div class="grid gap-4 sm:grid-cols-3">
+<label>{{if $ar}}لون الأزرار{{else}}Accent{{end}}<input type="color" name="accent" value="{{.Form.Identity.Accent}}" class="block w-full h-10 mt-2"></label>
+<label>{{if $ar}}الخلفية{{else}}Background{{end}}<input type="color" name="background" value="{{.Form.Identity.Background}}" class="block w-full h-10 mt-2"></label>
+<label>{{if $ar}}النص{{else}}Text{{end}}<input type="color" name="text" value="{{.Form.Identity.Text}}" class="block w-full h-10 mt-2"></label>
+</div><p class="text-muted text-sm mt-3">{{if $ar}}الحفظ يتحقق من وضوح النص وتباين ألوان الأزرار.{{else}}Saving checks text and button contrast.{{end}}</p></fieldset>
+<div class="grid gap-4 sm:grid-cols-2">
+<label>{{if $ar}}الخط{{else}}Font{{end}}<select name="font" class="block w-full border border-line bg-panel p-2 mt-2"><option value="zad" {{if eq .Form.Identity.Font "zad"}}selected{{end}}>Zad · زاد</option><option value="system" {{if eq .Form.Identity.Font "system"}}selected{{end}}>{{if $ar}}النظام{{else}}System{{end}}</option><option value="serif" {{if eq .Form.Identity.Font "serif"}}selected{{end}}>Serif</option><option value="mono" {{if eq .Form.Identity.Font "mono"}}selected{{end}}>Monospace</option></select></label>
+<label>{{if $ar}}عرض الصفحة{{else}}Page width{{end}}<select name="width" class="block w-full border border-line bg-panel p-2 mt-2"><option value="narrow" {{if eq .Form.Identity.Width "narrow"}}selected{{end}}>{{if $ar}}ضيق{{else}}Narrow{{end}}</option><option value="standard" {{if eq .Form.Identity.Width "standard"}}selected{{end}}>{{if $ar}}متوسط{{else}}Standard{{end}}</option><option value="wide" {{if eq .Form.Identity.Width "wide"}}selected{{end}}>{{if $ar}}واسع{{else}}Wide{{end}}</option></select></label>
+</div>
+<div class="flex flex-wrap gap-4 items-center"><button type="submit" class="bg-green text-white px-4 py-2">{{if $ar}}حفظ الهوية{{else}}Save identity{{end}}</button><a href="/" target="_blank" rel="noopener" class="underline">{{if $ar}}عرض الموقع{{else}}View site{{end}}</a></div>
+</form>
+{{if .Logo.CanPick}}{{template "partials/media_picker.html" .}}{{end}}
+{{end}}

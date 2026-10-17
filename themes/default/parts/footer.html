@@ -1,0 +1,43 @@
+{{/* Closes the document opened by parts/header.html. Child themes that keep
+     this footer (docs, magazine) keep its compact form; default gets columns. */}}
+</main>
+{{$shellFooter := setting (printf "theme.%s.footer_style" .Theme.Slug)}}
+{{if not (or (eq $shellFooter "signature") (eq $shellFooter "columns") (eq $shellFooter "minimal"))}}{{$shellFooter = "native"}}{{end}}
+{{$footerMenu := menu "footer"}}{{if not $footerMenu}}{{$footerMenu = menu "primary"}}{{end}}
+{{if eq .Theme.Slug "default"}}
+<footer data-shell-footer="{{$shellFooter}}" class="default-site-footer dt-footer">
+  <div class="gp-site-width dt-footer-main">
+    <div class="dt-footer-about">
+      <a href="{{url "/"}}" class="dt-brand">{{with media (setting "site.logo")}}{{img . "thumbnail" "dt-logo"}}{{else}}<span class="dt-mark" aria-hidden="true">{{printf "%.1s" $.Site.Title}}</span>{{end}}<span>{{.Site.Title}}</span></a>
+      {{with .Site.Tagline}}<p>{{.}}</p>{{end}}
+    </div>
+    {{with $footerMenu}}
+    <nav aria-label="{{t "footer_menu"}}" class="dt-footer-nav">
+      <ul>
+        {{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener noreferrer"{{end}}>{{.Label}}</a></li>{{end}}
+      </ul>
+    </nav>
+    {{end}}
+  </div>
+  <div class="gp-site-width dt-footer-base">
+    <p>© {{.Site.Title}}</p>
+    <p>{{t "powered_by"}}</p>
+  </div>
+</footer>
+{{else}}
+<footer data-shell-footer="{{$shellFooter}}" class="default-site-footer border-t border-line bg-panel">
+  <div class="gp-site-width mx-auto max-w-5xl px-4 py-6 flex flex-wrap items-center justify-between gap-3 text-muted">
+    <p>{{.Site.Title}}{{with .Site.Tagline}} · {{.}}{{end}}</p>
+    {{with $footerMenu}}
+    <nav aria-label="{{t "footer_menu"}}">
+      <ul class="flex flex-wrap gap-3">
+        {{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener noreferrer"{{end}} class="hover:text-ink">{{.Label}}</a></li>{{end}}
+      </ul>
+    </nav>
+    {{end}}
+    <p class="text-sm">{{t "powered_by"}}</p>
+  </div>
+</footer>
+{{end}}
+</body>
+</html>

@@ -1,0 +1,21 @@
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "dashboard-guide.css"}}">
+<details class="workspace-guide" data-widget="workspace_guide">
+ <summary><span><strong>{{t "workspaceguide.title"}}</strong><span class="guide-summary-help">{{t "workspaceguide.subtitle"}}</span></span><span class="guide-toggle" aria-hidden="true"></span></summary>
+ <div class="guide-expanded">
+  <div class="guide-map">
+   <p class="guide-hub">{{t "workspaceguide.hub"}}<small>{{t "workspaceguide.hub_help"}}</small></p>
+   <svg class="guide-connections" viewBox="0 0 900 260" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M450 0V28M150 28H750M150 28V245M450 28V245M750 28V245"/></svg>
+   <nav class="guide-areas" aria-label="{{t "workspaceguide.destinations"}}">
+   {{range .Areas}}<a class="guide-area" href="{{.Nav.Href}}" data-guide-area="{{.Key}}" data-guide-nav="{{.Nav.ID}}"><strong>{{t .LabelKey}}</strong><span>{{t .DescriptionKey}}</span><small>{{t .Nav.LabelKey}} <span aria-hidden="true">↗</span></small></a>{{end}}
+   </nav>
+   {{if not .Areas}}<p class="guide-empty">{{t "workspaceguide.no_destinations"}}</p>{{end}}
+  </div>
+  <div class="guide-howto">
+   <div><h3>{{t "workspaceguide.pin"}}</h3><p>{{t "workspaceguide.pin_help"}}</p></div>
+   <div><h3>{{t "workspaceguide.boards"}}</h3><p>{{t "workspaceguide.boards_help"}}</p></div>
+   <div><h3>{{t "workspaceguide.search"}} <kbd>/</kbd></h3><p>{{t "workspaceguide.search_help"}}</p></div>
+  </div>
+ </div>
+</details>
+{{end}}

@@ -1,0 +1,9 @@
+{{define "fields/number"}}
+<div class="gp-field" data-field-type="number" data-field-key="{{.Key}}">
+  {{template "fields/label" .}}
+  <input id="{{.ID}}" name="{{.Name}}" type="number" value="{{.Value}}" {{with .Min}}min="{{.}}"{{end}} {{with .Max}}max="{{.}}"{{end}} step="{{if .Step}}{{.Step}}{{else}}any{{end}}"
+         {{if .Required}}required{{end}} {{if .Error}}aria-invalid="true"{{end}} {{if .Help}}aria-describedby="{{.ID}}-help"{{end}}
+         class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+  {{template "fields/help" .}}
+</div>
+{{end}}

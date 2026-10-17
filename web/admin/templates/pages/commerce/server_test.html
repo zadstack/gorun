@@ -1,0 +1,15 @@
+{{/* HTMX fragment for "Test connection": OK, Catalog (commerce.Catalog), Error. */}}
+{{define "title"}}{{t "commerce.servers.test_title"}}{{end}}
+{{define "content"}}
+{{if .OK}}
+<div role="status" class="rounded border border-green bg-green-soft px-3 py-2">
+  <p class="font-medium text-green">{{t "commerce.servers.test_ok" (len .Catalog.Plans)}}</p>
+  {{with .Catalog.Plans}}<ul class="mt-2 space-y-1">{{range .}}<li class="flex gap-2"><code class="font-mono text-xs" dir="ltr">{{.Code}}</code><span>{{.Name}}{{with .NameAr}} · {{.}}{{end}}</span></li>{{end}}</ul>{{end}}
+</div>
+{{else}}
+<div role="alert" class="rounded border border-red bg-red-soft text-red px-3 py-2">
+  <p class="font-medium">{{t "commerce.servers.test_failed"}}</p>
+  <p class="mt-1 text-xs break-all" dir="ltr">{{.Error}}</p>
+</div>
+{{end}}
+{{end}}

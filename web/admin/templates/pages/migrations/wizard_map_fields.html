@@ -1,0 +1,58 @@
+{{/* Data: wpmigrate.page (Steps, M, FieldRows, Targets = field types, Fields = errors) — step 4 */}}
+{{define "title"}}{{t "wpmigrate.step.fields"}} · {{t "wpmigrate.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "wpmigrate.fields.title"}}</h1>
+<p class="text-muted mb-3">{{t "wpmigrate.fields.intro"}}</p>
+<nav aria-label="{{t "wpmigrate.steps"}}" class="mb-4 overflow-x-auto">
+  <ol class="flex gap-1 min-w-max">
+    {{range .Steps}}
+    <li>
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-green bg-green-soft text-green{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+        <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
+      </a>
+    </li>
+    {{end}}
+  </ol>
+</nav>
+<form method="post" action="/admin/migrations/{{.M.ID}}/fields" class="space-y-4" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <section class="rounded border border-line bg-panel overflow-x-auto">
+    {{if .FieldRows}}
+    <table class="w-full">
+      <thead class="bg-panel-2"><tr>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.fields.meta_key"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.fields.target"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.fields.type"}}</th>
+      </tr></thead>
+      <tbody>
+        {{$types := .Targets}}{{$errs := .Fields}}
+        {{range .FieldRows}}
+        {{$name := print "field." .WPType "." .Key}}
+        <tr class="border-t border-line">
+          <th scope="row" class="px-3 py-2 text-start font-normal"><span class="font-mono text-xs">{{.Key}}</span> <span class="text-muted text-xs">{{.WPType}}</span></th>
+          <td class="px-3 py-2">
+            <label for="{{$name}}" class="sr-only">{{t "wpmigrate.fields.target"}} {{.Key}}</label>
+            <input id="{{$name}}" name="{{$name}}" type="text" dir="ltr" value="{{.Target}}" placeholder="{{t "wpmigrate.fields.skip_placeholder"}}"
+                   {{with index $errs $name}}aria-invalid="true"{{end}}
+                   class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+            {{template "partials/field_errors" (index $errs $name)}}
+          </td>
+          <td class="px-3 py-2">
+            <label for="{{$name}}.type" class="sr-only">{{t "wpmigrate.fields.type"}} {{.Key}}</label>
+            <select id="{{$name}}.type" name="{{$name}}.type" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+              {{$sel := .Type}}{{range $types}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{.}}</option>{{end}}
+            </select>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="p-6 text-center text-muted">{{t "wpmigrate.fields.empty"}}</p>
+    {{end}}
+  </section>
+  <div class="flex justify-end">
+    <button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "wpmigrate.next.preview"}}</span>{{icon "arrow-right" "w-4 h-4 rtl:rotate-180"}}</button>
+  </div>
+</form>
+{{end}}

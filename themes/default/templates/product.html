@@ -1,0 +1,38 @@
+{{/* Commerce: /product/{slug}. .Extra.product is *commerce.Product (Description is sanitized HTML);
+     .Extra.checkout_action, .Extra.checkout_error (i18n key), .Extra.email, .Extra.image_url. */}}
+{{part "header" .}}
+{{$x := .Extra}}
+{{with .Extra.product}}
+<article class="mx-auto max-w-3xl">
+  <p class="text-sm text-muted"><a href="{{url "/shop"}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "commerce.shop.title"}}</a>{{with .GroupName}} · {{.}}{{end}}</p>
+  <h1 class="mt-2 text-[22px] font-bold leading-snug">{{.Name}}</h1>
+  {{with .ShortDescription}}<p class="mt-2 text-muted">{{.}}</p>{{end}}
+  {{with $x.image_url}}<img src="{{.}}" alt="" class="mt-6 w-full rounded border border-line">{{end}}
+  <div class="mt-6 grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start">
+    <div>
+      {{with .Description}}<div class="prose-gp">{{safe .}}</div>{{end}}
+      {{with .Features}}
+      <h2 class="mt-6 text-base font-bold">{{t "commerce.product.features"}}</h2>
+      <ul class="mt-2 space-y-1">{{range .}}<li class="flex gap-2"><span aria-hidden="true" class="text-green">✓</span><span>{{.}}</span></li>{{end}}</ul>
+      {{end}}
+    </div>
+    <aside class="rounded border border-line bg-panel p-5">
+      <p class="text-lg font-bold" dir="ltr">{{money .PriceMinor .Currency}}</p>
+      {{if ne .Kind "service"}}<p class="mt-1 text-sm text-muted">{{if eq .Kind "digital"}}{{t "commerce.request.months" .AccessMonths}}{{else}}{{t "commerce.product.months" .AccessMonths}}{{end}}</p>{{end}}
+      {{with $x.checkout_error}}<p role="alert" class="mt-3 rounded border border-red bg-red-soft px-3 py-2 text-sm text-red">{{t .}}</p>{{end}}
+      {{if or (eq .Kind "service") (eq .Kind "digital")}}<p>{{t "commerce.request.notice"}}</p><form action="/cart/items" method="post"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="product_id" value="{{.ID}}"><label for="quantity">الكمية</label><input id="quantity" name="quantity" type="number" min="1" max="99" value="1" required><button type="submit">{{t "commerce.request.add"}}</button></form>{{else}}<form method="post" action="{{$x.checkout_action}}" class="mt-4 space-y-3" novalidate>
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <div>
+          <label for="checkout-email" class="block font-medium mb-1">{{t "commerce.product.email"}}</label>
+          <input id="checkout-email" name="email" type="email" required autocomplete="email" dir="ltr" value="{{$x.email}}"
+                 class="h-10 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          <p class="mt-1 text-xs text-muted">{{t "commerce.product.email_help"}}</p>
+        </div>
+        <div class="sr-only" aria-hidden="true"><label for="checkout-website">{{t "honeypot_label"}}</label><input id="checkout-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+        <button type="submit" class="h-10 w-full rounded bg-green px-4 font-medium text-on-accent hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.product.buy"}}</button>
+      </form>{{end}}
+    </aside>
+  </div>
+</article>
+{{end}}
+{{part "footer" .}}

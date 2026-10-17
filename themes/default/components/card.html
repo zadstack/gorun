@@ -1,0 +1,8 @@
+{{/* Usage: {{component "card" $item}} — a content.Item. */}}
+<article class="reading-card rounded border border-line bg-panel p-5 hover:border-line-strong">
+  {{with media .FeaturedMediaID}}<a href="{{url $}}" class="default-card-image block mb-4" tabindex="-1" aria-hidden="true">{{img . "medium" "w-full h-48 object-cover rounded"}}</a>{{end}}
+  <h2 class="text-lg font-bold leading-snug"><a href="{{url .}}" class="hover:text-green focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">{{.Title}}</a></h2>
+  {{with .PublishedAt}}<p class="mt-1 text-sm text-muted"><time datetime="{{.}}">{{date .}}</time></p>{{end}}
+  {{with excerpt . 30}}<p class="mt-3 text-muted">{{.}}</p>{{end}}
+  <a href="{{url .}}" class="mt-3 inline-block text-blue hover:text-blue-hover underline underline-offset-2">{{t "read_more"}}</a>
+</article>

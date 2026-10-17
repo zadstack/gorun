@@ -1,0 +1,19 @@
+{
+  "title": "Connection setup",
+  "save": "Save the connection with the endpoint and credentials from your supplier.",
+  "test": "Test it explicitly to check access. Discovery does not prove generation, delivery or available credit.",
+  "activate": "Activate only where needed: writing provider, media storage or backup storage. Saving alone does not activate it.",
+  "ai": "Choose the API adapter and an exact model offered by your provider. OpenAI-compatible can also use a different supplier’s API base URL.",
+  "fill": "Use official endpoint",
+  "fill_help": "Fills an empty endpoint for the selected AI adapter only. Your custom or saved URL is never replaced. Review the model and credentials before saving.",
+  "mcp": "Copy the remote HTTP MCP endpoint supplied by your provider. There is no universal MCP URL. Testing lists tools; generation requires a separate reviewed Studio binding.",
+  "mcp_docs": "MCP remote server documentation",
+  "s3": "Copy the S3 API endpoint, bucket, region and scoped credentials from your storage provider. A bucket website or public media URL is not the API endpoint.",
+  "r2": "R2 uses region auto. Copy the exact account and jurisdiction endpoint from Cloudflare; do not substitute your public bucket URL.",
+  "storage": "First save an S3 connection, then explicitly test it. Choose media or encrypted backups here as separate destinations; credentials and bucket policy must suit that purpose.",
+  "guide": "Official guides and endpoint helper",
+  "kind_fixed": "Create a new connection to use a different type.",
+  "ai_conflict": "AI settings changed elsewhere. Your proposal is retained; reload and review before saving.",
+  "reload": "Reload saved settings",
+  "storage_conflict": "Storage changed elsewhere. No destination was disabled. Reload Storage and review the active destination."
+}

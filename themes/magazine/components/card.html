@@ -1,0 +1,8 @@
+{{/* A story without its own image is a text card: one repeated placeholder across a feed reads as broken. */}}
+{{$story := .}}{{$image := media .FeaturedMediaID}}
+<article class="ed-story{{if not $image}} ed-story-text{{end}}">
+{{with $image}}<a class="ed-story-image" href="{{url $story}}" tabindex="-1" aria-hidden="true">{{img . "medium" "ed-cover"}}</a>{{end}}
+<div class="ed-story-meta">{{with terms . "category"}}{{range .}}<a href="{{url .}}">{{.Name}}</a>{{end}}{{else}}<span>{{t "ed.story"}}</span>{{end}}{{with .PublishedAt}}<time datetime="{{.}}">{{date .}}</time>{{end}}</div>
+<h2><a href="{{url .}}">{{.Title}}</a></h2>{{with excerpt . 32}}<p>{{.}}</p>{{end}}
+<a class="ed-read" href="{{url .}}">{{t "read_more"}} <span aria-hidden="true">↗</span></a>
+</article>

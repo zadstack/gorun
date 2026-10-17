@@ -1,0 +1,60 @@
+/* GoRun section library: layout blocks for HTML page bodies.
+   The content sanitizer keeps only class names that start with "gp-", so every
+   block here uses the gp-s- prefix (the page builder owns gp-section/gp-grid).
+   Selectors are wrapped in :where() (zero specificity) and colors come from the
+   theme tokens (--bg, --panel, --ink, --muted, --line, --green, --on-accent, --radius), so any
+   theme, site identity or custom CSS can restyle them without fighting selectors.
+   Inside page bodies the themes' .prose-gp rules (link color and underline,
+   list markers, h2/h3 sizes, sibling margins; up to (0,2,2) specificity) would
+   win over zero-specificity rules, so the block at the end re-applies those
+   properties under ":root .prose-gp" (0,3,0). To restyle a section inside a
+   page body, use the same prefix or put the rule later (custom CSS loads after).
+   Markup examples: docs/THEMES.md → "Section library". */
+:where(.gp-s-hero, .gp-s-band, .gp-s-cta) { padding-block: clamp(32px, 6vw, 72px); }
+:where(.gp-s-hero) { border-bottom: 1px solid var(--line, #e5e5e5); }
+:where(.gp-s-hero) :where(h1) { font-size: clamp(36px, 5.2vw, 60px); line-height: 1.2; margin: 12px 0 16px; text-wrap: balance; }
+:where(.gp-s-eyebrow) { display: inline-block; font-size: 14px; font-weight: 600; color: var(--green, #1f6feb); }
+:where(.gp-s-lead) { font-size: clamp(18px, 1.6vw, 21px); color: var(--muted, #555); max-width: 40em; margin: 0 0 24px; }
+:where(.gp-s-actions) { display: flex; flex-wrap: wrap; gap: 12px; margin-block: 8px; }
+:where(.gp-s-btn) {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px;
+  border-radius: var(--radius, 8px); background: var(--green, #1f6feb); color: var(--on-accent, #fff); border: 1px solid var(--green, #1f6feb);
+  font-weight: 600; text-decoration: none;
+}
+:where(.gp-s-btn):hover { background: var(--green-hover, var(--green, #1f6feb)); }
+:where(.gp-s-btn-ghost) { background: transparent; color: var(--ink, #111); border-color: var(--line-strong, var(--line, #ccc)); }
+:where(.gp-s-band) { border-bottom: 1px solid var(--line, #e5e5e5); }
+:where(.gp-s-band) > :where(h2) { font-size: clamp(26px, 3.4vw, 40px); margin: 0 0 12px; text-wrap: balance; }
+:where(.gp-s-band) > :where(p) { color: var(--muted, #555); max-width: 44em; }
+:where(.gp-s-grid) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 16px; margin-block: 24px; }
+:where(.gp-s-card) { background: var(--panel, #fff); border: 1px solid var(--line, #e5e5e5); border-radius: var(--radius, 8px); padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+:where(.gp-s-card) :where(h3) { font-size: 20px; margin: 0; }
+:where(.gp-s-card) :where(p) { color: var(--muted, #555); margin: 0; }
+:where(.gp-s-card) > :where(a:last-child) { margin-top: auto; font-weight: 600; color: var(--green, #1f6feb); text-decoration: none; }
+:where(.gp-s-price) { font-size: 24px; font-weight: 700; color: var(--ink, #111); }
+:where(.gp-s-steps) { list-style: none; padding: 0; margin-block: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px; counter-reset: gp-s-step; }
+:where(.gp-s-steps) > :where(li) { border-top: 2px solid var(--green, #1f6feb); padding-top: 14px; counter-increment: gp-s-step; }
+:where(.gp-s-steps) > :where(li)::before { content: counter(gp-s-step, decimal-leading-zero); display: block; font-weight: 700; color: var(--green, #1f6feb); }
+:where(.gp-s-checks) { list-style: none; padding: 0; display: grid; gap: 10px; }
+:where(.gp-s-checks) > :where(li) { position: relative; padding-inline-start: 28px; }
+:where(.gp-s-checks) > :where(li)::before { content: "✓"; position: absolute; inset-inline-start: 0; color: var(--green, #1f6feb); font-weight: 700; }
+:where(.gp-s-faq) :where(details) { border-bottom: 1px solid var(--line, #e5e5e5); padding-block: 14px; }
+:where(.gp-s-faq) :where(summary) { cursor: pointer; font-weight: 600; }
+:where(.gp-s-cta) { text-align: center; }
+:where(.gp-s-cta) :where(h2) { font-size: clamp(28px, 4vw, 48px); margin: 0 auto 12px; max-width: 16em; }
+:where(.gp-s-cta) :where(.gp-s-actions) { justify-content: center; }
+
+/* Page bodies: the properties .prose-gp would otherwise take over. */
+:root .prose-gp > :is(.gp-s-hero, .gp-s-band, .gp-s-cta) { margin-top: 0; }
+:root .prose-gp .gp-s-hero h1 { font-size: clamp(36px, 5.2vw, 60px); line-height: 1.2; margin: 12px 0 16px; }
+:root .prose-gp :is(.gp-s-band, .gp-s-faq) > h2 { font-size: clamp(26px, 3.4vw, 40px); margin: 0 0 12px; padding: 0; border: 0; }
+:root .prose-gp .gp-s-cta h2 { font-size: clamp(28px, 4vw, 48px); margin: 0 auto 12px; padding: 0; border: 0; }
+:root .prose-gp .gp-s-card h3 { font-size: 20px; margin: 0; }
+:root .prose-gp :is(.gp-s-steps, .gp-s-checks) h3 { margin: 0 0 4px; }
+:root .prose-gp .gp-s-actions { margin-block: 8px; }
+:root .prose-gp .gp-s-btn, :root .prose-gp .gp-s-btn:hover { color: var(--on-accent, #fff); text-decoration: none; }
+:root .prose-gp .gp-s-btn-ghost, :root .prose-gp .gp-s-btn-ghost:hover { color: var(--ink, #111); }
+:root .prose-gp .gp-s-card > a:last-child { color: var(--green, #1f6feb); text-decoration: none; }
+:root .prose-gp :is(.gp-s-steps, .gp-s-checks) { list-style: none; padding: 0; }
+:root .prose-gp .gp-s-steps { margin-block: 24px; }
+:root .prose-gp .gp-s-checks > li { padding-inline-start: 28px; }

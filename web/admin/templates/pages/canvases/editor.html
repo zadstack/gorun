@@ -1,0 +1,99 @@
+{{define "title"}}{{.Board.Title}} · {{t "admin.canvas.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "canvas.css"}}">
+<link rel="stylesheet" href="{{asset "canvas-operations.css"}}">
+<script defer src="{{asset "canvas-graph.js"}}"></script>
+<script defer src="{{asset "canvas-presets.js"}}"></script>
+<script defer src="{{asset "canvas-operations.js"}}"></script>
+<script defer src="{{asset "canvas.js"}}"></script>
+<section class="canvas-workspace" id="canvas-editor" data-id="{{.Board.ID}}">
+ <input type="hidden" name="_csrf" value="{{csrf}}">
+ <div hidden data-canvas-labels><span data-label="cancel_run">{{t "canvasops.cancel_run"}}</span><span data-label="cancel_run_help">{{t "canvasops.cancel_run_help"}}</span><span data-label="cancelled">{{t "canvasops.cancelled"}}</span><span data-label="reviewed">{{t "canvasops.reviewed"}}</span><span data-label="run_stopped">{{t "canvasops.run_stopped"}}</span><span data-label="generation_kind">{{t "canvasops.generation_kind"}}</span><span data-label="text">{{t "canvasops.text"}}</span><span data-label="image">{{t "canvasops.image"}}</span><span data-label="video">{{t "canvasops.video"}}</span><span data-label="render">{{t "canvasops.render"}}</span><span data-label="preset_skill">{{t "canvasops.preset_skill"}}</span><span data-label="no_skill">{{t "canvasops.no_skill"}}</span><span data-label="result">{{t "canvasops.result"}}</span><span data-label="waiting">{{t "canvasops.waiting"}}</span><span data-label="check_result">{{t "canvasops.check_result"}}</span><span data-label="private_media">{{t "canvasops.private_media"}}</span><span data-label="media_error">{{t "canvasops.media_error"}}</span><span data-label="configure_destinations">{{t "canvasops.configure_destinations"}}</span><span data-label="preset">{{t "canvasops.preset"}}</span><span data-label="blank">{{t "canvasops.blank"}}</span><span data-label="ask-content">{{t "canvasops.ask-content"}}</span><span data-label="prepublish-review">{{t "canvasops.prepublish-review"}}</span><span data-label="social-drafts">{{t "canvasops.social-drafts"}}</span><span data-label="periodic-brief">{{t "canvasops.periodic-brief"}}</span><span data-label="evidence-worksheet">{{t "canvasops.evidence-worksheet"}}</span><span data-label="story-video">{{t "canvasops.story-video"}}</span><span data-label="preset_help">{{t "canvasops.preset_help"}}</span><span data-label="apply_preset">{{t "canvasops.apply_preset"}}</span><span data-label="preset_target">{{t "canvasops.preset_target"}}</span><span data-label="preset_ready">{{t "canvasops.preset_ready"}}</span><span data-label="preset_incomplete">{{t "canvasops.preset_incomplete"}}</span><span data-label="operations">{{t "canvasops.operations"}}</span><span data-label="ops_source">{{t "canvasops.ops_source"}}</span><span data-label="prompt">{{t "canvasops.prompt"}}</span><span data-label="provider">{{t "canvasops.provider"}}</span><span data-label="agent">{{t "canvasops.agent"}}</span><span data-label="schedule">{{t "canvasops.schedule"}}</span><span data-label="source_type">{{t "canvasops.source_type"}}</span><span data-label="source_limit">{{t "canvasops.source_limit"}}</span><span data-label="source_help">{{t "canvasops.source_help"}}</span><span data-label="provider_help">{{t "canvasops.provider_help"}}</span><span data-label="agent_help">{{t "canvasops.agent_help"}}</span><span data-label="interval">{{t "canvasops.interval"}}</span><span data-label="hourly">{{t "canvasops.hourly"}}</span><span data-label="daily">{{t "canvasops.daily"}}</span><span data-label="weekly">{{t "canvasops.weekly"}}</span><span data-label="schedule_help">{{t "canvasops.schedule_help"}}</span><span data-label="connections">{{t "canvasops.connections"}}</span><span data-label="from">{{t "canvasops.from"}}</span><span data-label="to">{{t "canvasops.to"}}</span><span data-label="connect">{{t "canvasops.connect"}}</span><span data-label="disconnect">{{t "canvasops.disconnect"}}</span><span data-label="no_connections">{{t "canvasops.no_connections"}}</span><span data-label="connection_error">{{t "canvasops.connection_error"}}</span><span data-label="review_run">{{t "canvasops.review_run"}}</span><span data-label="review">{{t "canvasops.review"}}</span><span data-label="destination">{{t "canvasops.destination"}}</span><span data-label="context">{{t "canvasops.context"}}</span><span data-label="run">{{t "canvasops.run"}}</span><span data-label="consent">{{t "canvasops.consent"}}</span><span data-label="enable_schedule">{{t "canvasops.enable_schedule"}}</span><span data-label="disable_schedule">{{t "canvasops.disable_schedule"}}</span><span data-label="recurring_consent">{{t "canvasops.recurring_consent"}}</span><span data-label="history">{{t "canvasops.history"}}</span><span data-label="no_runs">{{t "canvasops.no_runs"}}</span><span data-label="refresh_runs">{{t "canvasops.refresh_runs"}}</span><span data-label="requested">{{t "canvasops.requested"}}</span><span data-label="waiting_agent">{{t "canvasops.waiting_agent"}}</span><span data-label="queued">{{t "canvasops.queued"}}</span><span data-label="running">{{t "canvasops.running"}}</span><span data-label="succeeded">{{t "canvasops.succeeded"}}</span><span data-label="failed">{{t "canvasops.failed"}}</span><span data-label="uncertain">{{t "canvasops.uncertain"}}</span><span data-label="show_result">{{t "canvasops.show_result"}}</span><span data-label="disabled">{{t "canvasops.disabled"}}</span><span data-label="enabled">{{t "canvasops.enabled"}}</span><span data-label="needs_review">{{t "canvasops.needs_review"}}</span><span data-label="sharing">{{t "canvasops.sharing"}}</span><span data-label="sharing_help">{{t "canvasops.sharing_help"}}</span><span data-label="shared_nodes">{{t "canvasops.shared_nodes"}}</span><span data-label="read_grant">{{t "canvasops.read_grant"}}</span><span data-label="append_grant">{{t "canvasops.append_grant"}}</span><span data-label="run_grant">{{t "canvasops.run_grant"}}</span><span data-label="save_grant">{{t "canvasops.save_grant"}}</span><span data-label="revoke_grant">{{t "canvasops.revoke_grant"}}</span><span data-label="grant_saved">{{t "canvasops.grant_saved"}}</span><span data-label="unconfigured">{{t "canvasops.unconfigured"}}</span><span data-label="operations_error">{{t "canvasops.operations_error"}}</span><span data-label="operations_loading">{{t "canvasops.operations_loading"}}</span><span data-label="save_first">{{t "canvasops.save_first"}}</span><span data-label="reload_result">{{t "canvasops.reload_result"}}</span><span data-label="attributed">{{t "canvasops.attributed"}}</span><span data-label="schedule_inactive">{{t "canvasops.schedule_inactive"}}</span><span data-label="none">{{t "canvasops.none"}}</span><span data-label="run_confirmed">{{t "canvasops.run_confirmed"}}</span> <span data-label="title">{{t "admin.canvas.title"}}</span>
+ <span data-label="description">{{t "admin.canvas.description"}}</span>
+ <span data-label="create">{{t "admin.canvas.create"}}</span>
+ <span data-label="board_title">{{t "admin.canvas.board_title"}}</span>
+ <span data-label="open">{{t "admin.canvas.open"}}</span>
+ <span data-label="empty_list">{{t "admin.canvas.empty_list"}}</span>
+ <span data-label="private">{{t "admin.canvas.private"}}</span>
+ <span data-label="updated">{{t "admin.canvas.updated"}}</span>
+ <span data-label="back">{{t "admin.canvas.back"}}</span>
+ <span data-label="close">{{t "admin.canvas.close"}}</span>
+ <span data-label="add">{{t "admin.canvas.add"}}</span>
+ <span data-label="note">{{t "admin.canvas.note"}}</span>
+ <span data-label="checklist">{{t "admin.canvas.checklist"}}</span>
+ <span data-label="link">{{t "admin.canvas.link"}}</span>
+ <span data-label="content">{{t "admin.canvas.content"}}</span>
+ <span data-label="widget">{{t "admin.canvas.widget"}}</span>
+ <span data-label="loading">{{t "admin.canvas.loading"}}</span>
+ <span data-label="saved">{{t "admin.canvas.saved"}}</span>
+ <span data-label="saving">{{t "admin.canvas.saving"}}</span>
+ <span data-label="unsaved">{{t "admin.canvas.unsaved"}}</span>
+ <span data-label="error">{{t "admin.canvas.error"}}</span>
+ <span data-label="load_error">{{t "admin.canvas.load_error"}}</span>
+ <span data-label="conflict">{{t "admin.canvas.conflict"}}</span>
+ <span data-label="reload">{{t "admin.canvas.reload"}}</span>
+ <span data-label="reload_confirm">{{t "admin.canvas.reload_confirm"}}</span>
+ <span data-label="retry">{{t "admin.canvas.retry"}}</span>
+ <span data-label="empty">{{t "admin.canvas.empty"}}</span>
+ <span data-label="empty_help">{{t "admin.canvas.empty_help"}}</span>
+ <span data-label="move_hint">{{t "admin.canvas.move_hint"}}</span>
+ <span data-label="move">{{t "admin.canvas.move"}}</span>
+ <span data-label="up">{{t "admin.canvas.up"}}</span>
+ <span data-label="down">{{t "admin.canvas.down"}}</span>
+ <span data-label="left">{{t "admin.canvas.left"}}</span>
+ <span data-label="right">{{t "admin.canvas.right"}}</span>
+ <span data-label="edit">{{t "admin.canvas.edit"}}</span>
+ <span data-label="remove">{{t "admin.canvas.remove"}}</span>
+ <span data-label="remove_confirm">{{t "admin.canvas.remove_confirm"}}</span>
+ <span data-label="card_title">{{t "admin.canvas.card_title"}}</span>
+ <span data-label="body">{{t "admin.canvas.body"}}</span>
+ <span data-label="items">{{t "admin.canvas.items"}}</span>
+ <span data-label="url">{{t "admin.canvas.url"}}</span>
+ <span data-label="content_id">{{t "admin.canvas.content_id"}}</span>
+ <span data-label="content_help">{{t "admin.canvas.content_help"}}</span>
+ <span data-label="select_widget">{{t "admin.canvas.select_widget"}}</span>
+ <span data-label="save_card">{{t "admin.canvas.save_card"}}</span>
+ <span data-label="cancel">{{t "admin.canvas.cancel"}}</span>
+ <span data-label="invalid">{{t "admin.canvas.invalid"}}</span>
+ <span data-label="limit">{{t "admin.canvas.limit"}}</span>
+ <span data-label="unavailable">{{t "admin.canvas.unavailable"}}</span>
+ <span data-label="refresh">{{t "admin.canvas.refresh"}}</span>
+ <span data-label="widget_error">{{t "admin.canvas.widget_error"}}</span>
+ <span data-label="widget_loading">{{t "admin.canvas.widget_loading"}}</span>
+ <span data-label="source">{{t "admin.canvas.source"}}</span>
+ <span data-label="no_widgets">{{t "admin.canvas.no_widgets"}}</span>
+ <span data-label="js_required">{{t "admin.canvas.js_required"}}</span>
+ <span data-label="count">{{t "admin.canvas.count"}}</span>
+ <span data-label="position">{{t "admin.canvas.position"}}</span> <span data-label="no_results">{{t "admin.canvas.no_results"}}</span><span data-label="search_error">{{t "admin.canvas.search_error"}}</span></div>
+ <header class="canvas-heading">
+  <div class="canvas-heading-title"><a href="/admin/canvases" data-canvas-leave>{{t "admin.canvas.back"}}</a><h1><label for="canvas-title" class="canvas-sr-only">{{t "admin.canvas.board_title"}}</label><input id="canvas-title" value="{{.Board.Title}}" maxlength="120" autocomplete="off" disabled></h1></div>
+  <button type="button" data-action="close" class="canvas-primary" disabled>{{t "admin.canvas.close"}}</button>
+ </header>
+ <div data-canvas-preset></div>
+ <div class="canvas-toolbar">
+  <div class="canvas-add"><label for="canvas-kind">{{t "admin.canvas.add"}}</label><select id="canvas-kind"><option value="note">{{t "admin.canvas.note"}}</option><option value="checklist">{{t "admin.canvas.checklist"}}</option><option value="link">{{t "admin.canvas.link"}}</option><option value="content">{{t "admin.canvas.content"}}</option>{{if .Widgets}}<option value="widget">{{t "admin.canvas.widget"}}</option>{{end}}<option value="source">{{t "canvasops.ops_source"}}</option><option value="prompt">{{t "canvasops.prompt"}}</option><option value="provider">{{t "canvasops.provider"}}</option><option value="agent">{{t "canvasops.agent"}}</option><option value="schedule">{{t "canvasops.schedule"}}</option></select><button type="button" data-action="add" disabled>＋ <span>{{t "admin.canvas.add"}}</span></button></div>
+  <div class="canvas-state"><span data-count></span><span data-status role="status" aria-live="polite">{{t "admin.canvas.loading"}}</span><button type="button" data-action="retry" hidden>{{t "admin.canvas.retry"}}</button><button type="button" data-action="reload" hidden>{{t "admin.canvas.reload"}}</button></div>
+ </div>
+ <p class="canvas-help">{{t "admin.canvas.move_hint"}}</p>
+ <div class="canvas-viewport" tabindex="0" aria-label="{{t "admin.canvas.title"}}"><div class="canvas-surface"><div class="canvas-empty" hidden><h2>{{t "admin.canvas.empty"}}</h2><p>{{t "admin.canvas.empty_help"}}</p></div><div data-canvas-cards></div></div></div>
+ <div data-canvas-operations></div>
+ <noscript><p>{{t "admin.canvas.js_required"}}</p></noscript>
+ <dialog class="canvas-dialog" aria-labelledby="canvas-dialog-title">
+  <form id="canvas-card-form">
+   <header><h2 id="canvas-dialog-title">{{t "admin.canvas.edit"}}</h2><button type="button" data-action="cancel" aria-label="{{t "admin.canvas.cancel"}}">×</button></header>
+   <label>{{t "admin.canvas.card_title"}}<input name="title" maxlength="120" required autocomplete="off"></label>
+   <label data-field="body">{{t "admin.canvas.body"}}<textarea name="body" rows="6" maxlength="4000"></textarea></label>
+   <label data-field="items">{{t "admin.canvas.items"}}<textarea name="items" rows="7"></textarea></label>
+   <label data-field="url">{{t "admin.canvas.url"}}<input name="url" type="text" dir="ltr" placeholder="https:// · /page" maxlength="2048"></label>
+   <label data-field="content">{{t "admin.canvas.content_id"}}<input name="content_query" type="search" autocomplete="off"><select name="content_id" size="5" aria-label="{{t "admin.canvas.content"}}"></select><span data-search-status role="status"></span><small>{{t "admin.canvas.content_help"}}</small></label>
+   <label data-field="widget">{{t "admin.canvas.select_widget"}}<select name="widget_id">{{range .Widgets}}<option value="{{.ID}}">{{.Title}}</option>{{end}}</select></label>
+   <div data-field="source"><label>{{t "canvasops.source_type"}}<select name="source_type"></select></label><label>{{t "canvasops.source_limit"}}<input name="source_limit" type="number" min="1" max="5" value="3"></label><small>{{t "canvasops.source_help"}}</small></div>
+   <div data-field="provider"><label>{{t "canvasops.generation_kind"}}<select name="generation_kind"><option value="text">{{t "canvasops.text"}}</option><option value="image">{{t "canvasops.image"}}</option><option value="video">{{t "canvasops.video"}}</option><option value="render">{{t "canvasops.render"}}</option></select></label><label>{{t "canvasops.provider"}}<select name="provider_id"></select></label><label>{{t "canvasops.preset_skill"}}<select name="preset_id"></select></label><small>{{t "canvasops.provider_help"}}</small></div>
+   <label data-field="agent">{{t "canvasops.agent"}}<select name="agent_id"></select><small>{{t "canvasops.agent_help"}}</small></label>
+   <label data-field="schedule">{{t "canvasops.interval"}}<select name="interval"><option value="hourly">{{t "canvasops.hourly"}}</option><option value="daily">{{t "canvasops.daily"}}</option><option value="weekly">{{t "canvasops.weekly"}}</option></select><small>{{t "canvasops.schedule_help"}}</small></label>
+   <p data-form-error role="alert" hidden></p>
+   <footer><button type="button" data-action="cancel">{{t "admin.canvas.cancel"}}</button><button type="submit" class="canvas-primary">{{t "admin.canvas.save_card"}}</button></footer>
+  </form>
+ </dialog>
+</section>
+{{end}}

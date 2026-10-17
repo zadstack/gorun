@@ -1,0 +1,247 @@
+package theme
+
+import (
+	"html/template"
+	"regexp"
+	"slices"
+	"strings"
+
+	"github.com/zadstack/gorun/internal/content"
+)
+
+// Site identity: colors, fonts, scheme, corner radius and custom CSS that a
+// theme declaring the "identity" capability (theme.json "supports") accepts
+// from Appearance → Theme settings, so a site gets its own look without
+// overriding theme parts. Values are stored per theme as
+// theme.<slug>.identity_* (and theme.<slug>.custom_css) and rendered by the
+// {{identity .}} func after the theme's own stylesheets. Empty values keep
+// the theme's design.
+//
+// The capability is not inherited: a child theme gets the settings only
+// when its own theme.json declares it, so brand themes built on a catalog
+// parent (with their own private tokens) are never restyled by settings
+// they were not designed for.
+
+const (
+	idAccent     = "identity_accent"
+	idBackground = "identity_background"
+	idText       = "identity_text"
+	idHeading    = "identity_heading_font"
+	idBody       = "identity_body_font"
+	idScheme     = "identity_scheme"
+	idRadius     = "identity_radius"
+	idCustomCSS  = "custom_css"
+
+	// maxCustomCSS bounds the custom stylesheet stored in settings.
+	maxCustomCSS = 20000
+)
+
+var hexColor = regexp.MustCompile(`^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$`)
+
+// supportIdentity is the theme.json "supports" value that enables identity.
+const supportIdentity = "identity"
+
+// supportsIdentity reports whether the theme itself (not its parents)
+// declares the identity capability.
+func supportsIdentity(info Info) bool { return slices.Contains(info.Supports, supportIdentity) }
+
+// identityFont is a font offered by the identity settings: Arabic-capable
+// families from Google Fonts (allowed by the CSP), plus the bundled Zad font.
+type identityFont struct {
+	Value, Label, Family, Google string
+}
+
+var identityFonts = []identityFont{
+	{"zad", "Zad", "Zad,'Zad Font',Tahoma,sans-serif", ""},
+	{"ibm-plex-arabic", "IBM Plex Sans Arabic", "'IBM Plex Sans Arabic',system-ui,sans-serif", "IBM+Plex+Sans+Arabic:wght@400;500;600;700"},
+	{"noto-naskh", "Noto Naskh Arabic", "'Noto Naskh Arabic',Georgia,serif", "Noto+Naskh+Arabic:wght@400;600;700"},
+	{"noto-kufi", "Noto Kufi Arabic", "'Noto Kufi Arabic',system-ui,sans-serif", "Noto+Kufi+Arabic:wght@400;600;700"},
+	{"readex", "Readex Pro", "'Readex Pro',system-ui,sans-serif", "Readex+Pro:wght@400;500;600;700"},
+	{"tajawal", "Tajawal", "Tajawal,system-ui,sans-serif", "Tajawal:wght@400;500;700"},
+	{"cairo", "Cairo", "Cairo,system-ui,sans-serif", "Cairo:wght@400;600;700"},
+	{"amiri", "Amiri", "Amiri,Georgia,serif", "Amiri:wght@400;700"},
+}
+
+var identityRadii = map[string]string{"square": "0px", "soft": "8px", "round": "16px"}
+
+func lbl(ar, en string) map[string]string { return map[string]string{"ar": ar, "en": en} }
+
+func identityFontOptions() []content.Option {
+	out := []content.Option{{Value: "", Label: lbl("خط القالب", "Theme font")}}
+	for _, f := range identityFonts {
+		out = append(out, content.Option{Value: f.Value, Label: lbl(f.Label, f.Label)})
+	}
+	return out
+}
+
+// identityFields are appended to the settings schema of a theme that
+// supports identity (a theme declaring the same key keeps its own definition).
+func identityFields() []content.Field {
+	fontHelp := lbl("كل الخطوط تدعم العربية. Zad مضمّن في GoRun؛ البقية تُحمَّل من Google Fonts.", "All fonts support Arabic. Zad ships with GoRun; the others load from Google Fonts.")
+	colorHelp := lbl("لون بصيغة hex مثل #1f6feb. اتركه فارغًا لاستخدام لون القالب.", "A hex color such as #1f6feb. Leave empty to keep the theme color.")
+	return []content.Field{
+		{Key: idAccent, Type: "text", Label: lbl("اللون الأساسي", "Accent color"), Help: colorHelp},
+		{Key: idBackground, Type: "text", Label: lbl("لون الخلفية", "Background color"), Help: colorHelp},
+		{Key: idText, Type: "text", Label: lbl("لون النص", "Text color"), Help: colorHelp},
+		{Key: idHeading, Type: "select", Label: lbl("خط العناوين", "Heading font"), Options: identityFontOptions(), Help: fontHelp},
+		{Key: idBody, Type: "select", Label: lbl("خط النص", "Body font"), Options: identityFontOptions(), Help: fontHelp},
+		{Key: idScheme, Type: "select", Label: lbl("الوضع", "Color scheme"), Options: []content.Option{
+			{Value: "", Label: lbl("حسب القالب", "Theme default")},
+			{Value: "light", Label: lbl("فاتح", "Light")},
+			{Value: "dark", Label: lbl("داكن", "Dark")},
+		}, Help: lbl("الداكن يطبّق لوحة ألوان داكنة متناسقة؛ الألوان التي تحددها أعلاه تبقى لها الأولوية.", "Dark applies a matching dark palette; colors set above still win.")},
+		{Key: idRadius, Type: "select", Label: lbl("الحواف", "Corners"), Options: []content.Option{
+			{Value: "", Label: lbl("حسب القالب", "Theme default")},
+			{Value: "square", Label: lbl("حادة", "Square")},
+			{Value: "soft", Label: lbl("ناعمة", "Soft")},
+			{Value: "round", Label: lbl("دائرية", "Round")},
+		}},
+		{Key: idCustomCSS, Type: "textarea", Label: lbl("CSS مخصص", "Custom CSS"),
+			Help: lbl("يُضاف بعد أنماط القالب ويبقى بعد تحديثه. بلا @import ولا وسوم HTML؛ بحد أقصى 20000 حرف.", "Added after the theme styles and kept across theme updates. No @import or HTML tags; up to 20000 characters.")},
+	}
+}
+
+// withIdentity returns schema plus the identity fields it does not define.
+func withIdentity(schema []content.Field) []content.Field {
+	for _, f := range identityFields() {
+		if !slices.ContainsFunc(schema, func(g content.Field) bool { return g.Key == f.Key }) {
+			schema = append(schema, f)
+		}
+	}
+	return schema
+}
+
+// validateIdentity checks identity values the content field rules cannot
+// express; it returns an i18n error key per invalid field.
+func validateIdentity(vals map[string]any) map[string]string {
+	errs := map[string]string{}
+	for _, k := range []string{idAccent, idBackground, idText} {
+		if v := displayValue(vals[k]); v != "" && !hexColor.MatchString(v) {
+			errs[k] = "theme.identity.error_color"
+		}
+	}
+	if v := displayValue(vals[idCustomCSS]); v != "" {
+		if err := checkCustomCSS(v); err != "" {
+			errs[idCustomCSS] = err
+		}
+	}
+	return errs
+}
+
+func checkCustomCSS(css string) string {
+	low := strings.ToLower(css)
+	switch {
+	case len(css) > maxCustomCSS:
+		return "theme.identity.error_css_size"
+	case strings.Contains(low, "<"), strings.Contains(low, "@import"), strings.Contains(low, "expression("), strings.Contains(low, "javascript:"):
+		return "theme.identity.error_css"
+	}
+	return ""
+}
+
+func findFont(v string) (identityFont, bool) {
+	i := slices.IndexFunc(identityFonts, func(f identityFont) bool { return f.Value == v })
+	if i < 0 {
+		return identityFont{}, false
+	}
+	return identityFonts[i], true
+}
+
+// identityOnAccent is the text color for an accent fill (buttons, CTA
+// bands): white when it reaches WCAG AA 4.5:1, else near-black, else black
+// (one of white and black always reaches 4.58:1). Themes print it as
+// var(--on-accent,#fff), so a light accent such as amber keeps its buttons
+// readable instead of being rejected.
+func identityOnAccent(accent string) string {
+	for _, c := range []string{"#ffffff", "#111111"} {
+		if contrast(c, accent) >= 4.5 {
+			return c
+		}
+	}
+	return "#000000"
+}
+
+// darkPalette is the scheme=dark base, overridden by explicit colors.
+var darkPalette = [][2]string{
+	{"--bg", "#111418"}, {"--panel", "#181c22"}, {"--panel-2", "#20252d"}, {"--ink", "#eef1f4"},
+	{"--muted", "#a3acb8"}, {"--line", "rgba(238,241,244,.14)"}, {"--line-strong", "rgba(238,241,244,.3)"},
+}
+
+// identityCSS builds the font links and stylesheet for the stored values
+// (already read from settings); "" when nothing is set. Every value is
+// validated again here, so a hand-edited setting cannot inject markup.
+func identityCSS(get func(key string) string, nonce string) template.HTML {
+	var vars [][2]string
+	var rules []string
+	var google []string
+	switch get(idScheme) {
+	case "dark":
+		vars = append(vars, darkPalette...)
+		vars = append(vars, [2]string{"color-scheme", "dark"})
+	case "light":
+		vars = append(vars, [2]string{"color-scheme", "light"})
+	}
+	color := func(key string, names ...string) {
+		if v := get(key); hexColor.MatchString(v) {
+			for _, n := range names {
+				vars = append(vars, [2]string{n, v})
+			}
+		}
+	}
+	color(idBackground, "--bg", "--gp-bg", "--paper")
+	color(idText, "--ink", "--gp-text")
+	color(idAccent, "--green", "--blue", "--accent", "--gp-accent", "--link")
+	if v := get(idAccent); hexColor.MatchString(v) {
+		on := identityOnAccent(v)
+		vars = append(vars, [2]string{"--green-hover", "color-mix(in srgb," + v + " 82%,#000)"}, [2]string{"--green-soft", "color-mix(in srgb," + v + " 12%,transparent)"},
+			[2]string{"--on-accent", on}, [2]string{"--gp-on-accent", on})
+	}
+	if f, ok := findFont(get(idBody)); ok {
+		vars = append(vars, [2]string{"--font", f.Family}, [2]string{"--font-ui", f.Family})
+		if f.Google != "" {
+			google = append(google, f.Google)
+		}
+		rules = append(rules, `:root:root[data-theme] body{font-family:var(--font)}`)
+	}
+	if f, ok := findFont(get(idHeading)); ok {
+		vars = append(vars, [2]string{"--font-heading", f.Family})
+		if f.Google != "" && !slices.Contains(google, f.Google) {
+			google = append(google, f.Google)
+		}
+		rules = append(rules, `:root:root[data-theme] :where(h1,h2,h3,h4){font-family:var(--font-heading)}`)
+	}
+	if r, ok := identityRadii[get(idRadius)]; ok {
+		vars = append(vars, [2]string{"--radius", r}, [2]string{"--gp-radius", r})
+	}
+	custom := get(idCustomCSS)
+	if checkCustomCSS(custom) != "" {
+		custom = ""
+	}
+	if len(vars) == 0 && len(rules) == 0 && custom == "" {
+		return ""
+	}
+	var b strings.Builder
+	if len(google) > 0 {
+		// Families come from identityFonts only; Google Fonts expects them unescaped.
+		q := "family=" + strings.Join(google, "&family=") + "&display=swap"
+		b.WriteString(`<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?` + template.HTMLEscapeString(q) + `">`)
+	}
+	b.WriteString(`<style nonce="` + template.HTMLEscapeString(nonce) + `" data-gorun-identity>`)
+	if len(vars) > 0 {
+		// :root:root[data-theme] (0,3,0) outranks the themes' html[data-theme="…"] tokens.
+		b.WriteString(":root:root[data-theme]{")
+		for _, v := range vars {
+			b.WriteString(v[0] + ":" + v[1] + ";")
+		}
+		b.WriteString("}")
+		if get(idScheme) == "dark" || get(idBackground) != "" || get(idText) != "" {
+			b.WriteString(":root:root[data-theme] body{background:var(--bg);color:var(--ink)}")
+		}
+	}
+	b.WriteString(strings.Join(rules, ""))
+	if custom != "" {
+		b.WriteString("\n/* custom css */\n" + custom)
+	}
+	b.WriteString("</style>")
+	return template.HTML(b.String())
+}

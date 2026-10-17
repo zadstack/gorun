@@ -1,0 +1,32 @@
+{{define "title"}}{{t "content.types.title"}}{{end}}
+{{define "content"}}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <h1 class="text-[22px] font-bold">{{t "content.types.title"}}</h1>
+  <a href="/admin/types/new" class="h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center justify-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "content.types.new"}}</span></a>
+</div>
+<div class="rounded border border-line bg-panel overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="bg-panel-2">
+      <tr>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.types.name"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.types.slug"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted">{{t "content.types.fields"}}</th>
+        <th scope="col" class="px-3 py-2"><span class="sr-only">{{t "content.types.flags"}}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Types}}
+      <tr class="border-t border-line hover:bg-bg">
+        <td class="px-3 py-2"><a href="/admin/types/{{.Slug}}" class="inline-flex items-center gap-2 font-medium text-blue hover:text-blue-hover">{{icon .Icon}}<span>{{.Name}}</span></a></td>
+        <td class="px-3 py-2 font-mono text-xs">{{.Slug}}</td>
+        <td class="px-3 py-2 text-end font-mono">{{.Fields}}</td>
+        <td class="px-3 py-2 text-end space-x-1 rtl:space-x-reverse">
+          {{if .System}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-2 py-0.5 text-xs text-muted">{{t "content.types.system"}}</span>{{end}}
+          {{if .Public}}<span class="inline-flex rounded-chip border border-green bg-green-soft px-2 py-0.5 text-xs text-green">{{t "content.types.public"}}</span>{{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}

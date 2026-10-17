@@ -1,0 +1,18 @@
+{{/* /search?q= */}}
+{{part "header" .}}
+{{$q := index .Query "q"}}
+<h1 class="text-[22px] font-bold mb-4">{{with .Extra.title}}{{.}}{{else}}{{t "search_results"}}{{end}}</h1>
+<form action="{{url "/search"}}" method="get" role="search" class="reading-search mb-6 flex gap-2">
+  <label for="search-q" class="sr-only">{{t "search"}}</label>
+  <input id="search-q" name="q" type="search" value="{{$q}}" placeholder="{{t "search_placeholder"}}" class="h-9 min-w-0 flex-1 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  <button type="submit" class="h-9 rounded bg-green px-4 font-medium text-on-accent hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "search"}}</button>
+</form>
+{{if $q}}
+  {{if .Items}}
+  <div class="default-content-grid grid gap-4 sm:grid-cols-2">{{range .Items}}{{component "card" .}}{{end}}</div>
+  {{component "pagination" .}}
+  {{else}}
+  <p class="default-empty rounded border border-line bg-panel p-6 text-muted">{{t "no_results"}}</p>
+  {{end}}
+{{end}}
+{{part "footer" .}}

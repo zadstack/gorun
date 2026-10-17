@@ -1,0 +1,109 @@
+{{/* Data: wpmigrate.page (Steps, M, Validate) — step 7 */}}
+{{define "title"}}{{t "wpmigrate.step.validate"}} · {{t "wpmigrate.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "wpmigrate.validate.title"}}</h1>
+<p class="text-muted mb-3">{{t "wpmigrate.validate.intro"}}</p>
+<nav aria-label="{{t "wpmigrate.steps"}}" class="mb-4 overflow-x-auto">
+  <ol class="flex gap-1 min-w-max">
+    {{range .Steps}}
+    <li>
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-green bg-green-soft text-green{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+        <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
+      </a>
+    </li>
+    {{end}}
+  </ol>
+</nav>
+<div class="rounded border border-line bg-panel p-4 mb-4 flex flex-wrap items-center gap-2">
+  <form method="post" action="/admin/migrations/{{.M.ID}}/validate">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "refresh-cw"}}<span>{{t "wpmigrate.validate.run"}}</span></button>
+  </form>
+  {{if .Validate}}<a href="/admin/migrations/{{.M.ID}}/report.md" download class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "download"}}<span>{{t "wpmigrate.validate.download"}}</span></a>{{end}}
+</div>
+{{with .Validate}}
+<section class="rounded border border-line bg-panel p-4 mb-4" aria-labelledby="val-summary" data-readiness="{{.Readiness}}">
+  <h2 id="val-summary" class="text-base font-bold mb-1">{{t "wpmigrate.validate.summary"}}</h2>
+  <p class="font-bold">{{t (print "wpmigrate.validate.readiness." .Readiness)}}</p>
+  <p class="text-xs text-muted mb-2">{{t "wpmigrate.validate.summary_help"}}</p>
+  <p class="text-xs text-muted mb-2">{{t "wpmigrate.validate.scope"}}: {{range .Scope}}<span>{{t (print "wpmigrate.validate.scope." .)}} · </span>{{end}}</p>
+  <p class="text-xs text-muted mb-2">{{range .Limitations}}{{t (print "wpmigrate.validate.limitation." .)}}{{end}}</p>
+  <dl class="flex flex-wrap gap-x-5 gap-y-1 text-xs">
+    <div><dt class="inline">{{t "wpmigrate.validate.errors"}}:</dt> <dd class="inline font-mono">{{len .Errors}}</dd></div>
+    <div><dt class="inline">{{t "wpmigrate.validate.warnings"}}:</dt> <dd class="inline font-mono">{{len .Warnings}}</dd></div>
+    <div><dt class="inline">{{t "wpmigrate.validate.unverified"}}:</dt> <dd class="inline font-mono">{{len .UnverifiedChecks}}</dd></div>
+    <div><dt class="inline">{{t "wpmigrate.validate.media_checked"}}:</dt> <dd class="inline font-mono">{{.MediaChecked}}</dd></div>
+  </dl>
+  {{if .Errors}}<h3 class="font-bold mt-3 text-red">{{t "wpmigrate.validate.errors"}}</h3><ul class="space-y-2 mt-1">{{range .Errors}}
+    <li class="text-xs" data-kind="{{.Kind}}" data-code="{{.Code}}"><span class="font-mono">{{.Kind}} · {{.Code}}</span>
+      <span class="block break-all font-mono" dir="ltr">{{.OldRef}} → {{.NewRef}}</span>
+      <span class="text-muted">{{t "wpmigrate.validate.content_id"}}: {{.ContentID}} · {{if .Status}}HTTP {{.Status}} · {{end}}{{.CheckedAt}}</span>
+    </li>{{end}}</ul>{{end}}
+  {{if .Warnings}}<h3 class="font-bold mt-3 text-amber">{{t "wpmigrate.validate.warnings"}}</h3><ul class="space-y-2 mt-1">{{range .Warnings}}
+    <li class="text-xs" data-kind="{{.Kind}}" data-code="{{.Code}}"><span class="font-mono">{{.Kind}} · {{.Code}}</span>
+      <span class="block break-all font-mono" dir="ltr">{{.OldRef}} → {{.NewRef}}</span>
+      <span class="text-muted">{{t "wpmigrate.validate.content_id"}}: {{.ContentID}} · {{.CheckedAt}}</span>
+    </li>{{end}}</ul>{{end}}
+</section>
+{{if .UnverifiedChecks}}
+<section class="rounded border border-amber bg-panel p-4 mb-4" aria-labelledby="val-unverified">
+  <h2 id="val-unverified" class="text-base font-bold mb-1">{{t "wpmigrate.validate.unverified"}}</h2>
+  <p class="text-xs text-muted mb-2">{{t "wpmigrate.validate.unverified_help"}}</p>
+  <p class="text-xs mb-2">{{t "wpmigrate.validate.unverified_summary" (len .UnverifiedChecks)}}</p>
+  <ul class="space-y-2">{{range .UnverifiedChecks}}<li class="text-xs" data-outcome="{{.Outcome}}" data-code="{{.Code}}">
+    <span>{{t (print "wpmigrate.check.kind." .Kind)}}</span> <span class="font-mono break-all" dir="ltr">{{.Path}}</span>
+    <span>{{t (print "wpmigrate.check.outcome." .Outcome)}} · {{t (print "wpmigrate.check.reason." .Reason)}}</span>
+    <span class="block font-mono break-all" dir="ltr">{{.OldRef}} → {{.NewRef}}</span>
+    <span class="text-muted">{{t "wpmigrate.validate.content_id"}}: {{.ContentID}} · {{.CheckedAt}}</span>
+  </li>{{end}}</ul>
+</section>
+{{end}}
+<section class="rounded border border-line bg-panel mb-4 overflow-x-auto" aria-labelledby="val-counts">
+  <h2 id="val-counts" class="px-4 py-3 border-b border-line text-base font-bold">{{t "wpmigrate.validate.counts"}}</h2>
+  <table class="w-full">
+    <thead class="bg-panel-2"><tr>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.validate.kind"}}</th>
+      <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.validate.source"}}</th>
+      <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.validate.imported"}}</th>
+      <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.item.skipped"}}</th>
+      <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.item.failed"}}</th>
+    </tr></thead>
+    <tbody>
+      {{range .Counts}}
+      <tr class="border-t border-line"><th scope="row" class="px-3 py-2 text-start font-normal">{{t (print "wpmigrate.kind." .Kind)}}</th>
+        <td class="px-3 py-2 text-end font-mono">{{.Source}}</td><td class="px-3 py-2 text-end font-mono">{{.Imported}}</td>
+        <td class="px-3 py-2 text-end font-mono">{{.Skipped}}</td><td class="px-3 py-2 text-end font-mono {{if .Failed}}text-red{{end}}">{{.Failed}}</td></tr>
+      {{end}}
+    </tbody>
+  </table>
+</section>
+<div class="grid gap-3 md:grid-cols-2 mb-4">
+  <section class="rounded border {{if .RenderFailures}}border-red{{else}}border-line{{end}} bg-panel p-4">
+    <h2 class="text-base font-bold mb-1">{{t "wpmigrate.validate.render"}}</h2>
+    <p class="text-xs text-muted mb-2">{{t "wpmigrate.validate.render_summary" .RenderChecked (len .RenderFailures)}}</p>
+    <ul class="space-y-1">{{range .RenderFailures}}<li class="font-mono text-xs break-all" dir="ltr">{{.Path}} → {{.Status}}</li>{{end}}</ul>
+  </section>
+  <section class="rounded border {{if .BrokenLinks}}border-amber{{else}}border-line{{end}} bg-panel p-4">
+    <h2 class="text-base font-bold mb-2">{{t "wpmigrate.validate.broken_links"}}</h2>
+    {{if .BrokenLinks}}<ul class="space-y-1">{{range .BrokenLinks}}<li class="text-xs"><span>{{.Title}}</span> <span class="font-mono break-all" dir="ltr">{{.URL}}</span></li>{{end}}</ul>{{else}}<p class="text-muted">{{t "wpmigrate.bucket.none"}}</p>{{end}}
+  </section>
+  <section class="rounded border {{if .MissingMedia}}border-amber{{else}}border-line{{end}} bg-panel p-4">
+    <h2 class="text-base font-bold mb-2">{{t "wpmigrate.validate.missing_media"}}</h2>
+    {{if .MissingMedia}}<ul class="space-y-1">{{range .MissingMedia}}<li class="text-xs"><span>{{.Title}}</span> <span class="font-mono break-all" dir="ltr">{{.URL}}</span></li>{{end}}</ul>{{else}}<p class="text-muted">{{t "wpmigrate.bucket.none"}}</p>{{end}}
+  </section>
+  <section class="rounded border border-line bg-panel p-4">
+    <h2 class="text-base font-bold mb-1">{{t "wpmigrate.validate.shortcodes"}}</h2>
+    <p class="text-xs text-muted mb-2">{{t "wpmigrate.validate.shortcodes_help"}}</p>
+    {{if .Shortcodes}}<ul class="flex flex-wrap gap-1">{{range $tag, $n := .Shortcodes}}<li class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-[11px]">[{{$tag}}] ×{{$n}}</li>{{end}}</ul>{{else}}<p class="text-muted">{{t "wpmigrate.bucket.none"}}</p>{{end}}
+  </section>
+</div>
+<section class="rounded border border-line bg-panel mb-4" aria-labelledby="val-slugs">
+  <h2 id="val-slugs" class="px-4 py-3 border-b border-line text-base font-bold">{{t "wpmigrate.validate.slug_changes"}}</h2>
+  {{if .SlugChanges}}
+  <ul class="divide-y divide-line">{{range .SlugChanges}}<li class="px-4 py-1.5 text-xs flex flex-wrap gap-2"><span class="font-mono">{{.Type}}</span><span class="font-mono">{{.From}}</span><span aria-hidden="true">→</span><span class="font-mono">{{.To}}</span></li>{{end}}</ul>
+  {{else}}<p class="p-4 text-muted">{{t "wpmigrate.bucket.none"}}</p>{{end}}
+</section>
+{{else}}
+<p class="rounded border border-line bg-panel p-6 text-center text-muted">{{t "wpmigrate.validate.empty"}}</p>
+{{end}}
+{{end}}

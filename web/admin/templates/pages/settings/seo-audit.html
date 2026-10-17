@@ -1,0 +1,23 @@
+{{define "title"}}{{t "seoaudit.title"}}{{end}}
+{{define "content"}}
+<div class="min-w-0 grid gap-4">
+<header class="flex flex-wrap items-start justify-between gap-3"><div class="min-w-0"><h1 class="text-[22px] font-bold">{{t "seoaudit.title"}}</h1><p class="text-muted max-w-3xl">{{t "seoaudit.intro"}}</p></div><a href="/admin/settings/seo" class="min-h-11 inline-flex items-center px-3 rounded border border-line">{{t "seoaudit.settings"}}</a></header>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="rounded border border-line bg-panel p-3"><b class="block text-2xl font-mono">{{.Scanned}} / {{.Total}}</b><span>{{t "seoaudit.scanned"}}</span></div>
+<div class="rounded border border-line bg-panel p-3"><b class="block text-2xl font-mono">{{.Attention}}</b><span>{{t "seoaudit.attention"}}</span></div>
+<div class="rounded border border-line bg-panel p-3"><b class="block text-2xl font-mono">{{.NoIndex}}</b><span>{{t "seoaudit.noindex"}}</span></div>
+<div class="rounded border border-line bg-panel p-3"><b class="block text-2xl font-mono">{{.Duplicate}}</b><span>{{t "seoaudit.duplicates"}}</span></div>
+</div>
+<p class="text-sm text-muted">{{t "seoaudit.checked"}} <time class="font-mono" dir="ltr">{{.At}}</time></p>
+{{if .Limited}}<p role="status" class="p-3 rounded border border-amber">{{t "seoaudit.limited"}}</p>{{end}}
+<p class="p-3 rounded border border-line bg-panel">{{t "seoaudit.performance"}}</p>
+<p class="text-sm text-muted">{{t "seoaudit.scope"}} {{t "seoaudit.noindex_note"}}</p>
+{{if .Rows}}
+<div class="min-w-0 overflow-x-auto rounded border border-line bg-panel" tabindex="0" role="region" aria-label="{{t "seoaudit.findings"}}">
+<table class="w-full text-sm"><thead><tr class="border-b border-line text-start"><th class="text-start p-3">{{t "seoaudit.page"}}</th><th class="text-start p-3">{{t "seoaudit.findings"}}</th><th class="p-3">{{t "seoaudit.edit"}}</th></tr></thead><tbody>
+{{range .Rows}}<tr class="border-b border-line last:border-0 align-top"><td class="p-3"><strong class="break-words">{{.Title}}</strong><small class="block text-muted">{{.Type}} · {{.Locale}}</small>{{if .NoIndex}}<small class="block">noindex</small>{{end}}</td><td class="p-3">{{if .Issues}}<ul class="grid gap-1">{{range .Issues}}<li>{{t .}}</li>{{end}}</ul>{{else}}<span class="text-muted">{{t "seoaudit.clean"}}</span>{{end}}</td><td class="p-3"><a href="/admin/content/{{.Type}}/{{.ID}}" class="inline-flex min-h-11 items-center px-3 rounded border border-line whitespace-nowrap">{{t "seoaudit.edit"}}</a></td></tr>{{end}}
+</tbody></table></div>
+{{else}}<p>{{t "seoaudit.empty"}}</p>{{end}}
+<a class="text-blue underline min-h-11 inline-flex items-center" href="https://developers.google.com/search/docs/fundamentals/get-started-developers" target="_blank" rel="noopener noreferrer">{{t "seoaudit.reference"}}</a>
+</div>
+{{end}}

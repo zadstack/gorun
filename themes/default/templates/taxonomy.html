@@ -1,0 +1,10 @@
+{{/* A term archive (/category/news). */}}
+{{part "header" .}}
+{{with .Term}}
+<header class="mb-6">
+  <h1 class="text-[22px] font-bold">{{.Name}}</h1>
+  {{with .Description}}<p class="mt-2 text-muted">{{.}}</p>{{end}}
+</header>
+{{end}}
+{{component "list" .}}
+{{part "footer" .}}

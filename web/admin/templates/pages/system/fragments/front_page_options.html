@@ -1,0 +1,11 @@
+{{/* Data: pickerPage — options for the Settings → General front-page picker. */}}
+{{define "content"}}
+{{if .Items}}
+<ul role="listbox" class="max-h-64 overflow-y-auto py-1">
+  {{range .Items}}<li role="option" aria-selected="false"><button type="button" data-id="{{.ID}}" data-title="{{.Title}}" class="w-full text-start px-3 py-1.5 hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{.Title}} <span class="font-mono text-[11px] text-muted">{{.Type}}</span></button></li>{{end}}
+  <li role="option" aria-selected="false"><button type="button" data-id="" data-title="" class="w-full text-start px-3 py-1.5 text-muted hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{t "admin.settings.front_page_none"}}</button></li>
+</ul>
+{{else}}
+<p class="px-3 py-2 text-muted">{{t "admin.search.no_results"}}</p>
+{{end}}
+{{end}}

@@ -1,0 +1,76 @@
+{{define "title"}}{{.PluralName}}{{end}}
+{{define "content"}}
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <h1 class="text-[22px] font-bold">{{.PluralName}}</h1>
+  {{if .CanCreate}}<a href="{{.BaseURL}}/new" class="h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "content.list.new" .TypeName}}</span></a>{{end}}
+</div>
+<form id="content-filters" role="search" class="flex flex-wrap gap-2 mb-3" action="{{.BaseURL}}" method="get">
+  <label class="sr-only" for="content-search">{{t "content.list.search"}}</label>
+  <input id="content-search" name="search" type="search" value="{{.Search}}" placeholder="{{t "content.list.search"}}" dir="auto"
+         hx-get="{{.BaseURL}}" hx-trigger="keyup changed delay:300ms, search" hx-include="#content-filters"
+         hx-target="#content-list" hx-select="#content-list" hx-swap="outerHTML" hx-push-url="true"
+         class="h-9 w-full sm:w-72 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  <label class="sr-only" for="content-status">{{t "content.list.status"}}</label>
+  <select id="content-status" name="status" hx-get="{{.BaseURL}}" hx-trigger="change" hx-include="#content-filters"
+          hx-target="#content-list" hx-select="#content-list" hx-swap="outerHTML" hx-push-url="true"
+          class="h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <option value="">{{t "content.list.all_statuses"}}</option>
+    {{range .Statuses}}<option value="{{.}}" {{if eq (printf "%s" .) $.Status}}selected{{end}}>{{t (printf "content.status.%s" .)}}</option>{{end}}
+  </select>
+  <noscript><button type="submit" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.list.filter"}}</button></noscript>
+</form>
+<div id="content-list">
+  <form method="post" action="{{.BaseURL}}/bulk" x-data data-confirm="{{t "content.list.bulk_confirm"}}">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    {{if and .CanDelete .Rows}}
+    <div class="flex items-center gap-2 mb-2">
+      <label class="sr-only" for="bulk-action">{{t "content.list.bulk"}}</label>
+      <select id="bulk-action" name="action" class="h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <option value="trash">{{t "content.list.bulk_trash"}}</option>
+        {{if eq .Status "trash"}}<option value="delete">{{t "content.list.bulk_delete"}}</option>{{end}}
+      </select>
+      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.list.apply"}}</button>
+    </div>
+    {{end}}
+    <div class="rounded border border-line bg-panel overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-panel-2">
+          <tr class="text-start">
+            {{if .CanDelete}}<th scope="col" class="w-10 px-3 py-2"><input type="checkbox" aria-label="{{t "content.list.select_all"}}" class="h-4 w-4 accent-[var(--green)]"
+                @change="$root.querySelectorAll('input[name=ids]').forEach(c => c.checked = $event.target.checked)"></th>{{end}}
+            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.list.title"}}</th>
+            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.list.status"}}</th>
+            <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted">{{t "content.list.updated"}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .Rows}}
+          <tr class="border-t border-line hover:bg-bg">
+            {{if $.CanDelete}}<td class="px-3 py-2"><input type="checkbox" name="ids" value="{{.ID}}" aria-label="{{t "content.list.select"}} {{.Title}}" class="h-4 w-4 accent-[var(--green)]"></td>{{end}}
+            <td class="px-3 py-2"><a href="{{.EditURL}}" class="font-medium text-blue hover:text-blue-hover" dir="auto">{{if .Title}}{{.Title}}{{else}}{{t "content.list.untitled"}}{{end}}</a>
+              <div class="font-mono text-xs text-muted" dir="auto">{{.Slug}}</div></td>
+            <td class="px-3 py-2">{{template "content/status_chip" .Status}}</td>
+            <td class="px-3 py-2 text-end font-mono text-xs text-muted">{{date .UpdatedAt}}</td>
+          </tr>
+          {{else}}
+          <tr><td colspan="4" class="px-3 py-8 text-center text-muted">{{t "content.list.empty"}}</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+  </form>
+  {{if gt .Links.Pages 1}}
+  <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Links.Page .Links.Pages}}">
+    <span class="font-mono text-muted">{{t "core.pagination.summary" .Links.Page .Links.Pages}}</span>
+    <div class="flex gap-2">
+      {{with .Links.PrevURL}}<a href="{{.}}" hx-get="{{.}}" hx-target="#content-list" hx-select="#content-list" hx-swap="outerHTML" hx-push-url="true" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.pagination.prev"}}</a>{{end}}
+      {{with .Links.NextURL}}<a href="{{.}}" hx-get="{{.}}" hx-target="#content-list" hx-select="#content-list" hx-swap="outerHTML" hx-push-url="true" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.pagination.next"}}</a>{{end}}
+    </div>
+  </nav>
+  {{end}}
+</div>
+{{end}}
+
+{{define "content/status_chip"}}
+<span class="inline-flex items-center rounded-chip border px-2 py-0.5 text-xs {{if eq . "published"}}border-green bg-green-soft text-green{{else if eq . "scheduled"}}border-blue bg-blue-soft text-blue{{else if eq . "pending"}}border-amber bg-amber-soft text-amber-text{{else if eq . "trash"}}border-red bg-red-soft text-red{{else}}border-line bg-panel-2 text-muted{{end}}">{{t (printf "content.status.%s" .)}}</span>
+{{end}}

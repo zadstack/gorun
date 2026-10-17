@@ -1,0 +1,146 @@
+{{/* Data: keysPage. .Plaintext is set only in the create response. */}}
+{{define "title"}}{{t "admin.keys.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<div class="admin-contained admin-key-directory">
+<h1 class="text-[22px] font-bold mb-4">{{t "admin.keys.title"}}</h1>
+{{if .Plaintext}}
+<section role="status" class="mb-4 rounded border border-green bg-green-soft p-4" x-data="{ copied: false }" data-key-created hx-history="false">
+  <h2 class="text-base font-bold text-green mb-1">{{t "admin.keys.created_title"}}</h2>
+  <p class="mb-3 text-ink">{{t "admin.keys.created_help"}}</p>
+  <div class="flex flex-wrap gap-2">
+    <label class="sr-only" for="k-plaintext">{{t "admin.keys.plaintext"}}</label>
+    <input id="k-plaintext" x-ref="key" readonly value="{{.Plaintext}}" dir="ltr" @focus="$el.select()"
+           class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <button type="button" @click="navigator.clipboard.writeText($refs.key.value).then(() => copied = true)"
+            class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+      {{icon "copy"}}<span data-label-copy="{{t "admin.keys.copy"}}" data-label-copied="{{t "admin.keys.copied"}}" x-text="copied ? $el.dataset.labelCopied : $el.dataset.labelCopy">{{t "admin.keys.copy"}}</span>
+    </button>
+  </div>
+</section>
+{{end}}
+{{if .AgentModel}}{{template "agent-model-editor" .AgentModel}}{{end}}
+<script defer src="{{asset "agent-models.js"}}"></script>
+<div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_26rem]">
+  <section class="rounded border border-line bg-panel overflow-x-auto" aria-labelledby="k-list" tabindex="0">
+    <div class="flex flex-wrap items-center justify-between gap-2 p-4 pb-2">
+      <h2 id="k-list" class="text-base font-bold">{{t "admin.keys.list"}}</h2>
+      <nav class="flex gap-1 text-xs" aria-label="{{t "admin.keys.filter"}}">
+        <a href="/admin/agents/keys" class="rounded-chip border border-line px-2 py-1 {{if not .Filter}}bg-panel-2 font-medium{{end}}" {{if not .Filter}}aria-current="page"{{end}}>{{t "admin.keys.filter_all"}}</a>
+        <a href="/admin/agents/keys?status=active" class="rounded-chip border border-line px-2 py-1 {{if eq .Filter "active"}}bg-panel-2 font-medium{{end}}" {{if eq .Filter "active"}}aria-current="page"{{end}}>{{t "admin.keys.filter_active"}}</a>
+        <a href="/admin/agents/keys?status=inactive" class="rounded-chip border border-line px-2 py-1 {{if eq .Filter "inactive"}}bg-panel-2 font-medium{{end}}" {{if eq .Filter "inactive"}}aria-current="page"{{end}}>{{t "admin.keys.filter_inactive"}}</a>
+      </nav>
+    </div>
+    {{if .Keys}}
+    <table class="w-full text-start">
+      <thead class="border-b border-line"><tr>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.keys.name"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.keys.scopes"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted hidden md:table-cell">{{t "admin.keys.last_used"}}</th>
+        <th scope="col" class="w-24 px-3 py-2"><span class="sr-only">{{t "admin.keys.revoke"}}</span></th>
+      </tr></thead>
+      <tbody class="divide-y divide-line">
+        {{range .Keys}}
+        <tr data-key="{{.ID}}">
+          <td class="px-3 py-2 align-top">
+            <p class="font-medium">{{.Name}} <span class="ms-1 inline-flex rounded-chip border border-line {{if eq .Kind "agent"}}bg-blue-soft text-blue{{else}}bg-panel-2 text-muted{{end}} px-1.5 py-0.5 text-[11px]" data-key-kind="{{.Kind}}">{{if eq .Kind "agent"}}{{t "admin.keys.kind_agent"}}{{else}}{{t "admin.keys.kind_api"}}{{end}}</span></p>
+            {{if .Model}}<p class="font-mono text-xs text-muted mt-1" dir="ltr" data-agent-selected-model>{{.Model}} · {{.ModelMode}}</p>{{end}}
+            {{if .CanModel}}<a class="inline-block text-xs text-green underline mt-1" href="/admin/agents/keys?agent_model={{.ID}}">{{t "agentmodels.configure"}}</a>{{end}}
+            <p class="font-mono text-[11px] text-muted" dir="ltr">gp_{{.Prefix}}…</p>
+            <p class="text-[11px] text-muted" dir="ltr">{{.Owner}} · {{t "admin.keys.per_min" .RatePerMin}}</p>
+            {{if .RevokedAt}}<span class="mt-1 inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px] font-mono">{{t "admin.keys.revoked_on" (date .RevokedAt)}}</span>
+            {{else if .Expired}}<span class="mt-1 inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px] font-mono">{{t "admin.keys.expired"}}</span>
+            {{else if .ExpiresAt}}<span class="mt-1 inline-flex rounded-chip border border-line px-1.5 py-0.5 text-[11px] font-mono text-muted">{{t "admin.keys.expires_on" (date .ExpiresAt)}}</span>{{end}}
+          </td>
+          <td class="px-3 py-2 align-top"><ul class="flex flex-wrap gap-1">{{range .Scopes}}<li class="rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{.}}</li>{{end}}</ul></td>
+          <td class="px-3 py-2 align-top font-mono text-xs text-muted hidden md:table-cell">{{date .LastUsedAt}}<p class="mt-1" data-key-uses>{{t "admin.keys.uses" .UseCount}}</p>{{if .RotatedFrom}}<p class="mt-1">{{t "admin.keys.rotated"}}</p>{{end}}</td>
+          <td class="px-3 py-2 align-top text-end">
+            {{if .CanRotate}}
+            <form method="post" action="/admin/agents/keys/{{.ID}}/rotate" class="mb-2 flex flex-col items-end gap-1" data-confirm="{{t "admin.keys.rotate_confirm" .Name}}">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <label class="sr-only" for="grace-{{.ID}}">{{t "admin.keys.grace"}}</label>
+              <select id="grace-{{.ID}}" name="grace" class="h-8 rounded border border-line bg-panel px-1 text-xs">
+                <option value="0">{{t "admin.keys.grace_none"}}</option>
+                <option value="3600">{{t "admin.keys.grace_hour"}}</option>
+                <option value="86400">{{t "admin.keys.grace_day"}}</option>
+              </select>
+              <button type="submit" class="h-8 px-2.5 whitespace-nowrap rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.keys.rotate"}}</button>
+            </form>
+            {{end}}
+            {{if .Active}}
+            <form method="post" action="/admin/agents/keys/{{.ID}}/revoke" data-confirm="{{t "admin.keys.revoke_confirm" .Name}}">
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <button type="submit" class="h-8 px-2.5 whitespace-nowrap rounded border border-red text-red bg-red-soft hover:border-red focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{t "admin.keys.revoke"}}</button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="px-4 pb-4 text-muted">{{t "admin.keys.empty"}}</p>
+    {{end}}
+  </section>
+
+  <form method="post" action="/admin/agents/keys" class="rounded border border-line bg-panel p-4 space-y-4" novalidate
+        x-data="{ all: {{if .Form.All}}true{{else}}false{{end}} }" aria-labelledby="k-new">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <h2 id="k-new" class="text-base font-bold">{{t "admin.keys.new"}}</h2>
+    <fieldset>
+      <legend class="font-medium mb-1">{{t "admin.keys.kind"}}</legend>
+      <div class="grid gap-2 sm:grid-cols-2">
+        <label class="flex items-start gap-2 rounded border border-line bg-bg px-3 py-2">
+          <input type="radio" name="kind" value="agent" {{if ne .Form.Kind "api"}}checked{{end}} class="mt-0.5 accent-[var(--green)]">
+          <span><span class="block">{{t "admin.keys.kind_agent"}}</span><span class="block text-xs text-muted">{{t "admin.keys.kind_agent_help"}}</span></span>
+        </label>
+        <label class="flex items-start gap-2 rounded border border-line bg-bg px-3 py-2">
+          <input type="radio" name="kind" value="api" {{if eq .Form.Kind "api"}}checked{{end}} class="mt-0.5 accent-[var(--green)]">
+          <span><span class="block">{{t "admin.keys.kind_api"}}</span><span class="block text-xs text-muted">{{t "admin.keys.kind_api_help"}}</span></span>
+        </label>
+      </div>
+      {{template "partials/field_errors" (index .Fields "kind")}}
+    </fieldset>
+    <div>
+      <label for="k-name" class="block font-medium mb-1">{{t "admin.keys.name"}}</label>
+      <input id="k-name" name="name" value="{{.Form.Name}}" required class="h-9 w-full rounded border {{if index .Fields "name"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      {{template "partials/field_errors" (index .Fields "name")}}
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="k-rate" class="block font-medium mb-1">{{t "admin.keys.rate"}}</label>
+        <input id="k-rate" name="rate" type="number" min="0" max="10000" value="{{.Form.Rate}}" dir="ltr" class="h-9 w-full rounded border {{if index .Fields "rate"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        {{template "partials/field_errors" (index .Fields "rate")}}
+      </div>
+      <div>
+        <label for="k-expires" class="block font-medium mb-1">{{t "admin.keys.expires"}}</label>
+        <input id="k-expires" name="expires" type="date" value="{{.Form.Expires}}" dir="ltr" aria-describedby="k-expires-help" class="h-9 w-full rounded border {{if index .Fields "expires"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <p id="k-expires-help" class="mt-1 text-xs text-muted">{{t "admin.keys.expires_help"}}</p>
+        {{template "partials/field_errors" (index .Fields "expires")}}
+      </div>
+    </div>
+    <fieldset>
+      <legend class="font-medium mb-1">{{t "admin.keys.scopes"}}</legend>
+      <label class="flex items-center gap-2 rounded border border-line bg-bg px-3 py-2 mb-2">
+        <input type="checkbox" name="all" value="1" x-model="all" class="accent-[var(--green)]">
+        <span><span class="font-mono text-xs">*</span> — {{t "admin.keys.all_scopes"}}</span>
+      </label>
+      <div class="space-y-3 max-h-80 overflow-y-auto pe-1" :class="all && 'opacity-50'">
+        {{range .Groups}}
+        <fieldset :disabled="all">
+          <legend class="font-mono text-[11px] uppercase tracking-wide text-muted mb-1">{{.Module}}</legend>
+          <ul class="grid gap-1 sm:grid-cols-2">
+            {{range .Perms}}
+            <li><label class="flex items-start gap-2"><input type="checkbox" name="scopes" value="{{.Name}}" {{if .Checked}}checked{{end}} class="mt-0.5 accent-[var(--green)]"><span><span class="block">{{.Label}}</span><span class="block font-mono text-[11px] text-muted">{{.Name}}</span></span></label></li>
+            {{end}}
+          </ul>
+        </fieldset>
+        {{end}}
+      </div>
+      {{template "partials/field_errors" (index .Fields "scopes")}}
+    </fieldset>
+    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.keys.create"}}</button>
+  </form>
+</div>
+</div>
+{{end}}

@@ -1,0 +1,20 @@
+{{/* Webhook form fields shared by the webhooks list (create) and detail (edit) pages. */}}
+{{define "webhook-fields"}}
+<div>
+  <label for="wh-name" class="block font-medium mb-1">{{t "webhooks.name"}}</label>
+  <input id="wh-name" name="name" value="{{.Form.Name}}" required maxlength="100" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  {{with index .Fields "name"}}<p class="mt-1 text-sm text-red" role="alert">{{t .}}</p>{{end}}
+</div>
+<div>
+  <label for="wh-url" class="block font-medium mb-1">{{t "webhooks.url"}}</label>
+  <input id="wh-url" name="url" type="url" value="{{.Form.URL}}" required dir="ltr" placeholder="https://example.com/hooks/gorun" class="w-full h-9 rounded border border-line bg-panel px-3 font-mono text-sm focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  {{with index .Fields "url"}}<p class="mt-1 text-sm text-red" role="alert">{{t .}}</p>{{end}}
+</div>
+<fieldset>
+  <legend class="font-medium mb-1">{{t "webhooks.events"}}</legend>
+  <div class="grid gap-1 sm:grid-cols-2">
+  {{range .Events}}<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="events" value="{{.Name}}" {{if .Checked}}checked{{end}}><span>{{.Label}} <span class="font-mono text-[11px] text-muted" dir="ltr">{{.Name}}</span></span></label>{{end}}
+  </div>
+  {{with index .Fields "events"}}<p class="mt-1 text-sm text-red" role="alert">{{t .}}</p>{{end}}
+</fieldset>
+{{end}}

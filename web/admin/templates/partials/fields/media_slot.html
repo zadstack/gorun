@@ -1,0 +1,29 @@
+{{/* Media input used by fields/image, fields/file and the editor's featured/OG image.
+     Data: .Name (form name), .ID (unique; the picker target), .Value (media id, comma-separated when .Multiple), .CanPick.
+     The picker modal (partials/media_picker.html, included once by the page) is opened with media:open {target: .ID}
+     and answers media:selected {id, url, alt, target} on window; only the slot whose input id matches writes the value.
+     Without CanPick (no media module, or no media.upload) the current value is kept and shown read-only.
+     A saved value is previewed on load from GET /admin/x/media/{id}/thumb (first id when .Multiple); non-images show
+     their file name. */}}
+{{define "media_picker_slot"}}
+<div class="space-y-2" data-media-slot
+     x-data="{ value: {{json .Value}}, url: '', name: '', multiple: {{if .Multiple}}true{{else}}false{{end}} }"
+     x-init="if (value) fetch('/admin/x/media/' + encodeURIComponent(value.split(',')[0]) + '/thumb', { credentials: 'same-origin', headers: { Accept: 'application/json' } }).then(r => r.ok ? r.json() : null).then(j => { if (j && j.data && !url) { url = j.data.thumb; name = j.data.filename } }).catch(() => {})"
+     @media:selected.window="if ($event.detail && $event.detail.target === $refs.input.id) { value = (multiple && value) ? value + ',' + $event.detail.id : $event.detail.id; url = $event.detail.url; name = '' }">
+  <input type="hidden" x-ref="input" id="{{.ID}}" name="{{.Name}}" value="{{.Value}}" :value="value">
+  <div class="flex items-center gap-2 min-h-9">
+    <template x-if="url"><img :src="url" alt="" class="h-16 w-16 object-cover rounded border border-line bg-panel-2"></template>
+    <span x-show="value && !url" class="inline-flex max-w-full truncate rounded-chip border border-line bg-panel-2 px-2 py-0.5 font-mono text-xs" dir="ltr" x-text="name || value">{{.Value}}</span>
+    <span x-show="!value" {{if .Value}}x-cloak{{end}} class="[&[x-cloak]]:hidden text-sm text-muted">{{t "content.media.none"}}</span>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    {{if .CanPick}}
+    <button type="button" data-media-open data-target="{{.ID}}" aria-controls="gp-media-picker-body"
+            @click="$dispatch('media:open', { target: $el.dataset.target })"
+            class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "image"}}<span>{{t "content.media.choose"}}</span></button>
+    {{end}}
+    <button type="button" x-show="value" {{if not .Value}}x-cloak{{end}} @click="value = ''; url = ''; name = ''"
+            class="[&[x-cloak]]:hidden h-9 px-3 rounded border border-line bg-panel text-red hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.media.remove"}}</button>
+  </div>
+</div>
+{{end}}

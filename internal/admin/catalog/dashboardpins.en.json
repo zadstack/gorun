@@ -1,0 +1,23 @@
+{
+  "title": "Your dashboard",
+  "description": "Bring tools from the sidebar into your workspace. Your layout is private to your account.",
+  "drop": "Drop a sidebar item here",
+  "empty": "Keep the tools you use most within reach.",
+  "empty_help": "Drag a sidebar item here, or use its Add to dashboard button.",
+  "add": "Add to dashboard",
+  "return": "Return to sidebar",
+  "open": "Open tool",
+  "shortcut": "Quick access",
+  "shortcut_help": "Open the full tool to view its data and available actions.",
+  "empty_rows": "No records to show yet.",
+  "failed": "This summary is unavailable. Open the full tool or refresh the dashboard.",
+  "saving": "Saving your layout…",
+  "error": "Could not confirm the save. Reload to check the saved layout before retrying.",
+  "stale": "Available items changed. Reload the dashboard and try again.",
+  "saved": "Layout saved.",
+  "move": "Move panel",
+  "up": "Move earlier",
+  "down": "Move later",
+  "reload": "Reload",
+  "loading": "Loading…"
+}

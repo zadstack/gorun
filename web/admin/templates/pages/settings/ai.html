@@ -1,0 +1,48 @@
+{{/* Data: aiPage */}}
+{{define "title"}}{{t "admin.settings.tab_ai"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-3">{{t "admin.settings.title"}}</h1>
+<p class="mb-3"><a href="/admin/settings/studio" class="text-blue">{{if eq (locale) "ar"}}استوديو المحتوى: مزوّدو MCP والمهارات{{else}}Content studio: MCP providers & skills{{end}}</a></p>
+<nav class="flex gap-1 mb-4 border-b border-line" aria-label="{{t "admin.settings.title"}}">
+  <a href="/admin/settings/general" class="px-3 py-2 text-muted hover:text-ink">{{t "admin.settings.tab_general"}}</a>
+  <a href="/admin/settings/mail" class="px-3 py-2 text-muted hover:text-ink">{{t "admin.settings.tab_mail"}}</a>
+  <a href="/admin/settings/ai" aria-current="page" class="px-3 py-2 -mb-px border border-line border-b-panel bg-panel rounded-t font-medium">{{t "admin.settings.tab_ai"}}</a>
+</nav>
+{{if not .Configured}}<div role="status" class="mb-4 max-w-3xl rounded border border-line bg-panel-2 text-muted px-3 py-2">{{t "admin.ai.not_configured"}}</div>{{end}}
+<form method="post" action="/admin/settings/ai" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate x-data="{ provider: $el.dataset.provider }" data-provider="{{.Form.Provider}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="edit_token" value="{{.Form.EditToken}}">
+ {{with index .Fields "conflict"}}<p role="alert" class="text-red">{{t .}} <a class="underline" href="/admin/settings/ai">{{t "connectionsetup.reload"}}</a></p>{{end}}
+  <p class="text-xs text-muted">{{t "admin.ai.intro"}}</p>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="ai-provider" class="block font-medium mb-1">{{t "admin.ai.provider"}}</label>
+      <select id="ai-provider" name="provider" x-model="provider" class="h-9 w-full rounded border {{if index .Fields "provider"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        {{range .Providers}}<option value="{{.Value}}" {{if eq .Value $.Form.Provider}}selected{{end}}>{{t .LabelKey}}</option>{{end}}
+      </select>
+      {{template "partials/field_errors" (index .Fields "provider")}}
+    </div>
+    <div>
+      <label for="ai-model" class="block font-medium mb-1">{{t "admin.ai.model"}}</label>
+      <input id="ai-model" name="model" value="{{.Form.Model}}" dir="ltr" autocomplete="off" aria-describedby="ai-model-help" :placeholder="provider === 'anthropic' ? 'claude-sonnet-5-5' : ''"
+             class="h-9 w-full rounded border {{if index .Fields "model"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <p id="ai-model-help" class="mt-1 text-xs text-muted">{{t "admin.ai.model_help"}}</p>
+      {{template "partials/field_errors" (index .Fields "model")}}
+    </div>
+  </div>
+  <div x-show="provider !== 'anthropic'">
+    <label for="ai-base-url" class="block font-medium mb-1">{{t "admin.ai.base_url"}}</label>
+    <input id="ai-base-url" name="base_url" value="{{.Form.BaseURL}}" dir="ltr" placeholder="{{.DefaultURL}}" aria-describedby="ai-base-url-help"
+           class="h-9 w-full rounded border {{if index .Fields "base_url"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <p id="ai-base-url-help" class="mt-1 text-xs text-muted">{{t "admin.ai.base_url_help"}}</p>
+    {{template "partials/field_errors" (index .Fields "base_url")}}
+  </div>
+  <div>
+    <label for="ai-key" class="block font-medium mb-1">{{t "admin.ai.api_key"}}</label>
+    <input id="ai-key" name="api_key" type="password" autocomplete="new-password" dir="ltr" aria-describedby="ai-key-help" class="h-9 w-full rounded border {{if index .Fields "api_key"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <p id="ai-key-help" class="mt-1 text-xs text-muted">{{if .KeySet}}{{t "admin.ai.key_set"}}{{else}}{{t "admin.ai.key_unset"}}{{end}}</p>
+    {{if .KeySet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_key" class="accent-[var(--green)]"> {{t "admin.ai.key_clear"}}</label>{{end}}
+    {{template "partials/field_errors" (index .Fields "api_key")}}
+  </div>
+  <div><button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+</form>
+{{end}}

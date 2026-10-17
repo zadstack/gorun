@@ -1,0 +1,1 @@
+[{"id": 1, "name": "Sample Author", "slug": "sample-admin", "email": "owner@example.org", "roles": ["administrator"]}, {"id": 37, "name": "كاتب تجريبي", "slug": "editor", "email": "editor@example.org", "roles": ["author"]}]

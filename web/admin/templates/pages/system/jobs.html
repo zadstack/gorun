@@ -1,0 +1,52 @@
+{{/* Data: jobsPage */}}
+{{define "title"}}{{t "admin.jobs.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-3">{{t "admin.jobs.title"}}</h1>
+<nav class="flex flex-wrap gap-1 mb-4" aria-label="{{t "admin.jobs.status"}}">
+  <a href="/admin/system/jobs" hx-get="/admin/system/jobs" hx-target="#main" hx-push-url="true" {{if eq .Status ""}}aria-current="page"{{end}}
+     class="h-8 px-3 inline-flex items-center rounded border {{if eq .Status ""}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}}">{{t "admin.jobs.all"}}</a>
+  {{range .Statuses}}
+  <a href="/admin/system/jobs?status={{.}}" hx-get="/admin/system/jobs?status={{.}}" hx-target="#main" hx-push-url="true" {{if eq . $.Status}}aria-current="page"{{end}}
+     class="h-8 px-3 inline-flex items-center rounded border {{if eq . $.Status}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}}">{{t (printf "admin.jobs.status_%s" .)}}</a>
+  {{end}}
+</nav>
+{{if .Jobs}}
+<ul class="space-y-2">
+  {{range .Jobs}}
+  <li class="rounded border border-line bg-panel" data-job="{{.ID}}">
+    <details>
+      <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-3 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">
+        {{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}
+        <span class="font-mono text-xs font-medium">{{.Kind}}</span>
+        <span class="inline-flex rounded-chip border {{if eq .Status "dead"}}border-red bg-red-soft text-red{{else if .Retryable}}border-amber bg-amber-soft text-amber-text{{else if eq .Status "done"}}border-green bg-green-soft text-green{{else}}border-line bg-panel-2{{end}} px-1.5 py-0.5 text-[11px] font-mono">{{if .Retryable}}{{if eq .Status "dead"}}{{t "admin.jobs.status_dead"}}{{else}}{{t "admin.jobs.status_retrying"}}{{end}}{{else}}{{t (printf "admin.jobs.status_%s" .Status)}}{{end}}</span>
+        <span class="font-mono text-[11px] text-muted">{{.Attempts}}/{{.MaxAttempts}}</span>
+        <time class="ms-auto font-mono text-[11px] text-muted" datetime="{{.RunAt}}">{{date .RunAt}}</time>
+      </summary>
+      <div class="border-t border-line p-3 space-y-2">
+        <p class="font-mono text-[11px] text-muted break-all">{{t "admin.common.id"}} {{.ID}}</p>
+        {{if .LastError}}<p class="text-xs text-red" dir="ltr">{{.LastError}}</p>{{end}}
+        <pre class="rounded bg-panel-dark text-panel-2 p-3 text-xs overflow-x-auto" dir="ltr">{{.Preview}}</pre>
+        {{if .Retryable}}
+        <form method="post" action="/admin/system/jobs/{{.ID}}/retry">
+          <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="back" value="/admin/system/jobs">
+          <button type="submit" class="h-8 px-2.5 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "rotate-ccw"}}<span>{{t "admin.jobs.retry"}}</span></button>
+        </form>
+        {{end}}
+      </div>
+    </details>
+  </li>
+  {{end}}
+</ul>
+{{else}}
+<div class="rounded border border-line bg-panel p-6 text-muted">{{t "admin.jobs.empty"}}</div>
+{{end}}
+{{with .Pager}}{{if gt .Pages 1}}
+<nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
+  <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+  <div class="flex gap-2">
+    {{if .PrevURL}}<a href="{{.PrevURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
+    {{if .NextURL}}<a href="{{.NextURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}
+  </div>
+</nav>
+{{end}}{{end}}
+{{end}}

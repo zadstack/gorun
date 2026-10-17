@@ -1,0 +1,53 @@
+{{/* Data: webhooks.listPage. .Secret is set only in the create response. */}}
+{{define "title"}}{{t "webhooks.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<div class="admin-contained">
+<h1 class="text-[22px] font-bold mb-1">{{t "webhooks.title"}}</h1>
+<p class="text-muted mb-4">{{t "webhooks.intro"}}</p>
+{{if .Secret}}
+<section role="status" class="mb-4 rounded border border-green bg-green-soft p-4" data-webhook-secret hx-history="false">
+  <h2 class="text-base font-bold text-green mb-1">{{t "webhooks.created_title"}}</h2>
+  <p class="mb-3 text-ink">{{t "webhooks.secret_help"}}</p>
+  <label class="sr-only" for="wh-secret">{{t "webhooks.secret"}}</label>
+  <input id="wh-secret" readonly value="{{.Secret}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs">
+  <p class="mt-2"><a class="text-green underline" href="/admin/webhooks/{{.NewID}}">{{t "webhooks.open"}}</a></p>
+</section>
+{{end}}
+<div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_26rem]">
+  <section class="rounded border border-line bg-panel overflow-x-auto" aria-labelledby="wh-list">
+    <h2 id="wh-list" class="text-base font-bold p-4 pb-2">{{t "webhooks.list"}}</h2>
+    {{if .Hooks}}
+    <table class="w-full text-start">
+      <thead class="border-b border-line"><tr>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "webhooks.endpoint"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "webhooks.events"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted hidden md:table-cell">{{t "webhooks.last_delivery"}}</th>
+      </tr></thead>
+      <tbody class="divide-y divide-line">
+      {{range .Hooks}}
+        <tr data-webhook="{{.ID}}">
+          <td class="px-3 py-2 align-top">
+            <a class="font-medium text-green underline" href="/admin/webhooks/{{.ID}}">{{.Name}}</a>
+            {{if not .Active}}<span class="ms-1 inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px]">{{t "webhooks.disabled"}}</span>{{end}}
+            <p class="font-mono text-[11px] text-muted break-all" dir="ltr">{{.URL}}</p>
+          </td>
+          <td class="px-3 py-2 align-top"><ul class="flex flex-wrap gap-1">{{range .Events}}<li class="rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{.}}</li>{{end}}</ul></td>
+          <td class="px-3 py-2 align-top font-mono text-xs text-muted hidden md:table-cell">{{if .LastStatus}}<span data-status="{{.LastStatus}}">{{t (print "webhooks.status_" .LastStatus)}}</span> · {{date .LastDeliveryAt}}{{else}}—{{end}}</td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="px-4 pb-4 text-muted">{{t "webhooks.empty"}}</p>
+    {{end}}
+  </section>
+  <form method="post" action="/admin/webhooks" class="rounded border border-line bg-panel p-4 space-y-4" novalidate aria-labelledby="wh-new">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <h2 id="wh-new" class="text-base font-bold">{{t "webhooks.new"}}</h2>
+    {{template "webhook-fields" .}}
+    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "webhooks.create"}}</button>
+  </form>
+</div>
+</div>
+{{end}}

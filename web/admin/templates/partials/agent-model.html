@@ -1,0 +1,39 @@
+{{define "agent-model-editor"}}
+<section class="rounded border border-line bg-panel p-4 mb-4" aria-labelledby="agent-model-heading">
+<h2 id="agent-model-heading" class="font-bold text-base mb-2">{{t "agentmodels.title"}} · {{.Name}}</h2>
+{{if .Error}}<p role="alert" class="text-red mb-3">{{t .Error}}</p>{{end}}
+<form method="post" action="/admin/agents/keys/{{.ID}}/model" data-agent-model-form
+ data-loading="{{t "connectionmodels.loading"}}" data-ready="{{t "agentmodels.ready"}}" data-error="{{t "agentmodels.discovery_error"}}"
+ data-excluded="{{t "connectionmodels.excluded"}}" data-empty="{{t "agentmodels.choose_model"}}" data-refresh="{{t "agentmodels.refresh_needed"}}">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<input type="hidden" name="version" value="{{.Config.Version}}">
+<input type="hidden" name="connection_version" value="{{.Config.ConnectionVersion}}">
+<div class="grid gap-3 lg:grid-cols-3">
+<div><label class="block font-medium mb-1" for="agent-mode">{{t "agentmodels.mode"}}</label>
+<select id="agent-mode" name="mode" class="h-9 w-full rounded border border-line bg-panel px-2">
+<option value="external" {{if eq .Config.Mode "external"}}selected{{end}}>{{t "agentmodels.external"}}</option>
+<option value="managed" {{if eq .Config.Mode "managed"}}selected{{end}}>{{t "agentmodels.managed"}}</option>
+</select></div>
+<div><label class="block font-medium mb-1" for="agent-connection">{{t "agentmodels.connection"}}</label>
+<select id="agent-connection" name="connection_id" class="h-9 w-full rounded border border-line bg-panel px-2">
+<option value="">{{t "agentmodels.no_connection"}}</option>
+{{$cfg := .Config}}{{range .Profiles}}<option value="{{.ID}}" data-version="{{.Version}}" data-provider="{{.Provider}}" data-endpoint="{{.Endpoint}}" {{if eq .ID $cfg.ConnectionID}}selected{{end}}>{{.Name}}</option>{{end}}
+</select></div>
+<div><label class="block font-medium mb-1" for="agent-model">{{t "agentmodels.model"}}</label>
+<select id="agent-model" name="model" class="h-9 w-full rounded border border-line bg-panel px-2" dir="ltr">
+{{if .Config.Model}}<option value="{{.Config.Model}}" selected>{{.Config.Model}}</option>{{else}}<option value="">{{t "agentmodels.choose_model"}}</option>{{end}}
+</select></div>
+</div>
+<p class="text-xs text-muted mt-2" data-agent-mode-help="external">{{t "agentmodels.external_help"}}</p>
+<p class="text-xs text-muted mt-2" data-agent-mode-help="managed" hidden>{{t "agentmodels.managed_help"}}</p>
+<p class="text-xs text-muted mt-2">{{t "agentmodels.validation_help"}}</p>
+<div class="flex flex-wrap items-center gap-2 mt-3">
+<button type="button" data-agent-model-discover class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "connectionmodels.fetch"}}</button>
+<button type="submit" class="h-9 px-3 rounded bg-green text-white font-medium hover:bg-green-hover">{{t "agentmodels.save"}}</button>
+<a href="/admin/settings/connections" class="inline-flex items-center min-h-11 text-green underline">{{t "agentmodels.manage_connections"}}</a>
+<a href="/admin/agents/keys?agent_model={{.ID}}" class="inline-flex items-center min-h-11 text-muted underline">{{t "agentmodels.reload"}}</a>
+</div>
+<p class="text-xs mt-2 text-muted" role="status" aria-live="polite" data-agent-model-status></p>
+</form>
+</section>
+{{end}}

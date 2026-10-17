@@ -1,0 +1,28 @@
+{
+  "slug": "sample",
+  "name": {"en": "Sample extension", "ar": "إضافة تجريبية"},
+  "version": "0.1.0",
+  "description": {"en": "Declares a greeting type and listens to content events.", "ar": "تعرّف نوع تحية وتستمع لأحداث المحتوى."},
+  "author": "GoRun",
+  "permissions": ["content.view"],
+  "hooks": [
+    {"name": "content.before_save", "kind": "filter", "timeout_ms": 1500},
+    {"name": "content.published", "kind": "event"},
+    {"name": "content.after_save", "kind": "action"}
+  ],
+  "admin_nav": [{"label": {"en": "Sample dashboard", "ar": "لوحة التجربة"}, "url": "https://sample.example.com/dashboard"}],
+  "content_types": [
+    {
+      "slug": "greeting",
+      "name": {"en": "Greetings", "ar": "التحيات"},
+      "singular": {"en": "Greeting", "ar": "تحية"},
+      "public": true,
+      "supports": ["title", "body"],
+      "fields": [{"key": "mood", "label": {"en": "Mood", "ar": "المزاج"}, "type": "text"}]
+    }
+  ],
+  "settings": [
+    {"key": "greeting_word", "label": {"en": "Greeting word", "ar": "كلمة التحية"}, "type": "text", "default": "hello"}
+  ],
+  "endpoint": {"url": "http://127.0.0.1:9911/gorun", "auth": "hmac"}
+}

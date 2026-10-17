@@ -1,0 +1,20 @@
+{{define "content/studio"}}
+<section class="mt-6 border border-line rounded bg-panel p-4 space-y-4" aria-labelledby="studio-heading" data-studio data-content-id="{{.Item.ID}}">
+ <div class="flex flex-wrap justify-between gap-3"><h2 id="studio-heading" class="text-lg font-bold">{{if eq (locale) "ar"}}استوديو المحتوى{{else}}Content studio{{end}}</h2><a href="/admin/settings/studio" data-studio-settings hidden class="text-blue">{{if eq (locale) "ar"}}المزوّدون والمهارات{{else}}Providers & skills{{end}}</a></div>
+ <p class="text-muted">{{if eq (locale) "ar"}}حوّل النص الحالي إلى مسودات ووسائط. راجع الطلب قبل إرساله للمزوّد. النتائج لا تُنشر ولا تستبدل المقال تلقائيًا.{{else}}Turn your current text into drafts and media. Review the request before sending it to a provider. Results never publish or replace the article automatically.{{end}}</p>
+ {{if .IsNew}}<p role="status">{{if eq (locale) "ar"}}احفظ المسودة أولًا لبدء الاستوديو.{{else}}Save the draft first to use the studio.{{end}}</p>{{else}}
+ <div class="grid sm:grid-cols-3 gap-3">
+ <label>{{if eq (locale) "ar"}}نوع النتيجة{{else}}Output{{end}}<select data-studio-kind class="w-full border border-line bg-panel rounded p-2"><option value="text">{{if eq (locale) "ar"}}نص{{else}}Text{{end}}</option><option value="image">{{if eq (locale) "ar"}}صورة{{else}}Image{{end}}</option><option value="video">{{if eq (locale) "ar"}}فيديو{{else}}Video{{end}}</option><option value="render">{{if eq (locale) "ar"}}رندر{{else}}Render{{end}}</option></select></label>
+ <label>{{if eq (locale) "ar"}}المزوّد والأداة{{else}}Provider & tool{{end}}<select data-studio-provider class="w-full border border-line bg-panel rounded p-2"></select></label>
+ <label>{{if eq (locale) "ar"}}مهارة محفوظة{{else}}Saved skill{{end}}<select data-studio-preset class="w-full border border-line bg-panel rounded p-2"></select></label>
+ </div>
+ <p data-studio-capability class="text-muted" role="status"></p>
+ <label class="block">{{if eq (locale) "ar"}}التعليمات{{else}}Instructions{{end}}<textarea data-studio-prompt rows="3" maxlength="8000" class="mt-1 w-full rounded border border-line bg-panel p-3">{{if eq (locale) "ar"}}اكتب منشورًا اجتماعيًا واضحًا من المقال، دون اختراع حقائق.{{else}}Write a clear social post based on this article. Do not invent facts.{{end}}</textarea></label>
+ <button type="button" data-studio-review class="min-h-11 px-4 border border-line rounded">{{if eq (locale) "ar"}}راجع الطلب{{else}}Review request{{end}}</button>
+ <div data-studio-review-box hidden class="space-y-3 border border-line p-3 rounded"><p>{{if eq (locale) "ar"}}سيُرسل هذا الطلب إلى المزوّد المختار، وقد يستهلك رصيدك لديه.{{else}}This request will be sent to your selected provider and may use provider credits.{{end}}</p><pre data-studio-arguments class="whitespace-pre-wrap break-all max-h-72 overflow-auto text-xs" dir="auto"></pre><button type="button" data-studio-run class="min-h-11 px-4 bg-green text-white rounded">{{if eq (locale) "ar"}}توليد الآن{{else}}Generate now{{end}}</button></div>
+ <p data-studio-status role="status" aria-live="polite"></p>
+ <div data-studio-items class="space-y-4"></div>
+ <p class="text-xs text-muted">{{if eq (locale) "ar"}}حذف النتيجة هنا لا يحذف الوسائط من المكتبة. متابعة الفيديو تستخدم أداة الحالة المهيأة فقط.{{else}}Removing a result here keeps imported files in Media. Video status uses only the configured status tool.{{end}}</p>
+ {{end}}
+</section><script defer src="{{asset "studio.js"}}"></script>
+{{end}}

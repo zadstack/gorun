@@ -1,0 +1,104 @@
+{{/* Data: generalPage */}}
+{{define "title"}}{{t "admin.settings.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-3">{{t "admin.settings.title"}}</h1>
+<nav class="flex gap-1 mb-4 border-b border-line" aria-label="{{t "admin.settings.title"}}">
+  <a href="/admin/settings/general" aria-current="page" class="px-3 py-2 -mb-px border border-line border-b-panel bg-panel rounded-t font-medium">{{t "admin.settings.tab_general"}}</a>
+  <a href="/admin/settings/mail" class="px-3 py-2 text-muted hover:text-ink">{{t "admin.settings.tab_mail"}}</a>
+  <a href="/admin/settings/ai" class="px-3 py-2 text-muted hover:text-ink">{{t "admin.settings.tab_ai"}}</a>
+</nav>
+<form method="post" action="/admin/settings/general" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="edit_token" value="{{.EditToken}}">
+  {{with index .Fields "conflict"}}<div role="alert" class="border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="s-title" class="block font-medium mb-1">{{t "admin.settings.site_title"}}</label>
+      <input id="s-title" name="title" value="{{.Form.Title}}" maxlength="500" class="h-9 w-full rounded border {{if index .Fields "title"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      {{template "partials/field_errors" (index .Fields "title")}}
+    </div>
+    <div>
+      <label for="s-tagline" class="block font-medium mb-1">{{t "admin.settings.tagline"}}</label>
+      <input id="s-tagline" name="tagline" value="{{.Form.Tagline}}" maxlength="500" class="h-9 w-full rounded border {{if index .Fields "tagline"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      {{template "partials/field_errors" (index .Fields "tagline")}}
+    </div>
+    <div>
+      <label for="s-locale" class="block font-medium mb-1">{{t "admin.settings.locale"}}</label>
+      <select id="s-locale" name="locale" class="h-9 w-full rounded border {{if index .Fields "locale"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        {{range .Locales}}<option value="{{.}}" {{if eq . $.Form.Locale}}selected{{end}}>{{t (printf "admin.locale.%s" .)}}</option>{{end}}
+      </select>
+      {{template "partials/field_errors" (index .Fields "locale")}}
+    </div>
+    <div>
+      <label for="s-timezone" class="block font-medium mb-1">{{t "admin.settings.timezone"}}</label>
+      <input id="s-timezone" name="timezone" value="{{.Form.Timezone}}" list="s-timezones" dir="ltr" autocomplete="off" aria-describedby="s-timezone-help" {{if index .Fields "timezone"}}aria-invalid="true"{{end}}
+             class="h-9 w-full rounded border {{if index .Fields "timezone"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <datalist id="s-timezones">{{range .Timezones}}<option value="{{.}}">{{end}}</datalist>
+      <p id="s-timezone-help" class="mt-1 text-xs text-muted">{{t "admin.settings.timezone_help"}}</p>
+      {{template "partials/field_errors" (index .Fields "timezone")}}
+    </div>
+  </div>
+  <div>
+    <label for="s-base-url" class="block font-medium mb-1">{{t "admin.settings.base_url"}}</label>
+    <input id="s-base-url" name="base_url" type="url" value="{{.Form.BaseURL}}" dir="ltr" aria-describedby="s-base-url-help" {{if index .Fields "base_url"}}aria-invalid="true"{{end}}
+           class="h-9 w-full rounded border {{if index .Fields "base_url"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <p id="s-base-url-help" class="mt-1 text-xs text-muted">{{t "admin.settings.base_url_help"}}</p>
+    {{template "partials/field_errors" (index .Fields "base_url")}}
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="s-theme" class="block font-medium mb-1">{{t "admin.settings.theme"}}</label>
+      {{if .Themes}}
+      <select id="s-theme" name="theme" class="h-9 w-full rounded border {{if index .Fields "theme"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        {{range .Themes}}<option value="{{.Slug}}" {{if eq .Slug $.Form.Theme}}selected{{end}}>{{.Name}} ({{.Slug}})</option>{{end}}
+      </select>
+      {{else}}
+      <input id="s-theme" name="theme" value="{{.Form.Theme}}" dir="ltr" class="h-9 w-full rounded border {{if index .Fields "theme"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      {{end}}
+      {{template "partials/field_errors" (index .Fields "theme")}}
+    </div>
+    <div x-data="{ open: false, title: {{json .FrontPageTitle}}, pick(el) { if (!el) return; document.getElementById('s-front-page-id').value = el.dataset.id; this.title = el.dataset.title; this.open = false } }" @click.outside="open = false" class="relative">
+      <label for="s-front-page" class="block font-medium mb-1">{{t "admin.settings.front_page"}}</label>
+      {{if .HasContent}}
+      <input type="hidden" name="front_page" id="s-front-page-id" value="{{.Form.FrontPage}}">
+      <input id="s-front-page" type="search" name="q" autocomplete="off" placeholder="{{t "admin.settings.front_page_search"}}" x-model="title"
+             hx-get="/admin/x/settings/front-page" hx-trigger="input changed delay:300ms" hx-target="#s-front-page-options" @input="open = true"
+             role="combobox" aria-controls="s-front-page-options" :aria-expanded="open.toString()"
+             class="h-9 w-full rounded border {{if index .Fields "front_page"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <div id="s-front-page-options" x-show="open" x-cloak class="[&[x-cloak]]:hidden absolute z-20 mt-1 w-full rounded border border-line bg-panel"
+           @click="pick($event.target.closest('button[data-id]'))"></div>
+      <p class="mt-1 text-xs text-muted">{{t "admin.settings.front_page_help"}}</p>
+      {{else}}
+      <input id="s-front-page" name="front_page" value="{{.Form.FrontPage}}" dir="ltr" aria-describedby="s-front-page-help" class="h-9 w-full rounded border {{if index .Fields "front_page"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <p id="s-front-page-help" class="mt-1 text-xs text-muted">{{t "admin.settings.front_page_no_content"}}</p>
+      {{end}}
+      {{template "partials/field_errors" (index .Fields "front_page")}}
+    </div>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <span id="s-logo-label" class="block font-medium mb-1">{{t "admin.settings.logo"}}</span>
+      {{template "media_picker_slot" .Logo}}
+      <p class="mt-1 text-xs text-muted">{{t "admin.settings.logo_help"}}</p>
+      {{template "partials/field_errors" (index .Fields "logo")}}
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label for="s-contact-email" class="block font-medium mb-1">{{t "admin.settings.contact_email"}}</label>
+        <input id="s-contact-email" name="contact_email" type="email" value="{{.Form.ContactEmail}}" dir="ltr" maxlength="254" aria-describedby="s-contact-email-help" {{if index .Fields "contact_email"}}aria-invalid="true"{{end}}
+               class="h-9 w-full rounded border {{if index .Fields "contact_email"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <p id="s-contact-email-help" class="mt-1 text-xs text-muted">{{t "admin.settings.contact_email_help"}}</p>
+        {{template "partials/field_errors" (index .Fields "contact_email")}}
+      </div>
+      <div>
+        <label for="s-per-page" class="block font-medium mb-1">{{t "admin.settings.posts_per_page"}}</label>
+        <input id="s-per-page" name="posts_per_page" type="number" min="1" max="100" step="1" value="{{.Form.PostsPerPage}}" dir="ltr" {{if index .Fields "posts_per_page"}}aria-invalid="true"{{end}}
+               class="h-9 w-32 rounded border {{if index .Fields "posts_per_page"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        {{template "partials/field_errors" (index .Fields "posts_per_page")}}
+      </div>
+    </div>
+  </div>
+  <div><button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+</form>
+{{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}
+{{end}}

@@ -1,0 +1,18 @@
+{{/* Data: theme.settingsPage */}}
+{{define "title"}}{{t "theme.settings.title"}}{{end}}
+{{define "content"}}
+<div class="mb-4">
+  <h1 class="text-[22px] font-bold">{{t "theme.settings.title"}}</h1>
+  <p class="text-muted">{{t "theme.settings.intro" .Theme.Name}}</p>
+</div>
+{{if .Fields}}
+<form method="post" action="/admin/appearance/theme-settings" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  {{range .Fields}}{{template "fields/field" .}}{{end}}
+  <div><button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+</form>
+{{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}
+{{else}}
+<p class="rounded border border-line bg-panel p-4 text-muted">{{t "theme.settings.none"}}</p>
+{{end}}
+{{end}}

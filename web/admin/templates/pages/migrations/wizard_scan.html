@@ -1,0 +1,102 @@
+{{/* Data: wpmigrate.page (Steps, M, Source, Report, Error) — step 2 */}}
+{{define "title"}}{{t "wpmigrate.step.scan"}} · {{t "wpmigrate.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "wpmigrate.scan.title"}}</h1>
+<p class="text-muted mb-3">{{t "wpmigrate.scan.intro"}}</p>
+<nav aria-label="{{t "wpmigrate.steps"}}" class="mb-4 overflow-x-auto">
+  <ol class="flex gap-1 min-w-max">
+    {{range .Steps}}
+    <li>
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-green bg-green-soft text-green{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+        <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
+      </a>
+    </li>
+    {{end}}
+  </ol>
+</nav>
+{{with .Error}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
+<div class="rounded border border-line bg-panel p-4 mb-4 flex flex-wrap items-center gap-3">
+  {{with .Source}}
+  <div class="min-w-0">
+    <div class="font-medium">{{.Name}}</div>
+    <div class="font-mono text-xs text-muted break-all" dir="ltr">{{if eq .Kind "wxr"}}WXR{{else}}{{.URL}}{{end}}</div>
+  </div>
+  {{end}}
+  <form method="post" action="/admin/migrations/{{.M.ID}}/scan" class="ms-auto">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    {{if .Report}}
+    <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "refresh-cw"}}<span>{{t "wpmigrate.scan.rescan"}}</span></button>
+    {{else}}
+    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "scan-search"}}<span>{{t "wpmigrate.scan.run"}}</span></button>
+    {{end}}
+  </form>
+</div>
+
+{{with .Report}}
+<dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+  <div class="rounded border border-line bg-panel p-3"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.scan.site"}}</dt><dd class="font-medium">{{.Site.Name}}</dd></div>
+  <div class="rounded border border-line bg-panel p-3"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.scan.version"}}</dt><dd class="font-mono">{{if .Site.Version}}WordPress {{.Site.Version}}{{else}}—{{end}}</dd></div>
+  <div class="rounded border border-line bg-panel p-3"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.scan.locale"}}</dt><dd class="font-mono">{{if .Site.Locale}}{{.Site.Locale}}{{else}}—{{end}}</dd></div>
+  <div class="rounded border border-line bg-panel p-3"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.scan.auth"}}</dt>
+    <dd>{{if .Auth.Error}}<span class="text-red">{{if eq .Auth.Error "auth_unavailable"}}{{t "wpmigrate.scan.auth_unavailable_short"}}{{else}}{{t "wpmigrate.scan.auth_failed_short"}}{{end}}</span>{{else}}{{t (print "wpmigrate.auth." .Auth.Mode)}}{{end}}</dd></div>
+</dl>
+
+{{if not .Auth.Error}}
+{{with .ContentStateCounts}}
+<section class="rounded border border-line bg-panel p-4 mb-4" data-content-state-counts aria-labelledby="state-counts-title">
+  <h2 id="state-counts-title" class="font-bold">{{t "wpmigrate.content_states.scan_title"}}</h2>
+  <p class="text-xs text-muted my-2">{{t "wpmigrate.content_states.scan_help"}}</p>
+  <div class="overflow-x-auto"><table class="w-full">
+    <thead><tr><th scope="col" class="text-start p-2">{{t "wpmigrate.content_states.type"}}</th><th scope="col" class="text-start p-2">{{t "wpmigrate.preview.source_status"}}</th><th scope="col" class="text-start p-2">{{t "wpmigrate.content_states.count"}}</th></tr></thead>
+    <tbody>{{range $type, $states := .}}{{range $state, $count := $states}}<tr class="border-t border-line" data-source-type="{{$type}}" data-source-state="{{$state}}" data-readable-count="{{$count}}"><td class="p-2 font-mono text-xs">{{$type}}</td><td class="p-2">{{if or (eq $state "publish") (eq $state "draft") (eq $state "pending") (eq $state "future") (eq $state "private")}}{{t (print "wpmigrate.content_states." $state)}}{{else}}{{$state}}{{end}}</td><td class="p-2 font-mono text-xs">{{$count}}</td></tr>{{end}}{{end}}</tbody>
+  </table></div>
+</section>
+{{end}}
+<section class="rounded border border-green bg-green-soft p-4 mb-3" aria-labelledby="b-available">
+  <h2 id="b-available" class="text-base font-bold text-green flex items-center gap-1.5">{{icon "circle-check"}}<span>{{t "wpmigrate.bucket.available"}}</span></h2>
+  <p class="text-xs text-ink mb-2">{{t "wpmigrate.bucket.available_help"}}</p>
+  <ul class="space-y-1">
+    {{range .Available}}
+    <li class="rounded border border-line bg-panel px-3 py-2">
+      <div class="flex flex-wrap items-center gap-2"><span class="font-medium">{{index .Label locale}}</span>{{if .Count}}<span class="font-mono text-xs text-muted">{{.Count}}</span>{{end}}{{if .Sampled}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] text-muted">{{t "wpmigrate.scan.sampled"}}</span>{{end}}</div>
+      {{with .Note}}<p class="text-xs text-muted">{{index . locale}}</p>{{end}}
+    </li>
+    {{end}}
+  </ul>
+</section>
+<section class="rounded border border-amber bg-amber-soft p-4 mb-3" aria-labelledby="b-partial">
+  <h2 id="b-partial" class="text-base font-bold text-amber-text flex items-center gap-1.5">{{icon "circle-alert"}}<span>{{t "wpmigrate.bucket.partial"}}</span></h2>
+  <p class="text-xs text-amber-text mb-2">{{t "wpmigrate.bucket.partial_help"}}</p>
+  {{if .Partial}}
+  <ul class="space-y-1">
+    {{range .Partial}}
+    <li class="rounded border border-line bg-panel px-3 py-2">
+      <div class="flex flex-wrap items-center gap-2"><span class="font-medium">{{index .Label locale}}</span>{{if .Count}}<span class="font-mono text-xs text-muted">{{.Count}}</span>{{end}}{{if .Sampled}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] text-muted">{{t "wpmigrate.scan.sampled"}}</span>{{end}}</div>
+      {{with .Note}}<p class="text-xs text-muted">{{index . locale}}</p>{{end}}
+      {{with .Items}}<ul class="mt-1 flex flex-wrap gap-1">{{range .}}<li class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-[11px]" dir="ltr">{{.}}</li>{{end}}</ul>{{end}}
+    </li>
+    {{end}}
+  </ul>
+  {{else}}<p class="text-xs text-amber-text">{{t "wpmigrate.bucket.none"}}</p>{{end}}
+</section>
+<section class="rounded border border-line bg-panel-2 p-4 mb-4" aria-labelledby="b-unavailable">
+  <h2 id="b-unavailable" class="text-base font-bold flex items-center gap-1.5">{{icon "circle-minus"}}<span>{{t "wpmigrate.bucket.unavailable"}}</span></h2>
+  <p class="text-xs text-muted mb-2">{{t "wpmigrate.bucket.unavailable_help"}}</p>
+  <ul class="space-y-1">
+    {{range .Unavailable}}
+    <li class="rounded border border-line bg-panel px-3 py-2">
+      <div class="flex flex-wrap items-center gap-2"><span class="font-medium">{{index .Label locale}}</span>{{if .Count}}<span class="font-mono text-xs text-muted">{{.Count}}</span>{{end}}{{if .Sampled}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] text-muted">{{t "wpmigrate.scan.sampled"}}</span>{{end}}</div>
+      {{with .Note}}<p class="text-xs text-muted">{{index . locale}}</p>{{end}}
+      {{with .Items}}<ul class="mt-1 flex flex-wrap gap-1">{{range .}}<li class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-[11px]">{{.}}</li>{{end}}</ul>{{end}}
+    </li>
+    {{end}}
+  </ul>
+</section>
+<div class="flex justify-end">
+  <a href="/admin/migrations/{{$.M.ID}}/map" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "wpmigrate.next.map"}}</span>{{icon "arrow-right" "w-4 h-4 rtl:rotate-180"}}</a>
+</div>
+{{end}}
+{{else}}
+<p class="rounded border border-line bg-panel p-6 text-center text-muted">{{t "wpmigrate.scan.empty"}}</p>
+{{end}}
+{{end}}

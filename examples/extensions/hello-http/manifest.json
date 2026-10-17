@@ -1,0 +1,14 @@
+{
+  "slug": "hello",
+  "name": {"en": "Hello (HTTP example)", "ar": "مرحبا (مثال HTTP)"},
+  "version": "1.0.0",
+  "description": {"en": "Example extension: logs content events and appends \" — via hello\" to titles on save.", "ar": "إضافة مثال: تسجل أحداث المحتوى وتضيف \" — via hello\" إلى العناوين عند الحفظ."},
+  "author": "GoRun",
+  "permissions": ["content.view"],
+  "hooks": [
+    {"name": "content.before_save", "kind": "filter", "timeout_ms": 2000},
+    {"name": "content.after_save", "kind": "action"},
+    {"name": "content.published", "kind": "event"}
+  ],
+  "endpoint": {"url": "http://127.0.0.1:8787/gorun", "auth": "hmac"}
+}

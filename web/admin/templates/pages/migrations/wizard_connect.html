@@ -1,0 +1,99 @@
+{{/* Data: wpmigrate.page (Steps, Form, Fields, Policies) — step 1 */}}
+{{define "title"}}{{t "wpmigrate.step.connect"}} · {{t "wpmigrate.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "wpmigrate.connect.title"}}</h1>
+<p class="text-muted mb-3">{{t "wpmigrate.connect.intro"}}</p>
+<nav aria-label="{{t "wpmigrate.steps"}}" class="mb-4 overflow-x-auto">
+  <ol class="flex gap-1 min-w-max">
+    {{range .Steps}}
+    <li>
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-green bg-green-soft text-green{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+        <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
+      </a>
+    </li>
+    {{end}}
+  </ol>
+</nav>
+<div class="grid gap-4 lg:grid-cols-2 lg:items-start">
+  <form method="post" action="/admin/migrations/connect" class="rounded border border-line bg-panel p-4 space-y-3" novalidate autocomplete="off">
+    <h2 class="text-base font-bold flex items-center gap-1.5">{{icon "globe"}}<span>{{t "wpmigrate.connect.rest_title"}}</span></h2>
+    <p class="text-xs text-muted">{{t "wpmigrate.connect.rest_help"}}</p>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div>
+      <label for="mig-url" class="block font-medium mb-1">{{t "wpmigrate.connect.url"}}</label>
+      <input id="mig-url" name="url" type="url" dir="ltr" required value="{{.Form.URL}}" placeholder="https://example.com"
+             aria-describedby="mig-url-err" {{with index .Fields "url"}}aria-invalid="true"{{end}}
+             class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <div id="mig-url-err">{{template "partials/field_errors" (index .Fields "url")}}</div>
+    </div>
+    <div>
+      <label for="mig-name" class="block font-medium mb-1">{{t "wpmigrate.connect.name"}}</label>
+      <input id="mig-name" name="name" type="text" value="{{.Form.Name}}"
+             class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    </div>
+    <fieldset class="rounded border border-line p-3 space-y-3">
+      <legend class="px-1 font-medium">{{t "wpmigrate.connect.auth_legend"}}</legend>
+      <p class="text-xs text-muted">{{t "wpmigrate.connect.auth_help"}}</p>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label for="mig-user" class="block font-medium mb-1">{{t "wpmigrate.connect.username"}}</label>
+          <input id="mig-user" name="username" type="text" dir="ltr" value="{{.Form.Username}}" autocomplete="off"
+                 class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        </div>
+        <div>
+          <label for="mig-pass" class="block font-medium mb-1">{{t "wpmigrate.connect.app_password"}}</label>
+          <input id="mig-pass" name="app_password" type="password" dir="ltr" value="" autocomplete="new-password"
+                 aria-describedby="mig-pass-err" {{with index .Fields "app_password"}}aria-invalid="true"{{end}}
+                 class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          <div id="mig-pass-err">{{template "partials/field_errors" (index .Fields "app_password")}}</div>
+        </div>
+      </div>
+    </fieldset>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div>
+        <label for="mig-policy" class="block font-medium mb-1">{{t "wpmigrate.connect.slug_policy"}}</label>
+        <select id="mig-policy" name="slug_policy" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          {{$sel := .Form.SlugPolicy}}{{range .Policies}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{t (print "wpmigrate.policy." .)}}</option>{{end}}
+        </select>
+      </div>
+      <label class="flex items-center gap-2 sm:mt-7">
+        <input type="checkbox" name="keep_classes" value="1" {{if .Form.KeepClasses}}checked{{end}} class="h-4 w-4 accent-green">
+        <span>{{t "wpmigrate.connect.keep_classes"}}</span>
+      </label>
+      <div>
+        <label for="mig-rate" class="block font-medium mb-1">{{t "wpmigrate.connect.rate"}}</label>
+        <input id="mig-rate" name="rate_per_second" type="number" min="1" max="20" step="1" value="{{.Form.Rate}}" dir="ltr" placeholder="4" aria-describedby="mig-rate-help mig-rate-err" {{with index .Fields "rate_per_second"}}aria-invalid="true"{{end}}
+               class="w-32 h-9 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <p id="mig-rate-help" class="mt-1 text-xs text-muted">{{t "wpmigrate.connect.rate_help"}}</p>
+        <div id="mig-rate-err">{{template "partials/field_errors" (index .Fields "rate_per_second")}}</div>
+      </div>
+    </div>
+    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "wpmigrate.connect.submit"}}</button>
+  </form>
+
+  <form hx-post="/admin/migrations/upload" hx-encoding="multipart/form-data" hx-target="#main" hx-swap="innerHTML" class="rounded border border-line bg-panel p-4 space-y-3">
+    <h2 class="text-base font-bold flex items-center gap-1.5">{{icon "file-up"}}<span>{{t "wpmigrate.connect.wxr_title"}}</span></h2>
+    <p class="text-xs text-muted">{{t "wpmigrate.connect.wxr_help"}}</p>
+    <div>
+      <label for="mig-wxr" class="block font-medium mb-1">{{t "wpmigrate.connect.wxr_file"}}</label>
+      <input id="mig-wxr" type="file" name="wxr" accept=".xml,application/xml,text/xml" required aria-describedby="mig-wxr-err"
+             class="text-sm file:me-2 file:h-9 file:px-3 file:rounded file:border file:border-line file:bg-panel file:text-ink hover:file:border-line-strong">
+      <div id="mig-wxr-err">{{template "partials/field_errors" (index .Fields "wxr")}}</div>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div>
+        <label for="mig-cur" class="block font-medium mb-1">{{t "wpmigrate.connect.currency"}}</label>
+        <input id="mig-cur" name="currency" type="text" dir="ltr" maxlength="3" placeholder="AED"
+               class="w-full h-9 rounded border border-line bg-panel px-3 font-mono uppercase focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      </div>
+      <div>
+        <label for="mig-policy-wxr" class="block font-medium mb-1">{{t "wpmigrate.connect.slug_policy"}}</label>
+        <select id="mig-policy-wxr" name="slug_policy" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          {{range .Policies}}<option value="{{.}}">{{t (print "wpmigrate.policy." .)}}</option>{{end}}
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "upload"}}<span>{{t "wpmigrate.connect.wxr_submit"}}</span></button>
+  </form>
+</div>
+{{end}}

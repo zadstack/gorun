@@ -1,0 +1,55 @@
+{{/* Picker body, loaded by partials/media_picker.html into #gp-media-picker-body (layout-less). */}}
+{{define "content"}}
+<div x-data data-target="{{.Target}}" class="space-y-3">
+  <div class="flex flex-wrap items-center gap-2">
+    <form role="search" class="flex-1 min-w-[12rem]" hx-get="/admin/x/media/picker" hx-target="#gp-media-picker-body"
+          hx-trigger="submit, input changed delay:300ms from:find input[name=q]">
+      <input type="hidden" name="target" value="{{.Target}}">
+      <label for="gp-picker-q" class="sr-only">{{t "media.search.label"}}</label>
+      <input id="gp-picker-q" name="q" type="search" value="{{.Q}}" placeholder="{{t "media.search.placeholder"}}"
+             class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    </form>
+    <form hx-post="/admin/media" hx-encoding="multipart/form-data" hx-target="#gp-media-picker-body"
+          x-data="{ busy: false, p: 0 }"
+          @htmx:before-request="busy = true; p = 0"
+          @htmx:xhr:progress="p = $event.detail.total ? Math.round($event.detail.loaded * 100 / $event.detail.total) : 0">
+      <input type="hidden" name="view" value="picker">
+      <input type="hidden" name="target" value="{{.Target}}">
+      <label class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 cursor-pointer focus-within:ring-[3px] focus-within:ring-green-soft">
+        {{icon "upload"}}<span x-show="!busy">{{t "media.picker.upload"}}</span><span x-show="busy" x-cloak class="[&[x-cloak]]:hidden font-mono" x-text="p + '%'"></span>
+        <input type="file" name="file" multiple class="sr-only" accept="{{.AllowedMimes}}" @change="$el.form.requestSubmit()">
+      </label>
+    </form>
+  </div>
+  {{range .Errors}}
+  <div role="alert" class="rounded border border-red bg-red-soft text-red px-3 py-2">{{if .Filename}}<span class="font-mono">{{.Filename}}</span> — {{end}}{{t .Key}}</div>
+  {{end}}
+  {{if .Items}}
+  <ul class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+    {{range .Items}}
+    <li>
+      <button type="button" data-id="{{.ID}}" data-url="{{.URL}}" data-alt="{{.Alt}}" aria-label="{{t "media.picker.select" .Title}}"
+              @click="window.dispatchEvent(new CustomEvent('media:selected', { detail: { id: $el.dataset.id, url: $el.dataset.url, alt: $el.dataset.alt, target: $root.dataset.target } }))"
+              class="block w-full rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft overflow-hidden text-start">
+        <span class="flex aspect-square items-center justify-center bg-panel-2">
+          {{if .Thumb}}<img src="{{.Thumb}}" alt="" loading="lazy" class="h-full w-full object-cover">{{else}}{{icon .Icon "w-6 h-6 text-muted"}}{{end}}
+        </span>
+        <span class="block truncate px-1.5 py-1 text-xs">{{.Title}}</span>
+      </button>
+    </li>
+    {{end}}
+  </ul>
+  {{if gt .Pages 1}}
+  <nav class="flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
+    <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+    <div class="flex gap-2">
+      {{if .HasPrev}}<button type="button" hx-get="/admin/x/media/picker?q={{.Q}}&amp;target={{.Target}}&amp;page={{.Prev}}" hx-target="#gp-media-picker-body" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</button>{{end}}
+      {{if .HasNext}}<button type="button" hx-get="/admin/x/media/picker?q={{.Q}}&amp;target={{.Target}}&amp;page={{.Next}}" hx-target="#gp-media-picker-body" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</button>{{end}}
+    </div>
+  </nav>
+  {{end}}
+  {{else}}
+  <p class="rounded border border-line bg-panel p-6 text-center text-muted">{{if .Q}}{{t "media.empty_search"}}{{else}}{{t "media.empty"}}{{end}}</p>
+  {{end}}
+</div>
+{{end}}

@@ -1,0 +1,19 @@
+{{/* Data: .Widgets []template.HTML (rendered by the admin module, or by the auth placeholder route until it is removed). */}}
+{{define "title"}}{{t "core.dashboard.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "dashboard-layout.css"}}">
+<script src="{{asset "dashboard-layout.js"}}" defer></script>
+<h1 class="text-[22px] font-bold mb-1">{{t "core.dashboard.title"}}</h1>
+{{with user}}<p class="text-muted mb-6">{{t "core.dashboard.welcome" .Name}}</p>{{end}}
+{{if .Widgets}}
+<div class="dashboard-layout-toolbar" data-layout-toolbar data-saving="{{t "dashboardlayout.saving"}}" data-saved="{{t "dashboardlayout.saved"}}" data-error="{{t "dashboardlayout.error"}}" data-conflict="{{t "dashboardlayout.conflict"}}">
+ <p>{{t "dashboardlayout.help"}}</p><button type="button" data-layout-reset>{{t "dashboardlayout.reset"}}</button>
+ <span role="status" aria-live="polite" data-layout-status></span><button type="button" data-layout-retry hidden>{{t "dashboardlayout.retry"}}</button><a href="/admin" data-layout-reload hidden>{{t "dashboardlayout.reload"}}</a>
+</div>
+<div class="dashboard-grid" data-dashboard-layout>
+  {{range .Widgets}}{{if .}}{{template "partials/dashboard_widget" .}}{{end}}{{end}}
+</div>
+{{else}}
+<div class="rounded border border-line bg-panel p-6 text-muted">{{t "core.dashboard.empty"}}</div>
+{{end}}
+{{end}}

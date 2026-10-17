@@ -1,0 +1,2 @@
+<link rel="stylesheet" href="{{asset "home-composition.css"}}">
+<section class="ed-front"><header class="ed-edition"><p class="ed-eyebrow">{{t "ed.journal"}}</p><h1>{{with .Extra.title}}{{.}}{{else}}{{.Site.Title}}{{end}}</h1>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</header>{{component "home-stories" .}}</section>

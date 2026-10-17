@@ -1,0 +1,23 @@
+/* Inherited public forms must remain usable without runtime utility CSS. */
+.private-intake{box-sizing:border-box;width:100%;max-width:720px;margin-inline:auto;padding:48px 24px 64px;color:var(--gp-text,var(--ink,#17212b));font-family:var(--font,system-ui,sans-serif);font-size:16px;line-height:1.65}
+.private-intake *{box-sizing:border-box}
+.private-intake>*+*{margin-top:24px}
+.private-intake header h1,.private-intake [role=status] h1{font-family:inherit;font-size:clamp(1.8rem,4vw,2.5rem);line-height:1.25;font-weight:750;letter-spacing:-.02em;margin:0}
+[dir=rtl] .private-intake h1{letter-spacing:0;line-height:1.5}
+.private-intake header p,.private-intake [role=status] p{margin-top:12px}
+.private-intake form{display:grid;gap:20px;margin-block:28px 0}
+.private-intake form label{display:grid;gap:7px;font-size:16px;line-height:1.5;font-weight:600;margin:0}
+.private-intake form [hidden]{display:none!important}
+.private-intake form :is(input:not([type=hidden]):not([type=checkbox]),select,textarea){display:block;width:100%;min-width:0;min-height:48px;border:1px solid var(--line-strong,#8a939a);border-radius:3px;padding:11px 12px;font:inherit;font-weight:400;color:inherit;background:var(--gp-bg,var(--bg,#fff));margin:0}
+.private-intake textarea{min-height:180px;resize:vertical}
+.private-intake .intake-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+.private-intake form .intake-consent{display:flex;align-items:flex-start;gap:12px;font-weight:400}
+.private-intake input[type=checkbox]{appearance:auto;flex:0 0 auto;width:20px;height:20px;margin:3px 0 0;accent-color:var(--gp-accent,#1748ed)}
+.private-intake form button{justify-self:start;min-height:48px;max-width:100%;padding:12px 20px;border:1px solid var(--gp-accent,#1748ed);border-radius:3px;background:var(--gp-accent,#1748ed);color:var(--on-accent,#fff);font:inherit;font-weight:700;cursor:pointer;line-height:1.5}
+.private-intake form :is(input,select,textarea,button):focus-visible{outline:3px solid var(--gp-text,var(--ink,#17212b));outline-offset:3px}
+.private-intake>p,.private-intake form>p{font-size:14px;line-height:1.7;margin:0}
+.private-intake>p{margin-top:24px}
+.private-intake [role=alert]{border-inline-start:3px solid #ad2828;padding:12px 16px;color:var(--gp-text,var(--ink,#17212b));background:var(--gp-bg,var(--bg,#fff))}
+.private-intake [role=status]{border:1px solid var(--line-strong,#8a939a);padding:24px}
+.private-intake code{overflow-wrap:anywhere;font-family:ui-monospace,monospace;font-size:.9em}
+@media(max-width:520px){.private-intake{padding:32px 20px 44px}.private-intake .intake-fields{grid-template-columns:minmax(0,1fr);gap:20px}.private-intake form button{width:100%;justify-self:stretch}.private-intake [role=status]{padding:20px}}

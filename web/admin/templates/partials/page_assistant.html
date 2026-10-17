@@ -1,0 +1,20 @@
+{{define "partials/page_assistant"}}
+<dialog id="page-assistant-dialog" class="page-assistant" aria-labelledby="page-assistant-heading"
+ data-state-queued="{{t "pageassistant.state_queued"}}" data-state-running="{{t "pageassistant.state_running"}}" data-state-waiting="{{t "pageassistant.state_waiting"}}" data-state-ready="{{t "pageassistant.state_ready"}}" data-state-failed="{{t "pageassistant.state_failed"}}"
+ data-loading="{{t "pageassistant.loading"}}" data-error="{{t "pageassistant.error"}}" data-unconfigured="{{t "pageassistant.unconfigured"}}" data-sent="{{t "pageassistant.sent"}}" data-saved="{{t "pageassistant.saved"}}" data-empty="{{t "pageassistant.empty"}}" data-native="{{t "pageassistant.native"}}" data-use="{{t "pageassistant.use"}}" data-not-ready="{{t "pageassistant.not_ready"}}" data-conflict="{{t "pageassistant.conflict"}}" data-forbidden="{{t "pageassistant.forbidden"}}" data-oversize="{{t "pageassistant.oversize"}}" data-selection="{{t "pageassistant.selection"}}" data-builder="{{t "pageassistant.builder"}}" data-title="{{t "pageassistant.title"}}" data-excerpt="{{t "pageassistant.excerpt"}}" data-body="{{t "pageassistant.body"}}" data-question-task="{{t "pageassistant.question_task"}}" data-edit-task="{{t "pageassistant.edit_task"}}" data-pending-close="{{t "pageassistant.pending_close"}}">
+<header><div><h2 id="page-assistant-heading">{{t "pageassistant.open"}}</h2><p data-pa-page></p></div><button type="button" data-pa-close aria-label="{{t "core.action.close"}}">×</button></header>
+<div class="pa-body">
+<p>{{t "pageassistant.intro"}}</p><a data-pa-editor href="/admin/content/page">{{t "pageassistant.editor"}} →</a>
+<p role="status" aria-live="polite" data-pa-status></p><a data-pa-config href="/admin/settings/studio" hidden>{{t "pageassistant.configure"}} →</a>
+<section data-pa-work hidden>
+<div class="pa-grid"><label>{{t "pageassistant.mode"}}<select data-pa-mode><option value="question">{{t "pageassistant.question"}}</option><option value="edit">{{t "pageassistant.edit"}}</option></select></label><label data-pa-field-label hidden>{{t "pageassistant.field"}}<select data-pa-field></select></label><label>{{t "pageassistant.provider"}}<select data-pa-provider></select></label><label>{{t "pageassistant.preset"}}<select data-pa-preset><option value="">{{t "pageassistant.no_preset"}}</option></select></label></div>
+<label>{{t "pageassistant.prompt"}}<textarea data-pa-prompt rows="4" maxlength="6000"></textarea></label>
+<button type="button" data-pa-preview>{{t "pageassistant.preview"}}</button>
+<section data-pa-review hidden><h3>{{t "pageassistant.outbound"}}</h3><p>{{t "pageassistant.consent_help"}}</p><pre data-pa-payload dir="auto"></pre><label class="pa-check"><input type="checkbox" data-pa-consent>{{t "pageassistant.consent"}}</label><button type="button" data-pa-send disabled>{{t "pageassistant.send"}}</button></section>
+</section>
+<section><div class="pa-section-heading"><h3>{{t "pageassistant.history"}}</h3><button type="button" data-pa-refresh>{{t "pageassistant.refresh"}}</button></div><p>{{t "pageassistant.history_help"}}</p><div data-pa-history></div></section>
+<section data-pa-result hidden><h3>{{t "pageassistant.result"}}</h3><textarea data-pa-answer readonly rows="7"></textarea></section>
+<section data-pa-apply-panel hidden><h3>{{t "pageassistant.review_change"}}</h3><p data-pa-published hidden>{{t "pageassistant.published"}}</p><p data-pa-builder hidden>{{t "pageassistant.builder"}}</p><div class="pa-grid"><label>{{t "pageassistant.previous"}}<textarea data-pa-previous readonly rows="7"></textarea></label><label>{{t "pageassistant.replacement"}}<textarea data-pa-replacement rows="7" maxlength="100000"></textarea></label></div><button type="button" data-pa-selection hidden>{{t "pageassistant.select_portion"}}</button><label class="pa-check"><input type="checkbox" data-pa-apply-consent>{{t "pageassistant.apply_consent"}}</label><button type="button" data-pa-apply disabled>{{t "pageassistant.apply"}}</button><button type="button" data-pa-reload>{{t "pageassistant.reload"}}</button></section>
+</div>
+</dialog>
+{{end}}

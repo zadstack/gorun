@@ -1,0 +1,28 @@
+.dashboard-grid>section{order:4}
+.dashboard-grid>section:has([data-widget="workspace"]){order:3}
+.dashboard-grid>section:has([data-widget="content_stats"]){order:4}
+.dashboard-grid>section:has([data-widget="canvas_gallery"]){grid-column:1/-1;order:5;padding:0}
+.canvas-gallery{min-width:0;padding:1.25rem}
+.canvas-gallery>header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem}
+.canvas-gallery h2{font-size:1rem;font-weight:650}
+.canvas-gallery>header p,.canvas-gallery-note{color:var(--muted);font-size:.8rem;margin-top:.4rem}
+.canvas-gallery>header a{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;font-size:.8rem;font-weight:600}
+.canvas-gallery>header svg{width:1rem;height:1rem}
+.canvas-gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.canvas-gallery-board{display:block;min-width:0;border:1px solid var(--line);color:var(--ink);text-decoration:none;background:var(--panel)}
+.canvas-gallery-board:hover{border-color:var(--blue)}
+.canvas-gallery-board:focus-visible{outline:3px solid var(--blue);outline-offset:3px}
+.canvas-gallery-preview{height:190px;overflow:hidden;position:relative;direction:ltr;background-color:var(--bg);background-image:radial-gradient(#c4ccd8 1px,transparent 1px);background-size:14px 14px;border-bottom:1px solid var(--line)}
+.canvas-gallery-mini{position:absolute;margin:10px;width:30%;max-height:110px;overflow:hidden;border:1px solid var(--line);border-top:2px solid var(--blue);background:var(--panel);padding:6px;font-size:8px;line-height:1.55;overflow-wrap:anywhere;pointer-events:none}
+[dir="rtl"] .canvas-gallery-mini{direction:rtl}
+.canvas-gallery-mini small,.canvas-gallery-mini strong,.canvas-gallery-mini span{display:block}
+.canvas-gallery-mini small{color:var(--muted);font-size:7px}
+.canvas-gallery-mini strong{font-size:9px;margin-block:3px}
+.canvas-gallery-caption{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.4rem;padding:1rem}
+.canvas-gallery-caption h3{font-size:.875rem;font-weight:650;overflow-wrap:anywhere}
+.canvas-gallery-caption span,.canvas-gallery-caption time{font-size:.7rem;color:var(--muted)}
+.canvas-gallery-caption time{grid-column:1/-1}
+.canvas-gallery-blank{display:grid;place-items:center;height:100%;font-size:2rem;color:var(--muted)}
+.canvas-gallery-note{margin-top:1rem}
+@media(max-width:1100px){.canvas-gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.canvas-gallery-grid{grid-template-columns:minmax(0,1fr)}.canvas-gallery{padding:1rem}.canvas-gallery-preview{height:180px}}

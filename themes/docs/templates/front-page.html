@@ -1,0 +1,39 @@
+{{/* Docs home: a search hero, the top-level sections as cards, recently updated pages and latest posts. */}}
+{{part "header" .}}
+{{$pages := query (dict "type" "page" "order" "menu_order" "per_page" 100)}}
+<section class="docs-hero" aria-labelledby="docs-hero-title">
+  <h1 id="docs-hero-title">{{t "docs.help_title"}}</h1>
+  {{with setting "theme.docs.home_intro"}}<p>{{.}}</p>{{else}}{{with .Site.Tagline}}<p>{{.}}</p>{{end}}{{end}}
+  <form action="{{url "/search"}}" method="get" role="search" class="docs-hero-search">
+    <label for="docs-home-q" class="sr-only">{{t "docs.search_hint"}}</label>
+    <input id="docs-home-q" name="q" type="search" placeholder="{{t "docs.search_hint"}}">
+    <button type="submit">{{t "search"}}</button>
+  </form>
+</section>
+{{with $pages.Items}}
+<section class="docs-sections" aria-labelledby="docs-sections-title">
+  <h2 id="docs-sections-title">{{t "docs.sections"}}</h2>
+  <div class="docs-cards">
+    {{range $pages.Items}}{{if not .ParentID}}{{$top := .}}{{$n := 0}}{{range $pages.Items}}{{if eq .ParentID $top.ID}}{{$n = add $n 1}}{{end}}{{end}}
+    <a class="docs-card" href="{{url .}}">
+      <span class="docs-card-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h6M8 11h6"/></svg></span>
+      <span class="docs-card-copy"><strong>{{.Title}}</strong>{{with excerpt . 16}}<span>{{.}}</span>{{end}}{{if $n}}<span class="docs-card-count">{{t "docs.articles" $n}}</span>{{end}}</span>
+    </a>
+    {{end}}{{end}}
+  </div>
+</section>
+{{$recent := query (dict "type" "page" "order" "-updated_at" "per_page" 5)}}
+{{with $recent.Items}}
+<section class="docs-recent" aria-labelledby="docs-recent-title">
+  <h2 id="docs-recent-title">{{t "docs.recent"}}</h2>
+  <ul>{{range .}}<li><a href="{{url .}}"><span>{{.Title}}</span>{{with .UpdatedAt}}<time datetime="{{.}}">{{date .}}</time>{{end}}</a></li>{{end}}</ul>
+</section>
+{{end}}
+{{end}}
+{{if .Items}}
+<section class="docs-posts" aria-labelledby="docs-posts-title">
+  <h2 id="docs-posts-title">{{t "latest_posts"}}</h2>
+  {{component "list" .}}
+</section>
+{{end}}
+{{part "footer" .}}

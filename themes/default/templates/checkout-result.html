@@ -1,0 +1,16 @@
+{{/* Commerce: /checkout/success. .Extra.order {Number, Status, ProductName, TotalMinor, Currency, Final, Active, Failed};
+     .Extra.status_html is the live status block (polls /checkout/status/{id} every 3s with HTMX until final). */}}
+{{part "header" .}}
+<section class="mx-auto max-w-2xl">
+  <h1 class="text-[22px] font-bold">{{t "commerce.checkout.title"}}</h1>
+  {{with .Extra.order}}
+  <dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+    <dt class="text-muted">{{t "commerce.checkout.order"}}</dt><dd dir="ltr" class="text-start">#{{.Number}}</dd>
+    <dt class="text-muted">{{t "commerce.checkout.product"}}</dt><dd>{{.ProductName}}</dd>
+    <dt class="text-muted">{{if .ManualRequest}}{{t "commerce.request.total"}}{{else}}{{t "commerce.checkout.total"}}{{end}}</dt><dd dir="ltr" class="text-start">{{money .TotalMinor .Currency}}</dd>
+  </dl>
+  {{end}}
+  <div class="mt-6">{{.Extra.status_html}}</div>
+</section>
+{{if .Extra.poll}}<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>{{end}}
+{{part "footer" .}}

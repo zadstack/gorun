@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="{{locale}}" dir="{{dir}}">
+<head>
+{{template "head" .}}
+<title>{{block "title" .}}{{t "core.app.name"}}{{end}} · {{t "core.app.name"}}</title>
+</head>
+<body class="min-h-screen bg-bg text-ink text-sm font-sans antialiased flex items-center justify-center p-4">
+<main id="main" class="w-full max-w-sm">
+  {{template "partials/flash" .}}
+  {{template "content" .}}
+</main>
+</body>
+</html>

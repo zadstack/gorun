@@ -1,0 +1,3 @@
+{{part "header" .}}
+{{if .Content}}{{if eq .Content.Template "builder"}}<article class="ed-builder gp-page" aria-label="{{.Content.Title}}">{{builderBody .Content}}</article>{{else}}{{component "contact" .}}{{end}}{{else}}{{component "contact" .}}{{end}}
+{{part "footer" .}}

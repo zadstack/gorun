@@ -1,0 +1,23 @@
+{{define "content"}}
+<div class="dashboard-pins" data-widget="dashboard_pins" data-dashboard-pins>
+ <header class="dashboard-pins-heading"><div><h2>{{t "dashboardpins.title"}}</h2><p>{{t "dashboardpins.description"}}</p></div><span class="dashboard-drop-label" aria-hidden="true">＋ {{t "dashboardpins.drop"}}</span></header>
+ <div class="dashboard-pin-grid" data-pin-grid>
+ {{range .Pinned}}
+  <article class="dashboard-pin-panel" data-pin-id="{{.ID}}">
+   <header class="dashboard-pin-heading"><button type="button" draggable="true" data-pin-drag aria-label="{{t "dashboardpins.move"}}: {{.Title}}" title="{{t "dashboardpins.move"}}">⠿</button><span class="dashboard-pin-icon" aria-hidden="true">{{icon .Icon}}</span><h3>{{.Title}}</h3><div class="dashboard-pin-moves"><button type="button" data-pin-move="up" aria-label="{{t "dashboardpins.up"}}: {{.Title}}">↑</button><button type="button" data-pin-move="down" aria-label="{{t "dashboardpins.down"}}: {{.Title}}">↓</button></div></header>
+   <div class="dashboard-pin-content">
+    {{if .Hint}}<p class="dashboard-pin-hint">{{.Hint}}</p>{{end}}
+    {{if .Failed}}<p role="status">{{t "dashboardpins.failed"}}</p>
+    {{else if .Projection}}
+      {{if .Metrics}}<dl class="dashboard-pin-metrics">{{range .Metrics}}<div><dt>{{.Label}}</dt><dd>{{.Value}}</dd></div>{{end}}</dl>{{end}}
+      {{if .Rows}}<ul class="dashboard-pin-records">{{range .Rows}}<li>{{if .Href}}<a href="{{.Href}}">{{.Title}}</a>{{else}}<strong>{{.Title}}</strong>{{end}}{{if .Detail}}<small>{{.Detail}}</small>{{end}}</li>{{end}}</ul>{{else}}<p class="dashboard-pin-empty">{{t "dashboardpins.empty_rows"}}</p>{{end}}
+    {{else}}<p class="dashboard-pin-shortcut">{{t "dashboardpins.shortcut"}}</p><p>{{t "dashboardpins.shortcut_help"}}</p>{{end}}
+   </div>
+   <footer><a href="{{.Href}}">{{t "dashboardpins.open"}} <span aria-hidden="true">↗</span></a><button type="button" data-pin-remove>{{t "dashboardpins.return"}}</button></footer>
+  </article>
+ {{end}}
+ </div>
+ {{if not .Pinned}}<div class="dashboard-pins-empty"><span aria-hidden="true">＋</span><h3>{{t "dashboardpins.empty"}}</h3><p>{{t "dashboardpins.empty_help"}}</p></div>{{end}}
+ <p class="dashboard-pin-status" role="status" aria-live="polite" data-pin-status></p>
+</div>
+{{end}}

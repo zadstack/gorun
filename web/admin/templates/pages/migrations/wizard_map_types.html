@@ -1,0 +1,68 @@
+{{/* Data: wpmigrate.page (Steps, M, TypeRows, TaxRows, Targets) — step 3 */}}
+{{define "title"}}{{t "wpmigrate.step.map"}} · {{t "wpmigrate.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "wpmigrate.map.title"}}</h1>
+<p class="text-muted mb-3">{{t "wpmigrate.map.intro"}}</p>
+<nav aria-label="{{t "wpmigrate.steps"}}" class="mb-4 overflow-x-auto">
+  <ol class="flex gap-1 min-w-max">
+    {{range .Steps}}
+    <li>
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-green bg-green-soft text-green{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+        <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
+      </a>
+    </li>
+    {{end}}
+  </ol>
+</nav>
+<form method="post" action="/admin/migrations/{{.M.ID}}/map" class="space-y-4">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <section class="rounded border border-line bg-panel overflow-x-auto" aria-labelledby="map-types-h">
+    <h2 id="map-types-h" class="px-4 py-3 border-b border-line text-base font-bold">{{t "wpmigrate.map.types"}}</h2>
+    <table class="w-full">
+      <thead class="bg-panel-2"><tr>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.map.wp_type"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.map.count"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "wpmigrate.map.target"}}</th>
+      </tr></thead>
+      <tbody>
+        {{range .TypeRows}}
+        <tr class="border-t border-line">
+          <th scope="row" class="px-3 py-2 text-start font-normal"><span class="font-medium">{{.Name}}</span> <span class="font-mono text-xs text-muted">{{.WPType}}</span></th>
+          <td class="px-3 py-2 text-end font-mono">{{.Count}}</td>
+          <td class="px-3 py-2">
+            <label for="type-{{.WPType}}" class="sr-only">{{t "wpmigrate.map.target"}} {{.WPType}}</label>
+            <select id="type-{{.WPType}}" name="type.{{.WPType}}" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+              {{$sel := .Target}}{{range .Options}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{t (print "wpmigrate.target." .)}}</option>{{end}}
+            </select>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+  <section class="rounded border border-line bg-panel overflow-x-auto" aria-labelledby="map-tax-h">
+    <h2 id="map-tax-h" class="px-4 py-3 border-b border-line text-base font-bold">{{t "wpmigrate.map.taxonomies"}}</h2>
+    <p class="px-4 pt-3 text-xs text-muted">{{t "wpmigrate.map.taxonomies_help"}}</p>
+    <table class="w-full">
+      <tbody>
+        {{$targets := .Targets}}
+        {{range .TaxRows}}
+        <tr class="border-t border-line first:border-t-0">
+          <th scope="row" class="px-3 py-2 text-start font-normal font-mono text-xs">{{.WPTax}} <span class="text-muted">({{.Count}})</span></th>
+          <td class="px-3 py-2">
+            <label for="tax-{{.WPTax}}" class="sr-only">{{t "wpmigrate.map.target"}} {{.WPTax}}</label>
+            <select id="tax-{{.WPTax}}" name="tax.{{.WPTax}}" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+              <option value="">{{t "wpmigrate.target.skip"}}</option>
+              {{$sel := .Target}}{{range $targets}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{.}}</option>{{end}}
+            </select>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </section>
+  <div class="flex justify-end">
+    <button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "wpmigrate.next.fields"}}</span>{{icon "arrow-right" "w-4 h-4 rtl:rotate-180"}}</button>
+  </div>
+</form>
+{{end}}

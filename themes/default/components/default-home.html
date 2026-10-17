@@ -1,0 +1,63 @@
+{{/* Default's home: introduction, a featured story on the first page, the
+     latest stories and a site search. Only published items from the normal
+     home query are shown; nothing is invented when there are none. */}}
+{{$first := eq .Pagination.Page 1}}{{if eq .Pagination.Page 0}}{{$first = true}}{{end}}
+{{if $first}}
+<section class="dt-hero" aria-labelledby="dt-hero-title">
+  <h1 id="dt-hero-title">{{.Site.Title}}</h1>
+  {{with .Site.Tagline}}<p class="dt-hero-intro">{{.}}</p>{{end}}
+  {{if .Items}}<a class="dt-button" href="#dt-latest">{{t "start_reading"}}</a>{{end}}
+</section>
+{{end}}
+
+{{if .Items}}
+{{$rest := .Items}}
+{{if and $first (gt (len .Items) 1)}}
+{{with index .Items 0}}{{$f := .}}
+<section class="dt-featured-wrap" aria-labelledby="dt-featured-title">
+  <article class="dt-featured">
+    {{with media .FeaturedMediaID}}<a class="dt-featured-media" href="{{url $f}}" tabindex="-1" aria-hidden="true">{{img . "large" "dt-cover"}}</a>{{end}}
+    <div class="dt-featured-copy">
+      <p class="dt-kicker"><span class="dt-badge">{{t "featured"}}</span>{{range terms . "category"}}<a href="{{url .}}">{{.Name}}</a>{{end}}</p>
+      <h2 id="dt-featured-title"><a href="{{url .}}">{{.Title}}</a></h2>
+      {{with excerpt . 36}}<p class="dt-excerpt">{{.}}</p>{{end}}
+      <p class="dt-meta">{{with .PublishedAt}}<time datetime="{{.}}">{{date .}}</time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
+    </div>
+  </article>
+</section>
+{{end}}
+{{$rest = slice .Items 1}}
+{{end}}
+
+<section id="dt-latest" class="dt-latest" aria-labelledby="dt-latest-title">
+  <h2 id="dt-latest-title" class="dt-section-title">{{t "latest_posts"}}</h2>
+  <div class="dt-grid">
+  {{range $rest}}{{$p := .}}
+    <article class="dt-card">
+      {{with media .FeaturedMediaID}}<a class="dt-card-media" href="{{url $p}}" tabindex="-1" aria-hidden="true">{{img . "medium" "dt-cover"}}</a>{{end}}
+      <div class="dt-card-copy">
+        {{with terms . "category"}}<p class="dt-cat">{{range .}}<a href="{{url .}}">{{.Name}}</a>{{end}}</p>{{end}}
+        <h3><a href="{{url .}}">{{.Title}}</a></h3>
+        {{with excerpt . 22}}<p class="dt-excerpt">{{.}}</p>{{end}}
+        <p class="dt-meta">{{with .PublishedAt}}<time datetime="{{.}}">{{date .}}</time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
+      </div>
+    </article>
+  {{end}}
+  </div>
+  {{component "pagination" .}}
+</section>
+{{else}}
+<p class="dt-empty">{{t "empty"}}</p>
+{{end}}
+
+<section class="dt-search-strip" aria-labelledby="dt-search-title">
+  <div>
+    <h2 id="dt-search-title">{{t "search_cta_title"}}</h2>
+    <p>{{t "search_cta_body"}}</p>
+  </div>
+  <form action="{{url "/search"}}" method="get" role="search" class="dt-search-form">
+    <label for="dt-search-q" class="sr-only">{{t "search"}}</label>
+    <input id="dt-search-q" name="q" type="search" placeholder="{{t "search_placeholder"}}">
+    <button type="submit">{{t "search"}}</button>
+  </form>
+</section>

@@ -1,0 +1,165 @@
+{{/* Data: productPage */}}
+{{define "title"}}{{if .ID}}{{.Form.Name}}{{else}}{{t "commerce.products.new"}}{{end}}{{end}}
+{{define "content"}}
+<p class="mb-2"><a href="/admin/commerce/products" class="text-blue hover:text-blue-hover">{{t "commerce.products.back"}}</a></p>
+<h1 class="text-[22px] font-bold mb-4">{{if .ID}}{{.Form.Name}}{{else}}{{t "commerce.products.new"}}{{end}}</h1>
+{{with .WPProductID}}<p class="mb-4 text-xs text-muted">{{t "commerce.products.imported" .}}</p>{{end}}
+<form method="post" action="/admin/commerce/products{{with .ID}}/{{.}}{{end}}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <div class="space-y-4">
+    <section class="rounded border border-line bg-panel p-4 space-y-3">
+      <label for="p-kind" class="block font-medium">نوع المنتج / Product type</label>
+      <select id="p-kind" name="kind" class="h-9 w-full rounded border border-line bg-panel px-3">
+        <option value="provisioning" {{if or (eq .Form.Kind "") (eq .Form.Kind "provisioning")}}selected{{end}}>استضافة أو إنشاء موقع / Provisioning</option>
+        <option value="service" {{if eq .Form.Kind "service"}}selected{{end}}>خدمة / Service</option>
+        <option value="digital" {{if eq .Form.Kind "digital"}}selected{{end}}>ملف رقمي / Digital file</option>
+      </select>
+      {{template "partials/field_errors" (index .Fields "kind")}}
+      <p class="text-xs text-muted">الخطة والسيرفر مطلوبان للاستضافة فقط. الملف الرقمي لا يتفعّل قبل وجود ملف خاص حقيقي.</p>
+      <label for="p-digital" class="block font-medium">معرّف الملف الخاص / Private file ID</label>
+      <input id="p-digital" name="digital_file" value="{{.Form.DigitalFile}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3">
+      {{template "partials/field_errors" (index .Fields "digital_file")}}
+      <label for="p-download-days" class="block font-medium">مدة إتاحة التنزيل بالأيام / Download days</label>
+      <input id="p-download-days" name="download_days" type="number" min="1" max="365" value="{{.Form.DownloadDays}}" class="h-9 w-full rounded border border-line bg-panel px-3">
+      {{template "partials/field_errors" (index .Fields "download_days")}}
+    </section>
+    <section class="rounded border border-line bg-panel p-4 space-y-4">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="p-name" class="block font-medium mb-1">{{t "commerce.field.name"}}</label>
+          <input id="p-name" name="name" value="{{.Form.Name}}" required {{with index .Fields "name"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          {{template "partials/field_errors" (index .Fields "name")}}
+        </div>
+        <div>
+          <label for="p-slug" class="block font-medium mb-1">{{t "commerce.field.slug"}}</label>
+          <input id="p-slug" name="slug" value="{{.Form.Slug}}" dir="ltr" aria-describedby="p-slug-help" {{with index .Fields "slug"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs">
+          <p id="p-slug-help" class="mt-1 text-xs text-muted">{{t "commerce.field.slug_help"}}</p>
+          {{template "partials/field_errors" (index .Fields "slug")}}
+        </div>
+      </div>
+      <div>
+        <label for="p-short" class="block font-medium mb-1">{{t "commerce.field.short_description"}}</label>
+        <input id="p-short" name="short_description" value="{{.Form.ShortDescription}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      </div>
+      <div>
+        <label for="p-desc" class="block font-medium mb-1">{{t "commerce.field.description"}}</label>
+        <textarea id="p-desc" name="description" rows="8" aria-describedby="p-desc-help" class="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Form.Description}}</textarea>
+        <p id="p-desc-help" class="mt-1 text-xs text-muted">{{t "commerce.field.description_help"}}</p>
+      </div>
+      <div x-data="{ items: {{json .Form.Features}} }">
+        <span class="block font-medium mb-1">{{t "commerce.field.features"}}</span>
+        <template x-for="(item, i) in items" :key="i">
+          <div class="flex gap-2 mb-2">
+            <input name="features" x-model="items[i]" :aria-label="'{{t "commerce.field.feature"}} ' + (i + 1)" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+            <button type="button" @click="items.splice(i, 1)" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft" aria-label="{{t "commerce.action.remove"}}">{{icon "x"}}</button>
+          </div>
+        </template>
+        <button type="button" @click="items.push('')" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "commerce.action.add_feature"}}</span></button>
+        {{template "partials/field_errors" (index .Fields "features")}}
+      </div>
+    </section>
+    <details class="rounded border border-line bg-panel" {{if or .Form.SEOTitle .Form.SEODescription}}open{{end}}>
+      <summary class="px-4 py-3 cursor-pointer font-bold rounded focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.seo.title"}}</summary>
+      <div class="px-4 pb-4 space-y-3">
+        <div><label for="seo-title" class="block font-medium mb-1">{{t "commerce.seo.meta_title"}}</label><input id="seo-title" name="seo_title" value="{{.Form.SEOTitle}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+        <div><label for="seo-desc" class="block font-medium mb-1">{{t "commerce.seo.meta_description"}}</label><textarea id="seo-desc" name="seo_description" rows="2" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Form.SEODescription}}</textarea></div>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <div><label for="seo-og" class="block font-medium mb-1">{{t "commerce.seo.og_image"}}</label><input id="seo-og" name="seo_og_image" value="{{.Form.SEOOGImage}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs"></div>
+          <div><label for="seo-robots" class="block font-medium mb-1">{{t "commerce.seo.robots"}}</label><input id="seo-robots" name="seo_robots" value="{{.Form.SEORobots}}" dir="ltr" placeholder="index,follow" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs"></div>
+        </div>
+      </div>
+    </details>
+  </div>
+  <aside class="space-y-4">
+    <section class="rounded border border-line bg-panel p-4 space-y-3">
+      <label class="flex items-center gap-2 font-medium"><input type="checkbox" name="active" value="1" {{if .Form.Active}}checked{{end}} class="accent-[var(--green)]"> {{t "commerce.field.active"}}</label>
+      {{template "partials/field_errors" (index .Fields "active")}}
+      <div class="grid grid-cols-[minmax(0,1fr)_6rem] gap-2">
+        <div>
+          <label for="p-price" class="block font-medium mb-1">{{t "commerce.field.price"}}</label>
+          <input id="p-price" name="price" value="{{.Form.Price}}" inputmode="decimal" dir="ltr" {{with index .Fields "price"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+        </div>
+        <div>
+          <label for="p-currency" class="block font-medium mb-1">{{t "commerce.field.currency"}}</label>
+          <input id="p-currency" name="currency" value="{{.Form.Currency}}" maxlength="3" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono uppercase">
+        </div>
+      </div>
+      {{template "partials/field_errors" (index .Fields "price")}}{{template "partials/field_errors" (index .Fields "currency")}}
+      <div>
+        <label for="p-server" class="block font-medium mb-1">{{t "commerce.field.server"}}</label>
+        <select id="p-server" name="server_id" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft px-2">
+          <option value="">{{t "commerce.field.server_none"}}</option>
+          {{$sel := .Form.ServerID}}{{range .Servers}}<option value="{{.ID}}" {{if eq .ID $sel}}selected{{end}}>{{.Name}}</option>{{end}}
+        </select>
+        {{template "partials/field_errors" (index .Fields "server_id")}}
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label for="p-plan" class="block font-medium mb-1">{{t "commerce.field.plan_code"}}</label>
+          <input id="p-plan" name="plan_code" value="{{.Form.PlanCode}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs">
+        </div>
+        <div>
+          <label for="p-months" class="block font-medium mb-1">{{t "commerce.field.access_months"}}</label>
+          <input id="p-months" name="access_months" type="number" min="1" max="120" value="{{.Form.AccessMonths}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+        </div>
+      </div>
+      {{template "partials/field_errors" (index .Fields "access_months")}}
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label for="p-group" class="block font-medium mb-1">{{t "commerce.field.group"}}</label>
+          <input id="p-group" name="group_name" value="{{.Form.GroupName}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        </div>
+        <div>
+          <label for="p-sort" class="block font-medium mb-1">{{t "commerce.field.sort"}}</label>
+          <input id="p-sort" name="sort" type="number" value="{{.Form.Sort}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+        </div>
+      </div>
+      <input type="hidden" name="group_slug" value="{{.Form.GroupSlug}}">
+    </section>
+    <section class="rounded border border-line bg-panel p-4" x-data="{ id: {{json .Form.ImageMediaID}}, url: {{json .ImageURL}} }"
+             @media:selected.window="if ($event.detail.target === 'product-image') { id = $event.detail.id; url = $event.detail.url }">
+      <span class="block font-medium mb-2">{{t "commerce.field.image"}}</span>
+      <input type="hidden" name="image_media_id" :value="id">
+      <template x-if="url"><img :src="url" alt="" class="mb-2 w-full rounded border border-line"></template>
+      <div class="flex gap-2">
+        <button type="button" @click="$dispatch('media:open', { target: 'product-image' })" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "image"}}<span>{{t "commerce.action.choose_image"}}</span></button>
+        <button type="button" x-show="id" @click="id = ''; url = ''" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.action.remove"}}</button>
+      </div>
+    </section>
+    <div class="flex flex-wrap gap-2"><button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+  </aside>
+</form>
+<section class="mt-6 rounded border border-line bg-panel p-4 space-y-3" aria-labelledby="digital-upload-title"
+ x-data="{ busy: false, error: '', uploaded: false,
+ async upload(form) {
+   this.error = ''; this.uploaded = false; this.busy = true;
+   try {
+     const token = document.querySelector('meta[name=csrf-token]').content;
+     const response = await fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin', headers: { 'X-CSRF-Token': token, 'Accept': 'application/json' } });
+     const result = await response.json();
+     if (!response.ok || !result.ok) { this.error = result.error ? result.error.message : {{json (t "commerce.error.upload_failed")}}; return; }
+     const field = document.getElementById('p-digital');
+     field.value = result.data.digital_file; field.dispatchEvent(new Event('input', { bubbles: true })); this.uploaded = true; form.reset();
+   } catch (err) { this.error = {{json (t "commerce.error.upload_failed")}}; }
+   finally { this.busy = false; }
+ } }">
+  <h2 id="digital-upload-title" class="font-bold">{{t "commerce.upload.title"}}</h2>
+  <p class="text-xs text-muted">{{t "commerce.upload.help"}}</p>
+  {{with .UploadNotice}}<p role="status" class="rounded border border-green bg-green-soft text-green p-3">{{t .}}</p>{{end}}
+  {{with .UploadError}}<p role="alert" class="rounded border border-red bg-red-soft text-red p-3">{{t .}}</p>{{end}}
+  <p x-show="uploaded" x-cloak role="status" class="rounded border border-green bg-green-soft text-green p-3">{{t "commerce.upload.saved"}}</p>
+  <p x-show="error" x-cloak x-text="error" role="alert" class="rounded border border-red bg-red-soft text-red p-3"></p>
+  <form @submit.prevent="upload($el)" method="post" enctype="multipart/form-data" action="{{if .ID}}/admin/commerce/products/{{.ID}}/digital-file{{else}}/admin/commerce/digital-files{{end}}" class="flex flex-wrap items-end gap-3">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div class="flex-1 min-w-48"><label for="digital-upload-file" class="block font-medium mb-1">{{t "commerce.upload.file"}}</label><input id="digital-upload-file" type="file" name="file" required class="block w-full rounded border border-line bg-panel p-2" aria-describedby="digital-upload-limit"><p id="digital-upload-limit" class="mt-1 text-xs text-muted">{{t "commerce.upload.limit"}}</p></div>
+    <button type="submit" :disabled="busy" :aria-busy="busy" class="h-9 px-4 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong disabled:opacity-50">{{icon "upload"}} {{t "commerce.upload.action"}}</button>
+  </form>
+</section>
+{{if .ID}}
+<form method="post" action="/admin/commerce/products/{{.ID}}/delete" class="mt-6" data-confirm="{{t "commerce.confirm.delete_product"}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <button type="submit" class="h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{t "core.action.delete"}}</button>
+</form>
+{{end}}
+{{template "partials/media_picker.html" .}}
+{{end}}

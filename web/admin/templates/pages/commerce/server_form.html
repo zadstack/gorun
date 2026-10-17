@@ -1,0 +1,49 @@
+{{/* Data: serverPage */}}
+{{define "title"}}{{if .ID}}{{.Form.Name}}{{else}}{{t "commerce.servers.new"}}{{end}}{{end}}
+{{define "content"}}
+<p class="mb-2"><a href="/admin/commerce/servers" class="text-blue hover:text-blue-hover">{{t "commerce.servers.back"}}</a></p>
+<h1 class="text-[22px] font-bold mb-4">{{if .ID}}{{.Form.Name}}{{else}}{{t "commerce.servers.new"}}{{end}}</h1>
+<form method="post" action="/admin/commerce/servers{{with .ID}}/{{.}}{{end}}" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="s-name" class="block font-medium mb-1">{{t "commerce.field.name"}}</label>
+      <input id="s-name" name="name" value="{{.Form.Name}}" required {{with index .Fields "name"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      {{template "partials/field_errors" (index .Fields "name")}}
+    </div>
+    <div>
+      <label for="s-client" class="block font-medium mb-1">{{t "commerce.field.client_id"}}</label>
+      <input id="s-client" name="client_id" value="{{.Form.ClientID}}" dir="ltr" autocomplete="off" {{with index .Fields "client_id"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs">
+      {{template "partials/field_errors" (index .Fields "client_id")}}
+    </div>
+  </div>
+  <div>
+    <label for="s-url" class="block font-medium mb-1">{{t "commerce.field.base_url"}}</label>
+    <input id="s-url" name="base_url" value="{{.Form.BaseURL}}" dir="ltr" placeholder="https://billing.example.com" aria-describedby="s-url-help" {{with index .Fields "base_url"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs">
+    <p id="s-url-help" class="mt-1 text-xs text-muted">{{t "commerce.field.base_url_help"}}</p>
+    {{template "partials/field_errors" (index .Fields "base_url")}}
+  </div>
+  <div>
+    <label for="s-secret" class="block font-medium mb-1">{{t "commerce.field.secret"}}</label>
+    <input id="s-secret" name="secret" type="password" autocomplete="new-password" aria-describedby="s-secret-help" {{with index .Fields "secret"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <p id="s-secret-help" class="mt-1 text-xs text-muted">{{if .SecretSet}}{{t "commerce.field.secret_set"}}{{else}}{{t "commerce.field.secret_unset"}}{{end}}</p>
+    {{template "partials/field_errors" (index .Fields "secret")}}
+  </div>
+  <div><button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+</form>
+{{if .ID}}
+<section class="mt-4 rounded border border-line bg-panel p-4 max-w-3xl">
+  <h2 class="text-base font-bold mb-1">{{t "commerce.servers.test_title"}}</h2>
+  <p class="text-xs text-muted mb-3">{{t "commerce.servers.test_help"}}</p>
+  <form method="post" action="/admin/commerce/servers/{{.ID}}/test" hx-post="/admin/commerce/servers/{{.ID}}/test" hx-target="#server-test-result" hx-swap="innerHTML">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plug"}}<span>{{t "commerce.servers.test"}}</span></button>
+  </form>
+  <div id="server-test-result" class="mt-3" aria-live="polite"></div>
+</section>
+<form method="post" action="/admin/commerce/servers/{{.ID}}/delete" class="mt-6" data-confirm="{{t "commerce.confirm.delete_server"}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <button type="submit" class="h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{t "core.action.delete"}}</button>
+</form>
+{{end}}
+{{end}}

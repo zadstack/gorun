@@ -1,0 +1,123 @@
+/* GoRun default theme: shared tokens and scoped reading layouts. */
+:root {
+  --bg: #f3f5f2;
+  --panel: #ffffff;
+  --panel-2: #e9eeea;
+  --ink: #141816;
+  --muted: #637069;
+  --line: #cbd3ce;
+  --line-strong: #9ca9a1;
+  --green: #167252;
+  --green-hover: #125e44;
+  --green-soft: #dcefe7;
+  --blue: #256b9b;
+  --blue-hover: #1e577e;
+  --blue-soft: #deedf7;
+  --red: #ae3c35;
+  --red-soft: #f7dfdc;
+  --radius: 6px;
+  --font: "Zad", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  --font-ui: var(--font);
+  --body-size: 15px;
+}
+
+body { background: var(--bg); color: var(--ink); font-size: var(--body-size); }
+
+/* Sanitized rich text from the editor. */
+.prose-gp { line-height: 1.8; }
+.prose-gp > * + * { margin-top: 1em; }
+.prose-gp h2 { font-size: 18px; font-weight: 700; margin-top: 1.6em; }
+.prose-gp h3 { font-size: 16px; font-weight: 700; margin-top: 1.4em; }
+.prose-gp a { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; }
+.prose-gp a:hover { color: var(--blue-hover); }
+.prose-gp ul { list-style: disc; padding-inline-start: 1.5em; }
+.prose-gp ol { list-style: decimal; padding-inline-start: 1.5em; }
+.prose-gp blockquote { border: 1px solid var(--line); background: var(--panel-2); border-radius: var(--radius); padding: 12px 16px; }
+.prose-gp img { border-radius: var(--radius); max-width: 100%; height: auto; }
+.prose-gp pre { background: #0b100d; color: #e9eeea; border-radius: var(--radius); padding: 12px 16px; overflow-x: auto; direction: ltr; }
+.prose-gp code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
+.prose-gp table { width: 100%; border-collapse: collapse; }
+.prose-gp th, .prose-gp td { border: 1px solid var(--line); padding: 6px 10px; text-align: start; }
+
+/* Reading polish shared by default and docs; the art-directed themes (business,
+   magazine, portfolio) keep their own typography. */
+html:is([data-theme="default"],[data-theme="docs"]) {
+  --body-size: 17px;
+}
+html:is([data-theme="default"],[data-theme="docs"]) body { overflow-wrap: anywhere; }
+html:is([data-theme="default"],[data-theme="docs"]) #main { padding-block: clamp(2.5rem, 5vw, 5rem); }
+html:is([data-theme="default"],[data-theme="docs"]) #main h1 { font-size: clamp(2rem, 4.4vw, 3.75rem); line-height: 1.14; letter-spacing: -.035em; text-wrap: balance; max-width: 24ch; }
+html:is([data-theme="default"],[data-theme="docs"])[dir="rtl"] #main h1 { letter-spacing: 0; line-height: 1.45; }
+html:is([data-theme="default"],[data-theme="docs"]) .reading-article { max-width: 72ch; }
+html:is([data-theme="default"],[data-theme="docs"]) .reading-article .prose-gp { font-size: 1.0625rem; line-height: 1.9; margin-top: 2rem; }
+html:is([data-theme="default"],[data-theme="docs"]) .prose-gp h2 { font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.4; margin-top: 2em; }
+html:is([data-theme="default"],[data-theme="docs"]) .prose-gp h3 { font-size: 1.25rem; line-height: 1.5; }
+html:is([data-theme="default"],[data-theme="docs"]) .prose-gp table { display: block; overflow-x: auto; }
+html:is([data-theme="default"],[data-theme="docs"]) .prose-gp blockquote { border-radius: 0; border-inline: 0; padding: 1.5rem 0; background: transparent; font-size: 1.15em; }
+html:is([data-theme="default"],[data-theme="docs"]) :is(header,footer,aside) :is(nav a,a[hreflang]) { display: inline-flex; align-items: center; min-height: 44px; }
+html:is([data-theme="default"],[data-theme="docs"]) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),select,button) { min-height: 44px; max-width: 100%; }
+html:is([data-theme="default"],[data-theme="docs"]) :focus-visible { outline: 2px solid var(--green); outline-offset: 4px; }
+html:is([data-theme="default"],[data-theme="docs"]) .reading-search { margin-block: 2rem 3rem; max-width: 72ch; }
+html:is([data-theme="default"],[data-theme="docs"]) .reading-search input { min-width: 0; }
+html[data-theme="default"] .default-intro { padding-block: 1.5rem clamp(3rem, 6vw, 5rem); border-bottom: 1px solid var(--line); }
+html[data-theme="default"] .default-intro p { font-size: 1.15rem; max-width: 55ch; margin-top: 1.25rem; }
+html[data-theme="default"] .reading-card { padding: 1.75rem 0; border: 0; border-top: 1px solid var(--line); background: transparent; border-radius: 0; }
+html[data-theme="default"] .reading-card h2 { font-size: clamp(1.35rem, 2vw, 1.75rem); line-height: 1.35; }
+html[data-theme="default"] .reading-card > a:last-child { min-height: 44px; display: inline-flex; align-items: center; }
+@media (max-width: 480px) {
+ html:is([data-theme="default"],[data-theme="docs"]) #main { padding-block: 2rem 3rem; }
+ html:is([data-theme="default"],[data-theme="docs"]) .reading-article .prose-gp { font-size: 1rem; }
+}
+
+/* Default's own visual identity. Child themes retain their existing tokens/layout. */
+html[data-theme="default"] {
+  --bg: #fafaf8;
+  --panel-2: #f0f2ef;
+  --ink: #202824;
+  --muted: #59665e;
+  --line: #dde2dc;
+  --line-strong: #a4b0a7;
+  --radius: 8px;
+  --body-size: 16px;
+}
+html[data-theme="default"] .gp-site-width { max-width: 1160px; padding-inline: clamp(1rem, 3vw, 2rem); }
+html[data-theme="default"] .default-site-header > div { min-height: 80px; gap: .75rem 1.5rem; }
+html[data-theme="default"] .default-site-brand { max-width: 100%; font-size: 1.25rem; line-height: 1.5; }
+html[data-theme="default"] .default-site-header nav { font-size: .9375rem; }
+html[data-theme="default"] .default-site-search input { background: var(--bg); font-size: .875rem; }
+html[data-theme="default"] #main { padding-block: clamp(1.75rem, 4vw, 3rem); }
+html[data-theme="default"] #main h1 { font-size: clamp(1.875rem, 3.5vw, 3rem); max-width: 28ch; }
+html[data-theme="default"] .default-intro { padding-block: .5rem 2rem; margin-bottom: 2rem; }
+html[data-theme="default"] .default-intro p { font-size: 1.0625rem; line-height: 1.85; margin-top: .75rem; }
+html[data-theme="default"] .default-content-grid { gap: 1.5rem; align-items: stretch; }
+html[data-theme="default"] .reading-card {
+  display: flex; flex-direction: column; min-width: 0;
+  padding: 1.25rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+}
+html[data-theme="default"] .reading-card:hover { border-color: var(--line-strong); }
+html[data-theme="default"] .reading-card h2 { font-size: clamp(1.25rem, 2vw, 1.5rem); line-height: 1.55; }
+html[data-theme="default"] .reading-card > p:not(.text-sm) { font-size: .9375rem; line-height: 1.85; margin-bottom: 1rem; }
+html[data-theme="default"] .reading-card > a:last-child { margin-top: auto; padding-top: .75rem; font-size: .875rem; font-weight: 600; }
+html[data-theme="default"] .default-card-image { overflow: hidden; border-radius: 5px; }
+html[data-theme="default"] .default-card-image img { aspect-ratio: 16 / 9; width: 100%; height: auto; object-fit: cover; }
+html[data-theme="default"] .reading-article { max-width: 76ch; }
+html[data-theme="default"] .reading-article > header { border-bottom: 1px solid var(--line); padding-bottom: 1.5rem; }
+html[data-theme="default"] .reading-article figure { margin-block: 1.75rem; }
+html[data-theme="default"] .reading-article figure img { max-height: 560px; object-fit: contain; background: var(--panel-2); }
+html[data-theme="default"] .reading-article .prose-gp { font-size: 1.0625rem; line-height: 1.95; }
+html[data-theme="default"] .prose-gp :is(iframe,video) { max-width: 100%; }
+html[data-theme="default"] .default-empty { padding: 2rem; border-style: dashed; line-height: 1.8; }
+html[data-theme="default"] .default-pagination { border-top: 1px solid var(--line); padding-top: 1.5rem; }
+html[data-theme="default"] .default-site-footer { margin-top: 2rem; }
+html[data-theme="default"] .default-site-footer > div { padding-block: 1.5rem; font-size: .875rem; }
+@media (max-width: 639px) {
+  html[data-theme="default"] .default-site-header > div { gap: .5rem 1rem; }
+  html[data-theme="default"] .default-site-search { flex: 1 1 100%; order: 4; }
+  html[data-theme="default"] .default-site-search input { width: 100%; }
+  html[data-theme="default"] .default-site-header nav ul { gap: 0; }
+  html[data-theme="default"] .default-site-header nav a { padding-inline: .625rem; }
+  html[data-theme="default"] .default-content-grid { gap: 1rem; }
+  html[data-theme="default"] .reading-card { padding: 1rem; }
+  html[data-theme="default"] .reading-article .prose-gp { font-size: 1rem; }
+  html[data-theme="default"] .default-site-footer > div { align-items: flex-start; flex-direction: column; gap: .5rem; }
+}

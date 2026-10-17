@@ -1,0 +1,6 @@
+{{define "content"}}<div class="dashboard-layout-controls" data-layout-id="{{.ID}}" data-layout-version="{{.Version}}">
+<button type="button" data-layout-drag draggable="true" aria-label="{{t "dashboardlayout.drag"}}" title="{{t "dashboardlayout.drag"}}">⠿</button>
+<span data-layout-title class="sr-only">{{.ID}}</span>
+<button type="button" data-layout-up aria-label="{{t "dashboardlayout.up"}}" title="{{t "dashboardlayout.up"}}">↑</button>
+<button type="button" data-layout-down aria-label="{{t "dashboardlayout.down"}}" title="{{t "dashboardlayout.down"}}">↓</button>
+</div>{{end}}

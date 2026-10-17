@@ -1,0 +1,38 @@
+{{if eq .Theme.Slug "default"}}
+{{/* Opens the document; every template calls {{part "header" .}} first. */}}
+{{part "head" .}}
+{{$shellHeader := setting (printf "theme.%s.header_style" .Theme.Slug)}}
+{{if not (or (eq $shellHeader "rail") (eq $shellHeader "framed") (eq $shellHeader "editorial"))}}{{$shellHeader = "native"}}{{end}}
+{{part "shell" .}}
+<link rel="stylesheet" href="{{asset "default-layout.css"}}">
+{{$path := ""}}{{with .Request}}{{$path = .URL.Path}}{{end}}
+<header data-shell-header="{{$shellHeader}}" class="default-site-header dt-header">
+  <div class="gp-site-width dt-bar">
+    <a href="{{url "/"}}" class="default-site-brand dt-brand">{{with media (setting "site.logo")}}{{img . "thumbnail" "dt-logo"}}{{else}}<span class="dt-mark" aria-hidden="true">{{printf "%.1s" $.Site.Title}}</span>{{end}}<span>{{.Site.Title}}</span></a>
+    {{with menu "primary"}}
+    <nav class="gr-default-desktop dt-nav" aria-label="{{t "menu"}}">
+      <ul>
+        {{range .Items}}<li><a href="{{url .URL}}"{{if eq .URL $path}} aria-current="page"{{end}}{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}
+      </ul>
+    </nav>
+    {{end}}
+    <div class="dt-tools">
+      <a class="dt-icon-button" href="{{url "/search"}}" aria-label="{{t "search"}}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
+      {{range .Alternates}}{{if ne .Locale locale}}<a class="dt-lang" href="{{.URL}}" hreflang="{{.Locale}}" lang="{{.Locale}}">{{.Label}}</a>{{end}}{{end}}
+      {{with menu "primary"}}
+      <details class="gr-default-mobile dt-mobile-menu">
+        <summary class="dt-icon-button" aria-label="{{t "open_menu"}}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary>
+        <nav aria-label="{{t "menu"}}">
+          <ul>
+            {{range .Items}}<li><a href="{{url .URL}}"{{if eq .URL $path}} aria-current="page"{{end}}{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}
+          </ul>
+        </nav>
+      </details>
+      {{end}}
+    </div>
+  </div>
+</header>
+<main id="main" tabindex="-1" class="gp-site-width flex-1 mx-auto w-full dt-main">
+{{else}}
+{{part "legacy-header" .}}
+{{end}}

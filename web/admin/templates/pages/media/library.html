@@ -1,0 +1,76 @@
+{{define "title"}}{{t "media.title"}}{{end}}
+{{define "content"}}
+<div class="flex flex-wrap items-end justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-[22px] font-bold">{{t "media.title"}}</h1>
+    <p class="text-muted">{{t "media.intro"}}</p>
+  </div>
+  <form role="search" method="get" action="/admin/media" class="w-full sm:w-72"
+        hx-get="/admin/media" hx-target="#media-results" hx-select="#media-results" hx-swap="outerHTML" hx-push-url="true"
+        hx-trigger="submit, input changed delay:300ms from:find input">
+    <label for="media-q" class="sr-only">{{t "media.search.label"}}</label>
+    <input id="media-q" name="q" type="search" value="{{.Q}}" placeholder="{{t "media.search.placeholder"}}"
+           class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  </form>
+</div>
+
+<form id="media-upload" method="post" action="/admin/media" enctype="multipart/form-data"
+      hx-post="/admin/media" hx-encoding="multipart/form-data" hx-target="#media-results" hx-select="#media-results" hx-swap="outerHTML"
+      x-data="{ over: false, busy: false, p: 0 }"
+      @dragover.prevent="over = true" @dragleave.prevent="over = false"
+      @drop.prevent="over = false; $refs.file.files = $event.dataTransfer.files; $el.requestSubmit()"
+      @htmx:before-request="busy = true; p = 0"
+      @htmx:xhr:progress="p = $event.detail.total ? Math.round($event.detail.loaded * 100 / $event.detail.total) : 0"
+      @htmx:after-request="busy = false; $refs.file.value = ''"
+      class="mb-6">
+  <label for="media-file"
+         class="flex flex-col items-center justify-center gap-2 rounded border border-dashed px-4 py-8 text-center cursor-pointer bg-panel hover:border-line-strong focus-within:ring-[3px] focus-within:ring-green-soft"
+         :class="over ? 'border-green bg-green-soft' : 'border-line'">
+    {{icon "upload" "w-6 h-6 text-muted"}}
+    <span class="font-medium">{{t "media.upload.drop"}}</span>
+    <span class="text-xs text-muted font-mono">{{t "media.upload.limits" .MaxUploadMB}}</span>
+    <input id="media-file" x-ref="file" name="file" type="file" multiple class="sr-only" accept="{{.AllowedMimes}}"
+           @change="$el.form.requestSubmit()">
+  </label>
+  <div x-show="busy" x-cloak class="[&[x-cloak]]:hidden mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="p" aria-label="{{t "media.upload.progress"}}">
+    <div class="h-1.5 rounded-full bg-panel-2 overflow-hidden"><div class="h-full bg-green" :style="'width:' + p + '%'"></div></div>
+    <p class="mt-1 text-xs text-muted">{{t "media.upload.progress"}} <span class="font-mono" x-text="p + '%'"></span></p>
+  </div>
+</form>
+
+<section id="media-results" aria-live="polite">
+  {{if .Uploaded}}<div role="status" class="mb-4 rounded border border-green bg-green-soft text-green px-3 py-2">{{t "media.upload.done" .Uploaded}}</div>{{end}}
+  {{range .Errors}}
+  <div role="alert" class="mb-2 rounded border border-red bg-red-soft text-red px-3 py-2">{{if .Filename}}<span class="font-mono">{{.Filename}}</span> — {{end}}{{t .Key}}</div>
+  {{end}}
+  {{if .Items}}
+  <p class="mb-2 text-xs text-muted font-mono">{{t "media.total" .Total}}</p>
+  <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+    {{range .Items}}
+    <li>
+      <a href="/admin/media/{{.ID}}" class="group block rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft overflow-hidden">
+        <span class="flex aspect-square items-center justify-center bg-panel-2">
+          {{if .Thumb}}<img src="{{.Thumb}}" alt="{{.Alt}}" loading="lazy" class="h-full w-full object-cover">{{else}}{{icon .Icon "w-8 h-8 text-muted"}}{{end}}
+        </span>
+        <span class="block px-2 py-1.5">
+          <span class="block truncate font-medium">{{.Title}}</span>
+          <span class="block truncate text-xs text-muted font-mono"><bdi>{{.Size}}</bdi>{{if .Dims}} · <bdi>{{.Dims}}</bdi>{{end}}</span>
+        </span>
+      </a>
+    </li>
+    {{end}}
+  </ul>
+  {{if gt .Pages 1}}
+  <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
+    <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+    <div class="flex gap-2">
+      {{if .HasPrev}}<a href="/admin/media?q={{.Q}}&amp;page={{.Prev}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
+      {{if .HasNext}}<a href="/admin/media?q={{.Q}}&amp;page={{.Next}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}
+    </div>
+  </nav>
+  {{end}}
+  {{else}}
+  <div class="rounded border border-line bg-panel p-6 text-center text-muted">{{if .Q}}{{t "media.empty_search"}}{{else}}{{t "media.empty"}}{{end}}</div>
+  {{end}}
+</section>
+{{end}}

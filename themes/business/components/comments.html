@@ -1,0 +1,40 @@
+{{/* Usage: {{component "comments" (dict "Item" .Content "Flash" .Extra.comment_flash)}} — approved comments
+     and the form (posts to /forms/comment: CSRF, honeypot, rate limited, moderated). */}}
+{{with comments .Item}}{{$d := .}}
+<section id="comments" class="sb-comments mt-10 border-t border-line pt-6" aria-labelledby="comments-title">
+  <h2 id="comments-title" class="text-lg font-bold">{{t "site.comments.title"}} <span class="font-mono text-sm text-muted">{{.Count}}</span></h2>
+  {{with $.Flash}}<p data-comment-flash="{{.}}" role="status" class="mt-3 rounded border {{if or (eq . "pending") (eq . "approved")}}border-green bg-green-soft text-green{{else}}border-red bg-red-soft text-red{{end}} px-3 py-2 text-sm">{{t (printf "site.comments.flash_%s" .)}}</p>{{end}}
+  {{if .Items}}
+  <ol class="mt-4 space-y-4">
+    {{range .Items}}
+    <li id="comment-{{.ID}}" class="rounded border border-line bg-panel p-4">
+      <p class="text-sm"><b>{{.AuthorName}}</b> <time class="ms-2 font-mono text-xs text-muted" datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></p>
+      <p class="mt-2 whitespace-pre-line" dir="auto">{{.Body}}</p>
+      {{if .Replies}}<ol class="mt-3 space-y-3 border-s border-line ps-4">{{range .Replies}}
+        <li id="comment-{{.ID}}"><p class="text-sm"><b>{{.AuthorName}}</b> <time class="ms-2 font-mono text-xs text-muted" datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></p><p class="mt-1 whitespace-pre-line" dir="auto">{{.Body}}</p></li>
+      {{end}}</ol>{{end}}
+    </li>
+    {{end}}
+  </ol>
+  {{else}}<p class="mt-3 text-muted">{{t "site.comments.none"}}</p>{{end}}
+  {{if .Open}}
+  <form method="post" action="{{.Action}}" class="sb-form mt-6 space-y-3 rounded border border-line bg-panel p-4" novalidate>
+    <h3 class="font-bold">{{t "site.comments.leave"}}</h3>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="_back" value="{{.Back}}">
+    <input type="hidden" name="content_id" value="{{.ContentID}}">
+    <div class="hidden" aria-hidden="true"><label for="cm-website">{{t "honeypot_label"}}</label><input id="cm-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div><label for="cm-name" class="block font-medium mb-1">{{t "site.comments.name"}}</label>
+        <input id="cm-name" name="name" type="text" required maxlength="100" autocomplete="name" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
+      <div><label for="cm-email" class="block font-medium mb-1">{{t "site.comments.email"}}</label>
+        <input id="cm-email" name="email" type="email" required maxlength="254" autocomplete="email" dir="ltr" aria-describedby="cm-email-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <p id="cm-email-help" class="mt-1 text-xs text-muted">{{t "site.comments.email_help"}}</p></div>
+    </div>
+    <div><label for="cm-body" class="block font-medium mb-1">{{t "site.comments.body"}}</label>
+      <textarea id="cm-body" name="body" rows="5" required maxlength="5000" dir="auto" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></textarea></div>
+    <button type="submit" class="h-9 rounded bg-green px-4 font-medium text-on-accent hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.comments.submit"}}</button>
+  </form>
+  {{end}}
+</section>
+{{end}}

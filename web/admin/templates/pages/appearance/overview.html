@@ -1,0 +1,200 @@
+{{define "title"}}{{t "theme.overview.title"}}{{end}}
+{{define "content"}}
+{{$id := .Identity}}
+<link rel="stylesheet" href="{{asset "site-overview.css"}}">
+<link rel="stylesheet" href="{{asset "page-assistant.css"}}">
+<script src="{{asset "page-assistant.js"}}" defer></script>
+<script src="{{asset "site-overview.js"}}" defer></script>
+{{template "partials/page_assistant" .}}
+{{range $id.Type.Links}}<link rel="stylesheet" href="{{.}}">{{end}}
+<div class="site-overview grid gap-5"
+     x-data="{ filter: '*', open: '', device: 'desktop',
+       widths: { desktop: 1440, tablet: 820, mobile: 390 },
+       heights: { desktop: 520, tablet: 600, mobile: 680 },
+       boxH(key) { return this.open === key ? 920 : this.heights[this.device] },
+       frame(w, key) {
+         const dw = this.widths[this.device], s = w ? Math.min(1, w / dw) : 0.4;
+         const left = Math.max(0, (w - dw * s) / 2);
+         return `width:${dw}px;height:${Math.ceil(this.boxH(key) / s)}px;transform:scale(${s});left:${left}px`;
+       } }"
+     @keydown.escape.window="open = ''">
+
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h1 class="text-[22px] font-bold">{{t "theme.overview.title"}}</h1>
+      <p class="text-muted max-w-[70ch]">{{t "theme.overview.intro"}}</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 print:hidden">
+      <span class="h-9 px-3 inline-flex items-center gap-1 rounded border border-line bg-panel"><b class="font-mono">{{.Total}}</b> {{t "theme.overview.pages"}}</span>
+      <a href="/sitemap.xml" target="_blank" rel="noopener" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong">{{icon "map"}}<span>{{t "theme.overview.sitemap"}}</span></a>
+      <button type="button" data-overview-load-all @click="$dispatch('overview-load-all')" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "theme.overview.load_all"}}</button>
+      <button type="button" data-overview-print @click="$dispatch('overview-print')" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "theme.overview.print"}}</button>
+    </div>
+  </div>
+  <p data-overview-print-error hidden role="alert" class="text-[13px] text-red">{{t "theme.overview.print_timeout"}}</p>
+  <p class="ov-print-help">{{t "theme.overview.print_incomplete"}}</p>
+
+  {{/* ---- Identity ---------------------------------------------------- */}}
+  <section class="rounded border border-line bg-panel" aria-labelledby="ov-identity">
+    <h2 id="ov-identity" class="px-4 py-3 border-b border-line text-[16px] font-bold">{{t "theme.overview.identity"}}</h2>
+    <div class="ov-identity-body p-4">
+      <div class="flex gap-4 items-start min-w-0">
+        {{if $id.LogoURL}}<img src="{{$id.LogoURL}}" alt="" class="w-14 h-14 shrink-0 object-contain rounded border border-line bg-panel">{{else}}<div class="w-14 h-14 shrink-0 rounded border border-line bg-panel-2 flex items-center justify-center text-[11px] text-muted text-center leading-tight">{{t "theme.overview.no_logo"}}</div>{{end}}
+        <dl class="ov-identity-fields">
+          <dt class="text-muted">{{t "theme.overview.site_title"}}</dt><dd class="font-bold">{{or $id.Title "—"}}</dd>
+          <dt class="text-muted">{{t "theme.overview.tagline"}}</dt><dd>{{or $id.Tagline "—"}}</dd>
+          <dt class="text-muted">{{t "theme.overview.address"}}</dt><dd class="min-w-0"><a href="{{$id.BaseURL}}" target="_blank" rel="noopener" class="font-mono text-[12px] text-blue hover:text-blue-hover underline underline-offset-2 break-all" dir="ltr">{{or $id.BaseURL "—"}}</a></dd>
+          <dt class="text-muted">{{t "theme.overview.locale"}}</dt><dd class="font-mono text-[12px]">{{or $id.Locale "—"}}</dd>
+          <dt class="text-muted">{{t "theme.overview.theme"}}</dt><dd><a href="/admin/appearance/themes" class="text-blue hover:text-blue-hover underline underline-offset-2">{{$id.Theme.Name}}</a> <span class="font-mono text-[12px] text-muted" dir="ltr">{{$id.Theme.Slug}}{{with $id.Theme.Version}} · {{.}}{{end}}{{with $id.Theme.Parent}} · {{.}}{{end}}</span></dd>
+        </dl>
+      </div>
+
+    </div>
+  </section>
+
+  {{/* ---- Pages ------------------------------------------------------- */}}
+  {{if .Groups}}
+  <div class="flex flex-wrap items-center justify-between gap-3 print:hidden">
+    <h2 class="text-[18px] font-bold">{{t "theme.overview.site_pages"}}</h2>
+    <div class="inline-flex rounded border border-line bg-panel p-0.5" role="group" aria-label="{{t "theme.overview.view_modes"}}">
+      <button type="button" @click="device = 'desktop'" :aria-pressed="device === 'desktop'" :class="device === 'desktop' ? 'bg-panel-2 text-ink font-medium' : 'text-muted hover:text-ink'" class="h-8 px-3 inline-flex items-center gap-1.5 rounded focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "monitor"}}<span>{{t "theme.overview.desktop"}}</span></button>
+      <button type="button" @click="device = 'tablet'" :aria-pressed="device === 'tablet'" :class="device === 'tablet' ? 'bg-panel-2 text-ink font-medium' : 'text-muted hover:text-ink'" class="h-8 px-3 inline-flex items-center gap-1.5 rounded focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "tablet"}}<span>{{t "theme.overview.tablet"}}</span></button>
+      <button type="button" @click="device = 'mobile'" :aria-pressed="device === 'mobile'" :class="device === 'mobile' ? 'bg-panel-2 text-ink font-medium' : 'text-muted hover:text-ink'" class="h-8 px-3 inline-flex items-center gap-1.5 rounded focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "smartphone"}}<span>{{t "theme.overview.mobile"}}</span></button>
+    </div>
+  </div>
+
+  <nav class="flex flex-wrap gap-1 border-b border-line print:hidden" aria-label="{{t "theme.overview.title"}}">
+    <button type="button" @click="filter = '*'" :aria-pressed="filter === '*'" :class="filter === '*' ? 'border-line border-b-panel bg-panel text-ink font-medium' : 'border-transparent text-muted hover:text-ink'" class="px-3 py-2 -mb-px border rounded-t focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.overview.all"}} <span class="font-mono text-[11px] text-muted">{{.Total}}</span></button>
+    {{range .Groups}}
+    <button type="button" @click="filter = '{{.ID}}'" :aria-pressed="filter === '{{.ID}}'" :class="filter === '{{.ID}}' ? 'border-line border-b-panel bg-panel text-ink font-medium' : 'border-transparent text-muted hover:text-ink'" class="px-3 py-2 -mb-px border rounded-t focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{if .LabelKey}}{{t .LabelKey}}{{else}}{{.Label}}{{end}} <span class="font-mono text-[11px] text-muted">{{.Count}}</span></button>
+    {{end}}
+  </nav>
+
+  {{range $g := .Groups}}
+  <section x-show="filter === '*' || filter === '{{$g.ID}}'" aria-labelledby="ov-{{$g.ID}}">
+    <h3 id="ov-{{$g.ID}}" class="flex items-center gap-2 mb-3 text-[16px] font-bold">{{if $g.LabelKey}}{{t $g.LabelKey}}{{else}}{{$g.Label}}{{end}}<span class="rounded-chip border border-line bg-panel px-1.5 font-mono text-[11px] font-normal text-muted">{{$g.Count}}</span></h3>
+    <div class="grid gap-4" :class="{ 'md:grid-cols-2 2xl:grid-cols-3': device === 'desktop', 'md:grid-cols-2 xl:grid-cols-3': device === 'tablet', 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4': device === 'mobile' }">
+      {{range $i, $p := $g.Pages}}
+      {{$key := printf "%s-%d" $g.ID $i}}
+      <article class="ov-page rounded border border-line bg-panel overflow-hidden break-inside-avoid" :class="open === '{{$key}}' && 'col-span-full'" x-data="{ loaded: false, w: 0 }">
+        <div data-overview-frame-box class="relative overflow-hidden bg-panel-2" :style="`height:${boxH('{{$key}}')}px`"
+             x-init="w = $el.clientWidth; new ResizeObserver(() => w = $el.clientWidth).observe($el)">
+          <div data-overview-loading x-show="!loaded" class="absolute inset-0 flex items-center justify-center font-mono text-[12px] text-muted">{{t "theme.overview.loading"}}</div>
+          <div class="ov-print-fallback"><p>{{t "theme.overview.print_pending"}}</p><b>{{if $p.LabelKey}}{{t $p.LabelKey}}{{else}}{{or $p.Label $p.Path}}{{end}}</b><a href="{{$p.URL}}" dir="ltr">{{$p.Path}}</a></div>
+          <iframe sandbox="" referrerpolicy="no-referrer" data-src="{{$p.URL}}" data-preview-key="{{$key}}" title="{{if $p.LabelKey}}{{t $p.LabelKey}}{{else}}{{$p.Label}}{{end}}" loading="lazy" tabindex="-1" @load="loaded = $el.hasAttribute('src')"
+            class="absolute top-0 border-0 bg-white origin-top-left" :class="open !== '{{$key}}' && 'pointer-events-none'" :style="frame(w, '{{$key}}')"></iframe>
+        </div>
+        <footer class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-t border-line">
+          <div class="min-w-0"><b class="block truncate">{{if $p.LabelKey}}{{t $p.LabelKey}}{{else}}{{or $p.Label $p.Path}}{{end}}</b><code class="block font-mono text-[11px] text-muted truncate" dir="ltr">{{$p.Path}}</code></div>
+          <div class="flex flex-wrap gap-2 print:hidden">
+            {{if $p.ContentID}}<button type="button" data-page-assistant="{{$p.ContentID}}" class="h-8 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "pageassistant.open"}}</button>{{end}}
+            <button type="button" @click="open = open === '{{$key}}' ? '' : '{{$key}}'; $dispatch('overview-load', { key: '{{$key}}' })" :aria-expanded="open === '{{$key}}'" class="h-8 px-3 rounded border border-line bg-panel hover:border-line-strong whitespace-nowrap" x-text="open === '{{$key}}' ? '{{t "theme.overview.collapse"}}' : '{{t "theme.overview.expand"}}'">{{t "theme.overview.expand"}}</button>
+            <a href="{{$p.URL}}" target="_blank" rel="noopener" class="h-8 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong whitespace-nowrap">{{t "theme.overview.open"}} ↗</a>
+          </div>
+        </footer>
+      </article>
+      {{end}}
+    </div>
+    {{if $g.More}}<p class="mt-2 text-muted">{{t "theme.overview.more" $g.More}}</p>{{end}}
+  </section>
+  {{end}}
+  {{else}}
+  <div class="rounded border border-line bg-panel p-6 text-muted">{{t "theme.overview.empty"}}</div>
+  {{end}}
+<details class="ov-diagnostics rounded border border-line bg-panel"><summary>{{t "theme.overview.inferred_title"}}</summary><p class="ov-inferred-note">{{t "theme.overview.inferred_note"}}</p><div class="ov-diagnostics-content">  {{if $id.Roles}}
+  <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+    {{/* Color roles */}}
+    <section class="rounded border border-line bg-panel" aria-labelledby="ov-roles">
+      <h2 id="ov-roles" class="px-4 py-3 border-b border-line text-[16px] font-bold">{{t "theme.overview.roles"}}</h2>
+      <ul class="p-4 grid gap-2 grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
+        {{range $id.Roles}}
+        <li class="rounded border border-line overflow-hidden">
+          <span class="block h-12 border-b border-line" style="{{.Token.Style}}"></span>
+          <span class="block px-2 py-1.5"><b class="block text-[13px]">{{t (printf "theme.overview.role_%s" .Key)}}</b><span class="block font-mono text-[11px] text-muted truncate" dir="ltr">{{.Token.Name}} · {{.Token.Value}}</span></span>
+        </li>
+        {{end}}
+      </ul>
+    </section>
+
+    {{/* Contrast */}}
+    <section class="rounded border border-line bg-panel" aria-labelledby="ov-contrast">
+      <h2 id="ov-contrast" class="px-4 py-3 border-b border-line text-[16px] font-bold">{{t "theme.overview.contrast"}}</h2>
+      {{if $id.Contrast}}
+      <div class="ov-table-scroll"><table class="w-full text-[13px]">
+        <thead class="text-muted text-[12px]"><tr class="border-b border-line"><th class="text-start font-normal px-4 py-2">{{t "theme.overview.pair"}}</th><th class="text-start font-normal px-4 py-2">{{t "theme.overview.ratio"}}</th><th class="text-start font-normal px-4 py-2">{{t "theme.overview.result"}}</th></tr></thead>
+        <tbody>
+          {{range $id.Contrast}}
+          <tr class="border-b border-line last:border-0">
+            <td class="px-4 py-2"><span class="flex items-center gap-2"><span class="w-9 h-7 shrink-0 rounded border border-line flex items-center justify-center font-bold" style="{{.Style}}">Aa</span><span class="min-w-0">{{t (printf "theme.overview.pair_%s" .Key)}}<span class="block font-mono text-[11px] text-muted truncate" dir="ltr">{{.FgName}} / {{.BgName}}</span></span></span></td>
+            <td class="px-4 py-2 font-mono" dir="ltr">{{.Ratio}}:1</td>
+            <td class="px-4 py-2">{{if eq .Level "aa"}}<span class="rounded-chip border border-green bg-green-soft text-green px-1.5 text-[12px]">{{t "theme.overview.level_aa"}}</span>{{else if eq .Level "aa_large"}}<span class="rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 text-[12px]">{{t "theme.overview.level_aa_large"}}</span>{{else}}<span class="rounded-chip border border-red bg-red-soft text-red px-1.5 text-[12px]">{{t "theme.overview.level_fail"}}</span>{{end}}</td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table></div>
+      <p class="px-4 py-2 border-t border-line text-[12px] text-muted">{{t "theme.overview.contrast_note"}}</p>
+      {{else}}<p class="p-4 text-muted">{{t "theme.overview.no_pairs"}}</p>{{end}}
+    </section>
+  </div>
+  {{end}}
+
+  {{/* Typography and component lab, drawn with the theme's values */}}
+  <section class="rounded border border-line bg-panel" aria-labelledby="ov-type">
+    <h2 id="ov-type" class="px-4 py-3 border-b border-line text-[16px] font-bold">{{t "theme.overview.type_lab"}}</h2>
+    <div class="p-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div class="rounded border border-line p-5 grid gap-3" style="{{$id.Specimen.Page}}">
+        <p class="text-[34px] leading-tight font-bold" style="{{$id.Specimen.Heading}}">{{or $id.Title (t "theme.overview.heading_sample")}}</p>
+        <p class="text-[24px] leading-snug font-bold" style="{{$id.Specimen.Heading}}">{{t "theme.overview.heading_sample"}}</p>
+        <p class="text-[18px] font-bold" style="{{$id.Specimen.Heading}}">{{t "theme.overview.subheading_sample"}}</p>
+        <p class="text-[16px] leading-relaxed" style="{{$id.Specimen.Body}}">{{t "theme.overview.body_sample"}} <a href="#" @click.prevent class="underline underline-offset-2" style="{{$id.Specimen.Link}}">{{t "theme.overview.link_sample"}}</a>.</p>
+        <p class="text-[14px]" style="{{$id.Specimen.Muted}}">{{t "theme.overview.muted_sample"}}</p>
+        <p class="text-[15px]" dir="ltr" style="{{$id.Specimen.Body}}">The quick brown fox jumps over the lazy dog — 0123456789</p>
+        <dl class="mt-2 pt-3 border-t grid grid-cols-[6rem_minmax(0,1fr)] gap-x-3 gap-y-1 text-[12px]" style="{{$id.Specimen.Line}}">
+          <dt style="{{$id.Specimen.Muted}}">{{t "theme.overview.heading_font"}}</dt><dd class="font-mono truncate" dir="ltr">{{or $id.Type.Heading "—"}}</dd>
+          <dt style="{{$id.Specimen.Muted}}">{{t "theme.overview.body_font"}}</dt><dd class="font-mono truncate" dir="ltr">{{or $id.Type.Body "—"}}</dd>
+          {{if $id.Type.Families}}<dt style="{{$id.Specimen.Muted}}">{{t "theme.overview.families"}}</dt><dd>{{range $i, $f := $id.Type.Families}}{{if $i}}، {{end}}<span>{{$f}}</span>{{end}}</dd>{{end}}
+        </dl>
+      </div>
+      <div class="rounded border border-line p-5 grid gap-4 content-start" style="{{$id.Specimen.Page}}">
+        <div class="flex flex-wrap gap-2">
+          <span class="h-10 px-4 inline-flex items-center font-bold" style="{{$id.Specimen.Primary}}">{{t "theme.overview.btn_primary"}}</span>
+          <span class="h-10 px-4 inline-flex items-center" style="{{$id.Specimen.Secondary}}">{{t "theme.overview.btn_secondary"}}</span>
+          <span class="h-10 px-4 inline-flex items-center opacity-50" style="{{$id.Specimen.Secondary}}">{{t "theme.overview.btn_disabled"}}</span>
+        </div>
+        <label class="grid gap-1 text-[13px]"><span style="{{$id.Specimen.Muted}}">{{t "theme.overview.input_label"}}</span>
+          <input type="text" readonly value="{{t "theme.overview.input_value"}}" class="h-10 px-3 w-full" style="{{$id.Specimen.Input}}"></label>
+        <div class="flex flex-wrap gap-2 text-[12px]"><span class="px-2 py-0.5" style="{{$id.Specimen.Badge}}">{{t "theme.overview.badge"}}</span><span class="px-2 py-0.5" style="{{$id.Specimen.Secondary}}">{{t "theme.overview.badge_neutral"}}</span></div>
+        <div class="p-3 text-[14px]" style="{{$id.Specimen.Notice}}">{{t "theme.overview.notice_sample"}}</div>
+        <div class="p-4 grid gap-1" style="{{$id.Specimen.Card}}">
+          <b class="text-[16px]" style="{{$id.Specimen.Heading}}">{{t "theme.overview.card_title"}}</b>
+          <span class="text-[14px]" style="{{$id.Specimen.Muted}}">{{t "theme.overview.card_text"}}</span>
+          <a href="#" @click.prevent class="text-[14px] underline underline-offset-2" style="{{$id.Specimen.Link}}">{{t "theme.overview.link_sample"}}</a>
+        </div>
+        <table class="w-full text-[13px]" style="{{$id.Specimen.Card}}">
+          <tr class="border-b" style="{{$id.Specimen.Line}}"><th class="text-start px-3 py-2">{{t "theme.overview.table_item"}}</th><th class="text-start px-3 py-2">{{t "theme.overview.table_value"}}</th></tr>
+          <tr><td class="px-3 py-2" style="{{$id.Specimen.Muted}}">{{t "theme.overview.table_row"}}</td><td class="px-3 py-2 font-mono">42</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  {{if or $id.Colors $id.Fonts $id.Other}}
+  <details class="rounded border border-line bg-panel">
+    <summary class="cursor-pointer px-4 py-3 font-bold">{{t "theme.overview.all_tokens"}} <span class="font-mono text-[11px] text-muted font-normal">{{len $id.Colors}} · {{len $id.Fonts}} · {{len $id.Other}}</span></summary>
+    <div class="px-4 pb-4 grid gap-4 border-t border-line pt-4">
+      {{if $id.Colors}}
+      <ul class="grid gap-2 grid-cols-[repeat(auto-fill,minmax(170px,1fr))]">
+        {{range $id.Colors}}<li class="flex items-center gap-2 rounded border border-line p-2 min-w-0"><span class="w-8 h-8 shrink-0 rounded border border-line" style="{{.Style}}"></span><span class="min-w-0"><span class="block font-mono text-[12px] truncate" dir="ltr">{{.Name}}</span><span class="block font-mono text-[11px] text-muted truncate" dir="ltr">{{.Value}}</span></span></li>{{end}}
+      </ul>
+      {{end}}
+      {{if $id.Fonts}}<ul class="grid gap-1 md:grid-cols-2 font-mono text-[12px]" dir="ltr">{{range $id.Fonts}}<li><span class="text-muted">{{.Name}}:</span> {{.Value}}</li>{{end}}</ul>{{end}}
+      {{if $id.Other}}<ul class="grid gap-1 md:grid-cols-2 font-mono text-[12px]" dir="ltr">{{range $id.Other}}<li><span class="text-muted">{{.Name}}:</span> {{.Value}}</li>{{end}}</ul>{{end}}
+    </div>
+  </details>
+  {{else}}
+  <p class="text-muted">{{t "theme.overview.no_tokens"}}</p>
+  {{end}}
+
+</div></details>
+</div>
+{{end}}

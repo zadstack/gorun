@@ -1,0 +1,47 @@
+{{/* Data: backupsPage */}}
+{{define "title"}}{{t "admin.backups.title"}}{{end}}
+{{define "content"}}
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <div>
+    <h1 class="text-[22px] font-bold">{{t "admin.backups.title"}}</h1>
+    <p class="text-muted mt-1">{{t "admin.backups.help"}} <code class="font-mono text-xs break-all" dir="ltr">{{.Dir}}</code></p>
+  </div>
+  <form method="post" action="/admin/system/backups">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "archive"}}<span>{{t "admin.backups.create"}}</span></button>
+  </form>
+</div>
+<section class="border border-line bg-panel p-4 mb-5 space-y-3"><h2 class="font-bold">{{t "admin.storage.backup"}}</h2><p class="text-muted">{{t "admin.storage.remote_note"}}</p>
+{{if .RemoteName}}<p>{{t "admin.storage.remote_ready"}}: <strong>{{.RemoteName}}</strong></p><form method="post" action="/admin/system/backups/remote"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="admin-primary-button">{{t "admin.storage.remote_create"}}</button></form>{{else}}<p>{{t "admin.storage.remote_unconfigured"}}</p>{{end}}
+<a href="/admin/settings/storage" class="text-blue underline">{{t "admin.storage.title"}}</a>
+{{if .RemoteLast.At}}<p>{{t "admin.storage.remote_last"}}: <time>{{.RemoteLast.At}}</time> · {{if eq .RemoteLast.Status "success"}}{{t "admin.storage.remote_success"}}{{else}}{{t "admin.storage.remote_failed"}}{{end}}</p>{{else}}<p class="text-muted text-sm">{{t "admin.storage.remote_pending"}}</p>{{end}}
+<p class="text-muted text-sm">{{t "admin.storage.recovery"}}</p></section>
+<p class="text-muted text-sm mb-3">{{t "admin.backups.completeness_help"}}</p>
+{{if .Backups}}
+<div class="rounded border border-line bg-panel overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="bg-panel-2 text-muted">
+      <tr><th class="text-start font-medium px-3 py-2">{{t "admin.backups.when"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.database"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.files"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.completeness"}}</th></tr>
+    </thead>
+    <tbody>
+      {{range .Backups}}
+      <tr class="border-t border-line">
+        <td class="px-3 py-2"><time class="font-mono text-xs" datetime="{{.Time}}">{{date .Time}}</time></td>
+        <td class="px-3 py-2">{{if .HasDB}}<a href="/admin/system/backups/{{.Stamp}}.db" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "download" "w-4 h-4"}}<span class="font-mono text-xs">{{.DBSize}}</span></a>{{else}}<span class="text-muted">—</span>{{end}}</td>
+        <td class="px-3 py-2">{{if .HasFiles}}<a href="/admin/system/backups/{{.Stamp}}.tar.gz" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "download" "w-4 h-4"}}<span class="font-mono text-xs">{{.FilesSize}}</span></a>{{else}}<span class="text-muted">—</span>{{end}}</td>
+        <td class="px-3 py-2 text-xs" data-local-state="{{.LocalState}}" data-remote-state="{{.Remote.State}}">
+          <p>{{t (print "admin.backups.local." .LocalState)}}</p>
+          {{if .HasManifest}}<a href="/admin/system/backups/{{.Stamp}}.manifest.json" class="text-blue underline font-mono">manifest.json</a>{{end}}
+          <p>{{t (print "admin.backups.remote." .Remote.State)}}</p>
+          <ul>{{range .Remote.Files}}<li data-upload-state="{{.State}}"><span class="font-mono break-all" dir="ltr">{{.Name}}</span>: {{t (print "admin.backups.upload." .State)}} {{if .Code}}· {{.Code}}{{end}} · {{.CheckedAt}}</li>{{end}}</ul>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+<p class="text-muted text-xs mt-3">{{t "admin.backups.restore_help"}}</p>
+{{else}}
+<div class="rounded border border-line bg-panel p-6 text-muted">{{t "admin.backups.empty"}}</div>
+{{end}}
+{{end}}

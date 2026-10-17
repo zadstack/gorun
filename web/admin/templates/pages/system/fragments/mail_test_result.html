@@ -1,0 +1,4 @@
+{{/* Data: mailTestResult */}}
+{{define "content"}}
+<p role="status" data-mail-test="{{if .OK}}ok{{else}}fail{{end}}" class="rounded border px-3 py-1.5 {{if .OK}}border-green bg-green-soft text-green{{else}}border-red bg-red-soft text-red{{end}}">{{t .Message}} <span class="font-mono text-xs" dir="ltr">{{.To}}</span></p>
+{{end}}

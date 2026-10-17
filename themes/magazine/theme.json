@@ -1,0 +1,101 @@
+{
+  "name": "Magazine",
+  "version": "1.0.1",
+  "parent": "default",
+  "locations": [
+    "primary",
+    "footer"
+  ],
+  "settings": [
+    {
+      "key": "header_style",
+      "type": "select",
+      "label": {
+        "ar": "شكل الهيدر",
+        "en": "Header layout"
+      },
+      "options": [
+        {
+          "value": "native",
+          "label": {
+            "ar": "هوية القالب",
+            "en": "Theme identity"
+          }
+        },
+        {
+          "value": "rail",
+          "label": {
+            "ar": "شريط واضح",
+            "en": "Clean rail"
+          }
+        },
+        {
+          "value": "framed",
+          "label": {
+            "ar": "إطار مستقل",
+            "en": "Framed"
+          }
+        },
+        {
+          "value": "editorial",
+          "label": {
+            "ar": "تحريري",
+            "en": "Editorial"
+          }
+        }
+      ],
+      "help": {
+        "ar": "يغيّر الشكل ويحافظ على الشعار والقوائم والروابط الحالية.",
+        "en": "Changes the layout while preserving your logo, menus and existing links."
+      },
+      "default": "native"
+    },
+    {
+      "key": "footer_style",
+      "type": "select",
+      "label": {
+        "ar": "شكل الفوتر",
+        "en": "Footer layout"
+      },
+      "options": [
+        {
+          "value": "native",
+          "label": {
+            "ar": "هوية القالب",
+            "en": "Theme identity"
+          }
+        },
+        {
+          "value": "signature",
+          "label": {
+            "ar": "توقيع الهوية",
+            "en": "Brand signature"
+          }
+        },
+        {
+          "value": "columns",
+          "label": {
+            "ar": "أعمدة الروابط",
+            "en": "Link columns"
+          }
+        },
+        {
+          "value": "minimal",
+          "label": {
+            "ar": "مختصر",
+            "en": "Minimal"
+          }
+        }
+      ],
+      "help": {
+        "ar": "يغيّر الشكل ويحافظ على الشعار والقوائم والروابط الحالية.",
+        "en": "Changes the layout while preserving your logo, menus and existing links."
+      },
+      "default": "native"
+    }
+  ],
+  "supports": [
+    "rtl",
+    "identity"
+  ]
+}

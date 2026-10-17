@@ -1,0 +1,79 @@
+{{/* Data: ext.listData. */}}
+{{define "title"}}{{t "ext.title"}}{{end}}
+{{define "ext_status"}}{{if eq . "active"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "ext.status.active"}}</span>{{else if eq . "error"}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-xs">{{t "ext.status.error"}}</span>{{else if eq . "disabled"}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-xs">{{t "ext.status.disabled"}}</span>{{else}}<span class="inline-flex rounded-chip border border-blue bg-blue-soft text-blue px-1.5 py-0.5 text-xs">{{t "ext.status.installed"}}</span>{{end}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<div class="admin-contained admin-extension-directory">
+<h1 class="text-[22px] font-bold">{{t "ext.title"}}</h1>
+<p class="text-muted mb-4">{{t "ext.intro"}}</p>
+
+<section class="rounded border border-line bg-panel p-4 mb-4" aria-labelledby="ext-install">
+  <h2 id="ext-install" class="text-base font-bold mb-1">{{t "ext.install.title"}}</h2>
+  <p class="text-muted text-xs mb-3">{{t "ext.install.help" .MaxMB}}</p>
+  {{if .Fields}}
+  <div role="alert" class="mb-3 rounded border border-red bg-red-soft px-3 py-2 text-red">
+    <p class="font-medium">{{t "ext.install.failed"}}</p>
+    <ul class="mt-1 list-disc ps-5 text-xs">{{range $k, $v := .Fields}}<li class="field-error"><span class="font-mono" dir="ltr">{{$k}}</span>: {{t $v}}</li>{{end}}</ul>
+    {{with .Detail}}<p class="mt-2 text-xs">{{t "ext.install.detail"}}</p><pre class="mt-1 overflow-x-auto rounded bg-panel-dark text-panel-2 p-2 font-mono text-[11px] whitespace-pre-wrap break-all" dir="ltr">{{.}}</pre>{{end}}
+  </div>
+  {{end}}
+  <form hx-post="/admin/extensions/install" hx-encoding="multipart/form-data" hx-target="#main" hx-swap="innerHTML" class="flex flex-wrap items-center gap-2">
+    <label for="ext-package" class="sr-only">{{t "ext.install.file"}}</label>
+    <input id="ext-package" type="file" name="package" accept=".zip,application/zip" required
+           class="text-sm file:me-2 file:h-9 file:px-3 file:rounded file:border file:border-line file:bg-panel file:text-ink hover:file:border-line-strong">
+    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium inline-flex items-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "upload"}}{{t "ext.install.submit"}}</button>
+  </form>
+  {{if .Available}}
+  <div class="mt-4 border-t border-line pt-3">
+    <h3 class="text-xs font-bold text-muted mb-2">{{t "ext.available.title"}}</h3>
+    <ul class="divide-y divide-line">
+      {{range .Available}}
+      <li class="py-2 flex flex-wrap items-center justify-between gap-2">
+        <span><span class="font-medium">{{.DisplayName locale}}</span> <span class="font-mono text-xs text-muted" dir="ltr">{{.Slug}} · {{.Version}}</span></span>
+        <form method="post" action="/admin/extensions/install-dir" hx-post="/admin/extensions/install-dir" hx-target="#main" hx-swap="innerHTML">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <input type="hidden" name="slug" value="{{.Slug}}">
+          <button type="submit" class="h-8 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "ext.available.install"}}</button>
+        </form>
+      </li>
+      {{end}}
+    </ul>
+  </div>
+  {{end}}
+</section>
+
+<div class="rounded border border-line bg-panel overflow-x-auto" tabindex="0" role="region" aria-label="{{t "ext.title"}}">
+  {{if .Items}}
+  <table class="w-full">
+    <thead class="bg-panel-2">
+      <tr>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.col.name"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.col.version"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.col.status"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.col.hooks"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.col.failures"}}</th>
+        <th scope="col" class="px-3 py-2"><span class="sr-only">{{t "ext.col.actions"}}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Items}}
+      <tr class="border-t border-line hover:bg-bg" data-ext="{{.Slug}}" data-status="{{.Status}}">
+        <td class="px-3 py-2">
+          <a href="/admin/extensions/{{.Slug}}" class="font-medium text-blue hover:text-blue-hover underline-offset-2 hover:underline">{{.DisplayName locale}}</a>
+          <p class="font-mono text-[11px] text-muted" dir="ltr">{{.Slug}}{{with .Manifest.Author}} · {{.}}{{end}}</p>
+        </td>
+        <td class="px-3 py-2 font-mono text-xs" dir="ltr">{{.Version}}</td>
+        <td class="px-3 py-2">{{template "ext_status" .Status}}</td>
+        <td class="px-3 py-2 text-end font-mono">{{.HooksCount}}</td>
+        <td class="px-3 py-2 text-end font-mono {{if .Failures}}text-red{{end}}">{{.Failures}}<span class="text-muted"> / {{.TotalFailures}}</span></td>
+        <td class="px-3 py-2 text-end"><a href="/admin/extensions/{{.Slug}}" class="h-8 px-2 inline-flex items-center rounded border border-line hover:border-line-strong" aria-label="{{t "ext.action.view"}} {{.Slug}}">{{icon "chevron-right" "rtl:rotate-180"}}</a></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="p-6 text-center text-muted">{{t "ext.empty"}}</p>
+  {{end}}
+</div>
+</div>
+{{end}}

@@ -1,0 +1,8 @@
+# Migration files allowed to contain destructive statements (DROP TABLE,
+# DROP COLUMN, DROP INDEX, ALTER TABLE ... RENAME, table rebuilds).
+# TestMigrationsAreAdditive fails on any other destructive migration file and
+# on stale entries here. Format: one "repo/relative/path.sql # justification"
+# per line. New entries need a reviewer's agreement; see docs/ARCHITECTURE.md,
+# "Migrations must be additive".
+
+internal/workagents/migrations/0004_github_starred.sql # already applied fleet-wide; widens a CHECK by rename+add+copy+drop and keeps the column name execution_kind, so older readers still work

@@ -1,0 +1,15 @@
+{{define "content"}}
+<div data-widget="workspace" class="dashboard-workspace">
+ {{if .ShowContent}}<section class="dashboard-worklist" aria-labelledby="dashboard-content-title">
+  <div class="dashboard-panel-heading"><h2 id="dashboard-content-title">{{t "admin.dashboard.recent_content"}}</h2><p>{{t "admin.dashboard.recent_hint"}}</p></div>
+  {{if .Failed}}<p class="dashboard-empty" role="status">{{t "admin.dashboard.load_error"}}</p>
+  {{else if .Rows}}
+  <div class="dashboard-table-scroll"><table class="dashboard-content-table">
+   <thead><tr><th scope="col">{{t "content.list.title"}}</th><th scope="col">{{t "content.list.status"}}</th><th scope="col">{{t "content.list.updated"}}</th></tr></thead>
+   <tbody>{{range .Rows}}<tr><td><a href="{{.Href}}">{{if .Title}}{{.Title}}{{else}}{{t "content.list.untitled"}}{{end}}</a>{{with .Locale}}<span class="dashboard-locale">{{.}}</span>{{end}}</td><td><span class="dashboard-status">{{t .StatusKey}}</span></td><td><time datetime="{{.UpdatedAt}}">{{date .UpdatedAt}}</time></td></tr>{{end}}</tbody>
+  </table></div>
+  {{else}}<p class="dashboard-empty">{{t "admin.dashboard.empty_content"}}</p>{{end}}
+ </section>
+ {{end}}
+</div>
+{{end}}

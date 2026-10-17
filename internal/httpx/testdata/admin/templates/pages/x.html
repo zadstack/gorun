@@ -1,0 +1,1 @@
+{{define "title"}}X page{{end}}{{define "content"}}<h1>{{t "core.action.save"}}</h1>{{template "partials/hello" .Name}}{{json .}}{{date .At}}{{with pagination 2 10 35}}{{.Pages}}{{.HasPrev}}{{.HasNext}}{{end}}{{icon "trash-2"}}{{setting "site.title"}}{{end}}

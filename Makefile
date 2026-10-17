@@ -1,0 +1,45 @@
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+LDFLAGS := -s -w -X main.version=$(VERSION)
+
+.PHONY: build test run lint e2e
+
+build:
+	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/gorun ./cmd/gorun
+
+test:
+	go test ./...
+
+run:
+	go run ./cmd/gorun serve
+
+# staticcheck built against an older toolchain cannot read go1.27.2 export
+# data. lint retries once with LINT_TOOLCHAIN when (and only when) that error
+# appears, then skips with a message if it persists; real findings still fail.
+LINT_TOOLCHAIN ?= go1.27.1
+EXPORT_DATA_ERR := export data|unsupported version|could not import
+
+lint:
+	go vet ./...
+	@if ! command -v staticcheck >/dev/null 2>&1; then \
+		echo "lint: staticcheck not installed, skipping (go install honnef.co/go/tools/cmd/staticcheck@latest)"; \
+		exit 0; \
+	fi; \
+	out=$$(staticcheck ./... 2>&1); status=$$?; \
+	if [ $$status -ne 0 ] && printf '%s\n' "$$out" | grep -qE '$(EXPORT_DATA_ERR)'; then \
+		echo "lint: staticcheck cannot read this toolchain's export data, retrying with GOTOOLCHAIN=$(LINT_TOOLCHAIN)"; \
+		out=$$(GOTOOLCHAIN=$(LINT_TOOLCHAIN) staticcheck ./... 2>&1); status=$$?; \
+		if [ $$status -ne 0 ] && printf '%s\n' "$$out" | grep -qE '$(EXPORT_DATA_ERR)|toolchain'; then \
+			printf '%s\n' "$$out" | head -5; \
+			echo "lint: staticcheck skipped (export-data/toolchain issue, not a lint finding)"; \
+			exit 0; \
+		fi; \
+	fi; \
+	if [ -n "$$out" ]; then printf '%s\n' "$$out"; fi; \
+	exit $$status
+
+# e2e runs the Playwright browser suite (node/npm live only in e2e/; the Go
+# app has no node deps). It builds the binary, boots it on a free port with a
+# temp data dir. Admin/default-theme scripts are local; custom themes may use CDNs.
+# See docs/E2E.md.
+e2e:
+	cd e2e && npm ci && npx playwright install chromium && npx playwright test

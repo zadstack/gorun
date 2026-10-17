@@ -1,0 +1,1 @@
+{{part "header" .}}{{with .Content}}<article class="sb-document"><header class="sb-title"><p class="sb-eyebrow">{{$.Site.Title}}</p><h1>{{.Title}}</h1></header>{{with media .FeaturedMediaID}}<figure class="sb-featured">{{img . "large" "sb-cover"}}</figure>{{end}}<div class="prose-gp">{{safe .Body}}</div></article>{{end}}{{part "footer" .}}

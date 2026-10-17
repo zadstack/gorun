@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-17",
+  "files": [
+    {
+      "path": "github-banner.svg",
+      "bytes": 1835,
+      "sha256": "f222f21196d3ecb85d2d0508bef93689b45c38fb8790a55d0ffedcd676f0bdf5",
+      "viewBox": "0 0 1200 630"
+    },
+    {
+      "path": "github-social-preview.png",
+      "bytes": 57339,
+      "sha256": "4ed936a7e844e00625b390008a71484ac9600c826a8a946d0112eefbd9f9a94f",
+      "dimensions": [
+        1200,
+        630
+      ]
+    },
+    {
+      "path": "gorun-avatar.png",
+      "bytes": 12548,
+      "sha256": "dd9fe17b3c52ad4d6b6a296130a678f673bbecb6820cdd5514080b49abd71117",
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "path": "gorun-mark.svg",
+      "bytes": 491,
+      "sha256": "20426a4386b9d892c4fd2e69749fa083038113c65104bf4774706058e2d09787",
+      "viewBox": "0 0 96 96"
+    },
+    {
+      "path": "gorun-wordmark.svg",
+      "bytes": 540,
+      "sha256": "07220722345601ad4b2782428af230c7aa9c6c00f4d3b7ccda2039802fe60d6e",
+      "viewBox": "0 0 330 96"
+    },
+    {
+      "path": "reviewed-workflow.svg",
+      "bytes": 1748,
+      "sha256": "13bda65a1f699d1f644823cce99cc4c2b721d4c813ec36cf1cc56727c43c1195",
+      "viewBox": "0 0 1000 370"
+    },
+    {
+      "path": "screenshots/canvas-local-en.png",
+      "bytes": 113414,
+      "sha256": "69e2eacf7ced4a39c02c326ffdc1c55668f31996ce432323791dfdec319d8ba3",
+      "dimensions": [
+        1208,
+        1270
+      ]
+    },
+    {
+      "path": "screenshots/content-local-ar.png",
+      "bytes": 110274,
+      "sha256": "9d2c47c5e146a5d3492464ea8544836691cc27d5901024fac2489830b1c2f99b",
+      "dimensions": [
+        1280,
+        800
+      ]
+    }
+  ]
+}

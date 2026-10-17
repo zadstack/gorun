@@ -1,0 +1,64 @@
+{{define "title"}}{{t "commerce.entitlements.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-4">{{t "commerce.entitlements.title"}}</h1>
+<form role="search" method="get" action="/admin/commerce/entitlements" class="flex flex-wrap items-end gap-2 mb-3">
+  <div class="w-full sm:w-72">
+    <label for="list-q" class="sr-only">{{t "commerce.list.search"}}</label>
+    <input id="list-q" name="q" type="search" value="{{.List.Q}}" placeholder="{{t "commerce.list.search"}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  </div>
+  <div>
+    <label for="list-status" class="sr-only">{{t "commerce.col.status"}}</label>
+    <select id="list-status" name="status" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft px-2 w-auto">
+      <option value="">{{t "commerce.list.all"}}</option>
+      {{$sel := .List.Status}}{{range .List.Statuses}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{t (print "commerce.entitlement.status." .)}}</option>{{end}}
+    </select>
+  </div>
+  <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "filter"}}<span>{{t "commerce.list.filter"}}</span></button>
+  <span class="ms-auto font-mono text-xs text-muted">{{.List.Page.Total}}</span>
+</form>
+<div class="rounded border border-line bg-panel overflow-x-auto">
+  {{if .Entitlements}}
+  <table class="w-full">
+    <thead class="bg-panel-2"><tr>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.email"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.product"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.server"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.status"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.ends"}}</th>
+      {{if $.CanManage}}<th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.actions"}}</th>{{end}}
+    </tr></thead>
+    <tbody>
+      {{range .Entitlements}}
+      <tr class="border-t border-line hover:bg-bg">
+        <td class="px-3 py-2" dir="ltr">{{.Email}}<div class="font-mono text-xs text-muted"><a href="/admin/commerce/orders/{{.OrderID}}" class="text-blue hover:text-blue-hover">#{{.OrderNumber}}</a></div></td>
+        <td class="px-3 py-2">{{.ProductName}}<div class="font-mono text-xs text-muted" dir="ltr">{{.PlanCode}}</div></td>
+        <td class="px-3 py-2">{{.ServerName}}</td>
+        <td class="px-3 py-2"><span class="inline-flex rounded-chip border px-1.5 py-0.5 text-xs {{if or (eq .Status "active") (eq .Status "paid")}}border-green bg-green-soft text-green{{else if or (eq .Status "failed") (eq .Status "refunded")}}border-red bg-red-soft text-red{{else if or (eq .Status "suspended") (eq .Status "expired")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}}">{{t (print "commerce.entitlement.status." .Status)}}</span></td>
+        <td class="px-3 py-2 font-mono text-xs">{{if .EndsAt}}{{date .EndsAt}}{{else}}—{{end}}</td>
+        {{if $.CanManage}}
+        <td class="px-3 py-2">
+          <div class="flex flex-wrap justify-end gap-1">
+            {{$id := .ID}}
+            {{if eq .Status "active"}}<form method="post" action="/admin/commerce/entitlements/{{$id}}/suspend" data-confirm="{{t "commerce.confirm.suspend"}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.action.suspend"}}</button></form>{{end}}
+            {{if or (eq .Status "suspended") (eq .Status "expired")}}<form method="post" action="/admin/commerce/entitlements/{{$id}}/resume"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.action.resume"}}</button></form>{{end}}
+            {{if .ExternalID}}<form method="post" action="/admin/commerce/entitlements/{{$id}}/reconcile"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.action.reconcile"}}</button></form>{{end}}
+            {{if eq .Status "active"}}<form method="post" action="/admin/commerce/entitlements/{{$id}}/login-link"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.action.login_link"}}</button></form>{{end}}
+          </div>
+        </td>
+        {{end}}
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="p-6 text-center text-muted">{{t "commerce.entitlements.empty"}}</p>{{end}}
+</div>
+{{with .List.Page}}{{if gt .Pages 1}}
+<nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
+  <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+  <div class="flex gap-2">
+    {{if .HasPrev}}<a href="/admin/commerce/entitlements?q={{$.List.Q}}&amp;status={{$.List.Status}}&amp;page={{.Prev}}" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.pagination.prev"}}</a>{{end}}
+    {{if .HasNext}}<a href="/admin/commerce/entitlements?q={{$.List.Q}}&amp;status={{$.List.Status}}&amp;page={{.Next}}" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.pagination.next"}}</a>{{end}}
+  </div>
+</nav>
+{{end}}{{end}}
+{{end}}

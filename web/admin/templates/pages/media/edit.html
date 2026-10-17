@@ -1,0 +1,63 @@
+{{define "title"}}{{t "media.edit.title"}}{{end}}
+{{define "content"}}
+{{$m := .Media}}
+<a href="/admin/media" class="inline-flex items-center gap-1 text-blue hover:text-blue-hover mb-3">{{icon "arrow-left" "w-4 h-4 rtl:rotate-180"}}{{t "media.edit.back"}}</a>
+<h1 class="text-[22px] font-bold mb-4 break-all">{{$m.Title}}</h1>
+<div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+  <div class="rounded border border-line bg-panel p-4 flex items-center justify-center min-h-[240px]">
+    {{if .Item.IsImage}}<img src="{{$m.URL}}" alt="{{$m.Alt}}" class="max-h-[60vh] max-w-full">
+    {{else if eq $m.Mime "video/mp4"}}<video src="{{$m.URL}}" controls class="max-h-[60vh] max-w-full"></video>
+    {{else if eq $m.Mime "audio/mpeg"}}<audio src="{{$m.URL}}" controls class="w-full"></audio>
+    {{else}}<a href="{{$m.URL}}" class="inline-flex flex-col items-center gap-2 text-blue hover:text-blue-hover">{{icon .Item.Icon "w-10 h-10"}}<span>{{t "media.action.open"}}</span></a>{{end}}
+  </div>
+  <div class="space-y-4">
+    <form method="post" action="/admin/media/{{$m.ID}}" class="rounded border border-line bg-panel p-4 space-y-4">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div>
+        <label for="alt" class="block font-medium mb-1">{{t "media.field.alt"}}</label>
+        <input id="alt" name="alt" type="text" value="{{$m.Alt}}" aria-describedby="alt-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <p id="alt-help" class="mt-1 text-xs text-muted">{{t "media.field.alt_help"}}</p>
+      </div>
+      <div>
+        <label for="title" class="block font-medium mb-1">{{t "media.field.title"}}</label>
+        <input id="title" name="title" type="text" value="{{$m.Title}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      </div>
+      <div>
+        <label for="caption" class="block font-medium mb-1">{{t "media.field.caption"}}</label>
+        <textarea id="caption" name="caption" rows="3" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{$m.Caption}}</textarea>
+      </div>
+      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button>
+    </form>
+    <dl class="rounded border border-line bg-panel p-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2">
+      <dt class="text-muted">{{t "media.detail.file"}}</dt><dd class="font-mono break-all"><bdi>{{$m.Filename}}</bdi></dd>
+      <dt class="text-muted">{{t "media.detail.type"}}</dt><dd class="font-mono"><bdi>{{$m.Mime}}</bdi></dd>
+      <dt class="text-muted">{{t "media.detail.size"}}</dt><dd class="font-mono"><bdi>{{.Item.Size}}</bdi></dd>
+      {{if .Item.Dims}}<dt class="text-muted">{{t "media.detail.dimensions"}}</dt><dd class="font-mono"><bdi>{{.Item.Dims}}</bdi></dd>{{end}}
+      <dt class="text-muted">{{t "media.detail.uploaded"}}</dt><dd class="font-mono"><bdi>{{date $m.CreatedAt}}</bdi></dd>
+      {{if $m.SourceURL}}<dt class="text-muted">{{t "media.detail.source"}}</dt><dd class="font-mono break-all" dir="ltr">{{$m.SourceURL}}</dd>{{end}}
+      <dt class="text-muted">{{t "media.detail.url"}}</dt>
+      <dd x-data="{ copied: false }" data-url="{{$m.URL}}">
+        <code class="block font-mono text-xs break-all mb-1" dir="ltr">{{$m.URL}}</code>
+        <button type="button" class="h-8 px-2 rounded border border-line hover:border-line-strong inline-flex items-center gap-1 focus:outline-none focus:ring-[3px] focus:ring-green-soft"
+                @click="navigator.clipboard.writeText(new URL($root.dataset.url, location.origin).href); copied = true; setTimeout(() => copied = false, 2000)">
+          {{icon "copy"}}<span x-show="!copied">{{t "media.action.copy"}}</span><span x-show="copied" x-cloak class="[&[x-cloak]]:hidden">{{t "media.action.copied"}}</span>
+        </button>
+      </dd>
+    </dl>
+    {{if .Variants}}
+    <div class="rounded border border-line bg-panel p-4">
+      <h2 class="font-bold mb-2">{{t "media.detail.variants"}}</h2>
+      <ul class="space-y-1">
+        {{range .Variants}}<li class="flex justify-between gap-2"><a href="{{.URL}}" class="text-blue hover:text-blue-hover">{{t (print "media.variant." .Name)}}</a><span class="font-mono text-muted"><bdi>{{.Width}}×{{.Height}}</bdi></span></li>{{end}}
+      </ul>
+    </div>
+    {{end}}
+    {{if .CanDelete}}
+    <form method="post" action="/admin/media/{{$m.ID}}/delete" data-confirm="{{t "media.confirm.delete"}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2"}}{{t "media.action.delete"}}</button>
+    </form>
+    {{end}}
+  </div>
+</div>
+{{end}}

@@ -1,0 +1,45 @@
+{{define "title"}}{{t "theme.templates.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<div class="admin-contained admin-template-directory">
+<div class="flex flex-wrap items-end justify-between gap-3 mb-6">
+  <div>
+    <h1 class="text-[22px] font-bold">{{t "theme.templates.title"}}</h1>
+    <p class="text-muted">{{t "theme.templates.intro" .Theme.Name}}</p>
+  </div>
+  <form method="get" action="/admin/appearance/templates/edit" class="admin-template-open flex items-end gap-2">
+    <div>
+      <label for="new-template" class="block font-medium mb-1">{{t "theme.templates.new"}}</label>
+      <input id="new-template" name="name" required pattern="^((parts|components)\.)?[^./]+\.html$" placeholder="page-pricing.html" aria-describedby="new-template-help" class="h-9 w-56 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft" dir="ltr">
+      <p id="new-template-help" class="mt-1 text-[12px] text-muted">{{t "theme.templates.new_help"}}</p>
+    </div>
+    <button type="submit" class="h-9 px-3 mb-5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.templates.open"}}</button>
+  </form>
+</div>
+<div class="rounded border border-line bg-panel overflow-x-auto" tabindex="0" role="region" aria-label="{{t "theme.templates.title"}}">
+  <table class="w-full text-start">
+    <thead class="bg-panel-2 border-b border-line">
+      <tr>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "theme.templates.name"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "theme.templates.source"}}</th>
+        <th scope="col" class="px-3 py-2"><span class="sr-only">{{t "core.action.edit"}}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Rows}}
+      <tr class="border-b border-line last:border-b-0 hover:bg-panel-2" data-source="{{.Source}}">
+        <td class="px-3 py-2 font-mono" dir="ltr">{{.Name}}</td>
+        <td class="px-3 py-2">
+          <span class="rounded-chip border px-2 text-[12px] {{if eq .Source "override"}}border-blue bg-blue-soft text-blue{{else}}border-line bg-panel-2 text-muted{{end}}">{{t (print "theme.templates.source." .Source)}}</span>
+          {{if .HasDraft}}<span class="rounded-chip border border-amber bg-amber-soft text-amber-text px-2 text-[12px]">{{t "theme.templates.draft"}}</span>{{end}}
+        </td>
+        <td class="px-3 py-2 text-end"><a href="/admin/appearance/templates/edit?name={{.Name}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "core.action.edit"}}</a></td>
+      </tr>
+      {{else}}
+      <tr><td colspan="3" class="px-3 py-6 text-center text-muted">{{t "theme.templates.empty"}}</td></tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+</div>
+{{end}}

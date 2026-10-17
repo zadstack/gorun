@@ -1,0 +1,1 @@
+<html dir="{{dir}}">{{template "head" .}}<nav>{{range nav}}{{range .Items}}[{{.ID}}{{if active .Href}}*{{end}}]{{end}}{{end}}</nav><main>{{template "content" .}}</main>{{range flashes}}<p class="{{.Kind}}">{{t .Message}}</p>{{end}}<link href="{{asset "admin.css"}}"></html>

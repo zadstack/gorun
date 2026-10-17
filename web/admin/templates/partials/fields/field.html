@@ -1,0 +1,22 @@
+{{/* Field dispatcher: {{template "fields/field" .}} with a content fieldView. One partial per field type. */}}
+{{define "fields/field"}}
+{{- if eq .Type "text"}}{{template "fields/text" .}}
+{{- else if eq .Type "textarea"}}{{template "fields/textarea" .}}
+{{- else if eq .Type "richtext"}}{{template "fields/richtext" .}}
+{{- else if eq .Type "number"}}{{template "fields/number" .}}
+{{- else if eq .Type "date"}}{{template "fields/date" .}}
+{{- else if eq .Type "datetime"}}{{template "fields/datetime" .}}
+{{- else if eq .Type "boolean"}}{{template "fields/boolean" .}}
+{{- else if eq .Type "select"}}{{template "fields/select" .}}
+{{- else if eq .Type "multiselect"}}{{template "fields/multiselect" .}}
+{{- else if eq .Type "repeater"}}{{template "fields/repeater" .}}
+{{- else if eq .Type "relationship"}}{{template "fields/relationship" .}}
+{{- else if eq .Type "image"}}{{template "fields/image" .}}
+{{- else if eq .Type "file"}}{{template "fields/file" .}}
+{{- else if eq .Type "json"}}{{template "fields/json" .}}
+{{- else}}{{template "fields/text" .}}{{end}}
+{{end}}
+
+{{/* Shared label + help + error chrome. */}}
+{{define "fields/label"}}<label for="{{.ID}}" class="block font-medium mb-1">{{.Label}}{{if .Required}} <span class="text-red" aria-hidden="true">*</span>{{end}}</label>{{end}}
+{{define "fields/help"}}{{if .Help}}<p id="{{.ID}}-help" class="mt-1 text-xs text-muted">{{.Help}}</p>{{end}}{{template "partials/field_errors" .Error}}{{end}}

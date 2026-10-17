@@ -1,0 +1,3 @@
+{{part "header" .}}
+{{with .Extra.form}}<section class="studio-shell studio-article studio-form-result">{{if .OK}}<div role="status"><h1>{{t "form_sent_title"}}</h1><p>{{t "form_sent_body"}}</p></div>{{else}}<div role="alert" class="studio-feedback"><h1>{{t "form_error_title"}}</h1><ul>{{range $field,$key := .Errors}}<li>{{t $key}}</li>{{end}}</ul></div>{{if not (index .Errors "form")}}{{component "contact-form" $}}{{end}}{{end}}<a class="studio-read" href="{{.Back}}">{{t "back"}}</a></section>{{end}}
+{{part "footer" .}}

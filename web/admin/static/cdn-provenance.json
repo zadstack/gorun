@@ -1,0 +1,123 @@
+{
+  "verified_on": "2026-10-12",
+  "algorithm": "SHA-384",
+  "verification": "Hash the fetched upstream bytes and the served embedded asset bytes with SHA-384, base64-encode and prepend sha384-. Versions and integrity hashes are unchanged from the pinned CDN scripts.",
+  "notes": [
+    "All six admin dependency bundles are embedded and served from same origin with versioned filenames and SRI. Admin dependency loading requires no external requests.",
+    "Tailwind Play CDN remains a browser-side development compiler per upstream documentation. Vendoring and SRI do not remove this runtime limitation.",
+    "No additional dependency network loader found in the fetched bundles; HTMX can process scripts supplied in application HTML fragments. Those scripts are outside the bundle integrity check.",
+    "Quill uses existing local admin styles; no remote Quill stylesheet is loaded. Quill bundled dependency notices are preserved beside its bundle.",
+    "Upstream URLs record provenance only; browsers load the local_path assets through the existing admin asset helper."
+  ],
+  "assets": [
+    {
+      "package": "tailwindcss",
+      "version": "3.4.17",
+      "url": "https://cdn.tailwindcss.com/3.4.17",
+      "integrity": "sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K",
+      "bytes": 407279,
+      "current_alias_matches": true,
+      "license": "MIT",
+      "license_source": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss/v3.4.17/LICENSE",
+      "integrity_enforced": true,
+      "local_path": "web/admin/static/vendor/tailwindcss-3.4.17.js",
+      "license_local_path": "web/admin/static/vendor/tailwindcss-3.4.17.LICENSE",
+      "delivery": "same-origin embedded admin static asset"
+    },
+    {
+      "package": "alpinejs",
+      "version": "3.17.4",
+      "url": "https://cdn.jsdelivr.net/npm/alpinejs@3.17.4/dist/cdn.min.js",
+      "integrity": "sha384-5/joNqFnRyVWzXp99bHot6RHG+EksGp+USSgZwPar7T9SD9PKKER37n/8bXBAZGd",
+      "bytes": 55891,
+      "current_alias_matches": true,
+      "license": "MIT",
+      "license_source": "https://raw.githubusercontent.com/alpinejs/alpine/v3.17.4/LICENSE.md",
+      "integrity_enforced": true,
+      "local_path": "web/admin/static/vendor/alpinejs-3.17.4.js",
+      "license_local_path": "web/admin/static/vendor/alpinejs-3.17.4.LICENSE",
+      "license_metadata_source": "https://cdn.jsdelivr.net/npm/alpinejs@3.17.4/package.json",
+      "delivery": "same-origin embedded admin static asset"
+    },
+    {
+      "package": "htmx.org",
+      "version": "2.0.11",
+      "url": "https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js",
+      "integrity": "sha384-2OatzQy1H+Zd/IIrjr1TcuDGqLXeHhbooAyJY1KdQMKnr4LZ22k31GBLdYKHmVjg",
+      "bytes": 52182,
+      "current_alias_matches": true,
+      "license": "0BSD",
+      "license_source": "https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/LICENSE",
+      "integrity_enforced": true,
+      "local_path": "web/admin/static/vendor/htmx-org-2.0.11.js",
+      "license_local_path": "web/admin/static/vendor/htmx-org-2.0.11.LICENSE",
+      "license_metadata_source": "https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/package.json",
+      "delivery": "same-origin embedded admin static asset"
+    },
+    {
+      "package": "lucide",
+      "version": "1.55.0",
+      "url": "https://cdn.jsdelivr.net/npm/lucide@1.55.0/dist/umd/lucide.min.js",
+      "integrity": "sha384-SZUFq9Dx112fyzY/iIBEjyd2gu3jY4XVhp+LUNXSpEMB2IEm/TOoMTNH4BHtQ6Hz",
+      "bytes": 449915,
+      "current_alias_matches": true,
+      "license": "ISC",
+      "license_source": "https://cdn.jsdelivr.net/npm/lucide@1.55.0/LICENSE",
+      "integrity_enforced": true,
+      "local_path": "web/admin/static/vendor/lucide-1.55.0.js",
+      "license_local_path": "web/admin/static/vendor/lucide-1.55.0.LICENSE",
+      "license_metadata_source": "https://cdn.jsdelivr.net/npm/lucide@1.55.0/package.json",
+      "delivery": "same-origin embedded admin static asset"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js",
+      "integrity": "sha384-utBUCeG4SYaCm4m7GQZYr8Hy8Fpy3V4KGjBZaf4WTKOcwhCYpt/0PfeEe3HNlwx8",
+      "bytes": 209274,
+      "package": "quill",
+      "version": "2.0.3",
+      "license": "BSD-3-Clause",
+      "license_source": "https://cdn.jsdelivr.net/npm/quill@2.0.3/LICENSE",
+      "integrity_enforced": true,
+      "local_path": "web/admin/static/vendor/quill-2.0.3.js",
+      "license_local_path": "web/admin/static/vendor/quill-2.0.3.LICENSE",
+      "license_metadata_source": "https://cdn.jsdelivr.net/npm/quill@2.0.3/package.json",
+      "delivery": "same-origin embedded admin static asset",
+      "additional_license_notices": [
+        {
+          "source": "https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js.LICENSE.txt",
+          "local_path": "web/admin/static/vendor/quill-2.0.3.js.LICENSE.txt"
+        }
+      ]
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js",
+      "integrity": "sha384-/jkFGhPVLS9HIUzX09xB5W3coE5q1X5NXZA/PuOAdOaRxUPczlZmKzYEq9QcJnW0",
+      "bytes": 44605,
+      "package": "sortablejs",
+      "version": "1.15.3",
+      "license": "MIT",
+      "license_source": "https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/LICENSE",
+      "integrity_enforced": true,
+      "local_path": "web/admin/static/vendor/sortablejs-1.15.3.js",
+      "license_local_path": "web/admin/static/vendor/sortablejs-1.15.3.LICENSE",
+      "license_metadata_source": "https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/package.json",
+      "delivery": "same-origin embedded admin static asset"
+    },
+    {
+      "package": "lucide-core",
+      "version": "1.55.0",
+      "integrity": "sha384-bK9Knju/RHE6FGv/VC05FVEhRx8UZqXWAMxjuzLfya0bgVbDYk6/QkjxLPiFkEu0",
+      "bytes": 33605,
+      "license": "ISC",
+      "license_source": "https://cdn.jsdelivr.net/npm/lucide@1.55.0/LICENSE",
+      "integrity_enforced": true,
+      "local_path": "web/admin/static/vendor/lucide-core-1.55.0.js",
+      "license_local_path": "web/admin/static/vendor/lucide-1.55.0.LICENSE",
+      "license_metadata_source": "https://cdn.jsdelivr.net/npm/lucide@1.55.0/package.json",
+      "delivery": "same-origin embedded admin static asset",
+      "derivation": "Selected icon data and unchanged renderer from pinned local vendor; tools/admin-icons/update.mjs",
+      "source_integrity": "sha384-SZUFq9Dx112fyzY/iIBEjyd2gu3jY4XVhp+LUNXSpEMB2IEm/TOoMTNH4BHtQ6Hz",
+      "source_url": "https://cdn.jsdelivr.net/npm/lucide@1.55.0/dist/umd/lucide.min.js"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{{/* Data: usersListPage */}}
+{{define "title"}}{{t "admin.users.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<div class="admin-contained admin-user-directory">
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <h1 class="text-[22px] font-bold">{{t "admin.users.title"}}</h1>
+  <a href="/admin/users/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "user-plus"}}<span>{{t "admin.users.new"}}</span></a>
+</div>
+<form method="get" action="/admin/users" role="search" class="flex flex-wrap gap-2 mb-4"
+      hx-get="/admin/users" hx-trigger="input changed delay:300ms from:#users-q, change from:#users-role" hx-target="#users-results" hx-select="#users-results" hx-swap="outerHTML" hx-push-url="true">
+  <label class="sr-only" for="users-q">{{t "admin.users.search"}}</label>
+  <input id="users-q" name="q" type="search" value="{{.Query}}" placeholder="{{t "admin.users.search"}}"
+         class="h-9 w-64 max-w-full rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  <label class="sr-only" for="users-role">{{t "admin.users.role"}}</label>
+  <select id="users-role" name="role" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <option value="">{{t "admin.users.all_roles"}}</option>
+    {{range .Roles}}<option value="{{.Slug}}" {{if eq .Slug $.Role}}selected{{end}}>{{.Name}}</option>{{end}}
+  </select>
+  <noscript><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "core.action.search"}}</button></noscript>
+</form>
+<div id="users-results">
+  {{if .Users}}
+  <div class="rounded border border-line bg-panel overflow-x-auto" tabindex="0" role="region" aria-label="{{t "admin.users.title"}}">
+    <table class="w-full text-start">
+      <thead class="border-b border-line">
+        <tr>
+          <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.users.name"}}</th>
+          <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.users.role"}}</th>
+          <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.users.status"}}</th>
+          <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted hidden md:table-cell">{{t "admin.users.last_login"}}</th>
+          <th scope="col" class="px-3 py-2"><span class="sr-only">{{t "core.action.edit"}}</span></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-line">
+        {{range .Users}}
+        <tr class="hover:bg-bg">
+          <td class="px-3 py-2">
+            <a href="/admin/users/{{.ID}}" class="font-medium hover:text-blue">{{if .Name}}{{.Name}}{{else}}{{.Email}}{{end}}</a>
+            {{if eq .ID $.SelfID}}<span class="ms-1 inline-flex rounded-chip border border-line px-1.5 py-0.5 text-[11px] font-mono text-muted">{{t "admin.users.you"}}</span>{{end}}
+            <p class="text-muted text-xs" dir="ltr">{{.Email}}</p>
+          </td>
+          <td class="px-3 py-2"><span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{or (index $.RoleOf .Role) .Role}}</span></td>
+          <td class="px-3 py-2">
+            {{if eq .Status "active"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-[11px] font-mono">{{t "admin.users.status_active"}}</span>
+            {{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px] font-mono">{{t "admin.users.status_disabled"}}</span>{{end}}
+          </td>
+          <td class="px-3 py-2 font-mono text-xs text-muted hidden md:table-cell">{{date .LastLoginAt}}</td>
+          <td class="px-3 py-2 text-end"><a href="/admin/users/{{.ID}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "core.action.edit"}}</a></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="rounded border border-line bg-panel p-6 text-muted">{{t "admin.users.empty"}}</div>
+  {{end}}
+  {{with .Pager}}{{if gt .Pages 1}}
+  <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
+    <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+    <div class="flex gap-2">
+      {{if .PrevURL}}<a href="{{.PrevURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
+      {{if .NextURL}}<a href="{{.NextURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}
+    </div>
+  </nav>
+  {{end}}{{end}}
+</div>
+</div>
+{{end}}

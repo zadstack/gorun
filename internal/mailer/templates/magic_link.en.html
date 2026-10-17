@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<body style="margin:0;padding:24px;background:#f3f5f2;color:#141816;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;font-size:14px;">
+  <div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #cbd3ce;border-radius:6px;padding:24px;">
+    <p style="margin:0 0 12px;">Hello {{.Name}},</p>
+    <p style="margin:0 0 16px;">Use this link to sign in to {{.SiteTitle}}. It works once and expires in {{.TTLMinutes}} minutes.</p>
+    <p style="margin:0 0 16px;"><a href="{{.Link}}" style="display:inline-block;background:#167252;color:#ffffff;text-decoration:none;padding:8px 16px;border-radius:6px;">Sign in</a></p>
+    <p style="margin:0 0 8px;color:#637069;font-size:12px;">Or paste this address into your browser:</p>
+    <p style="margin:0 0 16px;font-family:ui-monospace,monospace;font-size:12px;word-break:break-all;">{{.Link}}</p>
+    <p style="margin:0;color:#637069;font-size:12px;">If you did not ask for this email, you can ignore it.</p>
+  </div>
+</body>
+</html>

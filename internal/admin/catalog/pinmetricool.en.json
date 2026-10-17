@@ -1,0 +1,5 @@
+{
+  "hint": "Your draft delivery history from GoRun. Confirmed means accepted as a draft, not published.",
+  "confirmed": "Draft confirmed",
+  "uncertain": "Needs verification"
+}

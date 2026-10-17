@@ -1,0 +1,24 @@
+{{/* Data: []audit.Entry */}}
+{{define "content"}}
+<div data-widget="recent_audit">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-base font-bold">{{t "admin.dashboard.recent_audit"}}</h2>
+    <a href="/admin/agents/audit" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>
+  </div>
+  {{if .}}
+  <ul class="divide-y divide-line">
+    {{range .}}
+    <li class="py-2 flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="font-mono text-xs truncate">{{.Action}}</p>
+        <p class="text-muted text-xs truncate">{{.Actor.Name}}{{if .TargetKind}} · {{.TargetKind}}{{end}}</p>
+      </div>
+      <time class="font-mono text-[11px] text-muted shrink-0" datetime="{{.At}}">{{date .At}}</time>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="text-muted">{{t "admin.audit.empty"}}</p>
+  {{end}}
+</div>
+{{end}}

@@ -1,0 +1,22 @@
+{
+  "source": "https://registry.npmjs.org/@floating-ui/dom",
+  "packages": [
+    {
+      "name": "@floating-ui/dom",
+      "version": "1.7.4",
+      "license": "MIT"
+    },
+    {
+      "name": "@floating-ui/core",
+      "version": "1.8.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@floating-ui/utils",
+      "version": "0.2.12",
+      "license": "MIT"
+    }
+  ],
+  "build": "esbuild 0.25.12 --bundle --format=esm --minify; exports computePosition,autoUpdate,offset,flip,shift,size",
+  "sha256": "72c19c2a1098b4c0fb48f738610d9953085eb1626932edba2cc37dbb0fcf278c"
+}

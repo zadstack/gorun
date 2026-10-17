@@ -1,0 +1,55 @@
+{{/* Data: site.Submission */}}
+{{define "title"}}{{.Name}} · {{t "site.submissions.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "form-directory.css"}}">
+<a href="/admin/system/form-submissions" class="inline-flex items-center gap-1 mb-3 text-blue hover:text-blue-hover underline underline-offset-2">{{icon "chevron-right" "w-4 h-4 ltr:rotate-180"}}{{t "site.submissions.back"}}</a>
+<div class="rounded border border-line bg-panel">
+  <div class="p-4 border-b border-line flex flex-wrap items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h1 class="text-lg font-bold">{{.Name}}</h1>
+      <a href="mailto:{{.Email}}" dir="ltr" class="text-blue hover:text-blue-hover underline underline-offset-2 break-all">{{.Email}}</a>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 text-xs">
+      {{if eq .Status "spam"}}<span class="rounded-chip border border-red bg-red-soft text-red px-2">{{t "site.submissions.status.spam"}}</span>{{end}}
+      {{template "partials/site_delivery" .Delivery}}
+    </div>
+  </div>
+  <p class="p-4 whitespace-pre-wrap leading-relaxed" dir="auto">{{.Message}}</p>
+<p class="px-4 text-xs text-muted mb-4">{{t "formsources.association_help"}}</p>
+  {{if .AttachmentName}}
+  <div class="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded border border-line bg-panel-2 p-3">
+    <span class="inline-flex items-center gap-2 min-w-0">{{icon "paperclip" "w-4 h-4 shrink-0"}}<span class="truncate" dir="auto">{{.AttachmentName}}</span><span class="font-mono text-xs text-muted">{{.SizeText}}</span></span>
+    <a href="/admin/system/form-submissions/{{.ID}}/attachment" class="h-8 px-3 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "download" "w-4 h-4"}}{{t "site.submissions.download"}}</a>
+  </div>
+  {{end}}
+  <dl class="px-4 pb-4 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_minmax(0,1fr)]">
+    <dt class="text-muted">{{t "site.submissions.received"}}</dt><dd class="font-mono">{{.SubmittedAt}}</dd>
+    <dt class="text-muted">{{t "formsources.submitted_form"}}</dt><dd>{{t "formsources.contact"}}</dd>
+    <dt class="text-muted">{{t "formsources.source"}}</dt><dd class="form-source">{{if .Source.Path}}<a href="{{.Source.Path}}" target="_blank" rel="noopener noreferrer">{{if .Source.Title}}<span dir="auto">{{.Source.Title}}</span> · {{end}}<bdi>{{.Source.Path}}</bdi> ↗</a>{{else}}{{t "formsources.unknown"}}{{end}}</dd>
+    <dt class="text-muted">IP</dt><dd class="font-mono" dir="ltr">{{.IP}}</dd>
+    {{with .DeliveryError}}<dt class="text-muted">{{t "site.submissions.delivery_error"}}</dt><dd class="font-mono text-xs break-all text-red" dir="ltr">{{.}}</dd>{{end}}
+  </dl>
+  <div class="p-4 border-t border-line flex flex-wrap gap-2">
+    <a href="mailto:{{.Email}}" class="h-9 px-4 inline-flex items-center gap-2 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "reply" "w-4 h-4"}}{{t "site.submissions.action.reply"}}</a>
+    <form method="post" action="/admin/system/form-submissions/{{.ID}}/resend">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.submissions.action.resend"}}</button>
+    </form>
+    <form method="post" action="/admin/system/form-submissions/{{.ID}}/status">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      {{if eq .Status "spam"}}<input type="hidden" name="status" value="read"><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.submissions.action.not_spam"}}</button>
+      {{else}}<input type="hidden" name="status" value="spam"><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.submissions.action.spam"}}</button>{{end}}
+    </form>
+    {{if ne .Status "spam"}}
+    <form method="post" action="/admin/system/form-submissions/{{.ID}}/status">
+      <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="status" value="new">
+      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.submissions.action.unread"}}</button>
+    </form>
+    {{end}}
+    <form method="post" action="/admin/system/form-submissions/{{.ID}}/delete" data-confirm="{{t "site.submissions.confirm.delete"}}" class="ms-auto">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="h-9 px-3 inline-flex items-center gap-1 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2" "w-4 h-4"}}{{t "site.submissions.action.delete"}}</button>
+    </form>
+  </div>
+</div>
+{{end}}

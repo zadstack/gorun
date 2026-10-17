@@ -1,0 +1,7 @@
+data/
+.superpowers/
+.worktrees/
+bin/
+.git/
+e2e/
+dist/

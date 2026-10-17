@@ -1,0 +1,41 @@
+{{/*
+Media picker modal — include ONCE per page:
+
+    {{template "partials/media_picker.html" .}}
+
+Open it from anywhere (optionally naming which field asked):
+
+    <button type="button" @click="$dispatch('media:open', { target: 'featured' })">…</button>
+    (or window.dispatchEvent(new CustomEvent('media:open', { detail: { target: 'featured' } })))
+
+On selection it dispatches on window and closes:
+
+    CustomEvent("media:selected", { detail: { id, url, alt, target } })
+
+Listen with Alpine, filtering on your target:
+
+    <div x-data="{ id: '', url: '' }"
+         @media:selected.window="if ($event.detail.target === 'featured') { id = $event.detail.id; url = $event.detail.url }">
+      <input type="hidden" name="featured_media_id" :value="id">
+    </div>
+
+The body is loaded over HTMX from GET /admin/x/media/picker?q=&page=&target= (search,
+pagination and upload-in-place happen inside it). Requires the media.upload permission.
+*/}}
+<div x-data="{ open: false, target: '' }"
+     @media:open.window="target = ($event.detail && $event.detail.target) || ''; open = true; $nextTick(() => { htmx.ajax('GET', '/admin/x/media/picker?target=' + encodeURIComponent(target), { target: '#gp-media-picker-body', swap: 'innerHTML' }); $refs.close.focus() })"
+     @media:selected.window="open = false"
+     @keydown.escape.window="open = false"
+     x-show="open" x-cloak
+     class="[&[x-cloak]]:hidden fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,24,22,0.3)] p-4">
+  <div role="dialog" aria-modal="true" aria-labelledby="gp-media-picker-title" @click.outside="open = false"
+       class="w-full max-w-4xl max-h-[85vh] flex flex-col rounded border border-line bg-bg">
+    <div class="flex items-center justify-between gap-2 border-b border-line bg-panel px-4 h-12 shrink-0">
+      <h2 id="gp-media-picker-title" class="text-base font-bold">{{t "media.picker.title"}}</h2>
+      <button type="button" x-ref="close" @click="open = false" aria-label="{{t "core.action.close"}}"
+              class="p-1.5 rounded border border-transparent hover:border-line focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "x"}}</button>
+    </div>
+    <div id="gp-media-picker-body" class="overflow-y-auto p-4" aria-live="polite"></div>
+  </div>
+</div>
+{{define "partials/media_picker"}}{{template "partials/media_picker.html" .}}{{end}}

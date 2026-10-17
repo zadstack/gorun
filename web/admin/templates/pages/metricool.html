@@ -1,0 +1,18 @@
+{{define "title"}}{{t "admin.metricool.title"}}{{end}}
+{{define "content"}}
+<div class="max-w-3xl space-y-5">
+<header><h1 class="text-2xl font-bold">{{t "admin.metricool.title"}}</h1><p class="mt-2 text-muted">{{t "admin.metricool.compose_intro"}}</p></header>
+{{with .Message}}<section role="status" class="border border-line p-4"><p>{{t .}}</p>{{with $.ProviderID}}<p class="mt-2 font-mono" dir="ltr">Metricool #{{.}}</p>{{end}}<a href="https://app.metricool.com" target="_blank" rel="noopener noreferrer" class="inline-block mt-3 underline text-blue">{{t "admin.metricool.open"}}</a></section><a href="/admin/metricool" class="inline-block underline">{{t "admin.metricool.new"}}</a>
+{{else}}
+{{if not .Ready}}<p role="status" class="border border-line p-4">{{t "admin.metricool.not_ready"}}</p>{{else}}
+<p class="text-sm text-muted">{{t "admin.metricool.blog_id"}}: <span dir="ltr" class="font-mono">{{.BlogID}}</span></p>
+<form method="post" action="/admin/metricool/drafts" class="space-y-4">
+<input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="version" value="{{.Version}}"><input type="hidden" name="nonce" value="{{.Nonce}}">
+<label class="block">{{t "admin.metricool.text"}}<textarea name="text" rows="8" maxlength="12000" required class="block w-full border border-line bg-panel p-3 mt-1">{{.Input.Text}}</textarea></label>
+<label class="block">{{t "admin.metricool.network"}}<select name="network" class="block w-full border border-line bg-panel p-2 mt-1"><option value="linkedin">LinkedIn</option><option value="facebook">Facebook</option><option value="twitter">X / Twitter</option><option value="threads">Threads</option><option value="bluesky">Bluesky</option></select></label>
+<div class="grid gap-4 sm:grid-cols-2"><label>{{t "admin.metricool.date"}}<input type="datetime-local" name="date_time" required class="block w-full min-w-0 border border-line bg-panel p-2 mt-1" dir="ltr"></label><label>{{t "admin.metricool.timezone"}}<input name="timezone" value="{{.Input.Timezone}}" maxlength="80" required class="block w-full border border-line bg-panel p-2 mt-1" dir="ltr"></label></div>
+<p class="text-sm text-muted">{{t "admin.metricool.date_help"}}</p><label class="flex items-start gap-2"><input type="checkbox" name="reviewed" required class="mt-1"><span>{{t "admin.metricool.review"}}</span></label>
+<button class="bg-blue text-white px-4 py-3">{{t "admin.metricool.send"}}</button>
+</form>{{end}}{{end}}
+<p class="text-sm text-muted">{{t "admin.metricool.boundary"}}</p>
+</div>{{end}}

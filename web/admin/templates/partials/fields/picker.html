@@ -1,0 +1,26 @@
+{{/* Item picker (relationship fields, parent): {{template "fields/picker" .Picker}} with a content pickView.
+     The selection renders server-side as removable chips holding the hidden inputs, so it never depends on how many
+     items exist; the search box fetches /admin/x/content/pick results whose buttons call add(). */}}
+{{define "fields/picker"}}
+<div class="space-y-2" data-multiple="{{if .Multiple}}1{{end}}"
+     x-data="{ add(el) {
+         const list = this.$refs.list;
+         for (const i of list.querySelectorAll('input')) { if (i.value === el.dataset.id) return; }
+         if (!this.$root.dataset.multiple) list.innerHTML = '';
+         const li = this.$refs.tpl.content.firstElementChild.cloneNode(true);
+         li.querySelector('input').value = el.dataset.id;
+         li.querySelector('[data-title]').textContent = el.dataset.title;
+         list.appendChild(li);
+         this.$refs.q.value = ''; this.$refs.results.innerHTML = '';
+       } }">
+  <input type="hidden" name="{{.Name}}" value="">
+  <ul x-ref="list" class="flex flex-wrap gap-1.5" aria-live="polite">
+    {{range .Picked}}<li class="inline-flex items-center gap-1 rounded-chip border border-line bg-panel-2 px-2 py-0.5 text-xs"><input type="hidden" name="{{$.Name}}" value="{{.Value}}"><span dir="auto">{{.Label}}</span><button type="button" @click="$el.closest('li').remove()" class="text-muted hover:text-red" aria-label="{{t "content.picker.remove"}}">{{icon "x" "w-3 h-3"}}</button></li>{{end}}
+  </ul>
+  <template x-ref="tpl"><li class="inline-flex items-center gap-1 rounded-chip border border-line bg-panel-2 px-2 py-0.5 text-xs"><input type="hidden" name="{{.Name}}" value=""><span data-title dir="auto"></span><button type="button" @click="$el.closest('li').remove()" class="text-muted hover:text-red" aria-label="{{t "content.picker.remove"}}">{{icon "x" "w-3 h-3"}}</button></li></template>
+  <input x-ref="q" id="{{.ID}}" type="search" name="q" autocomplete="off" dir="auto" placeholder="{{t "content.picker.search"}}"
+         hx-get="{{.SearchURL}}" hx-trigger="input changed delay:250ms, focus once" hx-target="next .gp-pick-results" hx-swap="innerHTML"
+         class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  <div x-ref="results" class="gp-pick-results"></div>
+</div>
+{{end}}

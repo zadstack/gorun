@@ -1,0 +1,14 @@
+/data/
+/bin/
+*.db
+*.db-wal
+*.db-shm
+.superpowers/
+.worktrees/
+/data-demo/
+/dist/
+
+__pycache__/
+
+# Local tool settings
+.claude/

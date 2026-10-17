@@ -1,0 +1,12 @@
+{{define "title"}}{{t "auth.security.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "security.css"}}">
+<header class="admin-page-heading"><h1>{{t "auth.security.title"}}</h1><p class="text-muted">{{t "auth.security.description"}}</p></header>
+{{if .Error}}<p role="alert" class="security-notice">{{t .Error}}</p>{{end}}
+<p class="security-notice">{{t "auth.security.help"}}</p>
+<section aria-labelledby="security-blocks"><h2 id="security-blocks">{{t "auth.security.blocks"}}</h2>
+{{range .Blocks}}<div class="security-row"><div><strong dir="ltr">{{.IP}}</strong><p class="text-muted">{{t "auth.security.until"}} <time dir="ltr">{{.ExpiresAt}}</time></p></div><form method="post" action="/admin/security/ip-unblock"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="ip" value="{{.IP}}"><input type="hidden" name="expires_at" value="{{.ExpiresAt}}"><button class="admin-secondary-button">{{t "auth.security.unblock"}}</button></form></div>{{else}}<p class="text-muted">{{t "auth.security.no_blocks"}}</p>{{end}}</section>
+<section aria-labelledby="security-attempts"><h2 id="security-attempts">{{t "auth.security.attempts"}}</h2>
+{{range .Attempts}}<article class="security-row"><div class="security-event"><strong dir="auto">{{if .Email}}{{.Email}}{{else}}—{{end}}</strong><div><span dir="ltr">{{.IP}}</span> <span class="text-muted">· {{if eq .Source "trusted_proxy"}}{{t "auth.security.proxy"}}{{else if eq .Source "peer"}}{{t "auth.security.peer"}}{{else}}{{t "auth.security.unverified"}}{{end}}</span></div><p class="text-muted"><time dir="ltr">{{.At}}</time> · {{t .Reason}}</p></div>
+{{if .Blockable}}<form method="post" action="/admin/security/ip-block"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="event_id" value="{{.ID}}"><label class="sr-only" for="duration-{{.ID}}">{{t "auth.security.duration"}}</label><select name="hours" id="duration-{{.ID}}"><option value="1">{{t "auth.security.hour"}}</option><option value="24">{{t "auth.security.day"}}</option><option value="168">{{t "auth.security.week"}}</option></select><button class="admin-secondary-button">{{t "auth.security.block"}}</button></form>{{else}}<span class="text-muted">{{t "auth.security.cannot_block"}}</span>{{end}}</article>{{else}}<p class="text-muted">{{t "auth.security.no_attempts"}}</p>{{end}}</section>
+{{end}}

@@ -1,0 +1,71 @@
+{{/* Data: webhooks.detailPage. .Secret is set only right after a rotation. */}}
+{{define "title"}}{{.Hook.Name}} · {{t "webhooks.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<div class="admin-contained">
+<p class="mb-2"><a class="text-green underline" href="/admin/webhooks">{{t "webhooks.back"}}</a></p>
+<h1 class="text-[22px] font-bold mb-1">{{.Hook.Name}}</h1>
+<p class="font-mono text-xs text-muted mb-4 break-all" dir="ltr">{{.Hook.URL}}</p>
+{{if .Secret}}
+<section role="status" class="mb-4 rounded border border-green bg-green-soft p-4" data-webhook-secret hx-history="false">
+  <h2 class="text-base font-bold text-green mb-1">{{t "webhooks.rotated_title"}}</h2>
+  <p class="mb-3 text-ink">{{t "webhooks.secret_help"}}</p>
+  <label class="sr-only" for="wh-secret">{{t "webhooks.secret"}}</label>
+  <input id="wh-secret" readonly value="{{.Secret}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs">
+</section>
+{{end}}
+{{with .Tested}}
+<section role="status" class="mb-4 rounded border p-4 {{if eq .Status "delivered"}}border-green bg-green-soft{{else}}border-red bg-red-soft{{end}}" data-webhook-test="{{.Status}}">
+  <p class="font-medium">{{if eq .Status "delivered"}}{{t "webhooks.test_ok" .ResponseCode .DurationMS}}{{else}}{{t "webhooks.test_failed"}} <span class="font-mono text-xs" dir="ltr">{{.Error}}</span>{{end}}</p>
+</section>
+{{end}}
+<div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_26rem]">
+  <section class="rounded border border-line bg-panel overflow-x-auto" aria-labelledby="wh-deliveries">
+    <h2 id="wh-deliveries" class="text-base font-bold p-4 pb-2">{{t "webhooks.deliveries"}}</h2>
+    {{if .Deliveries}}
+    <table class="w-full text-start">
+      <thead class="border-b border-line"><tr>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "webhooks.event"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "webhooks.result"}}</th>
+        <th scope="col" class="px-3 py-2"><span class="sr-only">{{t "webhooks.redeliver"}}</span></th>
+      </tr></thead>
+      <tbody class="divide-y divide-line">
+      {{range .Deliveries}}
+        <tr data-delivery="{{.ID}}" data-status="{{.Status}}">
+          <td class="px-3 py-2 align-top"><p class="font-mono text-xs" dir="ltr">{{.Event}}</p><p class="text-[11px] text-muted">{{date .CreatedAt}}</p></td>
+          <td class="px-3 py-2 align-top text-sm">{{t (print "webhooks.status_" .Status)}}{{if .ResponseCode}} · <span class="font-mono" dir="ltr">{{.ResponseCode}}</span>{{end}} · {{t "webhooks.attempts" .Attempts}}
+            {{if .Error}}<p class="font-mono text-[11px] text-red break-all" dir="ltr">{{.Error}}</p>{{end}}</td>
+          <td class="px-3 py-2 align-top text-end">
+            <form method="post" action="/admin/webhooks/deliveries/{{.ID}}/redeliver"><input type="hidden" name="_csrf" value="{{csrf}}">
+              <button type="submit" class="h-8 px-2.5 whitespace-nowrap rounded border border-line bg-panel hover:border-line-strong">{{t "webhooks.redeliver"}}</button></form>
+          </td>
+        </tr>
+      {{end}}
+      </tbody>
+    </table>
+    {{else}}<p class="px-4 pb-4 text-muted">{{t "webhooks.no_deliveries"}}</p>{{end}}
+  </section>
+  <div class="space-y-4">
+    <form method="post" action="/admin/webhooks/{{.Hook.ID}}" class="rounded border border-line bg-panel p-4 space-y-4" novalidate aria-labelledby="wh-edit">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <h2 id="wh-edit" class="text-base font-bold">{{t "webhooks.settings"}}</h2>
+      {{template "webhook-fields" .}}
+      <label class="flex items-center gap-2"><input type="hidden" name="active" value="false"><input type="checkbox" name="active" value="true" {{if .Form.Active}}checked{{end}}> {{t "webhooks.active"}}</label>
+      {{if and (not .Hook.Active) .Hook.ConsecutiveFailures}}<p class="text-sm text-red">{{t "webhooks.auto_disabled" .Hook.ConsecutiveFailures}}</p>{{end}}
+      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium">{{t "webhooks.save"}}</button>
+    </form>
+    <section class="rounded border border-line bg-panel p-4 space-y-3" aria-labelledby="wh-actions">
+      <h2 id="wh-actions" class="text-base font-bold">{{t "webhooks.actions"}}</h2>
+      <form method="post" action="/admin/webhooks/{{.Hook.ID}}/test"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "webhooks.send_test"}}</button></form>
+      <form method="post" action="/admin/webhooks/{{.Hook.ID}}/secret" data-confirm="{{t "webhooks.rotate_confirm"}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "webhooks.rotate_secret"}}</button></form>
+      <form method="post" action="/admin/webhooks/{{.Hook.ID}}/delete" data-confirm="{{t "webhooks.delete_confirm" .Hook.Name}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-9 px-3 rounded border border-red text-red bg-red-soft">{{t "webhooks.delete"}}</button></form>
+      <details class="text-sm"><summary class="cursor-pointer font-medium">{{t "webhooks.verify_title"}}</summary>
+        <p class="mt-2 text-muted">{{t "webhooks.verify_help"}}</p>
+        <pre class="mt-2 overflow-auto rounded bg-panel-2 p-3 text-[11px]" dir="ltr">expected = "sha256=" + hex(hmac_sha256(secret, X-GoRun-Timestamp + "." + body))
+compare(expected, X-GoRun-Signature) in constant time
+reject when |now - X-GoRun-Timestamp| &gt; 5 minutes</pre></details>
+    </section>
+  </div>
+</div>
+</div>
+{{end}}

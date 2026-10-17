@@ -1,0 +1,7 @@
+{{part "header" .}}
+{{if and .Content (eq .Content.Template "builder")}}
+<article class="gp-page studio-builder" aria-label="{{.Content.Title}}">{{builderBody .Content}}</article>
+{{else}}
+<section class="studio-shell studio-article">{{with .Content}}<h1>{{.Title}}</h1><div class="prose-gp">{{safe .Body}}</div>{{end}}{{with .Extra.form_flash}}<p role="status" class="studio-empty">{{if eq . "ok"}}{{t "form_sent_body"}}{{else}}{{t "form_error_title"}}{{end}}</p>{{end}}{{component "contact-form" .}}</section>
+{{end}}
+{{part "footer" .}}

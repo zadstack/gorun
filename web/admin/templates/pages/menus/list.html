@@ -1,0 +1,59 @@
+{{define "title"}}{{t "menus.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold">{{t "menus.title"}}</h1>
+<p class="text-muted mb-4">{{t "menus.intro"}}</p>
+<div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+  <div class="rounded border border-line bg-panel overflow-x-auto">
+    {{if .Menus}}
+    <table class="w-full text-start">
+      <thead class="bg-panel-2">
+        <tr class="text-start">
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "menus.col.name"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "menus.col.slug"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "menus.col.location"}}</th>
+          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "menus.col.items"}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Menus}}
+        <tr class="border-t border-line hover:bg-bg">
+          <td class="px-3 py-2"><a href="/admin/menus/{{.ID}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a></td>
+          <td class="px-3 py-2 font-mono text-xs">{{.Slug}}</td>
+          <td class="px-3 py-2">{{if .Location}}<span class="inline-flex items-center rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-xs">{{.Location}}</span>{{else}}<span class="text-muted">{{t "menus.none"}}</span>{{end}}</td>
+          <td class="px-3 py-2 text-end font-mono">{{.Count}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+    {{else}}
+    <p class="p-6 text-center text-muted">{{t "menus.empty"}}</p>
+    {{end}}
+  </div>
+  <form method="post" action="/admin/menus" class="rounded border border-line bg-panel p-4 space-y-4 self-start" novalidate>
+    <h2 class="text-base font-bold">{{t "menus.create.title"}}</h2>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div>
+      <label for="name" class="block font-medium mb-1">{{t "menus.field.name"}}</label>
+      <input id="name" name="name" type="text" required value="{{.Form.Name}}" {{with index .Fields "name"}}aria-invalid="true" aria-describedby="name-error"{{end}}
+             class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <div id="name-error">{{template "partials/field_errors" (index .Fields "name")}}</div>
+    </div>
+    <div>
+      <label for="slug" class="block font-medium mb-1">{{t "menus.field.slug"}}</label>
+      <input id="slug" name="slug" type="text" value="{{.Form.Slug}}" dir="ltr" aria-describedby="slug-help slug-error" {{with index .Fields "slug"}}aria-invalid="true"{{end}}
+             class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <p id="slug-help" class="mt-1 text-xs text-muted">{{t "menus.field.slug_help"}}</p>
+      <div id="slug-error">{{template "partials/field_errors" (index .Fields "slug")}}</div>
+    </div>
+    <div>
+      <label for="location" class="block font-medium mb-1">{{t "menus.field.location"}}</label>
+      <select id="location" name="location" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <option value="">{{t "menus.field.location_none"}}</option>
+        {{$sel := .Form.Location}}{{range .Locations}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{.}}</option>{{end}}
+      </select>
+      {{template "partials/field_errors" (index .Fields "location")}}
+    </div>
+    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "menus.create.submit"}}</button>
+  </form>
+</div>
+{{end}}

@@ -1,0 +1,23 @@
+{
+  "drag": "Drag section",
+  "up": "Move section up",
+  "down": "Move section down",
+  "help": "Arrange dashboard sections by dragging or using the arrow buttons. Your order is saved for your account.",
+  "reset": "Restore default order",
+  "saving": "Saving order…",
+  "saved": "Order saved",
+  "error": "Order was not saved. Try again or reload before leaving.",
+  "conflict": "The layout changed elsewhere. Your current arrangement is still here; reload to use the saved layout.",
+  "reload": "Reload saved layout",
+  "setup": "Integration setup",
+  "setup_hint": "Review saved configuration",
+  "local_only": "Local configuration only. No provider connection is tested when this dashboard opens.",
+  "email": "Email delivery",
+  "ai": "AI writing",
+  "connections": "MCP, AI & storage connections",
+  "social": "Metricool drafts",
+  "missing": "Not configured",
+  "off": "Intentionally off",
+  "configured": "Configured · not checked here",
+  "retry": "Retry saving"
+}

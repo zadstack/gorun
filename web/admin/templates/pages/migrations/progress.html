@@ -1,0 +1,69 @@
+{{/* Data: wpmigrate.page (M, Status, Kinds, Log, Polling, Can*) — HTMX fragment polled every 2s while running */}}
+{{define "title"}}{{t "wpmigrate.step.import"}}{{end}}
+{{define "content"}}
+<div id="mig-progress" {{if .Polling}}hx-get="/admin/x/migrations/{{.M.ID}}/progress" hx-trigger="every 2s" hx-swap="outerHTML"{{end}} aria-live="polite" class="space-y-4">
+  <div class="rounded border border-line bg-panel p-4">
+    <div class="flex flex-wrap items-center gap-3 mb-3">
+      {{$finished := or (eq .Status.Status "validated") (eq .Status.Status "completed")}}
+      <span class="inline-flex rounded-chip border {{if and $finished (gt .Status.Failed 0)}}border-amber bg-amber-soft text-amber-text{{else if $finished}}border-green bg-green-soft text-green{{else if eq .Status.Status "failed"}}border-red bg-red-soft text-red{{else if or (eq .Status.Status "running") (eq .Status.Status "paused")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}} px-1.5 py-0.5 text-xs" data-status="{{.Status.Status}}">{{if and $finished (gt .Status.Failed 0)}}{{t "wpmigrate.status.done_with_failures" .Status.Failed}}{{else}}{{t (print "wpmigrate.status." .Status.Status)}}{{end}}</span>
+      {{if .Status.Step}}<span class="text-xs text-muted">{{t "wpmigrate.import.step"}} <span class="font-mono">{{t (print "wpmigrate.runstep." .Status.Step)}}</span></span>{{end}}
+      <span class="font-mono ms-auto">{{.Status.Percent}}%</span>
+    </div>
+    <div class="h-2 rounded-full bg-panel-2 border border-line overflow-hidden" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.Status.Percent}}" aria-label="{{t "wpmigrate.import.overall"}}">
+      <div class="h-full bg-green" style="width: {{.Status.Percent}}%"></div>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2">
+      {{if .CanStart}}
+      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/start" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "play"}}<span>{{if .Status.StartedAt}}{{t "wpmigrate.import.rerun"}}{{else}}{{t "wpmigrate.import.start"}}{{end}}</span></button>
+      {{end}}
+      {{if .CanPause}}
+      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/pause" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "pause"}}<span>{{t "wpmigrate.import.pause"}}</span></button>
+      {{end}}
+      {{if .CanResume}}
+      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/resume" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "play"}}<span>{{t "wpmigrate.import.resume"}}</span></button>
+      {{end}}
+      {{if .CanRetry}}
+      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/retry" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-3 rounded border border-amber bg-panel text-amber-text hover:bg-amber-soft inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "rotate-ccw"}}<span>{{t "wpmigrate.import.retry"}} ({{.Status.Failed}})</span></button>
+      {{end}}
+      {{if or (eq .Status.Status "validated") (eq .Status.Status "completed")}}
+      <a href="/admin/migrations/{{.M.ID}}/validate" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "clipboard-check"}}<span>{{t "wpmigrate.next.validate"}}</span></a>
+      {{end}}
+    </div>
+  </div>
+  {{if .Kinds}}
+  <section class="rounded border border-line bg-panel p-4" aria-labelledby="mig-kinds">
+    <h2 id="mig-kinds" class="text-base font-bold mb-2">{{t "wpmigrate.import.by_kind"}}</h2>
+    <ul class="space-y-2">
+      {{range .Kinds}}
+      <li>
+        <div class="flex flex-wrap items-center gap-2 text-xs mb-1">
+          <span class="font-medium text-sm">{{t (print "wpmigrate.kind." .Kind)}}</span>
+          <span class="font-mono text-muted">{{.Done}}/{{.Total}}</span>
+          {{if .Skipped}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 font-mono">{{t "wpmigrate.item.skipped"}} {{.Skipped}}</span>{{end}}
+          {{if .Failed}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 font-mono">{{t "wpmigrate.item.failed"}} {{.Failed}}</span>{{end}}
+        </div>
+        <div class="h-1.5 rounded-full bg-panel-2 border border-line overflow-hidden" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{.Pc}}" aria-label="{{t (print "wpmigrate.kind." .Kind)}}">
+          <div class="h-full {{if .Failed}}bg-amber{{else}}bg-green{{end}}" style="width: {{.Pc}}%"></div>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+  </section>
+  {{end}}
+  <section class="rounded border border-line bg-panel" aria-labelledby="mig-log">
+    <h2 id="mig-log" class="px-4 py-3 border-b border-line text-base font-bold">{{t "wpmigrate.import.log"}}</h2>
+    {{if .Log}}
+    <ol class="divide-y divide-line">
+      {{range .Log}}
+      <li class="px-4 py-1.5 flex flex-wrap items-baseline gap-2 text-xs">
+        <time class="font-mono text-muted" datetime="{{.At}}">{{date .At}}</time>
+        <span class="inline-flex rounded-chip border {{if eq .Level "error"}}border-red bg-red-soft text-red{{else if eq .Level "warn"}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}} px-1.5 font-mono">{{.Level}}</span>
+        <span class="font-mono" dir="ltr">{{.Message}}</span>
+        {{with .Meta}}{{with index . "error"}}<span class="text-red break-all" dir="ltr">{{.}}</span>{{end}}{{end}}
+      </li>
+      {{end}}
+    </ol>
+    {{else}}<p class="p-4 text-muted">{{t "wpmigrate.import.no_log"}}</p>{{end}}
+  </section>
+</div>
+{{end}}

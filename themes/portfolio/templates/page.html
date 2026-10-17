@@ -1,0 +1,3 @@
+{{part "header" .}}
+{{with .Content}}<article class="studio-shell studio-article"><header><h1>{{.Title}}</h1></header>{{with media .FeaturedMediaID}}<figure>{{img . "large" "studio-featured"}}{{with .Caption}}<figcaption>{{.}}</figcaption>{{end}}</figure>{{end}}<div class="prose-gp">{{safe .Body}}</div></article>{{end}}
+{{part "footer" .}}

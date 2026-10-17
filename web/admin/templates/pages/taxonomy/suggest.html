@@ -1,0 +1,10 @@
+{{/* Tag suggestions for the flat-taxonomy tag input (HTMX fragment). */}}
+{{define "content"}}
+{{if .Terms}}
+<ul class="rounded border border-line bg-panel divide-y divide-line">
+  {{range .Terms}}
+  <li><button type="button" data-slug="{{.Slug}}" @click="add($el.dataset.slug)" class="w-full text-start px-3 py-1.5 hover:bg-panel-2 focus:outline-none focus:bg-panel-2"><span dir="auto">{{.Name}}</span> <span class="font-mono text-xs text-muted" dir="auto">{{.Slug}}</span></button></li>
+  {{end}}
+</ul>
+{{else if .Query}}<p class="text-xs text-muted px-1">{{t "taxonomy.picker.none"}}</p>{{end}}
+{{end}}

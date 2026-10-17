@@ -1,0 +1,17 @@
+{{define "fields/multiselect"}}
+<fieldset class="gp-field" data-field-type="multiselect" data-field-key="{{.Key}}" {{if .Help}}aria-describedby="{{.ID}}-help"{{end}}>
+  <legend class="block font-medium mb-1">{{.Label}}{{if .Required}} <span class="text-red" aria-hidden="true">*</span>{{end}}</legend>
+  <input type="hidden" name="{{.Name}}" value="">
+  <div class="flex flex-wrap gap-x-4 gap-y-1">
+    {{$name := .Name}}{{$id := .ID}}
+    {{range $i, $o := .Options}}
+    <label class="inline-flex items-center gap-2">
+      <input type="checkbox" id="{{$id}}-{{$i}}" name="{{$name}}" value="{{$o.Value}}" {{if $o.Selected}}checked{{end}}
+             class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+      <span>{{$o.Label}}</span>
+    </label>
+    {{end}}
+  </div>
+  {{template "fields/help" .}}
+</fieldset>
+{{end}}

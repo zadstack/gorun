@@ -1,0 +1,4 @@
+{{define "content"}}<details data-widget="setup_status" class="dashboard-setup">
+<summary><strong>{{t "dashboardlayout.setup"}}</strong><span>{{t "dashboardlayout.setup_hint"}}</span></summary>
+<p>{{t "dashboardlayout.local_only"}}</p><ul>{{range .}}<li><a href="{{.Href}}"><strong>{{t .TitleKey}}</strong><span>{{t .StatusKey}}</span><span aria-hidden="true">→</span></a></li>{{end}}</ul>
+</details>{{end}}

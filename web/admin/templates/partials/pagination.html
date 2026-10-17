@@ -1,0 +1,12 @@
+{{/* Usage: {{template "partials/pagination" (pagination .Page .PerPage .Total)}} */}}
+{{define "partials/pagination"}}
+{{if gt .Pages 1}}
+<nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
+  <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+  <div class="flex gap-2">
+    {{if .HasPrev}}<a href="?page={{.Prev}}" hx-get="?page={{.Prev}}" hx-target="#main" hx-push-url="true" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
+    {{if .HasNext}}<a href="?page={{.Next}}" hx-get="?page={{.Next}}" hx-target="#main" hx-push-url="true" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}
+  </div>
+</nav>
+{{end}}
+{{end}}

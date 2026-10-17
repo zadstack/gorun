@@ -1,0 +1,60 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          # Latest 1.27 patch (not the go.mod minimum) so govulncheck sees stdlib fixes.
+          go-version: '1.27.x'
+          check-latest: true
+      - name: build (CGO disabled)
+        run: CGO_ENABLED=0 go build ./...
+      - name: vet
+        run: go vet ./...
+      - name: test
+        run: go test -race -coverpkg=./... -coverprofile=coverage.out ./...
+      - name: coverage (80% across unit and integration tests)
+        run: |
+          go tool cover -func=coverage.out > coverage-summary.txt
+          awk '$1 == "total:" { found = 1; sub(/%$/, "", $3); if ($3 + 0 < 80) exit 1 } END { if (!found) exit 1 }' coverage-summary.txt
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      - name: check formatting
+        run: test -z "$(gofmt -l cmd pkg internal examples tools web)"
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - run: npm ci
+        working-directory: e2e
+      - run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - run: npm test -- --project=chromium --project=theme
+        working-directory: e2e
+        env:
+          STRIPE_SECRET_KEY: ''
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure-report
+          path: e2e/playwright-report/

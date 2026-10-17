@@ -1,0 +1,7 @@
+{{define "fields/image"}}
+<div class="gp-field" data-field-type="image" data-field-key="{{.Key}}">
+  {{template "fields/label" .}}
+  {{template "media_picker_slot" .}}
+  {{template "fields/help" .}}
+</div>
+{{end}}

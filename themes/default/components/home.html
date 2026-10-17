@@ -1,0 +1,9 @@
+<link rel="stylesheet" href="{{asset "home-composition.css"}}">
+<section class="gr-home-intro" aria-labelledby="gr-home-title">
+  <div class="gr-home-title"><h1 id="gr-home-title">{{.Site.Title}}</h1>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</div>
+  {{if .Items}}{{with index .Items 0}}<a class="gr-home-spotlight" href="{{url .}}">
+    {{with media .FeaturedMediaID}}{{img . "large" "gr-home-spotlight-image"}}{{end}}
+    <span class="gr-home-spotlight-copy"><span class="gr-home-label">{{t "latest_posts"}}</span><strong>{{.Title}}</strong><span class="gr-home-spotlight-action">{{t "read_more"}} <span aria-hidden="true">↗</span></span></span>
+  </a>{{end}}{{end}}
+</section>
+{{component "home-stories" .}}

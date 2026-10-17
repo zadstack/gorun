@@ -1,0 +1,15 @@
+{{define "partials/form_directory"}}
+<link rel="stylesheet" href="{{asset "form-directory.css"}}">
+<section class="form-directory" data-form-directory aria-label="{{t "formsources.directory"}}">
+ <header><h2>{{t "formsources.directory"}}</h2><p>{{t "formsources.directory_help"}}</p></header>
+ <div class="form-directory-grid">{{range .}}<article class="form-directory-card">
+  <span class="form-directory-kind">{{if eq .Kind "contact"}}{{t "formsources.contact"}}{{else if eq .Kind "incident"}}{{t "site.intake.incident"}}{{else}}{{t "site.intake.follow_up"}}{{end}} · <span lang="{{.Locale}}">{{if eq .Locale "ar"}}العربية{{else}}English{{end}}</span></span>
+  {{if .Title}}<h3 dir="auto">{{.Title}}</h3>{{end}}
+  <code dir="ltr">{{.Path}}</code>
+  {{if .Enabled}}<a href="{{.Path}}" target="_blank" rel="noopener noreferrer">{{t "formsources.open"}} <span aria-hidden="true">↗</span></a>{{else}}<span class="form-directory-disabled">{{t "formsources.disabled"}}</span>{{end}}
+ </article>{{else}}<p class="form-directory-empty">{{t "formsources.empty"}}</p>{{end}}</div>
+</section>
+{{end}}
+{{define "partials/form_source"}}
+<p class="form-source"><span>{{t "formsources.source"}}:</span> {{if .Path}}<a href="{{.Path}}" target="_blank" rel="noopener noreferrer">{{if .Title}}<span dir="auto">{{.Title}}</span> · {{end}}<bdi>{{.Path}}</bdi> ↗</a>{{else}}<span>{{t "formsources.unknown"}}</span>{{end}}</p>
+{{end}}

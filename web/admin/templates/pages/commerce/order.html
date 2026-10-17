@@ -1,0 +1,53 @@
+{{define "title"}}#{{.Order.Number}}{{end}}
+{{define "content"}}
+<p class="mb-2"><a href="/admin/commerce/orders" class="text-blue hover:text-blue-hover">{{t "commerce.orders.back"}}</a></p>
+{{with .Order}}
+<h1 class="text-[22px] font-bold mb-4">{{t "commerce.orders.order"}} <span class="font-mono">#{{.Number}}</span></h1>
+<dl class="rounded border border-line bg-panel p-4 grid gap-x-6 gap-y-2 sm:grid-cols-[10rem_minmax(0,1fr)] max-w-3xl">
+  <dt class="text-muted">{{t "commerce.col.status"}}</dt><dd><span class="inline-flex rounded-chip border px-1.5 py-0.5 text-xs {{if or (eq .Status "active") (eq .Status "paid")}}border-green bg-green-soft text-green{{else if or (eq .Status "failed") (eq .Status "refunded")}}border-red bg-red-soft text-red{{else if or (eq .Status "suspended") (eq .Status "expired")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}}">{{t (print "commerce.order.status." .Status)}}</span></dd>
+  <dt class="text-muted">{{t "commerce.col.email"}}</dt><dd dir="ltr" class="text-start">{{.Email}}</dd>
+  <dt class="text-muted">{{t "commerce.col.product"}}</dt><dd>{{.ProductName}}</dd>
+  <dt class="text-muted">{{t "commerce.col.total"}}</dt><dd class="font-mono text-start" dir="ltr">{{.Total}}</dd>
+  <dt class="text-muted">{{t "commerce.col.created"}}</dt><dd class="font-mono text-xs">{{date .CreatedAt}}</dd>
+  <dt class="text-muted">{{t "commerce.orders.paid_at"}}</dt><dd class="font-mono text-xs">{{if .PaidAt}}{{date .PaidAt}}{{else}}—{{end}}</dd>
+  <dt class="text-muted">Stripe</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.StripeSessionID}} {{.StripePaymentIntent}}</dd>
+{{if .ReceiptStatus}}
+  <dt class="text-muted">{{t "commerce.receipt.label"}}</dt><dd>{{t (print "commerce.receipt." .ReceiptStatus)}}{{if .ReceiptSentAt}} · {{date .ReceiptSentAt}}{{end}}{{if .ReceiptError}}<p class="text-sm text-muted">{{t "commerce.receipt.check_provider"}}</p>{{end}}</dd>
+  {{end}}
+</dl>
+{{end}}
+{{if .Items}}<section class="rounded border border-line bg-panel p-4 mt-4 max-w-3xl"><h2 class="font-bold mb-2">تفاصيل الطلب / Request brief</h2>{{range .Items}}{{$item := .}}<h3>{{.ProductName}} × {{.Quantity}}</h3>{{if .IntakeSchema}}<dl class="grid gap-2">{{range .IntakeSchema}}<dt class="font-medium">{{.Label}}</dt><dd class="whitespace-pre-wrap break-words">{{index $item.Intake .Key}}</dd>{{end}}</dl>{{end}}{{end}}</section>{{end}}
+{{if .Order.RequestStatus}}
+<section class="rounded border border-line bg-panel p-4 mt-4 max-w-3xl">
+  <h2 class="font-bold mb-2">تنفيذ طلب الخدمة / Service fulfillment</h2>
+  <p class="text-sm mb-3">{{.Order.RequestStatus}} · متابعة التنفيذ مستقلة عن الدفع؛ تغيير الحالة لا يسجّل مبلغًا مدفوعًا.</p>
+  <form method="post" action="/admin/commerce/requests/{{.Order.ID}}" class="grid gap-3">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <label>الحالة / Status<select name="status" class="block border border-line rounded p-2 w-full"><option value="accepted">قبول / Accepted</option><option value="in_progress">قيد التنفيذ / In progress</option><option value="fulfilled">تم التنفيذ / Fulfilled</option><option value="cancelled">إلغاء / Cancelled</option></select></label>
+    <label>ملاحظة / Note<textarea name="note" maxlength="4000" class="block border border-line rounded p-2 w-full">{{.Order.FulfillmentNote}}</textarea></label>
+    <button class="border border-line rounded px-3 py-2">حفظ حالة التنفيذ / Save</button>
+  </form>
+</section>
+{{end}}
+{{if .CanRetry}}
+<form method="post" action="/admin/commerce/orders/{{.Order.ID}}/retry" class="mt-4" data-confirm="{{t "commerce.confirm.retry"}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "rotate-cw"}}<span>{{t "commerce.action.retry"}}</span></button>
+</form>
+{{end}}
+<h2 class="text-base font-bold mt-6 mb-2">{{t "commerce.entitlements.title"}}</h2>
+<div class="rounded border border-line bg-panel overflow-x-auto max-w-3xl">
+  {{if .Entitlements}}<ul>{{range .Entitlements}}<li class="px-4 py-3 border-t border-line first:border-t-0 flex flex-wrap gap-3 items-center"><span class="inline-flex rounded-chip border px-1.5 py-0.5 text-xs {{if or (eq .Status "active") (eq .Status "paid")}}border-green bg-green-soft text-green{{else if or (eq .Status "failed") (eq .Status "refunded")}}border-red bg-red-soft text-red{{else if or (eq .Status "suspended") (eq .Status "expired")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}}">{{t (print "commerce.entitlement.status." .Status)}}</span><span class="font-mono text-xs" dir="ltr">{{.PlanCode}}</span><span>{{.ServerName}}</span><span class="font-mono text-xs text-muted">{{if .EndsAt}}{{t "commerce.account.ends"}} {{date .EndsAt}}{{end}}</span></li>{{end}}</ul>
+  {{else}}<p class="p-4 text-muted">{{t "commerce.entitlements.none_yet"}}</p>{{end}}
+</div>
+<h2 class="text-base font-bold mt-6 mb-2">{{t "commerce.ops.title"}}</h2>
+<div class="rounded border border-line bg-panel overflow-x-auto max-w-3xl">
+  {{if .Ops}}
+  <table class="w-full"><thead class="bg-panel-2"><tr>
+    <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.ops.kind"}}</th><th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.status"}}</th>
+    <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.ops.attempts"}}</th><th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.ops.error"}}</th></tr></thead>
+    <tbody>{{range .Ops}}<tr class="border-t border-line"><td class="px-3 py-2 font-mono text-xs">{{.Kind}}</td><td class="px-3 py-2 font-mono text-xs">{{.Status}}</td><td class="px-3 py-2 font-mono">{{.Attempts}}</td><td class="px-3 py-2 text-xs break-all">{{.LastError}}</td></tr>{{end}}</tbody>
+  </table>
+  {{else}}<p class="p-4 text-muted">{{t "commerce.ops.none"}}</p>{{end}}
+</div>
+{{end}}

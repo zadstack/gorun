@@ -1,0 +1,12 @@
+{
+  "derived_from": "IBM Plex Sans Arabic (https://github.com/IBM/plex), SIL OFL-1.1",
+  "license": "SIL OFL-1.1",
+  "sha256": {
+    "Zad-Light.woff2": "b93cd7ae73fb37dcc283a2ddd18720cd222e4579daea0e49c7300081943789e9",
+    "Zad-Regular.woff2": "1c25564ff4a6cdb93c9d92a1505ffd13e8146914afc40d8d4216676d05cd8ad3",
+    "Zad-Medium.woff2": "8633828cc5e6aab868566fa9da5f15aed35de6483a0289bacd9b76dd02ebb706",
+    "Zad-SemiBold.woff2": "b38db58a5b4628c6c18125972d9a9511f25a9579d74d824f190a5f134788878d",
+    "Zad-Bold.woff2": "18b9e0880a0427025a4e4b772498e9b6e330847feb2f7ed1d412080457605717",
+    "OFL.txt": "c53b0434893fd010d8b799d57fab6569e4138387108b41ca329ebce75d63a980"
+  }
+}

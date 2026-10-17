@@ -1,0 +1,10 @@
+{{/* Item picker results (HTMX fragment inside fields/picker). */}}
+{{define "content"}}
+{{if .Items}}
+<ul class="max-h-60 overflow-y-auto rounded border border-line bg-panel divide-y divide-line">
+  {{range .Items}}
+  <li><button type="button" data-id="{{.ID}}" data-title="{{.Title}}" @click="add($el)" class="w-full text-start px-3 py-1.5 hover:bg-panel-2 focus:outline-none focus:bg-panel-2"><span dir="auto">{{if .Title}}{{.Title}}{{else}}{{t "content.list.untitled"}}{{end}}</span> <span class="font-mono text-xs text-muted" dir="auto">{{.Slug}}</span></button></li>
+  {{end}}
+</ul>
+{{else}}<p class="text-xs text-muted px-1">{{t "content.picker.none"}}</p>{{end}}
+{{end}}

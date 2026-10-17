@@ -1,0 +1,15 @@
+{{/* The contact page (slug "contact" or template "contact"): body + contact form. */}}
+{{part "header" .}}
+{{with .Content}}
+<article class="reading-article mx-auto max-w-2xl">
+  <h1 class="text-[22px] font-bold leading-snug">{{.Title}}</h1>
+  {{with .Body}}<div class="prose-gp mt-4">{{safe .}}</div>{{end}}
+</article>
+{{end}}
+<div class="mx-auto max-w-2xl mt-6">
+  {{with .Extra.form_flash}}
+  <div role="status" class="mb-4 rounded border px-3 py-2 {{if eq . "ok"}}border-green bg-green-soft text-green{{else}}border-red bg-red-soft text-red{{end}}">{{if eq . "ok"}}{{t "form_sent_body"}}{{else}}{{t "form_error_title"}}{{end}}</div>
+  {{end}}
+  {{component "contact-form" .}}
+</div>
+{{part "footer" .}}

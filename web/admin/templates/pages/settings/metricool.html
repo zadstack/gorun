@@ -1,0 +1,15 @@
+{{define "title"}}{{t "admin.metricool.settings"}}{{end}}
+{{define "content"}}
+<div class="max-w-3xl space-y-5">
+<header><h1 class="text-2xl font-bold">{{t "admin.metricool.settings"}}</h1><p class="mt-2 text-muted">{{t "admin.metricool.intro"}}</p><a href="https://help.metricool.com/basic-guide-for-api-integration-r97af" target="_blank" rel="noopener noreferrer" class="underline text-blue">{{t "admin.metricool.docs"}}</a></header>
+<form method="post" action="/admin/settings/metricool" class="space-y-4 border border-line p-4">
+<input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="version" value="{{.Version}}">
+<div class="grid gap-4 sm:grid-cols-2"><label>{{t "admin.metricool.user_id"}}<input name="user_id" inputmode="numeric" pattern="[1-9][0-9]{0,9}" maxlength="10" value="{{.UserID}}" required dir="ltr" class="block w-full border border-line bg-panel p-2 mt-1"></label><label>{{t "admin.metricool.blog_id"}}<input name="blog_id" inputmode="numeric" pattern="[1-9][0-9]{0,9}" maxlength="10" value="{{.BlogID}}" required dir="ltr" class="block w-full border border-line bg-panel p-2 mt-1"></label></div>
+<label class="block">{{t "admin.metricool.token"}}<input name="token" type="password" autocomplete="new-password" maxlength="2048" dir="ltr" class="block w-full border border-line bg-panel p-2 mt-1"></label>
+<p class="text-sm text-muted">{{t "admin.connections.secret_help"}}</p>
+{{if .SecretSet}}<p class="text-sm">{{t "admin.connections.secret_set"}}</p><label class="flex items-center gap-2"><input type="checkbox" name="clear_secret">{{t "admin.connections.clear_secret"}}</label>{{else}}<p>{{t "admin.connections.secret_unset"}}</p>{{end}}
+<button class="bg-blue text-white px-4 py-2">{{t "core.action.save"}}</button></form>
+<section class="space-y-3"><h2 class="font-bold">{{t "admin.metricool.connection"}}</h2><p>{{if not .SecretSet}}{{t "metricoolstatus.not_configured"}}{{else if eq .TestStatus "pass"}}{{t "admin.metricool.test_pass"}}{{else if eq .TestStatus "fail"}}{{t "admin.metricool.test_fail"}}{{else}}{{t "admin.connections.not_tested"}}{{end}} {{with .TestedAt}}<time dir="ltr">{{.}}</time>{{end}}</p>
+<form method="post" action="/admin/settings/metricool/test"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="version" value="{{.Version}}"><button {{if not .SecretSet}}disabled{{end}} class="border border-line px-4 py-2 disabled:opacity-50">{{t "admin.metricool.test"}}</button></form>
+<p class="text-sm text-muted">{{t "admin.metricool.test_scope"}}</p><a href="/admin/metricool" class="underline text-blue">{{t "admin.metricool.title"}} →</a></section>
+</div>{{end}}
