@@ -87,7 +87,7 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 
 افتح **http://127.0.0.1:8080/admin/setup** لإنشاء المدير الأول، ثم استخدم **http://127.0.0.1:8080/admin**. شغّل البرنامج من جذر المستودع ليجد مجلد `themes/`.
 
-في الإنتاج، اضبط مجلد بيانات دائمًا، وHTTPS، وعنوان الموقع العام (`GORUN_BASE_URL`)، ومفتاح تشفير ثابتًا، و`setup_token` لحماية إنشاء المدير الأول، مع `GORUN_ENV=prod`، وشغّل عملية خادم واحدة لكل مجلد بيانات. تُضبط الإعدادات في `gorun.toml` أو عبر متغيرات `GORUN_*`، ولا تحفظ كلمات المرور أو مفاتيح المزودين في المستودع. راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md) و[دليل الإنتاج](docs/PRODUCTION.md) و[دليل Docker / Coolify](deploy/coolify.md).
+في الإنتاج، اضبط مجلد بيانات دائمًا، وHTTPS، وعنوان الموقع العام (`GORUN_BASE_URL`)، ومفتاح تشفير ثابتًا، و`setup_token` لحماية إنشاء المدير الأول، مع `GORUN_ENV=prod`، وشغّل عملية خادم واحدة لكل مجلد بيانات؛ يفرض النظام ذلك بقفل `gorun.lock` داخل مجلد البيانات، فترفض نسخة ثانية من `gorun serve` (أو `gorun mcp --jobs`) التشغيل برسالة واضحة. تُضبط الإعدادات في `gorun.toml` أو عبر متغيرات `GORUN_*`، ولا تحفظ كلمات المرور أو مفاتيح المزودين في المستودع. راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md) و[دليل الإنتاج](docs/PRODUCTION.md) و[دليل Docker / Coolify](deploy/coolify.md).
 
 ### تحت الغطاء
 
@@ -114,7 +114,7 @@ make build && make test && make lint
 
 GoRun في الإصدار v0.1 وما زال قيد التطوير النشط، ولا يوجد إصدار موسوم بعد؛ ابنِه من الفرع `main`. الحدود الحالية:
 
-- عملية خادم واحدة لكل مجلد بيانات SQLite، ولا يوجد تعدد مواقع بقاعدة بيانات مشتركة.
+- عملية خادم واحدة لكل مجلد بيانات SQLite (يفرضها القفل `<data>/gorun.lock`)، ولا يوجد تعدد مواقع بقاعدة بيانات مشتركة.
 - اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.
 - يحتفظ منشئ الصفحات بالمسودة الحالية وآخر تخطيط منشور، لا بسجل كامل للتخطيطات.
 - لا يوجد محدّث تلقائي للنواة، ولا توليد موقع كامل من تعليمة واحدة.
@@ -224,7 +224,7 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 
 Open **http://127.0.0.1:8080/admin/setup** to create the first administrator, then use **http://127.0.0.1:8080/admin**. Run from the repository root so the server finds `themes/`.
 
-For production, set a persistent data directory, HTTPS, the public base URL, a persistent encryption key and a setup token, and run one server process per data directory. See the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md) and [Docker / Coolify guide](deploy/coolify.md).
+For production, set a persistent data directory, HTTPS, the public base URL, a persistent encryption key and a setup token, and run one server process per data directory; GoRun enforces this with an OS lock on `<data>/gorun.lock`, and a second `gorun serve` (or `gorun mcp --jobs`) on the same directory refuses to start. See the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md) and [Docker / Coolify guide](deploy/coolify.md).
 
 ## Under the hood
 
@@ -251,7 +251,7 @@ make build && make test && make lint
 
 GoRun is an actively developed v0.1 with no tagged release yet; build from `main`. Current boundaries:
 
-- One server process per SQLite data directory; no shared-database multisite.
+- One server process per SQLite data directory (enforced by `<data>/gorun.lock`); no shared-database multisite.
 - Canvases are private to their owner, with explicit agent grants; they are not a shared multiplayer workspace.
 - The page builder keeps the current draft and last published layout, not a full layout history.
 - No automatic core updater, and no complete site generation from a single prompt.

@@ -26,7 +26,9 @@ and then:
 `kernel.BootWithOptions(..., kernel.BootOptions{StartJobs: false})` skips step 6. CLI commands that
 may run beside a live server use it: `gorun mcp` and `gorun import-wxr` always, `gorun reindex`
 with `--no-jobs` (`gorun mcp --jobs` opts back in). The boot log says which (`jobs: workers
-started` / `jobs: workers not started`).
+started` / `jobs: workers not started`). With `StartJobs` the kernel first takes an exclusive OS lock
+(`flock`) on `<data>/gorun.lock` (`kernel.LockDataDir`) and fails with `kernel.ErrDataDirLocked`, naming
+the holder, when another process has it; `App.Close` releases it and the OS drops it if the process dies.
 
 Infrastructure packages are importable by every module and never import a domain module:
 
@@ -237,7 +239,10 @@ hook names that currently have subscribers.
 ## Jobs
 
 Durable jobs live in the `jobs` table. `gorun serve` runs 2 workers and the cron scheduler; CLI commands
-that boot without workers only enqueue. A handler that keeps failing is retried with backoff up to its maximum
+that boot without workers only enqueue. While a job runs, its worker refreshes `locked_at` every 30 s; at
+startup and on every scheduler tick, running jobs with no `locked_at` or one older than 2 minutes are
+requeued (without counting an attempt), so jobs abandoned by a crash are retried while jobs another live
+worker is executing are left alone. A handler that keeps failing is retried with backoff up to its maximum
 attempts, then marked dead (retry from **System → Jobs** or `POST /api/v1/jobs/{id}/retry`).
 
 | Kind | Registered by | Max attempts | Purpose |

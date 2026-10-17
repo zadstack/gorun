@@ -22,6 +22,7 @@ func (q *Queue) schedule(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-t.C:
+			q.recover(ctx)
 			q.tick(ctx)
 		}
 	}
