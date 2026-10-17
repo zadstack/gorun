@@ -2,13 +2,75 @@
 
 [![ci](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE) ![Go 1.27](https://img.shields.io/badge/go-1.27-256b9b.svg)
 
+![GoRun — your content, your team, your agents](assets/branding/github-banner.svg)
+
 **العربية** · [English](#english)
 
-نظام إدارة محتوى ذاتي الاستضافة، مبني بـGo وSQLite، للنشر وإدارة الفريق والعمل مع الوكلاء عبر REST وMCP. الواجهة تدعم العربية والإنجليزية واتجاه RTL. البرنامج مفتوح المصدر بترخيص [GNU AGPL v3](LICENSE)؛ راجع أيضًا [NOTICE](NOTICE).
+**نظام إدارة محتوى يعمل فيه فريقك ووكلاء الذكاء الاصطناعي معًا، وتبقى القرارات الحساسة بيد البشر.**
+
+يجمع GoRun في لوحة تحكم واحدة، عربية وإنجليزية مع دعم كامل لاتجاه RTL، بين سير عمل الفريق، ووكلاء يعملون عبر REST وMCP بصلاحيات محددة، ولوحات عمل (Canvases) تربط المحتوى بالتعليمات والنتائج. وهو نظام مفتوح المصدر تستضيفه بنفسك بترخيص [GNU AGPL v3](LICENSE).
+
+[الفريق](#للفريق) · [الوكلاء](#للوكلاء) · [اللوحات](#اللوحات-canvases) · [البدء السريع](#البدء-السريع) · [التوثيق](#التوثيق)
+
+### للفريق
+
+- **أدوار تناسب طريقة عمل المحررين.** أدوار جاهزة هي `admin` و`editor` و`author` و`contributor`، ولكل منها صلاحيات صريحة.
+- **مراجعة قبل النشر.** مسودات، وحالة «بانتظار المراجعة»، ونشر مجدول، وسجل نسخ يمكن الاستعادة منه، وسلة محذوفات.
+- **سجل يوثّق من فعل ماذا.** سجل تدقيق لا يُعدَّل بعد كتابته، يشمل المستخدمين والمفاتيح، ومنها كل استدعاء لأدوات MCP.
+- **محتوى منظّم.** مقالات وصفحات وأنواع وحقول مخصصة وتصنيفات وقوائم ووسائط في لوحة تحكم واحدة.
+
+### للوكلاء
+
+1. أنشئ مفتاحًا من نوع **AI agent** من **وكلاء الذكاء الاصطناعي ← مفاتيح API** بالنطاقات (scopes) التي يحتاجها فقط.
+2. وجّه عميل MCP إلى `https://your-site.example/mcp` (أو شغّل `gorun mcp` محليًا عبر stdio).
+3. راجع الطلبات الحساسة من **وكلاء الذكاء الاصطناعي ← الموافقات**؛ ويستعلم الوكيل عن النتيجة بالأداة `check_approval`.
+
+- **حدود واضحة من الأساس.** لا يتجاوز المفتاح صلاحيات دور صاحبه، ولا يفعل إلا ما تسمح به نطاقاته.
+- **البشر يوافقون على الخطوات الحساسة.** النشر والحذف وتغيير الإعدادات وتعديل المحتوى المنشور تنتظر موافقة بشرية افتراضيًا. لا تستطيع مفاتيح الوكلاء استخدام REST للموافقة على طلباتها، والموافقة الذاتية نطاق مستقل لا يمنحه `*`.
+- **REST لبقية التكاملات.** تستخدم السكربتات والخدمات مفاتيح REST منفصلة على `/api/v1` (موصوفة في `/api/v1/openapi.json`)، أما مفاتيح الوكلاء فمرفوضة هناك وتبقى على MCP. وتُبلغ الـWebhooks الخدمات الأخرى بالتغييرات.
+
+يمكنك أن تبدأ بهذه التعليمات بعد ربط الوكيل:
+
+```text
+Inspect the site's structure, content types, and the tools available to your key.
+Explain your proposed changes before writing anything.
+Create new content as drafts and preserve existing content and settings.
+If a tool requests approval, report its request ID and wait for the decision.
+```
+
+[MCP والصلاحيات](docs/MCP.md) · [واجهة REST](docs/API.md) · [نماذج الوكلاء](docs/AGENT-MODELS.md)
+
+### اللوحات (Canvases)
+
+اللوحات (**لوحة التحكم ← اللوحات**) مساحة عمل تشغيلية، وليست أداة لتصميم الصفحات.
+
+![يُرسَل محتوى مختار وتعليمات إلى وكيل متصل، وتصبح النتيجة ملاحظة خاصة جديدة لمراجعتك](assets/branding/reviewed-workflow.svg)
+
+- **اجمع عملك في مكان واحد.** ملاحظات وقوائم مهام وروابط ومراجع لمقالات وصفحات، وودجات للموافقات والمهام الخلفية وطلبات الخدمة.
+- **شغّل الوكلاء على سياق تختاره أنت.** اربط المصادر والتعليمات بمزوّد نصوص مُعَدّ أو بمفتاح وكيل مسمّى، وراجع السياق كما سيُرسَل، ثم شغّل.
+- **النتائج تصل ملاحظاتٍ جديدة.** تُضاف كل نتيجة ملاحظةً خاصة مع بيان مصدرها، ولا تستبدل بطاقاتك ولا تنشر أي محتوى.
+- **تكرار دوري بعد المراجعة.** الجدولة كل ساعة أو يوم أو أسبوع تبدأ معطّلة، وتحتاج تفعيلًا صريحًا، وتعيد التحقق من الصلاحيات في كل تشغيل.
+- **صلاحيات صريحة للوكلاء.** أنت تحدد العناصر التي يستطيع كل وكيل قراءتها أو الإضافة إليها أو التشغيل عليها في كل لوحة.
+
+[مساحة اللوحات](docs/CANVASES.md) · [عمليات اللوحات](docs/CANVAS-OPERATIONS-CONTRACT.md) · [استوديو المحتوى](docs/CONTENT_STUDIO.md)
+
+### وأيضًا
+
+| المجال | ما تحصل عليه |
+| --- | --- |
+| منشئ المواقع والقوالب | مواقع جاهزة للبدء، ومنشئ صفحات مبني على الأقسام (12 نوعًا من الأقسام، وتراجع وإعادة، وحفظ تلقائي، ومعاينات)، وخمسة قوالب، وقوالب فرعية، وتخصيص القوالب |
+| الترحيل من ووردبريس | استيراد موجّه عبر REST أو ملف WXR مع ربط الحقول ومعاينة تجريبية وتحقق؛ لا تُنقل الإضافات ولا تخطيطات منشئي الصفحات ولا التعليقات ولا طلبات WooCommerce |
+| استوديو المحتوى | مقترحات نصوص ووسائط قابلة للمراجعة من مزودي ذكاء اصطناعي أو MCP مُعدّين صراحة |
+| التشغيل | مهام خلفية دائمة، وفحوص صحة، ونسخ احتياطي، وتحويلات، وبيانات SEO، وخرائط موقع، وتخزين وسائط متوافق مع S3 |
+| التجارة | منتجات رقمية، والدفع عبر Stripe Checkout، واستحقاقات للوصول إلى MCP |
+
+الميزات المعتمدة على مزودين خارجيين تحتاج بيانات اعتماد صالحة. حفظ الاتصال أو تحميل قائمة النماذج لا يثبت أن التوليد أو الدفع يعمل.
+
+[منشئ المواقع](docs/SITE_BUILDER.md) · [القوالب](docs/THEMES.md) · [الترحيل](docs/MIGRATION.md) · [التجارة](docs/COMMERCE.md)
 
 ### البدء السريع
 
-يحتاج البناء من المصدر إلى **Go 1.27** و`make`:
+يحتاج البناء من المصدر إلى **Go 1.27** و`make` (يثبّت المستودع إصدار الأدوات Go 1.27.2).
 
 ```sh
 git clone https://github.com/zadstack/gorun.git
@@ -23,62 +85,58 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 ./bin/gorun serve
 ```
 
-افتح **http://127.0.0.1:8080/admin/setup** لإنشاء المدير الأول، ثم **http://127.0.0.1:8080/admin**. شغّل البرنامج من جذر المستودع ليجد مجلد `themes/`.
+افتح **http://127.0.0.1:8080/admin/setup** لإنشاء المدير الأول، ثم استخدم **http://127.0.0.1:8080/admin**. شغّل البرنامج من جذر المستودع ليجد مجلد `themes/`.
 
-### الإنتاج
+في الإنتاج، اضبط مجلد بيانات دائمًا، وHTTPS، وعنوان الموقع العام (`GORUN_BASE_URL`)، ومفتاح تشفير ثابتًا، و`setup_token` لحماية إنشاء المدير الأول، مع `GORUN_ENV=prod`، وشغّل عملية خادم واحدة لكل مجلد بيانات؛ يفرض النظام ذلك بقفل `gorun.lock` داخل مجلد البيانات، فترفض نسخة ثانية من `gorun serve` (أو `gorun mcp --jobs`) التشغيل برسالة واضحة. تُضبط الإعدادات في `gorun.toml` أو عبر متغيرات `GORUN_*`، ولا تحفظ كلمات المرور أو مفاتيح المزودين في المستودع. راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md) و[دليل الإنتاج](docs/PRODUCTION.md) و[دليل Docker / Coolify](deploy/coolify.md).
 
-- إعدادات التشغيل في `gorun.toml` أو متغيرات `GORUN_*`.
-- استخدم `setup_token` لحماية إنشاء المدير الأول، واضبط `GORUN_ENV=prod` وعنوان الموقع الصحيح وHTTPS ومفتاح تشفير ثابتًا.
-- عملية خادم واحدة لكل مجلد بيانات؛ يفرض النظام ذلك بقفل `gorun.lock` داخل مجلد البيانات، فترفض نسخة ثانية من `gorun serve` (أو `gorun mcp --jobs`) التشغيل برسالة واضحة.
-- لا تحفظ كلمات المرور أو مفاتيح المزودين في المستودع.
+### تحت الغطاء
 
-راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md) و[دليل الإنتاج](docs/PRODUCTION.md).
+- **ملف تنفيذي واحد بلغة Go.** لوحة التحكم مضمّنة فيه، وقوالب المواقع تأتي معه في مجلد `themes/`.
+- **SQLite.** لا حاجة إلى خادم قاعدة بيانات منفصل.
+- **بلا Node.js أو PHP وقت التشغيل.** يُستخدم Node.js فقط لاختبارات المتصفح الاختيارية في `e2e/`.
+- **قابل للبناء عليه.** `cmd/gorun` غلاف رفيع حول الحزمة `pkg/cli`، ويستطيع برنامجك الخاص إضافة وحداته وأوامره عبر `cli.Option`. راجع [البناء فوق النواة](docs/ARCHITECTURE.md#building-on-the-core--البناء-فوق-النواة).
 
-### القوالب
+```sh
+make build && make test && make lint
+```
 
-يأتي النظام بخمسة قوالب عامة:
-- `default` للمدونات؛
-- `business` للشركات والخدمات؛
-- `magazine` للمجلات؛
-- `portfolio` للأعمال الشخصية؛
-- `docs` للتوثيق.
+### التوثيق
 
-القوالب المبنية لموقع واحد تُحفظ خارج `themes/` وتُحمَّل عبر `GORUN_THEMES_EXTRA`.
+| ابدأ من هنا | البناء والتكامل | التشغيل والمساهمة |
+| --- | --- | --- |
+| [التثبيت](docs/GORUN-INSTALLATION.md) | [البنية](docs/ARCHITECTURE.md) | [تشغيل الإنتاج](docs/PRODUCTION.md) |
+| [مساحة اللوحات](docs/CANVASES.md) | [واجهة REST](docs/API.md) | [Docker / Coolify](deploy/coolify.md) |
+| [منشئ المواقع](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [الأمان](SECURITY.md) |
+| [القوالب](docs/THEMES.md) | [الإضافات](docs/EXTENSIONS.md) | [المساهمة](CONTRIBUTING.md) |
+| [الترحيل من ووردبريس](docs/MIGRATION.md) | [التجارة](docs/COMMERCE.md) | [سجل التغييرات](CHANGELOG.md) |
 
-### البناء فوق النواة
+### حالة المشروع
 
-`cmd/gorun` غلاف رفيع حول الحزمة `pkg/cli`. يستطيع برنامج منفصل استيرادها وإضافة وحداته وأوامره عبر `cli.Option` مع الإبقاء على كل أوامر النواة. راجع [البناء فوق النواة](docs/ARCHITECTURE.md#building-on-the-core--البناء-فوق-النواة).
+GoRun في الإصدار v0.1 وما زال قيد التطوير النشط، ولا يوجد إصدار موسوم بعد؛ ابنِه من الفرع `main`. الحدود الحالية:
 
-### التوثيق والمساهمة
+- عملية خادم واحدة لكل مجلد بيانات SQLite (يفرضها القفل `<data>/gorun.lock`)، ولا يوجد تعدد مواقع بقاعدة بيانات مشتركة.
+- اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.
+- يحتفظ منشئ الصفحات بالمسودة الحالية وآخر تخطيط منشور، لا بسجل كامل للتخطيطات.
+- لا يوجد محدّث تلقائي للنواة، ولا توليد موقع كامل من تعليمة واحدة.
+- استعادة النسخ الاحتياطية يدوية، ويجب التحقق من التوليد الفعلي لدى المزودين ومن المدفوعات الحية في كل نشر.
 
-- **التوثيق:** [البنية](docs/ARCHITECTURE.md)، [عقد API](docs/API.md)، [دليل MCP](docs/MCP.md)، [القوالب](docs/THEMES.md)، [الترحيل من ووردبريس](docs/MIGRATION.md).
-- **المساهمة والأمان:** [المساهمة](CONTRIBUTING.md)، [الإبلاغ عن الثغرات](SECURITY.md).
+### المساهمة
 
-**المساهمة:** نرحّب بالبلاغات والاقتراحات عبر [Issues](https://github.com/zadstack/gorun/issues). طلبات الدمج الخارجية لا تُقبل حاليًا إلى أن تُعتمد اتفاقية المساهمة؛ التفاصيل في [CONTRIBUTING.md](CONTRIBUTING.md). أبلغ عن الثغرات الأمنية بشكل خاص كما في [SECURITY.md](SECURITY.md).
+نرحّب ببلاغات الأخطاء ومشكلات التوثيق وأفكار الميزات عبر [Issues](https://github.com/zadstack/gorun/issues). **لا تُقبل طلبات الدمج الخارجية حاليًا** إلى أن تُعتمد اتفاقية المساهمة؛ التفاصيل في [CONTRIBUTING.md](CONTRIBUTING.md). أبلغ عن الثغرات الأمنية بشكل خاص كما في [SECURITY.md](SECURITY.md).
 
-التفاصيل الكاملة باللغة الإنجليزية أدناه.
+### الترخيص
+
+GoRun برنامج حر بترخيص **[GNU Affero General Public License v3.0](LICENSE)**. إذا شغّلت نسخة معدّلة منه كخدمة عبر الشبكة، فإن ترخيص AGPL يُلزمك بإتاحة الشيفرة المصدرية المقابلة لمستخدميها.
+
+تحتفظ مكونات الطرف الثالث بتراخيصها الخاصة (راجع `web/admin/static/vendor/*.LICENSE` و`web/admin/static/fonts/zad/OFL.txt` و`internal/builder/static/THREE-LICENSE.txt`). راجع [NOTICE](NOTICE) للإسناد.
 
 ## English
 
-![GoRun — your content, your team, your agents](assets/branding/github-banner.svg)
+**A CMS where your team and AI agents work together, and people keep the final say.**
 
-**A self-hosted CMS for publishing websites and working with AI agents.**
+GoRun brings team workflows, agents with scoped access over REST and MCP, and canvases that connect content, instructions and results into one bilingual (English/Arabic, RTL) admin. It is self-hosted, open source, and licensed under the [GNU AGPL v3](LICENSE).
 
-Build a site, organize your content, and give agents scoped access to help your team. GoRun combines a bilingual admin, a visual page builder, operational canvases, REST APIs, and MCP in a Go application backed by SQLite.
-
-[Quick start](#quick-start) · [Documentation](docs/) · [MCP guide](docs/MCP.md) · [License](LICENSE)
-
-> GoRun is free and open-source software under the [GNU Affero General Public License v3.0](LICENSE).
-
-## Why GoRun?
-
-- **Own your deployment.** Run a Go executable with SQLite and the bundled themes. No PHP, separate database service, or frontend build pipeline is required to run the application.
-- **Publish with your team.** Manage posts, pages, custom content types, media, roles, revisions, and scheduled content from one admin.
-- **Give agents a defined role.** Connect through MCP, scope their permissions, and review sensitive actions before they take effect by default.
-- **Keep work connected.** Use canvases to connect content, prompts, agents, and results. Outputs become new notes instead of silently replacing your work.
-- **Work in both languages.** English and Arabic interfaces include RTL support, with responsive layouts for desktop and mobile.
-
-## See the workspace
+[Team](#for-your-team) · [Agents](#for-your-agents) · [Canvases](#canvases) · [Quick start](#quick-start) · [Docs](#documentation)
 
 <table>
   <tr>
@@ -87,15 +145,69 @@ Build a site, organize your content, and give agents scoped access to help your 
   </tr>
   <tr>
     <td><strong>Content administration</strong><br />Structured content and a native Arabic interface.</td>
-    <td><strong>A connected workspace</strong><br />Organize references, notes, and agent workflows.</td>
+    <td><strong>Canvases</strong><br />References, notes and reviewed agent runs.</td>
   </tr>
 </table>
 
-These are actual screenshots from isolated local environments, not customer data or proof of a connected provider.
+Screenshots come from isolated local environments, not customer data or a connected provider.
+
+## For your team
+
+- **Roles that match how editors work.** Seeded `admin`, `editor`, `author` and `contributor` roles with explicit permissions.
+- **Review before it goes live.** Drafts, pending review, scheduled publishing, revisions with restore, and trash.
+- **A record of who did what.** An append-only audit log covers people and keys, including every MCP tool call.
+- **Structured content.** Posts, pages, custom types and fields, taxonomies, menus and media in one admin.
+
+## For your agents
+
+1. Create an **AI agent** key in **AI Agents → API keys** with only the scopes it needs.
+2. Point your MCP client at `https://your-site.example/mcp` (or run `gorun mcp` locally over stdio).
+3. Review sensitive requests in **AI Agents → Approvals**; the agent polls `check_approval` for the result.
+
+- **Bounded by design.** A key never does more than its owner's role allows, and only what its scopes list.
+- **People approve the risky parts.** Publishing, deleting, changing settings and editing live content wait for a human by default. Agent keys cannot use REST to approve their own calls, and self-approval is a separate scope that `*` does not grant.
+- **REST for your other integrations.** Scripts and services use separate REST API keys against `/api/v1` (described by `/api/v1/openapi.json`); agent keys are refused there and stay on MCP. Webhooks notify other services of changes.
+
+```text
+Inspect the site's structure, content types, and the tools available to your key.
+Explain your proposed changes before writing anything.
+Create new content as drafts and preserve existing content and settings.
+If a tool requests approval, report its request ID and wait for the decision.
+```
+
+[MCP and permissions](docs/MCP.md) · [REST API](docs/API.md) · [Agent models](docs/AGENT-MODELS.md)
+
+## Canvases
+
+Canvases (**Dashboard → Canvases**) are an operational workspace, not a page designer.
+
+![Selected content and a prompt go to a connected agent; the result becomes a new private note for your review](assets/branding/reviewed-workflow.svg)
+
+- **Gather the work.** Notes, checklists, links, article and page references, and widgets for approvals, jobs and service requests.
+- **Run agents on context you choose.** Connect sources and a prompt to a configured text provider or a named agent key, review the exact context, then run it.
+- **Results arrive as new notes.** Each result is appended as a private note with provenance; it never overwrites your cards or publishes content.
+- **Recurring, but reviewed.** Hourly, daily or weekly schedules start disabled, need explicit activation, and recheck permissions on every run.
+- **Explicit agent grants.** You decide which nodes an agent can read, append to or run on each canvas.
+
+[Canvas workspace](docs/CANVASES.md) · [Canvas operations](docs/CANVAS-OPERATIONS-CONTRACT.md) · [Content studio](docs/CONTENT_STUDIO.md)
+
+## Also included
+
+| Area | What you get |
+| --- | --- |
+| Site builder and themes | Starter sites, a section-based page builder (12 section types, undo/redo, autosave, previews), five themes, child themes and template overrides |
+| WordPress migration | Guided REST or WXR import with mapping, dry-run preview and validation; plugins, page-builder layouts, comments and WooCommerce orders are not transferred |
+| Content studio | Reviewable text and media candidates from explicitly configured AI or MCP providers |
+| Operations | Persistent jobs, health checks, backups, redirects, SEO metadata, sitemaps and S3-compatible media storage |
+| Commerce | Virtual products, Stripe Checkout, and entitlements for MCP access |
+
+Provider-dependent features need valid credentials. Saving a connection or loading its model list does not prove that generation or payment works.
+
+[Site builder](docs/SITE_BUILDER.md) · [Themes](docs/THEMES.md) · [Migration](docs/MIGRATION.md) · [Commerce](docs/COMMERCE.md)
 
 ## Quick start
 
-Building from source requires **Go 1.27** and `make`. The repository specifies the Go 1.27.2 toolchain.
+Building from source requires **Go 1.27** and `make` (the repository pins the Go 1.27.2 toolchain).
 
 ```sh
 git clone https://github.com/zadstack/gorun.git
@@ -110,156 +222,49 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 ./bin/gorun serve
 ```
 
-Open **http://127.0.0.1:8080/admin/setup** to create the first administrator. Once setup is complete, use **http://127.0.0.1:8080/admin**.
+Open **http://127.0.0.1:8080/admin/setup** to create the first administrator, then use **http://127.0.0.1:8080/admin**. Run from the repository root so the server finds `themes/`.
 
-Run from the repository root so the application can find `themes/`. The admin assets are embedded in the executable; website themes are shipped separately and are required at runtime. Development mode creates its data directory and encryption key locally.
+For production, set a persistent data directory, HTTPS, the public base URL, a persistent encryption key and a setup token, and run one server process per data directory; GoRun enforces this with an OS lock on `<data>/gorun.lock`, and a second `gorun serve` (or `gorun mcp --jobs`) on the same directory refuses to start. See the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md) and [Docker / Coolify guide](deploy/coolify.md).
 
-For production, configure a persistent data directory, HTTPS, the public base URL, a persistent encryption key, and a setup token. Run one server process per site data directory; GoRun enforces this with an OS lock on `<data>/gorun.lock`, and a second `gorun serve` (or `gorun mcp --jobs`) on the same directory refuses to start. Follow the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md), or [Docker and Coolify guide](deploy/coolify.md).
+## Under the hood
 
-## What you can build
+- **One Go binary.** The admin is embedded; website themes ship alongside in `themes/`.
+- **SQLite.** No separate database service to run.
+- **No Node.js or PHP at runtime.** Node.js is only used by the optional browser tests in `e2e/`.
+- **Built to extend.** `cmd/gorun` is a thin wrapper around `pkg/cli`; your own binary can add modules and commands with `cli.Option`s. See [Building on the core](docs/ARCHITECTURE.md#building-on-the-core--البناء-فوق-النواة).
 
-| Area | Included capabilities |
-| --- | --- |
-| Publishing | Posts, pages, custom types and fields, taxonomies, revisions, scheduling, and trash |
-| Site design | Starter sites, a section-based page builder, editable identity, menus, Go templates, child themes, and template overrides |
-| Team workflows | Role-based access, scoped API keys, agent approvals, and audit records |
-| Canvases | Content references, notes, operational widgets, agent runs, and reviewed schedules |
-| Content studio | Reviewable text and media candidates using explicitly configured AI or MCP providers |
-| Integrations | REST/OpenAPI, MCP, encrypted connection profiles, and S3-compatible media storage |
-| WordPress migration | REST discovery, mapping, preview, import, validation, and WXR file imports |
-| Operations | Persistent jobs, health checks, backups, redirects, SEO metadata, and sitemaps |
-| Commerce | Virtual products, Stripe Checkout and entitlements for MCP access |
-
-Provider-dependent features require valid credentials and a supported provider contract. Saving a connection or loading its model list does not prove that generation or payment works.
-
-## Build and publish a website
-
-Open **Appearance → Build your site** and choose a complete starter:
-
-| Starter | Designed for | Starting pages |
-| --- | --- | --- |
-| `business` | Companies and service businesses | 5 |
-| `portfolio` | Independent professionals and portfolios | 5 |
-| `magazine` | Magazines and editorial teams | 4 |
-
-Add your identity, copy, services or topics, and contact details. Review the resulting drafts on desktop and mobile, then explicitly publish and activate the site.
-
-The page builder includes 12 section types, layout variants, drag-and-drop and keyboard ordering, undo/redo, autosave, and isolated previews. Identity settings control the logo, colors, fonts, and content width. Starter activation preserves existing content.
-
-[Site builder guide](docs/SITE_BUILDER.md) · [Themes and customization](docs/THEMES.md)
-
-### Themes
-
-Five general themes ship in `themes/` and appear under **Appearance → Themes**:
-
-| Theme | For |
-| --- | --- |
-| `default` | Blogs and general sites: a featured story, article cards with reading time, and site search |
-| `business` | Companies and services: service cards, process steps, a call-to-action band and a contact footer |
-| `magazine` | Magazines and editorial teams: a masthead, a lead story and text-first stories |
-| `portfolio` | Independent professionals: selected work and services |
-| `docs` | Documentation: grouped sections, an "on this page" list and previous/next pages |
-
-Earlier names keep working: `minimal` now means `default`, and `studio-business`, `studio-editorial` and `studio-portfolio` mean `business`, `magazine` and `portfolio`. A site still on an earlier name moves once at startup, together with its theme settings and template overrides.
-
-Themes built for one site can live outside `themes/` and stay out of general releases; load them as an extra directory with `GORUN_THEMES_EXTRA` (see [Themes](docs/THEMES.md)).
-
-## Work with agents
-
-GoRun exposes an MCP server at **`https://your-site.example/mcp`**, as well as a local stdio server through `gorun mcp`. The REST API is documented by **`/api/v1/openapi.json`**.
-
-1. Create an **AI agent** key in **AI Agents → API keys** with only the required scopes.
-2. Configure your MCP client with the endpoint and bearer key.
-3. Have the agent inspect the site structure before requesting changes.
-4. Review sensitive actions in **AI Agents → Approvals**.
-
-Agent keys are restricted to MCP and cannot approve their own requests through REST. Publishing, deleting, changing settings, and editing live content require approval by default. Deliberately granting self-approval changes that policy; see the scope documentation before doing so.
-
-### Start with a clear task
-
-Use this as a starting prompt after connecting an agent:
-
-```text
-Inspect the site's structure, content types, and the tools available to your key.
-Explain your proposed changes before writing anything.
-Create new content as drafts and preserve existing content and settings.
-If a tool requests approval, report its request ID and wait for the decision.
-Distinguish completed changes from pending approvals and unverified integrations.
+```sh
+make build && make test && make lint
 ```
-
-### Keep results on a canvas
-
-Connect selected content and a prompt to an agent, then review the run before starting it. Access is granted to the selected canvas context; the agent's result is added as a new private note. Saving a canvas does not start a provider automatically.
-
-Managed text agents can use a selected connection and model. External MCP agents execute through their own client; a saved model preference does not override that client's configuration. Image and video workflows use configured Studio/MCP bindings.
-
-[MCP and permissions](docs/MCP.md) · [Agent models](docs/AGENT-MODELS.md) · [Canvas operations](docs/CANVAS-OPERATIONS-CONTRACT.md) · [Content studio](docs/CONTENT_STUDIO.md)
-
-## Bring content from WordPress
-
-The native migration wizard guides you through:
-
-**Connect → Scan → Map types → Map fields → Preview → Import → Validate**
-
-With suitable WordPress credentials, REST migration includes permitted published, draft, pending, private, and scheduled records. Anonymous migration is limited to public content. Preview is a dry run, and repeat imports use source identity to avoid duplicating content.
-
-Migration has been tested against a real isolated WordPress/MariaDB source with **115 records**, including eight nonpublished records: state preservation, pagination, repeat imports, same-ID draft updates, authentication failures, and media handling.
-
-Migration has explicit boundaries: plugins, themes, Elementor layouts, comments, and WooCommerce orders/customers are not transferred. Source changes replace imported destination fields; this is not a destination-edit conflict detector. Unprobed external media remains unverified.
-
-[Migration guide](docs/MIGRATION.md)
-
-## Build on the core
-
-`cmd/gorun` is a thin wrapper around the importable package `pkg/cli`. A separate binary can import it, add its own modules and commands with `cli.Option`s, and keep every core command and flag. See [Building on the core](docs/ARCHITECTURE.md#building-on-the-core--البناء-فوق-النواة).
 
 ## Documentation
 
 | Start here | Build and integrate | Operate and contribute |
 | --- | --- | --- |
 | [Installation](docs/GORUN-INSTALLATION.md) | [Architecture](docs/ARCHITECTURE.md) | [Production operations](docs/PRODUCTION.md) |
-| [Site builder](docs/SITE_BUILDER.md) | [REST API](docs/API.md) | [Docker / Coolify](deploy/coolify.md) |
-| [Themes](docs/THEMES.md) | [MCP](docs/MCP.md) | [Security](SECURITY.md) |
-| [WordPress migration](docs/MIGRATION.md) | [Extensions](docs/EXTENSIONS.md) | [Contributing](CONTRIBUTING.md) |
-| [Canvas workspace](docs/CANVASES.md) | [Commerce](docs/COMMERCE.md) | [Changelog](CHANGELOG.md) |
+| [Canvas workspace](docs/CANVASES.md) | [REST API](docs/API.md) | [Docker / Coolify](deploy/coolify.md) |
+| [Site builder](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [Security](SECURITY.md) |
+| [Themes](docs/THEMES.md) | [Extensions](docs/EXTENSIONS.md) | [Contributing](CONTRIBUTING.md) |
+| [WordPress migration](docs/MIGRATION.md) | [Commerce](docs/COMMERCE.md) | [Changelog](CHANGELOG.md) |
 
-Documentation currently includes English and Arabic guides.
+## Project status
 
-### Development
+GoRun is an actively developed v0.1 with no tagged release yet; build from `main`. Current boundaries:
 
-```sh
-make build
-make test
-make lint
-```
-
-The application has no Node.js runtime dependency. The optional browser test suite under `e2e/` uses Node.js and Playwright; see [browser testing](docs/E2E.md).
-
-The main source areas are `cmd/gorun/` for the executable, `pkg/cli/` for the command line, `internal/` for domain modules, `web/admin/` for embedded admin assets, and `themes/` for the general website themes.
+- One server process per SQLite data directory (enforced by `<data>/gorun.lock`); no shared-database multisite.
+- Canvases are private to their owner, with explicit agent grants; they are not a shared multiplayer workspace.
+- The page builder keeps the current draft and last published layout, not a full layout history.
+- No automatic core updater, and no complete site generation from a single prompt.
+- Backup restore is manual; real provider generation and live payments must be verified per deployment.
 
 ## Contributing
 
 Bug reports, documentation problems and feature ideas are welcome as [issues](https://github.com/zadstack/gorun/issues). **Outside pull requests are not accepted yet**, until the project adopts its contribution agreement; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
-## Project status
-
-GoRun is an actively developed v0.1 product with no tagged release yet; build from `main`. A running site or successful connection test is not acceptance of every integration.
-
-Current boundaries include:
-
-- One server process per SQLite data directory (enforced by `<data>/gorun.lock`); no shared-database multisite.
-- No automatic core updater or complete website generation from a single AI prompt.
-- Canvases are owner-scoped with explicit agent grants, not a general shared multiplayer workspace.
-- Builder storage retains the current draft and last published layout, not a complete JSON layout revision history.
-- Backup restoration is manual; changing to S3 does not automatically move existing local media.
-- Real provider generation and live payment acceptance must be verified for the deployment's configured accounts.
-
 ## License
 
-GoRun is free software: you can redistribute it and/or modify it under the terms of the **[GNU Affero General Public License v3.0](LICENSE)** as published by the Free Software Foundation. If you run a modified version as a network service, the AGPL requires you to offer its users the corresponding source code.
+GoRun is free software under the **[GNU Affero General Public License v3.0](LICENSE)**. If you run a modified version as a network service, the AGPL requires you to offer its users the corresponding source code.
 
 Third-party components keep their own licenses (see `web/admin/static/vendor/*.LICENSE`, `web/admin/static/fonts/zad/OFL.txt` and `internal/builder/static/THREE-LICENSE.txt`). See [NOTICE](NOTICE) for attribution.
-
-Security reports: see [SECURITY.md](SECURITY.md).
 
 Copyright © 2026 ZAD STACK / Ahmed Morsy.
