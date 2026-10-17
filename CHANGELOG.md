@@ -5,6 +5,23 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- A process that runs job workers (`gorun serve`, `gorun mcp --jobs`, `gorun reindex` without
+  `--no-jobs`) now holds an exclusive OS lock on `<data>/gorun.lock`; a second one on the same data
+  directory refuses to start and names the holder. The lock is released on shutdown or if the
+  process dies.
+- Startup no longer requeues every running job. Workers refresh `locked_at` every 30 seconds, and only
+  running jobs whose heartbeat is older than 2 minutes are requeued, at startup and on every scheduler
+  tick, so jobs still executing elsewhere are never run twice.
+- Forwarding headers from a peer outside `GORUN_TRUSTED_PROXIES` are logged as a warning (first
+  occurrence, then at most hourly), since behind an unlisted proxy every visitor shares its address.
+
+### Documentation
+
+- `deploy/docker-compose.yml` and `deploy/coolify.md` configure `GORUN_TRUSTED_PROXIES`.
+- SECURITY.md and docs/PRODUCTION.md now state that no forwarding headers are trusted by default.
+
 ### First public release
 
 - GoRun is published as open source under the GNU Affero General Public License v3.0 (see

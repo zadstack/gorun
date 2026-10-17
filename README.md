@@ -29,7 +29,7 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 
 - إعدادات التشغيل في `gorun.toml` أو متغيرات `GORUN_*`.
 - استخدم `setup_token` لحماية إنشاء المدير الأول، واضبط `GORUN_ENV=prod` وعنوان الموقع الصحيح وHTTPS ومفتاح تشفير ثابتًا.
-- عملية خادم واحدة لكل مجلد بيانات.
+- عملية خادم واحدة لكل مجلد بيانات؛ يفرض النظام ذلك بقفل `gorun.lock` داخل مجلد البيانات، فترفض نسخة ثانية من `gorun serve` (أو `gorun mcp --jobs`) التشغيل برسالة واضحة.
 - لا تحفظ كلمات المرور أو مفاتيح المزودين في المستودع.
 
 راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md) و[دليل الإنتاج](docs/PRODUCTION.md).
@@ -114,7 +114,7 @@ Open **http://127.0.0.1:8080/admin/setup** to create the first administrator. On
 
 Run from the repository root so the application can find `themes/`. The admin assets are embedded in the executable; website themes are shipped separately and are required at runtime. Development mode creates its data directory and encryption key locally.
 
-For production, configure a persistent data directory, HTTPS, the public base URL, a persistent encryption key, and a setup token. Run one server process per site data directory. Follow the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md), or [Docker and Coolify guide](deploy/coolify.md).
+For production, configure a persistent data directory, HTTPS, the public base URL, a persistent encryption key, and a setup token. Run one server process per site data directory; GoRun enforces this with an OS lock on `<data>/gorun.lock`, and a second `gorun serve` (or `gorun mcp --jobs`) on the same directory refuses to start. Follow the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md), or [Docker and Coolify guide](deploy/coolify.md).
 
 ## What you can build
 
@@ -247,7 +247,7 @@ GoRun is an actively developed v0.1 product with no tagged release yet; build fr
 
 Current boundaries include:
 
-- One server process per SQLite data directory; no shared-database multisite.
+- One server process per SQLite data directory (enforced by `<data>/gorun.lock`); no shared-database multisite.
 - No automatic core updater or complete website generation from a single AI prompt.
 - Canvases are owner-scoped with explicit agent grants, not a general shared multiplayer workspace.
 - Builder storage retains the current draft and last published layout, not a complete JSON layout revision history.

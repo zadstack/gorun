@@ -41,7 +41,12 @@ It writes `/data/backups/<timestamp>.db` (`VACUUM INTO`) and
 `/data/backups/<timestamp>.tar.gz` (media, overrides, extensions, form uploads and any local recovery key/configuration) inside the
 volume; copy that directory off the host.
 
-Run a single replica only: SQLite is a single-node database.
+Run a single replica only: SQLite is a single-node database. GoRun enforces this
+with an exclusive OS lock on `/data/gorun.lock`: a second container on the same
+volume exits with "data directory is in use by another GoRun process" and names
+the holder. Deploy with stop-then-start (no rolling/zero-downtime overlap) so the
+old container releases the lock before the new one boots; a crashed container's
+lock is released by the OS automatically.
 
 ## 4. Domain and Traefik
 

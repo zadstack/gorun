@@ -203,9 +203,9 @@ directory: set `GORUN_THEMES` (as in the Claude Desktop config above), or start 
 root or the container's `/app`. Without it the process exits at once with "themes directory not found".
 
 The stdio process starts **no job workers or cron** of its own: it is meant to run beside `gorun
-serve`, whose workers execute the jobs the session enqueues (workers in a second process would requeue
-the server's running jobs and repeat its cron). Pass `--jobs` only when no server runs on that data
-directory. The old `--no-jobs` flag is still accepted and does nothing.
+serve`, whose workers execute the jobs the session enqueues. Pass `--jobs` only when no server runs on
+that data directory: a process with workers takes the exclusive `<data>/gorun.lock`, so `gorun mcp --jobs`
+beside a running server exits with "data directory is in use by another GoRun process". The old `--no-jobs` flag is still accepted and does nothing.
 
 ### Any streamable-HTTP client
 
