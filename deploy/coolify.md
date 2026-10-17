@@ -17,6 +17,7 @@ GoRun is one container with one persistent volume. Coolify deploys it from
 | `GORUN_SECRET_KEY` | yes | `openssl rand -base64 32`. Signs sessions and encrypts stored secrets. Never rotate casually. |
 | `GORUN_BASE_URL` | yes | Public URL, e.g. `https://example.com` (no trailing slash). |
 | `GORUN_SETUP_TOKEN` | for web setup | At least 16 characters (`openssl rand -hex 24`). `/admin/setup` asks for it before creating the first administrator; without it the page only shows instructions. Remove it once the first admin exists. |
+| `GORUN_TRUSTED_PROXIES` | behind Traefik: yes | Comma-separated IPs/CIDRs of the reverse proxy, e.g. Coolify's `coolify` network `10.0.1.0/24` (verify, see [step 4](#trust-traefiks-forwarded-headers)). Empty trusts no forwarding headers, so every visitor shares Traefik's IP for login limits and audit. |
 | `GORUN_ALLOW_PRIVATE_NET` | no | `1` lets outbound fetches (media from URL, WordPress import, billing servers) reach private networks. Home lab only; leave unset in production. |
 | `STRIPE_SECRET_KEY` | for shop | Stripe secret key. |
 | `STRIPE_WEBHOOK_SECRET` | for shop | Signing secret of the `/webhooks/stripe` endpoint. |
@@ -59,6 +60,41 @@ labels:
 
 When a domain is set, remove the `ports:` mapping so traffic only enters
 through Traefik.
+
+### Trust Traefik's forwarded headers
+
+GoRun trusts **no** forwarding headers by default. Behind Traefik, the TCP peer
+of every request is the Traefik container, so until you list it every visitor
+shares Traefik's address: the login limits (5 failures per IP + email, 30
+attempts per IP per 15 minutes) then apply to the whole site at once, and the
+audit log records Traefik's IP. GoRun logs a warning (at most once an hour)
+when it receives `X-Forwarded-For`, `Forwarded` or `X-Forwarded-Proto` from a
+peer it does not trust.
+
+Set `GORUN_TRUSTED_PROXIES` to the address or network Traefik reaches GoRun on:
+
+```sh
+# Find the network GoRun and Traefik share (Coolify's default is "coolify").
+docker network inspect coolify --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
+docker inspect coolify-proxy --format '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}'
+```
+
+```
+GORUN_TRUSTED_PROXIES=10.0.1.0/24
+```
+
+Use the narrowest value that matches: the proxy's own IP when it is stable,
+otherwise the shared Docker network. Never `0.0.0.0/0` or `::/0` (rejected at
+startup), and do not list networks where untrusted containers can connect to
+GoRun directly. With Cloudflare in front of Traefik, see
+[login security](../docs/LOGIN-SECURITY.md) before adding Cloudflare's ranges.
+Only `X-Forwarded-For` (walked right to left through trusted hops) and
+`X-Forwarded-Proto` are read; `Forwarded`, `X-Real-IP` and `CF-Connecting-IP`
+are ignored.
+
+Check it after deploying: sign in, open **Agents → Audit** and confirm the
+recorded IP is your own public address, not a `10.x`/`172.x` proxy address,
+and that the startup log has no "untrusted peer" warning.
 
 ## 5. Health
 

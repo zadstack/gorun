@@ -13,6 +13,15 @@ services:
       GORUN_SECRET_KEY: ${GORUN_SECRET_KEY:?set GORUN_SECRET_KEY (openssl rand -base64 32)}
       # The public URL (https://your-site.example, no trailing slash); required in prod.
       GORUN_BASE_URL: ${GORUN_BASE_URL:?set GORUN_BASE_URL (the public https URL)}
+      # Reverse proxy (Traefik, Caddy, nginx, Coolify) in front of GoRun: list the proxy's
+      # address or network, comma-separated, so X-Forwarded-For / X-Forwarded-Proto are honoured.
+      # Empty (the default) trusts no forwarding headers: behind a proxy every visitor then shares
+      # the proxy's IP for login rate limits and audit, and GoRun logs a warning.
+      # Use the exact proxy IP or the Docker network it reaches GoRun on, never 0.0.0.0/0, e.g.
+      #   GORUN_TRUSTED_PROXIES=10.0.1.0/24      (Coolify's default "coolify" network; verify with
+      #                                           docker network inspect coolify)
+      #   GORUN_TRUSTED_PROXIES=172.18.0.5       (one Traefik container)
+      GORUN_TRUSTED_PROXIES: ${GORUN_TRUSTED_PROXIES:-}
       # 1 only for home-lab setups that fetch from private networks; leave unset in production.
       GORUN_ALLOW_PRIVATE_NET: ${GORUN_ALLOW_PRIVATE_NET:-}
       # Required by /admin/setup in prod (>= 16 chars); unset = create the admin with `gorun user create --admin`.
