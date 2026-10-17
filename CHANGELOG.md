@@ -5,6 +5,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Media privacy
+
+- New JPEG, PNG and WebP uploads are stored without camera metadata (GPS, device serials, names,
+  XMP/IPTC, comments, JPEG trailers such as HDR gain maps). Stripping is lossless; ICC profiles and
+  the JPEG EXIF Orientation are kept. Setting `media.strip_metadata` (default on) turns it off.
+  Existing files are unchanged.
+- Variants of rotated photos (EXIF orientation 2–8) are now generated upright, and the recorded
+  width and height are the displayed ones.
+
 ### Fixed
 
 - A process that runs job workers (`gorun serve`, `gorun mcp --jobs`, `gorun reindex` without

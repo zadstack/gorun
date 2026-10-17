@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -364,7 +367,14 @@ func TestQueryMediaPriorOnlyContentFallbackDoesNotGuess(t *testing.T) {
 func TestWXRMediaEscapedSlashesKeepOriginBytes(t *testing.T) {
 	e := newEnv(t)
 	paths := []string{"/literal%2Fpart.png", "/literal%2fpart.png", "/literal/part.png"}
-	payloads := [][]byte{tinyPNG(), redPNG(), append(redPNG(), 0)}
+	// Three distinct, valid PNGs (bytes after IEND are dropped on upload).
+	third := image.NewRGBA(image.Rect(0, 0, 4, 2))
+	third.Set(1, 1, color.RGBA{G: 255, A: 255})
+	var thirdPNG bytes.Buffer
+	if err := png.Encode(&thirdPNG, third); err != nil {
+		t.Fatal(err)
+	}
+	payloads := [][]byte{tinyPNG(), redPNG(), thirdPNG.Bytes()}
 	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for i, path := range paths {
 			if r.URL.EscapedPath() == path {
