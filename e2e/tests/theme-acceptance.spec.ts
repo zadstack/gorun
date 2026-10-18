@@ -4,16 +4,26 @@
 // Arabic 0 · console errors 0 · CSP violations 0 · broken nav/footer links 0 ·
 // heading order valid · Tailwind CDN/Play runtime absent.
 import { test, expect, type Page } from '@playwright/test';
-import { MARKER_500 } from '../lib/helpers.ts';
+import { execFileSync } from 'node:child_process';
+import { resolve } from 'node:path';
+import { MARKER_500, env } from '../lib/helpers.ts';
 
 const THEMES = ['default', 'business', 'magazine', 'portfolio', 'docs'];
 const WIDTHS = [1440, 390];
+const cli = () => resolve('.bin/gorun');
 
 async function activate(page: Page, slug: string): Promise<void> {
   await page.goto('/admin/settings/general');
   await page.selectOption('#s-theme', slug);
   await page.locator('form[action="/admin/settings/general"] button[type="submit"]').click();
   await expect(page.locator('#s-theme')).toHaveValue(slug);
+}
+
+// Prefer the theme's native posts home (brief §6), not a leftover static front
+// page from earlier chromium specs (those often carry a page-title h1 plus a
+// body/section h1).
+function useThemeNativeHome(): void {
+  execFileSync(cli(), ['settings', 'unset', 'site.front_page', '--data', env('E2E_DATA')], { stdio: 'pipe' });
 }
 
 async function firstLink(page: Page, path: string, sel: string): Promise<string | null> {
@@ -147,9 +157,16 @@ async function auditPage(page: Page): Promise<Audit> {
       }
     }
 
-    const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6')).map((h) =>
-      Number(h.tagName.slice(1)),
-    );
+    const visibleHeading = (el: Element) => {
+      if (el.classList.contains('sr-only') || el.classList.contains('sb-sr')) return false;
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+      const r = (el as HTMLElement).getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    };
+    const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'))
+      .filter(visibleHeading)
+      .map((h) => Number(h.tagName.slice(1)));
     const h1Count = headings.filter((l) => l === 1).length;
     let headingOrderOk = h1Count === 1;
     let prev = 0;
@@ -196,6 +213,10 @@ async function auditPage(page: Page): Promise<Audit> {
 }
 
 test.describe.serial('theme acceptance (§6)', () => {
+  test('use theme-native home (no static front page)', async () => {
+    useThemeNativeHome();
+  });
+
   for (const slug of THEMES) {
     for (const width of WIDTHS) {
       test(`${slug} @${width}`, async ({ page }) => {
