@@ -57,6 +57,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Documentation
 
+- Outside contributions are accepted under the Developer Certificate of Origin: commits are signed off with
+  `git commit -s`, checked by the `dco` workflow (bot commits skipped). There is no CLA.
 - `deploy/docker-compose.yml` and `deploy/coolify.md` configure `GORUN_TRUSTED_PROXIES`.
 - SECURITY.md and docs/PRODUCTION.md now state that no forwarding headers are trusted by default.
 

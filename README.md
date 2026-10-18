@@ -122,7 +122,7 @@ GoRun في الإصدار v0.1 وما زال قيد التطوير النشط، 
 
 ### المساهمة
 
-نرحّب ببلاغات الأخطاء ومشكلات التوثيق وأفكار الميزات عبر [Issues](https://github.com/zadstack/gorun/issues). **لا تُقبل طلبات الدمج الخارجية حاليًا** إلى أن تُعتمد اتفاقية المساهمة؛ التفاصيل في [CONTRIBUTING.md](CONTRIBUTING.md). أبلغ عن الثغرات الأمنية بشكل خاص كما في [SECURITY.md](SECURITY.md).
+نرحّب ببلاغات الأخطاء ومشكلات التوثيق وأفكار الميزات عبر [Issues](https://github.com/zadstack/gorun/issues)، وبطلبات الدمج. وقّع كل commit بـ`git commit -s` وفق [DCO](https://developercertificate.org/) (دون CLA)؛ التفاصيل في [CONTRIBUTING.md](CONTRIBUTING.md). أبلغ عن الثغرات الأمنية بشكل خاص كما في [SECURITY.md](SECURITY.md).
 
 ### الترخيص
 
@@ -259,7 +259,7 @@ GoRun is an actively developed v0.1 with no tagged release yet; build from `main
 
 ## Contributing
 
-Bug reports, documentation problems and feature ideas are welcome as [issues](https://github.com/zadstack/gorun/issues). **Outside pull requests are not accepted yet**, until the project adopts its contribution agreement; see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+Bug reports, documentation problems and feature ideas are welcome as [issues](https://github.com/zadstack/gorun/issues), and pull requests are welcome too. Sign off every commit with `git commit -s` under the [Developer Certificate of Origin](https://developercertificate.org/) (no CLA); see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
