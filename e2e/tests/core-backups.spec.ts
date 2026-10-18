@@ -1,16 +1,22 @@
 import { test, expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { env, setLocale, expectNoServerError } from '../lib/helpers.ts';
+import { ADMIN, env, setLocale, expectNoServerError } from '../lib/helpers.ts';
 
-test('native backup presence and upload receipts remain distinct from verified restore', async ({ page, request }, info) => {
+test('native backup presence and upload receipts remain distinct from verified restore', async ({ page }, info) => {
   await page.goto('/admin/system/backups');
   await page.locator('form[action="/admin/system/backups"] button[type="submit"]').click();
   await expect(page.locator('[data-local-state="paired_not_inspected"]')).toBeVisible();
   const manifestLink = page.locator('a[href$=".manifest.json"]').first();
   const href = await manifestLink.getAttribute('href');
   expect(href).toBeTruthy();
-  const response = await request.get(href!);
+  // Downloads need a password confirmation within the last 10 minutes; the saved
+  // session may be older than that, so confirm explicitly before downloading.
+  await page.goto(`/admin/reauth?next=${encodeURIComponent('/admin/system/backups')}`);
+  await page.fill('input[name="password"]', ADMIN.password);
+  await page.locator('form[action="/admin/reauth"] button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/admin\/system\/backups$/);
+  const response = await page.request.get(href!);
   expect(response.status()).toBe(200);
   const manifest = await response.json();
   expect(manifest.format_version).toBe(1);

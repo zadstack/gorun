@@ -59,7 +59,7 @@ func (h *handlers) routes() {
 	bk.Get("/system/backups", h.backupsList)
 	bk.Post("/system/backups", h.backupCreate)
 	bk.Post("/system/backups/remote", h.backupRemoteCreate)
-	bk.Get("/system/backups/{name}", h.backupDownload)
+	bk.With(auth.RequireRecentAuth).Get("/system/backups/{name}", h.backupDownload)
 
 	keys := r.With(auth.RequirePerm(PermAPIKeys))
 	keys.Get("/agents/keys", h.keysList)

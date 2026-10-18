@@ -66,7 +66,7 @@ func SessionMiddleware(deps *kernel.Deps) func(http.Handler) http.Handler {
 				if refreshed {
 					setSessionCookie(w, c.Value, secure())
 				}
-				r = r.WithContext(withPrincipal(r.Context(), &principal{kind: "user", user: u, csrf: sess.CSRF, token: c.Value}))
+				r = r.WithContext(withPrincipal(r.Context(), &principal{kind: "user", user: u, csrf: sess.CSRF, token: c.Value, reauth: sess.ReauthAt}))
 			}
 			next.ServeHTTP(w, r)
 		})
