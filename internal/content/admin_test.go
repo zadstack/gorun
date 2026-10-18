@@ -281,7 +281,7 @@ func TestAdminTrashBulkAndOwnership(t *testing.T) {
 	if resp.StatusCode != 200 || strings.Contains(page, "Not mine") {
 		t.Fatalf("author list shows only own items: %d", resp.StatusCode)
 	}
-	resp, page = s.do("GET", "/admin/content/post/new", nil, nil)
+	_, page = s.do("GET", "/admin/content/post/new", nil, nil)
 	form := url.Values{"_csrf": {s.csrf(page)}, "title": {"Mine"}, "intent": {"save"}, "status": {"draft"}}
 	if resp, _ = s.do("POST", "/admin/content/post", form, nil); resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("author create: %d", resp.StatusCode)

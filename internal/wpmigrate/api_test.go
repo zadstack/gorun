@@ -26,7 +26,7 @@ func TestAPIMigrationsFlow(t *testing.T) {
 	if st, body = c.Post("/v1/migrations/sources/"+bad+"/discover", nil); st != 422 || apitest.ErrorCode(body) != "auth_failed" {
 		t.Fatalf("discover with bad password: %d %v", st, body)
 	}
-	st, body = c.Post("/v1/migrations/sources", map[string]any{"url": e.wp.URL(), "username": fixtureUser, "app_password": fixturePass})
+	_, body = c.Post("/v1/migrations/sources", map[string]any{"url": e.wp.URL(), "username": fixtureUser, "app_password": fixturePass})
 	srcID := apitest.Data(body)["id"].(string)
 	if st, body = c.Post("/v1/migrations/sources/"+srcID+"/discover", nil); st != 200 || apitest.Data(body)["auth"].(map[string]any)["ok"] != true {
 		t.Fatalf("discover: %d %v", st, body)

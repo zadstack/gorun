@@ -210,7 +210,7 @@ func Parse(r io.Reader) (*File, error) {
 			}
 		}
 		for _, c := range x.Categories {
-			it.Terms = append(it.Terms, ItemTerm{Domain: c.Domain, Nicename: c.Nicename, Name: c.Name})
+			it.Terms = append(it.Terms, ItemTerm(c))
 		}
 		for _, m := range x.Meta {
 			it.Meta[m.Key] = m.Value

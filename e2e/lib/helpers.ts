@@ -1,7 +1,7 @@
 // Shared helpers for the GoRun specs. Specs select elements by name=,
 // action= and href= attributes (stable across locales) and only assert copy
 // where the copy itself is under test.
-import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
@@ -41,6 +41,21 @@ export async function setLocale(page: Page, locale: 'ar' | 'en'): Promise<void> 
   expect(r.status()).toBe(303);
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('lang', locale);
+}
+
+// submitAndLand clicks a form's submit button and returns once its POST has
+// answered with status (the admin's post/redirect/get 303; null accepts any) and the page it
+// redirects to has loaded. A reload, goto or database read straight after a
+// bare click() can run before the POST is sent or committed, and a flash
+// already on the page (e.g. "created") cannot tell the old page from the new.
+export async function submitAndLand(page: Page, button: Locator, path: string, status: number | null = 303): Promise<void> {
+  const posted = page.waitForResponse(r => r.request().method() === 'POST' && new URL(r.url()).pathname === path);
+  const navigated = page.waitForEvent('framenavigated', frame => frame === page.mainFrame());
+  await button.click();
+  const response = await posted;
+  if (status !== null) expect(response.status()).toBe(status);
+  await navigated;
+  await page.waitForLoadState('load');
 }
 
 export function serverLog(): string {

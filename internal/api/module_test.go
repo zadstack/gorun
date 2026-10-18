@@ -135,7 +135,7 @@ func TestDocsPage(t *testing.T) {
 	if w.Code != 200 || !strings.HasPrefix(w.Header().Get("Content-Type"), "text/html") {
 		t.Fatalf("docs: %d %s", w.Code, w.Header().Get("Content-Type"))
 	}
-	for _, want := range []string{`dir="rtl"`, `https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.25.0`, `data-url="/api/v1/openapi.json"`} {
+	for _, want := range []string{`dir="rtl"`, `src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.25.0" integrity="sha384-`, `crossorigin="anonymous"`, `data-url="/api/v1/openapi.json"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("docs page misses %s", want)
 		}

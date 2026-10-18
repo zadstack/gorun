@@ -19,7 +19,7 @@ func TestNormalizeArabic(t *testing.T) {
 		{"harakat and shadda", "مُحَمَّد", "محمد"},
 		{"tanween and sukun", "كتابًا مُسْلِمٌ", "كتابا مسلم"},
 		{"superscript alef", "هٰذا", "هذا"},
-		{"quranic marks", "الرَّحِيمِ ۝ ذَٰلِكَ ۖ", "الرحيم ۝ ذلك "},
+		{"quranic marks", "الرَّحِيمِ \u06dd ذَٰلِكَ ۖ", "الرحيم \u06dd ذلك "},
 		{"tatweel", "تطويـــل", "تطويل"},
 		{"decomposed hamza above", "أحمد", "احمد"},
 		{"decomposed yaa hamza", "رئيس", "رييس"},

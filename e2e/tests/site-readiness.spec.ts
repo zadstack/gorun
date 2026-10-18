@@ -1,7 +1,7 @@
 import {test,expect} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 import {resolve} from 'node:path';
-import {db,env,setLocale,expectNoServerError} from '../lib/helpers.ts';
+import {db,env,setLocale,expectNoServerError,submitAndLand} from '../lib/helpers.ts';
 
 const route='/admin/appearance/readiness';
 
@@ -34,11 +34,11 @@ test('readiness gives actionable local evidence, updates after corrections and s
   expect(snapshot()).toBe(before);
   await page.goto('/admin/content/page/new');await page.fill('#title','Readiness real home');await page.fill('#slug','readiness-real-home');
   await page.locator('[data-field-key="body"] .ql-editor').fill('Our independent studio designs websites for local organizations.');
-  await page.locator('button[name="intent"][value="publish"]').click();
+  await submitAndLand(page,page.locator('button[name="intent"][value="publish"]'),'/admin/content/page');
   await page.goto(route);await check('contact_email').getByRole('link').click();await expect(page).toHaveURL(/\/admin\/settings\/general$/);
   await page.fill('#s-title','Readiness Studio');await page.fill('#s-contact-email','readiness-owner@e2e.test');
   await page.fill('#s-front-page','Readiness real home');await page.locator('#s-front-page-options button[data-id]').filter({hasText:'Readiness real home'}).first().click();
-  await page.locator('form[action="/admin/settings/general"] button[type="submit"]').click();
+  await submitAndLand(page,page.locator('form[action="/admin/settings/general"] button[type="submit"]'),'/admin/settings/general');
   await page.goto(route);await expect(check('contact_email')).toHaveAttribute('data-status','pass');await expect(check('front')).toHaveAttribute('data-status','pass');await expect(check('seo')).toHaveAttribute('data-status','pass');
   await expect(check('seo')).toContainText('rendered metadata remains unverified');
   // Presence of SMTP configuration cannot turn local evidence into delivery proof.

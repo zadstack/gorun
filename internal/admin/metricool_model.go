@@ -11,7 +11,7 @@ const metricoolConfigKey = "metricool.config"
 const metricoolDraftPrefix = "metricool.draft."
 
 var errMetricoolInvalid = errors.New("invalid Metricool input")
-var errMetricoolConflict = errors.New("Metricool request changed")
+var errMetricoolConflict = errors.New("metricool: request changed")
 var metricoolID = regexp.MustCompile(`^[1-9][0-9]{0,9}$`)
 
 type metricoolConfig struct {

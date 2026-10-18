@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var errMetricoolProvider = errors.New("Metricool response could not be verified")
+var errMetricoolProvider = errors.New("metricool: response could not be verified")
 
 type metricoolClient struct{ transport http.RoundTripper }
 

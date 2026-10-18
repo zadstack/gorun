@@ -75,7 +75,8 @@ func TestAvailabilityRateBoundAndConcurrency(t *testing.T) {
 	if l.allow("ip") {
 		t.Fatal("per ip")
 	}
-	if !l.begin() || !l.begin() || l.begin() {
+	first, second, third := l.begin(), l.begin(), l.begin()
+	if !first || !second || third {
 		t.Fatal("concurrency")
 	}
 	l.end()

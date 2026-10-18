@@ -34,7 +34,7 @@ func TestAdminProductsCRUD(t *testing.T) {
 	mustContain(t, page, `name="price"`, `name="server_id"`, `value="`+srv.ID+`"`, `name="features"`, `media:open`, `name="seo_title"`)
 
 	// Validation: active without a server mapping, bad price.
-	resp, page = e.adminPost("/admin/commerce/products", url.Values{"name": {"Pro"}, "price": {"12.345"}, "currency": {"AED"}, "active": {"1"}})
+	resp, _ = e.adminPost("/admin/commerce/products", url.Values{"name": {"Pro"}, "price": {"12.345"}, "currency": {"AED"}, "active": {"1"}})
 	if resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("invalid: %d", resp.StatusCode)
 	}

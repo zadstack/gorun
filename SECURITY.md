@@ -45,14 +45,15 @@ you. Please give us a reasonable time to ship the fix before publishing details.
   `/checkout/{slug}`, `/account/login` and `/account/open/{entitlement}`. API calls made with a session need
   `X-CSRF-Token`.
 - Responses carry a Content-Security-Policy with a per-request nonce for inline scripts and
-  `object-src 'none'`. Public pages permit the public-theme CDN sources and use
+  `object-src 'none'`. Public pages allow only same-origin and nonced scripts, with no CDN and no
+  `'unsafe-eval'`, unless the operator adds sources with `GORUN_CSP_SCRIPT_SRC` (https origins and
+  `'unsafe-eval'` only). `/api/docs` additionally allows the one pinned, SRI-checked Scalar bundle. They use
   `frame-ancestors 'self'` with `X-Frame-Options: SAMEORIGIN`. Admin and API responses use
   `frame-ancestors 'none'` with `X-Frame-Options: DENY`. Responses also carry `X-Content-Type-Options: nosniff`,
   `Referrer-Policy: strict-origin-when-cross-origin`, and HSTS when the request itself is https (same
   rule). In prod `GORUN_BASE_URL` is required and may not be
-  localhost; the server refuses to start otherwise. The script
-  policy includes `'unsafe-eval'`, which the Tailwind CDN and Alpine need.
-- Admin script sources are restricted to self and per-request nonces; the six exact dependency bundles and licenses are embedded locally with SRI. The public-theme CDN policy remains separate.
+  localhost; the server refuses to start otherwise.
+- Admin script sources are restricted to self and per-request nonces; the six exact dependency bundles and licenses are embedded locally with SRI. The admin policy keeps `'unsafe-eval'`: its Alpine directives are inline expressions that only the standard Alpine build can evaluate (the CSP build cannot).
 - Read-only draft previews apply their own restrictive sandbox, with scripts and form submission blocked. They are distinct from authenticated interactive administration, which retains its session, CSRF and permission checks.
 - Authors/contributors may read their own content and public published items, with no access to other users' private drafts, revisions or hidden translations. Public rendering always excludes internal content types.
 - The admin is reserved for staff roles; shop customers are refused.

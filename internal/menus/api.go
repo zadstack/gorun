@@ -125,7 +125,7 @@ func (a *apiHandlers) save(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	m, err := a.svc.Save(r.Context(), Menu{ID: req.ID, Slug: req.Slug, Name: req.Name, Location: req.Location, Locale: req.Locale, Items: req.Items})
+	m, err := a.svc.Save(r.Context(), Menu(req))
 	if err != nil {
 		writeErr(w, err)
 		return

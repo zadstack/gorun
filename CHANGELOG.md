@@ -16,6 +16,22 @@ All notable changes to GoRun are recorded here. The format follows
   tick, so jobs still executing elsewhere are never run twice.
 - Forwarding headers from a peer outside `GORUN_TRUSTED_PROXIES` are logged as a warning (first
   occurrence, then at most hourly), since behind an unlisted proxy every visitor shares its address.
+- A data directory whose path contains `?`, `#` or `%` opened the wrong database file and silently
+  lost the WAL, foreign-key and busy-timeout pragmas; the SQLite `file:` URI is now percent-encoded
+  (backups too).
+- The checkout result page loads the embedded HTMX instead of an unpinned jsDelivr copy.
+
+### Changed
+
+- Text responses (HTML, CSS, JS, JSON, XML, SVG) are gzip-compressed when the client accepts it.
+  Admin pages stay uncompressed (they carry the CSRF token; BREACH).
+- Version-named vendor files and `?v=` asset URLs are served with
+  `Cache-Control: public, max-age=31536000, immutable`.
+- **Public CSP:** public pages no longer allow scripts from `cdn.tailwindcss.com`,
+  `cdn.jsdelivr.net` or `unpkg.com`, nor `'unsafe-eval'`; the bundled themes need none of them. A custom
+  theme that does can be allowed with `GORUN_CSP_SCRIPT_SRC` / `csp_script_src`. `/api/docs` allows only
+  the pinned Scalar bundle, now with SRI. The admin keeps `'unsafe-eval'` for Alpine.
+- CI runs staticcheck (`staticcheck.conf`); unused code it found was removed.
 
 ### Documentation
 

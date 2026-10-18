@@ -33,11 +33,13 @@ type schemaSample struct {
 	N        int64             `json:"n"`
 	Ok       bool              `json:"ok"`
 	Skipped  string            `json:"-"`
-	hidden   string
-	Children []schemaSample `json:"children"`
+	Children []schemaSample    `json:"children"`
 	Inline   struct {
 		A string `json:"a"`
 	} `json:"inline"`
+
+	//lint:ignore U1000 an unexported field the generator must skip
+	hidden string
 }
 
 func gen(t *testing.T, vals ...any) (*schemaGen, []map[string]any) {

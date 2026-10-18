@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/seo"
 	"github.com/zadstack/gorun/internal/theme"
@@ -42,7 +43,7 @@ func (h *handlers) asset(w http.ResponseWriter, r *http.Request) {
 	case ".woff", ".woff2", ".ttf", ".otf":
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
-	w.Header().Set("Cache-Control", "public, max-age=3600")
+	w.Header().Set("Cache-Control", httpx.AssetCacheControl(r, clean)) // ?v= links are immutable
 	http.ServeFileFS(w, r, fsys, clean)
 }
 

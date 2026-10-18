@@ -74,7 +74,7 @@ func TestCheckoutCreatesPendingOrderAndUser(t *testing.T) {
 	}
 	// Bad email → 422 on the product page, no order.
 	before := e.count(`SELECT count(*) FROM orders`)
-	resp, page = e.do("POST", "/checkout/pro-monthly", url.Values{"_csrf": {csrf}, "email": {"nope"}})
+	resp, _ = e.do("POST", "/checkout/pro-monthly", url.Values{"_csrf": {csrf}, "email": {"nope"}})
 	if resp.StatusCode != http.StatusUnprocessableEntity || e.count(`SELECT count(*) FROM orders`) != before {
 		t.Fatalf("bad email: %d", resp.StatusCode)
 	}

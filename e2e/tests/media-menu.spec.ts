@@ -2,7 +2,7 @@
 // featured image of a published post → a primary menu with 2 items built in
 // the native menu editor (explicit drop zone and keyboard reorder) → the public header shows it.
 import { test, expect } from '@playwright/test';
-import { db, expectNoServerError } from '../lib/helpers.ts';
+import { db, expectNoServerError, submitAndLand } from '../lib/helpers.ts';
 import { tinyPNG } from '../fixtures/wp-fixture-server.ts';
 
 const FILE = 'e2e-featured.png';
@@ -104,7 +104,8 @@ test.describe.serial('media and menus', () => {
     await rows.nth(1).locator('[data-handle]').press('Alt+ArrowUp');
     await expect(title(0)).toHaveText(new RegExp('^' + POST_TITLE + '(?: ·.*)?$'));
     await expect(title(1)).toHaveText('E2E About');
-    await page.locator('form[action$="/items"] button[type="submit"]').click();
+    // The "created" flash is already on the page, so wait for the save itself.
+    await submitAndLand(page, page.locator('form[action$="/items"] button[type="submit"]'), `/admin/menus/${menuID}/items`);
     await expect(page.locator('#main div[role="status"]')).toBeVisible();
     await page.reload();
     await expect(title(0)).toHaveText(new RegExp('^' + POST_TITLE + '(?: ·.*)?$'));

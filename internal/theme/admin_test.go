@@ -141,7 +141,7 @@ func TestAdminTemplateOverrideFlow(t *testing.T) {
 		t.Fatalf("bad name: %d", resp.StatusCode)
 	}
 	// New templates can be created by name.
-	resp, page = c.get("/admin/appearance/templates/edit?name=page-pricing.html")
+	resp, _ = c.get("/admin/appearance/templates/edit?name=page-pricing.html")
 	if resp.StatusCode != 200 {
 		t.Fatalf("new template editor: %d", resp.StatusCode)
 	}

@@ -97,7 +97,7 @@ func TestAPIThemesAndTemplates(t *testing.T) {
 			t.Fatalf("malformed request replaced existing draft: %q", draft)
 		}
 	}
-	resp, body = c.get("/api/v1/templates/single.html")
+	_, body = c.get("/api/v1/templates/single.html")
 	if !strings.Contains(body, `"draft":"API-DRAFT {{.Kind}}"`) || !strings.Contains(body, "BASE-SINGLE") {
 		t.Fatalf("read with draft: %s", body)
 	}

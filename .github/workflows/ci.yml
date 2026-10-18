@@ -28,6 +28,9 @@ jobs:
         run: |
           go tool cover -func=coverage.out > coverage-summary.txt
           awk '$1 == "total:" { found = 1; sub(/%$/, "", $3); if ($3 + 0 < 80) exit 1 } END { if (!found) exit 1 }' coverage-summary.txt
+      - name: staticcheck
+        # Pinned; checks and exclusions live in staticcheck.conf.
+        run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
       - name: check formatting

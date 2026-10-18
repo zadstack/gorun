@@ -23,9 +23,9 @@ func TestAvailabilityPasswordGateAndReset(t *testing.T) {
 			t.Fatalf("gate %s %d", path, r.StatusCode)
 		}
 	}
-	r, b := e.get("/")
+	_, b := e.get("/")
 	csrf := csrfFrom(t, b)
-	r, _ = e.do("POST", "/_site/unlock", url.Values{"password": {"correct horse battery"}})
+	r, _ := e.do("POST", "/_site/unlock", url.Values{"password": {"correct horse battery"}})
 	if r.StatusCode != 403 {
 		t.Fatal("missing csrf", r.StatusCode)
 	}
@@ -87,7 +87,7 @@ func TestAvailabilityAdminSaveKeepClearAndCSRF(t *testing.T) {
 	if r.StatusCode != 303 {
 		t.Fatal("save", r.StatusCode)
 	}
-	r, b = e.get("/admin/settings/availability")
+	_, b = e.get("/admin/settings/availability")
 	if strings.Contains(b, "fixture secret password") || strings.Contains(b, "$argon2") {
 		t.Fatal("secret reflected")
 	}

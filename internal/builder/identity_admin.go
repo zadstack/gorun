@@ -68,7 +68,7 @@ func (h *identityHandler) store(ctx context.Context, form identityForm) error {
 		return content.ErrForbidden
 	}
 	if strings.TrimSpace(form.Title) == "" || len(form.Title) > 200 || len(form.Tagline) > 500 {
-		return errors.New("Enter a site name of up to 200 characters")
+		return errors.New("identity: site name must be 1-200 characters")
 	}
 	if err := brand.Validate(form.Identity); err != nil {
 		return err
@@ -76,10 +76,10 @@ func (h *identityHandler) store(ctx context.Context, form identityForm) error {
 	if form.Logo != "" {
 		ms, ok := kernel.Get[media.Service](h.d, kernel.ServiceMedia)
 		if !ok {
-			return errors.New("Media library unavailable")
+			return errors.New("identity: media library unavailable")
 		}
 		if _, err := ms.Get(ctx, form.Logo); err != nil {
-			return errors.New("Choose an existing logo from the media library")
+			return errors.New("identity: not an existing logo in the media library")
 		}
 	}
 	return db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {

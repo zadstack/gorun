@@ -146,13 +146,10 @@ func staticHandler() http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		if r.URL.Query().Get("v") != "" {
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-		} else {
-			w.Header().Set("Cache-Control", "public, max-age=3600")
-		}
 		// Public font bytes may be used by opaque-origin sandbox previews.
 		name := strings.TrimPrefix(r.URL.Path, httpx.StaticPrefix)
+		// ?v= URLs and version-named vendor files are immutable.
+		w.Header().Set("Cache-Control", httpx.AssetCacheControl(r, name))
 		if strings.HasPrefix(name, "fonts/") && strings.HasSuffix(name, ".woff2") {
 			if st, err := fs.Stat(sub, name); err == nil && !st.IsDir() {
 				w.Header().Set("Access-Control-Allow-Origin", "*")

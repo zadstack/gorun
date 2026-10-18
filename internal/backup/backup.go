@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/zadstack/gorun/internal/db" // registers the sqlite driver
+	"github.com/zadstack/gorun/internal/db" // also registers the sqlite driver
 )
 
 // Dirs are the data-directory trees archived next to the database copy.
@@ -194,7 +194,11 @@ func File(dataDir, name string) (string, error) {
 // vacuumInto copies the database at src to dst with VACUUM INTO, reading
 // src through a read-only connection (it is never created or migrated).
 func vacuumInto(src, dst string) error {
-	d, err := sql.Open("sqlite", "file:"+src+"?mode=ro&_pragma=busy_timeout(5000)")
+	uri, err := db.FileURI(src)
+	if err != nil {
+		return err
+	}
+	d, err := sql.Open("sqlite", uri+"?mode=ro&_pragma=busy_timeout(5000)")
 	if err != nil {
 		return err
 	}

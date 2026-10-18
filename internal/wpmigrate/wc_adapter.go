@@ -6,9 +6,6 @@ import (
 	"strings"
 )
 
-// mcbbKeys are the WooCommerce meta keys of the MCBB plan mapping.
-var mcbbKeys = []string{"_mcbb_server", "_mcbb_server_id", "_mcbb_plan", "_mcbb_plan_code", "_mcbb_months"}
-
 // hasPlanMapping reports whether a product carries MCBB plan meta.
 func hasPlanMapping(p WPProduct) bool {
 	server := firstNonEmpty(p.Meta["_mcbb_server"], p.Meta["_mcbb_server_id"])
