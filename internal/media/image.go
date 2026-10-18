@@ -64,8 +64,9 @@ var variantSlots = make(chan struct{}, 2)
 // chain (large from the original, medium from large, thumbnail from medium)
 // to cut CPU and memory. Transparent images remain lossless PNG. Opaque
 // non-JPEG images use JPEG only when it is materially smaller than PNG.
-// Originals are never modified; variants must be cheaper to transfer.
-func makeVariants(data []byte, mimeType string) ([]encodedVariant, error) {
+// Variants are turned upright for the EXIF orientation (pixels have none),
+// and must be cheaper to transfer than the original.
+func makeVariants(data []byte, mimeType string, orientation int) ([]encodedVariant, error) {
 	cfg, err := imageConfig(data)
 	if err != nil {
 		return nil, fmt.Errorf("media: decode image header: %w", err)
@@ -94,7 +95,11 @@ func makeVariants(data []byte, mimeType string) ([]encodedVariant, error) {
 		dst := image.NewRGBA(image.Rect(0, 0, vw, vh))
 		draw.CatmullRom.Scale(dst, dst.Bounds(), from, from.Bounds(), draw.Src, nil)
 		from = dst
-		v, err := encodeVariant(dst, mimeType, spec.Name)
+		shown := dst
+		if orientation > 1 {
+			shown = orient(dst, orientation).(*image.RGBA)
+		}
+		v, err := encodeVariant(shown, mimeType, spec.Name)
 		if err != nil {
 			return nil, fmt.Errorf("media: encode %s: %w", spec.Name, err)
 		}

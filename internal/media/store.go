@@ -130,6 +130,17 @@ func (s *service) store(ctx context.Context, filename string, r io.Reader, meta 
 			return nil, fmt.Errorf("%w: %v", ErrNotAllowed, err)
 		}
 	}
+	orientation := 1
+	if rasterMimes[mimeType] {
+		if clean, o, err := stripMetadata(data, mimeType); err != nil {
+			s.log.Warn("media: metadata not stripped", "filename", filename, "err", err)
+		} else {
+			orientation = o
+			if s.stripEnabled(ctx) {
+				data = clean
+			}
+		}
+	}
 	sum := sha256.Sum256(data)
 	now := s.now().UTC()
 	id := db.NewID()
@@ -172,7 +183,7 @@ func (s *service) store(ctx context.Context, filename string, r io.Reader, meta 
 	}
 	written = append(written, storedFile{m.StorageKey})
 	if rasterMimes[mimeType] {
-		if err := s.addVariants(ctx, m, data, base, &written); err != nil {
+		if err := s.addVariants(ctx, m, data, orientation, base, &written); err != nil {
 			cleanup()
 			return nil, err
 		}
@@ -192,17 +203,20 @@ func (s *service) store(ctx context.Context, filename string, r io.Reader, meta 
 
 // addVariants records the dimensions and stores the variants of a raster
 // image. Undecodable or oversized images are kept without variants.
-func (s *service) addVariants(ctx context.Context, m *Media, data []byte, base string, written *[]storedFile) error {
+func (s *service) addVariants(ctx context.Context, m *Media, data []byte, orientation int, base string, written *[]storedFile) error {
 	cfg, err := imageConfig(data)
 	if err != nil {
 		s.log.Warn("media: unreadable image header", "filename", m.Filename, "err", err)
 		return nil
 	}
 	m.Width, m.Height = cfg.Width, cfg.Height
+	if orientation >= 5 { // displayed rotated by 90°
+		m.Width, m.Height = cfg.Height, cfg.Width
+	}
 	if cfg.Width*cfg.Height > maxPixels || cfg.Width <= 0 || cfg.Height <= 0 {
 		return nil
 	}
-	variants, err := makeVariants(data, m.Mime)
+	variants, err := makeVariants(data, m.Mime, orientation)
 	if err != nil {
 		s.log.Warn("media: variants skipped", "filename", m.Filename, "err", err)
 		return nil

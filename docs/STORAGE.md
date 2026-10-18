@@ -16,6 +16,10 @@ sites/<persistent-site-id>/content/<content-id>/YYYY/MM/DD/<media-id>.<ext>
 
 Other managed uploads use `sites/<site-id>/uploads/YYYY/MM/<media-id>.<ext>`. Original local upload paths are unchanged. Normal MIME and upload-size restrictions still apply; MP4 is in the default allowlist. Provider credentials and signed download URLs must not be saved as `SourceURL`.
 
+### Photo metadata
+
+Uploaded originals are public, so GoRun removes camera metadata before storing JPEG, PNG and WebP files: GPS position, device serials, owner and editor names, XMP/IPTC, comments, and JPEG trailers such as HDR gain or depth maps. Stripping is lossless: no pixels are re-encoded, colour profiles (ICC) stay, and a JPEG keeps only its EXIF Orientation so it still displays upright. Variants are generated upright, and the stored width and height are the displayed ones. GIF and other files are stored as uploaded. Set `media.strip_metadata` to `false` to keep originals byte-for-byte; files uploaded earlier are not changed.
+
 Storage destinations allow HTTPS endpoints only. Managed runtime requests use DNS/IP guards, bounded timeouts and no redirects. Media object paths are bound to this site's namespace. Backup destinations and backup key prefixes cannot be served through `/media/`.
 
 ## Encrypted backups
@@ -47,6 +51,8 @@ The directory must contain the original `secret.key`, or supply the original `GO
 ## العربية
 
 من **الإعدادات ← التخزين** اختر اتصال S3 محفوظًا، ثم فعّله للوسائط الجديدة أو للنسخ الاحتياطية المشفّرة، كل وجهة بصورة مستقلة. اختبار الاتصال لا يفعّل التخزين ولا يرفع ملفات. تظل الملفات القديمة مرتبطة بوجهتها، وتحديث بيانات نفس الحاوية يتطلب إعادة تفعيلها صراحةً.
+
+الصور المرفوعة عامة، لذلك يحذف GoRun بيانات الكاميرا من ملفات JPEG وPNG وWebP قبل حفظها: الموقع الجغرافي (GPS)، والرقم التسلسلي للجهاز، وأسماء المالك والمحرّر، وبيانات XMP/IPTC، والتعليقات، والصور الملحقة بعد نهاية الصورة الأساسية. لا يُعاد ترميز الصورة، ويبقى ملف الألوان (ICC)، وتحتفظ صور JPEG باتجاه العرض فقط. لإبقاء الملف كما هو اضبط `media.strip_metadata` على `false`؛ الملفات المرفوعة سابقًا لا تتغير.
 
 تُرتّب الصور والفيديوهات المولّدة حسب الموقع والمحتوى والتاريخ. تخضع لنفس فحص نوع الملف وحد الحجم الموجودين في مكتبة الوسائط.
 

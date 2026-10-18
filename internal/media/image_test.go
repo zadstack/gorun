@@ -54,7 +54,7 @@ func TestOpaquePhotoPNGUsesSmallerJPEGVariants(t *testing.T) {
 	if err := png.Encode(&original, img); err != nil {
 		t.Fatal(err)
 	}
-	variants, err := makeVariants(original.Bytes(), "image/png")
+	variants, err := makeVariants(original.Bytes(), "image/png", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestVariantNeverCostsMoreThanOriginal(t *testing.T) {
 	if err := png.Encode(&original, img); err != nil {
 		t.Fatal(err)
 	}
-	variants, err := makeVariants(original.Bytes(), "image/png")
+	variants, err := makeVariants(original.Bytes(), "image/png", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestVariantsRejectOversizedHeaderBeforeDecode(t *testing.T) {
 	binary.BigEndian.PutUint32(data[16:20], 100000)
 	binary.BigEndian.PutUint32(data[20:24], 100000)
 	binary.BigEndian.PutUint32(data[29:33], crc32.ChecksumIEEE(data[12:29]))
-	_, err := makeVariants(data, "image/png")
+	_, err := makeVariants(data, "image/png", 1)
 	if err == nil || !strings.Contains(err.Error(), "pixel limit") {
 		t.Fatalf("expected early pixel guard, got %v", err)
 	}
