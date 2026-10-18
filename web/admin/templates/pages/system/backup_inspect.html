@@ -34,7 +34,11 @@
   <p class="text-muted text-sm">{{t "admin.backups.restore_next"}}</p>
   {{else if .Partial}}
   <p class="text-red" data-restore-partial>{{t "admin.backups.restore_partial"}}</p>
-  <p class="font-mono text-xs break-all" dir="ltr">{{.Partial}}</p>
+  <p class="font-mono text-xs break-all" dir="ltr" data-restore-partial-path>{{.Partial}}</p>
+  <form method="post" action="/admin/system/backups/{{.Stamp}}/discard-partial" data-confirm="{{t "admin.backups.restore_partial_clear_confirm"}}">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" class="h-9 px-3 rounded border border-red text-red bg-red-soft hover:border-red focus:outline-none focus:ring-[3px] focus:ring-red-soft" data-discard-partial>{{t "admin.backups.restore_partial_clear"}}</button>
+  </form>
   {{else if eq .Report.Readiness "blocked"}}
   <p class="text-red">{{t "admin.backups.restore_blocked"}}</p>
   {{else}}

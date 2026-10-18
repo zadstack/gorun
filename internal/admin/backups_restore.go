@@ -111,6 +111,41 @@ func (h *handlers) backupRestore(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, inspectPath, http.StatusSeeOther)
 }
 
+// backupDiscardPartial removes a leftover .<stamp>.partial staging directory
+// so restore can run again. Same permission and reauth gate as restore.
+func (h *handlers) backupDiscardPartial(w http.ResponseWriter, r *http.Request) {
+	stamp := chi.URLParam(r, "stamp")
+	inspectPath := "/admin/system/backups/" + stamp + "/inspect"
+	if !auth.RecentlyAuthenticated(r.Context(), auth.ReauthWindow) {
+		http.Redirect(w, r, "/admin/reauth?next="+url.QueryEscape(inspectPath), http.StatusSeeOther)
+		return
+	}
+	dest, err := backup.RestoreDestination(h.d.Config.DataDir, stamp)
+	if err != nil {
+		h.tpl.RenderError(w, r, http.StatusNotFound)
+		return
+	}
+	partial := backup.PartialPath(dest)
+	backupMu.Lock()
+	defer backupMu.Unlock()
+	if !exists(partial) {
+		httpx.SetFlash(w, "error", "admin.backups.restore_partial_gone")
+		http.Redirect(w, r, inspectPath, http.StatusSeeOther)
+		return
+	}
+	if err := backup.RemovePartial(dest); err != nil {
+		h.d.Log.Error("admin: discard restore partial", "err", err, "stamp", stamp)
+		httpx.SetFlash(w, "error", "admin.backups.restore_partial_clear_failed")
+		http.Redirect(w, r, inspectPath, http.StatusSeeOther)
+		return
+	}
+	h.d.Audit.Record(r.Context(), "system.backup_discard_partial", "backup", stamp, map[string]any{
+		"partial": partial,
+	})
+	httpx.SetFlash(w, "success", "admin.backups.restore_partial_cleared")
+	http.Redirect(w, r, inspectPath, http.StatusSeeOther)
+}
+
 // exists reports whether path exists (any type, symlinks not followed).
 func exists(path string) bool {
 	_, err := os.Lstat(path)

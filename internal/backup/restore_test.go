@@ -126,8 +126,14 @@ func TestRestoreStagesThenRenamesAndRefusesLeftoverPartial(t *testing.T) {
 	if data, err := os.ReadFile(filepath.Join(PartialPath(dest), "gorun.db")); err != nil || string(data) != "half" {
 		t.Fatal("leftover partial was modified")
 	}
-	if err := os.RemoveAll(PartialPath(dest)); err != nil {
+	if err := RemovePartial(dest); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := os.Stat(PartialPath(dest)); !os.IsNotExist(err) {
+		t.Fatal("RemovePartial left staging directory")
+	}
+	if err := RemovePartial(dest); !os.IsNotExist(err) {
+		t.Fatalf("RemovePartial when missing: %v", err)
 	}
 	if _, err := Restore(res.Manifest, dest); err != nil {
 		t.Fatal(err)

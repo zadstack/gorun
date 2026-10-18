@@ -20,6 +20,27 @@ func PartialPath(destination string) string {
 	return filepath.Join(filepath.Dir(destination), "."+filepath.Base(destination)+".partial")
 }
 
+// RemovePartial deletes the leftover staging directory for destination
+// (see PartialPath). It only removes that exact sibling name under the
+// destination's parent via os.OpenRoot — never a path outside restores/.
+func RemovePartial(destination string) error {
+	destination = filepath.Clean(destination)
+	if destination == "." || destination == string(filepath.Separator) {
+		return errors.New("backup: remove partial requires a destination path")
+	}
+	partial := PartialPath(destination)
+	parent, err := os.OpenRoot(filepath.Dir(partial))
+	if err != nil {
+		return err
+	}
+	defer parent.Close()
+	name := filepath.Base(partial)
+	if _, err := parent.Lstat(name); err != nil {
+		return err
+	}
+	return parent.RemoveAll(name)
+}
+
 // Restore writes only into a new directory. It never merges into an existing
 // installation; the caller must review external requirements before booting it.
 // Everything is written into PartialPath(destination) first and renamed to
