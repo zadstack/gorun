@@ -101,22 +101,23 @@ inject or file-mount that path:
 
 | Remove | Why |
 | --- | --- |
-| Traefik `file` / static router (or Coolify storage mount) that maps a host file to `/static/launch.css` | The app serves the same URL from embedded assets |
-| Extra `volumes:` bind of `launch.css` into the GoRun or proxy container solely for that route | No longer required for launch overlays |
-| Middleware that injects `<link rel="stylesheet" href="/static/launch.css">` **only** because the file lived outside the image | Keep the link in your `/start` HTML if you still use it; drop only the external file source |
+| Traefik `file` / static router (or Coolify storage mount) that maps a host file to `/static/launch.css` or `/static/launch-polish.js` | The app serves both URLs from embedded assets |
+| Extra `volumes:` bind of those files into the GoRun or proxy container solely for those routes | No longer required for launch overlays |
+| Middleware that injects `<link>` / `<script>` for those paths **only** because the files lived outside the image | Core `/start` pages already link them; drop only the external file source |
 
 Verify after redeploy (stop-then-start):
 
 ```sh
 curl -sI "https://<your-domain>/static/launch.css" | head
-# Expect: HTTP 200, Content-Type: text/css, and GoRun response headers
-# (e.g. content-security-policy / x-request-id) — not a bare proxy file hit.
+curl -sI "https://<your-domain>/static/launch-polish.js" | head
+curl -sI "https://<your-domain>/start" | head
+# Expect: HTTP 200 and GoRun response headers (CSP / x-request-id),
+# not a bare proxy file hit. /start is the customer journey; /admin/login stays staff.
 ```
 
 Do **not** remove TLS, domain, or trusted-proxy Traefik labels. This note is only
-about the launch CSS mount. Launch `/start` handlers and agents may still be
-host-specific until those land in core; the CSS path itself no longer needs
-proxy injection.
+about launch overlay mounts. Do not change Resend (or other mail) secrets when
+dropping these mounts.
 
 ### Trust Traefik's forwarded headers
 

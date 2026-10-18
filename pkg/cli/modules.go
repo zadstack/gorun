@@ -10,6 +10,7 @@ import (
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/ext"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/launch"
 	"github.com/zadstack/gorun/internal/mcp"
 	"github.com/zadstack/gorun/internal/media"
 	"github.com/zadstack/gorun/internal/membership"
@@ -47,6 +48,7 @@ func CoreModules() []kernel.Module {
 		commerce.New(),
 		saas.New(),
 		membership.New(),
+		launch.New(),
 		workagents.New(admin.CompleteWorkAgent),
 		wpmigrate.New(),
 		mcp.New(),

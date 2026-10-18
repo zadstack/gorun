@@ -10,6 +10,9 @@ All notable changes to GoRun are recorded here. The format follows
 - Embedded launch overlay stylesheet at `/static/launch.css` (`web/launch/launch.css`),
   served by the binary so Coolify/Traefik file mounts for that path can be removed
   after upgrade (see `deploy/coolify.md`).
+- Launch journey in core: `/start`, `/start/login`, `/start/verify` with site-title
+  titles (em dash) distinct from staff `/admin/login`; embed `/static/launch-polish.js`
+  (title/validation agent). Drop Traefik mounts for that script too.
 
 ### Changed
 

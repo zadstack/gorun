@@ -89,7 +89,8 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Router.Admin.NotFound(func(w http.ResponseWriter, r *http.Request) { tpl.RenderError(w, r, http.StatusNotFound) })
 	d.Router.Public.Get("/auth/magic/{token}", h.magicForm)
 	d.Router.Public.Post("/auth/magic/{token}", h.magicSubmit) // CSRF-exempt: the single-use token is the credential
-	d.Router.Public.Get(httpx.LaunchCSSPath, launchCSSHandler())
+	d.Router.Public.Get(httpx.LaunchCSSPath, launchAssetHandler("launch/launch.css", "text/css; charset=utf-8", "launch.css"))
+	d.Router.Public.Get(httpx.LaunchPolishPath, launchAssetHandler("launch/launch-polish.js", "text/javascript; charset=utf-8", "launch-polish.js"))
 	d.Router.Public.Handle(httpx.StaticPrefix+"*", staticHandler())
 
 	d.Jobs.Cron("auth.cleanup", time.Hour, func(ctx context.Context) error { return cleanup(ctx, d) })
@@ -140,17 +141,17 @@ func templateFuncs(d *kernel.Deps) httpx.Funcs {
 	}
 }
 
-// launchCSSHandler serves the embedded launch overlay stylesheet at
-// /static/launch.css so hosts no longer need a Traefik/Coolify file mount.
-func launchCSSHandler() http.HandlerFunc {
+// launchAssetHandler serves an embedded launch overlay file (CSS/JS) so hosts
+// no longer need a Traefik/Coolify file mount for that path.
+func launchAssetHandler(embedPath, contentType, cacheName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		b, err := web.FS.ReadFile("launch/launch.css")
+		b, err := web.FS.ReadFile(embedPath)
 		if err != nil {
 			http.Error(w, "unavailable", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "text/css; charset=utf-8")
-		w.Header().Set("Cache-Control", httpx.AssetCacheControl(r, "launch.css"))
+		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Cache-Control", httpx.AssetCacheControl(r, cacheName))
 		_, _ = w.Write(b)
 	}
 }

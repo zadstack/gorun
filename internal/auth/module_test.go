@@ -200,6 +200,10 @@ func TestLaunchCSSEmbeddedAtStaticPath(t *testing.T) {
 	if resp.StatusCode != 200 || resp.Header.Get("Cache-Control") != httpx.CacheImmutable {
 		t.Fatalf("versioned launch.css cache: %d %q", resp.StatusCode, resp.Header.Get("Cache-Control"))
 	}
+	resp, js := s.do("GET", httpx.LaunchPolishPath, nil)
+	if resp.StatusCode != 200 || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/javascript") || !strings.Contains(js, "launch-brand") {
+		t.Fatalf("launch-polish.js: %d %q", resp.StatusCode, js)
+	}
 }
 
 func TestAuthAloneServesNoDashboard(t *testing.T) {

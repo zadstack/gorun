@@ -45,7 +45,9 @@ const (
 	// LaunchCSSPath is the public URL for the embedded launch overlay stylesheet.
 	// Downstream /start pages and prior Traefik mounts use this exact path.
 	LaunchCSSPath = "/static/launch.css"
-	flashCookie   = "gp_flash"
+	// LaunchPolishPath is the public URL for the launch title/validation script.
+	LaunchPolishPath = "/static/launch-polish.js"
+	flashCookie      = "gp_flash"
 )
 
 // NavItem mirrors NavItem field for field, so callers convert with
