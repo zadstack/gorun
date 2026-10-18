@@ -108,4 +108,4 @@ you. Please give us a reasonable time to ship the fix before publishing details.
 - Mutations across modules write `audit_log` rows (actor, action, target). The audit log is append-only from the
   application's point of view.
 
-Backups include local recovery keys and configuration when present. Treat both backup files as secrets; keep external environment credentials separately. See [production recovery](docs/PRODUCTION.md).
+Backups leave out `secret.key` and `gorun.toml` (which can hold the Stripe, S3 and setup secrets) unless the operator runs `gorun backup --include-secrets`; the admin never includes them. Keep an independent, protected copy of the site secret: without it the database's encrypted settings cannot be read after a restore. Downloading a backup from the admin requires the password again when the last sign-in or confirmation is older than 10 minutes. Treat backup files as confidential all the same (they hold the whole database). See [production recovery](docs/PRODUCTION.md).

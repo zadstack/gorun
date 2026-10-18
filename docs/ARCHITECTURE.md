@@ -166,7 +166,8 @@ Everything lives under the data directory (`GORUN_DATA`, default `./data`):
 - `extensions/<slug>/`: installed extension packages;
 - `imports/`: WXR files uploaded in the migration wizard;
 - `backups/`: output of `gorun backup` (`<timestamp>.db` copied with `VACUUM INTO`, plus
-  `<timestamp>.tar.gz` of `media/`, `overrides/`, `extensions/`, `form-uploads/`, plus local `secret.key` and `gorun.toml` when present).
+  `<timestamp>.tar.gz` of `media/`, `overrides/`, `extensions/`, `form-uploads/`; local `secret.key` and `gorun.toml` only with
+  `gorun backup --include-secrets`, never from the admin).
 
 ### Migrations must be additive
 

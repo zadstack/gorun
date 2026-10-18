@@ -55,7 +55,8 @@ commands:
   backup-inspect inspect a local pair without writes (--input <timestamp>.manifest.json)
   backup-decrypt decrypt a .gorb backup with the original site secret (--input, --output; never overwrite)
   backup        copy the database (VACUUM INTO) and archive media/, overrides/, extensions/
-                to <data>/backups/<timestamp>.{db,tar.gz}
+                to <data>/backups/<timestamp>.{db,tar.gz}; secret.key and gorun.toml only
+                with --include-secrets (plain text: keep that archive offline)
   import-wxr    import a WordPress WXR export: import-wxr <file> [--dry-run] [--source-name NAME]
                 [--currency AED] [--slug-policy suffix|skip|overwrite] [--reset-options]
   theme         theme info (JSON) | activate <slug> | show <tpl> | save <tpl> [--draft] (stdin) | reset <tpl> |

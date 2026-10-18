@@ -147,7 +147,7 @@ GORUN_BASE_URL=https://your-site.example \
 ./bin/gorun backup --data ./data
 ```
 
-تتكون من `<timestamp>.db` و `<timestamp>.tar.gz` و `<timestamp>.manifest.json` تحت `data/backups`. تشمل الأرشفة media و overrides و extensions و form-uploads، و gorun.toml و secret.key إن وُجدا. لا تشمل حزمة themes الخارجية أو قيم البيئة الخارجية أو أجسام S3. احتفظ بها مستقلًا مع الإصدار والمفتاح الأصلي.
+تتكون من `<timestamp>.db` و `<timestamp>.tar.gz` و `<timestamp>.manifest.json` تحت `data/backups`. تشمل الأرشفة media و overrides و extensions و form-uploads. لا تشمل gorun.toml و secret.key إلا مع `gorun backup --include-secrets`؛ احفظهما مستقلًا وانسخهما إلى مجلد الاستعادة. لا تشمل حزمة themes الخارجية أو قيم البيئة الخارجية أو أجسام S3. احتفظ بها مستقلًا مع الإصدار والمفتاح الأصلي.
 
 افحص الزوج المحلي، بعد استبدال اسم manifest بالاسم الذي أُنشئ:
 
