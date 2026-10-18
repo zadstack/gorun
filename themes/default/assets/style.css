@@ -77,47 +77,47 @@ html[data-theme="default"] {
   --muted: #59665e;
   --line: #dde2dc;
   --line-strong: #a4b0a7;
-  --radius: 8px;
-  --body-size: 16px;
+  --radius: 7px;
+  --body-size: 15px;
 }
-html[data-theme="default"] .gp-site-width { max-width: 1160px; padding-inline: clamp(1rem, 3vw, 2rem); }
-html[data-theme="default"] .default-site-header > div { min-height: 80px; gap: .75rem 1.5rem; }
-html[data-theme="default"] .default-site-brand { max-width: 100%; font-size: 1.25rem; line-height: 1.5; }
-html[data-theme="default"] .default-site-header nav { font-size: .9375rem; }
-html[data-theme="default"] .default-site-search input { background: var(--bg); font-size: .875rem; }
-html[data-theme="default"] #main { padding-block: clamp(1.75rem, 4vw, 3rem); }
-html[data-theme="default"] #main h1 { font-size: clamp(1.875rem, 3.5vw, 3rem); max-width: 28ch; }
-html[data-theme="default"] .default-intro { padding-block: .5rem 2rem; margin-bottom: 2rem; }
-html[data-theme="default"] .default-intro p { font-size: 1.0625rem; line-height: 1.85; margin-top: .75rem; }
-html[data-theme="default"] .default-content-grid { gap: 1.5rem; align-items: stretch; }
+html[data-theme="default"] .gp-site-width { max-width: 1160px; padding-inline: clamp(.875rem, 2.5vw, 1.5rem); }
+html[data-theme="default"] .default-site-header > div { min-height: 64px; gap: .5rem 1.15rem; }
+html[data-theme="default"] .default-site-brand { max-width: 100%; font-size: 1.125rem; line-height: 1.4; }
+html[data-theme="default"] .default-site-header nav { font-size: .875rem; }
+html[data-theme="default"] .default-site-search input { background: var(--bg); font-size: .8125rem; }
+html[data-theme="default"] #main { padding-block: clamp(1.35rem, 3.25vw, 2.35rem); }
+html[data-theme="default"] #main h1 { font-size: clamp(1.65rem, 3.1vw, 2.55rem); max-width: 28ch; }
+html[data-theme="default"] .default-intro { padding-block: .35rem 1.5rem; margin-bottom: 1.5rem; }
+html[data-theme="default"] .default-intro p { font-size: 1rem; line-height: 1.75; margin-top: .625rem; }
+html[data-theme="default"] .default-content-grid { gap: 1.15rem; align-items: stretch; }
 html[data-theme="default"] .reading-card {
   display: flex; flex-direction: column; min-width: 0;
-  padding: 1.25rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+  padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
 }
 html[data-theme="default"] .reading-card:hover { border-color: var(--line-strong); }
-html[data-theme="default"] .reading-card h2 { font-size: clamp(1.25rem, 2vw, 1.5rem); line-height: 1.55; }
-html[data-theme="default"] .reading-card > p:not(.text-sm) { font-size: .9375rem; line-height: 1.85; margin-bottom: 1rem; }
-html[data-theme="default"] .reading-card > a:last-child { margin-top: auto; padding-top: .75rem; font-size: .875rem; font-weight: 600; }
-html[data-theme="default"] .default-card-image { overflow: hidden; border-radius: 5px; }
+html[data-theme="default"] .reading-card h2 { font-size: clamp(1.125rem, 1.8vw, 1.35rem); line-height: 1.5; }
+html[data-theme="default"] .reading-card > p:not(.text-sm) { font-size: .875rem; line-height: 1.75; margin-bottom: .75rem; }
+html[data-theme="default"] .reading-card > a:last-child { margin-top: auto; padding-top: .5rem; font-size: .8125rem; font-weight: 600; }
+html[data-theme="default"] .default-card-image { overflow: hidden; border-radius: 4px; }
 html[data-theme="default"] .default-card-image img { aspect-ratio: 16 / 9; width: 100%; height: auto; object-fit: cover; }
 html[data-theme="default"] .reading-article { max-width: 76ch; }
-html[data-theme="default"] .reading-article > header { border-bottom: 1px solid var(--line); padding-bottom: 1.5rem; }
-html[data-theme="default"] .reading-article figure { margin-block: 1.75rem; }
-html[data-theme="default"] .reading-article figure img { max-height: 560px; object-fit: contain; background: var(--panel-2); }
-html[data-theme="default"] .reading-article .prose-gp { font-size: 1.0625rem; line-height: 1.95; }
+html[data-theme="default"] .reading-article > header { border-bottom: 1px solid var(--line); padding-bottom: 1.15rem; }
+html[data-theme="default"] .reading-article figure { margin-block: 1.35rem; }
+html[data-theme="default"] .reading-article figure img { max-height: 520px; object-fit: contain; background: var(--panel-2); }
+html[data-theme="default"] .reading-article .prose-gp { font-size: 1rem; line-height: 1.85; }
 html[data-theme="default"] .prose-gp :is(iframe,video) { max-width: 100%; }
-html[data-theme="default"] .default-empty { padding: 2rem; border-style: dashed; line-height: 1.8; }
-html[data-theme="default"] .default-pagination { border-top: 1px solid var(--line); padding-top: 1.5rem; }
-html[data-theme="default"] .default-site-footer { margin-top: 2rem; }
-html[data-theme="default"] .default-site-footer > div { padding-block: 1.5rem; font-size: .875rem; }
+html[data-theme="default"] .default-empty { padding: 1.5rem; border-style: dashed; line-height: 1.7; }
+html[data-theme="default"] .default-pagination { border-top: 1px solid var(--line); padding-top: 1.15rem; }
+html[data-theme="default"] .default-site-footer { margin-top: 1.5rem; }
+html[data-theme="default"] .default-site-footer > div { padding-block: 1.15rem; font-size: .8125rem; }
 @media (max-width: 639px) {
-  html[data-theme="default"] .default-site-header > div { gap: .5rem 1rem; }
+  html[data-theme="default"] .default-site-header > div { gap: .375rem .75rem; }
   html[data-theme="default"] .default-site-search { flex: 1 1 100%; order: 4; }
   html[data-theme="default"] .default-site-search input { width: 100%; }
   html[data-theme="default"] .default-site-header nav ul { gap: 0; }
-  html[data-theme="default"] .default-site-header nav a { padding-inline: .625rem; }
-  html[data-theme="default"] .default-content-grid { gap: 1rem; }
-  html[data-theme="default"] .reading-card { padding: 1rem; }
+  html[data-theme="default"] .default-site-header nav a { padding-inline: .5rem; }
+  html[data-theme="default"] .default-content-grid { gap: .75rem; }
+  html[data-theme="default"] .reading-card { padding: .875rem; }
   html[data-theme="default"] .reading-article .prose-gp { font-size: 1rem; }
   html[data-theme="default"] .default-site-footer > div { align-items: flex-start; flex-direction: column; gap: .5rem; }
 }
