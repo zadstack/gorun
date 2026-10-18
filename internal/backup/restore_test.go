@@ -139,3 +139,57 @@ func TestRestoreStagesThenRenamesAndRefusesLeftoverPartial(t *testing.T) {
 		t.Fatal("staging directory left after a complete restore")
 	}
 }
+
+func TestRestoreClampsArchivePermissions(t *testing.T) {
+	dir, path := backupSource(t)
+	res, err := Create(dir, path, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := os.Create(res.Files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gz := gzip.NewWriter(f)
+	tw := tar.NewWriter(gz)
+	for _, h := range []*tar.Header{
+		{Name: "media/", Mode: 0777, Typeflag: tar.TypeDir},
+		{Name: "media/open", Mode: 0777, Typeflag: tar.TypeDir},
+		{Name: "media/open/world.txt", Mode: 0666, Typeflag: tar.TypeReg, Size: 5},
+		{Name: "media/run.sh", Mode: 0755, Typeflag: tar.TypeReg, Size: 5},
+	} {
+		if err := tw.WriteHeader(h); err != nil {
+			t.Fatal(err)
+		}
+		if h.Typeflag == tar.TypeReg {
+			if _, err := tw.Write([]byte("hello")); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if err := errors.Join(tw.Close(), gz.Close(), f.Close()); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(res.Manifest); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeManifest(res, nil, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	dest := filepath.Join(t.TempDir(), "restored")
+	if _, err := Restore(res.Manifest, dest); err != nil {
+		t.Fatal(err)
+	}
+	for name, want := range map[string]os.FileMode{
+		".": 0700, "gorun.db": 0600, "media": 0700, "media/open": 0700,
+		"media/open/world.txt": 0600, "media/run.sh": 0600,
+	} {
+		st, err := os.Stat(filepath.Join(dest, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := st.Mode().Perm(); got != want {
+			t.Errorf("%s: mode %o, want %o", name, got, want)
+		}
+	}
+}

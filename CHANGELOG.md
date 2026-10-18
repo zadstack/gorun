@@ -14,6 +14,7 @@ All notable changes to GoRun are recorded here. The format follows
 - Restores are staged in a hidden `.<name>.partial` sibling and renamed into place only after the
   database and archive checksums verify, so an interrupted restore never looks complete; a leftover
   partial directory is reported on the inspect page and blocks the next restore until it is removed.
+- Restored files are always `0600` and directories `0700`, whatever modes the archive records.
 
 ### Documentation
 

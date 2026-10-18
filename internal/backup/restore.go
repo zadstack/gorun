@@ -75,17 +75,18 @@ func Restore(manifestPath, destination string) (report *Inspection, resultErr er
 		return report, errors.New("backup: restored database checksum mismatch")
 	}
 	_, _, err = scanArchive(filepath.Join(dir, m.Archive.Name), func(name string, h *tar.Header, reader io.Reader) error {
+		// Permissions are clamped, never taken from the archive: the restored
+		// tree holds site data and possibly secret.key.
 		if h.Typeflag == tar.TypeDir {
-			return root.MkdirAll(name, 0700)
+			if err := root.MkdirAll(name, 0700); err != nil {
+				return err
+			}
+			return root.Chmod(name, 0700)
 		}
 		if err := root.MkdirAll(filepath.Dir(name), 0700); err != nil {
 			return err
 		}
-		mode := os.FileMode(h.Mode) & 0777
-		if name == "secret.key" || name == "gorun.toml" {
-			mode = 0600
-		}
-		f, err := root.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
+		f, err := root.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 		if err != nil {
 			return err
 		}
