@@ -5,6 +5,19 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `gorun backup-restore --input <stamp>.manifest.json --dest <new-empty-dir>` restores a local
+  backup pair into a new directory only (inspect preflight; never merges into a live data dir).
+- Operations → Backups → Inspect / restore: bilingual preflight and confined restore under
+  `<data>/restores/<stamp>/`, gated by recent password confirmation and `system.backup`.
+- Restores are staged in a hidden `.<name>.partial` sibling and renamed into place only after the
+  database and archive checksums verify, so an interrupted restore never looks complete; a leftover
+  partial directory is reported on the inspect page and blocks the next restore until it is removed.
+- Restored files are always `0600` and directories `0700`, whatever modes the archive records.
+- The inspect page explains each preflight error and warning in English and Arabic (the code stays
+  alongside for support).
+
 ### Documentation
 
 - `docs/GORUN-INSTALLATION.md` no longer describes an old MIT license or a "source-available" policy:

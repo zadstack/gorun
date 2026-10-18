@@ -1,0 +1,47 @@
+{{/* Data: backupInspectPage */}}
+{{define "title"}}{{t "admin.backups.inspect_title"}}{{end}}
+{{define "content"}}
+<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+  <div>
+    <h1 class="text-[22px] font-bold">{{t "admin.backups.inspect_title"}}</h1>
+    <p class="text-muted mt-1 font-mono text-xs" dir="ltr">{{.Stamp}}</p>
+  </div>
+  <a href="/admin/system/backups" class="text-blue underline">{{t "admin.backups.back_to_list"}}</a>
+</div>
+
+<section class="border border-line bg-panel p-4 mb-5 space-y-2" data-readiness="{{.Report.Readiness}}">
+  <h2 class="font-bold">{{t "admin.backups.readiness"}}</h2>
+  <p data-inspect-readiness="{{.Report.Readiness}}">{{t (print "admin.backups.readiness." .Report.Readiness)}}</p>
+  <p class="text-muted text-sm">{{t "admin.backups.inspect_help"}}</p>
+  {{if .Report.Errors}}
+  <ul class="text-sm text-red list-disc ps-5" data-inspect-errors>
+    {{range .Report.Errors}}<li data-code="{{.}}">{{t (print "admin.backups.code." .)}} <span class="font-mono text-xs" dir="ltr">({{.}})</span></li>{{end}}
+  </ul>
+  {{end}}
+  {{if .Report.Warnings}}
+  <ul class="text-sm text-muted list-disc ps-5" data-inspect-warnings>
+    {{range .Report.Warnings}}<li data-code="{{.}}">{{t (print "admin.backups.code." .)}} <span class="font-mono text-xs" dir="ltr">({{.}})</span></li>{{end}}
+  </ul>
+  {{end}}
+</section>
+
+<section class="border border-line bg-panel p-4 mb-5 space-y-3">
+  <h2 class="font-bold">{{t "admin.backups.restore_title"}}</h2>
+  <p class="text-muted text-sm">{{t "admin.backups.restore_confined_help"}}</p>
+  <p class="font-mono text-xs break-all" dir="ltr" data-restore-dest>{{.Dest}}</p>
+  {{if .Done}}
+  <p class="text-green" data-restore-done>{{t "admin.backups.restore_already"}}</p>
+  <p class="text-muted text-sm">{{t "admin.backups.restore_next"}}</p>
+  {{else if .Partial}}
+  <p class="text-red" data-restore-partial>{{t "admin.backups.restore_partial"}}</p>
+  <p class="font-mono text-xs break-all" dir="ltr">{{.Partial}}</p>
+  {{else if eq .Report.Readiness "blocked"}}
+  <p class="text-red">{{t "admin.backups.restore_blocked"}}</p>
+  {{else}}
+  <form method="post" action="/admin/system/backups/{{.Stamp}}/restore" data-confirm="{{t "admin.backups.restore_confirm"}}">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" class="h-9 px-3 rounded border border-red text-red bg-red-soft hover:border-red focus:outline-none focus:ring-[3px] focus:ring-red-soft" data-restore-submit>{{t "admin.backups.restore_action"}}</button>
+  </form>
+  {{end}}
+</section>
+{{end}}

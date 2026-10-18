@@ -59,6 +59,8 @@ func (h *handlers) routes() {
 	bk.Get("/system/backups", h.backupsList)
 	bk.Post("/system/backups", h.backupCreate)
 	bk.Post("/system/backups/remote", h.backupRemoteCreate)
+	bk.Get("/system/backups/{stamp}/inspect", h.backupInspect)
+	bk.Post("/system/backups/{stamp}/restore", h.backupRestore)
 	bk.With(auth.RequireRecentAuth).Get("/system/backups/{name}", h.backupDownload)
 
 	keys := r.With(auth.RequirePerm(PermAPIKeys))

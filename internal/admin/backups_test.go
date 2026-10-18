@@ -27,7 +27,7 @@ func TestAdminBackups(t *testing.T) {
 	if m == nil {
 		t.Fatalf("no backup listed:\n%s", page)
 	}
-	mustContain(t, page, `href="/admin/system/backups/`+m[1]+`.tar.gz"`, `data-local-state="paired_not_inspected"`, `data-remote-state="unverified"`, `href="/admin/system/backups/`+m[1]+`.manifest.json"`)
+	mustContain(t, page, `href="/admin/system/backups/`+m[1]+`.tar.gz"`, `data-local-state="paired_not_inspected"`, `data-remote-state="unverified"`, `href="/admin/system/backups/`+m[1]+`.manifest.json"`, `href="/admin/system/backups/`+m[1]+`/inspect"`)
 	resp, body := s.do("GET", "/admin/system/backups/"+m[1]+".db", nil)
 	if resp.StatusCode != http.StatusOK || !strings.HasPrefix(body, "SQLite format 3") ||
 		!strings.Contains(resp.Header.Get("Content-Disposition"), m[1]+".db") {

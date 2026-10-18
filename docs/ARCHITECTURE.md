@@ -169,6 +169,10 @@ Everything lives under the data directory (`GORUN_DATA`, default `./data`):
 - `backups/`: output of `gorun backup` (`<timestamp>.db` copied with `VACUUM INTO`, plus
   `<timestamp>.tar.gz` of `media/`, `overrides/`, `extensions/`, `form-uploads/`; local `secret.key` and `gorun.toml` only with
   `gorun backup --include-secrets`, never from the admin).
+- `restores/<timestamp>/`: confined output of the admin restore, staged in `.<timestamp>.partial`
+  and renamed into place when complete (files `0600`, directories `0700`). It never merges into the
+  live data directory; move it out before serving it with `--data`. The offline CLI
+  (`gorun backup-restore --dest`) should target a new directory outside the data directory instead.
 
 ### Migrations must be additive
 
