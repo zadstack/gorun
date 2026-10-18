@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/zadstack/gorun/internal/audit"
 	"github.com/zadstack/gorun/internal/config"
@@ -323,7 +324,9 @@ func assemble(deps *Deps) http.Handler {
 	proxies, _ := deps.Config.TrustedProxyNetworks()  // validated before boot
 	scriptSrc, _ := deps.Config.PublicScriptSources() // validated before boot
 	root.Use(httpx.RequestID, httpx.RealIPWithTrustedProxies(proxies), httpx.WarnUntrustedForwarding(deps.Log), httpx.Logger(deps.Log), httpx.Recover(deps.Log),
-		httpx.SecurityHeaders(scriptSrc...), httpx.Compress)
+		httpx.SecurityHeaders(scriptSrc...), httpx.Compress,
+		// HEAD is answered by the GET route (no body) wherever no HEAD route exists.
+		middleware.GetHead)
 	root.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { plain(w, http.StatusOK, "ok") })
 	root.Get("/readyz", func(w http.ResponseWriter, req *http.Request) {
 		if err := d.PingContext(req.Context()); err != nil {
