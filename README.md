@@ -12,12 +12,25 @@
 
 [الفريق](#للفريق) · [الوكلاء](#للوكلاء) · [اللوحات](#اللوحات-canvases) · [البدء السريع](#البدء-السريع) · [التوثيق](#التوثيق)
 
+لقطات الشاشة من نسخة محلية معزولة بمحتوى تجريبي خيالي (Nakhla Journal)، لا من بيانات عملاء ولا من مزود متصل.
+
 ### للفريق
 
 - **أدوار تناسب طريقة عمل المحررين.** أدوار جاهزة هي `admin` و`editor` و`author` و`contributor`، ولكل منها صلاحيات صريحة.
 - **مراجعة قبل النشر.** مسودات، وحالة «بانتظار المراجعة»، ونشر مجدول، وسجل نسخ يمكن الاستعادة منه، وسلة محذوفات.
 - **سجل يوثّق من فعل ماذا.** سجل تدقيق لا يُعدَّل بعد كتابته، يشمل المستخدمين والمفاتيح، ومنها كل استدعاء لأدوات MCP.
 - **محتوى منظّم.** مقالات وصفحات وأنواع وحقول مخصصة وتصنيفات وقوائم ووسائط في لوحة تحكم واحدة.
+
+<table>
+  <tr>
+    <td width="50%"><img src="assets/branding/screenshots/content-list-ar.png" alt="قائمة المقالات في لوحة تحكم GoRun بالعربية واتجاه من اليمين إلى اليسار، مع مقالات منشورة ومسودات بالعربية والإنجليزية" /></td>
+    <td width="50%"><img src="assets/branding/screenshots/editor-en.png" alt="محرر المقالات في GoRun بالإنجليزية مع النص والمقتطف والصورة البارزة ولوحة النشر" /></td>
+  </tr>
+  <tr>
+    <td><strong>المحتوى</strong><br />واجهة عربية أصيلة لمحتوى بلغتين.</td>
+    <td><strong>المحرر</strong><br />مسودات ونشر مجدول وصورة بارزة؛ سجل النسخ في الشريط الجانبي.</td>
+  </tr>
+</table>
 
 ### للوكلاء
 
@@ -40,6 +53,17 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 [MCP والصلاحيات](docs/MCP.md) · [واجهة REST](docs/API.md) · [نماذج الوكلاء](docs/AGENT-MODELS.md)
 
+<table>
+  <tr>
+    <td width="50%"><img src="assets/branding/screenshots/agent-keys-en.png" alt="صفحة مفاتيح API في GoRun بالإنجليزية: مفاتيح وكلاء ومفتاح REST، لكل منها نطاقات محددة مثل content.view وcanvas.run" /></td>
+    <td width="50%"><img src="assets/branding/screenshots/approvals-ar.png" alt="قائمة موافقات الوكلاء في GoRun بالعربية: طلبا نشر من وكيل التحرير بانتظار القرار، وقرار موافقة سابق" /></td>
+  </tr>
+  <tr>
+    <td><strong>مفاتيح الوكلاء</strong><br />نطاقات محددة لكل مفتاح، وREST منفصل عن MCP.</td>
+    <td><strong>الموافقات</strong><br />طلبات الوكيل الحساسة تنتظر قرارًا بشريًا.</td>
+  </tr>
+</table>
+
 ### اللوحات (Canvases)
 
 اللوحات (**لوحة التحكم ← اللوحات**) مساحة عمل تشغيلية، وليست أداة لتصميم الصفحات.
@@ -51,6 +75,8 @@ If a tool requests approval, report its request ID and wait for the decision.
 - **النتائج تصل ملاحظاتٍ جديدة.** تُضاف كل نتيجة ملاحظةً خاصة مع بيان مصدرها، ولا تستبدل بطاقاتك ولا تنشر أي محتوى.
 - **تكرار دوري بعد المراجعة.** الجدولة كل ساعة أو يوم أو أسبوع تبدأ معطّلة، وتحتاج تفعيلًا صريحًا، وتعيد التحقق من الصلاحيات في كل تشغيل.
 - **صلاحيات صريحة للوكلاء.** أنت تحدد العناصر التي يستطيع كل وكيل قراءتها أو الإضافة إليها أو التشغيل عليها في كل لوحة.
+
+<img src="assets/branding/screenshots/canvas-en.png" alt="لوحة في GoRun بالإنجليزية: مرجع لمقال وتعليمات متصلة بوكيل بحث مسمّى، وملاحظة المحرر، ونتيجة الوكيل مضافة ملاحظةً جديدة مع مصدرها" />
 
 [مساحة اللوحات](docs/CANVASES.md) · [عمليات اللوحات](docs/CANVAS-OPERATIONS-CONTRACT.md) · [استوديو المحتوى](docs/CONTENT_STUDIO.md)
 
@@ -68,16 +94,32 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 [منشئ المواقع](docs/SITE_BUILDER.md) · [القوالب](docs/THEMES.md) · [الترحيل](docs/MIGRATION.md) · [التجارة](docs/COMMERCE.md)
 
+<table>
+  <tr>
+    <td width="40%"><img src="assets/branding/screenshots/builder-ar.png" alt="منشئ الصفحات في GoRun بالعربية: محرر أقسام الواجهة الرئيسية بجانب معاينة مباشرة للصفحة" /></td>
+    <td width="40%"><img src="assets/branding/screenshots/theme-home-en.png" alt="الصفحة الرئيسية للقالب الافتراضي بالإنجليزية مع مقال بارز وصورته" /></td>
+    <td width="20%"><img src="assets/branding/screenshots/theme-post-ar-mobile.png" alt="مقال عربي في القالب الافتراضي على شاشة جوال" /></td>
+  </tr>
+  <tr>
+    <td><strong>منشئ الصفحات</strong><br />أقسام ومعاينة مباشرة ونشر صريح.</td>
+    <td><strong>القالب الافتراضي</strong><br />CSS مبني مسبقًا، بلا سكربتات خارجية.</td>
+    <td><strong>على الجوال</strong><br />RTL كامل.</td>
+  </tr>
+</table>
+
 ### البدء السريع
 
 **صورة Docker:** تُنشر الإصدارات صورةً متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.1.0` و`0.1` و`latest`:
 
 ```sh
-docker pull ghcr.io/zadstack/gorun:0.1.0
-docker run --rm --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.1.0 version
+docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
+  -e GORUN_BASE_URL=https://cms.example.com \
+  -e GORUN_SECRET_KEY="<openssl rand -base64 32>" \
+  -e GORUN_SETUP_TOKEN="<openssl rand -hex 24>" \
+  ghcr.io/zadstack/gorun:0.1.0
 ```
 
-تعمل الصورة في وضع الإنتاج وتحتاج `GORUN_BASE_URL` و`GORUN_SECRET_KEY` ومجلد بيانات دائمًا على `/data`؛ ملف Compose الجاهز وخطوات Coolify في [دليل Docker / Coolify](deploy/coolify.md).
+تعمل الصورة في وضع الإنتاج (`GORUN_ENV=prod`) وتحفظ بياناتها في `/data`. احتفظ بقيمة `GORUN_SECRET_KEY` ثابتة لأنها توقّع الجلسات وتشفّر الأسرار المحفوظة، وأدخل `GORUN_SETUP_TOKEN` في `/admin/setup` عند إنشاء المدير الأول ثم احذفه. ملف Compose الجاهز وخطوات Coolify في [دليل Docker / Coolify](deploy/coolify.md).
 
 **الملفات التنفيذية:** كل [إصدار على GitHub](https://github.com/zadstack/gorun/releases) يرفق أرشيفات لنظامي linux وdarwin بمعماريتي amd64 وarm64، وفيها البرنامج ومجلد `themes/` والوثائق، مع ملف `SHA256SUMS`:
 
@@ -106,13 +148,14 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 
 افتح **http://127.0.0.1:8080/admin/setup** لإنشاء المدير الأول، ثم استخدم **http://127.0.0.1:8080/admin**. شغّل البرنامج من جذر المستودع ليجد مجلد `themes/`.
 
-في الإنتاج، اضبط مجلد بيانات دائمًا، وHTTPS، وعنوان الموقع العام (`GORUN_BASE_URL`)، ومفتاح تشفير ثابتًا، و`setup_token` لحماية إنشاء المدير الأول، مع `GORUN_ENV=prod`، وشغّل عملية خادم واحدة لكل مجلد بيانات؛ يفرض النظام ذلك بقفل `gorun.lock` داخل مجلد البيانات، فترفض نسخة ثانية من `gorun serve` (أو `gorun mcp --jobs`) التشغيل برسالة واضحة. تُضبط الإعدادات في `gorun.toml` أو عبر متغيرات `GORUN_*`، ولا تحفظ كلمات المرور أو مفاتيح المزودين في المستودع. راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md) و[دليل الإنتاج](docs/PRODUCTION.md) و[دليل Docker / Coolify](deploy/coolify.md).
+في الإنتاج، اضبط مجلد بيانات دائمًا، وHTTPS، وعنوان الموقع العام (`GORUN_BASE_URL`)، ومفتاح تشفير ثابتًا، و`setup_token` لحماية إنشاء المدير الأول، مع `GORUN_ENV=prod`، وشغّل عملية خادم واحدة لكل مجلد بيانات؛ يفرض النظام ذلك بقفل `gorun.lock` داخل مجلد البيانات، فترفض نسخة ثانية من `gorun serve` (أو `gorun mcp --jobs`) التشغيل برسالة واضحة. خلف وكيل عكسي، أضف عنوانه إلى `GORUN_TRUSTED_PROXIES` (لا يثق النظام بترويسات التمرير افتراضيًا). تحمل استجابات HTTPS ترويسة HSTS لمدة سنة، وخيارا النطاقات الفرعية والـpreload اختياريان. ينسخ `gorun backup` قاعدة البيانات والوسائط إلى `<data>/backups/`، والاستعادة يدوية. تُضبط الإعدادات في `gorun.toml` أو عبر متغيرات `GORUN_*`، ولا تحفظ كلمات المرور أو مفاتيح المزودين في المستودع. راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md) و[دليل الإنتاج](docs/PRODUCTION.md) و[دليل Docker / Coolify](deploy/coolify.md).
 
 ### تحت الغطاء
 
 - **ملف تنفيذي واحد بلغة Go.** لوحة التحكم مضمّنة فيه، وقوالب المواقع تأتي معه في مجلد `themes/`.
 - **SQLite.** لا حاجة إلى خادم قاعدة بيانات منفصل.
 - **بلا Node.js أو PHP وقت التشغيل.** يُستخدم Node.js فقط لاختبارات المتصفح الاختيارية في `e2e/`.
+- **CSS مبني مسبقًا.** يأتي القالب الافتراضي بملف Tailwind مبني ومحفوظ في المستودع (نحو 12 KB، و3 KB مضغوطًا) بدل مترجم يعمل في المتصفح؛ يعيد `make css` بناءه بأداة Tailwind المستقلة دون npm.
 - **قابل للبناء عليه.** `cmd/gorun` غلاف رفيع حول الحزمة `pkg/cli`، ويستطيع برنامجك الخاص إضافة وحداته وأوامره عبر `cli.Option`. راجع [البناء فوق النواة](docs/ARCHITECTURE.md#building-on-the-core--البناء-فوق-النواة).
 
 ```sh
@@ -131,7 +174,7 @@ make build && make test && make lint
 
 ### حالة المشروع
 
-GoRun في الإصدار v0.1.0 وما زال قيد التطوير النشط؛ استخدم آخر [إصدار](https://github.com/zadstack/gorun/releases) أو ابنِه من الفرع `main`. الحدود الحالية:
+GoRun في الإصدار [v0.1.0](https://github.com/zadstack/gorun/releases/tag/v0.1.0) وما زال قيد التطوير النشط؛ استخدم آخر [إصدار](https://github.com/zadstack/gorun/releases) أو ابنِه من الفرع `main`. الحدود الحالية:
 
 - عملية خادم واحدة لكل مجلد بيانات SQLite (يفرضها القفل `<data>/gorun.lock`)، ولا يوجد تعدد مواقع بقاعدة بيانات مشتركة.
 - اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.
@@ -141,7 +184,7 @@ GoRun في الإصدار v0.1.0 وما زال قيد التطوير النشط�
 
 ### المساهمة
 
-نرحّب ببلاغات الأخطاء ومشكلات التوثيق وأفكار الميزات عبر [Issues](https://github.com/zadstack/gorun/issues)، وبطلبات الدمج. وقّع كل commit بـ`git commit -s` وفق [DCO](https://developercertificate.org/) (دون CLA)؛ التفاصيل في [CONTRIBUTING.md](CONTRIBUTING.md). أبلغ عن الثغرات الأمنية بشكل خاص كما في [SECURITY.md](SECURITY.md).
+نرحّب ببلاغات الأخطاء ومشكلات التوثيق وأفكار الميزات عبر [Issues](https://github.com/zadstack/gorun/issues)، وبطلبات الدمج. وقّع كل commit بـ`git commit -s` وفق [DCO](https://developercertificate.org/) (دون CLA)، ويتحقق CI من التوقيع؛ التفاصيل في [CONTRIBUTING.md](CONTRIBUTING.md). أبلغ عن الثغرات الأمنية بشكل خاص كما في [SECURITY.md](SECURITY.md).
 
 ### الترخيص
 
@@ -157,18 +200,7 @@ GoRun brings team workflows, agents with scoped access over REST and MCP, and ca
 
 [Team](#for-your-team) · [Agents](#for-your-agents) · [Canvases](#canvases) · [Quick start](#quick-start) · [Docs](#documentation)
 
-<table>
-  <tr>
-    <td width="50%"><img src="assets/branding/screenshots/content-local-ar.png" alt="GoRun content administration in Arabic with right-to-left layout" /></td>
-    <td width="50%"><img src="assets/branding/screenshots/canvas-local-en.png" alt="GoRun canvas workspace in English" /></td>
-  </tr>
-  <tr>
-    <td><strong>Content administration</strong><br />Structured content and a native Arabic interface.</td>
-    <td><strong>Canvases</strong><br />References, notes and reviewed agent runs.</td>
-  </tr>
-</table>
-
-Screenshots come from isolated local environments, not customer data or a connected provider.
+Screenshots come from an isolated local instance with fictional demo content (Nakhla Journal), not customer data or a connected provider.
 
 ## For your team
 
@@ -176,6 +208,17 @@ Screenshots come from isolated local environments, not customer data or a connec
 - **Review before it goes live.** Drafts, pending review, scheduled publishing, revisions with restore, and trash.
 - **A record of who did what.** An append-only audit log covers people and keys, including every MCP tool call.
 - **Structured content.** Posts, pages, custom types and fields, taxonomies, menus and media in one admin.
+
+<table>
+  <tr>
+    <td width="50%"><img src="assets/branding/screenshots/content-list-ar.png" alt="The GoRun posts list in Arabic with a right-to-left layout, showing published posts and drafts in Arabic and English" /></td>
+    <td width="50%"><img src="assets/branding/screenshots/editor-en.png" alt="The GoRun post editor in English with body, excerpt, featured image and the publish panel" /></td>
+  </tr>
+  <tr>
+    <td><strong>Content</strong><br />A native Arabic interface for bilingual content.</td>
+    <td><strong>Editor</strong><br />Drafts, scheduling and featured images; revisions sit in the sidebar.</td>
+  </tr>
+</table>
 
 ## For your agents
 
@@ -196,6 +239,17 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 [MCP and permissions](docs/MCP.md) · [REST API](docs/API.md) · [Agent models](docs/AGENT-MODELS.md)
 
+<table>
+  <tr>
+    <td width="50%"><img src="assets/branding/screenshots/agent-keys-en.png" alt="The GoRun API keys page in English: agent keys and a REST key, each with its own scopes such as content.view and canvas.run" /></td>
+    <td width="50%"><img src="assets/branding/screenshots/approvals-ar.png" alt="The GoRun agent approvals queue in Arabic: two publish requests from the editorial agent awaiting a decision, and one earlier approval" /></td>
+  </tr>
+  <tr>
+    <td><strong>Agent keys</strong><br />Scopes per key; REST kept apart from MCP.</td>
+    <td><strong>Approvals</strong><br />Sensitive agent calls wait for a person.</td>
+  </tr>
+</table>
+
 ## Canvases
 
 Canvases (**Dashboard → Canvases**) are an operational workspace, not a page designer.
@@ -207,6 +261,8 @@ Canvases (**Dashboard → Canvases**) are an operational workspace, not a page d
 - **Results arrive as new notes.** Each result is appended as a private note with provenance; it never overwrites your cards or publishes content.
 - **Recurring, but reviewed.** Hourly, daily or weekly schedules start disabled, need explicit activation, and recheck permissions on every run.
 - **Explicit agent grants.** You decide which nodes an agent can read, append to or run on each canvas.
+
+<img src="assets/branding/screenshots/canvas-en.png" alt="A GoRun canvas in English: an article reference and a brief connected to a named research agent, an editor note, and the agent's result appended as a new note with provenance" />
 
 [Canvas workspace](docs/CANVASES.md) · [Canvas operations](docs/CANVAS-OPERATIONS-CONTRACT.md) · [Content studio](docs/CONTENT_STUDIO.md)
 
@@ -224,16 +280,32 @@ Provider-dependent features need valid credentials. Saving a connection or loadi
 
 [Site builder](docs/SITE_BUILDER.md) · [Themes](docs/THEMES.md) · [Migration](docs/MIGRATION.md) · [Commerce](docs/COMMERCE.md)
 
+<table>
+  <tr>
+    <td width="40%"><img src="assets/branding/screenshots/builder-ar.png" alt="The GoRun page builder in Arabic: the hero section editor beside a live preview of the page" /></td>
+    <td width="40%"><img src="assets/branding/screenshots/theme-home-en.png" alt="The default theme home page in English with a featured post and its cover image" /></td>
+    <td width="20%"><img src="assets/branding/screenshots/theme-post-ar-mobile.png" alt="An Arabic post in the default theme on a phone screen" /></td>
+  </tr>
+  <tr>
+    <td><strong>Page builder</strong><br />Sections, live preview, explicit publishing.</td>
+    <td><strong>Default theme</strong><br />Precompiled CSS, no third-party scripts.</td>
+    <td><strong>Mobile</strong><br />Full RTL.</td>
+  </tr>
+</table>
+
 ## Quick start
 
 **Container image:** releases publish a multi-arch image (linux/amd64, linux/arm64) to GHCR, tagged `0.1.0`, `0.1` and `latest`:
 
 ```sh
-docker pull ghcr.io/zadstack/gorun:0.1.0
-docker run --rm --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.1.0 version
+docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
+  -e GORUN_BASE_URL=https://cms.example.com \
+  -e GORUN_SECRET_KEY="<openssl rand -base64 32>" \
+  -e GORUN_SETUP_TOKEN="<openssl rand -hex 24>" \
+  ghcr.io/zadstack/gorun:0.1.0
 ```
 
-The image runs in production mode and needs `GORUN_BASE_URL`, `GORUN_SECRET_KEY` and a persistent `/data` volume; the Compose file and Coolify steps are in the [Docker / Coolify guide](deploy/coolify.md).
+The image runs in production mode (`GORUN_ENV=prod`) and keeps its data in `/data`. Keep `GORUN_SECRET_KEY` stable: it signs sessions and encrypts stored secrets. Enter `GORUN_SETUP_TOKEN` at `/admin/setup` to create the first administrator, then remove it. The Compose file and Coolify steps are in the [Docker / Coolify guide](deploy/coolify.md).
 
 **Binaries:** every [GitHub release](https://github.com/zadstack/gorun/releases) attaches linux and darwin archives for amd64 and arm64, containing the binary, `themes/` and the docs, plus a `SHA256SUMS` file:
 
@@ -262,13 +334,14 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 
 Open **http://127.0.0.1:8080/admin/setup** to create the first administrator, then use **http://127.0.0.1:8080/admin**. Run from the repository root so the server finds `themes/`.
 
-For production, set a persistent data directory, HTTPS, the public base URL, a persistent encryption key and a setup token, and run one server process per data directory; GoRun enforces this with an OS lock on `<data>/gorun.lock`, and a second `gorun serve` (or `gorun mcp --jobs`) on the same directory refuses to start. See the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md) and [Docker / Coolify guide](deploy/coolify.md).
+For production, set a persistent data directory, HTTPS, the public base URL, a persistent encryption key and a setup token, and run one server process per data directory; GoRun enforces this with an OS lock on `<data>/gorun.lock`, and a second `gorun serve` (or `gorun mcp --jobs`) on the same directory refuses to start. Behind a reverse proxy, list it in `GORUN_TRUSTED_PROXIES` (no forwarded headers are trusted by default). HTTPS responses carry a one-year HSTS header; subdomains and preload are opt-in. `gorun backup` snapshots the database and media into `<data>/backups/`; restore is manual. See the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md) and [Docker / Coolify guide](deploy/coolify.md).
 
 ## Under the hood
 
 - **One Go binary.** The admin is embedded; website themes ship alongside in `themes/`.
 - **SQLite.** No separate database service to run.
 - **No Node.js or PHP at runtime.** Node.js is only used by the optional browser tests in `e2e/`.
+- **Precompiled theme CSS.** The default theme ships a committed Tailwind stylesheet (about 12 KB, 3 KB gzipped) instead of an in-browser compiler; `make css` rebuilds it with the standalone Tailwind CLI, no npm required.
 - **Built to extend.** `cmd/gorun` is a thin wrapper around `pkg/cli`; your own binary can add modules and commands with `cli.Option`s. See [Building on the core](docs/ARCHITECTURE.md#building-on-the-core--البناء-فوق-النواة).
 
 ```sh
@@ -287,7 +360,7 @@ make build && make test && make lint
 
 ## Project status
 
-GoRun is an actively developed v0.1.0; use the latest [release](https://github.com/zadstack/gorun/releases) or build from `main`. Current boundaries:
+GoRun is an actively developed [v0.1.0](https://github.com/zadstack/gorun/releases/tag/v0.1.0); use the latest [release](https://github.com/zadstack/gorun/releases) or build from `main`. Current boundaries:
 
 - One server process per SQLite data directory (enforced by `<data>/gorun.lock`); no shared-database multisite.
 - Canvases are private to their owner, with explicit agent grants; they are not a shared multiplayer workspace.
@@ -297,7 +370,7 @@ GoRun is an actively developed v0.1.0; use the latest [release](https://github.c
 
 ## Contributing
 
-Bug reports, documentation problems and feature ideas are welcome as [issues](https://github.com/zadstack/gorun/issues), and pull requests are welcome too. Sign off every commit with `git commit -s` under the [Developer Certificate of Origin](https://developercertificate.org/) (no CLA); see [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+Bug reports, documentation problems and feature ideas are welcome as [issues](https://github.com/zadstack/gorun/issues), and pull requests are welcome too. Sign off every commit with `git commit -s` under the [Developer Certificate of Origin](https://developercertificate.org/) (no CLA); CI checks the sign-off. See [CONTRIBUTING.md](CONTRIBUTING.md). Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
