@@ -40,5 +40,11 @@
   "search_cta_body": "ابحث في كل ما نُشر على الموقع.",
   "open_menu": "فتح القائمة",
   "site_links": "روابط الموقع",
-  "contact_heading": "تواصل"
+  "contact_heading": "تواصل",
+  "hero_kicker": "الرئيسية",
+  "latest_note": "قصص منشورة من هذا الموقع.",
+  "closing_fallback": "المزيد من هذا الموقع.",
+  "fact_posts": "مقالات",
+  "fact_pages": "صفحات",
+  "fact_products": "منتجات"
 }

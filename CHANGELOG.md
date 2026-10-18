@@ -7,6 +7,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Themes
 
+- Page anatomy (PR2): shared `anatomy.css` via `parts/shell.html`, reusable hero / section-head /
+  list-row / closing-band components, default header with filled CTA + 44px mobile `<details>`,
+  facts `<dl>` from real content/product counts, hairline cards with CSS cover fallback, numbered
+  archive rows, footer `aria-labelledby` columns, and reading rhythm (~18px / 1.9 / 760px) on
+  inner templates. Catalog themes keep personality CSS; versions bump to 1.2.0.
 - Shared base design tokens (`themes/_base/tokens.css`, served as `default/assets/tokens.css`)
   load first in every catalog theme (`default`, `business`, `magazine`, `portfolio`, `docs`).
   Themes override personality tokens; default migrates off hard-coded `:root` hex/spacing.

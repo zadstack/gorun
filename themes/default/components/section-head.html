@@ -1,0 +1,8 @@
+{{/* Usage: {{component "section-head" (dict "Path" "…" "Title" "…" "Note" "…" "ActionURL" "…" "ActionLabel" "…" "TitleID" "…")}} */}}
+{{$id := .TitleID}}{{if not $id}}{{$id = "gr-section-title"}}{{end}}
+<header class="gr-section-head">
+  {{with .Path}}<p class="gr-section-path"><span dir="ltr">{{.}}</span></p>{{end}}
+  <h2 id="{{$id}}">{{.Title}}</h2>
+  {{with .Note}}<p class="gr-section-note">{{.}}</p>{{end}}
+  {{if and .ActionURL .ActionLabel}}<a class="gr-section-action" href="{{url .ActionURL}}">{{.ActionLabel}} <span aria-hidden="true">→</span></a>{{end}}
+</header>

@@ -1,0 +1,14 @@
+{{/* Usage: {{component "list-row" (dict "Item" $item "Index" $i)}} — numbered row with 44px go link. */}}
+{{$item := .Item}}
+{{$n := add .Index 1}}
+<li class="gr-list-row">
+  <span class="gr-list-num" aria-hidden="true"><bdi>{{printf "%02d" $n}}</bdi></span>
+  <div class="gr-list-body">
+    <a class="title" href="{{url $item}}">{{$item.Title}}</a>
+    <div class="gr-list-meta">
+      {{with $item.PublishedAt}}<time datetime="{{.}}"><bdi>{{date .}}</bdi></time>{{end}}
+      {{with terms $item "category"}}{{range .}}<a class="gr-chip" href="{{url .}}">{{.Name}}</a>{{end}}{{end}}
+    </div>
+  </div>
+  <a class="gr-list-go" href="{{url $item}}" aria-label="{{t "read_more"}}: {{$item.Title}}"><span class="gr-go-arrow" aria-hidden="true">→</span></a>
+</li>

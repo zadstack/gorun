@@ -1,5 +1,8 @@
 {{/* A content type archive (/blog/). Also the fallback for taxonomy and search. */}}
 {{part "header" .}}
-<h1 class="text-[22px] font-bold mb-6">{{with .Extra.title}}{{.}}{{else}}{{t "latest_posts"}}{{end}}</h1>
-{{component "list" .}}
+{{$title := t "latest_posts"}}{{with .Extra.title}}{{$title = .}}{{end}}
+<section class="gr-section" aria-labelledby="archive-title">
+  {{component "section-head" (dict "Path" "/archive" "Title" $title "TitleID" "archive-title")}}
+  {{component "list" .}}
+</section>
 {{part "footer" .}}

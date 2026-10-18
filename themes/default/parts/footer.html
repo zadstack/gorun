@@ -1,10 +1,11 @@
-{{/* Closes the document opened by parts/header.html. Child themes that keep
-     this footer (docs, magazine) keep its compact form; default gets columns. */}}
+{{/* Closes the document opened by parts/header.html. */}}
 </main>
 {{$shellFooter := setting (printf "theme.%s.footer_style" .Theme.Slug)}}
 {{if not (or (eq $shellFooter "signature") (eq $shellFooter "columns") (eq $shellFooter "minimal"))}}{{$shellFooter = "native"}}{{end}}
 {{$footerMenu := menu "footer"}}{{if not $footerMenu}}{{$footerMenu = menu "primary"}}{{end}}
 {{if eq .Theme.Slug "default"}}
+{{/* Closing band is on home via default-home; other pages get a compact band. */}}
+{{if ne .Kind "home"}}{{part "closing-band" .}}{{end}}
 <footer data-shell-footer="{{$shellFooter}}" class="default-site-footer dt-footer">
   <div class="gp-site-width dt-footer-main">
     <div class="dt-footer-about">
@@ -12,24 +13,27 @@
       {{with .Site.Tagline}}<p>{{.}}</p>{{end}}
     </div>
     {{with $footerMenu}}
-    <nav aria-label="{{t "footer_menu"}}" class="dt-footer-nav">
+    <nav aria-labelledby="dt-footer-nav-label" class="dt-footer-nav gr-footer-nav">
+      <h2 id="dt-footer-nav-label" class="dt-footer-nav-label">{{t "site_links"}}</h2>
       <ul>
         {{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener noreferrer"{{end}}>{{.Label}}</a></li>{{end}}
       </ul>
     </nav>
     {{end}}
   </div>
-  <div class="gp-site-width dt-footer-base">
+  <div class="gp-site-width dt-footer-base gr-footer-base">
     <p>© {{.Site.Title}}</p>
     <p>{{t "powered_by"}}</p>
   </div>
 </footer>
 {{else}}
+{{if ne .Kind "home"}}{{part "closing-band" .}}{{end}}
 <footer data-shell-footer="{{$shellFooter}}" class="default-site-footer border-t border-line bg-panel">
   <div class="gp-site-width mx-auto max-w-5xl px-4 py-6 flex flex-wrap items-center justify-between gap-3 text-muted">
     <p>{{.Site.Title}}{{with .Site.Tagline}} · {{.}}{{end}}</p>
     {{with $footerMenu}}
-    <nav aria-label="{{t "footer_menu"}}">
+    <nav aria-labelledby="gr-footer-nav-label" class="gr-footer-nav">
+      <h2 id="gr-footer-nav-label" class="sr-only">{{t "site_links"}}</h2>
       <ul class="flex flex-wrap gap-3">
         {{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener noreferrer"{{end}} class="hover:text-ink">{{.Label}}</a></li>{{end}}
       </ul>

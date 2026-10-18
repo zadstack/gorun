@@ -6,6 +6,9 @@
 {{part "shell" .}}
 <link rel="stylesheet" href="{{asset "default-layout.css"}}">
 {{$path := ""}}{{with .Request}}{{$path = .URL.Path}}{{end}}
+{{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
+{{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
+{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "contact_heading"}}{{$ctaURL = "/contact"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="default-site-header dt-header">
   <div class="gp-site-width dt-bar">
     <a href="{{url "/"}}" class="default-site-brand dt-brand">{{with media (setting "site.logo")}}{{img . "thumbnail" "dt-logo"}}{{else}}<span class="dt-mark" aria-hidden="true">{{printf "%.1s" $.Site.Title}}</span>{{end}}<span>{{.Site.Title}}</span></a>
@@ -17,7 +20,7 @@
     </nav>
     {{end}}
     <div class="dt-tools">
-      <a class="dt-icon-button" href="{{url "/search"}}" aria-label="{{t "search"}}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></a>
+      <a class="dt-cta gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>
       {{range .Alternates}}{{if ne .Locale locale}}<a class="dt-lang" href="{{.URL}}" hreflang="{{.Locale}}" lang="{{.Locale}}">{{.Label}}</a>{{end}}{{end}}
       {{with menu "primary"}}
       <details class="gr-default-mobile dt-mobile-menu">
