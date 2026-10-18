@@ -4,7 +4,7 @@
 {{part "shell" .}}
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
-{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "contact_heading"}}{{$ctaURL = "/contact"}}{{end}}
+{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="sb-header"><div class="sb-header-inner">
 <a class="sb-brand" href="{{url "/"}}">{{with media (setting "site.logo")}}{{img . "thumbnail" "sb-logo"}}{{else}}<span class="sb-mark" aria-hidden="true">+</span>{{end}}<span>{{.Site.Title}}</span></a>
 {{with menu "primary"}}<nav class="sb-desktop-nav" aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}

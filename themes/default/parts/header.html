@@ -8,7 +8,7 @@
 {{$path := ""}}{{with .Request}}{{$path = .URL.Path}}{{end}}
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
-{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "contact_heading"}}{{$ctaURL = "/contact"}}{{end}}
+{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="default-site-header dt-header">
   <div class="gp-site-width dt-bar">
     <a href="{{url "/"}}" class="default-site-brand dt-brand">{{with media (setting "site.logo")}}{{img . "thumbnail" "dt-logo"}}{{else}}<span class="dt-mark" aria-hidden="true">{{printf "%.1s" $.Site.Title}}</span>{{end}}<span>{{.Site.Title}}</span></a>

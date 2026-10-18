@@ -101,8 +101,8 @@
         "en": "Header button label"
       },
       "help": {
-        "ar": "مثل: تواصل معنا. يظهر زر مملوء عند تعبئة النص والرابط؛ وإلا يُستخدم رابط التواصل.",
-        "en": "For example: Contact us. A filled button shows when both label and link are set; otherwise Contact is used."
+        "ar": "مثل: تواصل معنا. يظهر زر مملوء عند تعبئة النص والرابط؛ وإلا يُستخدم البحث.",
+        "en": "For example: Contact us. A filled button shows when both label and link are set; otherwise Search is used."
       }
     },
     {

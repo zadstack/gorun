@@ -4,7 +4,7 @@
 {{part "shell" .}}
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
-{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "contact_heading"}}{{$ctaURL = "/contact"}}{{end}}
+{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="studio-header">
  <div class="studio-shell studio-header-inner">
   <a href="{{url "/"}}" class="studio-brand">{{with media (setting "site.logo")}}{{img . "thumbnail" "studio-logo"}}{{else}}<span class="studio-monogram" aria-hidden="true">✳</span>{{end}}<span>{{.Site.Title}}</span></a>

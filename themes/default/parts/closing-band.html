@@ -1,7 +1,7 @@
 {{/* Closing band before the footer. Brand + one CTA; copy from site tagline when present. */}}
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
-{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "contact_heading"}}{{$ctaURL = "/contact"}}{{end}}
+{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <section class="gr-closing" aria-labelledby="gr-closing-title">
   <div class="gr-closing-copy">
     <h2 id="gr-closing-title">{{.Site.Title}}</h2>

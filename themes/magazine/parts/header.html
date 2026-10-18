@@ -4,7 +4,7 @@
 {{part "shell" .}}
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
-{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "contact_heading"}}{{$ctaURL = "/contact"}}{{end}}
+{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="ed-header">
   <div class="ed-topline gp-site-width"><span>{{t "ed.independent"}}</span><span>{{t "ed.reading"}}</span></div>
   <div class="ed-masthead gp-site-width"><a class="ed-wordmark" href="{{url "/"}}">{{with media (setting "site.logo")}}{{img . "thumbnail" "ed-logo"}}{{end}}<span>{{.Site.Title}}</span></a>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</div>
