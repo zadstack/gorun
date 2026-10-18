@@ -16,6 +16,18 @@
 
 للتشغيل من حزمة جاهزة: ملف gorun المطابق لنظامك ومعماريتك، ومجلد themes المرفق، ومجلد بيانات قابل للكتابة. لا يحتاج التشغيل Go أو PHP أو Node/npm أو خادم قاعدة بيانات منفصل؛ يستخدم SQLite. هذا لا يعني أن الملف التنفيذي وحده يشمل قوالب الموقع.
 
+## التثبيت من إصدار منشور
+
+بدءًا من v0.1.0 تُنشر الإصدارات على [صفحة الإصدارات في GitHub](https://github.com/zadstack/gorun/releases):
+
+- **أرشيفات تنفيذية** لـ linux وdarwin بمعماريتي amd64 وarm64 باسم `gorun-<الإصدار>-<النظام>-<المعمارية>.tar.gz`، وفيها `gorun` ومجلد `themes/` والوثائق، مع ملف `SHA256SUMS-<الإصدار>.txt`. تحقق من البصمة قبل فك الأرشيف، ثم شغّل `./gorun serve` من داخل مجلده.
+- **صورة حاوية** متعددة المعماريات `ghcr.io/zadstack/gorun` بالوسوم `0.1.0` و`0.1` و`latest`. تعمل بوضع الإنتاج (`GORUN_ENV=prod`) وتحتاج `GORUN_BASE_URL` و`GORUN_SECRET_KEY` وvolume على `/data`.
+
+```sh
+docker pull ghcr.io/zadstack/gorun:0.1.0
+docker run --rm --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.1.0 version
+```
+
 ## بناء المصدر
 
 نفّذ من جذر نسخة المصدر التي تحتوي go.mod و cmd/gorun و themes:

@@ -12,6 +12,11 @@ GoRun is one container with one persistent volume. Coolify deploys it from
 3. Turn on **Include Source Commit in Build** so the image reports the commit
    (`SOURCE_COMMIT`) instead of `dev`, or set a `VERSION` build variable yourself.
 
+To run a released image instead of building, use **New Resource → Docker Image** with
+`ghcr.io/zadstack/gorun:0.1` (or a full version such as `0.1.0`; `latest` follows
+every release), port `8080`, and the same environment variables and `/data` volume
+as below. Images are multi-arch (linux/amd64, linux/arm64).
+
 ## 2. Environment variables
 
 | Variable | Required | Notes |
