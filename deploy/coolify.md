@@ -130,8 +130,12 @@ and that the startup log has no "untrusted peer" warning.
 ## 5. Health
 
 The container healthcheck runs `/app/gorun healthcheck`, which requests
-`GET /healthz` on the local listener. Point Coolify's health check at
-`/healthz`, port `8080`.
+`GET /healthz` on the **local** listener inside the container. That is a
+liveness probe only: it does **not** prove TLS, Traefik routing, or public
+reachability.
+
+Point Coolify's health check at `/healthz`, port `8080`. After the domain is
+live, also probe **from outside** the container (see [§9](#9-https-acceptance-checklist)).
 
 ## 6. First run
 
@@ -192,3 +196,112 @@ and [TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md).
 Keep the original external `GORUN_SECRET_KEY` and other environment credentials
 separately from backup archives. For complete file/database consistency stop
 writes before backup when you need one coherent snapshot.
+
+## 9. HTTPS acceptance checklist
+
+One recipe for Coolify (Traefik) and generic Docker / `ghcr.io/zadstack/gorun`.
+Run it after the domain is attached and `GORUN_BASE_URL` is the public
+`https://…` URL (no trailing slash). Replace `https://cms.example.com` and
+`<container>` with your values.
+
+### A. Trusted proxies CIDR
+
+```sh
+# Coolify default network name is "coolify" — confirm on your host:
+docker network inspect coolify --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
+docker inspect coolify-proxy --format '{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}'
+```
+
+Set the narrowest match in Coolify env (or compose / `docker run -e`):
+
+```
+GORUN_TRUSTED_PROXIES=10.0.1.0/24
+```
+
+Prefer the proxy container IP when it is stable; otherwise the shared Docker
+network CIDR. Never `0.0.0.0/0` / `::/0` (rejected at startup). Redeploy
+stop-then-start after changing this value.
+
+**Pass:** container logs have **no** recurring
+`forwarding headers from an untrusted peer` warning after you load the site
+over HTTPS. Sign in once, open **AI Agents → Audit**, and confirm the recorded
+IP is your **public** address (not Traefik's `10.x` / `172.x`).
+
+### B. Cookie `Secure`
+
+With `GORUN_BASE_URL=https://…`, session/CSRF cookies get the `Secure` flag
+even if the proxy is not yet trusted. HSTS and real client IPs still need
+§A.
+
+```sh
+# Through the public HTTPS hostname (or Traefik → container with X-Forwarded-Proto):
+curl -sSI https://cms.example.com/admin/login | tr -d '\r' | grep -i '^set-cookie:'
+```
+
+**Pass:** any `Set-Cookie` line includes `Secure` (and usually `HttpOnly`,
+`SameSite=Lax`). Example: `gp_csrf=…; Path=/; HttpOnly; Secure; SameSite=Lax`.
+
+### C. HSTS options
+
+Default on every **request that GoRun treats as HTTPS** (TLS on the socket, or
+`X-Forwarded-Proto: https` from a peer in `GORUN_TRUSTED_PROXIES`):
+
+```
+Strict-Transport-Security: max-age=31536000
+```
+
+```sh
+curl -sSI https://cms.example.com/healthz | tr -d '\r' | grep -i '^strict-transport-security:'
+```
+
+**Pass:** header is present with `max-age=31536000`.
+
+Optional (leave unset until you mean them):
+
+| Variable | When |
+| --- | --- |
+| `GORUN_HSTS_INCLUDE_SUBDOMAINS=true` | **Every** subdomain of this host already serves HTTPS |
+| `GORUN_HSTS_PRELOAD=true` | Only with the subdomain flag, and only if you will submit the host to the browser preload list (hard to undo) |
+
+If §A is wrong, this header is **missing** even when browsers use HTTPS at the
+edge — that is the usual Coolify misconfig (empty `GORUN_TRUSTED_PROXIES`).
+
+### D. Healthcheck from outside the container
+
+Inside (always localhost; matches the image `HEALTHCHECK` / compose):
+
+```sh
+docker exec <container> /app/gorun healthcheck
+# equivalent: GET http://127.0.0.1:8080/healthz from inside the container
+```
+
+Outside (TLS + Traefik / published port — this is the acceptance gate):
+
+```sh
+curl -fsS -o /dev/null -w '%{http_code}\n' https://cms.example.com/healthz
+# expect: 200
+curl -fsS -o /dev/null -w '%{http_code}\n' https://cms.example.com/readyz
+# expect: 200 when the DB is up
+```
+
+**Pass:** both return `200` from a host that is **not** the container network
+namespace (your laptop, another VPS, or Coolify's external check URL). Green
+Docker health alone is not enough.
+
+### E. Quick matrix
+
+| Check | Command / UI | Expect |
+| --- | --- | --- |
+| Trusted CIDR set | Coolify env / compose | Proxy IP or shared Docker network only |
+| No untrusted-peer spam | Container logs after HTTPS hit | Warning absent (or only once while misconfigured) |
+| Client IP | **AI Agents → Audit** after login | Your public IP |
+| Cookie Secure | `curl -sSI https://…/admin/login` | `Set-Cookie: … Secure` |
+| HSTS default | `curl -sSI https://…/healthz` | `Strict-Transport-Security: max-age=31536000` |
+| Outside health | `curl -fsS https://…/healthz` | HTTP 200 |
+| Outside ready | `curl -fsS https://…/readyz` | HTTP 200 |
+
+Same env vars apply to plain `docker run` / compose with nginx, Caddy, or
+Traefik in front of `ghcr.io/zadstack/gorun:0.1` — only the CIDR discovery
+commands change (inspect the network your reverse proxy shares with GoRun).
+Troubleshooting: [TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md#https-proxy-hsts).
+Production overview: [PRODUCTION.md](../docs/PRODUCTION.md).

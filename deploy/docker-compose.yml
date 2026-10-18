@@ -28,6 +28,8 @@ services:
       #   GORUN_TRUSTED_PROXIES=10.0.1.0/24      (Coolify's default "coolify" network; verify with
       #                                           docker network inspect coolify)
       #   GORUN_TRUSTED_PROXIES=172.18.0.5       (one Traefik container)
+      # After deploy, run the HTTPS acceptance checklist in deploy/coolify.md §9
+      # (CIDR, cookie Secure, HSTS, health from outside the container).
       GORUN_TRUSTED_PROXIES: ${GORUN_TRUSTED_PROXIES:-}
       # 1 only for home-lab setups that fetch from private networks; leave unset in production.
       GORUN_ALLOW_PRIVATE_NET: ${GORUN_ALLOW_PRIVATE_NET:-}

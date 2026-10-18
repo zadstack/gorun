@@ -16,12 +16,17 @@ Short fixes for common self-host failures. For full procedures see [installation
 
 ## HTTPS, proxy, HSTS
 
+Operator acceptance recipe (CIDR, cookie Secure, HSTS, outside health):
+[deploy/coolify.md §9](../deploy/coolify.md#9-https-acceptance-checklist).
+
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
-| Every login attempt hits the shared IP limit; audit shows `10.x` / `172.x` | Empty `GORUN_TRUSTED_PROXIES` behind Traefik/Caddy/nginx/Coolify | Set the proxy IP or Docker network only. Verify with **Agents → Audit** (your public IP). Never `0.0.0.0/0`. Details: [LOGIN-SECURITY.md](LOGIN-SECURITY.md). |
-| Mixed content / wrong scheme cookies | Proxy not sending `X-Forwarded-Proto`, or peer not trusted | Fix Traefik/Caddy headers; list the proxy in `GORUN_TRUSTED_PROXIES`. |
+| Every login attempt hits the shared IP limit; audit shows `10.x` / `172.x` | Empty `GORUN_TRUSTED_PROXIES` behind Traefik/Caddy/nginx/Coolify | Set the proxy IP or Docker network only. Verify with **AI Agents → Audit** (your public IP). Never `0.0.0.0/0`. Details: [LOGIN-SECURITY.md](LOGIN-SECURITY.md). |
+| Log: `forwarding headers from an untrusted peer` | Proxy not listed (or wrong CIDR) | Inspect the shared Docker network / Traefik IP; set `GORUN_TRUSTED_PROXIES`; redeploy stop-then-start. |
+| No `Strict-Transport-Security` on `curl -sSI https://…/healthz` | Peer not trusted, so `X-Forwarded-Proto` is ignored | Fix §A in the Coolify checklist. Cookies may still be `Secure` via `GORUN_BASE_URL=https://…` — that alone does not prove HSTS/IP trust. |
+| Mixed content / wrong scheme cookies | Proxy not sending `X-Forwarded-Proto`, or peer not trusted, and `GORUN_BASE_URL` is still `http://…` | Public `GORUN_BASE_URL=https://…`; fix Traefik/Caddy headers; list the proxy in `GORUN_TRUSTED_PROXIES`. |
 | `includeSubDomains` breaks a subdomain | Opt-in HSTS covers every subdomain of the host | Leave `GORUN_HSTS_INCLUDE_SUBDOMAINS` unset until every subdomain serves HTTPS. Preload (`GORUN_HSTS_PRELOAD`) requires that flag and is hard to undo. |
-| Health green but site unreachable publicly | Health probes localhost inside the container | Check Coolify/Traefik domain, TLS cert, and that port `8080` is only exposed to the proxy. |
+| Health green but site unreachable publicly | In-container `gorun healthcheck` only probes localhost | Probe `https://<public-host>/healthz` and `/readyz` from outside. Check Coolify/Traefik domain, TLS cert, and that port `8080` is only exposed to the proxy. |
 
 ## Themes and first site
 
@@ -63,6 +68,7 @@ Full steps: [installation — upgrades](GORUN-INSTALLATION.md#upgrades-from-rele
 ## العربية — أين تبدأ؟
 
 - القفل على مجلد البيانات → أوقف العملية المذكورة؛ لا تحذف `gorun.lock` أثناء التشغيل.
-- حدود الدخول المشتركة خلف الوكيل → اضبط `GORUN_TRUSTED_PROXIES`.
+- حدود الدخول المشتركة خلف الوكيل / غياب HSTS → اضبط `GORUN_TRUSTED_PROXIES` ونفّذ [قائمة قبول HTTPS](../deploy/coolify.md#9-https-acceptance-checklist).
+- الصحة خضراء داخل الحاوية والموقع غير متاح → افحص `https://…/healthz` من الخارج.
 - الاستعادة → مجلد جديد فقط؛ انقل `restores/<stamp>/` خارج المجلد الحي قبل `serve`.
 - المفتاح الجديد بعد الاستعادة → استخدم المفتاح الأصلي دائمًا.

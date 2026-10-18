@@ -10,7 +10,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | --- | --- |
 | [GORUN-INSTALLATION.md](GORUN-INSTALLATION.md) | Fresh install: release binary, GHCR/Docker, build from source, first admin, config map, upgrade from release tags |
 | [PRODUCTION.md](PRODUCTION.md) | Production env, HTTPS / reverse proxy / HSTS, backup + restore (CLI and admin), cutover, acceptance checks |
-| [../deploy/coolify.md](../deploy/coolify.md) | Coolify Compose or GHCR image, Traefik, trusted proxies, volume, health, restore |
+| [../deploy/coolify.md](../deploy/coolify.md) | Coolify Compose or GHCR image, Traefik, trusted proxies, volume, health, restore, [HTTPS acceptance checklist](../deploy/coolify.md#9-https-acceptance-checklist) |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common boot, proxy, lock, backup, theme, and MCP failures |
 
 ## First site and day-to-day CMS / أول موقع والاستخدام اليومي
