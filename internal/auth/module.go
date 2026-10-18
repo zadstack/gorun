@@ -89,6 +89,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Router.Admin.NotFound(func(w http.ResponseWriter, r *http.Request) { tpl.RenderError(w, r, http.StatusNotFound) })
 	d.Router.Public.Get("/auth/magic/{token}", h.magicForm)
 	d.Router.Public.Post("/auth/magic/{token}", h.magicSubmit) // CSRF-exempt: the single-use token is the credential
+	d.Router.Public.Get(httpx.LaunchCSSPath, launchCSSHandler())
 	d.Router.Public.Handle(httpx.StaticPrefix+"*", staticHandler())
 
 	d.Jobs.Cron("auth.cleanup", time.Hour, func(ctx context.Context) error { return cleanup(ctx, d) })
@@ -136,6 +137,21 @@ func templateFuncs(d *kernel.Deps) httpx.Funcs {
 		},
 		CSRF:    CSRFToken,
 		Setting: func(ctx context.Context, key string) string { return d.Settings.GetString(ctx, key, "") },
+	}
+}
+
+// launchCSSHandler serves the embedded launch overlay stylesheet at
+// /static/launch.css so hosts no longer need a Traefik/Coolify file mount.
+func launchCSSHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		b, err := web.FS.ReadFile("launch/launch.css")
+		if err != nil {
+			http.Error(w, "unavailable", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		w.Header().Set("Cache-Control", httpx.AssetCacheControl(r, "launch.css"))
+		_, _ = w.Write(b)
 	}
 }
 

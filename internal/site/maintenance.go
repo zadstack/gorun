@@ -54,7 +54,8 @@ func maintenanceExempt(r *http.Request) bool {
 		return false
 	}
 	p := r.URL.Path
-	if p == "/sitemap.xml" || p == "/robots.txt" || strings.HasPrefix(p, "/media/") || strings.HasPrefix(p, httpx.StaticPrefix) {
+	if p == "/sitemap.xml" || p == "/robots.txt" || p == httpx.LaunchCSSPath ||
+		strings.HasPrefix(p, "/media/") || strings.HasPrefix(p, httpx.StaticPrefix) {
 		return true
 	}
 	parts := strings.SplitN(strings.TrimPrefix(p, "/"), "/", 4)

@@ -92,6 +92,32 @@ labels:
 When a domain is set, remove the `ports:` mapping so traffic only enters
 through Traefik.
 
+### Drop Traefik `launch.css` file mounts
+
+GoRun ships the launch overlay stylesheet in the binary at
+[`/static/launch.css`](../web/launch/launch.css). After upgrading to a release
+that includes this asset, **remove** any Coolify/Traefik workaround that used to
+inject or file-mount that path:
+
+| Remove | Why |
+| --- | --- |
+| Traefik `file` / static router (or Coolify storage mount) that maps a host file to `/static/launch.css` | The app serves the same URL from embedded assets |
+| Extra `volumes:` bind of `launch.css` into the GoRun or proxy container solely for that route | No longer required for launch overlays |
+| Middleware that injects `<link rel="stylesheet" href="/static/launch.css">` **only** because the file lived outside the image | Keep the link in your `/start` HTML if you still use it; drop only the external file source |
+
+Verify after redeploy (stop-then-start):
+
+```sh
+curl -sI "https://<your-domain>/static/launch.css" | head
+# Expect: HTTP 200, Content-Type: text/css, and GoRun response headers
+# (e.g. content-security-policy / x-request-id) — not a bare proxy file hit.
+```
+
+Do **not** remove TLS, domain, or trusted-proxy Traefik labels. This note is only
+about the launch CSS mount. Launch `/start` handlers and agents may still be
+host-specific until those land in core; the CSS path itself no longer needs
+proxy injection.
+
 ### Trust Traefik's forwarded headers
 
 GoRun trusts **no** forwarding headers by default. Behind Traefik, the TCP peer

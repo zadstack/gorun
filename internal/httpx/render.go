@@ -42,7 +42,10 @@ const (
 	staticDir    = "admin/static"
 	// StaticPrefix is where admin/static is served.
 	StaticPrefix = "/static/admin/"
-	flashCookie  = "gp_flash"
+	// LaunchCSSPath is the public URL for the embedded launch overlay stylesheet.
+	// Downstream /start pages and prior Traefik mounts use this exact path.
+	LaunchCSSPath = "/static/launch.css"
+	flashCookie   = "gp_flash"
 )
 
 // NavItem mirrors NavItem field for field, so callers convert with

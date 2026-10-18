@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/zadstack/gorun/internal/commerce"
+	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/mcp"
 	"github.com/zadstack/gorun/internal/site"
 )
@@ -45,7 +46,7 @@ func TestMaintenanceCoversCommerce(t *testing.T) {
 			t.Errorf("POST %s: %d", path, resp.StatusCode)
 		}
 	}
-	for _, path := range []string{"/healthz", "/admin/login", "/static/admin/admin.css", "/static/admin/admin.js", "/sitemap.xml", "/robots.txt", "/themes/default/assets/style.css", "/themes/default/assets/tailwind.css", "/media/example.jpg"} {
+	for _, path := range []string{"/healthz", "/admin/login", "/static/admin/admin.css", "/static/admin/admin.js", httpx.LaunchCSSPath, "/sitemap.xml", "/robots.txt", "/themes/default/assets/style.css", "/themes/default/assets/tailwind.css", "/media/example.jpg"} {
 		resp, _ := e.get(path)
 		if resp.StatusCode == http.StatusServiceUnavailable {
 			t.Errorf("exempt route %s blocked", path)
