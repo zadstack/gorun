@@ -33,6 +33,10 @@ All notable changes to GoRun are recorded here. The format follows
 - Restored files are always `0600` and directories `0700`, whatever modes the archive records.
 - The inspect page explains each preflight error and warning in English and Arabic (the code stays
   alongside for support).
+- Page builder layout history: `builder_revisions` stores save/publish/reset/restore snapshots
+  (default keep 25 via `builder.revisions_keep`). Admin lists history with preview and
+  restore-to-draft (restore requires recent password confirmation). REST and MCP expose
+  list/get/restore; MCP restore is sensitive. Public HTML is unchanged until publish.
 
 ### Documentation
 

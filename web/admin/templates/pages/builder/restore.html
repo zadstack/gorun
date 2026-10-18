@@ -1,0 +1,21 @@
+{{define "title"}}{{t "builder.history_restore"}}{{end}}
+{{define "content"}}
+<div class="space-y-4 max-w-xl">
+  <a href="/admin/builder/{{.ID}}" class="text-blue">{{t "builder.back_history"}}</a>
+  <h1 class="text-[22px] font-bold">{{t "builder.history_restore"}}</h1>
+  <p class="text-muted">{{t "builder.history_restore_lead"}}</p>
+  <dl class="border border-line bg-panel p-4 space-y-2 text-sm">
+    <div class="flex justify-between gap-3"><dt class="text-muted">{{t "builder.history_when"}}</dt><dd class="font-mono">{{date .Revision.CreatedAt}}</dd></div>
+    <div class="flex justify-between gap-3"><dt class="text-muted">{{t "builder.history_kind"}}</dt><dd>{{t (printf "builder.history_kind_%s" .Revision.Kind)}}</dd></div>
+    <div class="flex justify-between gap-3"><dt class="text-muted">{{t "builder.history_sections"}}</dt><dd>{{.Revision.SectionCount}}</dd></div>
+    {{if .Summary}}<div class="flex justify-between gap-3"><dt class="text-muted">{{t "builder.title"}}</dt><dd>{{.Summary}}</dd></div>{{end}}
+  </dl>
+  <form method="post" action="/admin/builder/{{.ID}}/revisions/{{.Revision.ID}}/restore" class="flex flex-wrap gap-2">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="updated_at" value="{{.UpdatedAt}}">
+    <button type="submit" class="bg-green text-white px-3 py-2">{{t "builder.history_restore_confirm"}}</button>
+    <a href="/admin/builder/{{.ID}}" class="border border-line px-3 py-2">{{t "builder.history_cancel"}}</a>
+    <a href="/admin/builder/{{.ID}}/revisions/{{.Revision.ID}}/preview" target="_blank" rel="noopener" class="border border-line px-3 py-2">{{t "builder.history_preview"}}</a>
+  </form>
+</div>
+{{end}}

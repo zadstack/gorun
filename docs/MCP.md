@@ -245,6 +245,9 @@ ignores `Mcp-Session-Id`. `GET /mcp` and `DELETE /mcp` return 405.
 - `get_page_layout`: `{id}`; returns the private draft, last-published flags and opaque version token; scope `content.edit`, with owner checks.
 - `save_page_layout`: `{id, document, base_updated_at}`; imports or updates a private draft without changing the public site; scope `content.edit`.
 - `publish_page_layout`: `{id, updated_at}`; scopes `content.edit` and `content.publish`; **sensitive**, so it waits for human approval before replacing public HTML.
+- `list_page_layout_revisions`: `{id}`; lists private layout history newest first; scope `content.edit`.
+- `get_page_layout_revision`: `{id, revision_id}`; reads one revision document for preview/comparison; scope `content.edit`.
+- `restore_page_layout_revision`: `{id, revision_id, updated_at}`; restores a revision into the private draft only; scope `content.edit`; **sensitive** (human approval). Public HTML stays unchanged until `publish_page_layout`.
 
 Pass the latest draft `updated_at` from get/save to the next operation. A conflict requires reloading the layout and reviewing the newer work. A portable document uses `version: 1` and ordered sections; copied media URLs still need their corresponding assets.
 

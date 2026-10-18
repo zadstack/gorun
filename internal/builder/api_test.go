@@ -298,10 +298,11 @@ func TestLayoutMCPRegisteredScopesSensitivityAndHandlers(t *testing.T) {
 		tools[tool.Name] = tool
 	}
 	get, save, publish := tools["get_page_layout"], tools["save_page_layout"], tools["publish_page_layout"]
-	if get.Handler == nil || save.Handler == nil || publish.Handler == nil {
+	list, getRev, restore := tools["list_page_layout_revisions"], tools["get_page_layout_revision"], tools["restore_page_layout_revision"]
+	if get.Handler == nil || save.Handler == nil || publish.Handler == nil || list.Handler == nil || getRev.Handler == nil || restore.Handler == nil {
 		t.Fatal("layout tools missing")
 	}
-	if get.Sensitive || save.Sensitive || !publish.Sensitive {
+	if get.Sensitive || save.Sensitive || list.Sensitive || getRev.Sensitive || !publish.Sensitive || !restore.Sensitive {
 		t.Fatal("incorrect approval flags")
 	}
 	if strings.Join(publish.Scopes, ",") != "content.edit,content.publish" || strings.Join(save.Scopes, ",") != "content.edit" {
@@ -418,7 +419,7 @@ func TestLayoutMCPRealProtocolOwnershipAndHumanApproval(t *testing.T) {
 	for _, tool := range tools.Tools {
 		names[tool.Name] = true
 	}
-	for _, name := range []string{"get_page_layout", "save_page_layout", "publish_page_layout"} {
+	for _, name := range []string{"get_page_layout", "save_page_layout", "publish_page_layout", "list_page_layout_revisions", "get_page_layout_revision", "restore_page_layout_revision"} {
 		if !names[name] {
 			t.Fatalf("missing SDK tool %s", name)
 		}
@@ -503,5 +504,63 @@ func TestLayoutPublicationValidationRESTAndMCP(t *testing.T) {
 	fresh, err := f.cs.Get(auth.WithUser(context.Background(), admin), it.ID)
 	if err != nil || fresh.Status != "draft" {
 		t.Fatal("invalid draft was published")
+	}
+}
+
+func TestLayoutHistoryRESTAndMCPRestore(t *testing.T) {
+	f := newLayoutFixture(t, mcp.New())
+	admin := f.user(t, "admin")
+	it := f.page(t, admin, "History page")
+	token := f.token(t, admin, []string{"content.edit", "content.publish"})
+	ctx := auth.WithUser(context.Background(), admin)
+	first, err := f.svc.Save(ctx, it.ID, heroDoc("Alpha"), content.EditToken(it))
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := f.svc.Save(ctx, it.ID, heroDoc("Beta"), first.UpdatedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	status, body := f.request(t, http.DefaultClient, "GET", "/api/v1/builder/"+it.ID+"/revisions", token, "", nil)
+	if status != 200 {
+		t.Fatalf("list revisions %d %s", status, body)
+	}
+	var listEnv struct {
+		OK   bool             `json:"ok"`
+		Data []LayoutRevision `json:"data"`
+	}
+	if err := json.Unmarshal(body, &listEnv); err != nil || len(listEnv.Data) == 0 {
+		t.Fatalf("list decode: %v %s", err, body)
+	}
+	oldest := listEnv.Data[len(listEnv.Data)-1]
+	status, body = f.request(t, http.DefaultClient, "GET", "/api/v1/builder/"+it.ID+"/revisions/"+oldest.ID, token, "", nil)
+	if status != 200 || !bytes.Contains(body, []byte("Alpha")) {
+		t.Fatalf("get revision %d %s", status, body)
+	}
+	status, body = f.request(t, http.DefaultClient, "POST", "/api/v1/builder/"+it.ID+"/revisions/"+oldest.ID+"/restore", token, "", layoutRestoreRequest{UpdatedAt: second.UpdatedAt})
+	if status != 200 {
+		t.Fatalf("restore %d %s", status, body)
+	}
+	restored := decodeLayoutResponse(t, body)
+	if restored.Document.Sections[0].Title != "Alpha" {
+		t.Fatalf("restored title %q", restored.Document.Sections[0].Title)
+	}
+	status, _ = f.request(t, http.DefaultClient, "POST", "/api/v1/builder/"+it.ID+"/revisions/"+oldest.ID+"/restore", token, "", layoutRestoreRequest{UpdatedAt: "stale"})
+	if status != 409 {
+		t.Fatalf("stale restore %d", status)
+	}
+	client := layoutSDK(t, f, token)
+	envelope, isError := layoutSDKCall(t, client, "list_page_layout_revisions", layoutIDInput{ID: it.ID})
+	if isError {
+		t.Fatalf("mcp list %v", envelope)
+	}
+	envelope, isError = layoutSDKCall(t, client, "restore_page_layout_revision", layoutRestoreInput{ID: it.ID, RevisionID: oldest.ID, UpdatedAt: restored.UpdatedAt})
+	pending := layoutSDKData(t, envelope, isError)
+	if pending["status"] != "pending_approval" {
+		t.Fatalf("restore not pending approval %v", pending)
+	}
+	fresh, err := f.cs.Get(ctx, it.ID)
+	if err != nil || strings.Contains(fresh.Body, "Alpha") {
+		t.Fatal("pending restore changed public page")
 	}
 }
