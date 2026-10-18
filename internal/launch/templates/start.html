@@ -1,0 +1,73 @@
+{{define "start.html"}}<!doctype html>
+<html lang="{{.Locale}}" dir="{{.Dir}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="launch-brand" content="{{.Brand}}">
+<title>{{.Title}}</title>
+<link rel="stylesheet" href="{{.CSS}}">
+<script src="{{.JS}}" defer></script>
+</head>
+<body class="launch-page launch-start">
+<a class="skip-link" href="#main">{{t .Locale "launch.start.skip"}}</a>
+<header class="launch-header">
+  <a class="launch-brand" href="{{.HomeHref}}" aria-label="{{.Brand}}">
+    <span class="brand-mark" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M7 17h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 10.1 3.5 3.5 0 0 0 7 17Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+    <span class="brand-word" dir="ltr">{{.Brand}}</span>
+  </a>
+  <nav aria-label="Account and language">
+    <a class="language-link" href="{{.OtherLangHref}}" lang="{{if eq .Locale "ar"}}en{{else}}ar{{end}}">{{.OtherLangLabel}}</a>
+    <a class="account-link" href="{{.LoginHref}}">{{t .Locale "launch.start.my_account"}}</a>
+  </nav>
+</header>
+<main id="main" tabindex="-1">
+<section class="start-intro" aria-labelledby="start-title">
+  <div class="intro-copy">
+    <p class="eyebrow">{{t .Locale "launch.start.eyebrow" .Brand}}</p>
+    <h1 id="start-title">{{t .Locale "launch.start.heading"}}</h1>
+    <p class="intro-lead">{{t .Locale "launch.start.lead"}}</p>
+    <p class="intro-proof">{{t .Locale "launch.start.proof"}}</p>
+  </div>
+  <ol class="journey-steps" aria-label="steps">
+    <li aria-current="step"><span class="step-number">01</span><div><strong>{{t .Locale "launch.start.step1.title"}}</strong><p>{{t .Locale "launch.start.step1.body"}}</p></div></li>
+    <li><span class="step-number">02</span><div><strong>{{t .Locale "launch.start.step2.title"}}</strong><p>{{t .Locale "launch.start.step2.body"}}</p></div></li>
+    <li><span class="step-number">03</span><div><strong>{{t .Locale "launch.start.step3.title"}}</strong><p>{{t .Locale "launch.start.step3.body"}}</p></div></li>
+  </ol>
+</section>
+{{if .Error}}<p class="error" role="alert">{{.Error}}</p>{{end}}
+<form class="start-form" method="post" action="{{.StartHref}}">
+  <input type="hidden" name="_csrf" value="{{.CSRF}}">
+  <fieldset class="design-section">
+    <legend><span class="section-number">01</span> {{t .Locale "launch.start.theme_legend"}}</legend>
+    <p class="section-intro">{{t .Locale "launch.start.theme_intro"}}</p>
+    <div class="design-grid">
+      {{$th := .Theme}}
+      <article class="design-choice"><label class="design-label" for="design-business"><span class="design-topline"><span>{{t .Locale "launch.start.theme.business.label"}}</span><input id="design-business" type="radio" name="template" value="business"{{if eq $th "business"}} checked{{end}} required></span><span class="design-title">{{t .Locale "launch.start.theme.business.title"}}</span><span class="design-description">{{t .Locale "launch.start.theme.business.desc"}}</span><span class="design-detail">{{t .Locale "launch.start.theme.business.detail"}}</span></label></article>
+      <article class="design-choice"><label class="design-label" for="design-portfolio"><span class="design-topline"><span>{{t .Locale "launch.start.theme.portfolio.label"}}</span><input id="design-portfolio" type="radio" name="template" value="portfolio"{{if eq $th "portfolio"}} checked{{end}}></span><span class="design-title">{{t .Locale "launch.start.theme.portfolio.title"}}</span><span class="design-description">{{t .Locale "launch.start.theme.portfolio.desc"}}</span><span class="design-detail">{{t .Locale "launch.start.theme.portfolio.detail"}}</span></label></article>
+      <article class="design-choice"><label class="design-label" for="design-editorial"><span class="design-topline"><span>{{t .Locale "launch.start.theme.magazine.label"}}</span><input id="design-editorial" type="radio" name="template" value="magazine"{{if eq $th "magazine"}} checked{{end}}></span><span class="design-title">{{t .Locale "launch.start.theme.magazine.title"}}</span><span class="design-description">{{t .Locale "launch.start.theme.magazine.desc"}}</span><span class="design-detail">{{t .Locale "launch.start.theme.magazine.detail"}}</span></label></article>
+    </div>
+  </fieldset>
+  <div class="setup-fields">
+    <fieldset class="form-section">
+      <legend><span class="section-number">02</span> {{t .Locale "launch.start.account_legend"}}</legend>
+      <p class="section-intro">{{t .Locale "launch.start.account_intro"}}</p>
+      <label>{{t .Locale "launch.start.name"}}<input name="name" required maxlength="120" autocomplete="name" value="{{.Name}}"></label>
+      <label>{{t .Locale "launch.start.email"}}<input name="email" type="email" dir="ltr" required maxlength="254" autocomplete="username" value="{{.Email}}"></label>
+      <label>{{t .Locale "launch.start.password"}}<input name="password" type="password" required minlength="10" maxlength="1024" autocomplete="new-password" aria-describedby="password-help"></label>
+      <p class="field-help" id="password-help">{{t .Locale "launch.start.password_help"}}</p>
+    </fieldset>
+  </div>
+  <div class="start-submit">
+    <div>
+      <p class="submit-title">{{t .Locale "launch.start.submit_title"}}</p>
+      <p>{{t .Locale "launch.start.submit_body"}}</p>
+    </div>
+    <button type="submit">{{t .Locale "launch.start.submit"}}</button>
+  </div>
+</form>
+<p class="signin-note">{{t .Locale "launch.start.signin_note"}} <a href="{{.LoginHref}}">{{t .Locale "launch.start.signin_link"}}</a> · <a href="{{.AdminLoginHref}}">{{t .Locale "launch.start.admin_login"}}</a></p>
+</main>
+<footer><span>{{t .Locale "launch.start.powered"}} <bdi dir="ltr">GoRun</bdi></span><nav aria-label="Footer"><a href="{{.AdminLoginHref}}">{{t .Locale "launch.start.admin_login"}}</a></nav></footer>
+</body>
+</html>{{end}}

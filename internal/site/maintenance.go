@@ -54,7 +54,7 @@ func maintenanceExempt(r *http.Request) bool {
 		return false
 	}
 	p := r.URL.Path
-	if p == "/sitemap.xml" || p == "/robots.txt" || p == httpx.LaunchCSSPath ||
+	if p == "/sitemap.xml" || p == "/robots.txt" || p == httpx.LaunchCSSPath || p == httpx.LaunchPolishPath ||
 		strings.HasPrefix(p, "/media/") || strings.HasPrefix(p, httpx.StaticPrefix) {
 		return true
 	}

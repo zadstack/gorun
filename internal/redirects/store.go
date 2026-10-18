@@ -126,7 +126,7 @@ func HostOf(raw string) string {
 // ReservedPrefixes are application paths a redirect may never take over:
 // saving one is a validation error and the middleware never answers them.
 var ReservedPrefixes = []string{"/admin", "/api", "/mcp", "/auth", "/webhooks", "/media", "/static", "/checkout",
-	"/account", "/healthz", "/readyz", "/metrics"}
+	"/account", "/start", "/healthz", "/readyz", "/metrics"}
 
 // Reserved reports whether path is one of ReservedPrefixes or below one,
 // by whole path segment and ignoring case ("/admin" and "/Admin/x" are,
