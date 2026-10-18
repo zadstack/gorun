@@ -1,7 +1,11 @@
 # Deploying GoRun on Coolify
 
 GoRun is one container with one persistent volume. Coolify deploys it from
-`deploy/docker-compose.yml`.
+`deploy/docker-compose.yml`, or you can run a released GHCR image. For general
+production rules (HSTS, backup cutover, upgrades) see
+[docs/PRODUCTION.md](../docs/PRODUCTION.md). Install overview:
+[docs/GORUN-INSTALLATION.md](../docs/GORUN-INSTALLATION.md). Docs index:
+[docs/README.md](../docs/README.md).
 
 ## 1. Create the resource
 
@@ -25,13 +29,16 @@ as below. Images are multi-arch (linux/amd64, linux/arm64).
 | `GORUN_BASE_URL` | yes | Public URL, e.g. `https://example.com` (no trailing slash). |
 | `GORUN_SETUP_TOKEN` | for web setup | At least 16 characters (`openssl rand -hex 24`). `/admin/setup` asks for it before creating the first administrator; without it the page only shows instructions. Remove it once the first admin exists. |
 | `GORUN_TRUSTED_PROXIES` | behind Traefik: yes | Comma-separated IPs/CIDRs of the reverse proxy, e.g. Coolify's `coolify` network `10.0.1.0/24` (verify, see [step 4](#trust-traefiks-forwarded-headers)). Empty trusts no forwarding headers, so every visitor shares Traefik's IP for login limits and audit. |
+| `GORUN_HSTS_INCLUDE_SUBDOMAINS` | no | `true` only when **every** subdomain of the host already serves HTTPS. Default HSTS is already `max-age=31536000` on HTTPS responses. |
+| `GORUN_HSTS_PRELOAD` | no | `true` only with the subdomain flag, and only if you intend to submit the host to the browser preload list (hard to undo). |
 | `GORUN_ALLOW_PRIVATE_NET` | no | `1` lets outbound fetches (media from URL, WordPress import, billing servers) reach private networks. Home lab only; leave unset in production. |
 | `STRIPE_SECRET_KEY` | for shop | Stripe secret key. |
 | `STRIPE_WEBHOOK_SECRET` | for shop | Signing secret of the `/webhooks/stripe` endpoint. |
 | `GORUN_S3_ENDPOINT`, `GORUN_S3_BUCKET`, `GORUN_S3_ACCESS_KEY`, `GORUN_S3_SECRET_KEY` | no | New media in an S3-compatible bucket (R2: `https://<account>.r2.cloudflarestorage.com`). Optional `GORUN_S3_REGION` (default `auto`) and `GORUN_S3_PUBLIC_URL`. A misconfigured bucket stops the server at boot. |
 
 `GORUN_ENV=prod`, `GORUN_DATA=/data` and `GORUN_ADDR=:8080` are baked into
-the image.
+the image. Pin the image tag (`0.1.0` or `0.1`) in production rather than
+relying on `latest` alone.
 
 ## 3. Persistent storage
 
@@ -45,8 +52,12 @@ docker exec <container> /app/gorun backup
 ```
 
 It writes `/data/backups/<timestamp>.db` (`VACUUM INTO`) and
-`/data/backups/<timestamp>.tar.gz` (media, overrides, extensions, form uploads and any local recovery key/configuration) inside the
-volume; copy that directory off the host.
+`/data/backups/<timestamp>.tar.gz` (media, overrides, extensions, form uploads)
+inside the volume; copy that directory off the host. **Default backups omit
+`secret.key` and `gorun.toml`** (they hold the site key and other plaintext
+secrets). Keep `GORUN_SECRET_KEY` and other env credentials in Coolify's secret
+store separately. Only `gorun backup --include-secrets` adds those two files;
+the admin UI never does.
 
 Run a single replica only: SQLite is a single-node database. GoRun enforces this
 with an exclusive OS lock on `/data/gorun.lock`: a second container on the same
@@ -124,4 +135,52 @@ host (the image has no shell, so call the binary directly):
 docker exec <container> /app/gorun user create --admin --email you@example.com --password '...'
 ```
 
-Backups contain secrets. Keep the original external GORUN_SECRET_KEY and other environment credentials separately. For complete file/database consistency stop writes before backup. Restore to an empty data directory while the service is stopped; see [production recovery](../docs/PRODUCTION.md).
+Prefer `--password-stdin` over putting the password on the command line when your
+shell allows it. After setup, remove `GORUN_SETUP_TOKEN` from the Coolify env.
+
+Switch the admin UI language with the top-bar locale control (Arabic ⇄ English).
+Build the first public site under **Appearance → Build your site**, or activate a
+theme under **Appearance → Themes** (activation alone does not create starter
+pages). See [SITE_BUILDER.md](../docs/SITE_BUILDER.md) and
+[ADMIN_WORKSPACE.md](../docs/ADMIN_WORKSPACE.md).
+
+## 7. Backup restore (post restore UX)
+
+Restores **never merge** into the live `/data` directory.
+
+**While the site runs (admin):** **Operations → Backups → Inspect / restore**
+(password confirmation required). The copy lands under
+`/data/restores/<timestamp>/`. Move that directory **out** of the live volume
+before serving it (for example copy to a new volume or host path), stop the
+current container, then start GoRun with `GORUN_DATA` pointing at the moved
+copy and the **original** `GORUN_SECRET_KEY`. An interrupted restore leaves
+`/data/restores/.<timestamp>.partial`; delete it before retrying.
+
+**While stopped (CLI):**
+
+```sh
+docker run --rm -v gorun-data:/data -v /var/lib/gorun-restored:/restore \
+  --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.1.0 \
+  backup-restore --input /data/backups/<timestamp>.manifest.json --dest /restore
+```
+
+Then point a new deployment at the restored directory (or replace the volume
+contents carefully offline) with the original secrets. Full cutover:
+[PRODUCTION.md](../docs/PRODUCTION.md).
+
+## 8. Upgrade from a release tag
+
+1. Backup (`docker exec … /app/gorun backup`) and confirm Coolify still holds
+   `GORUN_SECRET_KEY` / `GORUN_BASE_URL` / `GORUN_TRUSTED_PROXIES`.
+2. Change the image to `ghcr.io/zadstack/gorun:X.Y.Z` (or rebuild from a newer
+   commit with **Include Source Commit in Build**).
+3. Redeploy with **stop then start** so the old container releases `/data/gorun.lock`.
+4. Check `/healthz`, admin login, and a public page. Migrations run on boot.
+
+Rollback: previous image tag + restored data volume + same secret key. See
+[installation upgrades](../docs/GORUN-INSTALLATION.md#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار)
+and [TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md).
+
+Keep the original external `GORUN_SECRET_KEY` and other environment credentials
+separately from backup archives. For complete file/database consistency stop
+writes before backup when you need one coherent snapshot.

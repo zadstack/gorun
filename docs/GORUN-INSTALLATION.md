@@ -1,6 +1,8 @@
 # تثبيت GoRun وتشغيله
 
-هذا الدليل يطابق المصدر `1049a9c529583c16ad1d8a9eda0d0a9961b9ef2e`. جُرب البناء والتشغيل والأوامر الأساسية على macOS Apple Silicon في مجلد بيانات مستقل. أوامر Linux والإنتاج أدناه مستمدة من المصدر؛ لم تُنفذ على إنتاج ضمن إعداد هذا الدليل.
+دليل المشغّل لتثبيت جديد (ملف تنفيذي أو Docker/GHCR)، أول مدير، الترقية من وسوم الإصدار، والنسخ الاحتياطي. للفهرس الكامل راجع [docs/README.md](README.md). لأعطال شائعة راجع [استكشاف الأعطال](TROUBLESHOOTING.md).
+
+جُرب البناء والتشغيل والأوامر الأساسية على macOS Apple Silicon في مجلد بيانات مستقل. أوامر Linux والإنتاج أدناه مستمدة من المصدر الحالي (`v0.1.0` وما بعده على `main`).
 
 ## المصدر والترخيص
 
@@ -20,13 +22,37 @@ GoRun برنامج حر مفتوح المصدر بترخيص **GNU Affero Genera
 
 بدءًا من v0.1.0 تُنشر الإصدارات على [صفحة الإصدارات في GitHub](https://github.com/zadstack/gorun/releases):
 
-- **أرشيفات تنفيذية** لـ linux وdarwin بمعماريتي amd64 وarm64 باسم `gorun-<الإصدار>-<النظام>-<المعمارية>.tar.gz`، وفيها `gorun` ومجلد `themes/` والوثائق، مع ملف `SHA256SUMS-<الإصدار>.txt`. تحقق من البصمة قبل فك الأرشيف، ثم شغّل `./gorun serve` من داخل مجلده.
-- **صورة حاوية** متعددة المعماريات `ghcr.io/zadstack/gorun` بالوسوم `0.1.0` و`0.1` و`latest`. تعمل بوضع الإنتاج (`GORUN_ENV=prod`) وتحتاج `GORUN_BASE_URL` و`GORUN_SECRET_KEY` وvolume على `/data`.
+- **أرشيفات تنفيذية** لـ linux وdarwin بمعماريتي amd64 وarm64 باسم `gorun-<الإصدار>-<النظام>-<المعمارية>.tar.gz`، وفيها `gorun` ومجلد `themes/` والوثائق، مع ملف `SHA256SUMS-<الإصدار>.txt`. تحقق من البصمة قبل فك الأرشيف، ثم شغّل `./gorun serve` من **داخل** مجلد الفك حتى يجد `themes/`.
+- **صورة حاوية** متعددة المعماريات `ghcr.io/zadstack/gorun` بالوسوم `0.1.0` و`0.1` و`latest` (وثبّت دائمًا على رقم إصدار في الإنتاج). تعمل بوضع الإنتاج (`GORUN_ENV=prod`) وتحتاج `GORUN_BASE_URL` و`GORUN_SECRET_KEY` وvolume دائم على `/data`. القوالب مضمّنة في الصورة.
+
+### ملف تنفيذي (مثال linux/amd64)
+
+```sh
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/gorun-0.1.0-linux-amd64.tar.gz
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/SHA256SUMS-0.1.0.txt
+sha256sum --ignore-missing -c SHA256SUMS-0.1.0.txt
+tar xzf gorun-0.1.0-linux-amd64.tar.gz
+cd gorun-0.1.0-linux-amd64
+GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
+```
+
+افتح `http://127.0.0.1:8080/admin/setup`. في الإنتاج استبدل المتغيرات كما في قسم متطلبات الإنتاج أدناه، واستمع على loopback خلف وكيل TLS.
+
+### Docker / GHCR
 
 ```sh
 docker pull ghcr.io/zadstack/gorun:0.1.0
 docker run --rm --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.1.0 version
+
+docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
+  -e GORUN_BASE_URL=https://cms.example.com \
+  -e GORUN_SECRET_KEY="$(openssl rand -base64 32)" \
+  -e GORUN_SETUP_TOKEN="$(openssl rand -hex 24)" \
+  -e GORUN_TRUSTED_PROXIES=10.0.1.0/24 \
+  ghcr.io/zadstack/gorun:0.1.0
 ```
+
+احفظ `GORUN_SECRET_KEY` خارج الحاوية قبل التشغيل الأول. خلف Traefik أو Coolify اضبط `GORUN_TRUSTED_PROXIES` على شبكة الوكيل الحقيقية؛ التفاصيل في [Coolify](../deploy/coolify.md) و[الإنتاج](PRODUCTION.md). Compose من المصدر: `deploy/docker-compose.yml`.
 
 ## بناء المصدر
 
@@ -144,17 +170,30 @@ GORUN_BASE_URL=https://your-site.example \
 
 لا تطبع الأسرار في الأوامر أو السجلات. البريد و AI و Stripe و S3 اختيارية لتثبيت CMS أساسي؛ تحتاج إعدادًا واختبارًا مستقلاً عند استخدام القدرة المرتبطة بها. إعداد البريد من `/admin/settings/mail` يدعم SMTP أو Resend؛ وجود الإعدادات ليس إثبات تسليم. التسجيل المُدار مع تفعيل البريد يتطلب مزودًا جاهزًا، ولا يُعد البريد المفقود نجاحًا.
 
-## الترقية والنسخ الاحتياطي
+## الترقية من وسوم الإصدار {#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار}
 
-`serve` يطبق migrations قبل فتح HTTP. ويمكن تطبيقها صراحة:
+لا يوجد محدّث تلقائي للنواة. الترقية = تثبيت ثنائي/صورة الإصدار الجديد على **نفس** مجلد البيانات والمفتاح، بعد نسخة احتياطية.
+
+1. اقرأ قسم الإصدار في [CHANGELOG.md](../CHANGELOG.md) ووسوم [Releases](https://github.com/zadstack/gorun/releases).
+2. أنشئ نسخة: `gorun backup --data <data>` واحفظ `secret.key` / `GORUN_SECRET_KEY` و`gorun.toml` وبيئة الخدمة خارج الأرشيف الافتراضي.
+3. اختبر على مجلد بيانات مستقل (استعادة النسخة ثم تشغيل الإصدار الجديد عليه) قبل لمس الإنتاج.
+4. أوقف العملية القديمة حتى يتحرر `<data>/gorun.lock` (في Docker/Coolify: stop ثم start؛ لا تتداخل نسختان على الـvolume).
+5. ثبّت الوسم الجديد:
+   - **ثنائي:** فك أرشيف `vX.Y.Z` الجديد، أبقِ `GORUN_DATA` و`GORUN_SECRET_KEY` كما هما، وشغّل `./gorun serve` من مجلد الفك (مع `themes/`).
+   - **GHCR:** غيّر الصورة إلى `ghcr.io/zadstack/gorun:X.Y.Z` (تجنّب الاعتماد على `latest` وحدها في الإنتاج)، نفس الـvolume ونفس المتغيرات.
+6. `serve` يطبّق migrations قبل فتح HTTP. للتشغيل الصريح (أمر كتابة، ليس dry-run):
 
 ```sh
 ./bin/gorun migrate --data ./data
 ```
 
-هذا أمر كتابة، وليس dry-run. في الإنتاج، شغّل أوامر CLI بنفس بيئة الخدمة، خصوصًا GORUN_ENV وGORUN_SECRET_KEY؛ العلم --data لا يحمّل ملف runtime.env تلقائيًا. لا تستخدم مفتاح dev جديدًا بدل مفتاح الموقع الأصلي.
+في الإنتاج شغّل أوامر CLI بنفس بيئة الخدمة (`GORUN_ENV` و`GORUN_SECRET_KEY`)؛ `--data` لا يحمّل ملف بيئة الخدمة تلقائيًا.
 
-قبل ترقية موقع فعلي، راجع تغيرات المخطط، وبصمات المصدر والبناء، وتوافق themes والإضافات. اختبر على مجلد مستقل أولًا؛ لا تشغّل عمليات serve متنافسة على نفس مجلد البيانات. إرجاع الملف التنفيذي السابق لا يعيد مخطط SQLite ولا البيانات إلى ما كانت عليه.
+7. افحص `/healthz`، دخول الأدمن، المحتوى، والوسائط. إن فشل التحديث: أوقف الخدمة، شغّل **ثنائي/صورة الإصدار السابق** على مجلد مُستعاد من النسخة مع المفتاح الأصلي. إرجاع الملف التنفيذي وحده لا يعيد مخطط SQLite إلى ما كان عليه.
+
+توافق القوالب والإضافات جزء من الاختبار على المجلد المستقل. المواقع التي تستخدم slug قالب متقاعد تُرحَّل عند الإقلاع فقط إذا غاب القالب القديم؛ راجع [THEMES.md](THEMES.md).
+
+## النسخ الاحتياطي والاستعادة
 
 لإنشاء نسخة محلية لموقعك:
 
@@ -192,4 +231,52 @@ GORUN_BASE_URL=https://your-site.example \
 
 ## روابط العمل التالية
 
-بعد التثبيت: إدارة المحتوى والوسائط، ثم المظهر والقوائم والهوية. API في `/api/docs` ووثيقته في `/api/v1/openapi.json`؛ خادم MCP على `/mcp` يتطلب مفتاحًا وصلاحيات مناسبة. إن كان هدفك منصة استضافة تسجّل العملاء وتجهّز لهم مواقع، فهذه طبقة إضافية تبنيها فوق النواة (وحدات خاصة وعامل provisioning و TLS/routes وصلاحيات خادم منفصلة). تشغيل GoRun CMS وحده لا ينشئ تلك البنية.
+بعد التثبيت:
+
+1. بدّل لغة لوحة الإدارة من زر اللغة في الشريط العلوي (عربية ⇄ English)، واضبط لغة الموقع من **الإعدادات ← عام**. التفاصيل في [مساحة الإدارة](ADMIN_WORKSPACE.md).
+2. ابنِ أول موقع من **المظهر ← ابنِ موقعك**، أو بدّل القالب من **المظهر ← القوالب** ثم راجع [منشئ المواقع](SITE_BUILDER.md) و[القوالب](THEMES.md).
+3. للوكلاء: [MCP](MCP.md). API في `/api/docs` و`/api/v1/openapi.json`.
+4. للإنتاج خلف وكيل: [PRODUCTION.md](PRODUCTION.md) و[Coolify](../deploy/coolify.md). أعطال شائعة: [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+
+إن كان هدفك منصة استضافة تسجّل العملاء وتجهّز لهم مواقع، فهذه طبقة إضافية فوق النواة. تشغيل GoRun CMS وحده لا ينشئ تلك البنية.
+
+---
+
+## English — fresh install and upgrades
+
+Operator path for a new host. Full Arabic detail is above; production hardening is in [PRODUCTION.md](PRODUCTION.md).
+
+### Binary from a release tag
+
+```sh
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/gorun-0.1.0-linux-amd64.tar.gz
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/SHA256SUMS-0.1.0.txt
+sha256sum --ignore-missing -c SHA256SUMS-0.1.0.txt
+tar xzf gorun-0.1.0-linux-amd64.tar.gz && cd gorun-0.1.0-linux-amd64
+GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
+```
+
+Open `/admin/setup`. Production needs `GORUN_ENV=prod`, a persistent data dir, HTTPS, `GORUN_BASE_URL`, a stable `GORUN_SECRET_KEY` (32 bytes Base64), and usually `GORUN_SETUP_TOKEN` (≥16 chars) for web bootstrap. Run from the extract directory so `themes/` resolves, or set `GORUN_THEMES`.
+
+### Docker / GHCR
+
+```sh
+docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
+  -e GORUN_BASE_URL=https://cms.example.com \
+  -e GORUN_SECRET_KEY="$(openssl rand -base64 32)" \
+  -e GORUN_SETUP_TOKEN="$(openssl rand -hex 24)" \
+  ghcr.io/zadstack/gorun:0.1.0
+```
+
+Pin a version tag in production (`0.1.0` or `0.1`). Behind a reverse proxy set `GORUN_TRUSTED_PROXIES`. Coolify: [deploy/coolify.md](../deploy/coolify.md). Compose: `deploy/docker-compose.yml`.
+
+### Upgrades from release tags
+
+1. Read [CHANGELOG.md](../CHANGELOG.md) for the target tag; `gorun backup`; keep secrets outside the default archive.
+2. Stop the old process (release `<data>/gorun.lock`); do not overlap two containers on one volume.
+3. Install the new archive or switch the image to `ghcr.io/zadstack/gorun:X.Y.Z` with the **same** data volume and secret key. Migrations run on `serve`.
+4. Verify health, admin login, content, media. Rollback = previous binary/image + restored data dir + original key — not binary-only.
+
+### After install
+
+Bilingual admin toggle in the top bar · first site under **Appearance → Build your site** · theme switch under **Appearance → Themes** · agents: [MCP.md](MCP.md) · problems: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) · index: [README.md](README.md).

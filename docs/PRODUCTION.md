@@ -1,8 +1,10 @@
 # GoRun: التشغيل والإصدار والاستعادة
 
+دليل المشغّل للإنتاج: HTTPS والوكيل وHSTS، النسخ والاستعادة (بعد مسار الاستعادة المحصور)، والترقية من وسوم الإصدار. الفهرس: [docs/README.md](README.md). الأعطال: [TROUBLESHOOTING.md](TROUBLESHOOTING.md). التثبيت الأول: [GORUN-INSTALLATION.md](GORUN-INSTALLATION.md).
+
 ## الإصدارات المنشورة
 
-عند دفع وسم `v*` يبني سير العمل `.github/workflows/release.yml` صورة `ghcr.io/zadstack/gorun` لمعماريتي linux/amd64 وlinux/arm64 (وسوم `X.Y.Z` و`X.Y` و`latest`، وتحمل `VERSION` من الوسم ووسوم OCI للمصدر والترخيص)، ويتحقق من أن `gorun version` داخلها يطابق الإصدار، ويبني الأرشيفات التنفيذية الأربعة مع `SHA256SUMS` بالأداة أدناه، ثم ينشئ إصدار GitHub بملاحظات قسم الإصدار في `CHANGELOG.md`. طلبات الدمج التي تغيّر Dockerfile أو سير العمل تبني كل ذلك دون نشر.
+عند دفع وسم `v*` يبني سير العمل `.github/workflows/release.yml` صورة `ghcr.io/zadstack/gorun` لمعماريتي linux/amd64 وlinux/arm64 (وسوم `X.Y.Z` و`X.Y` و`latest`، وتحمل `VERSION` من الوسم ووسوم OCI للمصدر والترخيص)، ويتحقق من أن `gorun version` داخلها يطابق الإصدار، ويبني الأرشيفات التنفيذية الأربعة مع `SHA256SUMS` بالأداة أدناه، ثم ينشئ إصدار GitHub بملاحظات قسم الإصدار في `CHANGELOG.md`. طلبات الدمج التي تغيّر Dockerfile أو سير العمل تبني كل ذلك دون نشر. ثبّت الإنتاج على وسم رقمي (`0.1.0` أو `0.1`) لا على `latest` وحدها.
 
 ## نطاق الإصدار المحلي
 
@@ -39,6 +41,25 @@ docker exec <container> /app/gorun healthcheck
 
 Docker وCompose غير مطلوبين للتشغيل المحلي من الحزمة. يظل اختبار صورة Docker الفعلي مطلوبًا على مضيف تتوفر عليه الأدوات قبل نشرها.
 
+## HTTPS والوكيل العكسي وHSTS
+
+ضع GoRun خلف وكيل TLS (Traefik أو Caddy أو nginx أو Coolify). التطبيق يستمع عادة على `127.0.0.1:8080` أو `:8080` داخل الشبكة الخاصة بالوكيل؛ لا تفتح منفذ التطبيق للعامة مباشرة.
+
+| الإعداد | الدور |
+| --- | --- |
+| `GORUN_BASE_URL` | العنوان العام `https://…` بلا شرطة أخيرة؛ مطلوب في `prod` وليس loopback |
+| `GORUN_TRUSTED_PROXIES` | عناوين/CIDR للوكيل فقط؛ فارغ = لا ثقة بترويسات التمرير |
+| `GORUN_HSTS_INCLUDE_SUBDOMAINS` | اختياري؛ فقط إن كانت **كل** النطاقات الفرعية على HTTPS |
+| `GORUN_HSTS_PRELOAD` | اختياري؛ يتطلب الخيار السابق؛ الخروج من قائمة preload بطيء |
+
+سلوك الخادم:
+
+- يرسل `Strict-Transport-Security: max-age=31536000` لطلبات HTTPS الفعلية فقط (TLS مباشر أو `X-Forwarded-Proto: https` من وكيل موثوق).
+- لا يثق بـ`X-Forwarded-For` / `X-Forwarded-Proto` إلا من العناوين في `GORUN_TRUSTED_PROXIES`. خلف Coolify افحص شبكة `coolify` كما في [deploy/coolify.md](../deploy/coolify.md). لا تستخدم `0.0.0.0/0`.
+- بعد النشر: سجّل دخولًا وافتح **وكلاء الذكاء الاصطناعي ← التدقيق** وتأكد أن IP المسجّل هو عنوانك العام لا عنوان الوكيل.
+
+تفاصيل حدود الدخول وحظر IP: [LOGIN-SECURITY.md](LOGIN-SECURITY.md).
+
 ## تغييرات الأمان والسلوك
 
 - الاستماع الافتراضي في `dev` محلي فقط، وفي `prod` على `:8080`. الرمز المضبوط للإعداد يُطلب في البيئتين.
@@ -47,8 +68,17 @@ Docker وCompose غير مطلوبين للتشغيل المحلي من الحز
 - مزود OpenAI يحتاج endpoint صريحًا، في اللوحة وفي `gorun ai set --base-url`. لا يوجد عنوان جهة ثالثة تلقائي. إعداد قديم بلا عنوان يعطّل الطلب بدل إرساله إلى وجهة افتراضية.
 - الصيانة تحجب صفحات المتجر والحساب وcheckout مع صفحات الموقع، وتترك الإدارة وملفاتها، REST/MCP، webhooks، health، sitemap، robots والوسائط متاحة.
 - مكتبات واجهة الإدارة مثبتة النسخ مع integrity؛ كل مكتبات لوحة الإدارة مضمّنة محليًا، ويمنع CSP فيها السكريبتات الخارجية. القالب الافتراضي يستخدم سكربتات محلية؛ الصفحات العامة لقوالب Studio الثلاثة تعمل بـCSS أصلي دون سكربتات أو خطوط خارجية، بينما لوحة منشئ المواقع تستخدم مكتبات الإدارة المحلية؛ ولا يسمح CSP في الصفحات العامة بأي CDN ولا بـ`'unsafe-eval'`. القالب المخصص الذي يحتاج CDN أو Alpine يُسمح له صراحة عبر `GORUN_CSP_SCRIPT_SRC` (مصادر https و`'unsafe-eval'` فقط). Tailwind في القالب الافتراضي CSS مبني مسبقًا (`themes/default/assets/tailwind.css`) فلا يعمل مترجم داخل المتصفح ولا يحتاج الخادم Node؛ القالب المخصص الذي يحتاج المترجم يضيف `{{part "tailwind-runtime" .}}` إلى `parts/head-extra.html`.
-- يرسل الخادم `Strict-Transport-Security: max-age=31536000` لطلبات HTTPS فقط. `includeSubDomains` معطل افتراضيًا لأنه يفرض HTTPS على كل النطاقات الفرعية للمضيف؛ فعّله بـ`GORUN_HSTS_INCLUDE_SUBDOMAINS=true` بعد التأكد منها، وأضف `GORUN_HSTS_PRELOAD=true` فقط إن أردت التسجيل في قائمة preload للمتصفحات (يتطلب الخيار الأول، والخروج منها بطيء).
-- لا يثق النظام افتراضيًا بترويسات التمرير من أي جهة، ولا حتى loopback أو الشبكات الخاصة. اكتشاف HTTPS (`X-Forwarded-Proto`) وعنوان العميل (`X-Forwarded-For`) يُقبلان فقط من العناوين أو الشبكات المذكورة في `GORUN_TRUSTED_PROXIES` (أو `trusted_proxies` في `gorun.toml`). خلف وكيل عكسي (Traefik أو Caddy أو nginx أو Coolify) اضبطها على عنوان الوكيل أو شبكة Docker التي يصل منها، وإلا يشترك كل الزوار في عنوان الوكيل في حدود تسجيل الدخول والتدقيق، ويسجّل الخادم تحذيرًا مرة كل ساعة على الأكثر. لا تستخدم `0.0.0.0/0`، واجعل المنفذ الداخلي متاحًا للوكيل الموثوق فقط. التفاصيل في [أمان الدخول](LOGIN-SECURITY.md) و[دليل Coolify](../deploy/coolify.md).
+- HSTS والوكلاء الموثوقون: انظر القسم أعلاه؛ التفاصيل الإضافية في [أمان الدخول](LOGIN-SECURITY.md) و[Coolify](../deploy/coolify.md).
+
+## الترقية من وسم إصدار
+
+1. نسخة احتياطية + حفظ الأسرار خارج الأرشيف الافتراضي.
+2. أوقف العملية القديمة (قفل `gorun.lock`).
+3. ثبّت أرشيف/صورة الوسم الجديد بنفس `GORUN_DATA` و`GORUN_SECRET_KEY`.
+4. راقب migrations عند `serve`، ثم افحص الصحة ودخول الأدمن.
+5. الرجوع: ثنائي/صورة سابقة + مجلد مُستعاد + المفتاح الأصلي.
+
+الخطوات المفصّلة في [GORUN-INSTALLATION.md](GORUN-INSTALLATION.md#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار).
 
 ## النسخ الاحتياطي
 
@@ -111,3 +141,15 @@ gorun backup-restore --input /var/lib/gorun/backups/<timestamp>.manifest.json --
 ## تجهيز محتوى الموقع قبل النشر
 
 أكمل معالج بيانات النشاط وراجع الصفحات، ثم افتح شاشة الجاهزية. [دليل إنشاء الموقع والجاهزية](SITE_BUILDER.md) يشرح الحالات وروابط الإصلاح واختبار التواصل. الجاهزية المحلية لا تنشر إلى خادم ولا تختبر وصول البريد أو DNS/TLS أو استعادة النسخة. احتفظ بقبول البيئة الفعلية كخطوة مستقلة عند تحديد وجهة النشر.
+
+---
+
+## English — production checklist
+
+1. **Secrets:** `GORUN_ENV=prod`, public `GORUN_BASE_URL`, stable `GORUN_SECRET_KEY`, persistent `GORUN_DATA`, optional `GORUN_SETUP_TOKEN` for web bootstrap.
+2. **One process per data dir:** stop-then-start on Docker/Coolify; lock file is `<data>/gorun.lock`.
+3. **HTTPS / proxy:** terminate TLS at the proxy; set `GORUN_TRUSTED_PROXIES` to that hop only; confirm audit IPs. HSTS is one year on HTTPS; subdomain and preload flags are opt-in.
+4. **Backup:** `gorun backup` (or admin). Default archive omits `secret.key` / `gorun.toml` unless `--include-secrets`.
+5. **Restore:** never merges into the live dir. Online: **Operations → Backups → Inspect / restore** → `<data>/restores/<stamp>/` → move out → stop old process → `serve --data` the moved copy with original secrets. Offline: `gorun backup-restore --dest <new-empty-dir>` while stopped.
+6. **Upgrade:** pin `ghcr.io/zadstack/gorun:X.Y.Z` or the matching binary archive; migrate on `serve`; roll back with previous artifact + restored data + original key.
+7. **Problems:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Coolify: [deploy/coolify.md](../deploy/coolify.md).
