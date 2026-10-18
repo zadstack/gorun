@@ -1,0 +1,26 @@
+{{/* Portfolio contact form — studio styles, no Tailwind utilities. */}}
+{{$f := .Extra.form}}{{$files := eq (setting "contact.attachments") "true"}}{{$mb := setting "contact.attachment_max_mb"}}{{if not $mb}}{{$mb = "5"}}{{end}}
+<form method="post" action="/forms/contact"{{if $files}} enctype="multipart/form-data"{{end}} class="studio-contact-form" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="_back" value="{{with $f}}{{.Back}}{{else}}{{.Request.URL.Path}}{{end}}">
+  <div class="sr-only" aria-hidden="true">
+    <label for="cf-website">{{t "honeypot_label"}}</label>
+    <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off">
+  </div>
+  <label for="cf-name">{{t "contact_name"}}</label>
+  <input id="cf-name" name="name" type="text" required maxlength="200" autocomplete="name" value="{{with $f}}{{index .Values "name"}}{{end}}">
+  {{with $f}}{{with index .Errors "name"}}<p class="text-red">{{t .}}</p>{{end}}{{end}}
+  <label for="cf-email">{{t "contact_email"}}</label>
+  <input id="cf-email" name="email" type="email" required maxlength="254" autocomplete="email" dir="ltr" value="{{with $f}}{{index .Values "email"}}{{end}}">
+  {{with $f}}{{with index .Errors "email"}}<p class="text-red">{{t .}}</p>{{end}}{{end}}
+  <label for="cf-message">{{t "contact_message"}}</label>
+  <textarea id="cf-message" name="message" rows="6" required maxlength="5000">{{with $f}}{{index .Values "message"}}{{end}}</textarea>
+  {{with $f}}{{with index .Errors "message"}}<p class="text-red">{{t .}}</p>{{end}}{{end}}
+  {{if $files}}
+  <label for="cf-attachment">{{t "contact_attachment"}}</label>
+  <input id="cf-attachment" name="attachment" type="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.docx,.xlsx,.pptx" aria-describedby="cf-attachment-help">
+  <p id="cf-attachment-help" class="studio-help">{{t "contact_attachment_help" $mb}}</p>
+  {{with $f}}{{with index .Errors "attachment"}}<p class="text-red">{{t .}}</p>{{end}}{{end}}
+  {{end}}
+  <button type="submit">{{t "send"}}</button>
+</form>
