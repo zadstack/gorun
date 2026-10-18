@@ -7,6 +7,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Themes
 
+- A11y + RTL hardening (PR3): shared `a11y.css` (after tokens) across catalog themes with
+  contrast-safe `--muted`, `:focus-visible` rings (light accent / dark `--focus-ring`), 44px tap
+  targets (prose inline links excluded), visible skip links, `prefers-reduced-motion`, Arabic
+  `letter-spacing: 0` + no mono on body/dates, mirrored go arrows. Headless §6 acceptance audit in
+  Playwright (`theme-acceptance.spec.ts`: home + 3 inners @ 1440 & 390). Theme versions `1.3.0`.
 - Page anatomy (PR2): shared `anatomy.css` via `parts/shell.html`, reusable hero / section-head /
   list-row / closing-band components, default header with filled CTA + 44px mobile `<details>`,
   facts `<dl>` from real content/product counts, hairline cards with CSS cover fallback, numbered

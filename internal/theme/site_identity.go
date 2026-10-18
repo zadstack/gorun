@@ -165,6 +165,7 @@ func identityOnAccent(accent string) string {
 var darkPalette = [][2]string{
 	{"--bg", "#111418"}, {"--panel", "#181c22"}, {"--panel-2", "#20252d"}, {"--ink", "#eef1f4"},
 	{"--muted", "#a3acb8"}, {"--line", "rgba(238,241,244,.14)"}, {"--line-strong", "rgba(238,241,244,.3)"},
+	{"--focus-ring", "#d7dee8"},
 }
 
 // identityCSS builds the font links and stylesheet for the stored values
