@@ -9,7 +9,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 - `gorun backup-restore --input <stamp>.manifest.json --dest <new-empty-dir>` restores a local
   backup pair into a new directory only (inspect preflight; never merges into a live data dir).
-- System → Backups → Inspect / restore: bilingual preflight and confined restore under
+- Operations → Backups → Inspect / restore: bilingual preflight and confined restore under
   `<data>/restores/<stamp>/`, gated by recent password confirmation and `system.backup`.
 - Restores are staged in a hidden `.<name>.partial` sibling and renamed into place only after the
   database and archive checksums verify, so an interrupted restore never looks complete; a leftover
