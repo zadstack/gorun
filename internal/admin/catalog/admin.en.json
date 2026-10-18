@@ -114,6 +114,8 @@
   "health.status_warn": "Warn",
   "health.status_fail": "Fail",
   "health.runtime": "Runtime",
+  "health.gorun_version": "GoRun version",
+  "health.releases_link": "GitHub releases",
   "health.go_version": "Go version",
   "health.cpus": "CPUs",
   "health.goroutines": "Goroutines",

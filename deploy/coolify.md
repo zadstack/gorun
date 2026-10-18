@@ -182,15 +182,20 @@ contents carefully offline) with the original secrets. Full cutover:
 
 ## 8. Upgrade from a release tag
 
+Full operator runbook (binary · GHCR · Coolify · smoke · rollback):
+[docs/UPGRADE.md](../docs/UPGRADE.md).
+
 1. Backup (`docker exec … /app/gorun backup`) and confirm Coolify still holds
    `GORUN_SECRET_KEY` / `GORUN_BASE_URL` / `GORUN_TRUSTED_PROXIES`.
 2. Change the image to `ghcr.io/zadstack/gorun:X.Y.Z` (or rebuild from a newer
    commit with **Include Source Commit in Build**).
 3. Redeploy with **stop then start** so the old container releases `/data/gorun.lock`.
 4. Check `/healthz`, admin login, and a public page. Migrations run on boot.
+   Confirm **Operations → System health** shows the expected GoRun version.
 
-Rollback: previous image tag + restored data volume + same secret key. See
-[installation upgrades](../docs/GORUN-INSTALLATION.md#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار)
+Rollback: previous image tag + restored pre-upgrade backup pair + same secret
+key (not image-only). See [UPGRADE.md](../docs/UPGRADE.md#6-rollback),
+[installation upgrades](../docs/GORUN-INSTALLATION.md#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار),
 and [TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md).
 
 Keep the original external `GORUN_SECRET_KEY` and other environment credentials

@@ -172,7 +172,7 @@ GORUN_BASE_URL=https://your-site.example \
 
 ## الترقية من وسوم الإصدار {#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار}
 
-لا يوجد محدّث تلقائي للنواة. الترقية = تثبيت ثنائي/صورة الإصدار الجديد على **نفس** مجلد البيانات والمفتاح، بعد نسخة احتياطية.
+لا يوجد محدّث تلقائي للنواة. الترقية = تثبيت ثنائي/صورة الإصدار الجديد على **نفس** مجلد البيانات والمفتاح، بعد نسخة احتياطية. **الدليل الكامل (ثنائي · GHCR · Coolify · فحص دخان · رجوع):** [UPGRADE.md](UPGRADE.md).
 
 1. اقرأ قسم الإصدار في [CHANGELOG.md](../CHANGELOG.md) ووسوم [Releases](https://github.com/zadstack/gorun/releases).
 2. أنشئ نسخة: `gorun backup --data <data>` واحفظ `secret.key` / `GORUN_SECRET_KEY` و`gorun.toml` وبيئة الخدمة خارج الأرشيف الافتراضي.
@@ -191,7 +191,7 @@ GORUN_BASE_URL=https://your-site.example \
 
 7. افحص `/healthz`، دخول الأدمن، المحتوى، والوسائط. إن فشل التحديث: أوقف الخدمة، شغّل **ثنائي/صورة الإصدار السابق** على مجلد مُستعاد من النسخة مع المفتاح الأصلي. إرجاع الملف التنفيذي وحده لا يعيد مخطط SQLite إلى ما كان عليه.
 
-توافق القوالب والإضافات جزء من الاختبار على المجلد المستقل. المواقع التي تستخدم slug قالب متقاعد تُرحَّل عند الإقلاع فقط إذا غاب القالب القديم؛ راجع [THEMES.md](THEMES.md).
+توافق القوالب والإضافات جزء من الاختبار على المجلد المستقل. المواقع التي تستخدم slug قالب متقاعد تُرحَّل عند الإقلاع فقط إذا غاب القالب الأصلي؛ راجع [THEMES.md](THEMES.md).
 
 ## النسخ الاحتياطي والاستعادة
 
@@ -276,6 +276,8 @@ Coolify deploy notes: [deploy/coolify.md](../deploy/coolify.md). Compose:
 `deploy/docker-compose.yml`.
 
 ### Upgrades from release tags
+
+Full checklist (binary, GHCR, Coolify, smoke, rollback): [UPGRADE.md](UPGRADE.md).
 
 1. Read [CHANGELOG.md](../CHANGELOG.md) for the target tag; `gorun backup`; keep secrets outside the default archive.
 2. Stop the old process (release `<data>/gorun.lock`); do not overlap two containers on one volume.

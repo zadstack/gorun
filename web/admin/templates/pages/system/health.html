@@ -25,6 +25,12 @@
   <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-runtime">
     <h2 id="h-runtime" class="text-base font-bold mb-3">{{t "admin.health.runtime"}}</h2>
     <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+      <dt class="text-muted">{{t "admin.health.gorun_version"}}</dt>
+      <dd class="font-mono text-xs">
+        <span data-stat="gorun-version">{{.Version}}</span>
+        <span class="text-muted">·</span>
+        <a href="https://github.com/zadstack/gorun/releases" class="text-green hover:underline" dir="ltr" rel="noopener noreferrer" target="_blank">{{t "admin.health.releases_link"}}</a>
+      </dd>
       <dt class="text-muted">{{t "admin.health.go_version"}}</dt><dd class="font-mono text-xs">{{.GoVersion}} · {{.OS}}/{{.Arch}}</dd>
       <dt class="text-muted">{{t "admin.health.cpus"}}</dt><dd class="font-mono text-xs">{{.NumCPU}}</dd>
       <dt class="text-muted">{{t "admin.health.goroutines"}}</dt><dd class="font-mono text-xs">{{.Goroutines}}</dd>

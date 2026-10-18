@@ -44,6 +44,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Documentation
 
+- Upgrade / rollback runbook (`docs/UPGRADE.md`): tag → binary or GHCR/Coolify image → migrate on
+  `serve` → smoke → rollback with prior artifact + pre-upgrade backup pair + original secret key.
+  Cross-linked from install, production, troubleshooting, Coolify §8, and the docs index. System
+  Health and `/api/v1/system/health` expose the binary build as `version` (read-only; compare to
+  GitHub Releases — no in-app updater).
 - Coolify / Docker HTTPS acceptance checklist (`deploy/coolify.md` §9): discover trusted-proxy CIDR,
   verify cookie `Secure`, default HSTS (`max-age=31536000`) and opt-ins, and probe `/healthz` +
   `/readyz` from outside the container — linked from `docs/PRODUCTION.md`, `docs/TROUBLESHOOTING.md`,

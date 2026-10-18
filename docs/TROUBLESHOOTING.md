@@ -63,7 +63,9 @@ If the new binary/image fails after a tag bump:
 2. Run the **previous** release binary/image against a **restored** data directory (or the pre-upgrade copy you kept), with the **same** secret key.
 3. Do not expect rolling back the binary alone to undo SQLite migrations already applied.
 
-Full steps: [installation — upgrades](GORUN-INSTALLATION.md#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار) and [production](PRODUCTION.md).
+Full runbook (smoke + rollback drill): [UPGRADE.md](UPGRADE.md). Summaries:
+[installation — upgrades](GORUN-INSTALLATION.md#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار),
+[production](PRODUCTION.md).
 
 ## العربية — أين تبدأ؟
 

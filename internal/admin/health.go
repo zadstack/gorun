@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/jobs"
 	"github.com/zadstack/gorun/internal/kernel"
@@ -44,6 +45,7 @@ const (
 // healthReport is the System Health page and the /api/v1/system/health
 // payload. It never contains secrets.
 type healthReport struct {
+	Version       string        `json:"version"` // binary build (api.CoreVersion); compare to GitHub Releases
 	GoVersion     string        `json:"go_version"`
 	OS            string        `json:"os"`
 	Arch          string        `json:"arch"`
@@ -77,7 +79,7 @@ func (h *handlers) healthReport(ctx context.Context) (*healthReport, error) {
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
 	cfg := h.d.Config
-	rep := &healthReport{GoVersion: runtime.Version(), OS: runtime.GOOS, Arch: runtime.GOARCH, NumCPU: runtime.NumCPU(),
+	rep := &healthReport{Version: api.CoreVersion, GoVersion: runtime.Version(), OS: runtime.GOOS, Arch: runtime.GOARCH, NumCPU: runtime.NumCPU(),
 		Goroutines: runtime.NumGoroutine(), HeapAlloc: humanBytes(mem.HeapAlloc), DBPath: cfg.DBPath(),
 		DBSize: fileSize(cfg.DBPath()), WALSize: fileSize(cfg.DBPath() + "-wal"), Hooks: h.d.Hooks.Names(),
 		Uptime: time.Since(h.started).Truncate(time.Second).String(), StartedAt: h.started.UTC().Format(time.RFC3339),

@@ -80,7 +80,8 @@ Docker وCompose غير مطلوبين للتشغيل المحلي من الحز
 4. راقب migrations عند `serve`، ثم افحص الصحة ودخول الأدمن.
 5. الرجوع: ثنائي/صورة سابقة + مجلد مُستعاد + المفتاح الأصلي.
 
-الخطوات المفصّلة في [GORUN-INSTALLATION.md](GORUN-INSTALLATION.md#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار).
+**دليل التشغيل الكامل:** [UPGRADE.md](UPGRADE.md). ملخص التثبيت:
+[GORUN-INSTALLATION.md](GORUN-INSTALLATION.md#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار).
 
 ## النسخ الاحتياطي
 
@@ -162,5 +163,5 @@ gorun backup-restore --input /var/lib/gorun/backups/<timestamp>.manifest.json --
    - Confirm **AI Agents → Audit** shows your public IP after login; no recurring untrusted-peer log warning.
 4. **Backup:** `gorun backup` (or admin). Optional local schedule + retain-N on **System → Backups**, or host cron with `gorun backup --retain N`. Default archive omits `secret.key` / `gorun.toml` unless `--include-secrets`. Encrypted S3 upload stays manual.
 5. **Restore:** never merges into the live dir. Online: **Operations → Backups → Inspect / restore** → `<data>/restores/<stamp>/` → move out → stop old process → `serve --data` the moved copy with original secrets. Offline: `gorun backup-restore --dest <new-empty-dir>` while stopped.
-6. **Upgrade:** pin `ghcr.io/zadstack/gorun:X.Y.Z` or the matching binary archive; migrate on `serve`; roll back with previous artifact + restored data + original key.
+6. **Upgrade:** pin `ghcr.io/zadstack/gorun:X.Y.Z` or the matching binary archive; migrate on `serve`; roll back with previous artifact + restored data + original key. Full runbook: [UPGRADE.md](UPGRADE.md).
 7. **Problems:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Coolify: [deploy/coolify.md](../deploy/coolify.md).
