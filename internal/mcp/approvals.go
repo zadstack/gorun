@@ -37,8 +37,9 @@ var (
 	// approvals of another API key in check_approval).
 	ErrApprovalNotFound = errors.New("mcp: approval not found")
 	// ErrDecisionForbidden is returned when the decider may not decide: the
-	// requesting key itself, or an API key without an explicit mcp.approve
-	// scope ("*" does not count).
+	// requesting key itself, another key of the same owner (unless
+	// GORUN_MCP_SAME_OWNER_APPROVAL), or an API key without an explicit
+	// mcp.approve scope ("*" does not count).
 	ErrDecisionForbidden = errors.New("mcp: this principal may not decide approvals")
 )
 
@@ -231,7 +232,10 @@ func (st *approvalStore) Deny(ctx context.Context, id string) (*Approval, bool, 
 
 // checkDecider allows decisions from user sessions (the route or API op
 // already required mcp.approve) and from API keys that list mcp.approve
-// explicitly ("*" does not count) and did not request the call themselves.
+// explicitly ("*" does not count), did not request the call themselves and
+// belong to a different person than the requesting key: two keys of one
+// owner are one person approving their own call. Single-operator sites can
+// allow that with GORUN_MCP_SAME_OWNER_APPROVAL.
 func (st *approvalStore) checkDecider(ctx context.Context, id string) error {
 	a, err := st.get(ctx, id)
 	if err != nil {
@@ -246,6 +250,20 @@ func (st *approvalStore) checkDecider(ctx context.Context, id string) error {
 	}
 	k, err := st.s.findKey(ctx, actor.ID)
 	if err != nil || !slices.Contains(k.Scopes, PermApprove) {
+		return ErrDecisionForbidden
+	}
+	if st.s.d.Config.MCPSameOwnerApproval {
+		return nil
+	}
+	requester := a.RequestedBy
+	if requester == "" { // rows parked without an owner: look the key up
+		rk, err := st.s.findKey(ctx, a.APIKeyID)
+		if err != nil {
+			return ErrDecisionForbidden
+		}
+		requester = rk.UserID
+	}
+	if requester == "" || requester == k.UserID {
 		return ErrDecisionForbidden
 	}
 	return nil

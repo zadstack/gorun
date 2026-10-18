@@ -56,10 +56,11 @@ func withAPI(mods []kernel.Module) []kernel.Module {
 
 // Options configure New.
 type Options struct {
-	Role       string   // owner role, default "admin"
-	Scopes     []string // key scopes, default ["*"]
-	RatePerMin int      // key rate limit, default 100000 (effectively unlimited)
-	Kind       string   // auth.KeyKindAPI (default) or auth.KeyKindAgent
+	Role       string     // owner role, default "admin"
+	Scopes     []string   // key scopes, default ["*"]
+	RatePerMin int        // key rate limit, default 100000 (effectively unlimited)
+	Kind       string     // auth.KeyKindAPI (default) or auth.KeyKindAgent
+	User       *auth.User // existing key owner; nil creates a fresh user with Role
 }
 
 // Client calls the API of a booted app with a bearer key.
@@ -99,10 +100,13 @@ func New(t testing.TB, app *kernel.App, o Options) *Client {
 		t.Fatal("apitest: api key service not registered")
 	}
 	ctx := context.Background()
-	email := "apitest-" + strings.ToLower(db.NewID()) + "@example.com"
-	u, err := users.Create(ctx, email, "API Test", "correct horse battery staple", o.Role)
-	if err != nil {
-		t.Fatalf("apitest: create user: %v", err)
+	u := o.User
+	if u == nil {
+		email := "apitest-" + strings.ToLower(db.NewID()) + "@example.com"
+		var err error
+		if u, err = users.Create(ctx, email, "API Test", "correct horse battery staple", o.Role); err != nil {
+			t.Fatalf("apitest: create user: %v", err)
+		}
 	}
 	if o.Kind == "" {
 		o.Kind = auth.KeyKindAPI

@@ -28,3 +28,17 @@ func TestPublicScriptSources(t *testing.T) {
 		t.Fatal("empty adds nothing", e)
 	}
 }
+
+func TestMCPSameOwnerApprovalConfig(t *testing.T) {
+	if c, e := Load(nil); e != nil || c.MCPSameOwnerApproval {
+		t.Fatal("same-owner approval must be off by default", e)
+	}
+	t.Setenv("GORUN_MCP_SAME_OWNER_APPROVAL", "maybe")
+	if _, e := Load(nil); e == nil {
+		t.Fatal("accepted a non-boolean value")
+	}
+	t.Setenv("GORUN_MCP_SAME_OWNER_APPROVAL", "true")
+	if c, e := Load(nil); e != nil || !c.MCPSameOwnerApproval {
+		t.Fatal("explicit opt-in ignored", e)
+	}
+}

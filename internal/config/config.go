@@ -33,19 +33,23 @@ const (
 
 // Config is the resolved runtime configuration.
 type Config struct {
-	Addons          map[string]string                         // Optional addon modes: enabled, disabled or auto.
-	TrustedProxies  []string                                  // GORUN_TRUSTED_PROXIES; empty trusts no forwarded headers
-	CSPScriptSrc    []string                                  // GORUN_CSP_SCRIPT_SRC: extra public-page script sources (see PublicScriptSources)
-	Env             string                                    // "dev" | "prod"
-	DataDir         string                                    // GORUN_DATA, default ./data
-	BaseURL         string                                    // GORUN_BASE_URL
-	Addr            string                                    // GORUN_ADDR default 127.0.0.1:8080 (dev), :8080 (prod)
-	SecretKey       []byte                                    // GORUN_SECRET_KEY (32 bytes after base64 decode) — required in prod, generated+persisted in dev
-	AllowPrivateNet bool                                      // GORUN_ALLOW_PRIVATE_NET
-	Stripe          struct{ SecretKey, WebhookSecret string } // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
-	Theme           string                                    // GORUN_THEME default "default"
-	SetupToken      string                                    // GORUN_SETUP_TOKEN: honored in every environment; required for prod setup (≥ 16 chars)
-	S3              S3                                        // [s3] / GORUN_S3_*: media in an S3-compatible bucket
+	Addons          map[string]string // Optional addon modes: enabled, disabled or auto.
+	TrustedProxies  []string          // GORUN_TRUSTED_PROXIES; empty trusts no forwarded headers
+	CSPScriptSrc    []string          // GORUN_CSP_SCRIPT_SRC: extra public-page script sources (see PublicScriptSources)
+	Env             string            // "dev" | "prod"
+	DataDir         string            // GORUN_DATA, default ./data
+	BaseURL         string            // GORUN_BASE_URL
+	Addr            string            // GORUN_ADDR default 127.0.0.1:8080 (dev), :8080 (prod)
+	SecretKey       []byte            // GORUN_SECRET_KEY (32 bytes after base64 decode) — required in prod, generated+persisted in dev
+	AllowPrivateNet bool              // GORUN_ALLOW_PRIVATE_NET
+	// MCPSameOwnerApproval (GORUN_MCP_SAME_OWNER_APPROVAL) lets an API key
+	// approve MCP calls requested by another key of the same owner. Off by
+	// default: approvals by key need a different person.
+	MCPSameOwnerApproval bool
+	Stripe               struct{ SecretKey, WebhookSecret string } // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+	Theme                string                                    // GORUN_THEME default "default"
+	SetupToken           string                                    // GORUN_SETUP_TOKEN: honored in every environment; required for prod setup (≥ 16 chars)
+	S3                   S3                                        // [s3] / GORUN_S3_*: media in an S3-compatible bucket
 }
 
 // S3 is an S3-compatible bucket for media (empty = media on disk).
@@ -69,6 +73,7 @@ type fileConfig struct {
 	Addr            *string           `toml:"addr"`
 	SecretKey       *string           `toml:"secret_key"`
 	AllowPrivateNet *bool             `toml:"allow_private_net"`
+	MCPSameOwner    *bool             `toml:"mcp_same_owner_approval"`
 	Theme           *string           `toml:"theme"`
 	SetupToken      *string           `toml:"setup_token"`
 	Stripe          struct {
@@ -234,6 +239,9 @@ func applyFile(c *Config, secret *string) error {
 	if fc.AllowPrivateNet != nil {
 		c.AllowPrivateNet = *fc.AllowPrivateNet
 	}
+	if fc.MCPSameOwner != nil {
+		c.MCPSameOwnerApproval = *fc.MCPSameOwner
+	}
 	return nil
 }
 
@@ -285,6 +293,13 @@ func applyEnv(c *Config, secret *string) error {
 			return fmt.Errorf("config: GORUN_ALLOW_PRIVATE_NET: %w", err)
 		}
 		c.AllowPrivateNet = b
+	}
+	if v := os.Getenv("GORUN_MCP_SAME_OWNER_APPROVAL"); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return fmt.Errorf("config: GORUN_MCP_SAME_OWNER_APPROVAL: %w", err)
+		}
+		c.MCPSameOwnerApproval = b
 	}
 	return nil
 }

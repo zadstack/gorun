@@ -7,6 +7,8 @@
 > **وكلاء الذكاء الاصطناعي ← مفاتيح API** بأقل النطاقات اللازمة، فهذا النوع يعمل على MCP فقط وترفضه `/api`.
 > الأدوات الحساسة (النشر وإلغاؤه والحذف وتعديل الإعدادات وتعديل المحتوى المنشور) لا تُنفَّذ مباشرة بل تنتظر
 > موافقة بشرية من **وكلاء الذكاء الاصطناعي ← الموافقات**، ويستعلم الوكيل عن النتيجة بالأداة `check_approval`.
+> الموافقة بمفتاح API تتطلب شخصًا آخر: لا يقرر المفتاح طلباته ولا طلبات مفتاح آخر لمالكه نفسه، إلا إذا فعّل موقع
+> بمشغّل واحد ذلك صراحة بـ`GORUN_MCP_SAME_OWNER_APPROVAL=true`.
 > كل استدعاء يُسجَّل في سجل التدقيق مع بصمة المعاملات فقط.
 
 GoRun ships an official [Model Context Protocol](https://modelcontextprotocol.io) server so AI agents
@@ -64,7 +66,7 @@ public `Host` header.
 | `migrations.run` | Migration preview and status (when the WordPress migrator is installed) |
 | `commerce.manage` | `list_products` (when commerce is installed) |
 | `mcp.approve_self` | Sensitive tools run immediately, with no human approval. It must be listed explicitly in the key's scopes: `*` does **not** imply it. |
-| `mcp.approve` | Decide approvals over REST. It must be listed explicitly in the key's scopes (`*` does not count), and a key can never decide calls it requested itself. |
+| `mcp.approve` | Decide approvals over REST. It must be listed explicitly in the key's scopes (`*` does not count). A key can never decide calls it requested itself, nor calls requested by another key of the same owner (see below). |
 
 **Create MCP keys with only the scopes the agent needs, and never `*`.**
 
@@ -129,8 +131,13 @@ for scopes, approval, audit and rate limits.
    `{"status":"pending_approval","approval_id":"…","expires_at":"…"}`.
 2. A user with the `mcp.approve` permission reviews the tool, its arguments (pretty-printed and escaped),
    the key and the requester in **AI Agents → Approvals** (`/admin/agents/approvals`), then approves or
-   denies. Over REST, only keys that list `mcp.approve` explicitly can decide, and never for calls
-   they requested (HTTP 403). The REST API offers the same actions: `GET /api/v1/mcp/approvals`,
+   denies. Over REST, only keys that list `mcp.approve` explicitly can decide, never for calls
+   they requested, and never for calls requested by another key of **the same owner**: approval is
+   separation by person, not by key (HTTP 403). A signed-in user may still approve calls of their own
+   agent keys in the admin; that is the human in the loop. A single-operator site that wants an
+   approver key to decide its owner's own agent calls must opt in explicitly with
+   `GORUN_MCP_SAME_OWNER_APPROVAL=true` (or `mcp_same_owner_approval = true` in `gorun.toml`); the
+   requesting key itself is still refused. The REST API offers the same actions: `GET /api/v1/mcp/approvals`,
    `POST /api/v1/mcp/approvals/{id}/approve`, `POST /api/v1/mcp/approvals/{id}/deny`.
 3. **Approve** runs the call **once** with the stored arguments, as the requesting key
    (`auth.WithAPIKeyActor`: the key's scopes and its owner's role apply, and the `mcp.call` audit row
