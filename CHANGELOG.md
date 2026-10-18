@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Embedded launch overlay stylesheet at `/static/launch.css` (`web/launch/launch.css`),
+  served by the binary so Coolify/Traefik file mounts for that path can be removed
+  after upgrade (see `deploy/coolify.md`).
+
 ### Changed
 
 - Admin UI polish: light non-flat workspace atmosphere, clearer sidebar/topbar hierarchy,

@@ -181,6 +181,27 @@ func TestSetupCreatesFirstAdminAndLogsIn(t *testing.T) {
 	}
 }
 
+func TestLaunchCSSEmbeddedAtStaticPath(t *testing.T) {
+	s := bootWith(t)
+	resp, body := s.do("GET", httpx.LaunchCSSPath, nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("launch.css: %d", resp.StatusCode)
+	}
+	ct := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, "text/css") {
+		t.Fatalf("content-type: %q", ct)
+	}
+	for _, want := range []string{"--journey-bg", ".launch-page", ".launch-start", ".start-form"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("launch.css missing %q", want)
+		}
+	}
+	resp, _ = s.do("GET", httpx.LaunchCSSPath+"?v=test", nil)
+	if resp.StatusCode != 200 || resp.Header.Get("Cache-Control") != httpx.CacheImmutable {
+		t.Fatalf("versioned launch.css cache: %d %q", resp.StatusCode, resp.Header.Get("Cache-Control"))
+	}
+}
+
 func TestAuthAloneServesNoDashboard(t *testing.T) {
 	s := bootWith(t) // auth without the admin module
 	resp, _ := s.do("GET", "/admin", nil)
