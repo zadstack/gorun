@@ -129,9 +129,32 @@
 .admin-workspace .navigation-move button { border-radius: var(--radius); }
 .admin-workspace .dashboard-grid { gap: var(--admin-space-sm); }
 .admin-workspace #main:has(> .dashboard-grid) > p { margin-bottom: var(--admin-space-md); }
-.admin-workspace .dashboard-grid > section { border-radius: var(--radius); }
-.admin-workspace .dashboard-grid > section:has([data-widget=quick_actions]) { padding: var(--admin-space-sm) var(--admin-space-md); }
+.admin-workspace .dashboard-grid > section {
+  border-radius: var(--radius);
+  padding: var(--admin-space-sm) var(--admin-space-md);
+}
+.admin-workspace .dashboard-grid > section:has([data-widget=quick_actions]) {
+  padding: var(--admin-space-sm) var(--admin-space-md);
+}
 .admin-workspace .dashboard-grid [data-widget=quick_actions] { gap: var(--admin-space-sm); }
+.admin-workspace .dashboard-grid [data-widget=quick_actions] h2 { font-size: .9375rem; margin-bottom: .5rem; }
+.admin-workspace .dashboard-grid [data-widget=quick_actions] a {
+  min-height: var(--control-h);
+  padding-block: .35rem;
+  font-size: .8125rem;
+}
+.admin-workspace .dashboard-layout-toolbar { margin-block: 0 .625rem; gap: .5rem; font-size: .75rem; }
+.admin-workspace .dashboard-layout-toolbar button,
+.admin-workspace .dashboard-layout-toolbar a {
+  min-height: var(--control-h);
+  padding: .35rem .625rem;
+}
+.admin-workspace .dashboard-layout-controls button {
+  width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  font-size: .875rem;
+}
 .admin-workspace .workspace-guide > summary { padding: var(--admin-space-sm) var(--admin-space-md); min-height: 52px; }
 .admin-workspace .guide-map,.admin-workspace .guide-howto { padding: var(--admin-space-md); }
 .admin-workspace .guide-hub,.admin-workspace .guide-area { border-radius: var(--radius); }
@@ -160,6 +183,17 @@
  .admin-workspace #main :is(button,summary,select),.admin-workspace #main a:is(.h-8,.h-9) { min-height: var(--control-h-touch); }
  .admin-workspace .admin-nav-link { min-height: var(--control-h-touch); }
  .admin-workspace [data-sidebar-toggle] { min-width: var(--control-h-touch); min-height: var(--control-h-touch); }
+ .admin-workspace .dashboard-layout-toolbar button,
+ .admin-workspace .dashboard-layout-toolbar a,
+ .admin-workspace .dashboard-layout-controls button,
+ .admin-workspace .dashboard-grid [data-widget=quick_actions] a {
+   min-height: var(--control-h-touch);
+   min-width: var(--control-h-touch);
+ }
+ .admin-workspace .dashboard-layout-controls button {
+   width: var(--control-h-touch);
+   height: var(--control-h-touch);
+ }
 }
 
 .admin-workspace .admin-sidebar nav { padding-block: .375rem; }
