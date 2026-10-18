@@ -254,6 +254,7 @@
   "backups.restored": "Backup restored into a new data directory under restores/. Copy secrets, stop the live process, then serve with --data on that folder.",
   "backups.restore_exists": "That restore directory already exists; remove or rename it before restoring again.",
   "backups.restore_blocked": "Restore blocked: the local pair failed preflight. See Inspect.",
+  "backups.restore_partial": "An earlier restore was interrupted and left the partial directory below. Remove it on the server, then restore again.",
   "backups.restore_failed": "Restore failed; see the server log and Inspect.",
   "settings.tab_ai": "AI writing",
   "settings.error_ai_provider": "Choose a provider",

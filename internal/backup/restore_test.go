@@ -3,6 +3,7 @@ package backup
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -90,6 +91,51 @@ func TestRestoreRejectsUnsafeArchivesBeforeWriting(t *testing.T) {
 			if _, err := os.Stat(dest); !os.IsNotExist(err) {
 				t.Fatal("unsafe restore wrote destination")
 			}
+			if _, err := os.Stat(PartialPath(dest)); !os.IsNotExist(err) {
+				t.Fatal("failed restore left its staging directory")
+			}
 		})
+	}
+}
+
+func TestRestoreStagesThenRenamesAndRefusesLeftoverPartial(t *testing.T) {
+	dir, path := backupSource(t)
+	res, err := Create(dir, path, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := t.TempDir()
+	dest := filepath.Join(parent, "restored")
+	if got := PartialPath(dest); got != filepath.Join(parent, ".restored.partial") {
+		t.Fatal(got)
+	}
+	// An interrupted restore (process killed mid-way) leaves only the staging
+	// directory, never a destination that looks complete.
+	if err := os.Mkdir(PartialPath(dest), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(PartialPath(dest), "gorun.db"), []byte("half"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Restore(res.Manifest, dest); !errors.Is(err, ErrPartialRestore) {
+		t.Fatalf("leftover partial: %v", err)
+	}
+	if _, err := os.Stat(dest); !os.IsNotExist(err) {
+		t.Fatal("destination created next to a leftover partial")
+	}
+	if data, err := os.ReadFile(filepath.Join(PartialPath(dest), "gorun.db")); err != nil || string(data) != "half" {
+		t.Fatal("leftover partial was modified")
+	}
+	if err := os.RemoveAll(PartialPath(dest)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Restore(res.Manifest, dest); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dest, "gorun.db")); err != nil {
+		t.Fatal("restored database missing", err)
+	}
+	if _, err := os.Stat(PartialPath(dest)); !os.IsNotExist(err) {
+		t.Fatal("staging directory left after a complete restore")
 	}
 }

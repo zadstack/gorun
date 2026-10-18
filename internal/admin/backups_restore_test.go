@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -80,5 +81,46 @@ func TestAdminBackupInspectAndRestore(t *testing.T) {
 	}
 	if resp, _ = s.do("GET", "/admin/system/backups/not-a-stamp/inspect", nil); resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("bad stamp: %d", resp.StatusCode)
+	}
+}
+
+func TestAdminBackupRestoreRefusesLeftoverPartial(t *testing.T) {
+	s := boot(t)
+	s.login("admin@example.com", "admin", "en")
+	if resp, _ := s.post("/admin/system/backups", nil); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("create: %d", resp.StatusCode)
+	}
+	_, page := s.do("GET", "/admin/system/backups", nil)
+	m := inspectLink.FindStringSubmatch(page)
+	if m == nil {
+		t.Fatal("no inspect link")
+	}
+	stamp := m[1]
+	restores := filepath.Join(s.app.Deps.Config.DataDir, "restores")
+	partial := filepath.Join(restores, "."+stamp+".partial")
+	if err := os.MkdirAll(partial, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(partial, "gorun.db"), []byte("half"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	inspectPath := "/admin/system/backups/" + stamp + "/inspect"
+	_, page = s.do("GET", inspectPath, nil)
+	mustContain(t, page, `data-restore-partial`, partial)
+	if strings.Contains(page, `data-restore-done`) || strings.Contains(page, `data-restore-submit`) {
+		t.Fatal("interrupted restore shown as done or restorable")
+	}
+	if resp, _ := s.post("/admin/system/backups/"+stamp+"/restore", nil); resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != inspectPath {
+		t.Fatalf("restore over partial: %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	if _, err := os.Stat(filepath.Join(restores, stamp)); !os.IsNotExist(err) {
+		t.Fatal("restore ran next to a leftover partial")
+	}
+	if s.auditCount("system.backup_restore", stamp) != 0 {
+		t.Fatal("refused restore was audited as done")
+	}
+	_, page = s.do("GET", "/admin/system/backups", nil)
+	if strings.Contains(page, `data-restored-path`) {
+		t.Fatal("partial restore listed as restored")
 	}
 }

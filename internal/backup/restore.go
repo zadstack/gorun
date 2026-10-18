@@ -9,8 +9,22 @@ import (
 	"path/filepath"
 )
 
+// ErrPartialRestore reports that an interrupted restore left its staging
+// directory (see PartialPath); remove it before restoring again.
+var ErrPartialRestore = errors.New("backup: an interrupted restore left a partial directory")
+
+// PartialPath is the staging directory Restore fills before it renames it to
+// destination: a hidden sibling, so an interrupted restore never looks complete.
+func PartialPath(destination string) string {
+	destination = filepath.Clean(destination)
+	return filepath.Join(filepath.Dir(destination), "."+filepath.Base(destination)+".partial")
+}
+
 // Restore writes only into a new directory. It never merges into an existing
 // installation; the caller must review external requirements before booting it.
+// Everything is written into PartialPath(destination) first and renamed to
+// destination only after the database and archive checksums verify, so
+// destination exists only for a complete restore.
 func Restore(manifestPath, destination string) (report *Inspection, resultErr error) {
 	destination = filepath.Clean(destination)
 	if destination == "." || destination == string(filepath.Separator) {
@@ -33,15 +47,22 @@ func Restore(manifestPath, destination string) (report *Inspection, resultErr er
 	}
 	defer parent.Close()
 	base := filepath.Base(destination)
-	if err := parent.Mkdir(base, 0700); err != nil {
-		return report, fmt.Errorf("backup: destination must not exist: %w", err)
+	staging := filepath.Base(PartialPath(destination))
+	if _, err := parent.Lstat(base); err == nil || !errors.Is(err, os.ErrNotExist) {
+		return report, fmt.Errorf("backup: destination must not exist: %s", destination)
+	}
+	if err := parent.Mkdir(staging, 0700); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return report, fmt.Errorf("%w: %s", ErrPartialRestore, PartialPath(destination))
+		}
+		return report, err
 	}
 	defer func() {
 		if resultErr != nil {
-			resultErr = errors.Join(resultErr, parent.RemoveAll(base))
+			resultErr = errors.Join(resultErr, parent.RemoveAll(staging))
 		}
 	}()
-	root, err := parent.OpenRoot(base)
+	root, err := parent.OpenRoot(staging)
 	if err != nil {
 		return report, err
 	}
@@ -50,7 +71,7 @@ func Restore(manifestPath, destination string) (report *Inspection, resultErr er
 	if err := copyRestoredDatabase(root, filepath.Join(dir, m.Database.Name)); err != nil {
 		return report, err
 	}
-	if actual, err := digest(filepath.Join(destination, "gorun.db")); err != nil || actual.Size != m.Database.Size || actual.SHA256 != m.Database.SHA256 {
+	if actual, err := digest(filepath.Join(PartialPath(destination), "gorun.db")); err != nil || actual.Size != m.Database.Size || actual.SHA256 != m.Database.SHA256 {
 		return report, errors.New("backup: restored database checksum mismatch")
 	}
 	_, _, err = scanArchive(filepath.Join(dir, m.Archive.Name), func(name string, h *tar.Header, reader io.Reader) error {
@@ -77,6 +98,15 @@ func Restore(manifestPath, destination string) (report *Inspection, resultErr er
 	}
 	if actual, err := digest(filepath.Join(dir, m.Archive.Name)); err != nil || actual.Size != m.Archive.Size || actual.SHA256 != m.Archive.SHA256 {
 		return report, errors.New("backup: archive changed during restore")
+	}
+	if err := root.Close(); err != nil {
+		return report, err
+	}
+	if _, err := parent.Lstat(base); err == nil || !errors.Is(err, os.ErrNotExist) {
+		return report, fmt.Errorf("backup: destination appeared during restore: %s", destination)
+	}
+	if err := parent.Rename(staging, base); err != nil {
+		return report, err
 	}
 	return report, nil
 }

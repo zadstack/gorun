@@ -32,6 +32,9 @@
   {{if .Done}}
   <p class="text-green" data-restore-done>{{t "admin.backups.restore_already"}}</p>
   <p class="text-muted text-sm">{{t "admin.backups.restore_next"}}</p>
+  {{else if .Partial}}
+  <p class="text-red" data-restore-partial>{{t "admin.backups.restore_partial"}}</p>
+  <p class="font-mono text-xs break-all" dir="ltr">{{.Partial}}</p>
   {{else if eq .Report.Readiness "blocked"}}
   <p class="text-red">{{t "admin.backups.restore_blocked"}}</p>
   {{else}}
