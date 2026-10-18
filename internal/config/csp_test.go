@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -26,6 +28,35 @@ func TestPublicScriptSources(t *testing.T) {
 	t.Setenv("GORUN_CSP_SCRIPT_SRC", "")
 	if c, e = Load(nil); e != nil || len(c.CSPScriptSrc) != 0 {
 		t.Fatal("empty adds nothing", e)
+	}
+}
+
+func TestMetricsConfig(t *testing.T) {
+	t.Setenv("GORUN_DATA", t.TempDir())
+	if c, e := Load(nil); e != nil || c.Metrics || c.MetricsToken != "" {
+		t.Fatal("metrics must be off by default", e)
+	}
+	t.Setenv("GORUN_METRICS", "maybe")
+	if _, e := Load(nil); e == nil {
+		t.Fatal("accepted a non-boolean value")
+	}
+	t.Setenv("GORUN_METRICS", "true")
+	t.Setenv("GORUN_METRICS_TOKEN", "scrape-secret")
+	c, e := Load(nil)
+	if e != nil || !c.Metrics || c.MetricsToken != "scrape-secret" {
+		t.Fatal("metrics opt-in ignored", e)
+	}
+	dir := t.TempDir()
+	t.Setenv("GORUN_DATA", dir)
+	t.Setenv("GORUN_METRICS", "")
+	t.Setenv("GORUN_METRICS_TOKEN", "")
+	if err := os.WriteFile(filepath.Join(dir, "gorun.toml"),
+		[]byte("metrics = true\nmetrics_token = \"from-toml\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	c, e = Load(nil)
+	if e != nil || !c.Metrics || c.MetricsToken != "from-toml" {
+		t.Fatal("toml metrics ignored", e)
 	}
 }
 

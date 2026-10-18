@@ -127,6 +127,10 @@ gorun backup-restore --input /var/lib/gorun/backups/<timestamp>.manifest.json --
 4. أوقف كل عملية على المجلد القديم، وأعد أصول S3 وأسرار البيئة الخارجية إن كانت مستخدمة. شغّل الإصدار المطابق للنسخة بـ`--data` على مجلد الاستعادة وتحقق من الصحة ودخول الأدمن والمحتوى وقراءة إعدادات التكامل.
 5. قبل إصدار جديد احتفظ بالحزمة القديمة وزوج النسخة والإعدادات. إن فشل التحديث، أوقف الخدمة، وأعد الحزمة القديمة ومجلد البيانات المستعاد مع المفتاح الأصلي ثم أعد فحص الرحلات.
 
+## المراقبة الخفيفة (اختياري)
+
+`GORUN_METRICS=true` يفعّل `GET /metrics` بصيغة Prometheus نصية (عدادات HTTP، مقاييس المهام، وقت آخر نسخة محلية ناجحة). اختياري: `GORUN_METRICS_TOKEN` لـBearer. عطّل افتراضيًا؛ اسحب من الشبكة الخاصة ولا تفتح المسار للعامة بلا رمز أو ACL. السجلات في `prod` JSON على stderr للشحن عبر مُجمّع المضيف. الدليل: [OBSERVABILITY.md](OBSERVABILITY.md).
+
 ## قبول النشر الفعلي
 
 بعد تحديد المضيف، تحقق من HTTPS وrestart وvolume والصحة خارج الحاوية، ثم عملية Stripe اختبارية كاملة وwebhook والفوترة وسحب الوصول بعد refund، وإرسال بريد فعلي واستعادة على بيانات اختبار. هذه فحوصات مستقلة عن نجاح الاختبارات المحلية.
@@ -164,4 +168,5 @@ gorun backup-restore --input /var/lib/gorun/backups/<timestamp>.manifest.json --
 4. **Backup:** `gorun backup` (or admin). Optional local schedule + retain-N on **System → Backups**, or host cron with `gorun backup --retain N`. Default archive omits `secret.key` / `gorun.toml` unless `--include-secrets`. Encrypted S3 upload stays manual.
 5. **Restore:** never merges into the live dir. Online: **Operations → Backups → Inspect / restore** → `<data>/restores/<stamp>/` → move out → stop old process → `serve --data` the moved copy with original secrets. Offline: `gorun backup-restore --dest <new-empty-dir>` while stopped.
 6. **Upgrade:** pin `ghcr.io/zadstack/gorun:X.Y.Z` or the matching binary archive; migrate on `serve`; roll back with previous artifact + restored data + original key. Full runbook: [UPGRADE.md](UPGRADE.md).
-7. **Problems:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Coolify: [deploy/coolify.md](../deploy/coolify.md).
+7. **Observability (optional):** `GORUN_METRICS=true` → `GET /metrics` (Prometheus text); optional `GORUN_METRICS_TOKEN`. Prod logs are JSON on stderr for host log shipping. Details: [OBSERVABILITY.md](OBSERVABILITY.md).
+8. **Problems:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Coolify: [deploy/coolify.md](../deploy/coolify.md).

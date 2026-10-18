@@ -288,7 +288,8 @@ func TestRedirectReservedPrefixes(t *testing.T) {
 	s := testService(t)
 	ctx := context.Background()
 	for _, p := range []string{"/admin", "/admin/", "/Admin/users", "/api/v1/x", "/mcp", "/auth/magic/x", "/webhooks/stripe",
-		"/media/2026/a.png", "/static/admin/app.css", "/checkout/pro", "/account", "/account/open/1", "/healthz", "/readyz"} {
+		"/media/2026/a.png", "/static/admin/app.css", "/checkout/pro", "/account", "/account/open/1", "/healthz", "/readyz",
+		"/metrics"} {
 		_, err := s.Save(ctx, Redirect{FromPath: p, ToURL: "/elsewhere", Enabled: true})
 		var ve *ValidationError
 		if !errors.As(err, &ve) || ve.Fields["from_path"] != "redirects.error.from_reserved" {

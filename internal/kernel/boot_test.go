@@ -224,6 +224,9 @@ func TestAdminAndAPIDenyByDefaultWithoutAuthenticator(t *testing.T) {
 			t.Errorf("%s: %d %q", p, code, body)
 		}
 	}
+	if code, _, _ := get(t, app.Handler, "GET", "/metrics"); code != http.StatusNotFound {
+		t.Fatalf("/metrics must be absent when GORUN_METRICS is off: %d", code)
+	}
 	app.Deps.Router.SetAuthenticator("auth")
 	if code, body, _ := get(t, app.Handler, "GET", "/admin/x"); code != 200 || body != "admin" {
 		t.Errorf("after SetAuthenticator: %d %q", code, body)
@@ -238,6 +241,39 @@ func TestReadyzFailsWhenDBUnavailable(t *testing.T) {
 	app.Close()
 	if code, _, _ := get(t, app.Handler, "GET", "/readyz"); code != http.StatusServiceUnavailable {
 		t.Fatalf("want 503 after DB closed, got %d", code)
+	}
+}
+
+func TestBootMetricsExport(t *testing.T) {
+	cfg := testConfig(t)
+	cfg.Metrics = true
+	cfg.MetricsToken = "tok"
+	web := fakeModule{name: "content", register: func(d *kernel.Deps) error {
+		d.Router.SetAuthenticator("fake")
+		d.Router.Public.Get("/", func(w http.ResponseWriter, _ *http.Request) { io.WriteString(w, "home") })
+		return nil
+	}}
+	app, err := kernel.Boot(context.Background(), cfg, []kernel.Module{settingsmod.New(), web})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer app.Close()
+	if _, _, hdr := get(t, app.Handler, "GET", "/metrics"); hdr.Get("X-Order") != "" {
+		t.Fatal("/metrics must bypass Public middleware")
+	}
+	code, _, _ := get(t, app.Handler, "GET", "/metrics")
+	if code != http.StatusUnauthorized {
+		t.Fatalf("want 401 without token, got %d", code)
+	}
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req.Header.Set("Authorization", "Bearer tok")
+	app.Handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "gorun_jobs") {
+		t.Fatalf("%d %q", rec.Code, rec.Body.String())
+	}
+	if _, _, hdr := get(t, app.Handler, "GET", "/healthz"); hdr.Get("X-Order") != "" {
+		t.Fatal("/healthz must still bypass Public middleware")
 	}
 }
 

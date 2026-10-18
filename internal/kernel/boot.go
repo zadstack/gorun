@@ -24,6 +24,7 @@ import (
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/jobs"
+	"github.com/zadstack/gorun/internal/metrics"
 	"github.com/zadstack/gorun/internal/settings"
 )
 
@@ -328,6 +329,11 @@ func assemble(deps *Deps) http.Handler {
 			HSTSIncludeSubdomains: deps.Config.HSTSIncludeSubdomains, HSTSPreload: deps.Config.HSTSPreload}), httpx.Compress,
 		// HEAD is answered by the GET route (no body) wherever no HEAD route exists.
 		middleware.GetHead)
+	var httpMetrics *metrics.HTTP
+	if deps.Config.Metrics {
+		httpMetrics = &metrics.HTTP{}
+		root.Use(httpMetrics.Middleware)
+	}
 	root.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { plain(w, http.StatusOK, "ok") })
 	root.Get("/readyz", func(w http.ResponseWriter, req *http.Request) {
 		if err := d.PingContext(req.Context()); err != nil {
@@ -336,6 +342,9 @@ func assemble(deps *Deps) http.Handler {
 		}
 		plain(w, http.StatusOK, "ok")
 	})
+	if deps.Config.Metrics {
+		root.Get("/metrics", metrics.Handler(deps.Config.MetricsToken, httpMetrics, deps.Jobs, deps.Settings, deps.Config.DataDir))
+	}
 	root.Mount("/admin", r.Admin)
 	root.Mount("/api", r.API)
 	root.Mount("/webhooks", r.Webhooks)

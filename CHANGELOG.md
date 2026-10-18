@@ -30,6 +30,9 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Optional Prometheus text scrape at `GET /metrics` when `GORUN_METRICS=true` (stdlib exposition:
+  HTTP status-class counters, job gauges including dead/failed, backup last-success timestamp).
+  Optional `GORUN_METRICS_TOKEN` Bearer; off by default. Operator guide: `docs/OBSERVABILITY.md`.
 - Local backup schedule + retain-N: System → Backups settings (`backup.schedule_hours`,
   `backup.retain`) drive hourly cron `backup.schedule` (secrets still excluded; no remote upload).
   `backup.Prune` keeps the newest N complete local pairs; `gorun backup --retain N` for host
