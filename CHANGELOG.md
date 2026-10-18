@@ -5,6 +5,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-18
+
+Second tagged release after the CMS hosting gap sequence, launch-in-core path, admin/theme
+polish, and operator runbooks landed on `main` (#16–#30).
+
 ### Added
 
 - Productized staging / promote-to-live for single-process SQLite: `gorun staging seed`
@@ -204,5 +209,6 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/zadstack/gorun/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/zadstack/gorun/releases/tag/v0.1.0

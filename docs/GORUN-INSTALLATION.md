@@ -2,7 +2,7 @@
 
 دليل المشغّل لتثبيت جديد (ملف تنفيذي أو Docker/GHCR)، أول مدير، الترقية من وسوم الإصدار، والنسخ الاحتياطي. للفهرس الكامل راجع [docs/README.md](README.md). لأعطال شائعة راجع [استكشاف الأعطال](TROUBLESHOOTING.md).
 
-جُرب البناء والتشغيل والأوامر الأساسية على macOS Apple Silicon في مجلد بيانات مستقل. أوامر Linux والإنتاج أدناه مستمدة من المصدر الحالي (`v0.1.0` وما بعده على `main`).
+جُرب البناء والتشغيل والأوامر الأساسية على macOS Apple Silicon في مجلد بيانات مستقل. أوامر Linux والإنتاج أدناه مستمدة من المصدر الحالي (`v0.2.0` وما بعده على `main`).
 
 ## المصدر والترخيص
 
@@ -23,16 +23,16 @@ GoRun برنامج حر مفتوح المصدر بترخيص **GNU Affero Genera
 بدءًا من v0.1.0 تُنشر الإصدارات على [صفحة الإصدارات في GitHub](https://github.com/zadstack/gorun/releases):
 
 - **أرشيفات تنفيذية** لـ linux وdarwin بمعماريتي amd64 وarm64 باسم `gorun-<الإصدار>-<النظام>-<المعمارية>.tar.gz`، وفيها `gorun` ومجلد `themes/` والوثائق، مع ملف `SHA256SUMS-<الإصدار>.txt`. تحقق من البصمة قبل فك الأرشيف، ثم شغّل `./gorun serve` من **داخل** مجلد الفك حتى يجد `themes/`.
-- **صورة حاوية** متعددة المعماريات `ghcr.io/zadstack/gorun` بالوسوم `0.1.0` و`0.1` و`latest` (وثبّت دائمًا على رقم إصدار في الإنتاج). تعمل بوضع الإنتاج (`GORUN_ENV=prod`) وتحتاج `GORUN_BASE_URL` و`GORUN_SECRET_KEY` وvolume دائم على `/data`. القوالب مضمّنة في الصورة.
+- **صورة حاوية** متعددة المعماريات `ghcr.io/zadstack/gorun` بالوسوم `0.2.0` و`0.2` و`latest` (وثبّت دائمًا على رقم إصدار في الإنتاج). تعمل بوضع الإنتاج (`GORUN_ENV=prod`) وتحتاج `GORUN_BASE_URL` و`GORUN_SECRET_KEY` وvolume دائم على `/data`. القوالب مضمّنة في الصورة.
 
 ### ملف تنفيذي (مثال linux/amd64)
 
 ```sh
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/gorun-0.1.0-linux-amd64.tar.gz
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/SHA256SUMS-0.1.0.txt
-sha256sum --ignore-missing -c SHA256SUMS-0.1.0.txt
-tar xzf gorun-0.1.0-linux-amd64.tar.gz
-cd gorun-0.1.0-linux-amd64
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.2.0/gorun-0.2.0-linux-amd64.tar.gz
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.2.0/SHA256SUMS-0.2.0.txt
+sha256sum --ignore-missing -c SHA256SUMS-0.2.0.txt
+tar xzf gorun-0.2.0-linux-amd64.tar.gz
+cd gorun-0.2.0-linux-amd64
 GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
 ```
 
@@ -41,15 +41,15 @@ GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun ser
 ### Docker / GHCR
 
 ```sh
-docker pull ghcr.io/zadstack/gorun:0.1.0
-docker run --rm --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.1.0 version
+docker pull ghcr.io/zadstack/gorun:0.2.0
+docker run --rm --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.2.0 version
 
 docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
   -e GORUN_BASE_URL=https://cms.example.com \
   -e GORUN_SECRET_KEY="$(openssl rand -base64 32)" \
   -e GORUN_SETUP_TOKEN="$(openssl rand -hex 24)" \
   -e GORUN_TRUSTED_PROXIES=10.0.1.0/24 \
-  ghcr.io/zadstack/gorun:0.1.0
+  ghcr.io/zadstack/gorun:0.2.0
 ```
 
 احفظ `GORUN_SECRET_KEY` خارج الحاوية قبل التشغيل الأول. خلف Traefik أو Coolify اضبط `GORUN_TRUSTED_PROXIES` على شبكة الوكيل الحقيقية، ثم نفّذ قائمة قبول HTTPS (CIDR، Secure، HSTS، صحة من خارج الحاوية) في [Coolify §9](../deploy/coolify.md#9-https-acceptance-checklist). التفاصيل أيضًا في [الإنتاج](PRODUCTION.md). Compose من المصدر: `deploy/docker-compose.yml`.
@@ -249,10 +249,10 @@ Operator path for a new host. Full Arabic detail is above; production hardening 
 ### Binary from a release tag
 
 ```sh
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/gorun-0.1.0-linux-amd64.tar.gz
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/SHA256SUMS-0.1.0.txt
-sha256sum --ignore-missing -c SHA256SUMS-0.1.0.txt
-tar xzf gorun-0.1.0-linux-amd64.tar.gz && cd gorun-0.1.0-linux-amd64
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.2.0/gorun-0.2.0-linux-amd64.tar.gz
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.2.0/SHA256SUMS-0.2.0.txt
+sha256sum --ignore-missing -c SHA256SUMS-0.2.0.txt
+tar xzf gorun-0.2.0-linux-amd64.tar.gz && cd gorun-0.2.0-linux-amd64
 GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
 ```
 
@@ -265,10 +265,10 @@ docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
   -e GORUN_BASE_URL=https://cms.example.com \
   -e GORUN_SECRET_KEY="$(openssl rand -base64 32)" \
   -e GORUN_SETUP_TOKEN="$(openssl rand -hex 24)" \
-  ghcr.io/zadstack/gorun:0.1.0
+  ghcr.io/zadstack/gorun:0.2.0
 ```
 
-Pin a version tag in production (`0.1.0` or `0.1`). Behind a reverse proxy set
+Pin a version tag in production (`0.2.0` or `0.2`). Behind a reverse proxy set
 `GORUN_TRUSTED_PROXIES`, then run the HTTPS acceptance checklist (trusted CIDR,
 cookie `Secure`, HSTS, health from outside the container):
 [deploy/coolify.md §9](../deploy/coolify.md#9-https-acceptance-checklist).
