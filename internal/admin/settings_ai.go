@@ -85,7 +85,8 @@ func isLocalHost(host string) bool {
 
 // validateAI returns the settings to store and field errors (i18n keys).
 // A provider is only stored together with a model (and, for Anthropic, an
-// API key), so a non-empty ai.provider means the helper is usable.
+// API key), so a non-empty ai.provider means the helper menu can appear.
+// Saving never proves generation works.
 func (h *handlers) validateAI(ctx context.Context, in aiInput) (map[string]any, map[string]string) {
 	keyStored := h.d.Settings.GetString(ctx, aiSettingAPIKey, "") != ""
 	if in.ClearKey {
@@ -194,6 +195,6 @@ func (h *handlers) settingsAISave(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	httpx.SetFlash(w, "success", "admin.settings.saved")
+	httpx.SetFlash(w, "success", "admin.ai.saved")
 	redirect(w, r, "/admin/settings/ai")
 }

@@ -58,9 +58,13 @@ func (h *handlers) studioList(w http.ResponseWriter, r *http.Request) {
 	}
 	providers := []option{}
 	if cfg, e := h.loadAIConfig(r.Context()); e == nil {
-		providers = append(providers, option{"native-text", "Configured writing provider", "text"})
+		providers = append(providers, option{"native-text", "Saved writing provider · generation not verified", "text"})
 		if cfg.Provider == AIProviderOpenAI && config.ImageModel != "" {
-			providers = append(providers, option{"native-image", "Configured image model: " + config.ImageModel, "image"})
+			providers = append(providers, option{
+				"native-image",
+				"Saved image model · generation not verified: " + config.ImageModel,
+				"image",
+			})
 		}
 	}
 	for _, b := range config.Bindings {

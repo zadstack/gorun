@@ -111,6 +111,23 @@ func TestStudioNativeTextUsesUnsavedSourceAndNeverPublishes(t *testing.T) {
 		t.Fatal(code)
 	}
 }
+func TestStudioNativeProviderLabelsDoNotClaimGeneration(t *testing.T) {
+	s := boot(t, content.New())
+	u := s.login("studio-labels@example.com", "admin", "en")
+	it := studioPost(t, s, u)
+	fake := newFakeAI(t, 200, openAIReply("unused"), nil)
+	configureAI(t, s, url.Values{"provider": {"openai"}, "base_url": {fake.srv.URL}, "model": {"label-model"}})
+	if err := s.app.Deps.Settings.Set(context.Background(), "ai.studio", map[string]any{"image_model": "dall-e-test"}); err != nil {
+		t.Fatal(err)
+	}
+	resp, body := s.do("GET", "/admin/x/studio/"+it.ID, nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("list %d", resp.StatusCode)
+	}
+	mustContain(t, body, "Saved writing provider · generation not verified", "Saved image model · generation not verified: dall-e-test")
+	mustNotContain(t, body, "Configured writing provider", `"Configured image model`)
+}
+
 func TestStudioContentOwnershipAndUnconfiguredCapabilities(t *testing.T) {
 	s := boot(t, content.New())
 	u := s.login("owner@example.com", "admin", "en")

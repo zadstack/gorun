@@ -6,7 +6,7 @@
   "sent": "Generation requested. Refresh history to see its result; the page has not changed.",
   "saved": "Reviewed change saved. Public preview is reloading.",
   "empty": "No text candidates for this page yet.",
-  "native": "Configured writing provider",
+  "native": "Saved writing provider · generation not verified",
   "use": "Review result",
   "not_ready": "Not ready",
   "conflict": "The saved page changed. Your proposal remains here. Reload the saved page and review again before applying.",

@@ -47,6 +47,10 @@ All notable changes to GoRun are recorded here. The format follows
 - Job workers no longer leave a job `running` when shutdown cancels the context while the job is being
   claimed: the claim itself is not cancellable, so a claimed job is always finished or requeued (it
   previously waited for stale-job recovery). This also fixes the flaky `TestStartRequeuesStaleRunningJobs`.
+- Provider truthfulness: System Health no longer marks a stored Stripe secret key or webhook secret as
+  `ok` (both are `warn` until checkout/delivery are verified elsewhere). Content Studio, AI writing, and
+  connection admin copy state that save or list/discovery probes do not prove generation works.
+
 
 ## [0.1.0] - 2026-10-18
 
