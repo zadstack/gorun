@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -13,9 +15,10 @@ import (
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/settings/settingsmod"
 	"github.com/zadstack/gorun/internal/theme"
+	"github.com/zadstack/gorun/pkg/themekit"
 )
 
-const themeUsage = "usage: gorun theme info | activate <slug> | show <template> | save <template> [--draft] (body on stdin) | reset <template> | reparent <child> <parent> [--apply] [--data dir]"
+const themeUsage = "usage: gorun theme info | doctor [slug] [--json] [--warnings] | activate <slug> | show <template> | save <template> [--draft] (body on stdin) | reset <template> | reparent <child> <parent> [--apply] [--data dir]"
 
 type themeInfo struct {
 	Active    string          `json:"active"`
@@ -38,7 +41,8 @@ type templateEntry struct {
 
 // themeCmd works with the active theme like Appearance in the admin does,
 // through the theme service (so activation and saving are validated the
-// same way): info (JSON), activate, show/save/reset a template override.
+// same way): info (JSON), doctor (pkg/themekit contract, no DB), activate,
+// show/save/reset a template override.
 func themeCmd(args []string, in io.Reader, out io.Writer) error {
 	if len(args) == 0 {
 		return errors.New(themeUsage)
@@ -46,8 +50,17 @@ func themeCmd(args []string, in io.Reader, out io.Writer) error {
 	sub, args := args[0], args[1:]
 	draft, args := boolFlag(args, "draft")
 	apply, args := boolFlag(args, "apply")
+	asJSON, args := boolFlag(args, "json")
+	withWarnings, args := boolFlag(args, "warnings")
 	var name, parent string
-	if sub != "info" {
+	switch sub {
+	case "info":
+		// no positional args
+	case "doctor":
+		if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+			name, args = args[0], args[1:]
+		}
+	default:
 		if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 			return errors.New(themeUsage)
 		}
@@ -62,6 +75,9 @@ func themeCmd(args []string, in io.Reader, out io.Writer) error {
 	cfg, err := config.Load(args)
 	if err != nil {
 		return err
+	}
+	if sub == "doctor" {
+		return themeDoctor(cfg, name, asJSON, withWarnings, out)
 	}
 	ctx := context.Background()
 	app, err := kernel.BootWithOptions(ctx, cfg, []kernel.Module{settingsmod.New(), theme.New()}, kernel.BootOptions{StartJobs: false})
@@ -153,4 +169,80 @@ func themeCmd(args []string, in io.Reader, out io.Writer) error {
 		return errors.New(themeUsage)
 	}
 	return nil
+}
+
+// doctorReport is the JSON shape for `gorun theme doctor --json`.
+type doctorReport struct {
+	themekit.Result
+	Warnings []themekit.Issue `json:"warnings,omitempty"`
+}
+
+// themeDoctor runs pkg/themekit validators without booting the kernel.
+// Contract failures use ValidateDir / DoctorRoots (same as catalog CI).
+// --warnings adds soft lang-key scans that do not fail the exit code.
+func themeDoctor(cfg config.Config, slug string, asJSON, withWarnings bool, out io.Writer) error {
+	roots := append([]string{theme.ThemesDir(cfg)}, theme.ExtraThemesDirs()...)
+	var results []themekit.Result
+	if slug == "" {
+		results = themekit.DoctorRoots(roots)
+	} else {
+		dir, err := findThemeDirForDoctor(roots, slug)
+		if err != nil {
+			return err
+		}
+		results = []themekit.Result{themekit.DoctorTheme(dir, roots)}
+	}
+	reports := make([]doctorReport, 0, len(results))
+	for _, res := range results {
+		rep := doctorReport{Result: res}
+		if withWarnings {
+			dir := ""
+			for _, root := range roots {
+				cand := filepath.Join(root, res.Slug)
+				if _, err := os.Stat(filepath.Join(cand, "theme.json")); err == nil {
+					dir = cand
+					break
+				}
+			}
+			if dir != "" {
+				warns, err := themekit.LangKeyWarnings(dir, roots)
+				if err != nil {
+					return err
+				}
+				rep.Warnings = warns
+			}
+		}
+		reports = append(reports, rep)
+	}
+	if asJSON {
+		enc := json.NewEncoder(out)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(reports); err != nil {
+			return err
+		}
+	} else {
+		for _, rep := range reports {
+			fmt.Fprint(out, themekit.FormatResult(rep.Result))
+			for _, w := range rep.Warnings {
+				fmt.Fprintf(out, "  ~ warning: %s\n", w)
+			}
+		}
+	}
+	if themekit.AnyFailed(results) {
+		return &exitError{code: 1, msg: "theme doctor: catalog contract errors found"}
+	}
+	return nil
+}
+
+func findThemeDirForDoctor(roots []string, slug string) (string, error) {
+	for _, root := range roots {
+		cand := filepath.Join(root, slug)
+		if st, err := os.Stat(filepath.Join(cand, "theme.json")); err == nil && !st.IsDir() {
+			if abs, err := filepath.Abs(cand); err == nil {
+				return abs, nil
+			}
+			return cand, nil
+		}
+	}
+	return "", fmt.Errorf("theme doctor: theme %q not found", slug)
 }

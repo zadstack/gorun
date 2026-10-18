@@ -10,7 +10,9 @@ All notable changes to GoRun are recorded here. The format follows
 - Shared catalog contract in `pkg/themekit` (`ValidateDir` / `ValidateCatalogRoot`): required
   templates (via inheritance), own `lang/en.json` + `lang/ar.json`, `rtl` + `identity` supports,
   screenshot, sections/identity/builderStyle head, token selector, no third-party script CDNs.
-  Documented in `docs/THEMES.md`; covered by ship-with Go tests.
+  Documented in `docs/THEMES.md` and `docs/THEME-CONTRACT.md`; covered by ship-with Go tests.
+- `gorun theme doctor [slug] [--json] [--warnings]`: filesystem contract checks via the same
+  `pkg/themekit` validators (no database). Soft `{{t}}` lang-key scans are opt-in warnings.
 - Ship-with uplift: `business` and `portfolio` gain bilingual lang files; business/portfolio
   comments and portfolio contact forms no longer depend on Tailwind utilities; full-bleed home
   heroes for business, magazine, portfolio and docs (each keeps its existing personality); docs

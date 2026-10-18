@@ -60,9 +60,10 @@ commands:
                 with --include-secrets (plain text: keep that archive offline)
   import-wxr    import a WordPress WXR export: import-wxr <file> [--dry-run] [--source-name NAME]
                 [--currency AED] [--slug-policy suffix|skip|overwrite] [--reset-options]
-  theme         theme info (JSON) | activate <slug> | show <tpl> | save <tpl> [--draft] (stdin) | reset <tpl> |
-                reparent <child> <parent> [--apply] (report first, backs up theme.json):
-                the active theme and its template overrides, validated as in Appearance
+  theme         theme info (JSON) | doctor [slug] [--json] [--warnings] | activate <slug> | show <tpl> |
+                save <tpl> [--draft] (stdin) | reset <tpl> | reparent <child> <parent> [--apply]
+                (report first, backs up theme.json): active theme + overrides, or filesystem
+                contract checks via pkg/themekit (doctor needs no database)
   key           key console: key list | create --name N --user EMAIL --scopes a,b|* [--kind api|agent]
                 [--rate N] [--expires DATE] | revoke <id> | rotate <id> [--grace 1h] (tokens printed once)
   webhook       webhook list | events | create --name N --url URL --events a,b|* | update <id> [...] |

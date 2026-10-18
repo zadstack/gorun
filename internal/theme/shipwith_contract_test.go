@@ -9,8 +9,8 @@ import (
 )
 
 // TestShipWithCatalogMeetsThemekitContract keeps the catalog on the shared
-// contract owned by pkg/themekit. When theme doctor lands, it should call the
-// same ValidateDir / ValidateCatalogRoot helpers.
+// contract owned by pkg/themekit. `gorun theme doctor` calls the same
+// ValidateDir / DoctorRoots helpers (see pkg/cli/theme_cmd.go).
 func TestShipWithCatalogMeetsThemekitContract(t *testing.T) {
 	root, err := filepath.Abs("../../themes")
 	if err != nil {
