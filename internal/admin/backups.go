@@ -29,6 +29,7 @@ type backupRow struct {
 	HasDB, HasFiles                bool
 	LocalState                     string
 	HasManifest                    bool
+	RestoredPath                   string
 	Remote                         backup.UploadReceipt
 }
 
@@ -45,8 +46,12 @@ func (h *handlers) backupsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, e := range list {
-		d.Backups = append(d.Backups, backupRow{Stamp: e.Stamp, Time: e.Time.Format(time.RFC3339),
-			DBSize: humanSize(e.DBSize), FilesSize: humanSize(e.FilesSize), HasDB: e.DBSize >= 0, HasFiles: e.FilesSize >= 0, LocalState: e.LocalState, HasManifest: e.HasManifest, Remote: e.Remote})
+		row := backupRow{Stamp: e.Stamp, Time: e.Time.Format(time.RFC3339),
+			DBSize: humanSize(e.DBSize), FilesSize: humanSize(e.FilesSize), HasDB: e.DBSize >= 0, HasFiles: e.FilesSize >= 0, LocalState: e.LocalState, HasManifest: e.HasManifest, Remote: e.Remote}
+		if dest, ok := backup.Restored(h.d.Config.DataDir, e.Stamp); ok {
+			row.RestoredPath = dest
+		}
+		d.Backups = append(d.Backups, row)
 	}
 	h.tpl.Render(w, r, "pages/system/backups.html", d)
 }

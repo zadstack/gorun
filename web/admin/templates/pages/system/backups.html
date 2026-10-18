@@ -21,7 +21,7 @@
 <div class="rounded border border-line bg-panel overflow-x-auto">
   <table class="w-full text-sm">
     <thead class="bg-panel-2 text-muted">
-      <tr><th class="text-start font-medium px-3 py-2">{{t "admin.backups.when"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.database"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.files"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.completeness"}}</th></tr>
+      <tr><th class="text-start font-medium px-3 py-2">{{t "admin.backups.when"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.database"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.files"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.completeness"}}</th><th class="text-start font-medium px-3 py-2">{{t "admin.backups.actions"}}</th></tr>
     </thead>
     <tbody>
       {{range .Backups}}
@@ -34,6 +34,14 @@
           {{if .HasManifest}}<a href="/admin/system/backups/{{.Stamp}}.manifest.json" class="text-blue underline font-mono">manifest.json</a>{{end}}
           <p>{{t (print "admin.backups.remote." .Remote.State)}}</p>
           <ul>{{range .Remote.Files}}<li data-upload-state="{{.State}}"><span class="font-mono break-all" dir="ltr">{{.Name}}</span>: {{t (print "admin.backups.upload." .State)}} {{if .Code}}· {{.Code}}{{end}} · {{.CheckedAt}}</li>{{end}}</ul>
+          {{if .RestoredPath}}<p class="mt-1 text-green" data-restored-path dir="ltr">{{.RestoredPath}}</p>{{end}}
+        </td>
+        <td class="px-3 py-2 text-xs">
+          {{if .HasManifest}}
+          <a href="/admin/system/backups/{{.Stamp}}/inspect" class="text-blue underline" data-inspect-link>{{t "admin.backups.inspect_action"}}</a>
+          {{else}}
+          <span class="text-muted">—</span>
+          {{end}}
         </td>
       </tr>
       {{end}}

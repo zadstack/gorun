@@ -169,6 +169,8 @@ Everything lives under the data directory (`GORUN_DATA`, default `./data`):
 - `backups/`: output of `gorun backup` (`<timestamp>.db` copied with `VACUUM INTO`, plus
   `<timestamp>.tar.gz` of `media/`, `overrides/`, `extensions/`, `form-uploads/`; local `secret.key` and `gorun.toml` only with
   `gorun backup --include-secrets`, never from the admin).
+- `restores/<timestamp>/`: confined output of admin restore (or any `gorun backup-restore --dest`);
+  never merges into the live data directory while a process holds `gorun.lock`.
 
 ### Migrations must be additive
 

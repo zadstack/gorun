@@ -7,6 +7,8 @@ test('native backup presence and upload receipts remain distinct from verified r
   await page.goto('/admin/system/backups');
   await page.locator('form[action="/admin/system/backups"] button[type="submit"]').click();
   await expect(page.locator('[data-local-state="paired_not_inspected"]')).toBeVisible();
+  const inspectLink = page.locator('[data-inspect-link]').first();
+  await expect(inspectLink).toBeVisible();
   const manifestLink = page.locator('a[href$=".manifest.json"]').first();
   const href = await manifestLink.getAttribute('href');
   expect(href).toBeTruthy();
@@ -23,6 +25,17 @@ test('native backup presence and upload receipts remain distinct from verified r
   expect(manifest.database.sha256).toMatch(/^[a-f0-9]{64}$/);
   expect(manifest.archive.sha256).toMatch(/^[a-f0-9]{64}$/);
   expect(manifest.consistency).toBe('database_snapshot_files_not_atomic');
+
+  await page.locator('[data-inspect-link]').first().click();
+  await expect(page).toHaveURL(/\/admin\/system\/backups\/\d{8}T\d{6}Z\/inspect$/);
+  await expect(page.locator('[data-inspect-readiness="review_required"]')).toBeVisible();
+  await page.locator('[data-restore-submit]').click();
+  const modal = page.locator('[role="dialog"][aria-labelledby="gp-confirm-title"]');
+  await expect(modal).toBeVisible();
+  await modal.locator('button[\\@click="$store.confirm.yes()"]').click();
+  await expect(page.locator('[data-restore-done]')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('[data-restore-dest]')).toContainText(`restores/${manifest.stamp}`);
+
   const backups = join(env('E2E_DATA'), 'backups');
   mkdirSync(backups, { recursive: true });
   // Synthetic receipts are confined to the disposable instance; no provider is called.
@@ -37,12 +50,13 @@ test('native backup presence and upload receipts remain distinct from verified r
   writeFileSync(join(backups, '20000101T000000Z.db'), 'legacy fixture');
   writeFileSync(join(backups, '20000101T000000Z.tar.gz'), 'legacy fixture');
   writeFileSync(join(backups, '20000102T000000Z.db'), 'partial fixture');
-  await page.reload();
+  await page.goto('/admin/system/backups');
   await expect(page.locator('[data-remote-state="partial"]')).toBeVisible();
   await expect(page.locator('[data-upload-state="uploaded"]')).toBeVisible();
   await expect(page.locator('[data-upload-state="failed"]')).toBeVisible();
   await expect(page.locator('[data-local-state="legacy_unverified"]')).toBeVisible();
   await expect(page.locator('[data-local-state="partial"]')).toBeVisible();
+  await expect(page.locator('[data-restored-path]')).toBeVisible();
   for (const locale of ['ar', 'en'] as const) {
     await setLocale(page, locale);
     await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');

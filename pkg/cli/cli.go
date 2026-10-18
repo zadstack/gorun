@@ -53,6 +53,7 @@ commands:
   mcp           serve MCP over stdio as an API key (--key gp_… or GORUN_MCP_KEY); no job
                 workers unless --jobs (the running server executes the jobs)
   backup-inspect inspect a local pair without writes (--input <timestamp>.manifest.json)
+  backup-restore restore a local pair into a new empty directory (--input, --dest; never merges)
   backup-decrypt decrypt a .gorb backup with the original site secret (--input, --output; never overwrite)
   backup        copy the database (VACUUM INTO) and archive media/, overrides/, extensions/
                 to <data>/backups/<timestamp>.{db,tar.gz}; secret.key and gorun.toml only
@@ -153,6 +154,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return mcpStdio(args[1:], readCloser(in), writeCloser(out))
 	case "backup-inspect":
 		return backupInspect(args[1:], out)
+	case "backup-restore":
+		return backupRestore(args[1:], out)
 	case "backup-decrypt":
 		return backupDecrypt(args[1:])
 	case "backup":

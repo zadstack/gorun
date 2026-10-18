@@ -108,7 +108,7 @@ func declarePermissions(d *kernel.Deps) {
 		{PermSettings, "Manage settings", "إدارة الإعدادات"},
 		{PermHealth, "View system health", "عرض حالة النظام"},
 		{PermAPIKeys, "Manage API keys", "إدارة مفاتيح API"},
-		{PermBackup, "Make and download backups", "إنشاء النسخ الاحتياطية وتنزيلها"},
+		{PermBackup, "Make, download and restore backups", "إنشاء النسخ الاحتياطية وتنزيلها واستعادتها"},
 	} {
 		d.Perms.Declare(p.name, map[string]string{"en": p.en, "ar": p.ar})
 	}

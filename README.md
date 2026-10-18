@@ -293,7 +293,7 @@ GoRun is an actively developed v0.1.0; use the latest [release](https://github.c
 - Canvases are private to their owner, with explicit agent grants; they are not a shared multiplayer workspace.
 - The page builder keeps the current draft and last published layout, not a full layout history.
 - No automatic core updater, and no complete site generation from a single prompt.
-- Backup restore is manual; real provider generation and live payments must be verified per deployment.
+- Backup restore writes only into a new empty data directory (`gorun backup-restore` or System → Backups → Inspect / restore); cutover still needs operator-held secrets and a process stop. Real provider generation and live payments must be verified per deployment.
 
 ## Contributing
 

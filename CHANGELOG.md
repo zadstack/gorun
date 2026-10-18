@@ -5,6 +5,13 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `gorun backup-restore --input <stamp>.manifest.json --dest <new-empty-dir>` restores a local
+  backup pair into a new directory only (inspect preflight; never merges into a live data dir).
+- System → Backups → Inspect / restore: bilingual preflight and confined restore under
+  `<data>/restores/<stamp>/`, gated by recent password confirmation and `system.backup`.
+
 ## [0.1.0] - 2026-10-18
 
 The first tagged release: a multi-arch image on `ghcr.io/zadstack/gorun` and binary archives for
