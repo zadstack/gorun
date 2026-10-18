@@ -205,7 +205,9 @@ docker run --rm -v gorun-data:/data -v /var/lib/gorun-restored:/restore \
 
 Then point a new deployment at the restored directory (or replace the volume
 contents carefully offline) with the original secrets. Full cutover:
-[PRODUCTION.md](../docs/PRODUCTION.md).
+[PRODUCTION.md](../docs/PRODUCTION.md). For a standing staging site (second
+resource/volume) and promote-to-live:
+[STAGING.md](../docs/STAGING.md) (`gorun staging seed|promote`).
 
 ## 8. Upgrade from a release tag
 

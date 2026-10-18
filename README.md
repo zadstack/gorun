@@ -168,7 +168,7 @@ make build && make test && make lint
 
 | ابدأ من هنا | البناء والتكامل | التشغيل والمساهمة |
 | --- | --- | --- |
-| [التثبيت](docs/GORUN-INSTALLATION.md) | [البنية](docs/ARCHITECTURE.md) | [تشغيل الإنتاج](docs/PRODUCTION.md) |
+| [التثبيت](docs/GORUN-INSTALLATION.md) | [البنية](docs/ARCHITECTURE.md) | [تشغيل الإنتاج](docs/PRODUCTION.md) · [التجريبي والترقية للحي](docs/STAGING.md) |
 | [مساحة اللوحات](docs/CANVASES.md) | [واجهة REST](docs/API.md) | [Docker / Coolify](deploy/coolify.md) |
 | [منشئ المواقع](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [الترقية والرجوع](docs/UPGRADE.md) |
 | [القوالب](docs/THEMES.md) | [الإضافات](docs/EXTENSIONS.md) | [المراقبة](docs/OBSERVABILITY.md) · [استكشاف الأعطال](docs/TROUBLESHOOTING.md) |
@@ -182,7 +182,7 @@ GoRun في الإصدار [v0.1.0](https://github.com/zadstack/gorun/releases/ta
 - اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.
 - منشئ الصفحات يحتفظ بسجل تخطيطات قابل للمعاينة والاستعادة إلى المسودة (مع تأكيد كلمة المرور حديثًا في لوحة الإدارة)؛ الصفحة العامة لا تتغير حتى النشر.
 - لا يوجد محدّث تلقائي للنواة، ولا توليد موقع كامل من تعليمة واحدة.
-- تُستعاد النسخ الاحتياطية إلى مسار مجلد بيانات جديد فقط (يجب ألا يكون موجودًا) (`gorun backup-restore` أو **تشغيل النظام ← النسخ الاحتياطية ← فحص / استعادة**)، ويحتاج الانتقال إليها إلى الأسرار التي يحتفظ بها المشغّل وإيقاف العملية الحالية. ويجب التحقق من التوليد الفعلي لدى المزودين ومن المدفوعات الحية في كل نشر.
+- تُستعاد النسخ الاحتياطية إلى مسار مجلد بيانات جديد فقط (يجب ألا يكون موجودًا) (`gorun backup-restore` أو `gorun staging seed|promote` أو **تشغيل النظام ← النسخ الاحتياطية ← فحص / استعادة**)، ويحتاج الانتقال إليها إلى الأسرار التي يحتفظ بها المشغّل وإيقاف العملية الحالية. الموقع التجريبي = مجلد بيانات وعملية ثانية — راجع [STAGING.md](docs/STAGING.md). ويجب التحقق من التوليد الفعلي لدى المزودين ومن المدفوعات الحية في كل نشر.
 
 ### المساهمة
 
@@ -356,7 +356,7 @@ Full index: [docs/README.md](docs/README.md).
 
 | Start here | Build and integrate | Operate and contribute |
 | --- | --- | --- |
-| [Installation](docs/GORUN-INSTALLATION.md) | [Architecture](docs/ARCHITECTURE.md) | [Production operations](docs/PRODUCTION.md) |
+| [Installation](docs/GORUN-INSTALLATION.md) | [Architecture](docs/ARCHITECTURE.md) | [Production](docs/PRODUCTION.md) · [Staging / promote](docs/STAGING.md) |
 | [Canvas workspace](docs/CANVASES.md) | [REST API](docs/API.md) | [Docker / Coolify](deploy/coolify.md) |
 | [Site builder](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [Upgrade / rollback](docs/UPGRADE.md) |
 | [Themes](docs/THEMES.md) | [Extensions](docs/EXTENSIONS.md) | [Observability](docs/OBSERVABILITY.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) |
@@ -370,7 +370,7 @@ GoRun is an actively developed [v0.1.0](https://github.com/zadstack/gorun/releas
 - Canvases are private to their owner, with explicit agent grants; they are not a shared multiplayer workspace.
 - The page builder keeps a layout history you can preview and restore into the private draft (admin restore requires a recent password confirmation); the public page stays unchanged until you publish.
 - No automatic core updater, and no complete site generation from a single prompt.
-- Backup restore writes only into a new data directory path that must not already exist (`gorun backup-restore` or **Operations → Backups → Inspect / restore**); cutover still needs operator-held secrets and a process stop. Real provider generation and live payments must be verified per deployment.
+- Backup restore writes only into a new data directory path that must not already exist (`gorun backup-restore`, `gorun staging seed|promote`, or **Operations → Backups → Inspect / restore**); cutover still needs operator-held secrets and a process stop. Staging is a second data dir + process — see [STAGING.md](docs/STAGING.md). Real provider generation and live payments must be verified per deployment.
 
 ## Contributing
 

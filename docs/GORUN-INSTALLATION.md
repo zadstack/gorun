@@ -221,7 +221,7 @@ GORUN_BASE_URL=https://your-site.example \
 
 - **أثناء التشغيل:** من **تشغيل النظام ← النسخ الاحتياطية ← فحص / استعادة**، بعد تأكيد كلمة المرور، تُكتب النسخة تحت `data/restores/<timestamp>/` والموقع يعمل. هذا المجلد داخل مجلد البيانات الحي، فانقله خارجه قبل تشغيل الخدمة عليه، مثلًا `mv ./data/restores/<timestamp> ./data-restored`.
 
-بعدها انسخ `secret.key` و`gorun.toml` إلى مجلد الاستعادة (أو اضبط `GORUN_SECRET_KEY` الأصلي)، وأوقف كل عملية على المجلد القديم، ثم شغّل `gorun serve --data ./data-restored`. التفاصيل في [دليل الإنتاج](PRODUCTION.md).
+بعدها انسخ `secret.key` و`gorun.toml` إلى مجلد الاستعادة (أو اضبط `GORUN_SECRET_KEY` الأصلي)، وأوقف كل عملية على المجلد القديم، ثم شغّل `gorun serve --data ./data-restored`. التفاصيل في [دليل الإنتاج](PRODUCTION.md). لموقع تجريبي دائم وترقية إلى الحي: `gorun staging seed|promote` و[STAGING.md](STAGING.md).
 
 ## حدود ترحيل WordPress في المصدر الحالي
 
@@ -286,4 +286,4 @@ Full checklist (binary, GHCR, Coolify, smoke, rollback): [UPGRADE.md](UPGRADE.md
 
 ### After install
 
-Bilingual admin toggle in the top bar · first site under **Appearance → Build your site** · theme switch under **Appearance → Themes** · agents: [MCP.md](MCP.md) · problems: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) · index: [README.md](README.md).
+Bilingual admin toggle in the top bar · first site under **Appearance → Build your site** · theme switch under **Appearance → Themes** · staging / promote-to-live: [STAGING.md](STAGING.md) · agents: [MCP.md](MCP.md) · problems: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) · index: [README.md](README.md).

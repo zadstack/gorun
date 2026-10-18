@@ -280,7 +280,7 @@
   "backups.database": "Database",
   "backups.files": "Files",
   "backups.empty": "No backups yet",
-  "backups.restore_help": "Backups do not contain secret.key or gorun.toml by default: keep your own protected copy. Online: Inspect / Restore writes a confined copy under data/restores/<stamp>/ while the site keeps running. Offline: stop the service and run gorun backup-restore --input … --dest <new-directory-path> outside the data directory (the path must not exist). Before serving a restore, move it out of the live data directory, copy the secrets, and stop every process on the old one. See docs/PRODUCTION.md.",
+  "backups.restore_help": "Backups do not contain secret.key or gorun.toml by default: keep your own protected copy. Online: Inspect / Restore writes a confined copy under data/restores/<stamp>/ while the site keeps running. Offline: stop the service and run gorun backup-restore --input … --dest <new-directory-path> outside the data directory (the path must not exist). For a staging site or promote-to-live cutover use gorun staging seed|promote (docs/STAGING.md). Before serving a restore, move it out of the live data directory, copy the secrets, and stop every process on the old one. See docs/PRODUCTION.md.",
   "backups.actions": "Actions",
   "backups.inspect_action": "Inspect / restore",
   "backups.inspect_title": "Backup inspect",
