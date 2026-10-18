@@ -67,7 +67,8 @@ type Deps struct {
 // Session/CSRF/permission middleware on Admin and key-or-session on API are
 // installed by the auth module via Admin.Use / API.Use; Webhooks stays raw.
 // Admin and API deny every request (503) until SetAuthenticator is called.
-// The root mux also serves GET /healthz (liveness) and GET /readyz (DB ping),
+// The root mux also serves GET /healthz (liveness), GET /readyz (DB ping),
+// and optionally GET /metrics (Prometheus text when GORUN_METRICS is on),
 // outside every sub-router.
 type Router struct {
 	Public, Admin, API, Webhooks chi.Router

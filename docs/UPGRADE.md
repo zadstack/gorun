@@ -141,6 +141,7 @@ are behind Traefik/Coolify (same idea as the HTTPS acceptance checklist).
 | Version | `gorun version` / `docker exec … /app/gorun version` | Target `X.Y.Z` (not stale `dev` unless you built from source without `VERSION`) |
 | Liveness | `curl -fsS https://cms.example.com/healthz` | HTTP 200 |
 | Readiness | `curl -fsS https://cms.example.com/readyz` | HTTP 200 |
+| Metrics (if `GORUN_METRICS`) | `curl -fsS http://127.0.0.1:8080/metrics` (Bearer if token set) | HTTP 200, body has `gorun_jobs` — see [OBSERVABILITY.md](OBSERVABILITY.md) |
 | In-container | `docker exec <c> /app/gorun healthcheck` | OK (necessary but not sufficient alone) |
 | Admin | Sign in | Session works; cookies `Secure` if `BASE_URL` is `https://…` |
 | System health | **Operations → System health** | GoRun version matches; schema check not unexpected `fail` |

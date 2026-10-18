@@ -27,6 +27,8 @@ Operator acceptance recipe (CIDR, cookie Secure, HSTS, outside health):
 | Mixed content / wrong scheme cookies | Proxy not sending `X-Forwarded-Proto`, or peer not trusted, and `GORUN_BASE_URL` is still `http://…` | Public `GORUN_BASE_URL=https://…`; fix Traefik/Caddy headers; list the proxy in `GORUN_TRUSTED_PROXIES`. |
 | `includeSubDomains` breaks a subdomain | Opt-in HSTS covers every subdomain of the host | Leave `GORUN_HSTS_INCLUDE_SUBDOMAINS` unset until every subdomain serves HTTPS. Preload (`GORUN_HSTS_PRELOAD`) requires that flag and is hard to undo. |
 | Health green but site unreachable publicly | In-container `gorun healthcheck` only probes localhost | Probe `https://<public-host>/healthz` and `/readyz` from outside. Check Coolify/Traefik domain, TLS cert, and that port `8080` is only exposed to the proxy. |
+| `/metrics` returns 404 | `GORUN_METRICS` unset / false | Opt in with `GORUN_METRICS=true`. See [OBSERVABILITY.md](OBSERVABILITY.md). |
+| `/metrics` returns 401 | `GORUN_METRICS_TOKEN` set; scrape missing Bearer | Send `Authorization: Bearer …` or `X-Metrics-Token`. |
 
 ## Themes and first site
 

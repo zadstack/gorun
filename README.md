@@ -171,7 +171,7 @@ make build && make test && make lint
 | [التثبيت](docs/GORUN-INSTALLATION.md) | [البنية](docs/ARCHITECTURE.md) | [تشغيل الإنتاج](docs/PRODUCTION.md) |
 | [مساحة اللوحات](docs/CANVASES.md) | [واجهة REST](docs/API.md) | [Docker / Coolify](deploy/coolify.md) |
 | [منشئ المواقع](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [الترقية والرجوع](docs/UPGRADE.md) |
-| [القوالب](docs/THEMES.md) | [الإضافات](docs/EXTENSIONS.md) | [استكشاف الأعطال](docs/TROUBLESHOOTING.md) |
+| [القوالب](docs/THEMES.md) | [الإضافات](docs/EXTENSIONS.md) | [المراقبة](docs/OBSERVABILITY.md) · [استكشاف الأعطال](docs/TROUBLESHOOTING.md) |
 | [الترحيل من ووردبريس](docs/MIGRATION.md) | [التجارة](docs/COMMERCE.md) | [الأمان](SECURITY.md) · [المساهمة](CONTRIBUTING.md) · [سجل التغييرات](CHANGELOG.md) |
 
 ### حالة المشروع
@@ -359,7 +359,7 @@ Full index: [docs/README.md](docs/README.md).
 | [Installation](docs/GORUN-INSTALLATION.md) | [Architecture](docs/ARCHITECTURE.md) | [Production operations](docs/PRODUCTION.md) |
 | [Canvas workspace](docs/CANVASES.md) | [REST API](docs/API.md) | [Docker / Coolify](deploy/coolify.md) |
 | [Site builder](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [Upgrade / rollback](docs/UPGRADE.md) |
-| [Themes](docs/THEMES.md) | [Extensions](docs/EXTENSIONS.md) | [Troubleshooting](docs/TROUBLESHOOTING.md) |
+| [Themes](docs/THEMES.md) | [Extensions](docs/EXTENSIONS.md) | [Observability](docs/OBSERVABILITY.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) |
 | [WordPress migration](docs/MIGRATION.md) | [Commerce](docs/COMMERCE.md) | [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md) |
 
 ## Project status

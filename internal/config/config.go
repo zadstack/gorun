@@ -50,10 +50,14 @@ type Config struct {
 	// (GORUN_HSTS_PRELOAD) extend the HSTS header sent on https requests.
 	// Off by default; preload requires includeSubDomains.
 	HSTSIncludeSubdomains, HSTSPreload bool
-	Stripe                             struct{ SecretKey, WebhookSecret string } // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
-	Theme                              string                                    // GORUN_THEME default "default"
-	SetupToken                         string                                    // GORUN_SETUP_TOKEN: honored in every environment; required for prod setup (≥ 16 chars)
-	S3                                 S3                                        // [s3] / GORUN_S3_*: media in an S3-compatible bucket
+	// Metrics (GORUN_METRICS) serves GET /metrics in Prometheus text format.
+	// Off by default. MetricsToken (GORUN_METRICS_TOKEN) optional Bearer for scrapers.
+	Metrics      bool
+	MetricsToken string
+	Stripe       struct{ SecretKey, WebhookSecret string } // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+	Theme        string                                    // GORUN_THEME default "default"
+	SetupToken   string                                    // GORUN_SETUP_TOKEN: honored in every environment; required for prod setup (≥ 16 chars)
+	S3           S3                                        // [s3] / GORUN_S3_*: media in an S3-compatible bucket
 }
 
 // S3 is an S3-compatible bucket for media (empty = media on disk).
@@ -80,6 +84,8 @@ type fileConfig struct {
 	MCPSameOwner    *bool             `toml:"mcp_same_owner_approval"`
 	HSTSSubdomains  *bool             `toml:"hsts_include_subdomains"`
 	HSTSPreload     *bool             `toml:"hsts_preload"`
+	Metrics         *bool             `toml:"metrics"`
+	MetricsToken    *string           `toml:"metrics_token"`
 	Theme           *string           `toml:"theme"`
 	SetupToken      *string           `toml:"setup_token"`
 	Stripe          struct {
@@ -248,11 +254,13 @@ func applyFile(c *Config, secret *string) error {
 	if fc.AllowPrivateNet != nil {
 		c.AllowPrivateNet = *fc.AllowPrivateNet
 	}
-	for dst, v := range map[*bool]*bool{&c.MCPSameOwnerApproval: fc.MCPSameOwner, &c.HSTSIncludeSubdomains: fc.HSTSSubdomains, &c.HSTSPreload: fc.HSTSPreload} {
+	for dst, v := range map[*bool]*bool{&c.MCPSameOwnerApproval: fc.MCPSameOwner, &c.HSTSIncludeSubdomains: fc.HSTSSubdomains,
+		&c.HSTSPreload: fc.HSTSPreload, &c.Metrics: fc.Metrics} {
 		if v != nil {
 			*dst = *v
 		}
 	}
+	setStr(&c.MetricsToken, fc.MetricsToken)
 	return nil
 }
 
@@ -289,6 +297,7 @@ func applyEnv(c *Config, secret *string) error {
 	envStr(&c.Addr, "GORUN_ADDR")
 	envStr(&c.Theme, "GORUN_THEME")
 	envStr(&c.SetupToken, "GORUN_SETUP_TOKEN")
+	envStr(&c.MetricsToken, "GORUN_METRICS_TOKEN")
 	envStr(secret, "GORUN_SECRET_KEY")
 	envStr(&c.Stripe.SecretKey, "STRIPE_SECRET_KEY")
 	envStr(&c.Stripe.WebhookSecret, "STRIPE_WEBHOOK_SECRET")
@@ -306,7 +315,8 @@ func applyEnv(c *Config, secret *string) error {
 		c.AllowPrivateNet = b
 	}
 	for name, dst := range map[string]*bool{"GORUN_MCP_SAME_OWNER_APPROVAL": &c.MCPSameOwnerApproval,
-		"GORUN_HSTS_INCLUDE_SUBDOMAINS": &c.HSTSIncludeSubdomains, "GORUN_HSTS_PRELOAD": &c.HSTSPreload} {
+		"GORUN_HSTS_INCLUDE_SUBDOMAINS": &c.HSTSIncludeSubdomains, "GORUN_HSTS_PRELOAD": &c.HSTSPreload,
+		"GORUN_METRICS": &c.Metrics} {
 		if v := os.Getenv(name); v != "" {
 			b, err := strconv.ParseBool(v)
 			if err != nil {
