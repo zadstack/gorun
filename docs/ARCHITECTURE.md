@@ -301,6 +301,13 @@ Seeded roles (`internal/auth/migrations/0001_auth.sql`, `0002_editor_redirects.s
 | `contributor` | `content.view`, `content.create`, `content.edit` |
 | `customer` | none (shop customers; refused by the admin gate) |
 
+Custom roles (`system=0`) are created under **Settings → Roles** (`/admin/roles`) or
+`/api/v1/roles` (`users.manage`). Slugs are immutable; bilingual `name_json` and the
+permission set are editable. System roles cannot be deleted; the `admin` role’s `*` grant
+is locked. Actors may only assign permissions they themselves hold (`CanGrant`). UI
+permission changes and role deletes require recent password confirmation (`ReauthWindow`).
+After grant mutations, `auth.ReloadRoles` refreshes the in-memory map used by `Can`.
+
 ## Adding a module
 
 1. **Place it in the order.** Add the name to `kernel.BootOrder` (`internal/kernel/order.go`) after every module

@@ -1,0 +1,82 @@
+{{/* Data: roleEditPage (.Record is nil when creating) */}}
+{{define "title"}}{{if .IsNew}}{{t "admin.roles.new"}}{{else}}{{t "admin.roles.edit"}}{{end}}{{end}}
+{{define "content"}}
+<nav class="mb-2 text-xs"><a href="/admin/roles" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.roles.back"}}</a></nav>
+<h1 class="text-[22px] font-bold mb-4">{{if .IsNew}}{{t "admin.roles.new"}}{{else}}{{t "admin.roles.edit"}}{{end}}</h1>
+<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+  <form method="post" action="{{if .IsNew}}/admin/roles{{else}}/admin/roles/{{.Record.Slug}}{{end}}" class="rounded border border-line bg-panel p-4 space-y-4" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div>
+      <label for="r-slug" class="block font-medium mb-1">{{t "admin.roles.slug"}}</label>
+      <input id="r-slug" name="slug" value="{{.Form.Slug}}" dir="ltr" autocomplete="off" required {{if not .IsNew}}readonly{{end}}
+             aria-describedby="r-slug-help"
+             class="h-9 w-full rounded border {{if index .Fields "slug"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft {{if not .IsNew}}opacity-70{{end}}">
+      <p id="r-slug-help" class="mt-1 text-xs text-muted">{{if .IsNew}}{{t "admin.roles.slug_help"}}{{else}}{{t "admin.roles.slug_locked"}}{{end}}</p>
+      {{template "partials/field_errors" (index .Fields "slug")}}
+    </div>
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="r-name-en" class="block font-medium mb-1">{{t "admin.roles.name_en"}}</label>
+        <input id="r-name-en" name="name_en" value="{{.Form.NameEN}}" autocomplete="off" required
+               class="h-9 w-full rounded border {{if index .Fields "name_en"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        {{template "partials/field_errors" (index .Fields "name_en")}}
+      </div>
+      <div>
+        <label for="r-name-ar" class="block font-medium mb-1">{{t "admin.roles.name_ar"}}</label>
+        <input id="r-name-ar" name="name_ar" value="{{.Form.NameAR}}" autocomplete="off" required dir="rtl"
+               class="h-9 w-full rounded border {{if index .Fields "name_ar"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        {{template "partials/field_errors" (index .Fields "name_ar")}}
+      </div>
+    </div>
+    <fieldset>
+      <legend class="font-medium mb-1">{{t "admin.roles.permissions"}}</legend>
+      {{if .AdminLocked}}
+      <p class="rounded border border-line bg-bg px-3 py-2 text-sm text-muted">{{t "admin.roles.admin_locked"}}</p>
+      <input type="hidden" name="permissions" value="*">
+      {{else}}
+      <p class="mb-2 text-xs text-muted">{{t "admin.roles.permissions_help"}}</p>
+      <div class="space-y-3 max-h-80 overflow-y-auto pe-1">
+        {{range .Groups}}
+        <fieldset>
+          <legend class="font-mono text-[11px] uppercase tracking-wide text-muted mb-1">{{.Module}}</legend>
+          <ul class="grid gap-1 sm:grid-cols-2">
+            {{range .Perms}}
+            <li><label class="flex items-start gap-2"><input type="checkbox" name="permissions" value="{{.Name}}" {{if .Checked}}checked{{end}} class="mt-0.5 accent-[var(--green)]"><span><span class="block">{{.Label}}</span><span class="block font-mono text-[11px] text-muted">{{.Name}}</span></span></label></li>
+            {{end}}
+          </ul>
+        </fieldset>
+        {{end}}
+      </div>
+      {{end}}
+      {{template "partials/field_errors" (index .Fields "permissions")}}
+    </fieldset>
+    <div class="flex gap-2">
+      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{if .IsNew}}{{t "admin.roles.create"}}{{else}}{{t "core.action.save"}}{{end}}</button>
+      <a href="/admin/roles" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.action.cancel"}}</a>
+    </div>
+  </form>
+  {{with .Record}}
+  <aside class="space-y-4">
+    <section class="rounded border border-line bg-panel p-4">
+      <h2 class="text-base font-bold mb-2">{{t "admin.roles.details"}}</h2>
+      <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+        <dt class="text-muted">{{t "admin.roles.slug"}}</dt><dd class="font-mono break-all" dir="ltr">{{.Slug}}</dd>
+        <dt class="text-muted">{{t "admin.roles.kind"}}</dt>
+        <dd>{{if .System}}{{t "admin.roles.system"}}{{else}}{{t "admin.roles.custom"}}{{end}}</dd>
+        <dt class="text-muted">{{t "admin.roles.users"}}</dt><dd class="font-mono">{{.UserCount}}</dd>
+      </dl>
+    </section>
+    {{if not .System}}
+    <section class="rounded border border-line bg-panel p-4">
+      <h2 class="text-base font-bold mb-2">{{t "admin.roles.danger"}}</h2>
+      <p class="text-xs text-muted mb-3">{{t "admin.roles.delete_help"}}</p>
+      <form method="post" action="/admin/roles/{{.Slug}}/delete" data-confirm="{{t "admin.roles.delete_confirm" .Slug}}">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-red text-red bg-red-soft hover:border-red focus:outline-none focus:ring-[3px] focus:ring-red-soft" {{if gt .UserCount 0}}disabled{{end}}>{{icon "trash-2"}}<span>{{t "admin.roles.delete"}}</span></button>
+      </form>
+    </section>
+    {{end}}
+  </aside>
+  {{end}}
+</div>
+{{end}}

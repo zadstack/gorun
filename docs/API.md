@@ -148,7 +148,7 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **156 operations** in 22 tags.
+Generated from the current locally booted OpenAPI document: **161 operations** in 23 tags.
 
 ### builder
 
@@ -297,6 +297,16 @@ Generated from the current locally booted OpenAPI document: **156 operations** i
 | DELETE | `/api/v1/redirects/{id}` | Delete a redirect | `redirects.manage` |
 | GET | `/api/v1/redirects` | List redirects | `redirects.manage` |
 | POST | `/api/v1/redirects` | Create or update a redirect | `redirects.manage` |
+
+### roles
+
+| Method | Path | Summary | Scopes |
+|---|---|---|---|
+| DELETE | `/api/v1/roles/{slug}` | Delete a custom role | `users.manage` |
+| GET | `/api/v1/roles/{slug}` | Get a role | `users.manage` |
+| GET | `/api/v1/roles` | List roles | `users.manage` |
+| PATCH | `/api/v1/roles/{slug}` | Update a role | `users.manage` |
+| POST | `/api/v1/roles` | Create a custom role | `users.manage` |
 
 ### saas
 

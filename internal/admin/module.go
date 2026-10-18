@@ -1,7 +1,7 @@
 // Package admin serves the core admin screens: dashboard widgets, users,
-// general and mail settings, system health and jobs, API keys, the audit
-// viewer and the global admin search. It also publishes the mailer service
-// (mailer.ServiceName) and the REST operations for those resources.
+// roles, general and mail settings, system health and jobs, API keys, the
+// audit viewer and the global admin search. It also publishes the mailer
+// service (mailer.ServiceName) and the REST operations for those resources.
 package admin
 
 import (
@@ -52,6 +52,7 @@ type handlers struct {
 	d       *kernel.Deps
 	tpl     *httpx.Templates
 	users   auth.Service
+	roles   auth.RoleService
 	keys    auth.KeyService
 	mail    *mailer.Mailer
 	aiLimit *aiLimiter // POST /admin/x/ai/write, per user
@@ -76,11 +77,15 @@ func (*Module) Register(d *kernel.Deps) error {
 	if !ok {
 		return errors.New("admin: api key service missing")
 	}
+	roles, ok := kernel.Get[auth.RoleService](d, kernel.ServiceRoles)
+	if !ok {
+		return errors.New("admin: roles service missing")
+	}
 	declarePermissions(d)
 	m := mailer.New(d.Settings, d.Log).WithKey(d.Config.SecretKey).WithEnv(d.Config.Env)
 	d.Services.Set(mailer.ServiceName, m)
 
-	h := &handlers{d: d, tpl: tpl, users: users, keys: keys, mail: m, aiLimit: newAILimiter(), started: time.Now()}
+	h := &handlers{d: d, tpl: tpl, users: users, roles: roles, keys: keys, mail: m, aiLimit: newAILimiter(), started: time.Now()}
 	tpl.SetSidebarBrandResolver(h.sidebarBrand)
 	d.Services.Set(kernel.ServiceNavigationPins, kernel.NavigationPins(h))
 	addNav(d)
@@ -94,6 +99,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Jobs.Register("studio.generate", h.studioGenerateJob, 1)
 	d.Jobs.Cron("studio.recover", time.Minute, h.studioRecover)
 	h.apiOperations()
+	h.roleAPIOperations()
 	h.keyAPIOperations()
 	d.Jobs.Cron("jobs.prune", time.Hour, h.pruneJobs)
 	d.Jobs.Cron("backup.schedule", time.Hour, h.backupScheduleTick)
@@ -122,6 +128,7 @@ func addNav(d *kernel.Deps) {
 		{ID: "agents.audit", LabelKey: "admin.nav.audit", Icon: "scroll-text", Href: "/admin/agents/audit", Permission: PermHealth, Group: "system", Position: 930},
 		{ID: "storage", LabelKey: "admin.storage.title", Icon: "hard-drive", Href: "/admin/settings/storage", Permission: PermSettings, Group: "integrations", Position: 820},
 		{ID: "users", LabelKey: "admin.nav.users", Icon: "users", Href: "/admin/users", Permission: PermUsers, Group: "settings", Position: 720},
+		{ID: "roles", LabelKey: "admin.nav.roles", Icon: "shield", Href: "/admin/roles", Permission: PermUsers, Group: "settings", Position: 725},
 		{ID: "settings.connections", LabelKey: "admin.connections.title", Icon: "plug", Href: "/admin/settings/connections", Permission: PermSettings, Group: "integrations", Position: 800},
 		{ID: "settings", LabelKey: "admin.nav.settings", Icon: "settings", Href: "/admin/settings/general", Permission: PermSettings, Group: "settings", Position: 700},
 		{ID: "system.health", LabelKey: "admin.nav.health", Icon: "activity", Href: "/admin/system/health", Permission: PermHealth, Group: "system", Position: 900},
