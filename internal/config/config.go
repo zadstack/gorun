@@ -316,12 +316,9 @@ func applyFlags(c *Config, fl Config, set map[string]bool) {
 	}
 }
 
-// resolveSecret decodes the configured secret, or in dev generates one and
-// persists it to <DataDir>/secret.key so sessions survive restarts.
-func resolveSecret(c Config, encoded string) ([]byte, error) {
-	return resolveSecretMode(c, encoded, true)
-}
-
+// resolveSecretMode decodes the configured secret, or in dev reads
+// <DataDir>/secret.key, generating and persisting one when allowGenerate is
+// set so sessions survive restarts.
 func resolveSecretMode(c Config, encoded string, allowGenerate bool) ([]byte, error) {
 	if encoded != "" {
 		return decodeSecret(encoded)

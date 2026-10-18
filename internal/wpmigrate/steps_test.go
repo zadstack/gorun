@@ -254,9 +254,8 @@ func TestArabicSlugRoundtrip(t *testing.T) {
 
 // fakeImporter records products (commerce stand-in).
 type fakeImporter struct {
-	mu   sync.Mutex
-	got  []WPProduct
-	fail bool
+	mu  sync.Mutex
+	got []WPProduct
 }
 
 func (f *fakeImporter) UpsertFromWP(_ context.Context, p WPProduct) (string, error) {

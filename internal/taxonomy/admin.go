@@ -46,13 +46,6 @@ func registerAdmin(d *kernel.Deps, svc *service) {
 	r.With(view).Get("/x/taxonomy/{tax}/picker", h.picker)
 }
 
-func (h *adminHandlers) tr(ctx context.Context, key string) string {
-	if h.d.I18n == nil {
-		return key
-	}
-	return h.d.I18n.T(i18n.Locale(ctx), key)
-}
-
 func (h *adminHandlers) fail(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, ErrNotFound):

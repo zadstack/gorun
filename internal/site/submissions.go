@@ -53,14 +53,6 @@ func scanSubmission(sc interface{ Scan(...any) error }) (Submission, error) {
 	return s, err
 }
 
-// storeSubmission writes s (its ID already set) before any mail attempt.
-func (h *handlers) storeSubmission(ctx context.Context, s FormSubmission) error {
-	_, err := h.d.DB.ExecContext(ctx, `INSERT INTO form_submissions (id, form, name, email, message, page, ip, created_at,
-		attachment_name, attachment_type, attachment_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		s.ID, s.Form, s.Name, s.Email, s.Message, s.Page, s.IP, s.SubmittedAt, s.AttachmentName, s.AttachmentType, s.AttachmentSize)
-	return err
-}
-
 // setDelivery records the mail outcome; delivered mirrors delivery = sent.
 func (h *handlers) setDelivery(ctx context.Context, id, state, detail string) {
 	if id == "" {

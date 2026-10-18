@@ -55,18 +55,6 @@ func (h *handlers) dashboardPinned(ctx context.Context) ([]dashboardPin, error) 
 	}
 	return out, rows.Err()
 }
-func (h *handlers) dashboardPinnedItem(ctx context.Context, id string) (*dashboardPin, error) {
-	pins, e := h.dashboardPinned(ctx)
-	if e != nil {
-		return nil, e
-	}
-	for _, p := range pins {
-		if p.ID == id {
-			return &p, nil
-		}
-	}
-	return nil, sql.ErrNoRows
-}
 func restorePinVisibility(ctx context.Context, tx *sql.Tx, userID, id string) error {
 	var raw string
 	e := tx.QueryRowContext(ctx, `SELECT hidden_json FROM user_navigation_preferences WHERE user_id=?`, userID).Scan(&raw)

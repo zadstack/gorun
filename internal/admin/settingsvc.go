@@ -156,12 +156,6 @@ func (h *handlers) validFrontPage(ctx context.Context, id string) bool {
 	return len(id) <= 64 && !strings.ContainsAny(id, " \t\r\n")
 }
 
-// saveSettings stores vals atomically and audits the changed key names
-// (never values).
-func (h *handlers) saveSettings(ctx context.Context, vals map[string]any) error {
-	return h.saveSettingsGuarded(ctx, vals, nil)
-}
-
 func (h *handlers) saveSettingsGuarded(ctx context.Context, vals map[string]any, expected *string) error {
 	keys := slices.Sorted(maps.Keys(vals))
 	err := db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {

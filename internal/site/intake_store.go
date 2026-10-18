@@ -32,10 +32,6 @@ func (h *handlers) sealIntake(id string, data intakePayload) (string, error) {
 	return db.Encrypt(h.d.Config.SecretKey, raw, "private-intake:"+id)
 }
 
-func (h *handlers) createIntake(ctx context.Context, id, kind string, data intakePayload) error {
-	return h.createIntakeFrom(ctx, id, kind, "", data)
-}
-
 func (h *handlers) createIntakeFrom(ctx context.Context, id, kind, source string, data intakePayload) error {
 	if source != "" && h.intakeSource(ctx, source, kind).Path == "" {
 		return errIntakeConflict

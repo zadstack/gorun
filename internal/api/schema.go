@@ -42,11 +42,6 @@ func newSchemaGen() *schemaGen {
 	return &schemaGen{seen: map[reflect.Type]bool{}, names: map[reflect.Type]string{}, defs: map[string]any{}}
 }
 
-// isComponent reports whether t is rendered as a named component.
-func isComponent(t reflect.Type) bool {
-	return t.Kind() == reflect.Struct && t.Name() != "" && t != timeType && !customJSON(t)
-}
-
 // customJSON reports whether t (or *t) controls its own JSON encoding.
 func customJSON(t reflect.Type) bool {
 	if t == timeType {

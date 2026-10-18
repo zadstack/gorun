@@ -2,7 +2,6 @@ package theme
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -231,6 +230,3 @@ func (s *service) set(ctx context.Context, slug string, preview bool) (*compiled
 	s.cache[slug] = c
 	return c, nil
 }
-
-// errNoServices is logged when a func needs a service that is not booted.
-var errNoServices = errors.New("theme: service not available")
