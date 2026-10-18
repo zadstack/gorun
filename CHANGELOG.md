@@ -7,6 +7,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Productized staging / promote-to-live for single-process SQLite: `gorun staging seed`
+  and `gorun staging promote` wrap backup + confined restore into a new `--dest`
+  (never merges into a live data dir), with operator next-steps. Runbook:
+  `docs/STAGING.md`.
 - Embedded launch overlay stylesheet at `/static/launch.css` (`web/launch/launch.css`),
   served by the binary so Coolify/Traefik file mounts for that path can be removed
   after upgrade (see `deploy/coolify.md`).

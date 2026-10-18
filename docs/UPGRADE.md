@@ -8,8 +8,10 @@ original key**.
 
 Short summaries also live in [GORUN-INSTALLATION.md](GORUN-INSTALLATION.md),
 [PRODUCTION.md](PRODUCTION.md), and [deploy/coolify.md](../deploy/coolify.md).
-Problems: [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Schema rules:
-[ARCHITECTURE.md](ARCHITECTURE.md#migrations-must-be-additive).
+A dress rehearsal on a restored copy is the same confined-restore path as
+staging; for an ongoing staging site + promote-to-live cutover see
+[STAGING.md](STAGING.md). Problems: [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+Schema rules: [ARCHITECTURE.md](ARCHITECTURE.md#migrations-must-be-additive).
 
 ---
 
@@ -232,6 +234,7 @@ release notes (see [LOGIN-SECURITY.md](LOGIN-SECURITY.md) for an example).
 
 Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 [PRODUCTION.md](PRODUCTION.md) (HTTPS, restore cutover),
+[STAGING.md](STAGING.md) (staging site + promote-to-live),
 [TROUBLESHOOTING.md](TROUBLESHOOTING.md#upgrade-from-a-release-tag).
 
 ---

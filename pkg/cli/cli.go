@@ -59,6 +59,9 @@ commands:
                 to <data>/backups/<timestamp>.{db,tar.gz}; secret.key and gorun.toml only
                 with --include-secrets (plain text: keep that archive offline); optional
                 --retain N keeps the newest N complete local pairs and deletes older ones
+  staging       staging seed|promote (--from <source-data> | --input <stamp>.manifest.json)
+                --dest <new-directory-path> [--include-secrets]: backup (optional) + restore
+                into a new data dir for a staging site or promote-to-live cutover; never merges
   import-wxr    import a WordPress WXR export: import-wxr <file> [--dry-run] [--source-name NAME]
                 [--currency AED] [--slug-policy suffix|skip|overwrite] [--reset-options]
   theme         theme info (JSON) | doctor [slug] [--json] [--warnings] | activate <slug> | show <tpl> |
@@ -162,6 +165,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return backupDecrypt(args[1:])
 	case "backup":
 		return backup(args[1:], out)
+	case "staging":
+		return stagingCmd(args[1:], out)
 	case "settings":
 		return settingsCmd(args[1:], out)
 	case "ai":

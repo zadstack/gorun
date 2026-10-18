@@ -172,7 +172,9 @@ Everything lives under the data directory (`GORUN_DATA`, default `./data`):
 - `restores/<timestamp>/`: confined output of the admin restore, staged in `.<timestamp>.partial`
   and renamed into place when complete (files `0600`, directories `0700`). It never merges into the
   live data directory; move it out before serving it with `--data`. The offline CLI
-  (`gorun backup-restore --dest`) should target a new directory outside the data directory instead.
+  (`gorun backup-restore --dest`, or `gorun staging seed|promote --dest`) should target a new
+  directory outside the data directory instead. Staging / promote-to-live is a second data dir
+  plus cutover, not a shared database — see [STAGING.md](STAGING.md).
 
 ### Migrations must be additive
 

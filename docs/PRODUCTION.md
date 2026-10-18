@@ -167,6 +167,7 @@ gorun backup-restore --input /var/lib/gorun/backups/<timestamp>.manifest.json --
    - Confirm **AI Agents → Audit** shows your public IP after login; no recurring untrusted-peer log warning.
 4. **Backup:** `gorun backup` (or admin). Optional local schedule + retain-N on **System → Backups**, or host cron with `gorun backup --retain N`. Default archive omits `secret.key` / `gorun.toml` unless `--include-secrets`. Encrypted S3 upload stays manual.
 5. **Restore:** never merges into the live dir. Online: **Operations → Backups → Inspect / restore** → `<data>/restores/<stamp>/` → move out → stop old process → `serve --data` the moved copy with original secrets. Offline: `gorun backup-restore --dest <new-empty-dir>` while stopped.
-6. **Upgrade:** pin `ghcr.io/zadstack/gorun:X.Y.Z` or the matching binary archive; migrate on `serve`; roll back with previous artifact + restored data + original key. Full runbook: [UPGRADE.md](UPGRADE.md).
-7. **Observability (optional):** `GORUN_METRICS=true` → `GET /metrics` (Prometheus text); optional `GORUN_METRICS_TOKEN`. Prod logs are JSON on stderr for host log shipping. Details: [OBSERVABILITY.md](OBSERVABILITY.md).
-8. **Problems:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Coolify: [deploy/coolify.md](../deploy/coolify.md).
+6. **Staging / promote:** second data dir + process for staging; `gorun staging seed` / `gorun staging promote` wrap backup → restore into a **new** dest, then stop live and point `--data` (never merges). Full path: [STAGING.md](STAGING.md).
+7. **Upgrade:** pin `ghcr.io/zadstack/gorun:X.Y.Z` or the matching binary archive; migrate on `serve`; roll back with previous artifact + restored data + original key. Full runbook: [UPGRADE.md](UPGRADE.md).
+8. **Observability (optional):** `GORUN_METRICS=true` → `GET /metrics` (Prometheus text); optional `GORUN_METRICS_TOKEN`. Prod logs are JSON on stderr for host log shipping. Details: [OBSERVABILITY.md](OBSERVABILITY.md).
+9. **Problems:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Coolify: [deploy/coolify.md](../deploy/coolify.md).
