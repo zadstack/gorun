@@ -17,3 +17,4 @@
 - [ ] Admin strings added in both `ar` and `en` catalogs; RTL checked
 - [ ] Docs updated (`docs/API.md`, `docs/MCP.md`, `docs/ARCHITECTURE.md` as relevant) and `CHANGELOG.md` under *Unreleased*
 - [ ] Commit messages follow `type(scope): description`
+- [ ] Every commit is signed off (`git commit -s`, DCO; see CONTRIBUTING.md)

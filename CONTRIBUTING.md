@@ -19,6 +19,13 @@
   `refactor` `style` `chore` `ci`.
 - **اختبارات المتصفح (e2e):** طريقة تشغيلها في [docs/E2E.md](docs/E2E.md).
 - **المراجعة:** طلب دمج صغير ومركّز، مع الاختبارات وتحديث الوثائق، وقائمة التحقق في قالب طلب الدمج.
+- **الترخيص والتوقيع (DCO):** نقبل المساهمات الخارجية بترخيص المشروع نفسه (AGPL-3.0)، دون اتفاقية CLA. يجب أن
+  يحمل كل commit في طلب الدمج سطر `Signed-off-by: الاسم <البريد>` وفق
+  [شهادة منشأ المطوّر DCO 1.1](https://developercertificate.org/)، وبه تُقرّ بأن لك حق تقديم هذا العمل بترخيص
+  المشروع. أضفه بـ`git commit -s`، ويجب أن يطابق البريد مؤلف الـcommit؛ وللـcommits الموجودة شغّل
+  `git rebase --signoff main` ثم ادفع الفرع من جديد. يتحقق سير العمل `dco` من ذلك تلقائيًا، ويتخطى commits
+  حسابات البوت مثل Dependabot. النص الكامل للشهادة في القسم الإنجليزي أدناه. أبلغ عن الثغرات بشكل خاص كما في
+  [SECURITY.md](SECURITY.md).
 
 </div>
 
@@ -91,11 +98,58 @@ including how to start the fixture servers and run the suite.
 - A reviewer reads the diff against the spec or issue, runs the tests, and checks the items in the pull request
   template.
 
-## License of contributions
+## License of contributions and DCO sign-off
 
-GoRun is licensed under the GNU Affero General Public License v3.0.
+GoRun is licensed under the GNU Affero General Public License v3.0, and contributions are accepted under the
+same license. There is no CLA. Instead, every commit in a pull request must be signed off under the
+[Developer Certificate of Origin 1.1](https://developercertificate.org/): by adding the line
 
-**Outside code contributions are not accepted yet.** The project is still deciding on its contribution
-agreement. Until it is published here, please open issues for bugs, security reports (see `SECURITY.md`),
-documentation problems and feature ideas instead of pull requests; pull requests from outside the project
-will be closed without review. This section will say when code contributions open and on what terms.
+```text
+Signed-off-by: Your Name <you@example.com>
+```
+
+you certify the statements below for that commit. `git commit -s` adds the line from your `user.name` and
+`user.email`; the email must match the commit author. To sign off commits already on your branch, run
+`git rebase --signoff main` and push again.
+
+The `dco` workflow (`.github/workflows/dco.yml`, script `.github/scripts/dco-check.sh`) checks every non-merge
+commit of a pull request. Commits authored by GitHub bot accounts such as Dependabot are skipped.
+
+```text
+Developer Certificate of Origin
+Version 1.1
+
+Copyright (C) 2004, 2006 The Linux Foundation and its contributors.
+
+Everyone is permitted to copy and distribute verbatim copies of this
+license document, but changing it is not allowed.
+
+
+Developer's Certificate of Origin 1.1
+
+By making a contribution to this project, I certify that:
+
+(a) The contribution was created in whole or in part by me and I
+    have the right to submit it under the open source license
+    indicated in the file; or
+
+(b) The contribution is based upon previous work that, to the best
+    of my knowledge, is covered under an appropriate open source
+    license and I have the right under that license to submit that
+    work with modifications, whether created in whole or in part
+    by me, under the same open source license (unless I am
+    permitted to submit under a different license), as indicated
+    in the file; or
+
+(c) The contribution was provided directly to me by some other
+    person who certified (a), (b) or (c) and I have not modified
+    it.
+
+(d) I understand and agree that this project and the contribution
+    are public and that a record of the contribution (including all
+    personal information I submit with it, including my sign-off) is
+    maintained indefinitely and may be redistributed consistent with
+    this project or the open source license(s) involved.
+```
+
+Report security issues privately as described in [SECURITY.md](SECURITY.md), not in a pull request.
