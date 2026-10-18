@@ -49,6 +49,8 @@ binary itself (the image has no shell and no SQLite CLI):
 
 ```sh
 docker exec <container> /app/gorun backup
+# keep newest N complete local pairs (host cron / Coolify scheduled task):
+docker exec <container> /app/gorun backup --retain 7
 ```
 
 It writes `/data/backups/<timestamp>.db` (`VACUUM INTO`) and
@@ -58,6 +60,12 @@ inside the volume; copy that directory off the host. **Default backups omit
 secrets). Keep `GORUN_SECRET_KEY` and other env credentials in Coolify's secret
 store separately. Only `gorun backup --include-secrets` adds those two files;
 the admin UI never does.
+
+**In-app schedule:** while the container is running, **System → Backups** can set
+hours + local retain-N (secrets still excluded; no automatic S3 upload). Prefer
+a Coolify scheduled task or host cron with `docker exec … backup --retain N` if
+you want backups independent of admin settings or after the process stops.
+Encrypted remote upload remains a manual admin action (64 MiB/file limit).
 
 Run a single replica only: SQLite is a single-node database. GoRun enforces this
 with an exclusive OS lock on `/data/gorun.lock`: a second container on the same

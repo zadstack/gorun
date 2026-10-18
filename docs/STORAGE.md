@@ -1,6 +1,6 @@
 # Storage, generated media and encrypted backups
 
-GoRun can activate a saved S3-compatible connection from **Settings → Storage**. Saving a connection or running its read-only bucket test does not activate storage. No scheduled backup is enabled by this feature.
+GoRun can activate a saved S3-compatible connection from **Settings → Storage**. Saving a connection or running its read-only bucket test does not activate storage. Encrypted remote backup upload is still a manual action; local schedule/retention (if enabled under **System → Backups**) never uploads to the bucket.
 
 ## Website media
 
@@ -24,7 +24,7 @@ Storage destinations allow HTTPS endpoints only. Managed runtime requests use DN
 
 ## Encrypted backups
 
-Choose **Use for encrypted backups**, then **System → Backups → Create and upload encrypted backup**. This is an explicit manual action. The existing **Create backup** action remains local-only.
+Choose **Use for encrypted backups**, then **System → Backups → Create and upload encrypted backup**. This is an explicit manual action (not driven by the local schedule). The existing **Create backup** action and optional in-app schedule remain local-only.
 
 GoRun first creates its existing consistent SQLite/database and file archive locally. Each file is encrypted with AES-256-GCM using a purpose-derived key from the site's recovery secret before upload. The format authenticates the original filename and file bytes. Uploaded object names are:
 
@@ -33,7 +33,19 @@ backups/<site-id>/YYYY/MM/DD/<timestamp>.db.gorb
 backups/<site-id>/YYYY/MM/DD/<timestamp>.tar.gz.gorb
 ```
 
-The limit is **64 MiB per plaintext backup file**. This bounded implementation is intended for small sites; it does not implement multipart uploads. A remote failure leaves completed local backup files available. Remote objects can be incomplete when only one upload succeeds; only success for both files is recorded as a successful remote backup. Nothing is automatically deleted or scheduled. Bucket ACL settings are not treated as proof of privacy: uploaded backup bytes are always encrypted.
+The limit is **64 MiB per plaintext backup file**. This bounded implementation is intended for small sites; it does not implement multipart uploads. A remote failure leaves completed local backup files available. Remote objects can be incomplete when only one upload succeeds; only success for both files is recorded as a successful remote backup. **Nothing in the bucket is automatically deleted or scheduled** — retain-N applies only to local pairs under `<data>/backups/`. Bucket ACL settings are not treated as proof of privacy: uploaded backup bytes are always encrypted.
+
+### Local schedule and retention
+
+On **System → Backups**, set **every N hours** (1–168; `0` = off) and optional **retain N** complete local pairs (`0` = never auto-delete). While `gorun serve` runs with job workers, cron `backup.schedule` creates a normal local pair (secrets still excluded) and then prunes older complete pairs when retain ≥ 1. Manual **Back up now** does not prune. Hosts without a long-running process can use host cron instead:
+
+```sh
+gorun backup --data /var/lib/gorun --retain 7
+# Coolify / Docker:
+docker exec <container> /app/gorun backup --retain 7
+```
+
+Keep an independent copy of recovery secrets off the host. Schedule is not off-site continuity.
 
 Keep an independent, protected copy of `secret.key` or `GORUN_SECRET_KEY`. A recovery secret stored only inside the encrypted backup cannot recover itself. Losing that secret makes the remote backups unrecoverable. Normal GoRun backup contents include the database and local files; remote media objects need their own bucket retention/backup policy.
 
@@ -56,6 +68,6 @@ The directory must contain the original `secret.key`, or supply the original `GO
 
 تُرتّب الصور والفيديوهات المولّدة حسب الموقع والمحتوى والتاريخ. تخضع لنفس فحص نوع الملف وحد الحجم الموجودين في مكتبة الوسائط.
 
-النسخ المشفّرة تُنشأ وتُرفع يدويًا من شاشة النسخ الاحتياطية، بحد 64 ميبيبايت لكل ملف قبل التشفير. لا توجد جدولة تلقائية. احتفظ بنسخة مستقلة وآمنة من سر الموقع؛ فقدانه يمنع استعادة النسخ المشفّرة. فشل الرفع لا يحذف النسخة المحلية، ولا يعني وجود ملف خارجي واحد اكتمال النسخة. استعادة الملفات بأمر `backup-decrypt` لا تعدّل الموقع الجاري ولا تستبدل ملفًا موجودًا.
+النسخ المشفّرة تُنشأ وتُرفع يدويًا من شاشة النسخ الاحتياطية، بحد 64 ميبيبايت لكل ملف قبل التشفير. الجدولة المحلية الاختيارية (ساعات + احتفاظ N) لا ترفع إلى الحاوية ولا تحذف كائنات S3. احتفظ بنسخة مستقلة وآمنة من سر الموقع؛ فقدانه يمنع استعادة النسخ المشفّرة. فشل الرفع لا يحذف النسخة المحلية، ولا يعني وجود ملف خارجي واحد اكتمال النسخة. استعادة الملفات بأمر `backup-decrypt` لا تعدّل الموقع الجاري ولا تستبدل ملفًا موجودًا. يمكن أيضًا `gorun backup --retain N` من cron المضيف.
 
 No real bucket credentials are required to build or test these paths. Unit tests use synthetic data and fake S3 responses. A configured destination is not evidence of a successful real-provider upload.

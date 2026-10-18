@@ -57,7 +57,8 @@ commands:
   backup-decrypt decrypt a .gorb backup with the original site secret (--input, --output; never overwrite)
   backup        copy the database (VACUUM INTO) and archive media/, overrides/, extensions/
                 to <data>/backups/<timestamp>.{db,tar.gz}; secret.key and gorun.toml only
-                with --include-secrets (plain text: keep that archive offline)
+                with --include-secrets (plain text: keep that archive offline); optional
+                --retain N keeps the newest N complete local pairs and deletes older ones
   import-wxr    import a WordPress WXR export: import-wxr <file> [--dry-run] [--source-name NAME]
                 [--currency AED] [--slug-policy suffix|skip|overwrite] [--reset-options]
   theme         theme info (JSON) | doctor [slug] [--json] [--warnings] | activate <slug> | show <tpl> |

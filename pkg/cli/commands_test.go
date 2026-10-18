@@ -207,6 +207,36 @@ func TestFlagHelpers(t *testing.T) {
 	}
 }
 
+func TestBackupRetainKeepsNewestPairs(t *testing.T) {
+	dir, _ := seed(t)
+	for i := 0; i < 3; i++ {
+		time.Sleep(1100 * time.Millisecond)
+		var out bytes.Buffer
+		if err := backup([]string{"--data", dir, "--retain", "2"}, &out); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(out.String(), "retain:") {
+			t.Fatalf("missing retain line: %q", out.String())
+		}
+	}
+	entries, err := os.ReadDir(filepath.Join(dir, "backups"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbs := 0
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".db") {
+			dbs++
+		}
+	}
+	if dbs != 2 {
+		t.Fatalf("want 2 .db files after retain, got %d (%v)", dbs, entries)
+	}
+	if err := backup([]string{"--data", dir, "--retain", "0"}, &bytes.Buffer{}); err == nil {
+		t.Fatal("--retain 0 must fail")
+	}
+}
+
 func TestBackupRefusesMissingDatabaseAndCleansUpOnFailure(t *testing.T) {
 	kernel.LogOutput = io.Discard
 	// A mistyped data dir has no database: refuse, write nothing.

@@ -270,6 +270,7 @@ attempts, then marked dead (retry from **System → Jobs** or `POST /api/v1/jobs
 | `wpmigrate.watchdog` | 5 min | fail items of a running migration that sit pending with no job, so the run advances |
 | `commerce.expire` | 24 h | expire entitlements past `ends_at` and enqueue suspensions |
 | `jobs.prune` | 1 h | delete finished jobs: `done` after `jobs.retain_done_days` (7), `dead` after `jobs.retain_dead_days` (30), jobs with an idempotency key after `jobs.retain_keyed_days` (90); System Health shows the job table row count |
+| `backup.schedule` | 1 h | when `backup.schedule_hours` ≥ 1, create a local backup pair (secrets excluded) if due; then prune to `backup.retain` newest complete pairs when retain ≥ 1; no remote upload |
 
 ## Permissions and roles
 

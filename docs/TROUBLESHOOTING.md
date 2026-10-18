@@ -39,6 +39,8 @@ Short fixes for common self-host failures. For full procedures see [installation
 | Leftover `.<stamp>.partial` under `restores/` | Interrupted admin restore | Delete the partial directory, then retry. It blocks the next restore until removed. |
 | Restored site cannot decrypt settings | Secrets were outside the archive | Copy operator-held `secret.key` / set original `GORUN_SECRET_KEY` and `gorun.toml` into the restore dir. Default backups omit them unless `gorun backup --include-secrets`. |
 | Tried to point `--data` at `<data>/restores/<stamp>/` while live | Restore dir is inside the live volume | Move it **out** of the live data directory, stop the old process, then `serve --data` the moved copy. |
+| In-app schedule never creates backups | Hours = 0, or process without job workers | Set hours on **System → Backups**, or use host cron: `gorun backup --retain N` / `docker exec … /app/gorun backup --retain N`. Schedule does not upload to S3. |
+| Local backups disappeared unexpectedly | Retain-N after schedule or CLI `--retain` | Raise retain, or set retain to `0` (no prune). Manual **Back up now** does not prune. |
 
 ## MCP and agents
 

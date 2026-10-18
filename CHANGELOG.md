@@ -21,6 +21,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Local backup schedule + retain-N: System → Backups settings (`backup.schedule_hours`,
+  `backup.retain`) drive hourly cron `backup.schedule` (secrets still excluded; no remote upload).
+  `backup.Prune` keeps the newest N complete local pairs; `gorun backup --retain N` for host
+  cron / Coolify `docker exec`. Manual create and encrypted S3 upload unchanged.
 - `gorun backup-restore --input <stamp>.manifest.json --dest <new-directory-path>` restores a local
   backup pair into a destination that must not already exist (inspect preflight; never merges into a
   live data dir).
