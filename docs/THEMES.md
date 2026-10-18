@@ -117,7 +117,30 @@ point where they were saved.
 
 Module funcs are resolved when templates are parsed. The engine registers empty fallbacks for the commerce funcs (`products` returns no groups, `product` returns nil), so any theme can call them and the CLI (`gorun theme save`, which boots no commerce) validates such templates; the commerce module replaces them when it is booted. Wrap their use in `{{with products}}…{{end}}` so the section disappears on sites without a store. Tests that need real products still register stand-ins with `d.Theme.AddFunc` (`internal/theme/commerce_stub_test.go`).
 
-Public pages allow scripts from the site itself (`/static/...`, theme assets) and inline scripts only with `nonce="{{nonce}}"`. Third-party script hosts and `'unsafe-eval'` are not allowed, so vendor libraries under the theme's assets, and note that the standard Alpine build (which evaluates its directives with `new Function`) does not run. Inline event handler attributes (`onclick`) are blocked. Styles from Google Fonts are allowed. The bundled themes need nothing more; the default theme uses the local Tailwind runtime (`/static/admin/vendor/tailwindcss-3.4.17.js`) and the local HTMX. A custom theme that still needs a CDN or Alpine can have the operator allow it with `GORUN_CSP_SCRIPT_SRC` (or `csp_script_src` in `gorun.toml`): https origins or URL prefixes, plus the keyword `'unsafe-eval'`, for example `GORUN_CSP_SCRIPT_SRC="https://cdn.jsdelivr.net 'unsafe-eval'"`. Broader sources (`https:`, `*`, `'unsafe-inline'`) are refused at startup. These apply to public pages only, never to the admin.
+Public pages allow scripts from the site itself (`/static/...`, theme assets) and inline scripts only with `nonce="{{nonce}}"`. Third-party script hosts and `'unsafe-eval'` are not allowed, so vendor libraries under the theme's assets, and note that the standard Alpine build (which evaluates its directives with `new Function`) does not run. Inline event handler attributes (`onclick`) are blocked. Styles from Google Fonts are allowed. The bundled themes need nothing more; the default theme uses a precompiled Tailwind stylesheet (see [Tailwind in the default theme](#tailwind-in-the-default-theme)) and the local HTMX. A custom theme that still needs a CDN or Alpine can have the operator allow it with `GORUN_CSP_SCRIPT_SRC` (or `csp_script_src` in `gorun.toml`): https origins or URL prefixes, plus the keyword `'unsafe-eval'`, for example `GORUN_CSP_SCRIPT_SRC="https://cdn.jsdelivr.net 'unsafe-eval'"`. Broader sources (`https:`, `*`, `'unsafe-inline'`) are refused at startup. These apply to public pages only, never to the admin.
+
+## Tailwind in the default theme
+
+The default theme (and child themes that keep its `parts/head.html`, such as `docs`) styles its markup with
+Tailwind utilities compiled ahead of time into `themes/default/assets/tailwind.css`, which is linked last in
+the head. No compiler runs in the browser and the app needs no Node.
+
+- **Rebuild:** `make css` (or `tools/tailwind/build.sh`) downloads the pinned Tailwind standalone CLI (v3.4.17)
+  once, verifies its SHA-256 against the upstream release, and writes the minified CSS. Commit the result; CI
+  runs `tools/tailwind/build.sh --check` and fails when the committed file is stale. Rebuild after adding or
+  changing utility classes in the default or docs theme or in Go code that renders public markup.
+- **What is scanned** (`tools/tailwind/tailwind.config.js`): default and docs theme templates, parts,
+  components and scripts; the bundled starter content; and the Go files that render public markup
+  (`internal/theme`, `internal/commerce`, the builder renderer and starters), where only `class="…"` attribute
+  values count. Add a Go file to that list when it starts emitting utility classes on public pages.
+- **Safelist** (`tools/tailwind/safelist.txt`): classes that must be present even when no scanned file spells
+  them out, one per line. Add a class there only when it reaches public pages from data at runtime.
+- **Content HTML** cannot add utilities: the sanitizer keeps only `ql-*`, `gp-*` and `language-*` classes, which
+  the theme CSS styles, so post and page bodies never depend on the Tailwind build.
+- **Runtime opt-in:** a custom child theme, an extension template or a template override that uses utilities
+  missing from the build can load the in-browser compiler again (the local Play build, about 400 KB of
+  JavaScript per page) by adding `{{part "tailwind-runtime" .}}` to its `parts/head-extra.html`. Prefer
+  rebuilding the CSS when the classes are known.
 
 ## Site identity
 

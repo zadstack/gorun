@@ -1,7 +1,7 @@
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build test run lint e2e
+.PHONY: build test run lint e2e css css-check
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/gorun ./cmd/gorun
@@ -11,6 +11,15 @@ test:
 
 run:
 	go run ./cmd/gorun serve
+
+# css rebuilds themes/default/assets/tailwind.css with the pinned Tailwind
+# standalone CLI (downloaded once, checksum verified; no Node). Commit the
+# result. css-check fails when the committed file is stale (CI runs it).
+css:
+	tools/tailwind/build.sh
+
+css-check:
+	tools/tailwind/build.sh --check
 
 # staticcheck built against an older toolchain cannot read go1.27.2 export
 # data. lint retries once with LINT_TOOLCHAIN when (and only when) that error
@@ -40,6 +49,7 @@ lint:
 # e2e runs the Playwright browser suite (node/npm live only in e2e/; the Go
 # app has no node deps). It builds the binary, boots it on a free port with a
 # temp data dir. Admin/default-theme scripts are local; custom themes may use CDNs.
+# The default theme's CSS is precompiled (make css), so the app needs no Node.
 # See docs/E2E.md.
 e2e:
 	cd e2e && npm ci && npx playwright install chromium && npx playwright test

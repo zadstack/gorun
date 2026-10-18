@@ -8,7 +8,7 @@
 > والخدمات والخطافات والمهام والصلاحيات، ومسار الطلب، وقائمة خطوات إضافة وحدة جديدة.
 
 GoRun is a modular monolith: one Go binary (`cmd/gorun`), one SQLite database, server-rendered
-HTML (Go templates + HTMX + Alpine + locally served Tailwind runtime) and a REST API and MCP server over the same
+HTML (Go templates + HTMX + Alpine; Tailwind precompiled for the default theme, a local runtime for the admin) and a REST API and MCP server over the same
 services.
 
 ## Kernel and infrastructure

@@ -1,0 +1,18 @@
+# Utility classes the default theme CSS must contain even if no scanned file
+# spells them out. One class per line; '#' starts a comment.
+#
+# Only add classes that reach public pages at runtime from data (a setting,
+# a database value, an extension) and that therefore cannot be found by
+# scanning. Editor content cannot carry utilities: the sanitizer keeps only
+# ql-*, gp-* and language-* classes, which the theme CSS styles itself.
+#
+# Emitted by Go code (internal/theme/builder_body.go, internal/commerce/
+# fragments.go); kept here so a moved file cannot drop them silently.
+sr-only
+not-sr-only
+border-green
+bg-green-soft
+border-red
+bg-red-soft
+border-line
+bg-panel
