@@ -95,7 +95,8 @@ func requestReceiptEmail(b *i18n.Bundle, locale, number, baseURL string) (subjec
 	if identity != "" {
 		subject = identity + " — " + subject
 	}
-	html, text = renderMail(b, locale, mailParts{
+	// Only the plaintext is kept: the HTML part is rebuilt from it below.
+	_, text = renderMail(b, locale, mailParts{
 		Title:  tr(b, locale, "commerce.mail.request.title"),
 		Lines:  []string{tr(b, locale, "commerce.mail.request.number", number), tr(b, locale, "commerce.mail.request.review"), tr(b, locale, "commerce.mail.request.no_payment"), tr(b, locale, "commerce.mail.request.next")},
 		Button: tr(b, locale, "commerce.mail.request.button"),
