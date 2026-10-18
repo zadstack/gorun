@@ -44,6 +44,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Documentation
 
+- Coolify / Docker HTTPS acceptance checklist (`deploy/coolify.md` §9): discover trusted-proxy CIDR,
+  verify cookie `Secure`, default HSTS (`max-age=31536000`) and opt-ins, and probe `/healthz` +
+  `/readyz` from outside the container — linked from `docs/PRODUCTION.md`, `docs/TROUBLESHOOTING.md`,
+  `docs/GORUN-INSTALLATION.md`, and `docs/README.md`.
 - Operator docs expansion: `docs/README.md` index; `docs/TROUBLESHOOTING.md`; install/upgrade from
   release tags (binary + GHCR) in `docs/GORUN-INSTALLATION.md`; HTTPS / proxy / HSTS and restore
   cutover in `docs/PRODUCTION.md`; Coolify restore + upgrade + HSTS in `deploy/coolify.md`; bilingual

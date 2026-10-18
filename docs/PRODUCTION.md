@@ -56,7 +56,9 @@ Docker وCompose غير مطلوبين للتشغيل المحلي من الحز
 
 - يرسل `Strict-Transport-Security: max-age=31536000` لطلبات HTTPS الفعلية فقط (TLS مباشر أو `X-Forwarded-Proto: https` من وكيل موثوق).
 - لا يثق بـ`X-Forwarded-For` / `X-Forwarded-Proto` إلا من العناوين في `GORUN_TRUSTED_PROXIES`. خلف Coolify افحص شبكة `coolify` كما في [deploy/coolify.md](../deploy/coolify.md). لا تستخدم `0.0.0.0/0`.
+- علم `Secure` على الكوكيز يتبع HTTPS الطلب **أو** كون `GORUN_BASE_URL` يبدأ بـ`https://`؛ أما HSTS وعنوان العميل الحقيقي فيتطلبان وكيلًا موثوقًا.
 - بعد النشر: سجّل دخولًا وافتح **وكلاء الذكاء الاصطناعي ← التدقيق** وتأكد أن IP المسجّل هو عنوانك العام لا عنوان الوكيل.
+- قائمة قبول المشغّل (CIDR، Secure، HSTS، صحة من خارج الحاوية): [deploy/coolify.md §9](../deploy/coolify.md#9-https-acceptance-checklist).
 
 تفاصيل حدود الدخول وحظر IP: [LOGIN-SECURITY.md](LOGIN-SECURITY.md).
 
@@ -152,7 +154,12 @@ gorun backup-restore --input /var/lib/gorun/backups/<timestamp>.manifest.json --
 
 1. **Secrets:** `GORUN_ENV=prod`, public `GORUN_BASE_URL`, stable `GORUN_SECRET_KEY`, persistent `GORUN_DATA`, optional `GORUN_SETUP_TOKEN` for web bootstrap.
 2. **One process per data dir:** stop-then-start on Docker/Coolify; lock file is `<data>/gorun.lock`.
-3. **HTTPS / proxy:** terminate TLS at the proxy; set `GORUN_TRUSTED_PROXIES` to that hop only; confirm audit IPs. HSTS is one year on HTTPS; subdomain and preload flags are opt-in.
+3. **HTTPS / proxy acceptance** (Coolify or `ghcr.io/zadstack/gorun` behind any reverse proxy) — full recipe: [deploy/coolify.md §9](../deploy/coolify.md#9-https-acceptance-checklist):
+   - Discover the proxy hop: Coolify `docker network inspect coolify` (or the proxy container IP); set `GORUN_TRUSTED_PROXIES` to that CIDR/IP only — never `0.0.0.0/0`.
+   - Cookie `Secure`: `curl -sSI https://<host>/admin/login` → `Set-Cookie` includes `Secure` (also follows `GORUN_BASE_URL=https://…`).
+   - HSTS: `curl -sSI https://<host>/healthz` → `Strict-Transport-Security: max-age=31536000`. Opt-in only: `GORUN_HSTS_INCLUDE_SUBDOMAINS` / `GORUN_HSTS_PRELOAD`.
+   - Health **outside** the container: `curl -fsS https://<host>/healthz` and `/readyz` → `200`. `docker exec … healthcheck` alone is not acceptance.
+   - Confirm **AI Agents → Audit** shows your public IP after login; no recurring untrusted-peer log warning.
 4. **Backup:** `gorun backup` (or admin). Optional local schedule + retain-N on **System → Backups**, or host cron with `gorun backup --retain N`. Default archive omits `secret.key` / `gorun.toml` unless `--include-secrets`. Encrypted S3 upload stays manual.
 5. **Restore:** never merges into the live dir. Online: **Operations → Backups → Inspect / restore** → `<data>/restores/<stamp>/` → move out → stop old process → `serve --data` the moved copy with original secrets. Offline: `gorun backup-restore --dest <new-empty-dir>` while stopped.
 6. **Upgrade:** pin `ghcr.io/zadstack/gorun:X.Y.Z` or the matching binary archive; migrate on `serve`; roll back with previous artifact + restored data + original key.

@@ -52,7 +52,7 @@ docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
   ghcr.io/zadstack/gorun:0.1.0
 ```
 
-احفظ `GORUN_SECRET_KEY` خارج الحاوية قبل التشغيل الأول. خلف Traefik أو Coolify اضبط `GORUN_TRUSTED_PROXIES` على شبكة الوكيل الحقيقية؛ التفاصيل في [Coolify](../deploy/coolify.md) و[الإنتاج](PRODUCTION.md). Compose من المصدر: `deploy/docker-compose.yml`.
+احفظ `GORUN_SECRET_KEY` خارج الحاوية قبل التشغيل الأول. خلف Traefik أو Coolify اضبط `GORUN_TRUSTED_PROXIES` على شبكة الوكيل الحقيقية، ثم نفّذ قائمة قبول HTTPS (CIDR، Secure، HSTS، صحة من خارج الحاوية) في [Coolify §9](../deploy/coolify.md#9-https-acceptance-checklist). التفاصيل أيضًا في [الإنتاج](PRODUCTION.md). Compose من المصدر: `deploy/docker-compose.yml`.
 
 ## بناء المصدر
 
@@ -268,7 +268,12 @@ docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
   ghcr.io/zadstack/gorun:0.1.0
 ```
 
-Pin a version tag in production (`0.1.0` or `0.1`). Behind a reverse proxy set `GORUN_TRUSTED_PROXIES`. Coolify: [deploy/coolify.md](../deploy/coolify.md). Compose: `deploy/docker-compose.yml`.
+Pin a version tag in production (`0.1.0` or `0.1`). Behind a reverse proxy set
+`GORUN_TRUSTED_PROXIES`, then run the HTTPS acceptance checklist (trusted CIDR,
+cookie `Secure`, HSTS, health from outside the container):
+[deploy/coolify.md §9](../deploy/coolify.md#9-https-acceptance-checklist).
+Coolify deploy notes: [deploy/coolify.md](../deploy/coolify.md). Compose:
+`deploy/docker-compose.yml`.
 
 ### Upgrades from release tags
 
