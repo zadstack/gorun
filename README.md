@@ -164,13 +164,15 @@ make build && make test && make lint
 
 ### التوثيق
 
+فهرس كامل: [docs/README.md](docs/README.md).
+
 | ابدأ من هنا | البناء والتكامل | التشغيل والمساهمة |
 | --- | --- | --- |
 | [التثبيت](docs/GORUN-INSTALLATION.md) | [البنية](docs/ARCHITECTURE.md) | [تشغيل الإنتاج](docs/PRODUCTION.md) |
 | [مساحة اللوحات](docs/CANVASES.md) | [واجهة REST](docs/API.md) | [Docker / Coolify](deploy/coolify.md) |
-| [منشئ المواقع](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [الأمان](SECURITY.md) |
-| [القوالب](docs/THEMES.md) | [الإضافات](docs/EXTENSIONS.md) | [المساهمة](CONTRIBUTING.md) |
-| [الترحيل من ووردبريس](docs/MIGRATION.md) | [التجارة](docs/COMMERCE.md) | [سجل التغييرات](CHANGELOG.md) |
+| [منشئ المواقع](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [استكشاف الأعطال](docs/TROUBLESHOOTING.md) |
+| [القوالب](docs/THEMES.md) | [الإضافات](docs/EXTENSIONS.md) | [الأمان](SECURITY.md) |
+| [الترحيل من ووردبريس](docs/MIGRATION.md) | [التجارة](docs/COMMERCE.md) | [المساهمة](CONTRIBUTING.md) · [سجل التغييرات](CHANGELOG.md) |
 
 ### حالة المشروع
 
@@ -350,13 +352,15 @@ make build && make test && make lint
 
 ## Documentation
 
+Full index: [docs/README.md](docs/README.md).
+
 | Start here | Build and integrate | Operate and contribute |
 | --- | --- | --- |
 | [Installation](docs/GORUN-INSTALLATION.md) | [Architecture](docs/ARCHITECTURE.md) | [Production operations](docs/PRODUCTION.md) |
 | [Canvas workspace](docs/CANVASES.md) | [REST API](docs/API.md) | [Docker / Coolify](deploy/coolify.md) |
-| [Site builder](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [Security](SECURITY.md) |
-| [Themes](docs/THEMES.md) | [Extensions](docs/EXTENSIONS.md) | [Contributing](CONTRIBUTING.md) |
-| [WordPress migration](docs/MIGRATION.md) | [Commerce](docs/COMMERCE.md) | [Changelog](CHANGELOG.md) |
+| [Site builder](docs/SITE_BUILDER.md) | [MCP](docs/MCP.md) | [Troubleshooting](docs/TROUBLESHOOTING.md) |
+| [Themes](docs/THEMES.md) | [Extensions](docs/EXTENSIONS.md) | [Security](SECURITY.md) |
+| [WordPress migration](docs/MIGRATION.md) | [Commerce](docs/COMMERCE.md) | [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md) |
 
 ## Project status
 

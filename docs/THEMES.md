@@ -17,6 +17,8 @@ A GoRun theme is a directory of Go `html/template` files under `themes/<slug>/`,
 
 Five general themes ship in `themes/` and appear in **Appearance → Themes** (or `theme = "<slug>"` in `gorun.toml`). All are children of `default`, so shop, account, checkout and form templates come from it unless a theme overrides them.
 
+**Switching themes in the admin:** open **Appearance → Themes**, activate a catalog slug (`site.theme`). That changes public rendering immediately for new requests. It does **not** create starter pages — use **Appearance → Build your site** for that ([SITE_BUILDER.md](SITE_BUILDER.md)). Initial install can also set `theme` in `gorun.toml` / `GORUN_THEME` before the first boot; afterwards prefer the admin so the change is audited.
+
 | Slug | For | Character |
 |---|---|---|
 | `default` | personal blogs and general sites | calm reading layout, featured story, card grid with reading time, site search |

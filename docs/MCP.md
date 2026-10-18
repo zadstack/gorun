@@ -11,6 +11,26 @@
 > بمشغّل واحد ذلك صراحة بـ`GORUN_MCP_SAME_OWNER_APPROVAL=true`.
 > كل استدعاء يُسجَّل في سجل التدقيق مع بصمة المعاملات فقط.
 
+## Operator overview / نظرة للمشغّل
+
+| Step | Action |
+| --- | --- |
+| 1 | Create an **AI agent** key under **AI Agents → API keys** with the minimum scopes (never `*` on production keys). |
+| 2 | Point the MCP client at `https://<your-site>/mcp` with `Authorization: Bearer gp_…`, or run `gorun mcp --key gp_…` (stdio). |
+| 3 | Humans decide sensitive calls under **AI Agents → Approvals**; the agent polls `check_approval`. |
+| 4 | Use a separate **REST API** key for `/api/v1` scripts; agent keys are refused there (`403 agent_key_not_allowed`). |
+| 5 | Audit every tool call under **AI Agents → Audit**. Canvases that run agents: [CANVASES.md](CANVASES.md). |
+
+| الخطوة | الإجراء |
+| --- | --- |
+| 1 | أنشئ مفتاح **وكيل ذكاء اصطناعي** من **وكلاء الذكاء الاصطناعي ← مفاتيح API** بأقل النطاقات. |
+| 2 | وجّه العميل إلى `https://<موقعك>/mcp` أو شغّل `gorun mcp`. |
+| 3 | راجع الطلبات الحساسة من **الموافقات**. |
+| 4 | مفاتيح REST منفصلة لـ`/api/v1`. |
+| 5 | راجع **التدقيق**. اللوحات: [CANVASES.md](CANVASES.md). |
+
+Common failures (wrong key kind, stuck approvals, same-owner rules): [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Docs index: [README.md](README.md).
+
 GoRun ships an official [Model Context Protocol](https://modelcontextprotocol.io) server so AI agents
 (Claude Code, Claude Desktop, any MCP client) can read and edit the site through the same services,
 permissions and validation as the admin and the REST API.

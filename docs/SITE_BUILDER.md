@@ -2,6 +2,8 @@
 
 ابدأ من **المظهر ← ابنِ موقعك** داخل لوحة الإدارة. تحتاج حساب مدير لإنشاء الموقع وتفعيله. المعالج يجهز صفحات قابلة للتعديل؛ الموقع الحالي يظل كما هو حتى تختار **نشر وتفعيل الموقع**.
 
+لتبديل لغة لوحة الإدارة (عربية ⇄ English) استخدم زر اللغة في الشريط العلوي؛ لغة الموقع العامة تُضبط في **الإعدادات ← عام**. راجع [مساحة الإدارة](ADMIN_WORKSPACE.md).
+
 ## 1. اختر التصميم
 
 | التصميم | الصفحات الجاهزة | مناسب لـ |
@@ -84,6 +86,23 @@
 
 من **النظام ← النسخ الاحتياطية** أنشئ نسخة واحفظ ملفي قاعدة البيانات والأرشيف معًا. نتيجة الجاهزية تثبت وجود زوج الملفات فقط؛ خطوات التشغيل والاستعادة موضحة في [دليل الإنتاج والاستعادة](PRODUCTION.md).
 
+## 7. تبديل القالب بعد أول موقع
+
+- **المظهر ← القوالب:** فعّل `default` أو `business` أو `magazine` أو `portfolio` أو `docs`. التفعيل يغيّر العرض فقط ولا ينشئ صفحات البداية.
+- لإنشاء صفحات جاهزة مع التصميم الجديد: **المظهر ← ابنِ موقعك** من جديد، راجع المسودات، ثم **نشر وتفعيل الموقع** (ينشر المجموعة ويطبّق القالب والهوية معًا).
+- تخصيص ملفات القالب الفعّال: مسودات من اللوحة أو REST/MCP تُحفظ تحت `<data>/overrides/<theme>/`؛ التفاصيل في [THEMES.md](THEMES.md).
+- القوالب الخمسة باختصار: [DEFAULT-THEMES.md](DEFAULT-THEMES.md).
+
 ## حدود هذه المرحلة
 
 المعالج يجهز مواقع المحتوى والخدمات ويملأ البيانات المقدمة. لا يولد موقعًا من وصف ذكاء اصطناعي، ولا ينشئ متجرًا مخصصًا أو يضبط الدومين والبريد تلقائيًا. دليل المطور للقوالب والأقسام موجود في [THEMES.md](THEMES.md).
+
+---
+
+## English — first site and theme switch
+
+1. Sign in as admin. Optionally switch the admin UI with the top-bar locale control ([ADMIN_WORKSPACE.md](ADMIN_WORKSPACE.md)).
+2. Open **Appearance → Build your site**, pick Business / Portfolio / Magazine, fill identity fields, **Prepare draft site**.
+3. Edit drafts in the section builder; the live site is unchanged until **Publish and activate site**.
+4. Check **Appearance → Site readiness**, then test the published contact form and take a backup ([PRODUCTION.md](PRODUCTION.md)).
+5. To change look only: **Appearance → Themes** and activate a catalog slug. To get that theme's starter pages, run Build your site again and activate explicitly. Activating a theme alone does not create pages.

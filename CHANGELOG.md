@@ -22,6 +22,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Documentation
 
+- Operator docs expansion: `docs/README.md` index; `docs/TROUBLESHOOTING.md`; install/upgrade from
+  release tags (binary + GHCR) in `docs/GORUN-INSTALLATION.md`; HTTPS / proxy / HSTS and restore
+  cutover in `docs/PRODUCTION.md`; Coolify restore + upgrade + HSTS in `deploy/coolify.md`; bilingual
+  admin and first-site / theme-switch paths in `docs/ADMIN_WORKSPACE.md` and `docs/SITE_BUILDER.md`;
+  MCP operator overview in `docs/MCP.md`; README documentation tables link the new index.
 - `docs/GORUN-INSTALLATION.md` no longer describes an old MIT license or a "source-available" policy:
   it states `AGPL-3.0-only`, as LICENSE, NOTICE and README do, and points to the public repository and
   releases. CONTRIBUTING names the SPDX identifier.
