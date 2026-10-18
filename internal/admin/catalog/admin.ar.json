@@ -114,6 +114,8 @@
   "health.status_warn": "تنبيه",
   "health.status_fail": "عطل",
   "health.runtime": "بيئة التشغيل",
+  "health.gorun_version": "إصدار GoRun",
+  "health.releases_link": "إصدارات GitHub",
   "health.go_version": "إصدار Go",
   "health.cpus": "المعالجات",
   "health.goroutines": "Goroutines",

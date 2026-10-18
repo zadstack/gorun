@@ -48,7 +48,8 @@ func TestHealthReportsJobsBacklog(t *testing.T) {
 		`data-stat="failed">1<`, `data-stat="dead">1<`,
 		`data-check="jobs" data-status="warn"`, `data-check="billing" data-status="fail"`,
 		"boom dead", "boom retry", `action="/admin/system/jobs/`+ids[0]+`/retry"`,
-		"journal_mode=wal", "auth", "admin", "go1.")
+		"journal_mode=wal", "auth", "admin", "go1.",
+		`data-stat="gorun-version">`, "GitHub releases")
 	mustNotContain(t, page, "secret")
 	// Other jobs (e.g. the user.login event) may be queued too.
 	if m := queuedRe.FindStringSubmatch(page); m == nil || m[1] == "0" {

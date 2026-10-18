@@ -163,6 +163,9 @@ func TestAPIJobsAuditHealth(t *testing.T) {
 	if data["journal_mode"] != "wal" || data["jobs"] == nil || data["checks"] == nil {
 		t.Fatalf("health data: %v", data)
 	}
+	if _, ok := data["version"].(string); !ok || data["version"] == "" {
+		t.Fatalf("health version missing: %v", data["version"])
+	}
 	raw, _ := json.Marshal(data)
 	if strings.Contains(strings.ToLower(string(raw)), "secret") {
 		t.Fatalf("health must not expose secrets: %s", raw)
