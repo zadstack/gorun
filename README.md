@@ -70,7 +70,26 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 ### البدء السريع
 
-يحتاج البناء من المصدر إلى **Go 1.27** و`make` (يثبّت المستودع إصدار الأدوات Go 1.27.2).
+**صورة Docker:** تُنشر الإصدارات صورةً متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.1.0` و`0.1` و`latest`:
+
+```sh
+docker pull ghcr.io/zadstack/gorun:0.1.0
+docker run --rm --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.1.0 version
+```
+
+تعمل الصورة في وضع الإنتاج وتحتاج `GORUN_BASE_URL` و`GORUN_SECRET_KEY` ومجلد بيانات دائمًا على `/data`؛ ملف Compose الجاهز وخطوات Coolify في [دليل Docker / Coolify](deploy/coolify.md).
+
+**الملفات التنفيذية:** كل [إصدار على GitHub](https://github.com/zadstack/gorun/releases) يرفق أرشيفات لنظامي linux وdarwin بمعماريتي amd64 وarm64، وفيها البرنامج ومجلد `themes/` والوثائق، مع ملف `SHA256SUMS`:
+
+```sh
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/gorun-0.1.0-linux-amd64.tar.gz
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/SHA256SUMS-0.1.0.txt
+sha256sum --ignore-missing -c SHA256SUMS-0.1.0.txt
+tar xzf gorun-0.1.0-linux-amd64.tar.gz && cd gorun-0.1.0-linux-amd64
+GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
+```
+
+**من المصدر:** يحتاج البناء من المصدر إلى **Go 1.27** و`make` (يثبّت المستودع إصدار الأدوات Go 1.27.2).
 
 ```sh
 git clone https://github.com/zadstack/gorun.git
@@ -112,7 +131,7 @@ make build && make test && make lint
 
 ### حالة المشروع
 
-GoRun في الإصدار v0.1 وما زال قيد التطوير النشط، ولا يوجد إصدار موسوم بعد؛ ابنِه من الفرع `main`. الحدود الحالية:
+GoRun في الإصدار v0.1.0 وما زال قيد التطوير النشط؛ استخدم آخر [إصدار](https://github.com/zadstack/gorun/releases) أو ابنِه من الفرع `main`. الحدود الحالية:
 
 - عملية خادم واحدة لكل مجلد بيانات SQLite (يفرضها القفل `<data>/gorun.lock`)، ولا يوجد تعدد مواقع بقاعدة بيانات مشتركة.
 - اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.
@@ -207,7 +226,26 @@ Provider-dependent features need valid credentials. Saving a connection or loadi
 
 ## Quick start
 
-Building from source requires **Go 1.27** and `make` (the repository pins the Go 1.27.2 toolchain).
+**Container image:** releases publish a multi-arch image (linux/amd64, linux/arm64) to GHCR, tagged `0.1.0`, `0.1` and `latest`:
+
+```sh
+docker pull ghcr.io/zadstack/gorun:0.1.0
+docker run --rm --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.1.0 version
+```
+
+The image runs in production mode and needs `GORUN_BASE_URL`, `GORUN_SECRET_KEY` and a persistent `/data` volume; the Compose file and Coolify steps are in the [Docker / Coolify guide](deploy/coolify.md).
+
+**Binaries:** every [GitHub release](https://github.com/zadstack/gorun/releases) attaches linux and darwin archives for amd64 and arm64, containing the binary, `themes/` and the docs, plus a `SHA256SUMS` file:
+
+```sh
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/gorun-0.1.0-linux-amd64.tar.gz
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/SHA256SUMS-0.1.0.txt
+sha256sum --ignore-missing -c SHA256SUMS-0.1.0.txt
+tar xzf gorun-0.1.0-linux-amd64.tar.gz && cd gorun-0.1.0-linux-amd64
+GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
+```
+
+**From source:** building from source requires **Go 1.27** and `make` (the repository pins the Go 1.27.2 toolchain).
 
 ```sh
 git clone https://github.com/zadstack/gorun.git
@@ -249,7 +287,7 @@ make build && make test && make lint
 
 ## Project status
 
-GoRun is an actively developed v0.1 with no tagged release yet; build from `main`. Current boundaries:
+GoRun is an actively developed v0.1.0; use the latest [release](https://github.com/zadstack/gorun/releases) or build from `main`. Current boundaries:
 
 - One server process per SQLite data directory (enforced by `<data>/gorun.lock`); no shared-database multisite.
 - Canvases are private to their owner, with explicit agent grants; they are not a shared multiplayer workspace.
