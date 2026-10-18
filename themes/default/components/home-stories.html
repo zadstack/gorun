@@ -10,7 +10,7 @@
         <div class="gr-home-story-meta">{{with .PublishedAt}}<time datetime="{{.}}"><bdi>{{date .}}</bdi></time>{{end}}{{with terms . "category"}}{{range .}}<a href="{{url .}}">{{.Name}}</a>{{end}}{{end}}</div>
         <h3><a href="{{url .}}">{{.Title}}</a></h3>
         {{with excerpt . 32}}<p>{{.}}</p>{{end}}
-        <a class="gr-home-story-link" href="{{url .}}">{{t "read_more"}} <span aria-hidden="true">↗</span></a>
+        <a class="gr-home-story-link" href="{{url .}}">{{t "read_more"}} <span class="gr-ext-arrow" aria-hidden="true">↗</span></a>
       </div>
     </article>
   {{end}}

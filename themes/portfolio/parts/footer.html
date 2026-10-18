@@ -2,7 +2,7 @@
 {{$shellFooter := setting (printf "theme.%s.footer_style" .Theme.Slug)}}
 {{if not (or (eq $shellFooter "signature") (eq $shellFooter "columns") (eq $shellFooter "minimal"))}}{{$shellFooter = "native"}}{{end}}
 <footer data-shell-footer="{{$shellFooter}}" class="studio-footer"><div class="studio-shell">
- <a class="studio-footer-title" href="{{url "/"}}">{{.Site.Title}} <span aria-hidden="true">↗</span></a>
+ <a class="studio-footer-title" href="{{url "/"}}">{{.Site.Title}} <span class="gr-ext-arrow" aria-hidden="true">↗</span></a>
  {{with .Site.Tagline}}<p>{{.}}</p>{{end}}
  <div class="studio-footer-meta">{{$footerMenu := menu "footer"}}{{if not $footerMenu}}{{$footerMenu = menu "primary"}}{{end}}{{with $footerMenu}}<nav aria-label="{{t "footer_menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}<span>{{t "powered_by"}}</span></div>
 </div></footer>
