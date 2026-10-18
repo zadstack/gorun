@@ -172,13 +172,17 @@ GORUN_BASE_URL=https://your-site.example \
 
 الفحص لا يُثبت استعادة موقع كاملة أو قراءة نسخة بعيدة؛ قد ينجح ويعرض `review_required`. لقطة SQLite متسقة، لكن DB وأرشيف الملفات ليسا معاملة واحدة؛ أوقف الكتابة حين تحتاج لقطة الموقع الكاملة المتسقة.
 
-للاستعادة إلى مجلد بيانات جديد فارغ (لا تُدمج في المجلد الحي):
+الاستعادة لا تُدمج في المجلد الحي، ولها طريقان:
+
+- **دون تشغيل:** أوقف الخدمة، ثم استعد إلى مجلد جديد فارغ خارج مجلد البيانات:
 
 ```sh
 ./bin/gorun backup-restore --input "./data/backups/REPLACE_WITH_ACTUAL_TIMESTAMP.manifest.json" --dest "./data-restored"
 ```
 
-من لوحة الإدارة: System → Backups → Inspect / restore يكتب تحت `data/restores/<timestamp>/` بعد تأكيد كلمة المرور. انسخ `secret.key` و`gorun.toml` (أو اضبط `GORUN_SECRET_KEY` الأصلي)، أوقف كل عملية على المجلد القديم، ثم شغّل `gorun serve --data` على مجلد الاستعادة.
+- **أثناء التشغيل:** من **تشغيل النظام ← النسخ الاحتياطية ← فحص / استعادة**، بعد تأكيد كلمة المرور، تُكتب النسخة تحت `data/restores/<timestamp>/` والموقع يعمل. هذا المجلد داخل مجلد البيانات الحي، فانقله خارجه قبل تشغيل الخدمة عليه، مثلًا `mv ./data/restores/<timestamp> ./data-restored`.
+
+بعدها انسخ `secret.key` و`gorun.toml` إلى مجلد الاستعادة (أو اضبط `GORUN_SECRET_KEY` الأصلي)، وأوقف كل عملية على المجلد القديم، ثم شغّل `gorun serve --data ./data-restored`. التفاصيل في [دليل الإنتاج](PRODUCTION.md).
 
 ## حدود ترحيل WordPress في المصدر الحالي
 
