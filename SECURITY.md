@@ -51,7 +51,9 @@ you. Please give us a reasonable time to ship the fix before publishing details.
   `frame-ancestors 'self'` with `X-Frame-Options: SAMEORIGIN`. Admin and API responses use
   `frame-ancestors 'none'` with `X-Frame-Options: DENY`. Responses also carry `X-Content-Type-Options: nosniff`,
   `Referrer-Policy: strict-origin-when-cross-origin`, and HSTS when the request itself is https (same
-  rule). In prod `GORUN_BASE_URL` is required and may not be
+  rule). HSTS is `max-age=31536000` by default. `GORUN_HSTS_INCLUDE_SUBDOMAINS=true` adds
+  `includeSubDomains` (only when every subdomain of the host serves https), and `GORUN_HSTS_PRELOAD=true`
+  adds `preload` (requires the former; submit to hstspreload.org yourself, and know that removal takes months). In prod `GORUN_BASE_URL` is required and may not be
   localhost; the server refuses to start otherwise.
 - Admin script sources are restricted to self and per-request nonces; the six exact dependency bundles and licenses are embedded locally with SRI. The admin policy keeps `'unsafe-eval'`: its Alpine directives are inline expressions that only the standard Alpine build can evaluate (the CSP build cannot).
 - Read-only draft previews apply their own restrictive sandbox, with scripts and form submission blocked. They are distinct from authenticated interactive administration, which retains its session, CSRF and permission checks.
@@ -108,4 +110,4 @@ you. Please give us a reasonable time to ship the fix before publishing details.
 - Mutations across modules write `audit_log` rows (actor, action, target). The audit log is append-only from the
   application's point of view.
 
-Backups include local recovery keys and configuration when present. Treat both backup files as secrets; keep external environment credentials separately. See [production recovery](docs/PRODUCTION.md).
+Backups leave out `secret.key` and `gorun.toml` (which can hold the Stripe, S3 and setup secrets) unless the operator runs `gorun backup --include-secrets`; the admin never includes them. Keep an independent, protected copy of the site secret: without it the database's encrypted settings cannot be read after a restore. Downloading a backup from the admin requires the password again when the last sign-in or confirmation is older than 10 minutes. Treat backup files as confidential all the same (they hold the whole database). See [production recovery](docs/PRODUCTION.md).

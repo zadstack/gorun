@@ -4,6 +4,11 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+      args:
+        # Reported by `gorun version` and the admin. Compose cannot run git, so pass it:
+        #   VERSION=$(git describe --tags --always --dirty) docker compose -f deploy/docker-compose.yml up -d --build
+        # Coolify sets SOURCE_COMMIT when "Include Source Commit in Build" is on.
+        VERSION: ${VERSION:-${SOURCE_COMMIT:-dev}}
     image: gorun:latest
     restart: unless-stopped
     ports:

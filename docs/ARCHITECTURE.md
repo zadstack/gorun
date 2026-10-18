@@ -136,7 +136,8 @@ with `kernel.Get[T](d, name)`.
    from a private/loopback peer, i.e. a reverse proxy) → `httpx.Logger` (one `slog` line per request) →
    `httpx.Recover` (panics become 500 and are logged) → `httpx.SecurityHeaders` (CSP with a per-request nonce,
    `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, and HSTS when the request
-   is https: TLS, or `X-Forwarded-Proto: https` from a private/loopback proxy peer).
+   is https: TLS, or `X-Forwarded-Proto: https` from a trusted proxy; `includeSubDomains`/`preload` only when
+   configured) → `httpx.Compress` → chi `middleware.GetHead` (HEAD served by GET routes).
 2. **Probes** on the root: `GET /healthz` (liveness, always `ok`) and `GET /readyz` (pings the database, 503
    when it is unreachable).
 3. **Mounts**, each a late-bound sub-router that modules filled during `Register`. Admin and API also carry a
@@ -166,7 +167,8 @@ Everything lives under the data directory (`GORUN_DATA`, default `./data`):
 - `extensions/<slug>/`: installed extension packages;
 - `imports/`: WXR files uploaded in the migration wizard;
 - `backups/`: output of `gorun backup` (`<timestamp>.db` copied with `VACUUM INTO`, plus
-  `<timestamp>.tar.gz` of `media/`, `overrides/`, `extensions/`, `form-uploads/`, plus local `secret.key` and `gorun.toml` when present).
+  `<timestamp>.tar.gz` of `media/`, `overrides/`, `extensions/`, `form-uploads/`; local `secret.key` and `gorun.toml` only with
+  `gorun backup --include-secrets`, never from the admin).
 
 ### Migrations must be additive
 

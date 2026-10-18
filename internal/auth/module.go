@@ -79,6 +79,8 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Router.Admin.Get("/login", h.loginForm)
 	d.Router.Admin.Post("/login", h.loginSubmit)
 	d.Router.Admin.Post("/logout", h.logout)
+	d.Router.Admin.Get("/reauth", h.reauthForm)
+	d.Router.Admin.Post("/reauth", h.reauthSubmit)
 	d.Router.Admin.Get("/setup", h.setupForm)
 	d.Router.Admin.Post("/setup", h.setupSubmit)
 	d.Router.Admin.Post("/locale", h.setLocale)

@@ -68,7 +68,7 @@ func TestBackupCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	m := regexp.MustCompile(`database: (\S+)\nfiles:    (\S+) \((\d+) files\)`).FindStringSubmatch(out.String())
-	if m == nil || m[3] != "5" || !strings.HasPrefix(m[1], filepath.Join(dir, "backups")+string(os.PathSeparator)) {
+	if m == nil || m[3] != "4" || !strings.HasPrefix(m[1], filepath.Join(dir, "backups")+string(os.PathSeparator)) {
 		t.Fatalf("output %q", out.String())
 	}
 	bdb, err := db.Open(m[1])
@@ -101,8 +101,20 @@ func TestBackupCommand(t *testing.T) {
 		}
 	}
 	slices.Sort(names)
-	if strings.Join(names, ",") != "extensions/demo/manifest.json,form-uploads/01ABC,media/2026/10/a.png,overrides/example/page.html,secret.key" {
-		t.Fatalf("archive (symlinks must be skipped): %v", names)
+	if strings.Join(names, ",") != "extensions/demo/manifest.json,form-uploads/01ABC,media/2026/10/a.png,overrides/example/page.html" {
+		t.Fatalf("archive (symlinks and secrets must be skipped): %v", names)
+	}
+	if !strings.Contains(out.String(), "secrets:  not archived") {
+		t.Fatalf("output must say the secrets were left out: %q", out.String())
+	}
+	out.Reset()
+	time.Sleep(1100 * time.Millisecond)
+	if err := backup([]string{"--data", dir, "--include-secrets"}, &out); err != nil {
+		t.Fatal(err)
+	}
+	m = regexp.MustCompile(`files:    (\S+) \((\d+) files\)`).FindStringSubmatch(out.String())
+	if m == nil || m[2] != "5" || !strings.Contains(out.String(), "plain text") {
+		t.Fatalf("--include-secrets output %q", out.String())
 	}
 }
 

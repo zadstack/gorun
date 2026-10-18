@@ -22,7 +22,7 @@ const (
 )
 
 type session struct {
-	ID, UserID, CSRF, ExpiresAt string
+	ID, UserID, CSRF, ExpiresAt, ReauthAt string
 }
 
 type sessionStore struct {
@@ -51,12 +51,12 @@ func hashToken(t string) string {
 func (s *sessionStore) create(ctx context.Context, userID, ip, ua string) (string, session, error) {
 	token := randomToken(32)
 	now := s.now()
-	sess := session{ID: hashToken(token), UserID: userID, CSRF: randomToken(32), ExpiresAt: db.FormatTime(now.Add(sessionTTL))}
+	sess := session{ID: hashToken(token), UserID: userID, CSRF: randomToken(32), ExpiresAt: db.FormatTime(now.Add(sessionTTL)), ReauthAt: db.FormatTime(now)}
 	if len(ua) > 512 {
 		ua = ua[:512]
 	}
-	_, err := s.db.ExecContext(ctx, `INSERT INTO sessions (id, user_id, csrf_token, ip, ua, expires_at, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`, sess.ID, userID, sess.CSRF, ip, ua, sess.ExpiresAt, db.FormatTime(now))
+	_, err := s.db.ExecContext(ctx, `INSERT INTO sessions (id, user_id, csrf_token, ip, ua, expires_at, created_at, reauth_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, sess.ID, userID, sess.CSRF, ip, ua, sess.ExpiresAt, db.FormatTime(now), sess.ReauthAt)
 	if err != nil {
 		return "", session{}, fmt.Errorf("auth: create session: %w", err)
 	}
@@ -70,10 +70,10 @@ func (s *sessionStore) load(ctx context.Context, token string) (*session, *User,
 		return nil, nil, false, ErrNotFound
 	}
 	var sess session
-	row := s.db.QueryRowContext(ctx, `SELECT s.id, s.user_id, s.csrf_token, s.expires_at, u.id, u.email, u.name, u.role, u.locale, u.status, u.last_login_at, u.created_at, u.updated_at
+	row := s.db.QueryRowContext(ctx, `SELECT s.id, s.user_id, s.csrf_token, s.expires_at, s.reauth_at, u.id, u.email, u.name, u.role, u.locale, u.status, u.last_login_at, u.created_at, u.updated_at
 		FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ?`, hashToken(token))
 	var u User
-	err := row.Scan(&sess.ID, &sess.UserID, &sess.CSRF, &sess.ExpiresAt,
+	err := row.Scan(&sess.ID, &sess.UserID, &sess.CSRF, &sess.ExpiresAt, &sess.ReauthAt,
 		&u.ID, &u.Email, &u.Name, &u.Role, &u.Locale, &u.Status, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil, false, ErrNotFound
@@ -96,6 +96,13 @@ func (s *sessionStore) load(ctx context.Context, token string) (*session, *User,
 		refreshed = true
 	}
 	return &sess, &u, refreshed, nil
+}
+
+// markReauthenticated records that the session's user just confirmed their
+// password.
+func (s *sessionStore) markReauthenticated(ctx context.Context, token string) error {
+	_, err := s.db.ExecContext(ctx, `UPDATE sessions SET reauth_at = ? WHERE id = ?`, db.FormatTime(s.now()), hashToken(token))
+	return err
 }
 
 func (s *sessionStore) delete(ctx context.Context, token string) error {

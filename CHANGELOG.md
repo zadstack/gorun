@@ -20,6 +20,15 @@ All notable changes to GoRun are recorded here. The format follows
   lost the WAL, foreign-key and busy-timeout pragmas; the SQLite `file:` URI is now percent-encoded
   (backups too).
 - The checkout result page loads the embedded HTMX instead of an unpinned jsDelivr copy.
+- WordPress migration render checks no longer disable the private-network block because of the
+  admin-editable site base URL; they reach a private address only when it matches the configured
+  `GORUN_BASE_URL` (or `GORUN_ALLOW_PRIVATE_NET` is set).
+- `HEAD` requests to GET routes (`/admin/setup`, `/healthz`, …) answer like GET without a body instead
+  of 405.
+- An MCP approval decided with an API key now requires that key's owner to differ from the owner of
+  the request; one admin with two keys can no longer approve their own calls. Single-admin sites can
+  opt out with `GORUN_MCP_SAME_OWNER_APPROVAL=true` / `mcp_same_owner_approval`. Approving in the admin
+  UI is unchanged.
 
 ### Changed
 
@@ -32,6 +41,19 @@ All notable changes to GoRun are recorded here. The format follows
   theme that does can be allowed with `GORUN_CSP_SCRIPT_SRC` / `csp_script_src`. `/api/docs` allows only
   the pinned Scalar bundle, now with SRI. The admin keeps `'unsafe-eval'` for Alpine.
 - CI runs staticcheck (`staticcheck.conf`); unused code it found was removed.
+- **Local backups leave out `secret.key` and `gorun.toml` by default.** Keep them separately (a password
+  manager or offline copy) and restore them next to the archive; `gorun backup create --include-secrets`
+  restores the old behaviour for an archive you protect yourself. Admin and remote backups never include
+  them.
+- Downloading a backup from the admin requires confirming your password within the last 10 minutes
+  (`/admin/reauth`); signing in counts. Migration `0009` adds `sessions.reauth_at`.
+- **HSTS:** the header is now `max-age=31536000` without `includeSubDomains` by default.
+  `GORUN_HSTS_INCLUDE_SUBDOMAINS=true` and `GORUN_HSTS_PRELOAD=true` (`hsts_include_subdomains`,
+  `hsts_preload`) add the directives; preload requires includeSubDomains. Set the first to keep the
+  previous header.
+- GitHub Actions are pinned to commit SHAs, and Dependabot proposes weekly Go module, Actions and e2e
+  npm updates.
+- `deploy/docker-compose.yml` passes `VERSION` (or Coolify's `SOURCE_COMMIT`) to the image build.
 
 ### Documentation
 

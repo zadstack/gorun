@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -91,8 +92,23 @@ func TestBackupIsolatedFullAppRestoreDrill(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !rep.IntegrityOK || rep.ForeignKeyViolations != 0 || !rep.RecoveryKeyArchived || rep.Remote.ReadBackVerified {
+	// Secrets are not archived by default: the preflight says so, and the
+	// operator restores the separately kept secret.key and gorun.toml.
+	if !rep.IntegrityOK || rep.ForeignKeyViolations != 0 || rep.RecoveryKeyArchived || rep.Remote.ReadBackVerified ||
+		!slices.Contains(rep.Warnings, "independent_original_secret_required") {
 		t.Fatalf("incorrect preflight: %+v", rep)
+	}
+	for _, name := range []string{"secret.key", "gorun.toml"} {
+		if _, err := os.Stat(filepath.Join(destination, name)); !os.IsNotExist(err) {
+			t.Fatalf("%s was restored from an archive that must not contain it", name)
+		}
+		kept, err := os.ReadFile(filepath.Join(source, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(destination, name), kept, 0o600); err != nil {
+			t.Fatal(err)
+		}
 	}
 	restoredConfig, err := config.LoadReadOnly([]string{"--data", destination})
 	if err != nil {

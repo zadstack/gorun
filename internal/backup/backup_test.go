@@ -2,11 +2,13 @@ package backup
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -48,7 +50,7 @@ func TestBackupRestoresEncryptedCredentials(t *testing.T) {
 		t.Fatal(err)
 	}
 	d.Close()
-	res, err := Create(dir, path, time.Now())
+	res, err := CreateWith(dir, path, time.Now(), Options{IncludeSecrets: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +165,7 @@ func TestFailedArchiveLeavesNoSnapshot(t *testing.T) {
 	if err := os.Symlink("missing", filepath.Join(dir, "secret.key")); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Create(dir, path, time.Now()); err == nil {
+	if _, err := CreateWith(dir, path, time.Now(), Options{IncludeSecrets: true}); err == nil {
 		t.Fatal("unrecoverable key was silently omitted")
 	}
 	entries, err := List(dir)
@@ -172,5 +174,48 @@ func TestFailedArchiveLeavesNoSnapshot(t *testing.T) {
 	}
 	if len(entries) != 0 {
 		t.Fatal("failed archive left a database snapshot")
+	}
+}
+
+func TestBackupLeavesSecretsOutByDefault(t *testing.T) {
+	dir, path := backupSource(t)
+	if _, err := config.Load([]string{"--data", dir}); err != nil { // writes secret.key
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "gorun.toml"), []byte("[stripe]\nsecret_key = \"sk_fixture\"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	res, err := Create(dir, path, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(res.Files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gz, err := gzip.NewReader(bytes.NewReader(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	tr := tar.NewReader(gz)
+	for {
+		h, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if h.Name == "secret.key" || h.Name == "gorun.toml" {
+			t.Fatalf("%s archived without IncludeSecrets", h.Name)
+		}
+	}
+	m, err := ReadManifest(res.Manifest)
+	if err != nil || len(m.RecoveryFiles) != 0 {
+		t.Fatalf("manifest lists recovery files: %v %v", m, err)
+	}
+	report, err := Inspect(res.Manifest)
+	if err != nil || report.RecoveryKeyArchived || !slices.Contains(report.Warnings, "independent_original_secret_required") {
+		t.Fatalf("inspection must ask for the independently kept secret: %+v %v", report, err)
 	}
 }

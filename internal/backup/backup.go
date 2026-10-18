@@ -25,7 +25,20 @@ import (
 // Dirs are the data-directory trees archived next to the database copy.
 var Dirs = []string{"media", "overrides", "extensions", "form-uploads"}
 
+// recoveryFiles hold the site secret (secret.key) and configuration that
+// may carry secrets (gorun.toml: secret_key, Stripe, S3, setup token). They
+// are archived only with Options.IncludeSecrets: an archive is otherwise a
+// file anyone who downloads or copies it could use to decrypt the database's
+// protected fields and forge sessions.
 var recoveryFiles = []string{"secret.key", "gorun.toml"}
+
+// Options adjust Create.
+type Options struct {
+	// IncludeSecrets archives secret.key and gorun.toml in plain text
+	// (`gorun backup --include-secrets`). Keep such archives offline and
+	// encrypted; the admin never sets it.
+	IncludeSecrets bool
+}
 
 // stampLayout names a backup by its UTC creation time.
 const stampLayout = "20060102T150405Z"
@@ -54,8 +67,14 @@ type Entry struct {
 // Dir is the backups directory of dataDir.
 func Dir(dataDir string) string { return filepath.Join(dataDir, "backups") }
 
-// Create backs up the database at dbPath and the data trees of dataDir, named after now.
+// Create backs up the database at dbPath and the data trees of dataDir,
+// named after now, without the recovery secrets (see Options).
 func Create(dataDir, dbPath string, now time.Time) (Result, error) {
+	return CreateWith(dataDir, dbPath, now, Options{})
+}
+
+// CreateWith is Create with options.
+func CreateWith(dataDir, dbPath string, now time.Time, opts Options) (Result, error) {
 	// A mistyped --data / GORUN_DATA must not "back up" a fresh empty
 	// database: the source must already exist.
 	if st, err := os.Stat(dbPath); err != nil || !st.Mode().IsRegular() {
@@ -98,6 +117,9 @@ func Create(dataDir, dbPath string, now time.Time) (Result, error) {
 	paths := append([]string{}, Dirs...)
 	recovery := []string{}
 	for _, name := range recoveryFiles {
+		if !opts.IncludeSecrets {
+			break
+		}
 		st, err := os.Lstat(filepath.Join(dataDir, name))
 		if errors.Is(err, fs.ErrNotExist) {
 			continue

@@ -142,6 +142,13 @@ for `gorun import-wxr`), lists broken internal links,
 media still pointing at WordPress, unresolved shortcodes and changed slugs. The report is stored in the
 migration log and can be downloaded as Markdown.
 
+Render checks probe the public base URL (the site setting, else `GORUN_BASE_URL`). They may reach a private
+or loopback address only when that URL is the configured `GORUN_BASE_URL` (`base_url`), or when
+`GORUN_ALLOW_PRIVATE_NET` is set, so editing the **site base URL** setting cannot point the server at internal
+hosts. / يفحص التحقق رابط الموقع العام، ولا يصل إلى عنوان خاص أو loopback إلا إذا طابق `GORUN_BASE_URL`
+المضبوط في البيئة أو الإعدادات، أو عند تفعيل `GORUN_ALLOW_PRIVATE_NET`؛ فلا يكفي تعديل رابط الموقع من لوحة
+الإدارة لتوجيه الخادم إلى الشبكة الداخلية.
+
 ## WXR fallback / ملف التصدير WXR
 
 When the REST API hides data, export from WordPress (**Tools → Export → All content**) and either upload the

@@ -155,7 +155,37 @@ const (
 // serve Tailwind's runtime and HTMX indicators; blob: images serve upload
 // previews.
 func SecurityHeaders(publicScripts ...string) func(http.Handler) http.Handler {
-	extra := strings.Join(publicScripts, " ")
+	return SecurityHeadersWith(SecurityOptions{PublicScripts: publicScripts})
+}
+
+// SecurityOptions configure SecurityHeadersWith.
+type SecurityOptions struct {
+	// PublicScripts are extra public-page script sources (see SecurityHeaders).
+	PublicScripts []string
+	// HSTSIncludeSubdomains and HSTSPreload extend the HSTS header
+	// (config.HSTS*). Both are off by default: includeSubDomains would force
+	// https on every subdomain of the site's host, and preload is a
+	// browser-wide commitment that is slow to undo.
+	HSTSIncludeSubdomains, HSTSPreload bool
+}
+
+// HSTSValue is the Strict-Transport-Security value for o: one year, plus
+// includeSubDomains and preload when enabled.
+func (o SecurityOptions) HSTSValue() string {
+	v := "max-age=31536000"
+	if o.HSTSIncludeSubdomains || o.HSTSPreload {
+		v += "; includeSubDomains"
+	}
+	if o.HSTSPreload {
+		v += "; preload"
+	}
+	return v
+}
+
+// SecurityHeadersWith is SecurityHeaders with options.
+func SecurityHeadersWith(o SecurityOptions) func(http.Handler) http.Handler {
+	extra := strings.Join(o.PublicScripts, " ")
+	hsts := o.HSTSValue()
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			nonce := newNonce()
@@ -191,7 +221,7 @@ func SecurityHeaders(publicScripts ...string) func(http.Handler) http.Handler {
 			h.Set("X-Content-Type-Options", "nosniff")
 			h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
 			if RequestIsHTTPS(r) {
-				h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+				h.Set("Strict-Transport-Security", hsts)
 			}
 			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), nonceKey, nonce)))
 		})

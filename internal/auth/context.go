@@ -15,6 +15,7 @@ type principal struct {
 	scopes []string
 	csrf   string
 	token  string // session cookie token, for logout
+	reauth string // session reauth_at: last sign-in or password confirmation
 }
 
 type principalKey struct{}

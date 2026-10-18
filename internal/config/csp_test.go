@@ -28,3 +28,35 @@ func TestPublicScriptSources(t *testing.T) {
 		t.Fatal("empty adds nothing", e)
 	}
 }
+
+func TestMCPSameOwnerApprovalConfig(t *testing.T) {
+	if c, e := Load(nil); e != nil || c.MCPSameOwnerApproval {
+		t.Fatal("same-owner approval must be off by default", e)
+	}
+	t.Setenv("GORUN_MCP_SAME_OWNER_APPROVAL", "maybe")
+	if _, e := Load(nil); e == nil {
+		t.Fatal("accepted a non-boolean value")
+	}
+	t.Setenv("GORUN_MCP_SAME_OWNER_APPROVAL", "true")
+	if c, e := Load(nil); e != nil || !c.MCPSameOwnerApproval {
+		t.Fatal("explicit opt-in ignored", e)
+	}
+}
+
+func TestHSTSConfig(t *testing.T) {
+	if c, e := Load(nil); e != nil || c.HSTSIncludeSubdomains || c.HSTSPreload {
+		t.Fatal("HSTS extensions must be off by default", e)
+	}
+	t.Setenv("GORUN_HSTS_PRELOAD", "true")
+	if _, e := Load(nil); e == nil {
+		t.Fatal("preload without includeSubDomains accepted")
+	}
+	t.Setenv("GORUN_HSTS_INCLUDE_SUBDOMAINS", "true")
+	if c, e := Load(nil); e != nil || !c.HSTSIncludeSubdomains || !c.HSTSPreload {
+		t.Fatal("HSTS opt-in ignored", e)
+	}
+	t.Setenv("GORUN_HSTS_INCLUDE_SUBDOMAINS", "sometimes")
+	if _, e := Load(nil); e == nil {
+		t.Fatal("accepted a non-boolean value")
+	}
+}

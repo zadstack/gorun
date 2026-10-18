@@ -102,19 +102,27 @@ func mcpStdio(args []string, in io.ReadCloser, out io.WriteCloser) error {
 	return err
 }
 
-// backup implements `gorun backup [--data dir]`: a consistent copy of the
-// database (VACUUM INTO) and a gzip tar of media/, overrides/,
-// extensions/ and form-uploads/, both under <DataDir>/backups/<UTC timestamp>.
+// backup implements `gorun backup [--data dir] [--include-secrets]`: a
+// consistent copy of the database (VACUUM INTO) and a gzip tar of media/,
+// overrides/, extensions/ and form-uploads/, both under
+// <DataDir>/backups/<UTC timestamp>. secret.key and gorun.toml are archived
+// only with --include-secrets.
 func backup(args []string, out io.Writer) error {
+	includeSecrets, args := boolFlag(args, "include-secrets")
 	cfg, err := config.Load(args)
 	if err != nil {
 		return err
 	}
-	res, err := gpbackup.Create(cfg.DataDir, cfg.DBPath(), time.Now())
+	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets})
 	if err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "database: %s\nfiles:    %s (%d files)\n", res.DB, res.Files, res.Count)
+	if includeSecrets {
+		fmt.Fprintln(out, "secrets:  secret.key and gorun.toml are in the archive in plain text; keep it offline and encrypted")
+	} else {
+		fmt.Fprintln(out, "secrets:  not archived; keep secret.key / GORUN_SECRET_KEY separately (needed to restore encrypted settings and sessions)")
+	}
 	return nil
 }
 

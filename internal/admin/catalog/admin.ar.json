@@ -236,7 +236,7 @@
   "backups.database": "قاعدة البيانات",
   "backups.files": "الملفات",
   "backups.empty": "لا توجد نسخ احتياطية بعد",
-  "backups.restore_help": "النسخ تحتوي أسرار الاستعادة. أوقف كل العمليات، واستعد ملف .db باسم gorun.db وفك .tar.gz داخل مجلد بيانات فارغ. احتفظ بمفتاح البيئة الأصلي والاعتمادات الخارجية. راجع docs/PRODUCTION.md.",
+  "backups.restore_help": "النسخ لا تحتوي secret.key ولا gorun.toml: احتفظ بنسخة محمية منهما. أوقف كل العمليات، واستعد ملف .db باسم gorun.db وفك .tar.gz داخل مجلد بيانات فارغ، ثم انسخ secret.key و gorun.toml (أو اضبط GORUN_SECRET_KEY الأصلي). راجع docs/PRODUCTION.md.",
   "settings.tab_ai": "الكتابة بالذكاء الاصطناعي",
   "settings.error_ai_provider": "اختر مزوّد الخدمة",
   "settings.error_ai_base_url_required": "أدخل عنوان مزود الخدمة صراحةً",

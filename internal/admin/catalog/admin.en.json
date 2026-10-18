@@ -236,7 +236,7 @@
   "backups.database": "Database",
   "backups.files": "Files",
   "backups.empty": "No backups yet",
-  "backups.restore_help": "Backups contain recovery secrets. Stop all processes, restore the .db as gorun.db and unpack the .tar.gz into an empty data directory. Keep the original external environment key and credentials. See docs/PRODUCTION.md.",
+  "backups.restore_help": "Backups do not contain secret.key or gorun.toml: keep your own protected copy. Stop all processes, restore the .db as gorun.db, unpack the .tar.gz into an empty data directory and copy your secret.key and gorun.toml (or set the original GORUN_SECRET_KEY). See docs/PRODUCTION.md.",
   "settings.tab_ai": "AI writing",
   "settings.error_ai_provider": "Choose a provider",
   "settings.error_ai_base_url_required": "Enter the provider endpoint explicitly",
