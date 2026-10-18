@@ -1,0 +1,20 @@
+{{/* Shared home hero. Data: Context (.) with optional dict overrides via component call.
+     Facts use real query/product totals only; zeros and missing counts are omitted. */}}
+{{$title := .Site.Title}}
+{{$dek := .Site.Tagline}}
+{{$kicker := t "hero_kicker"}}
+{{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
+{{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
+{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "start_reading"}}{{$ctaURL = "#gr-latest"}}{{end}}
+{{$secondaryLabel := t "all_posts"}}
+{{$secondaryURL := "/search"}}
+<section class="gr-hero" aria-labelledby="gr-hero-title">
+  <p class="gr-hero-kicker">{{$kicker}}</p>
+  <h1 id="gr-hero-title">{{$title}}</h1>
+  {{with $dek}}<p class="gr-hero-dek">{{.}}</p>{{end}}
+  <div class="gr-hero-actions">
+    <a class="gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>
+    <a class="gr-btn-text" href="{{url $secondaryURL}}">{{$secondaryLabel}} <span aria-hidden="true">↗</span></a>
+  </div>
+  {{component "hero-facts" .}}
+</section>

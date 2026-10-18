@@ -31,9 +31,12 @@ html:is([data-theme="default"],[data-theme="docs"]) body { overflow-wrap: anywhe
 html:is([data-theme="default"],[data-theme="docs"]) #main { padding-block: clamp(2.5rem, 5vw, 5rem); }
 html:is([data-theme="default"],[data-theme="docs"]) #main h1 { font-size: clamp(2rem, 4.4vw, 3.75rem); line-height: 1.14; letter-spacing: -.035em; text-wrap: balance; max-width: 24ch; }
 html:is([data-theme="default"],[data-theme="docs"])[dir="rtl"] #main h1 { letter-spacing: 0; line-height: 1.45; }
-html:is([data-theme="default"],[data-theme="docs"]) .reading-article { max-width: 72ch; }
-html:is([data-theme="default"],[data-theme="docs"]) .reading-article .prose-gp { font-size: 1.0625rem; line-height: 1.9; margin-top: 2rem; }
-html:is([data-theme="default"],[data-theme="docs"]) .prose-gp h2 { font-size: clamp(1.5rem, 2.5vw, 2rem); line-height: 1.4; margin-top: 2em; }
+html:is([data-theme="default"],[data-theme="docs"]) .reading-article { max-width: 760px; }
+html:is([data-theme="default"],[data-theme="docs"]) .reading-article .prose-gp { font-size: 1.125rem; line-height: 1.9; margin-top: 2rem; }
+html:is([data-theme="default"],[data-theme="docs"]) .prose-gp h2 {
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem); line-height: 1.4; margin-top: 2em;
+  padding-top: 1em; border-top: 1px solid var(--line);
+}
 html:is([data-theme="default"],[data-theme="docs"]) .prose-gp h3 { font-size: 1.25rem; line-height: 1.5; }
 html:is([data-theme="default"],[data-theme="docs"]) .prose-gp table { display: block; overflow-x: auto; }
 html:is([data-theme="default"],[data-theme="docs"]) .prose-gp blockquote { border-radius: 0; border-inline: 0; padding: 1.5rem 0; background: transparent; font-size: 1.15em; }
@@ -105,11 +108,11 @@ html[data-theme="default"] .reading-card > p:not(.text-sm) { font-size: .875rem;
 html[data-theme="default"] .reading-card > a:last-child { margin-top: auto; padding-top: .5rem; font-size: .8125rem; font-weight: 600; }
 html[data-theme="default"] .default-card-image { overflow: hidden; border-radius: 4px; }
 html[data-theme="default"] .default-card-image img { aspect-ratio: 16 / 9; width: 100%; height: auto; object-fit: cover; }
-html[data-theme="default"] .reading-article { max-width: 76ch; }
+html[data-theme="default"] .reading-article { max-width: 760px; }
 html[data-theme="default"] .reading-article > header { border-bottom: 1px solid var(--line); padding-bottom: 1.15rem; }
 html[data-theme="default"] .reading-article figure { margin-block: 1.35rem; }
 html[data-theme="default"] .reading-article figure img { max-height: 520px; object-fit: contain; background: var(--panel-2); }
-html[data-theme="default"] .reading-article .prose-gp { font-size: 1rem; line-height: 1.85; }
+html[data-theme="default"] .reading-article .prose-gp { font-size: 1.125rem; line-height: 1.9; }
 html[data-theme="default"] .prose-gp :is(iframe,video) { max-width: 100%; }
 html[data-theme="default"] .default-empty { padding: 1.5rem; border-style: dashed; line-height: 1.7; }
 html[data-theme="default"] .default-pagination { border-top: 1px solid var(--line); padding-top: 1.15rem; }

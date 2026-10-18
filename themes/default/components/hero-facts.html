@@ -1,0 +1,15 @@
+{{/* Facts <dl> from real published counts only. Omit empty groups — never invent. */}}
+{{$posts := query (dict "type" "post" "per_page" 1)}}
+{{$pages := query (dict "type" "page" "per_page" 1)}}
+{{$productN := 0}}
+{{with products}}{{range .}}{{range .Products}}{{$productN = add $productN 1}}{{end}}{{end}}{{end}}
+{{$showPosts := gt $posts.Total 0}}
+{{$showPages := gt $pages.Total 0}}
+{{$showProducts := gt $productN 0}}
+{{if or $showPosts $showPages $showProducts}}
+<dl class="gr-facts">
+  {{if $showPosts}}<div><dt>{{t "fact_posts"}}</dt><dd><bdi>{{$posts.Total}}</bdi></dd></div>{{end}}
+  {{if $showPages}}<div><dt>{{t "fact_pages"}}</dt><dd><bdi>{{$pages.Total}}</bdi></dd></div>{{end}}
+  {{if $showProducts}}<div><dt>{{t "fact_products"}}</dt><dd><bdi>{{$productN}}</bdi></dd></div>{{end}}
+</dl>
+{{end}}

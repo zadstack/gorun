@@ -1,8 +1,8 @@
 {{/* A page. Specific pages use page-{slug}.html or page-{template}.html. */}}
 {{part "header" .}}
 {{with .Content}}
-<article class="reading-article mx-auto max-w-3xl">
-  <h1 class="text-[22px] font-bold leading-snug">{{.Title}}</h1>
+<article class="reading-article mx-auto">
+  <h1>{{.Title}}</h1>
   {{with media .FeaturedMediaID}}<figure class="mt-6">{{img . "large" "w-full rounded border border-line"}}</figure>{{end}}
   <div class="prose-gp mt-6">{{safe .Body}}</div>
 </article>

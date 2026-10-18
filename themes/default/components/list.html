@@ -1,8 +1,8 @@
-{{/* Usage: {{component "list" .}} — cards for .Items plus pagination. */}}
+{{/* Usage: {{component "list" .}} — numbered rows + pagination, or empty state. */}}
 {{if .Items}}
-<div class="default-content-grid grid gap-4 sm:grid-cols-2">
-  {{range .Items}}{{component "card" .}}{{end}}
-</div>
+<ol class="gr-list">
+  {{range $i, $item := .Items}}{{component "list-row" (dict "Item" $item "Index" $i)}}{{end}}
+</ol>
 {{component "pagination" .}}
 {{else}}
 <p class="default-empty rounded border border-line bg-panel p-6 text-muted">{{t "empty"}}</p>

@@ -40,5 +40,11 @@
   "search_cta_body": "Search everything published on this site.",
   "open_menu": "Open menu",
   "site_links": "Site links",
-  "contact_heading": "Contact"
+  "contact_heading": "Contact",
+  "hero_kicker": "Home",
+  "latest_note": "Published stories from this site.",
+  "closing_fallback": "More from this site.",
+  "fact_posts": "Posts",
+  "fact_pages": "Pages",
+  "fact_products": "Products"
 }

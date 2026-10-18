@@ -1,6 +1,6 @@
 {
   "name": "GoRun Default",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "parent": null,
   "locations": [
     "primary",
@@ -92,6 +92,30 @@
         "en": "Changes the layout while preserving your logo, menus and existing links."
       },
       "default": "native"
+    },
+    {
+      "key": "cta_label",
+      "type": "text",
+      "label": {
+        "ar": "نص زر الهيدر",
+        "en": "Header button label"
+      },
+      "help": {
+        "ar": "مثل: تواصل معنا. يظهر زر مملوء عند تعبئة النص والرابط؛ وإلا يُستخدم البحث.",
+        "en": "For example: Contact us. A filled button shows when both label and link are set; otherwise Search is used."
+      }
+    },
+    {
+      "key": "cta_url",
+      "type": "text",
+      "label": {
+        "ar": "رابط زر الهيدر",
+        "en": "Header button link"
+      },
+      "help": {
+        "ar": "مسار داخلي مثل /contact أو رابط كامل.",
+        "en": "An internal path such as /contact, or a full URL."
+      }
     }
   ],
   "supports": [

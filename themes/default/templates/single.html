@@ -1,9 +1,9 @@
 {{/* A single item of a non-page content type (e.g. a post). */}}
 {{part "header" .}}
 {{with .Content}}
-<article class="reading-article mx-auto max-w-3xl">
+<article class="reading-article mx-auto">
   <header class="mb-6">
-    <h1 class="text-[22px] font-bold leading-snug">{{.Title}}</h1>
+    <h1>{{.Title}}</h1>
     {{with .PublishedAt}}<p class="mt-2 text-sm text-muted"><time datetime="{{.}}"><bdi>{{date .}}</bdi></time></p>{{end}}
   </header>
   {{with media .FeaturedMediaID}}<figure class="mb-6">{{img . "large" "w-full rounded border border-line"}}{{with .Caption}}<figcaption class="mt-2 text-sm text-muted">{{.}}</figcaption>{{end}}</figure>{{end}}
@@ -12,7 +12,7 @@
   {{if or $cats $tags}}
   <footer class="mt-8 border-t border-line pt-4 space-y-2 text-sm">
     {{with $cats}}<p><span class="text-muted">{{t "categories"}}:</span> {{range $i, $t := .}}{{if $i}}{{t "theme.list_separator"}}{{end}}<a href="{{url $t}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{$t.Name}}</a>{{end}}</p>{{end}}
-    {{with $tags}}<p class="flex flex-wrap gap-1"><span class="text-muted">{{t "tags"}}:</span> {{range .}}<a href="{{url .}}" class="rounded-full border border-line bg-panel-2 px-2 text-[13px] hover:border-line-strong">{{.Name}}</a>{{end}}</p>{{end}}
+    {{with $tags}}<p class="flex flex-wrap gap-1"><span class="text-muted">{{t "tags"}}:</span> {{range .}}<a href="{{url .}}" class="gr-chip">{{.Name}}</a>{{end}}</p>{{end}}
   </footer>
   {{end}}
   {{component "comments" (dict "Item" . "Flash" $.Extra.comment_flash)}}

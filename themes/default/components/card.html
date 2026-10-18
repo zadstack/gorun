@@ -1,8 +1,21 @@
-{{/* Usage: {{component "card" $item}} — a content.Item. */}}
-<article class="reading-card rounded border border-line bg-panel p-5 hover:border-line-strong">
-  {{with media .FeaturedMediaID}}<a href="{{url $}}" class="default-card-image block mb-4" tabindex="-1" aria-hidden="true">{{img . "medium" "w-full h-48 object-cover rounded"}}</a>{{end}}
-  <h2 class="text-lg font-bold leading-snug"><a href="{{url .}}" class="hover:text-green focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">{{.Title}}</a></h2>
-  {{with .PublishedAt}}<p class="mt-1 text-sm text-muted"><time datetime="{{.}}"><bdi>{{date .}}</bdi></time></p>{{end}}
-  {{with excerpt . 30}}<p class="mt-3 text-muted">{{.}}</p>{{end}}
-  <a href="{{url .}}" class="mt-3 inline-block text-blue hover:text-blue-hover underline underline-offset-2">{{t "read_more"}}</a>
+{{/* Usage: {{component "card" $item}} — hairline card with CSS cover fallback (no initials). */}}
+<article class="gr-card reading-card">
+  {{with media .FeaturedMediaID}}
+  <a class="gr-card-media default-card-image" href="{{url $}}" tabindex="-1" aria-hidden="true">{{img . "medium" "w-full h-full object-cover"}}</a>
+  {{else}}
+  <div class="gr-card-cover" aria-hidden="true">
+    <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" focusable="false">
+      <rect width="320" height="180" fill="currentColor" opacity="0"/>
+      <path d="M0 120 C80 80 120 160 200 110 S300 40 320 70 L320 180 L0 180 Z" fill="currentColor" opacity=".12"/>
+      <circle cx="248" cy="48" r="28" fill="currentColor" opacity=".1"/>
+      <path d="M24 36 h72 M24 52 h48" stroke="currentColor" stroke-width="3" opacity=".18" stroke-linecap="round"/>
+    </svg>
+  </div>
+  {{end}}
+  <div class="gr-card-copy">
+    <h3 class="text-lg font-bold leading-snug"><a href="{{url .}}">{{.Title}}</a></h3>
+    {{with .PublishedAt}}<p class="gr-card-meta"><time datetime="{{.}}"><bdi>{{date .}}</bdi></time></p>{{end}}
+    {{with excerpt . 30}}<p class="gr-card-excerpt">{{.}}</p>{{end}}
+    <a class="gr-btn-text" href="{{url .}}">{{t "read_more"}} <span aria-hidden="true">→</span></a>
+  </div>
 </article>
