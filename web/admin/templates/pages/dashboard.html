@@ -14,6 +14,6 @@
   {{range .Widgets}}{{if .}}{{template "partials/dashboard_widget" .}}{{end}}{{end}}
 </div>
 {{else}}
-<div class="rounded border border-line bg-panel p-6 text-muted">{{t "core.dashboard.empty"}}</div>
+<div class="rounded border border-line bg-panel p-4 text-muted">{{t "core.dashboard.empty"}}</div>
 {{end}}
 {{end}}
