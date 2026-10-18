@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { env, db, expectNoServerError, setLocale } from '../lib/helpers.ts';
+import { env, db, expectNoServerError, setLocale, submitAndLand } from '../lib/helpers.ts';
 
 test('admin editing, menus and language toggle work without external network access', async ({ page }) => {
   const external: string[] = [];
@@ -41,7 +41,7 @@ test('admin editing, menus and language toggle work without external network acc
   await expect(page.locator('.menu-tree-item')).toHaveCount(2);
   await page.locator('.menu-tree-item').nth(1).locator('[data-handle]').press('Alt+ArrowUp');
   await expect(page.locator('.menu-tree-item').first()).toContainText('Second offline link');
-  await page.locator('form[action$="/items"] button[type="submit"]').click();
+  await submitAndLand(page, page.locator('form[action$="/items"] button[type="submit"]'), `/admin/menus/${menuID}/items`);
   await page.reload();
   await expect(page.locator('.menu-tree-item').first()).toContainText('Second offline link');
   const database = db();

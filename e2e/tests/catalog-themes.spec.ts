@@ -14,7 +14,7 @@ import { test, expect, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { MARKER_500, env } from '../lib/helpers.ts';
+import { MARKER_500, env, submitAndLand } from '../lib/helpers.ts';
 
 const THEMES = ['default', 'business', 'magazine', 'portfolio', 'docs'];
 const WIDTHS = [375, 1280];
@@ -239,7 +239,7 @@ test.describe.serial('catalog themes', () => {
     // A bad color is rejected with a field error and nothing is stored.
     await page.goto('/admin/appearance/theme-settings');
     await page.fill('input[name="settings[identity_accent]"]', 'red; } body { display:none');
-    await page.locator('form button[type="submit"]').last().click();
+    await submitAndLand(page, page.locator('form button[type="submit"]').last(), '/admin/appearance/theme-settings', null);
     await expect(page.locator('input[name="settings[identity_accent]"]')).toHaveValue('red; } body { display:none');
     await page.goto('/');
     await expect(page.locator('body')).toBeVisible();
@@ -249,7 +249,7 @@ test.describe.serial('catalog themes', () => {
     await page.selectOption('select[name="settings[identity_scheme]"]', '');
     await page.fill('input[name="settings[identity_accent]"]', '');
     await page.selectOption('select[name="settings[identity_heading_font]"]', '');
-    await page.locator('form button[type="submit"]').last().click();
+    await submitAndLand(page, page.locator('form button[type="submit"]').last(), '/admin/appearance/theme-settings');
     await page.goto('/');
     await expect(page.locator('style[data-gorun-identity]')).toHaveCount(0);
   });
