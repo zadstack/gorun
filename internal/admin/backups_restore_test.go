@@ -123,6 +123,44 @@ func TestAdminBackupRestoreRefusesLeftoverPartial(t *testing.T) {
 	if strings.Contains(page, `data-restored-path`) {
 		t.Fatal("partial restore listed as restored")
 	}
+
+	discardPath := "/admin/system/backups/" + stamp + "/discard-partial"
+	stale := db.FormatTime(time.Now().Add(-11 * time.Minute))
+	if _, err := s.app.Deps.DB.Exec(`UPDATE sessions SET reauth_at = ?`, stale); err != nil {
+		t.Fatal(err)
+	}
+	resp, _ := s.post(discardPath, nil)
+	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/admin/reauth?next="+url.QueryEscape(inspectPath) {
+		t.Fatalf("discard reauth gate: %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	if resp, _ = s.post("/admin/reauth", url.Values{"password": {testPassword}, "next": {inspectPath}}); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("reauth: %d", resp.StatusCode)
+	}
+	if resp, _ = s.post(discardPath, nil); resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != inspectPath {
+		t.Fatalf("discard redirect: %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	if _, err := os.Stat(partial); !os.IsNotExist(err) {
+		t.Fatal("partial still present after discard")
+	}
+	if s.auditCount("system.backup_discard_partial", stamp) != 1 {
+		t.Fatal("missing discard audit")
+	}
+	_, page = s.do("GET", inspectPath, nil)
+	mustContain(t, page, `data-restore-submit`)
+	if strings.Contains(page, `data-restore-partial`) || strings.Contains(page, `data-discard-partial`) {
+		t.Fatal("partial UI still shown after discard")
+	}
+	if resp, _ = s.post("/admin/system/backups/"+stamp+"/restore", nil); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("restore after discard: %d", resp.StatusCode)
+	}
+	if s.auditCount("system.backup_restore", stamp) != 1 {
+		t.Fatal("restore after discard missing audit")
+	}
+	ed := boot(t)
+	ed.login("editor@example.com", "editor", "en")
+	if resp, _ = ed.post(discardPath, nil); resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("editor discard: %d", resp.StatusCode)
+	}
 }
 
 // Every inspection code (errors, warnings, limitations) has an EN and AR

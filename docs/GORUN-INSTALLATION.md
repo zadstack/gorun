@@ -174,7 +174,7 @@ GORUN_BASE_URL=https://your-site.example \
 
 الاستعادة لا تُدمج في المجلد الحي، ولها طريقان:
 
-- **دون تشغيل:** أوقف الخدمة، ثم استعد إلى مجلد جديد فارغ خارج مجلد البيانات:
+- **دون تشغيل:** أوقف الخدمة، ثم استعد إلى مسار مجلد جديد (يجب ألا يكون موجودًا) خارج مجلد البيانات:
 
 ```sh
 ./bin/gorun backup-restore --input "./data/backups/REPLACE_WITH_ACTUAL_TIMESTAMP.manifest.json" --dest "./data-restored"

@@ -148,7 +148,7 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 
 افتح **http://127.0.0.1:8080/admin/setup** لإنشاء المدير الأول، ثم استخدم **http://127.0.0.1:8080/admin**. شغّل البرنامج من جذر المستودع ليجد مجلد `themes/`.
 
-في الإنتاج، اضبط مجلد بيانات دائمًا، وHTTPS، وعنوان الموقع العام (`GORUN_BASE_URL`)، ومفتاح تشفير ثابتًا، و`setup_token` لحماية إنشاء المدير الأول، مع `GORUN_ENV=prod`، وشغّل عملية خادم واحدة لكل مجلد بيانات؛ يفرض النظام ذلك بقفل `gorun.lock` داخل مجلد البيانات، فترفض نسخة ثانية من `gorun serve` (أو `gorun mcp --jobs`) التشغيل برسالة واضحة. خلف وكيل عكسي، أضف عنوانه إلى `GORUN_TRUSTED_PROXIES` (لا يثق النظام بترويسات التمرير افتراضيًا). تحمل استجابات HTTPS ترويسة HSTS لمدة سنة، وخيارا النطاقات الفرعية والـpreload اختياريان. ينسخ `gorun backup` قاعدة البيانات والوسائط إلى `<data>/backups/`. للاستعادة افحص النسخة ثم استعدها من **تشغيل النظام ← النسخ الاحتياطية ← فحص / استعادة** أثناء التشغيل، أو بالأمر `gorun backup-restore` والخدمة متوقفة؛ في الحالتين تُكتب النسخة في مجلد جديد فارغ ولا تُدمج في المجلد الحي. تُضبط الإعدادات في `gorun.toml` أو عبر متغيرات `GORUN_*`، ولا تحفظ كلمات المرور أو مفاتيح المزودين في المستودع. راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md) و[دليل الإنتاج](docs/PRODUCTION.md) و[دليل Docker / Coolify](deploy/coolify.md).
+في الإنتاج، اضبط مجلد بيانات دائمًا، وHTTPS، وعنوان الموقع العام (`GORUN_BASE_URL`)، ومفتاح تشفير ثابتًا، و`setup_token` لحماية إنشاء المدير الأول، مع `GORUN_ENV=prod`، وشغّل عملية خادم واحدة لكل مجلد بيانات؛ يفرض النظام ذلك بقفل `gorun.lock` داخل مجلد البيانات، فترفض نسخة ثانية من `gorun serve` (أو `gorun mcp --jobs`) التشغيل برسالة واضحة. خلف وكيل عكسي، أضف عنوانه إلى `GORUN_TRUSTED_PROXIES` (لا يثق النظام بترويسات التمرير افتراضيًا). تحمل استجابات HTTPS ترويسة HSTS لمدة سنة، وخيارا النطاقات الفرعية والـpreload اختياريان. ينسخ `gorun backup` قاعدة البيانات والوسائط إلى `<data>/backups/`. للاستعادة افحص النسخة ثم استعدها من **تشغيل النظام ← النسخ الاحتياطية ← فحص / استعادة** أثناء التشغيل، أو بالأمر `gorun backup-restore` والخدمة متوقفة؛ في الحالتين تُكتب النسخة في مسار مجلد جديد (يجب ألا يكون موجودًا) ولا تُدمج في المجلد الحي. تُضبط الإعدادات في `gorun.toml` أو عبر متغيرات `GORUN_*`، ولا تحفظ كلمات المرور أو مفاتيح المزودين في المستودع. راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md) و[دليل الإنتاج](docs/PRODUCTION.md) و[دليل Docker / Coolify](deploy/coolify.md).
 
 ### تحت الغطاء
 
@@ -180,7 +180,7 @@ GoRun في الإصدار [v0.1.0](https://github.com/zadstack/gorun/releases/ta
 - اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.
 - يحتفظ منشئ الصفحات بالمسودة الحالية وآخر تخطيط منشور، لا بسجل كامل للتخطيطات.
 - لا يوجد محدّث تلقائي للنواة، ولا توليد موقع كامل من تعليمة واحدة.
-- تُستعاد النسخ الاحتياطية إلى مجلد بيانات جديد فارغ فقط (`gorun backup-restore` أو **تشغيل النظام ← النسخ الاحتياطية ← فحص / استعادة**)، ويحتاج الانتقال إليها إلى الأسرار التي يحتفظ بها المشغّل وإيقاف العملية الحالية. ويجب التحقق من التوليد الفعلي لدى المزودين ومن المدفوعات الحية في كل نشر.
+- تُستعاد النسخ الاحتياطية إلى مسار مجلد بيانات جديد فقط (يجب ألا يكون موجودًا) (`gorun backup-restore` أو **تشغيل النظام ← النسخ الاحتياطية ← فحص / استعادة**)، ويحتاج الانتقال إليها إلى الأسرار التي يحتفظ بها المشغّل وإيقاف العملية الحالية. ويجب التحقق من التوليد الفعلي لدى المزودين ومن المدفوعات الحية في كل نشر.
 
 ### المساهمة
 
@@ -334,7 +334,7 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 
 Open **http://127.0.0.1:8080/admin/setup** to create the first administrator, then use **http://127.0.0.1:8080/admin**. Run from the repository root so the server finds `themes/`.
 
-For production, set a persistent data directory, HTTPS, the public base URL, a persistent encryption key and a setup token, and run one server process per data directory; GoRun enforces this with an OS lock on `<data>/gorun.lock`, and a second `gorun serve` (or `gorun mcp --jobs`) on the same directory refuses to start. Behind a reverse proxy, list it in `GORUN_TRUSTED_PROXIES` (no forwarded headers are trusted by default). HTTPS responses carry a one-year HSTS header; subdomains and preload are opt-in. `gorun backup` snapshots the database and media into `<data>/backups/`. To restore, inspect the pair and restore it from **Operations → Backups → Inspect / restore** while the site runs, or with `gorun backup-restore` while it is stopped; either way the copy lands in a new empty directory and never merges into the live one. See the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md) and [Docker / Coolify guide](deploy/coolify.md).
+For production, set a persistent data directory, HTTPS, the public base URL, a persistent encryption key and a setup token, and run one server process per data directory; GoRun enforces this with an OS lock on `<data>/gorun.lock`, and a second `gorun serve` (or `gorun mcp --jobs`) on the same directory refuses to start. Behind a reverse proxy, list it in `GORUN_TRUSTED_PROXIES` (no forwarded headers are trusted by default). HTTPS responses carry a one-year HSTS header; subdomains and preload are opt-in. `gorun backup` snapshots the database and media into `<data>/backups/`. To restore, inspect the pair and restore it from **Operations → Backups → Inspect / restore** while the site runs, or with `gorun backup-restore` while it is stopped; either way the copy lands in a new directory path that must not already exist and never merges into the live one. See the [installation guide](docs/GORUN-INSTALLATION.md), [production guide](docs/PRODUCTION.md) and [Docker / Coolify guide](deploy/coolify.md).
 
 ## Under the hood
 
@@ -366,7 +366,7 @@ GoRun is an actively developed [v0.1.0](https://github.com/zadstack/gorun/releas
 - Canvases are private to their owner, with explicit agent grants; they are not a shared multiplayer workspace.
 - The page builder keeps the current draft and last published layout, not a full layout history.
 - No automatic core updater, and no complete site generation from a single prompt.
-- Backup restore writes only into a new empty data directory (`gorun backup-restore` or **Operations → Backups → Inspect / restore**); cutover still needs operator-held secrets and a process stop. Real provider generation and live payments must be verified per deployment.
+- Backup restore writes only into a new data directory path that must not already exist (`gorun backup-restore` or **Operations → Backups → Inspect / restore**); cutover still needs operator-held secrets and a process stop. Real provider generation and live payments must be verified per deployment.
 
 ## Contributing
 

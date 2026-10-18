@@ -12,8 +12,8 @@ import (
 )
 
 // backupRestore implements `gorun backup-restore --input <stamp>.manifest.json
-// --dest <new-empty-dir>`: inspects the local pair, then writes into a new
-// directory only. It never merges into a live data directory.
+// --dest <new-directory-path>`: inspects the local pair, then writes into a
+// destination that must not already exist. It never merges into a live data directory.
 func backupRestore(args []string, out io.Writer) error {
 	input, args, err := stringFlag(args, "input")
 	if err != nil {
@@ -24,7 +24,7 @@ func backupRestore(args []string, out io.Writer) error {
 		return err
 	}
 	if input == "" || dest == "" || len(args) != 0 {
-		return errors.New("usage: gorun backup-restore --input <timestamp>.manifest.json --dest <new-empty-directory>")
+		return errors.New("usage: gorun backup-restore --input <timestamp>.manifest.json --dest <new-directory-path>")
 	}
 	if err := os.MkdirAll(filepath.Dir(filepath.Clean(dest)), 0o700); err != nil {
 		return err

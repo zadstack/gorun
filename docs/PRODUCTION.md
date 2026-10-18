@@ -76,7 +76,7 @@ gorun backup --data /var/lib/gorun
 gorun backup-inspect --input /var/lib/gorun/backups/<timestamp>.manifest.json
 ```
 
-2. استعد إلى مجلد جديد فارغ خارج مجلد البيانات:
+2. استعد إلى مسار مجلد جديد (يجب ألا يكون موجودًا) خارج مجلد البيانات:
 
 ```sh
 gorun backup-restore --input /var/lib/gorun/backups/<timestamp>.manifest.json --dest /var/lib/gorun-restored
