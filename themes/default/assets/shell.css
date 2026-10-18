@@ -20,6 +20,7 @@ html[data-theme] [data-shell-header="framed"] .ed-wordmark {font-size:clamp(1.4r
 html[data-theme] [data-shell-header="editorial"] {border-top:5px solid var(--shell-accent);border-bottom:1px solid var(--shell-line);background:var(--panel,#fff);box-shadow:none;}
 html[data-theme] [data-shell-header="editorial"] :is(.ed-masthead) {padding-block:2.5rem;text-align:center;}
 html[data-theme] [data-shell-header="editorial"] .ed-wordmark {font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.04em;line-height:1.15;justify-content:center;}
+html[data-theme][dir="rtl"] [data-shell-header="editorial"] .ed-wordmark {letter-spacing:0;line-height:1.35;}
 html[data-theme] [data-shell-header="editorial"] :is(.ed-nav-shell) {border-top:1px solid var(--shell-line);padding-block:.7rem;}
 html[data-theme] [data-shell-header="editorial"] :is(.sb-header-inner,.gc-header-inner,.studio-header-inner) {min-height:100px;}
 html[data-theme] [data-shell-footer]:not([data-shell-footer="native"]) {margin-top:4rem;background:var(--panel,#f8faf7);color:var(--shell-ink);border-top:1px solid var(--shell-line);box-shadow:none;}

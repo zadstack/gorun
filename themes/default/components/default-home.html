@@ -21,7 +21,7 @@
       <p class="dt-kicker"><span class="dt-kicker-label">{{t "featured"}}</span>{{range terms . "category"}}<a href="{{url .}}">{{.Name}}</a>{{end}}</p>
       <h2 id="dt-featured-title"><a href="{{url .}}">{{.Title}}</a></h2>
       {{with excerpt . 36}}<p class="dt-excerpt">{{.}}</p>{{end}}
-      <p class="dt-meta">{{with .PublishedAt}}<time datetime="{{.}}">{{date .}}</time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
+      <p class="dt-meta">{{with .PublishedAt}}<time datetime="{{.}}"><bdi>{{date .}}</bdi></time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
     </div>
   </article>
 </section>
@@ -39,7 +39,7 @@
         {{with terms . "category"}}<p class="dt-cat">{{range .}}<a href="{{url .}}">{{.Name}}</a>{{end}}</p>{{end}}
         <h3><a href="{{url .}}">{{.Title}}</a></h3>
         {{with excerpt . 22}}<p class="dt-excerpt">{{.}}</p>{{end}}
-        <p class="dt-meta">{{with .PublishedAt}}<time datetime="{{.}}">{{date .}}</time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
+        <p class="dt-meta">{{with .PublishedAt}}<time datetime="{{.}}"><bdi>{{date .}}</bdi></time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
       </div>
     </article>
   {{end}}

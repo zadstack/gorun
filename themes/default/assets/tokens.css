@@ -1,0 +1,109 @@
+/* Served copy of themes/_base/tokens.css — keep identical (PR1). */
+/* GoRun shared theme tokens (PR1).
+   Every catalog theme loads this first (served as default/assets/tokens.css).
+   Child themes override under :where(html[data-theme="<slug>"]), not in components. */
+
+:root {
+  /* Surfaces */
+  --bg: #f3f5f2;
+  --panel: #ffffff;
+  --panel-2: #e9eeea;
+  --panel-3: #dfe6e1;
+
+  /* Lines */
+  --line: #cbd3ce;
+  --line-2: #dde3df;
+  --line-strong: #9ca9a1;
+
+  /* Ink */
+  --head: #141816;
+  --ink: #141816;
+  --ink-2: #2a322e;
+  --muted: #637069;
+  --muted-tinted: #4a5650;
+
+  /* Accent (one per theme; themes remap) */
+  --accent: #167252;
+  --accent-hover: #125e44;
+  --accent-ink: #167252;
+  --accent-soft: #dcefe7;
+  --accent-tint: #edf6f1;
+  --accent-line: #9bc4b2;
+  --on-accent: #ffffff;
+
+  /* Semantic (optional pairs) */
+  --blue: #256b9b;
+  --blue-hover: #1e577e;
+  --blue-soft: #deedf7;
+  --red: #ae3c35;
+  --red-soft: #f7dfdc;
+  --info-bg: var(--blue-soft);
+  --info-text: #163a54;
+  --success-bg: var(--accent-soft);
+  --success-text: #0f3d2c;
+  --warning-bg: #f7edd8;
+  --warning-text: #6a4a12;
+  --danger-bg: var(--red-soft);
+  --danger-text: #6e241f;
+
+  /* Shape + space (4px grid) */
+  --radius: 6px;
+  --radius-card: 12px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --section-pad-y: 88px;
+  --section-pad-y-mobile: 56px;
+  --site-width: 1160px;
+  --body-size: 15px;
+
+  /* Fonts: Arabic-first UI, display for headings, mono for code/IDs only */
+  --font: "Zad", "Zad Font", Tahoma, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-ui: var(--font);
+  --font-heading: var(--font);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Backward-compatible aliases used by existing theme/component CSS */
+  --green: var(--accent);
+  --green-hover: var(--accent-hover);
+  --green-soft: var(--accent-soft);
+  --gp-accent: var(--accent);
+  --gp-on-accent: var(--on-accent);
+  --gp-bg: var(--bg);
+  --gp-text: var(--ink);
+  --gp-width: var(--site-width);
+  --ed-line: var(--line);
+  --ed-muted: var(--muted);
+  --ed-ink: var(--ink);
+}
+
+/* Dates: never force LTR (reverses Arabic month names). Isolate for mixed runs. */
+time {
+  direction: inherit;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+html[dir="rtl"] time {
+  direction: rtl;
+}
+
+/* Arabic text: no negative / decorative tracking on headings. */
+html[dir="rtl"] :is(h1, h2, h3, h4, h5, h6) {
+  letter-spacing: 0;
+}
+
+/* Mono is for code/IDs/paths/metrics — not Arabic prose or dates. */
+html[dir="rtl"] time.font-mono,
+html[dir="rtl"] .font-mono:lang(ar) {
+  font-family: var(--font-ui);
+}
+
+@media (max-width: 760px) {
+  :root {
+    --section-pad-y: var(--section-pad-y-mobile);
+  }
+}

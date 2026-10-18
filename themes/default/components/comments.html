@@ -8,10 +8,10 @@
   <ol class="mt-4 space-y-4">
     {{range .Items}}
     <li id="comment-{{.ID}}" class="rounded border border-line bg-panel p-4">
-      <p class="text-sm"><b>{{.AuthorName}}</b> <time class="ms-2 font-mono text-xs text-muted" datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></p>
+      <p class="text-sm"><b>{{.AuthorName}}</b> <time class="ms-2 text-xs text-muted" datetime="{{.CreatedAt}}"><bdi>{{date .CreatedAt}}</bdi></time></p>
       <p class="mt-2 whitespace-pre-line" dir="auto">{{.Body}}</p>
       {{if .Replies}}<ol class="mt-3 space-y-3 border-s border-line ps-4">{{range .Replies}}
-        <li id="comment-{{.ID}}"><p class="text-sm"><b>{{.AuthorName}}</b> <time class="ms-2 font-mono text-xs text-muted" datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></p><p class="mt-1 whitespace-pre-line" dir="auto">{{.Body}}</p></li>
+        <li id="comment-{{.ID}}"><p class="text-sm"><b>{{.AuthorName}}</b> <time class="ms-2 text-xs text-muted" datetime="{{.CreatedAt}}"><bdi>{{date .CreatedAt}}</bdi></time></p><p class="mt-1 whitespace-pre-line" dir="auto">{{.Body}}</p></li>
       {{end}}</ol>{{end}}
     </li>
     {{end}}

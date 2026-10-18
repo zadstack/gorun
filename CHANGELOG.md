@@ -5,6 +5,17 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Themes
+
+- Shared base design tokens (`themes/_base/tokens.css`, served as `default/assets/tokens.css`)
+  load first in every catalog theme (`default`, `business`, `magazine`, `portfolio`, `docs`).
+  Themes override personality tokens; default migrates off hard-coded `:root` hex/spacing.
+- Default RTL ship-blockers: dates no longer force LTR on `<time>` (isolate + `<bdi>`), Arabic
+  headings keep `letter-spacing: 0` (home + editorial shell), magazine RTL drops Latin-only
+  Georgia fallthrough, `/shop` product grid uses real CSS columns (3 / 2 / 1).
+- Shipped themes still use precompiled Tailwind only; the Play runtime part stays opt-in for
+  custom children (no CDN).
+
 ## [0.2.0] - 2026-10-18
 
 Second tagged release after the CMS hosting gap sequence, launch-in-core path, admin/theme
