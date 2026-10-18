@@ -3,10 +3,9 @@ package api
 import (
 	"html/template"
 	"net/http"
-)
 
-// scalarScript is the pinned Scalar API reference bundle.
-const scalarScript = "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.25.0"
+	"github.com/zadstack/gorun/internal/httpx"
+)
 
 var docsTemplate = template.Must(template.New("docs").Parse(`<!doctype html>
 <html lang="{{.Locale}}" dir="{{.Dir}}">
@@ -17,7 +16,7 @@ var docsTemplate = template.Must(template.New("docs").Parse(`<!doctype html>
 </head>
 <body>
 <script id="api-reference" data-url="/api/v1/openapi.json"></script>
-<script src="{{.Script}}"></script>
+<script src="{{.Script}}" integrity="{{.Integrity}}" crossorigin="anonymous"></script>
 </body>
 </html>
 `))
@@ -31,7 +30,7 @@ func (s *server) docsPage(w http.ResponseWriter, r *http.Request) {
 		dir = s.deps.I18n.Dir(locale)
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := docsTemplate.Execute(w, map[string]string{"Locale": locale, "Dir": dir, "Script": scalarScript}); err != nil {
+	if err := docsTemplate.Execute(w, map[string]string{"Locale": locale, "Dir": dir, "Script": httpx.ScalarScript, "Integrity": httpx.ScalarIntegrity}); err != nil {
 		log().Error("api: docs page", "err", err)
 	}
 }

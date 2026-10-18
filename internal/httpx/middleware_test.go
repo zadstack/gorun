@@ -66,7 +66,7 @@ func TestSecurityHeadersAndNonce(t *testing.T) {
 		directives[strings.TrimSpace(d)] = true
 	}
 	for _, want := range []struct{ directive, sources string }{
-		{"style-src", "'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net"}, // Quill snow CSS
+		{"style-src", "'self' 'unsafe-inline' https://fonts.googleapis.com"},
 		{"font-src", "'self' https://fonts.gstatic.com data:"},
 		{"img-src", "'self' data: blob: https:"}, // media thumbnails/previews, Scalar
 	} {
@@ -184,17 +184,67 @@ func TestAdminScriptsUseOnlyEmbeddedOrigins(t *testing.T) {
 			t.Fatalf("%s lost admin security headers", path)
 		}
 	}
-	for _, path := range []string{"/", "/post/example", "/administrator-notes"} {
+	for _, path := range []string{"/", "/post/example", "/administrator-notes", "/checkout/success"} {
 		rec := httptest.NewRecorder()
 		SecurityHeaders()(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
-		csp := rec.Header().Get("Content-Security-Policy")
-		for _, origin := range strings.Fields(cspScriptCDNs) {
-			if !strings.Contains(csp, origin) {
-				t.Fatalf("%s lost public script origin %s", path, origin)
-			}
+		script := directive(rec.Header().Get("Content-Security-Policy"), "script-src")
+		if !strings.HasPrefix(script, "script-src 'self' 'nonce-") || strings.Count(script, " ") != 2 {
+			t.Fatalf("%s: public pages load only same-origin or nonced scripts, no CDN or eval: %q", path, script)
 		}
 		if rec.Header().Get("X-Frame-Options") != "SAMEORIGIN" {
 			t.Fatalf("%s lost public frame policy", path)
+		}
+	}
+}
+
+func directive(csp, name string) string {
+	for _, d := range strings.Split(csp, ";") {
+		if d = strings.TrimSpace(d); strings.HasPrefix(d, name+" ") {
+			return d
+		}
+	}
+	return ""
+}
+
+func TestPublicScriptSourcesFromConfig(t *testing.T) {
+	mw := SecurityHeaders("https://cdn.example.com", "'unsafe-eval'")
+	for path, want := range map[string]bool{"/": true, "/blog/x": true, "/admin": false, "/admin/login": false, "/api/docs": false} {
+		rec := httptest.NewRecorder()
+		mw(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		script := directive(rec.Header().Get("Content-Security-Policy"), "script-src")
+		if got := strings.Contains(script, "https://cdn.example.com"); got != want {
+			t.Errorf("%s: operator source applied=%v: %q", path, got, script)
+		}
+		if want && !strings.HasSuffix(script, " https://cdn.example.com 'unsafe-eval'") {
+			t.Errorf("%s: %q", path, script)
+		}
+	}
+}
+
+func TestAuthPagesKeepTheAdminScriptPolicy(t *testing.T) {
+	rec := httptest.NewRecorder()
+	SecurityHeaders("https://cdn.example.com")(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", "/auth/magic/x", nil))
+	if script := directive(rec.Header().Get("Content-Security-Policy"), "script-src"); !strings.HasSuffix(script, "' 'unsafe-eval'") {
+		t.Fatalf("auth layout loses Alpine or gains operator sources: %q", script)
+	}
+}
+
+func TestAPIDocsAllowsOnlyThePinnedScalarBundle(t *testing.T) {
+	rec := httptest.NewRecorder()
+	SecurityHeaders()(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", "/api/docs", nil))
+	csp := rec.Header().Get("Content-Security-Policy")
+	script := directive(csp, "script-src")
+	if !strings.HasSuffix(script, "' "+ScalarScript) || strings.Contains(script, "unsafe-eval") {
+		t.Fatalf("api docs script-src %q", script)
+	}
+	if directive(csp, "style-src") != "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net" {
+		t.Fatalf("api docs style-src %q", csp)
+	}
+	for _, path := range []string{"/api/docs/x", "/api/v1/items", "/"} {
+		rec := httptest.NewRecorder()
+		SecurityHeaders()(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		if strings.Contains(rec.Header().Get("Content-Security-Policy"), "jsdelivr") {
+			t.Fatalf("%s trusts jsDelivr", path)
 		}
 	}
 }

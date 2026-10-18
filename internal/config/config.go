@@ -35,6 +35,7 @@ const (
 type Config struct {
 	Addons          map[string]string                         // Optional addon modes: enabled, disabled or auto.
 	TrustedProxies  []string                                  // GORUN_TRUSTED_PROXIES; empty trusts no forwarded headers
+	CSPScriptSrc    []string                                  // GORUN_CSP_SCRIPT_SRC: extra public-page script sources (see PublicScriptSources)
 	Env             string                                    // "dev" | "prod"
 	DataDir         string                                    // GORUN_DATA, default ./data
 	BaseURL         string                                    // GORUN_BASE_URL
@@ -62,6 +63,7 @@ func (c Config) DBPath() string { return filepath.Join(c.DataDir, dbFile) }
 type fileConfig struct {
 	Addons          map[string]string `toml:"addons"`
 	TrustedProxies  []string          `toml:"trusted_proxies"`
+	CSPScriptSrc    []string          `toml:"csp_script_src"`
 	Env             *string           `toml:"env"`
 	BaseURL         *string           `toml:"base_url"`
 	Addr            *string           `toml:"addr"`
@@ -114,6 +116,9 @@ func load(args []string, allowGenerate bool) (Config, error) {
 		return Config{}, err
 	}
 	if _, err := c.TrustedProxyNetworks(); err != nil {
+		return Config{}, err
+	}
+	if _, err := c.PublicScriptSources(); err != nil {
 		return Config{}, err
 	}
 	if c.Env != "dev" && c.Env != "prod" {
@@ -211,6 +216,7 @@ func applyFile(c *Config, secret *string) error {
 	}
 	c.Addons = fc.Addons
 	c.TrustedProxies = append([]string(nil), fc.TrustedProxies...)
+	c.CSPScriptSrc = append([]string(nil), fc.CSPScriptSrc...)
 	setStr(&c.Env, fc.Env)
 	setStr(&c.BaseURL, fc.BaseURL)
 	setStr(&c.Addr, fc.Addr)
@@ -255,6 +261,9 @@ func applyEnv(c *Config, secret *string) error {
 		if strings.TrimSpace(v) != "" {
 			c.TrustedProxies = strings.Split(v, ",")
 		}
+	}
+	if v, ok := os.LookupEnv("GORUN_CSP_SCRIPT_SRC"); ok {
+		c.CSPScriptSrc = strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == ' ' || r == '\t' || r == '\n' })
 	}
 	envStr(&c.Env, "GORUN_ENV")
 	envStr(&c.BaseURL, "GORUN_BASE_URL")

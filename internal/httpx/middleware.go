@@ -129,19 +129,33 @@ func RedactPath(p string) string {
 	return p
 }
 
-// CDN origins allowed by the CSP (Tailwind play CDN, jsDelivr, unpkg,
-// Google Fonts).
-const cspScriptCDNs = "https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com"
+// ScalarScript is the pinned Scalar API reference bundle served on
+// /api/docs, and ScalarIntegrity its SRI hash. It is the only third-party
+// script the built-in pages load, so the CSP allows exactly this URL on
+// exactly that page.
+const (
+	ScalarScript    = "https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.25.0"
+	ScalarIntegrity = "sha384-VPR3QD7bdyIR9EHf6dRrFXz7NO0yJV7/UCVTLQ6e7a0wgzot5WaxvciVrrYOKEpU"
+	apiDocsPath     = "/api/docs"
+)
 
 // SecurityHeaders sets CSP (with a per-request nonce, see Nonce),
 // X-Frame-Options (SAMEORIGIN for public pages, DENY for /admin and /api), nosniff, Referrer-Policy, and HSTS when the request
 // itself is https (RequestIsHTTPS: TLS, or X-Forwarded-Proto from a trusted
 // proxy). It never follows a database setting, so a wrong site.base_url
 // cannot pin browsers to https on a plain-http deployment.
-// 'unsafe-eval' is required by the standard Alpine build and Tailwind's play
-// CDN; inline styles by Tailwind's play CDN and HTMX indicators. jsDelivr
-// styles serve Quill's snow theme; blob: images serve upload previews.
-func SecurityHeaders() func(http.Handler) http.Handler {
+//
+// Scripts come from the site itself or carry the nonce. The admin adds
+// 'unsafe-eval' because its Alpine directives are inline expressions that only
+// the standard (eval-based) Alpine build evaluates. Public pages get no eval
+// and no CDN: the bundled themes self-host everything (the default theme's
+// Tailwind runtime included, which does not eval). publicScripts are the
+// operator's extra public script sources (config.PublicScriptSources) for
+// custom themes that still load a CDN or self-hosted Alpine. Inline styles
+// serve Tailwind's runtime and HTMX indicators; blob: images serve upload
+// previews.
+func SecurityHeaders(publicScripts ...string) func(http.Handler) http.Handler {
+	extra := strings.Join(publicScripts, " ")
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			nonce := newNonce()
@@ -152,16 +166,25 @@ func SecurityHeaders() func(http.Handler) http.Handler {
 				frame, xfo = "'none'", "DENY"
 			}
 			h := w.Header()
-			scriptSources := "'self' 'nonce-" + nonce + "' 'unsafe-eval'"
-			if r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/") {
+			scriptSources := "'self' 'nonce-" + nonce + "'"
+			styleSources := "'self' 'unsafe-inline' https://fonts.googleapis.com"
+			switch {
+			case r.URL.Path == "/admin" || strings.HasPrefix(r.URL.Path, "/admin/"):
 				h.Set("Cache-Control", "private, no-store")
-			} else {
-				scriptSources += " " + cspScriptCDNs
+				scriptSources += " 'unsafe-eval'"
+			case strings.HasPrefix(r.URL.Path, "/auth/"):
+				// The magic-link page renders the admin's auth layout (Alpine).
+				scriptSources += " 'unsafe-eval'"
+			case r.URL.Path == apiDocsPath:
+				scriptSources += " " + ScalarScript
+				styleSources += " https://cdn.jsdelivr.net"
+			case extra != "":
+				scriptSources += " " + extra
 			}
 
 			h.Set("Content-Security-Policy", "default-src 'self'; "+
 				"script-src "+scriptSources+"; "+
-				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "+
+				"style-src "+styleSources+"; "+
 				"font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; "+
 				"connect-src 'self'; frame-ancestors "+frame+"; base-uri 'self'; form-action 'self'; object-src 'none'")
 			h.Set("X-Frame-Options", xfo)

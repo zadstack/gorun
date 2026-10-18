@@ -114,6 +114,9 @@ func BootWithOptions(ctx context.Context, cfg config.Config, mods []Module, opts
 	if _, err := cfg.TrustedProxyNetworks(); err != nil {
 		return nil, err
 	}
+	if _, err := cfg.PublicScriptSources(); err != nil {
+		return nil, err
+	}
 	if err := validateModules(mods); err != nil {
 		return nil, err
 	}
@@ -317,9 +320,10 @@ func plain(w http.ResponseWriter, code int, body string) {
 func assemble(deps *Deps) http.Handler {
 	r, d := deps.Router, deps.DB
 	root := chi.NewRouter()
-	proxies, _ := deps.Config.TrustedProxyNetworks() // validated before boot
+	proxies, _ := deps.Config.TrustedProxyNetworks()  // validated before boot
+	scriptSrc, _ := deps.Config.PublicScriptSources() // validated before boot
 	root.Use(httpx.RequestID, httpx.RealIPWithTrustedProxies(proxies), httpx.WarnUntrustedForwarding(deps.Log), httpx.Logger(deps.Log), httpx.Recover(deps.Log),
-		httpx.SecurityHeaders(), httpx.Compress)
+		httpx.SecurityHeaders(scriptSrc...), httpx.Compress)
 	root.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { plain(w, http.StatusOK, "ok") })
 	root.Get("/readyz", func(w http.ResponseWriter, req *http.Request) {
 		if err := d.PingContext(req.Context()); err != nil {
