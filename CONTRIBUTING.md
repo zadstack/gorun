@@ -21,7 +21,7 @@
   `refactor` `style` `chore` `ci`.
 - **اختبارات المتصفح (e2e):** طريقة تشغيلها في [docs/E2E.md](docs/E2E.md).
 - **المراجعة:** طلب دمج صغير ومركّز، مع الاختبارات وتحديث الوثائق، وقائمة التحقق في قالب طلب الدمج.
-- **الترخيص والتوقيع (DCO):** نقبل المساهمات الخارجية بترخيص المشروع نفسه (AGPL-3.0)، دون اتفاقية CLA. يجب أن
+- **الترخيص والتوقيع (DCO):** نقبل المساهمات الخارجية بترخيص المشروع نفسه (`AGPL-3.0-only`)، دون اتفاقية CLA. يجب أن
   يحمل كل commit في طلب الدمج سطر `Signed-off-by: الاسم <البريد>` وفق
   [شهادة منشأ المطوّر DCO 1.1](https://developercertificate.org/)، وبه تُقرّ بأن لك حق تقديم هذا العمل بترخيص
   المشروع. أضفه بـ`git commit -s`، ويجب أن يطابق البريد مؤلف الـcommit؛ وللـcommits الموجودة شغّل
@@ -105,7 +105,7 @@ including how to start the fixture servers and run the suite.
 
 ## License of contributions and DCO sign-off
 
-GoRun is licensed under the GNU Affero General Public License v3.0, and contributions are accepted under the
+GoRun is licensed under the GNU Affero General Public License, version 3 only (`AGPL-3.0-only`), and contributions are accepted under the
 same license. There is no CLA. Instead, every commit in a pull request must be signed off under the
 [Developer Certificate of Origin 1.1](https://developercertificate.org/): by adding the line
 

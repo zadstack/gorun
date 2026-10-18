@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Documentation
+
+- `docs/GORUN-INSTALLATION.md` no longer describes an old MIT license or a "source-available" policy:
+  it states `AGPL-3.0-only`, as LICENSE, NOTICE and README do, and points to the public repository and
+  releases. CONTRIBUTING names the SPDX identifier.
+
 ## [0.1.0] - 2026-10-18
 
 The first tagged release: a multi-arch image on `ghcr.io/zadstack/gorun` and binary archives for
