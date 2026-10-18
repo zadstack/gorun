@@ -109,14 +109,14 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 ### البدء السريع
 
-**صورة Docker:** تُنشر الإصدارات صورةً متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.1.0` و`0.1` و`latest`:
+**صورة Docker:** تُنشر الإصدارات صورةً متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.2.0` و`0.2` و`latest`:
 
 ```sh
 docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
   -e GORUN_BASE_URL=https://cms.example.com \
   -e GORUN_SECRET_KEY="<openssl rand -base64 32>" \
   -e GORUN_SETUP_TOKEN="<openssl rand -hex 24>" \
-  ghcr.io/zadstack/gorun:0.1.0
+  ghcr.io/zadstack/gorun:0.2.0
 ```
 
 تعمل الصورة في وضع الإنتاج (`GORUN_ENV=prod`) وتحفظ بياناتها في `/data`. احتفظ بقيمة `GORUN_SECRET_KEY` ثابتة لأنها توقّع الجلسات وتشفّر الأسرار المحفوظة، وأدخل `GORUN_SETUP_TOKEN` في `/admin/setup` عند إنشاء المدير الأول ثم احذفه. ملف Compose الجاهز وخطوات Coolify في [دليل Docker / Coolify](deploy/coolify.md).
@@ -124,10 +124,10 @@ docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
 **الملفات التنفيذية:** كل [إصدار على GitHub](https://github.com/zadstack/gorun/releases) يرفق أرشيفات لنظامي linux وdarwin بمعماريتي amd64 وarm64، وفيها البرنامج ومجلد `themes/` والوثائق، مع ملف `SHA256SUMS`:
 
 ```sh
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/gorun-0.1.0-linux-amd64.tar.gz
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/SHA256SUMS-0.1.0.txt
-sha256sum --ignore-missing -c SHA256SUMS-0.1.0.txt
-tar xzf gorun-0.1.0-linux-amd64.tar.gz && cd gorun-0.1.0-linux-amd64
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.2.0/gorun-0.2.0-linux-amd64.tar.gz
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.2.0/SHA256SUMS-0.2.0.txt
+sha256sum --ignore-missing -c SHA256SUMS-0.2.0.txt
+tar xzf gorun-0.2.0-linux-amd64.tar.gz && cd gorun-0.2.0-linux-amd64
 GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
 ```
 
@@ -176,7 +176,7 @@ make build && make test && make lint
 
 ### حالة المشروع
 
-GoRun في الإصدار [v0.1.0](https://github.com/zadstack/gorun/releases/tag/v0.1.0) وما زال قيد التطوير النشط؛ استخدم آخر [إصدار](https://github.com/zadstack/gorun/releases) أو ابنِه من الفرع `main`. الحدود الحالية:
+GoRun في الإصدار [v0.2.0](https://github.com/zadstack/gorun/releases/tag/v0.2.0) وما زال قيد التطوير النشط؛ استخدم آخر [إصدار](https://github.com/zadstack/gorun/releases) أو ابنِه من الفرع `main`. الحدود الحالية:
 
 - عملية خادم واحدة لكل مجلد بيانات SQLite (يفرضها القفل `<data>/gorun.lock`)، ولا يوجد تعدد مواقع بقاعدة بيانات مشتركة.
 - اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.
@@ -297,14 +297,14 @@ Provider-dependent features need valid credentials. Saving a connection or loadi
 
 ## Quick start
 
-**Container image:** releases publish a multi-arch image (linux/amd64, linux/arm64) to GHCR, tagged `0.1.0`, `0.1` and `latest`:
+**Container image:** releases publish a multi-arch image (linux/amd64, linux/arm64) to GHCR, tagged `0.2.0`, `0.2` and `latest`:
 
 ```sh
 docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
   -e GORUN_BASE_URL=https://cms.example.com \
   -e GORUN_SECRET_KEY="<openssl rand -base64 32>" \
   -e GORUN_SETUP_TOKEN="<openssl rand -hex 24>" \
-  ghcr.io/zadstack/gorun:0.1.0
+  ghcr.io/zadstack/gorun:0.2.0
 ```
 
 The image runs in production mode (`GORUN_ENV=prod`) and keeps its data in `/data`. Keep `GORUN_SECRET_KEY` stable: it signs sessions and encrypts stored secrets. Enter `GORUN_SETUP_TOKEN` at `/admin/setup` to create the first administrator, then remove it. The Compose file and Coolify steps are in the [Docker / Coolify guide](deploy/coolify.md).
@@ -312,10 +312,10 @@ The image runs in production mode (`GORUN_ENV=prod`) and keeps its data in `/dat
 **Binaries:** every [GitHub release](https://github.com/zadstack/gorun/releases) attaches linux and darwin archives for amd64 and arm64, containing the binary, `themes/` and the docs, plus a `SHA256SUMS` file:
 
 ```sh
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/gorun-0.1.0-linux-amd64.tar.gz
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.1.0/SHA256SUMS-0.1.0.txt
-sha256sum --ignore-missing -c SHA256SUMS-0.1.0.txt
-tar xzf gorun-0.1.0-linux-amd64.tar.gz && cd gorun-0.1.0-linux-amd64
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.2.0/gorun-0.2.0-linux-amd64.tar.gz
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.2.0/SHA256SUMS-0.2.0.txt
+sha256sum --ignore-missing -c SHA256SUMS-0.2.0.txt
+tar xzf gorun-0.2.0-linux-amd64.tar.gz && cd gorun-0.2.0-linux-amd64
 GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
 ```
 
@@ -364,7 +364,7 @@ Full index: [docs/README.md](docs/README.md).
 
 ## Project status
 
-GoRun is an actively developed [v0.1.0](https://github.com/zadstack/gorun/releases/tag/v0.1.0); use the latest [release](https://github.com/zadstack/gorun/releases) or build from `main`. Current boundaries:
+GoRun is an actively developed [v0.2.0](https://github.com/zadstack/gorun/releases/tag/v0.2.0); use the latest [release](https://github.com/zadstack/gorun/releases) or build from `main`. Current boundaries:
 
 - One server process per SQLite data directory (enforced by `<data>/gorun.lock`); no shared-database multisite.
 - Canvases are private to their owner, with explicit agent grants; they are not a shared multiplayer workspace.

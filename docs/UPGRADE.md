@@ -61,9 +61,9 @@ docker exec <container> /app/gorun backup
 ## 2. Upgrade — release binary
 
 ```sh
-# Example: 0.1.0 → 0.1.1 (replace versions and arch)
+# Example: 0.1.0 → 0.2.0 (replace versions and arch)
 PREV=0.1.0
-NEXT=0.1.1
+NEXT=0.2.0
 ARCH=linux-amd64   # or linux-arm64, darwin-amd64, darwin-arm64
 
 # 1) Backup (already done in §1) — note the stamp
