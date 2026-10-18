@@ -10,6 +10,30 @@
  <p id="builder-status" role="status" aria-live="polite"></p>
  <div class="flex flex-wrap gap-2 items-center"><label for="builder-kind">{{t "builder.add"}}</label><select id="builder-kind" class="bg-panel border border-line p-2">{{range .Catalog}}<option value="{{.Kind}}">{{.Label}}</option>{{end}}</select><button type="button" data-action="add" class="border border-line px-3 py-2">{{t "builder.add"}}</button><button type="button" data-action="desktop" aria-pressed="true" class="border border-line px-3 py-2">{{t "builder.desktop"}}</button><button type="button" data-action="mobile" aria-pressed="false" class="border border-line px-3 py-2">{{t "builder.mobile"}}</button></div>
  <div class="grid gap-4 xl:grid-cols-2"><div id="builder-sections" class="space-y-3 min-w-0"></div><div class="border border-line bg-panel p-2 min-w-0"><h2 class="font-bold mb-2">{{t "builder.preview"}}</h2><p id="builder-preview-status" role="status" aria-live="polite"></p><iframe id="builder-preview" title="{{t "builder.preview"}}" sandbox="" class="w-full bg-white border border-line" style="height:650px;margin-inline:auto;display:block"></iframe></div></div>
+ <section class="border border-line bg-panel p-4 space-y-3" aria-labelledby="builder-history-heading">
+  <div>
+   <h2 id="builder-history-heading" class="font-bold">{{t "builder.history"}}</h2>
+   <p class="text-muted text-sm">{{t "builder.history_help"}}</p>
+  </div>
+  {{if .Revisions}}
+  <ul class="space-y-2 text-sm">
+   {{range .Revisions}}
+   <li class="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
+    <div class="min-w-0">
+     <div class="font-mono text-xs text-muted">{{date .CreatedAt}}</div>
+     <div>{{t (printf "builder.history_kind_%s" .Kind)}} · {{.SectionCount}} {{t "builder.history_sections"}}{{if .Summary}} · {{.Summary}}{{end}}</div>
+    </div>
+    <div class="flex flex-wrap gap-2">
+     <a href="/admin/builder/{{$.ID}}/revisions/{{.ID}}/preview" target="_blank" rel="noopener" class="text-blue hover:text-blue-hover text-xs">{{t "builder.history_preview"}}</a>
+     <a href="/admin/builder/{{$.ID}}/revisions/{{.ID}}/restore" class="text-blue hover:text-blue-hover text-xs">{{t "builder.history_restore"}}</a>
+    </div>
+   </li>
+   {{end}}
+  </ul>
+  {{else}}
+  <p class="text-muted text-sm">{{t "builder.history_empty"}}</p>
+  {{end}}
+ </section>
 </div>
 <script defer src="{{asset "vendor/sortablejs-1.15.3.js"}}"></script>
 <script defer src="{{asset "builder.js"}}"></script>

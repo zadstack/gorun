@@ -109,8 +109,8 @@ func (s *service) Save(ctx context.Context, id string, doc Document, expected st
 		if !public || status == "trash" || typ != "page" || (u != nil && (u.Role == "author" || u.Role == "contributor") && owner != u.ID) {
 			return ErrForbidden
 		}
-		var oldToken, base, published string
-		err := tx.QueryRowContext(ctx, `SELECT updated_at,base_updated_at,published_document_json FROM builder_documents WHERE content_id=?`, id).Scan(&oldToken, &base, &published)
+		var oldToken, base, published, previous string
+		err := tx.QueryRowContext(ctx, `SELECT updated_at,base_updated_at,published_document_json,document_json FROM builder_documents WHERE content_id=?`, id).Scan(&oldToken, &base, &published, &previous)
 		if err == sql.ErrNoRows {
 			if expected != content.EditToken(it) {
 				return ErrConflict
@@ -134,6 +134,15 @@ func (s *service) Save(ctx context.Context, id string, doc Document, expected st
 		out.BaseUpdatedAt = base
 		out.HasPublished = published != "null"
 		out.ContentChanged = base != content.EditToken(it)
+		if previous != string(raw) {
+			var prev Document
+			if err = json.Unmarshal([]byte(previous), &prev); err != nil {
+				return err
+			}
+			if err = s.addRevision(ctx, tx, id, RevisionKindSave, prev); err != nil {
+				return err
+			}
+		}
 		_, err = tx.ExecContext(ctx, `UPDATE builder_documents SET document_json=?,updated_at=? WHERE content_id=? AND updated_at=?`, string(raw), out.UpdatedAt, id, oldToken)
 		return err
 	})
@@ -178,6 +187,9 @@ func (s *service) Publish(ctx context.Context, id, expected string) error {
 	in.Status = "published"
 	in.PublishAt = ""
 	_, err = atomic.UpdateAtomic(ctx, id, in, draft.BaseUpdatedAt, func(tx *sql.Tx, saved *content.Item) error {
+		if err := s.addRevision(ctx, tx, id, RevisionKindPublish, draft.Document); err != nil {
+			return err
+		}
 		result, err := tx.ExecContext(ctx, `UPDATE builder_documents SET published_document_json=document_json,base_updated_at=?,updated_at=? WHERE content_id=? AND updated_at=?`, content.EditToken(saved), db.NewID(), id, expected)
 		if err != nil {
 			return err
@@ -225,8 +237,8 @@ func (s *service) ResetGuarded(ctx context.Context, id, expected string, expecte
 				return ErrConflict
 			}
 		}
-		var published, token string
-		err := tx.QueryRowContext(ctx, `SELECT published_document_json,updated_at FROM builder_documents WHERE content_id=?`, id).Scan(&published, &token)
+		var published, token, currentJSON string
+		err := tx.QueryRowContext(ctx, `SELECT published_document_json,updated_at,document_json FROM builder_documents WHERE content_id=?`, id).Scan(&published, &token, &currentJSON)
 		if err == sql.ErrNoRows {
 			return ErrConflict
 		}
@@ -235,6 +247,13 @@ func (s *service) ResetGuarded(ctx context.Context, id, expected string, expecte
 		}
 		if token != expected {
 			return ErrConflict
+		}
+		var current Document
+		if err = json.Unmarshal([]byte(currentJSON), &current); err != nil {
+			return err
+		}
+		if err = s.addRevision(ctx, tx, id, RevisionKindReset, current); err != nil {
+			return err
 		}
 		var res sql.Result
 		if published == "null" {

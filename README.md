@@ -178,7 +178,7 @@ GoRun في الإصدار [v0.1.0](https://github.com/zadstack/gorun/releases/ta
 
 - عملية خادم واحدة لكل مجلد بيانات SQLite (يفرضها القفل `<data>/gorun.lock`)، ولا يوجد تعدد مواقع بقاعدة بيانات مشتركة.
 - اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.
-- يحتفظ منشئ الصفحات بالمسودة الحالية وآخر تخطيط منشور، لا بسجل كامل للتخطيطات.
+- منشئ الصفحات يحتفظ بسجل تخطيطات قابل للمعاينة والاستعادة إلى المسودة (مع تأكيد كلمة المرور حديثًا في لوحة الإدارة)؛ الصفحة العامة لا تتغير حتى النشر.
 - لا يوجد محدّث تلقائي للنواة، ولا توليد موقع كامل من تعليمة واحدة.
 - تُستعاد النسخ الاحتياطية إلى مجلد بيانات جديد فارغ فقط (`gorun backup-restore` أو **تشغيل النظام ← النسخ الاحتياطية ← فحص / استعادة**)، ويحتاج الانتقال إليها إلى الأسرار التي يحتفظ بها المشغّل وإيقاف العملية الحالية. ويجب التحقق من التوليد الفعلي لدى المزودين ومن المدفوعات الحية في كل نشر.
 
@@ -364,7 +364,7 @@ GoRun is an actively developed [v0.1.0](https://github.com/zadstack/gorun/releas
 
 - One server process per SQLite data directory (enforced by `<data>/gorun.lock`); no shared-database multisite.
 - Canvases are private to their owner, with explicit agent grants; they are not a shared multiplayer workspace.
-- The page builder keeps the current draft and last published layout, not a full layout history.
+- The page builder keeps a layout history you can preview and restore into the private draft (admin restore requires a recent password confirmation); the public page stays unchanged until you publish.
 - No automatic core updater, and no complete site generation from a single prompt.
 - Backup restore writes only into a new empty data directory (`gorun backup-restore` or **Operations → Backups → Inspect / restore**); cutover still needs operator-held secrets and a process stop. Real provider generation and live payments must be verified per deployment.
 

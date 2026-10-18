@@ -29,6 +29,18 @@ type layoutPublishInput struct {
 	ID        string `json:"id"`
 	UpdatedAt string `json:"updated_at" format:"-"`
 }
+type layoutRevisionInput struct {
+	ID         string `json:"id"`
+	RevisionID string `json:"revision_id"`
+}
+type layoutRestoreInput struct {
+	ID         string `json:"id"`
+	RevisionID string `json:"revision_id"`
+	UpdatedAt  string `json:"updated_at" format:"-"`
+}
+type layoutRestoreRequest struct {
+	UpdatedAt string `json:"updated_at" format:"-"`
+}
 type layoutAPI struct {
 	svc *service
 	d   *kernel.Deps
@@ -84,15 +96,28 @@ func registerLayoutAPI(d *kernel.Deps, svc *service) {
 		{Status: 413, Code: "payload_too_large", Description: "JSON body exceeds 1 MiB."},
 	}}
 	id := []kernel.APIParam{{Name: "id", In: "path", Type: "string", Required: true, Description: "page content ID"}}
+	rev := []kernel.APIParam{{Name: "id", In: "path", Type: "string", Required: true, Description: "page content ID"}, {Name: "revision", In: "path", Type: "string", Required: true, Description: "layout revision ID"}}
 	d.API.Add(kernel.APIOperation{Method: "GET", Path: "/v1/builder/{id}", Summary: "Read a private structured page layout and optimistic draft token", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: id, Response: Draft{}, Handler: a.get})
 	d.API.Add(kernel.APIOperation{Method: "PUT", Path: "/v1/builder/{id}/draft", Summary: "Save a validated page layout as a separate private draft", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: id, Request: saveRequest{}, Response: Draft{}, Handler: a.save, Contract: contract})
 	d.API.Add(kernel.APIOperation{Method: "POST", Path: "/v1/builder/{id}/publish", Summary: "Publish a saved layout using its current opaque draft token", Tags: []string{"builder"}, Scopes: []string{"content.edit", "content.publish"}, Params: id, Request: layoutPublishRequest{}, Response: Draft{}, Handler: a.publish, Contract: contract})
+	d.API.Add(kernel.APIOperation{Method: "GET", Path: "/v1/builder/{id}/revisions", Summary: "List page-builder layout revisions (newest first)", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: id, Response: []LayoutRevision{}, Handler: a.listRevisions})
+	d.API.Add(kernel.APIOperation{Method: "GET", Path: "/v1/builder/{id}/revisions/{revision}", Summary: "Read one page-builder layout revision", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: rev, Response: LayoutRevision{}, Handler: a.getRevision})
+	d.API.Add(kernel.APIOperation{Method: "POST", Path: "/v1/builder/{id}/revisions/{revision}/restore", Summary: "Restore a layout revision into the private draft", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: rev, Request: layoutRestoreRequest{}, Response: Draft{}, Handler: a.restoreRevision, Contract: contract})
 	d.MCP.AddTool(kernel.MCPTool{Name: "get_page_layout", Description: "Read a private page-builder layout with its current opaque updated_at token. Requires ownership where applicable.", Input: layoutIDInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutIDInput) (any, error) { return a.load(ctx, in.ID) })})
 	d.MCP.AddTool(kernel.MCPTool{Name: "save_page_layout", Description: "Import or update validated structured sections as a private page-builder draft; public content stays unchanged. Pass updated_at from get_page_layout as base_updated_at.", Input: layoutSaveInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutSaveInput) (any, error) {
 		return a.saveLayout(ctx, in.ID, in.Document, in.BaseUpdatedAt)
 	})})
 	d.MCP.AddTool(kernel.MCPTool{Name: "publish_page_layout", Description: "Publish a saved page-builder draft, replacing public page content. Requires human approval and the current draft updated_at token.", Input: layoutPublishInput{}, Scopes: []string{"content.edit", "content.publish"}, Sensitive: true, Handler: bindLayout(func(ctx context.Context, in layoutPublishInput) (any, error) {
 		return a.publishLayout(ctx, in.ID, in.UpdatedAt)
+	})})
+	d.MCP.AddTool(kernel.MCPTool{Name: "list_page_layout_revisions", Description: "List private page-builder layout revisions for a page, newest first. Does not change the draft or public page.", Input: layoutIDInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutIDInput) (any, error) {
+		return a.revisions(ctx, in.ID)
+	})})
+	d.MCP.AddTool(kernel.MCPTool{Name: "get_page_layout_revision", Description: "Read one private page-builder layout revision document for preview or comparison.", Input: layoutRevisionInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutRevisionInput) (any, error) {
+		return a.revision(ctx, in.ID, in.RevisionID)
+	})})
+	d.MCP.AddTool(kernel.MCPTool{Name: "restore_page_layout_revision", Description: "Restore a prior page-builder layout revision into the private draft. Public HTML is unchanged until publish. Requires human approval and the current draft updated_at token.", Input: layoutRestoreInput{}, Scopes: []string{"content.edit"}, Sensitive: true, Handler: bindLayout(func(ctx context.Context, in layoutRestoreInput) (any, error) {
+		return a.restore(ctx, in.ID, in.RevisionID, in.UpdatedAt)
 	})})
 }
 func (a *layoutAPI) load(ctx context.Context, id string) (*Draft, error) {
@@ -165,8 +190,82 @@ func (a *layoutAPI) writeError(w http.ResponseWriter, err error) {
 	}
 	httpx.Error(w, status, e.code, e.message, e.fields)
 }
+func (a *layoutAPI) revisions(ctx context.Context, id string) ([]LayoutRevision, error) {
+	if err := layoutPermission(ctx, false); err != nil {
+		return nil, err
+	}
+	if err := validateLayoutID(id); err != nil {
+		return nil, err
+	}
+	list, err := a.svc.ListRevisions(ctx, id)
+	if err != nil {
+		return nil, layoutFailure(err)
+	}
+	return list, nil
+}
+func (a *layoutAPI) revision(ctx context.Context, id, revisionID string) (*LayoutRevision, error) {
+	if err := layoutPermission(ctx, false); err != nil {
+		return nil, err
+	}
+	if err := validateLayoutID(id); err != nil {
+		return nil, err
+	}
+	if revisionID == "" || len(revisionID) > 80 {
+		return nil, invalidLayout("invalid revision ID", map[string]string{"revision_id": "revision ID required"})
+	}
+	rev, err := a.svc.GetRevision(ctx, id, revisionID)
+	if err != nil {
+		return nil, layoutFailure(err)
+	}
+	return rev, nil
+}
+func (a *layoutAPI) restore(ctx context.Context, id, revisionID, token string) (*Draft, error) {
+	if err := layoutPermission(ctx, false); err != nil {
+		return nil, err
+	}
+	if err := validateLayoutID(id); err != nil {
+		return nil, err
+	}
+	if revisionID == "" || len(revisionID) > 80 {
+		return nil, invalidLayout("invalid revision ID", map[string]string{"revision_id": "revision ID required"})
+	}
+	draft, err := a.svc.RestoreRevision(ctx, id, revisionID, token)
+	if err != nil {
+		return nil, layoutFailure(err)
+	}
+	return draft, nil
+}
 func (a *layoutAPI) get(w http.ResponseWriter, r *http.Request) {
 	draft, err := a.load(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		a.writeError(w, err)
+		return
+	}
+	httpx.JSON(w, 200, draft, nil)
+}
+func (a *layoutAPI) listRevisions(w http.ResponseWriter, r *http.Request) {
+	list, err := a.revisions(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		a.writeError(w, err)
+		return
+	}
+	httpx.JSON(w, 200, list, nil)
+}
+func (a *layoutAPI) getRevision(w http.ResponseWriter, r *http.Request) {
+	rev, err := a.revision(r.Context(), chi.URLParam(r, "id"), chi.URLParam(r, "revision"))
+	if err != nil {
+		a.writeError(w, err)
+		return
+	}
+	httpx.JSON(w, 200, rev, nil)
+}
+func (a *layoutAPI) restoreRevision(w http.ResponseWriter, r *http.Request) {
+	var in layoutRestoreRequest
+	if err := decodeBuilder(w, r, &in); err != nil {
+		writeDecodeError(w, err)
+		return
+	}
+	draft, err := a.restore(r.Context(), chi.URLParam(r, "id"), chi.URLParam(r, "revision"), in.UpdatedAt)
 	if err != nil {
 		a.writeError(w, err)
 		return

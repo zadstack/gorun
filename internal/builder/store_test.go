@@ -20,12 +20,14 @@ func builderTest(t *testing.T) (*service, content.Service, context.Context) {
 		t.Fatal(err)
 	}
 	t.Cleanup(app.Close)
-	raw, err := files.ReadFile("migrations/0001_documents.sql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err = app.Deps.DB.Exec(string(raw)); err != nil {
-		t.Fatal(err)
+	for _, name := range []string{"migrations/0001_documents.sql", "migrations/0002_revisions.sql"} {
+		raw, err := files.ReadFile(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = app.Deps.DB.Exec(string(raw)); err != nil {
+			t.Fatal(err)
+		}
 	}
 	cs, _ := kernel.Get[content.Service](app.Deps, kernel.ServiceContent)
 	ctx := auth.WithUser(context.Background(), &auth.User{ID: "admin", Role: "admin", Status: auth.StatusActive})

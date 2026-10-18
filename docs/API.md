@@ -157,6 +157,9 @@ Generated from the current locally booted OpenAPI document: **153 operations** i
 | GET | `/api/v1/builder/{id}` | Read a private structured page layout and optimistic draft token | `content.edit` |
 | POST | `/api/v1/builder/{id}/publish` | Publish a saved layout using its current opaque draft token | `content.edit`, `content.publish` |
 | PUT | `/api/v1/builder/{id}/draft` | Save a validated page layout as a separate private draft | `content.edit` |
+| GET | `/api/v1/builder/{id}/revisions` | List page-builder layout revisions (newest first) | `content.edit` |
+| GET | `/api/v1/builder/{id}/revisions/{revision}` | Read one page-builder layout revision | `content.edit` |
+| POST | `/api/v1/builder/{id}/revisions/{revision}/restore` | Restore a layout revision into the private draft | `content.edit` |
 
 ### comments
 
@@ -512,6 +515,8 @@ Author and contributor principals can read their own content or published conten
 The private draft endpoints require `content.edit` and enforce page ownership. `GET /api/v1/builder/{id}` returns a `Draft`; use its opaque `updated_at` token as `base_updated_at` in `PUT /api/v1/builder/{id}/draft`, alongside `document`. Documents have `version: 1` and an ordered `sections` array. Tokens are versions, not human timestamps.
 
 `POST /api/v1/builder/{id}/publish` takes `{ "updated_at": "current-draft-token" }` and additionally requires `content.publish`. Saving remains private; publishing replaces public page HTML. Conflicts return 409 and require reloading/reviewing the latest layout. Strict JSON bodies are bounded to 1 MiB, layouts to 60 sections and each repeated section to 24 entries. Empty drafts are allowed, but publication requires visible content with a heading. The JSON document is portable; media URLs must be migrated separately.
+
+Layout history lives in `builder_revisions`. `GET /api/v1/builder/{id}/revisions` returns newest-first snapshots (`kind` is `save`, `publish`, `restore` or `reset`) with the full `document`. `POST …/revisions/{revision}/restore` takes `{ "updated_at": "current-draft-token" }`, snapshots the current draft, then replaces only the private draft. Public HTML is unchanged until publish. Stale tokens return 409. History length defaults to 25 (`builder.revisions_keep`).
 
 ## Template editor contract
 
