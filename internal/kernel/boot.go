@@ -319,7 +319,7 @@ func assemble(deps *Deps) http.Handler {
 	root := chi.NewRouter()
 	proxies, _ := deps.Config.TrustedProxyNetworks() // validated before boot
 	root.Use(httpx.RequestID, httpx.RealIPWithTrustedProxies(proxies), httpx.WarnUntrustedForwarding(deps.Log), httpx.Logger(deps.Log), httpx.Recover(deps.Log),
-		httpx.SecurityHeaders())
+		httpx.SecurityHeaders(), httpx.Compress)
 	root.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { plain(w, http.StatusOK, "ok") })
 	root.Get("/readyz", func(w http.ResponseWriter, req *http.Request) {
 		if err := d.PingContext(req.Context()); err != nil {
