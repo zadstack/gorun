@@ -163,9 +163,17 @@ func TestServerTestConnection(t *testing.T) {
 		names = append(names, c.Name+"="+c.Status)
 	}
 	got := strings.Join(names, ",")
-	for _, want := range []string{"Stripe configured=ok", "Stripe webhook secret set=ok", "Billing server Fake reachable=fail"} {
+	for _, want := range []string{"Stripe secret key=warn", "Stripe webhook secret=warn", "Billing server Fake reachable=fail"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("health checks = %s (want %s)", got, want)
+		}
+	}
+	for _, c := range *checks {
+		if c.Name == "Stripe secret key" && !strings.Contains(c.Detail, "checkout not verified") {
+			t.Fatalf("stripe detail = %q", c.Detail)
+		}
+		if c.Name == "Stripe webhook secret" && !strings.Contains(c.Detail, "delivery not verified") {
+			t.Fatalf("webhook detail = %q", c.Detail)
 		}
 	}
 

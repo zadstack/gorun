@@ -114,7 +114,7 @@ func TestAISettingsValidateAndEncryptKey(t *testing.T) {
 		t.Fatalf("base_url = %q", got)
 	}
 	_, page = s.do("GET", "/admin/settings/ai", nil)
-	mustContain(t, page, "A key is stored (encrypted)")
+	mustContain(t, page, "A key is stored (encrypted)", "Generation has not been verified")
 	mustNotContain(t, page, testAIKey, enc)
 	var meta string
 	s.app.Deps.DB.QueryRow(`SELECT meta_json FROM audit_log WHERE action = 'settings.update' ORDER BY rowid DESC LIMIT 1`).Scan(&meta)

@@ -53,9 +53,10 @@ func (c *healthCache) forget(id string) {
 	delete(c.entries, id)
 }
 
-// healthChecks contributes to the system.health.checks filter: Stripe key,
-// webhook secret and each billing server's reachability (GET /catalog,
-// cached 5 minutes).
+// healthChecks contributes to the system.health.checks filter: Stripe key
+// presence, webhook secret presence, and each billing server's reachability
+// (GET /catalog, cached 5 minutes). A stored Stripe key or webhook secret is
+// CheckWarn — configuration only; this page never proves checkout or delivery.
 func (s *service) healthChecks(ctx context.Context, v any) (any, error) {
 	checks, ok := v.(*[]admin.HealthCheck)
 	if !ok || checks == nil {
@@ -67,12 +68,12 @@ func (s *service) healthChecks(ctx context.Context, v any) (any, error) {
 		*checks = append(*checks, admin.HealthCheck{Name: name, Status: status, Detail: detail})
 	}
 	if s.stripeSecretKey(ctx) != "" {
-		add(t("commerce.health.stripe"), admin.CheckOK, t("commerce.health.configured"))
+		add(t("commerce.health.stripe"), admin.CheckWarn, t("commerce.health.configured"))
 	} else {
 		add(t("commerce.health.stripe"), admin.CheckWarn, t("commerce.health.stripe_missing"))
 	}
 	if s.webhookSecret(ctx) != "" {
-		add(t("commerce.health.webhook"), admin.CheckOK, s.baseURL(ctx)+"/webhooks/stripe")
+		add(t("commerce.health.webhook"), admin.CheckWarn, t("commerce.health.webhook_set", s.baseURL(ctx)+"/webhooks/stripe"))
 	} else {
 		add(t("commerce.health.webhook"), admin.CheckWarn, t("commerce.health.webhook_missing"))
 	}
