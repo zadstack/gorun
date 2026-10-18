@@ -92,6 +92,7 @@ unset gorun_install_password
 | مفتاح التشفير | `GORUN_SECRET_KEY` | `secret_key` في TOML ؛ 32 بايت بعد فك Base64 |
 | رمز الإعداد الأول | `GORUN_SETUP_TOKEN` | `setup_token` ؛ يفضل البيئة على معامل يظهر فيقائمة العمليات |
 | الوكيل العكسي الموثوق | `GORUN_TRUSTED_PROXIES` | `trusted_proxies` ؛ قائمة عناوين/CIDR محددة |
+| مصادر سكربتات إضافية للصفحات العامة | `GORUN_CSP_SCRIPT_SRC` | `csp_script_src` ؛ مصادر https و`'unsafe-eval'` فقط، لقالب مخصص يحتاج CDN |
 | طلبات الشبكات الخاصة | `GORUN_ALLOW_PRIVATE_NET` | `--allow-private-net` / `allow_private_net` ؛ معطلة افتراضيًا |
 
 مثال TOML محلي، دون أسرار، في `data/gorun.toml`:
