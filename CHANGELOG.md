@@ -10,6 +10,16 @@ All notable changes to GoRun are recorded here. The format follows
 - `docs/GORUN-INSTALLATION.md` no longer describes an old MIT license or a "source-available" policy:
   it states `AGPL-3.0-only`, as LICENSE, NOTICE and README do, and points to the public repository and
   releases. CONTRIBUTING names the SPDX identifier.
+- README: new screenshots (1440×900 at 2×, fictional demo content) under each pillar in both languages
+  (content list, editor, agent keys, approvals, a canvas with an agent result, the page builder, and the
+  default theme on desktop and mobile), a `docker run` example for the GHCR image, links to the v0.1.0
+  release, and short notes on precompiled theme CSS, trusted proxies, HSTS, backups and the DCO check.
+
+### Fixed
+
+- Job workers no longer leave a job `running` when shutdown cancels the context while the job is being
+  claimed: the claim itself is not cancellable, so a claimed job is always finished or requeued (it
+  previously waited for stale-job recovery). This also fixes the flaky `TestStartRequeuesStaleRunningJobs`.
 
 ## [0.1.0] - 2026-10-18
 

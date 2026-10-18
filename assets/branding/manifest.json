@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-17",
+  "date": "2026-10-18",
   "files": [
     {
       "path": "github-banner.svg",
@@ -44,21 +44,75 @@
       "viewBox": "0 0 1000 370"
     },
     {
-      "path": "screenshots/canvas-local-en.png",
-      "bytes": 113414,
-      "sha256": "69e2eacf7ced4a39c02c326ffdc1c55668f31996ce432323791dfdec319d8ba3",
+      "path": "screenshots/agent-keys-en.png",
+      "bytes": 146052,
+      "sha256": "af850cedb17564ed2558a624677a00be5475cccb9063daa5dab75d214699bd66",
       "dimensions": [
-        1208,
-        1270
+        2880,
+        1800
       ]
     },
     {
-      "path": "screenshots/content-local-ar.png",
-      "bytes": 110274,
-      "sha256": "9d2c47c5e146a5d3492464ea8544836691cc27d5901024fac2489830b1c2f99b",
+      "path": "screenshots/approvals-ar.png",
+      "bytes": 89380,
+      "sha256": "b1334fe7d789850b7083d4aaf770d2ad2821c1397fc138557e08afc4d5bb30d6",
       "dimensions": [
-        1280,
-        800
+        2880,
+        1800
+      ]
+    },
+    {
+      "path": "screenshots/builder-ar.png",
+      "bytes": 99747,
+      "sha256": "47635d0eed0702aa9af17eb8c0dd5a5bee902a8cac5d83501006eeb1df850a82",
+      "dimensions": [
+        2880,
+        1800
+      ]
+    },
+    {
+      "path": "screenshots/canvas-en.png",
+      "bytes": 128565,
+      "sha256": "7f914ecdb2abb0d902f4486c68441ea2836953a7f25acaf12dd1c7665cabe2d5",
+      "dimensions": [
+        2880,
+        2120
+      ]
+    },
+    {
+      "path": "screenshots/content-list-ar.png",
+      "bytes": 118079,
+      "sha256": "05d26f4a81f93fb2cc38ae17044b454661ca2d1a04abc5fa07f0052c15bcad71",
+      "dimensions": [
+        2880,
+        1800
+      ]
+    },
+    {
+      "path": "screenshots/editor-en.png",
+      "bytes": 107273,
+      "sha256": "a9708316db95a2410f1bfe2b93e5cc7dab6b0a46195a7c16ea3c5923b2b2498a",
+      "dimensions": [
+        2880,
+        1800
+      ]
+    },
+    {
+      "path": "screenshots/theme-home-en.png",
+      "bytes": 97352,
+      "sha256": "e2c314a71f105848749a80c670f6aadde8942acf066758fe96a143ad91493989",
+      "dimensions": [
+        2880,
+        1800
+      ]
+    },
+    {
+      "path": "screenshots/theme-post-ar-mobile.png",
+      "bytes": 51586,
+      "sha256": "97277205b0f18b7fc484e29bb799e91a333c1c32166737cc68ddbdf12af59b33",
+      "dimensions": [
+        780,
+        1688
       ]
     }
   ]
