@@ -61,3 +61,13 @@ button:disabled{cursor:not-allowed;opacity:.6}
 html[dir="rtl"] :is(h1,h2,h3,.studio-kicker,.studio-footer-title){letter-spacing:normal;line-height:1.5}
 @media(min-width:701px){.studio-builder .gp-hero.gp-split h1{font-size:clamp(2.5rem,4.2vw,4.5rem)}}
 @media(max-width:700px){.studio-header-inner{min-height:72px}.studio-builder .gp-hero{padding-block:3rem}.studio-builder .gp-hero h1{font-size:clamp(2.4rem,9vw,3.5rem)}.studio-kicker{font-size:.875rem}}
+
+/* UI/UX polish: empty + hero rhythm; keep project-imagery personality. */
+html[data-theme="portfolio"] body{background:
+  radial-gradient(820px 380px at 0% 0%,color-mix(in srgb,var(--gp-accent,var(--green)) 8%,transparent),transparent 55%),
+  var(--bg)}
+html[data-theme="portfolio"] .studio-empty{text-align:center;line-height:1.75;padding:2.5rem 1.25rem;background:color-mix(in srgb,var(--panel) 55%,var(--bg))}
+html[data-theme="portfolio"] .studio-hero-copy h1{max-width:12ch}
+html[data-theme="portfolio"] .studio-hero-art img{transition:transform .35s ease}
+html[data-theme="portfolio"] .studio-hero-art:hover img{transform:scale(1.02)}
+@media(prefers-reduced-motion:reduce){html[data-theme="portfolio"] .studio-hero-art img{transition:none}html[data-theme="portfolio"] .studio-hero-art:hover img{transform:none}}

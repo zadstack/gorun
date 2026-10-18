@@ -1,17 +1,188 @@
-/* A shared, content-driven home composition. Child themes keep their brand tokens. */
-.gr-home-intro,.gr-home-stories{--home-accent:var(--gp-accent,var(--accent,#176b53));width:min(100%,1240px);margin-inline:auto;color:inherit}
-.gr-home-intro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);align-items:center;padding-block:clamp(32px,6vw,88px);border-bottom:1px solid color-mix(in srgb,currentColor 15%,transparent)}
-.gr-home-title h1{font-size:clamp(36px,5.5vw,76px);line-height:1.18;letter-spacing:-.035em;margin:0;text-wrap:balance;max-width:15ch}
-.gr-home-title p{font-size:clamp(17px,1.8vw,22px);line-height:1.85;max-width:48ch;margin-block:24px 0;opacity:.76}
-.gr-home-spotlight{display:grid;grid-template-columns:1fr;position:relative;overflow:hidden;background:color-mix(in srgb,var(--home-accent) 7%,#fff);border-radius:8px;text-decoration:none;color:inherit;min-width:0}
-.gr-home-spotlight-image{width:100%;height:260px;object-fit:cover;display:block}
-.gr-home-spotlight-copy{display:grid;gap:16px;padding:clamp(20px,3vw,36px)}
-.gr-home-label{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--home-accent)}
-.gr-home-spotlight strong{font-size:clamp(22px,2.5vw,34px);line-height:1.4;text-wrap:balance}
-.gr-home-spotlight-action,.gr-home-story-link{display:flex;align-items:center;justify-content:space-between;gap:16px;font-weight:650;font-size:14px;color:var(--home-accent)}
-.gr-home-stories{padding-block:40px 64px}.gr-home-section-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.gr-home-section-heading h2{font-size:22px;margin:0}.gr-home-section-heading>span{font-size:32px;color:var(--home-accent)}
-.gr-home-story-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}.gr-home-story{min-width:0;display:flex;flex-direction:column;border-bottom:1px solid color-mix(in srgb,currentColor 15%,transparent);padding-bottom:24px}.gr-home-story-lead{grid-column:span 2;grid-row:span 2}
-.gr-home-story-image{display:block;overflow:hidden;border-radius:5px;margin-bottom:20px}.gr-home-cover{width:100%;height:180px;object-fit:cover;display:block;transition:transform .25s ease}.gr-home-story-lead .gr-home-cover{height:clamp(220px,30vw,420px)}.gr-home-story-copy{display:flex;flex-direction:column;align-items:stretch;flex:1}.gr-home-story-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;opacity:.68}.gr-home-story-meta a{text-decoration:none;color:inherit}.gr-home-story h3{font-size:22px;line-height:1.45;margin:12px 0;text-wrap:balance}.gr-home-story-lead h3{font-size:clamp(28px,3vw,40px)}.gr-home-story h3 a{color:inherit;text-decoration:none}.gr-home-story p{font-size:16px;line-height:1.85;opacity:.76;margin:0 0 24px;max-width:60ch}.gr-home-story-link{margin-top:auto;text-decoration:none;padding-top:16px}.gr-home-story a:focus-visible,.gr-home-spotlight:focus-visible{outline:3px solid var(--home-accent);outline-offset:5px}.gr-home-story:hover .gr-home-cover{transform:scale(1.025)}
-.gr-home-intro:not(:has(.gr-home-spotlight)){grid-template-columns:1fr}.gr-home-intro:not(:has(.gr-home-spotlight)) .gr-home-title h1{max-width:22ch}
-@media(max-width:760px){.gr-home-intro{grid-template-columns:1fr;padding-block:32px;gap:28px}.gr-home-title h1{max-width:none}.gr-home-spotlight-image{height:220px}.gr-home-story-grid{grid-template-columns:1fr;gap:28px}.gr-home-story-lead{grid-column:auto;grid-row:auto}.gr-home-story-lead .gr-home-cover,.gr-home-cover{height:230px}.gr-home-stories{padding-block:28px 40px}}
-@media(prefers-reduced-motion:reduce){.gr-home-cover{transition:none}.gr-home-story:hover .gr-home-cover{transform:none}}
+/* Shared content-driven home composition. Child themes keep their brand tokens. */
+.gr-home-intro,
+.gr-home-stories {
+  --home-accent: var(--gp-accent, var(--accent, #176b53));
+  color: inherit;
+}
+.gr-home-intro {
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(24px, 5vw, 72px);
+  align-items: center;
+  padding-block: clamp(40px, 8vw, 96px);
+  padding-inline: max(1.25rem, calc((100vw - 1240px) / 2));
+  border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  background:
+    radial-gradient(780px 360px at 90% 0%, color-mix(in srgb, var(--home-accent) 12%, transparent), transparent 58%),
+    linear-gradient(160deg, color-mix(in srgb, var(--home-accent) 7%, #fff) 0%, transparent 52%);
+}
+.gr-home-title h1 {
+  font-size: clamp(40px, 6vw, 84px);
+  line-height: 1.12;
+  letter-spacing: -.04em;
+  margin: 0;
+  text-wrap: balance;
+  max-width: 12ch;
+  font-weight: 750;
+}
+.gr-home-title p {
+  font-size: clamp(17px, 1.8vw, 22px);
+  line-height: 1.8;
+  max-width: 42ch;
+  margin-block: 24px 0;
+  opacity: .76;
+}
+.gr-home-spotlight {
+  display: grid;
+  grid-template-columns: 1fr;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  border-radius: 0;
+  border-inline-start: 3px solid var(--home-accent);
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+  transition: opacity .2s ease;
+}
+.gr-home-spotlight:hover { opacity: .92; }
+.gr-home-spotlight-image {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+}
+.gr-home-spotlight-copy {
+  display: grid;
+  gap: 16px;
+  padding: clamp(20px, 3vw, 28px) 0 clamp(8px, 2vw, 16px) clamp(16px, 2vw, 24px);
+}
+.gr-home-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--home-accent);
+}
+html[dir="rtl"] .gr-home-label { letter-spacing: normal; text-transform: none; }
+.gr-home-spotlight strong {
+  font-size: clamp(22px, 2.5vw, 34px);
+  line-height: 1.35;
+  text-wrap: balance;
+}
+.gr-home-spotlight-action,
+.gr-home-story-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-weight: 650;
+  font-size: 14px;
+  color: var(--home-accent);
+}
+.gr-home-stories {
+  width: min(100%, 1240px);
+  margin-inline: auto;
+  padding-block: 40px 64px;
+  padding-inline: max(1rem, calc((100% - 1240px) / 2));
+}
+.gr-home-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.gr-home-section-heading h2 { font-size: 22px; margin: 0; }
+.gr-home-section-heading > span { font-size: 32px; color: var(--home-accent); }
+.gr-home-story-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+}
+.gr-home-story {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  padding-bottom: 24px;
+}
+.gr-home-story-lead { grid-column: span 2; grid-row: span 2; }
+.gr-home-story-image {
+  display: block;
+  overflow: hidden;
+  border-radius: 0;
+  margin-bottom: 20px;
+}
+.gr-home-cover {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+  transition: transform .25s ease;
+}
+.gr-home-story-lead .gr-home-cover { height: clamp(220px, 30vw, 420px); }
+.gr-home-story-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1;
+}
+.gr-home-story-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  opacity: .68;
+}
+.gr-home-story-meta a { text-decoration: none; color: inherit; }
+.gr-home-story h3 {
+  font-size: 22px;
+  line-height: 1.45;
+  margin: 12px 0;
+  text-wrap: balance;
+}
+.gr-home-story-lead h3 { font-size: clamp(28px, 3vw, 40px); }
+.gr-home-story h3 a { color: inherit; text-decoration: none; }
+.gr-home-story p {
+  font-size: 16px;
+  line-height: 1.85;
+  opacity: .76;
+  margin: 0 0 24px;
+  max-width: 60ch;
+}
+.gr-home-story-link {
+  margin-top: auto;
+  text-decoration: none;
+  padding-top: 16px;
+}
+.gr-home-story a:focus-visible,
+.gr-home-spotlight:focus-visible {
+  outline: 3px solid var(--home-accent);
+  outline-offset: 5px;
+}
+.gr-home-story:hover .gr-home-cover { transform: scale(1.025); }
+.gr-home-intro:not(:has(.gr-home-spotlight)) { grid-template-columns: 1fr; }
+.gr-home-intro:not(:has(.gr-home-spotlight)) .gr-home-title h1 { max-width: 18ch; }
+@media (max-width: 760px) {
+  .gr-home-intro {
+    grid-template-columns: 1fr;
+    padding-block: 36px;
+    gap: 28px;
+  }
+  .gr-home-title h1 { max-width: none; }
+  .gr-home-spotlight { border-inline-start-width: 0; border-block-start: 3px solid var(--home-accent); }
+  .gr-home-spotlight-copy { padding-inline-start: 0; }
+  .gr-home-spotlight-image { height: 220px; }
+  .gr-home-story-grid { grid-template-columns: 1fr; gap: 28px; }
+  .gr-home-story-lead { grid-column: auto; grid-row: auto; }
+  .gr-home-story-lead .gr-home-cover,
+  .gr-home-cover { height: 230px; }
+  .gr-home-stories { padding-block: 28px 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gr-home-cover { transition: none; }
+  .gr-home-story:hover .gr-home-cover { transform: none; }
+  .gr-home-spotlight { transition: none; }
+}

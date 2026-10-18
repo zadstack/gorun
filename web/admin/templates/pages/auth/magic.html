@@ -1,14 +1,15 @@
 {{define "title"}}{{t "auth.magic.title"}}{{end}}
 {{define "content"}}
-<div class="rounded border border-line bg-panel p-6">
-  <h1 class="text-[22px] font-bold mb-2">{{t "auth.magic.title"}}</h1>
+<div class="admin-auth-panel">
+  <p class="admin-auth-brand">{{t "core.app.name"}}</p>
+  <h1>{{t "auth.magic.title"}}</h1>
   {{if .Error}}
-  <p role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .Error}}</p>
+  <p role="alert" class="mt-4 mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .Error}}</p>
   <a href="/" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "auth.magic.back"}}</a>
   {{else}}
-  <p class="text-muted mb-4">{{t "auth.magic.intro"}}</p>
+  <p class="text-muted mt-2 mb-4">{{t "auth.magic.intro"}}</p>
   <form method="post" action="/auth/magic/{{.Token}}">
-    <button type="submit" class="w-full h-9 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.magic.submit"}}</button>
+    <button type="submit" class="w-full h-9 bg-green text-white hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.magic.submit"}}</button>
   </form>
   {{end}}
 </div>

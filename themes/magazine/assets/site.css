@@ -218,3 +218,11 @@ html[data-theme="magazine"] .gp-feed-posts .gp-grid>.ed-story:first-child>.ed-st
 html[data-theme="magazine"] .gp-feed-posts .gp-grid>.ed-story:first-child h2{font-size:clamp(1.75rem,3.2vw,2.6rem);line-height:1.35}
 html[data-theme="magazine"] .gp-feed-posts .gp-grid>.ed-story-text:first-child{display:block;max-width:52rem}
 @media(max-width:767px){html[data-theme="magazine"] .gp-feed-posts .gp-grid>.ed-story:first-child{display:block}}
+
+/* UI/UX polish only: focus/spacing — warm paper personality unchanged. */
+html[data-theme="magazine"] .ed-empty{text-align:center;line-height:1.75;padding:2.5rem 1rem}
+html[data-theme="magazine"] .ed-edition h1{max-width:16ch}
+html[data-theme="magazine"][dir="rtl"] .ed-edition h1{max-width:none}
+html[data-theme="magazine"] .ed-cover{transition:transform .25s ease}
+html[data-theme="magazine"] .ed-story-image:hover .ed-cover{transform:scale(1.02)}
+@media(prefers-reduced-motion:reduce){html[data-theme="magazine"] .ed-cover{transition:none}html[data-theme="magazine"] .ed-story-image:hover .ed-cover{transform:none}}

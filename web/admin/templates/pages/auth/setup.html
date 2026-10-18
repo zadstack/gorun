@@ -1,9 +1,10 @@
 {{define "title"}}{{t "auth.setup.title"}}{{end}}
 {{define "content"}}
-<div class="rounded border border-line bg-panel p-6">
-  <h1 class="text-[22px] font-bold">{{t "auth.setup.title"}}</h1>
+<div class="admin-auth-panel">
+  <p class="admin-auth-brand">{{t "core.app.name"}}</p>
+  <h1>{{t "auth.setup.title"}}</h1>
   {{if .SetupBlocked}}
-  <div role="alert" class="rounded border border-amber bg-amber-soft p-3 text-amber-text">
+  <div role="alert" class="mt-4 rounded border border-amber bg-amber-soft p-3 text-amber-text">
     <p class="mb-2">{{t "auth.setup.blocked"}}</p>
     <ul class="list-disc ps-5 space-y-1">
       <li>{{t "auth.setup.blocked_token"}} <code dir="ltr" class="font-mono text-xs">GORUN_SETUP_TOKEN</code></li>
@@ -11,7 +12,7 @@
     </ul>
   </div>
   {{else}}
-  <p class="text-muted mb-4">{{t "auth.setup.intro"}}</p>
+  <p class="text-muted mt-2 mb-4">{{t "auth.setup.intro"}}</p>
   <form method="post" action="/admin/setup" class="space-y-4" novalidate>
     <input type="hidden" name="_csrf" value="{{csrf}}">
     {{if .NeedToken}}
@@ -40,7 +41,7 @@
       <p id="password-help" class="mt-1 text-xs text-muted">{{t "auth.field.password_help"}}</p>
       <div id="password-error">{{template "partials/field_errors" (index .Fields "password")}}</div>
     </div>
-    <button type="submit" class="w-full h-9 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.setup.submit"}}</button>
+    <button type="submit" class="w-full h-9 bg-green text-white hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.setup.submit"}}</button>
   </form>
   {{end}}
 </div>
