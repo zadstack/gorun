@@ -7,7 +7,9 @@
 ## المساهمة
 
 - **الإعداد:** Go 1.27، ثم من جذر المستودع: `make build` و`bin/gorun serve` (البيانات في `./data`).
-  لا Node ولا npm ولا خطوة بناء للواجهة: القوالب Go وTailwind وHTMX وAlpine من CDN.
+  لا يحتاج التطبيق Node ولا npm: القوالب Go مع HTMX وAlpine ومكتبات محلية. CSS الخاص بـTailwind في القالب الافتراضي
+  مبني مسبقًا ومحفوظ في المستودع؛ إن غيّرت أصناف Tailwind فيه أو في Go فشغّل `make css` (أداة Tailwind المستقلة بنسخة
+  مثبتة ومتحقق من بصمتها) واحفظ الناتج، ويتحقق CI من أنه محدّث.
 - **أوامر make:** `make build` (ملف ثابت في `bin/gorun`)، `make test` (`go test ./...`)، `make run`،
   `make lint` (`go vet` ثم staticcheck إن وُجد).
 - **الاختبارات:** شغّل `go test -race ./...` قبل كل طلب دمج (هذا ما يشغّله CI). الاختبارات تستخدم SQLite حقيقية
@@ -42,8 +44,10 @@ make build              # bin/gorun, CGO_ENABLED=0
 bin/gorun serve       # http://localhost:8080, data in ./data, first admin at /admin/setup
 ```
 
-There is no Node, npm or frontend build: admin and themes are Go templates with Tailwind, HTMX, Alpine and
-Lucide from CDNs. Commands that boot GoRun need the themes directory (`./themes`, or `GORUN_THEMES`).
+The app needs no Node or npm: admin and themes are Go templates with HTMX, Alpine and Lucide served locally.
+The default theme's Tailwind CSS is precompiled and committed; after changing utility classes in the default or
+docs theme or in Go markup, run `make css` (pinned standalone CLI, checksum verified) and commit
+`themes/default/assets/tailwind.css`. CI checks that it is up to date. Commands that boot GoRun need the themes directory (`./themes`, or `GORUN_THEMES`).
 
 ## Make targets
 
@@ -53,6 +57,7 @@ Lucide from CDNs. Commands that boot GoRun need the themes directory (`./themes`
 | `make test` | `go test ./...` |
 | `make run` | `go run ./cmd/gorun serve` |
 | `make lint` | `go vet ./...`, then `staticcheck ./...` when installed |
+| `make css` / `make css-check` | rebuild / verify `themes/default/assets/tailwind.css` (`tools/tailwind/build.sh`) |
 | `make e2e` | builds a temporary instance and runs the Playwright browser suite |
 
 ## Tests

@@ -32,6 +32,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- **Default theme CSS is precompiled.** The default theme (and `docs`) links `themes/default/assets/tailwind.css`
+  (12.4 KB, 3.3 KB gzipped) instead of loading the in-browser Tailwind compiler (407 KB, 127 KB gzipped)
+  on every page. `make css` rebuilds it with the pinned, checksum-verified standalone CLI; CI fails when it is
+  stale. Custom themes that need the runtime add `{{part "tailwind-runtime" .}}` to `parts/head-extra.html`.
 - Text responses (HTML, CSS, JS, JSON, XML, SVG) are gzip-compressed when the client accepts it.
   Admin pages stay uncompressed (they carry the CSRF token; BREACH).
 - Version-named vendor files and `?v=` asset URLs are served with
