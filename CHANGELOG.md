@@ -15,6 +15,8 @@ All notable changes to GoRun are recorded here. The format follows
   database and archive checksums verify, so an interrupted restore never looks complete; a leftover
   partial directory is reported on the inspect page and blocks the next restore until it is removed.
 - Restored files are always `0600` and directories `0700`, whatever modes the archive records.
+- The inspect page explains each preflight error and warning in English and Arabic (the code stays
+  alongside for support).
 
 ### Documentation
 

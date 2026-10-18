@@ -124,3 +124,50 @@ func TestAdminBackupRestoreRefusesLeftoverPartial(t *testing.T) {
 		t.Fatal("partial restore listed as restored")
 	}
 }
+
+// Every inspection code (errors, warnings, limitations) has an EN and AR
+// message, so the inspect page never shows a bare code.
+func TestBackupInspectionCodesTranslated(t *testing.T) {
+	code := regexp.MustCompile(`(?:Errors|Warnings), "([a-z_]+)"`)
+	limits := regexp.MustCompile(`backupLimitations = \[\]string\{([^}]*)\}`)
+	quoted := regexp.MustCompile(`"([a-z_]+)"`)
+	seen := map[string]bool{}
+	for _, f := range []string{"../backup/inspect.go", "../backup/manifest.go"} {
+		src, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, m := range code.FindAllStringSubmatch(string(src), -1) {
+			seen[m[1]] = true
+		}
+		if m := limits.FindStringSubmatch(string(src)); m != nil {
+			for _, q := range quoted.FindAllStringSubmatch(m[1], -1) {
+				seen[q[1]] = true
+			}
+		}
+	}
+	if len(seen) < 20 {
+		t.Fatalf("found only %d codes: %v", len(seen), seen)
+	}
+	for _, loc := range []string{"en", "ar"} {
+		raw, err := os.ReadFile("catalog/admin." + loc + ".json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for c := range seen {
+			if !strings.Contains(string(raw), `"backups.code.`+c+`":`) {
+				t.Errorf("admin.%s.json lacks backups.code.%s", loc, c)
+			}
+		}
+	}
+	s := boot(t)
+	s.login("admin@example.com", "admin", "ar")
+	s.post("/admin/system/backups", nil)
+	_, page := s.do("GET", "/admin/system/backups", nil)
+	m := inspectLink.FindStringSubmatch(page)
+	if m == nil {
+		t.Fatal("no inspect link")
+	}
+	_, page = s.do("GET", "/admin/system/backups/"+m[1]+"/inspect", nil)
+	mustContain(t, page, `data-code="remote_pair_not_confirmed"`, "لا توجد نسخة بعيدة مؤكدة لهذا الزوج.")
+}
