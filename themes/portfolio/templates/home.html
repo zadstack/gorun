@@ -1,1 +1,14 @@
-{{part "header" .}}<section class="studio-shell studio-intro"><p class="studio-kicker">{{.Theme.Name}}</p><h1>{{.Site.Title}}</h1>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</section><section class="studio-shell studio-listing"><h2>{{t "latest_posts"}}</h2>{{component "list" .}}</section>{{part "footer" .}}
+{{part "header" .}}
+<section class="studio-hero" aria-labelledby="studio-hero-title">
+  <div class="studio-hero-plane">
+    <div class="studio-shell studio-hero-inner studio-hero-inner-solo">
+      <div class="studio-hero-copy">
+        <p class="studio-kicker">{{t "pf.kicker"}}</p>
+        <h1 id="studio-hero-title">{{.Site.Title}}</h1>
+        {{with .Site.Tagline}}<p>{{.}}</p>{{else}}<p>{{t "pf.home_note"}}</p>{{end}}
+      </div>
+    </div>
+  </div>
+</section>
+<section class="studio-shell studio-listing"><h2>{{t "latest_posts"}}</h2>{{component "list" .}}</section>
+{{part "footer" .}}

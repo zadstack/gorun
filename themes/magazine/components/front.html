@@ -1,2 +1,11 @@
 <link rel="stylesheet" href="{{asset "home-composition.css"}}">
-<section class="ed-front"><header class="ed-edition"><p class="ed-eyebrow">{{t "ed.journal"}}</p><h1>{{with .Extra.title}}{{.}}{{else}}{{.Site.Title}}{{end}}</h1>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</header>{{component "home-stories" .}}</section>
+<section class="ed-front" aria-labelledby="ed-front-title">
+  <div class="ed-hero-plane">
+    <header class="ed-edition gp-site-width">
+      <p class="ed-eyebrow">{{t "ed.journal"}}</p>
+      <h1 id="ed-front-title">{{with .Extra.title}}{{.}}{{else}}{{.Site.Title}}{{end}}</h1>
+      {{with .Site.Tagline}}<p>{{.}}</p>{{else}}<p>{{t "ed.front_note"}}</p>{{end}}
+    </header>
+  </div>
+  <div class="gp-site-width">{{component "home-stories" .}}</div>
+</section>

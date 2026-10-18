@@ -1,6 +1,6 @@
 {
   "name": "Portfolio",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "parent": "default",
   "locations": [
     "primary",

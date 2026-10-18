@@ -74,3 +74,29 @@ test.describe.serial('Business theme', () => {
     expect(await page.content()).not.toContain(MARKER_500);
   });
 });
+
+// Cheap smoke for the other catalog themes (catalog project already runs the
+// full design QA). Activate each, hit home, assert shell + no 500, restore default.
+test.describe.serial('Catalog theme home smoke', () => {
+  for (const slug of ['magazine', 'portfolio', 'docs'] as const) {
+    test(`${slug} home renders`, async ({ page }) => {
+      await page.goto('/admin/settings/general');
+      await page.selectOption('#s-theme', slug);
+      await page.locator('form[action="/admin/settings/general"] button[type="submit"]').click();
+      await expect(page.locator('#s-theme')).toHaveValue(slug);
+      const resp = await page.goto('/');
+      expect(resp?.status()).toBe(200);
+      const html = await page.content();
+      expect(html).not.toContain(MARKER_500);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', slug);
+      await expect(page.locator('main, #main').first()).toBeVisible();
+    });
+  }
+
+  test('restore default theme', async ({ page }) => {
+    await page.goto('/admin/settings/general');
+    await page.selectOption('#s-theme', 'default');
+    await page.locator('form[action="/admin/settings/general"] button[type="submit"]').click();
+    await expect(page.locator('#s-theme')).toHaveValue('default');
+  });
+});

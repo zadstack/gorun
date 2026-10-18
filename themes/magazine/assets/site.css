@@ -17,11 +17,13 @@
 .ed-nav-tools{gap:1rem}
 .ed-mobile-nav{display:none}
 .ed-main{flex:1;padding-block:45px 75px;overflow-wrap:anywhere}
-.ed-edition{display:grid;grid-template-columns:1fr 1fr;column-gap:4rem;border-bottom:1px solid var(--ink);padding-bottom:32px;margin-bottom:32px;align-items:end}
+.ed-hero-plane{width:100%;border-bottom:1px solid var(--ink);background:linear-gradient(180deg,color-mix(in srgb,var(--green) 8%,var(--panel)) 0%,var(--bg) 72%);margin-bottom:32px}
+.ed-edition{display:grid;grid-template-columns:1fr 1fr;column-gap:4rem;padding-block:clamp(2.5rem,6vw,4.5rem);align-items:end}
 .ed-eyebrow{font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:14px}
 .ed-edition>.ed-eyebrow{grid-column:1/-1}
-.ed-edition h1{font-size:clamp(2rem,4vw,3.7rem);font-weight:700;line-height:1.16;letter-spacing:-.025em}
+.ed-edition h1{font-size:clamp(2rem,4vw,3.7rem);font-weight:700;line-height:1.16;letter-spacing:-.025em;text-wrap:balance}
 .ed-edition>p:last-child{font-size:18px;max-width:33rem}
+.ed-front>.gp-site-width{padding-bottom:8px}
 .ed-story-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px 30px}
 .ed-story{min-width:0;padding-bottom:24px;border-bottom:1px solid var(--line)}
 .ed-story-image{display:block;overflow:hidden;background:var(--panel-2);margin-bottom:18px}

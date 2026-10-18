@@ -1,1 +1,18 @@
-{{part "header" .}}<link rel="stylesheet" href="{{asset "home-composition.css"}}"><section class="studio-shell studio-intro"><p class="studio-kicker">{{.Theme.Name}}</p><h1>{{.Site.Title}}</h1>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</section><section class="studio-shell studio-listing">{{component "home-stories" .}}</section>{{part "footer" .}}
+{{part "header" .}}
+<link rel="stylesheet" href="{{asset "home-composition.css"}}">
+<section class="studio-hero" aria-labelledby="studio-hero-title">
+  <div class="studio-hero-plane">
+    <div class="studio-shell studio-hero-inner">
+      <div class="studio-hero-copy">
+        <p class="studio-kicker">{{t "pf.kicker"}}</p>
+        <h1 id="studio-hero-title">{{.Site.Title}}</h1>
+        {{with .Site.Tagline}}<p>{{.}}</p>{{else}}<p>{{t "pf.home_note"}}</p>{{end}}
+      </div>
+      <figure class="studio-hero-art">
+        <img src="{{asset "images/project-orbit.svg"}}" alt="" width="720" height="900">
+      </figure>
+    </div>
+  </div>
+</section>
+<section class="studio-shell studio-listing">{{component "home-stories" .}}</section>
+{{part "footer" .}}

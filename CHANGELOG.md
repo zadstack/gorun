@@ -5,6 +5,18 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Themes
+
+- Shared catalog contract in `pkg/themekit` (`ValidateDir` / `ValidateCatalogRoot`): required
+  templates (via inheritance), own `lang/en.json` + `lang/ar.json`, `rtl` + `identity` supports,
+  screenshot, sections/identity/builderStyle head, token selector, no third-party script CDNs.
+  Documented in `docs/THEMES.md`; covered by ship-with Go tests.
+- Ship-with uplift: `business` and `portfolio` gain bilingual lang files; business/portfolio
+  comments and portfolio contact forms no longer depend on Tailwind utilities; full-bleed home
+  heroes for business, magazine, portfolio and docs (each keeps its existing personality); docs
+  tokens move under `:where(html[data-theme="docs"])`. E2E theme project smokes
+  magazine/portfolio/docs home.
+
 ### Added
 
 - `gorun backup-restore --input <stamp>.manifest.json --dest <new-empty-dir>` restores a local

@@ -90,7 +90,7 @@ func renderBusinessHome(t *testing.T, modules ...kernel.Module) string {
 	}
 	body := rec.Body.String()
 	mustNotContain(t, body, Marker500)
-	mustContain(t, body, `class="sb-home"`)
+	mustContain(t, body, `class="sb-hero"`)
 	return body
 }
 

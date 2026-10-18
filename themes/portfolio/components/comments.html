@@ -1,0 +1,37 @@
+{{/* Portfolio comments: studio shell styles only (no Tailwind). */}}
+{{with comments .Item}}
+<section id="comments" class="studio-comments" aria-labelledby="comments-title">
+  <h2 id="comments-title">{{t "site.comments.title"}} <span>{{.Count}}</span></h2>
+  {{with $.Flash}}<p data-comment-flash="{{.}}" role="status" class="studio-feedback">{{t (printf "site.comments.flash_%s" .)}}</p>{{end}}
+  {{if .Items}}
+  <ol class="studio-comment-list">
+    {{range .Items}}
+    <li id="comment-{{.ID}}">
+      <p class="studio-comment-meta"><b>{{.AuthorName}}</b> <time datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></p>
+      <p dir="auto">{{.Body}}</p>
+      {{if .Replies}}<ol>{{range .Replies}}
+        <li id="comment-{{.ID}}"><p class="studio-comment-meta"><b>{{.AuthorName}}</b> <time datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></p><p dir="auto">{{.Body}}</p></li>
+      {{end}}</ol>{{end}}
+    </li>
+    {{end}}
+  </ol>
+  {{else}}<p class="studio-empty">{{t "site.comments.none"}}</p>{{end}}
+  {{if .Open}}
+  <form method="post" action="{{.Action}}" class="studio-comment-form" novalidate>
+    <h3>{{t "site.comments.leave"}}</h3>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="_back" value="{{.Back}}">
+    <input type="hidden" name="content_id" value="{{.ContentID}}">
+    <div class="sr-only" aria-hidden="true"><label for="cm-website">{{t "honeypot_label"}}</label><input id="cm-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+    <label for="cm-name">{{t "site.comments.name"}}</label>
+    <input id="cm-name" name="name" type="text" required maxlength="100" autocomplete="name">
+    <label for="cm-email">{{t "site.comments.email"}}</label>
+    <input id="cm-email" name="email" type="email" required maxlength="254" autocomplete="email" dir="ltr" aria-describedby="cm-email-help">
+    <p id="cm-email-help" class="studio-help">{{t "site.comments.email_help"}}</p>
+    <label for="cm-body">{{t "site.comments.body"}}</label>
+    <textarea id="cm-body" name="body" rows="5" required maxlength="5000" dir="auto"></textarea>
+    <button type="submit">{{t "site.comments.submit"}}</button>
+  </form>
+  {{end}}
+</section>
+{{end}}

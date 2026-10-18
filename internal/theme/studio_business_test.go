@@ -28,7 +28,7 @@ func TestStudioBusinessRendersCompleteNativeTemplates(t *testing.T) {
 			item           *content.Item
 			want           string
 		}{
-			{KindHome, "", nil, "sb-home"},
+			{KindHome, "", nil, "sb-hero"},
 			{KindPage, "", &content.Item{Title: "Company page", Body: "<p>Readable copy</p>"}, "sb-document"},
 			{KindPage, "builder", &content.Item{Title: "Built page", Body: `<div class="gp-builder"><section class="gp-section gp-hero"><h1>Built hero</h1></section></div>`}, "Built hero"},
 			{KindSingle, "", &content.Item{Title: "Journal entry", Body: "<p>Article content</p>"}, "sb-article"},

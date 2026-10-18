@@ -27,6 +27,20 @@ Five general themes ship in `themes/` and appear in **Appearance → Themes** (o
 
 `business`, `magazine` and `portfolio` are complete designs: they style navigation, footer, internal pages, article cards, search, empty results, contact and errors, load no public JavaScript or external fonts, and ship original local SVG artwork to replace before publication.
 
+### Catalog contract (`pkg/themekit`)
+
+Ship-with themes share one contract in `pkg/themekit` (`CatalogOptions` / `ValidateDir` / `ValidateCatalogRoot`):
+
+- `theme.json` with a name; catalog children set `"parent": "default"`
+- `supports` includes `rtl` and `identity`
+- Own `lang/en.json` and `lang/ar.json` (not only inherited keys)
+- Required templates resolve via inheritance (`index`, `page`, `single`, `archive`, `taxonomy`, `search`, `404`, `500`, `page-builder`, `page-contact`, `form-result`, plus `front-page` or `home`)
+- `screenshot.png`; head (own or inherited) loads `sections.css`, `builderStyle`, and `identity`
+- Primary stylesheet declares tokens under `:where(html[data-theme="<slug>"])`
+- No third-party script CDN hosts in theme HTML/CSS/JS
+
+CI covers this through `TestShipWithCatalogMeetsThemekitContract` and `pkg/themekit` tests. Prefer inheriting parts and components from `default` over copy-paste; theme-specific chrome stays in each theme’s CSS. When `gorun theme doctor` lands, it should call the same validators.
+
 ### Retired slugs
 
 Installed themes keep their exact slug and implementation, including legacy parents used by custom themes. Only when the old theme is absent do earlier slugs resolve to catalog replacements for activation, parent chains, starters and provisioning tools:
