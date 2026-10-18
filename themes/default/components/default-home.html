@@ -18,7 +18,7 @@
   <article class="dt-featured">
     {{with media .FeaturedMediaID}}<a class="dt-featured-media" href="{{url $f}}" tabindex="-1" aria-hidden="true">{{img . "large" "dt-cover"}}</a>{{end}}
     <div class="dt-featured-copy">
-      <p class="dt-kicker"><span class="dt-badge">{{t "featured"}}</span>{{range terms . "category"}}<a href="{{url .}}">{{.Name}}</a>{{end}}</p>
+      <p class="dt-kicker"><span class="dt-kicker-label">{{t "featured"}}</span>{{range terms . "category"}}<a href="{{url .}}">{{.Name}}</a>{{end}}</p>
       <h2 id="dt-featured-title"><a href="{{url .}}">{{.Title}}</a></h2>
       {{with excerpt . 36}}<p class="dt-excerpt">{{.}}</p>{{end}}
       <p class="dt-meta">{{with .PublishedAt}}<time datetime="{{.}}">{{date .}}</time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>

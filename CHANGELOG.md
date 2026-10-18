@@ -5,6 +5,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Admin UI polish: light non-flat workspace atmosphere, clearer sidebar/topbar hierarchy,
+  brand-first auth panels (login/setup/magic/reauth), shared empty-state treatment on
+  high-traffic lists, and quieter flash/form focus rhythm — still Zad + green selection, RTL-safe.
+- Public theme polish: `default` home is a full-bleed brand-first band (pill featured badge
+  removed); shared `home-composition` intro is edge-to-edge; light focus/empty/hero polish on
+  business, portfolio, docs, and magazine (personalities unchanged). Themekit doctor still green.
+
 ### Themes
 
 - Shared catalog contract in `pkg/themekit` (`ValidateDir` / `ValidateCatalogRoot`): required

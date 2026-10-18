@@ -246,3 +246,17 @@ html[data-theme="business"] .sb-service-card h3 a{text-decoration:none}
 html[data-theme="business"] .sb-service-card h3 a::after{content:"";position:absolute;inset:0}
 html[data-theme="business"] .sb-service-card p{margin:0;color:var(--muted)}
 html[data-theme="business"] .sb-service-card .sb-service-price{margin-top:auto;padding-top:.75rem;font-weight:700;color:var(--ink);text-align:end}
+
+/* UI/UX polish: atmosphere, empty, focus — keep service-studio personality. */
+html[data-theme="business"]{--font:Zad,"Zad Font",system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif}
+html[data-theme="business"] body{background:
+  radial-gradient(900px 420px at 100% 0%,color-mix(in srgb,var(--gp-accent) 9%,transparent),transparent 55%),
+  var(--bg)}
+html[data-theme="business"] .sb-hero-plane{background:
+  linear-gradient(160deg,color-mix(in srgb,var(--gp-accent) 12%,var(--panel)) 0%,var(--bg) 58%,var(--bg) 100%)}
+html[data-theme="business"] .sb-empty{text-align:center;line-height:1.75;background:color-mix(in srgb,var(--panel) 70%,var(--bg))}
+html[data-theme="business"] .sb-hero h1{letter-spacing:-.04em;max-width:14ch;text-wrap:balance}
+html[data-theme="business"][dir="rtl"] .sb-hero h1{letter-spacing:0}
+html[data-theme="business"] .sb-action{transition:transform .2s ease,background-color .2s ease}
+html[data-theme="business"] .sb-action:hover{transform:translateY(-1px)}
+@media(prefers-reduced-motion:reduce){html[data-theme="business"] .sb-action{transition:none}html[data-theme="business"] .sb-action:hover{transform:none}}

@@ -127,3 +127,12 @@ html[data-theme="docs"] .docs-recent time { color: var(--muted); font-size: .812
   html[data-theme="docs"] .docs-pager { grid-template-columns: 1fr; }
   html[data-theme="docs"] .docs-pager-next { grid-column: auto; }
 }
+
+/* UI/UX polish: hero band + empty/search clarity. */
+html[data-theme="docs"] .docs-hero{background:
+  radial-gradient(700px 320px at 50% 0%,color-mix(in srgb,var(--docs-accent) 10%,transparent),transparent 60%),
+  linear-gradient(180deg,var(--panel-2) 0%,var(--bg) 88%)}
+html[data-theme="docs"] #main .docs-hero h1{font-size:clamp(2.15rem,5vw,3.25rem);letter-spacing:-.03em;max-width:18ch;margin-inline:auto}
+html[data-theme="docs"][dir="rtl"] #main .docs-hero h1{letter-spacing:0}
+html[data-theme="docs"] .docs-hero-search{border-radius:8px;box-shadow:none}
+html[data-theme="docs"] .docs-hero-search:focus-within{box-shadow:none;outline:3px solid var(--docs-accent);outline-offset:3px}

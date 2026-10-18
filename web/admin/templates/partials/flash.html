@@ -1,5 +1,5 @@
 {{define "partials/flash"}}
 {{range flashes}}
-<div role="status" class="mb-4 rounded border px-3 py-2 {{if eq .Kind "error"}}border-red bg-red-soft text-red{{else if eq .Kind "success"}}border-green bg-green-soft text-green{{else}}border-blue bg-blue-soft text-blue{{end}}">{{t .Message}}</div>
+<div role="status" class="admin-flash mb-4 rounded border px-3 py-2 {{if eq .Kind "error"}}border-red bg-red-soft text-red{{else if eq .Kind "success"}}border-green bg-green-soft text-green{{else}}border-blue bg-blue-soft text-blue{{end}}">{{t .Message}}</div>
 {{end}}
 {{end}}

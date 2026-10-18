@@ -1,17 +1,18 @@
 {{define "title"}}{{t "auth.reauth.title"}}{{end}}
 {{define "content"}}
-<div class="rounded border border-line bg-panel p-6">
-  <h1 class="text-[22px] font-bold">{{t "auth.reauth.title"}}</h1>
-  <p class="text-muted mb-4">{{t "auth.reauth.lead"}}</p>
+<div class="admin-auth-panel">
+  <p class="admin-auth-brand">{{t "core.app.name"}}</p>
+  <h1>{{t "auth.reauth.title"}}</h1>
+  <p class="text-muted mt-2 mb-4">{{t "auth.reauth.lead"}}</p>
   {{with .Error}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
   <form method="post" action="/admin/reauth" class="space-y-4" novalidate>
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <input type="hidden" name="next" value="{{.Next}}">
     <div>
       <label for="password" class="block font-medium mb-1">{{t "auth.field.password"}}</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required autofocus class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="password" name="password" type="password" autocomplete="current-password" required autofocus class="w-full h-9 border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
     </div>
-    <button type="submit" class="w-full h-9 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.reauth.submit"}}</button>
+    <button type="submit" class="w-full h-9 bg-green text-white hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.reauth.submit"}}</button>
   </form>
   <p class="text-muted text-sm mt-4">{{t "auth.reauth.no_password"}}</p>
 </div>
