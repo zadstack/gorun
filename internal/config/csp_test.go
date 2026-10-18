@@ -42,3 +42,21 @@ func TestMCPSameOwnerApprovalConfig(t *testing.T) {
 		t.Fatal("explicit opt-in ignored", e)
 	}
 }
+
+func TestHSTSConfig(t *testing.T) {
+	if c, e := Load(nil); e != nil || c.HSTSIncludeSubdomains || c.HSTSPreload {
+		t.Fatal("HSTS extensions must be off by default", e)
+	}
+	t.Setenv("GORUN_HSTS_PRELOAD", "true")
+	if _, e := Load(nil); e == nil {
+		t.Fatal("preload without includeSubDomains accepted")
+	}
+	t.Setenv("GORUN_HSTS_INCLUDE_SUBDOMAINS", "true")
+	if c, e := Load(nil); e != nil || !c.HSTSIncludeSubdomains || !c.HSTSPreload {
+		t.Fatal("HSTS opt-in ignored", e)
+	}
+	t.Setenv("GORUN_HSTS_INCLUDE_SUBDOMAINS", "sometimes")
+	if _, e := Load(nil); e == nil {
+		t.Fatal("accepted a non-boolean value")
+	}
+}

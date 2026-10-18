@@ -248,3 +248,20 @@ func TestAPIDocsAllowsOnlyThePinnedScalarBundle(t *testing.T) {
 		}
 	}
 }
+
+func TestHSTSOptions(t *testing.T) {
+	for _, c := range []struct {
+		o    SecurityOptions
+		want string
+	}{
+		{SecurityOptions{}, "max-age=31536000"},
+		{SecurityOptions{HSTSIncludeSubdomains: true}, "max-age=31536000; includeSubDomains"},
+		{SecurityOptions{HSTSIncludeSubdomains: true, HSTSPreload: true}, "max-age=31536000; includeSubDomains; preload"},
+	} {
+		rec := httptest.NewRecorder()
+		SecurityHeadersWith(c.o)(http.NotFoundHandler()).ServeHTTP(rec, httptest.NewRequest("GET", "https://x.example/", nil))
+		if got := rec.Header().Get("Strict-Transport-Security"); got != c.want {
+			t.Errorf("%+v: %q, want %q", c.o, got, c.want)
+		}
+	}
+}

@@ -94,6 +94,8 @@ unset gorun_install_password
 | الوكيل العكسي الموثوق | `GORUN_TRUSTED_PROXIES` | `trusted_proxies` ؛ قائمة عناوين/CIDR محددة |
 | مصادر سكربتات إضافية للصفحات العامة | `GORUN_CSP_SCRIPT_SRC` | `csp_script_src` ؛ مصادر https و`'unsafe-eval'` فقط، لقالب مخصص يحتاج CDN |
 | طلبات الشبكات الخاصة | `GORUN_ALLOW_PRIVATE_NET` | `--allow-private-net` / `allow_private_net` ؛ معطلة افتراضيًا |
+| HSTS للنطاقات الفرعية | `GORUN_HSTS_INCLUDE_SUBDOMAINS` | `hsts_include_subdomains` ؛ معطلة افتراضيًا؛ فعّلها فقط إن كانت كل النطاقات الفرعية تعمل بـHTTPS |
+| HSTS preload | `GORUN_HSTS_PRELOAD` | `hsts_preload` ؛ يتطلب الخيار السابق، والتراجع عنه يستغرق أشهرًا |
 | موافقة MCP من مفتاح لنفس المالك | `GORUN_MCP_SAME_OWNER_APPROVAL` | `mcp_same_owner_approval` ؛ معطلة افتراضيًا، لموقع بمشغّل واحد فقط |
 
 مثال TOML محلي، دون أسرار، في `data/gorun.toml`:

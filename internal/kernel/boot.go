@@ -324,7 +324,8 @@ func assemble(deps *Deps) http.Handler {
 	proxies, _ := deps.Config.TrustedProxyNetworks()  // validated before boot
 	scriptSrc, _ := deps.Config.PublicScriptSources() // validated before boot
 	root.Use(httpx.RequestID, httpx.RealIPWithTrustedProxies(proxies), httpx.WarnUntrustedForwarding(deps.Log), httpx.Logger(deps.Log), httpx.Recover(deps.Log),
-		httpx.SecurityHeaders(scriptSrc...), httpx.Compress,
+		httpx.SecurityHeadersWith(httpx.SecurityOptions{PublicScripts: scriptSrc,
+			HSTSIncludeSubdomains: deps.Config.HSTSIncludeSubdomains, HSTSPreload: deps.Config.HSTSPreload}), httpx.Compress,
 		// HEAD is answered by the GET route (no body) wherever no HEAD route exists.
 		middleware.GetHead)
 	root.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) { plain(w, http.StatusOK, "ok") })
