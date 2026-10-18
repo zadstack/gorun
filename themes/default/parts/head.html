@@ -7,13 +7,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {{seo .}}
 <link rel="stylesheet" href="/static/admin/zad-font.css">
+<link rel="stylesheet" href="{{asset "tokens.css"}}">
 <link rel="stylesheet" href="{{asset "style.css"}}">
 {{if .Extra.commerce}}<link rel="stylesheet" href="{{asset "commerce.css"}}">{{end}}
 {{part "head-extra" .}}
 {{with .Content}}{{if eq .Template "builder"}}<link rel="stylesheet" href="/static/builder/builder.css">{{end}}{{end}}
 <style nonce="{{nonce}}">{{builderStyle}}</style>
 <link rel="stylesheet" href="{{asset "sections.css"}}">{{identity .}}
-{{/* Precompiled Tailwind (tools/tailwind/build.sh); last, where the runtime used to inject its styles. */}}
+{{/* Precompiled Tailwind (tools/tailwind/build.sh); last. No CDN/Play runtime in shipped themes. */}}
 <link rel="stylesheet" href="{{asset "tailwind.css"}}"></head>
 <body class="min-h-screen flex flex-col bg-bg text-ink font-sans leading-relaxed antialiased">
 <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:start-2 focus:z-50 focus:bg-panel focus:border focus:border-line focus:rounded focus:px-3 focus:py-2">{{t "skip_to_content"}}</a>

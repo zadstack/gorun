@@ -5,20 +5,37 @@
   --bg: #ffffff;
   --panel: #ffffff;
   --panel-2: #f4f7fa;
+  --panel-3: #e8eef4;
+  --head: #18212b;
   --ink: #18212b;
+  --ink-2: #2a3542;
   --muted: #55606d;
+  --muted-tinted: #44505c;
   --line: #d8dee5;
+  --line-2: #e6ebf0;
   --line-strong: #a9b5c2;
-  --green: #1f5f8b;
-  --green-hover: #174a6c;
-  --green-soft: #e6eff7;
+  --accent: #1f5f8b;
+  --accent-hover: #174a6c;
+  --accent-ink: #1f5f8b;
+  --accent-soft: #e6eff7;
+  --accent-tint: #f0f5fa;
+  --accent-line: #7aa3c0;
+  --on-accent: #ffffff;
+  --green: var(--accent);
+  --green-hover: var(--accent-hover);
+  --green-soft: var(--accent-soft);
   --blue: #1f5f8b;
   --blue-hover: #174a6c;
   --blue-soft: #e6eff7;
   --radius: 8px;
+  --radius-card: 12px;
   --font: "IBM Plex Sans Arabic", "IBM Plex Sans", system-ui, sans-serif;
-  --docs-accent: var(--green);
-  --docs-soft: var(--green-soft);
+  --font-ui: var(--font);
+  --font-heading: var(--font);
+  --site-width: 1360px;
+  --gp-width: var(--site-width);
+  --docs-accent: var(--accent);
+  --docs-soft: var(--accent-soft);
 }
 
 /* Header */

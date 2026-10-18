@@ -44,7 +44,7 @@ func TestDefaultThemeRendersAllKinds(t *testing.T) {
 		if err != nil || (rec.Code != 200 && rec.Code != 404) {
 			t.Fatalf("%s: %d %v\n%s", c.want, rec.Code, err, e.logs.String())
 		}
-		mustContain(t, rec.Body.String(), `dir="rtl"`, `data-theme="default"`, "</html>")
+		mustContain(t, rec.Body.String(), `dir="rtl"`, `data-theme="default"`, "/themes/default/assets/tokens.css", "</html>")
 	}
 	// form-result.html renders with the site's FormState via the site
 	// module; here it is executed directly with a map of the same shape.

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {{seo .}}
 <link rel="stylesheet" href="/static/admin/zad-font.css">
+<link rel="stylesheet" href="{{asset "tokens.css"}}">
 {{with .Content}}{{if eq .Template "builder"}}<link rel="stylesheet" href="/static/builder/builder.css">{{end}}{{end}}
 {{part "head-extra" .}}
 <style nonce="{{nonce}}">{{builderStyle}}</style>

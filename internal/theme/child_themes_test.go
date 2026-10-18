@@ -54,7 +54,7 @@ func TestChildThemesRenderAllKinds(t *testing.T) {
 					if err != nil || (rec.Code != 200 && rec.Code != 404) {
 						t.Fatalf("%s %+v: %d %v\n%s", slug, c.req, rec.Code, err, e.logs.String())
 					}
-					mustContain(t, rec.Body.String(), `data-theme="`+slug+`"`, "/themes/"+slug+"/assets/theme.css", "/themes/default/assets/style.css", "</html>")
+					mustContain(t, rec.Body.String(), `data-theme="`+slug+`"`, "/themes/default/assets/tokens.css", "/themes/"+slug+"/assets/theme.css", "/themes/default/assets/style.css", "</html>")
 				}
 			}
 			rec, _ := e.render(kernel.KindRequest{Kind: KindHome}, list())

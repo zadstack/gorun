@@ -4,7 +4,7 @@
 <article class="reading-article mx-auto max-w-3xl">
   <header class="mb-6">
     <h1 class="text-[22px] font-bold leading-snug">{{.Title}}</h1>
-    {{with .PublishedAt}}<p class="mt-2 text-sm text-muted"><time datetime="{{.}}">{{date .}}</time></p>{{end}}
+    {{with .PublishedAt}}<p class="mt-2 text-sm text-muted"><time datetime="{{.}}"><bdi>{{date .}}</bdi></time></p>{{end}}
   </header>
   {{with media .FeaturedMediaID}}<figure class="mb-6">{{img . "large" "w-full rounded border border-line"}}{{with .Caption}}<figcaption class="mt-2 text-sm text-muted">{{.}}</figcaption>{{end}}</figure>{{end}}
   <div class="prose-gp">{{safe .Body}}</div>
