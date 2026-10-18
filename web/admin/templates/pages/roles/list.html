@@ -1,0 +1,45 @@
+{{/* Data: rolesListPage */}}
+{{define "title"}}{{t "admin.roles.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<div class="admin-contained">
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+  <div>
+    <h1 class="text-[22px] font-bold">{{t "admin.roles.title"}}</h1>
+    <p class="mt-1 text-sm text-muted">{{t "admin.roles.lead"}}</p>
+  </div>
+  <a href="/admin/roles/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "shield"}}<span>{{t "admin.roles.new"}}</span></a>
+</div>
+{{if .Roles}}
+<div class="rounded border border-line bg-panel overflow-x-auto" tabindex="0" role="region" aria-label="{{t "admin.roles.title"}}">
+  <table class="w-full text-start">
+    <thead class="border-b border-line">
+      <tr>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.roles.name"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.roles.slug"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.roles.permissions"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.roles.users"}}</th>
+        <th scope="col" class="px-3 py-2"><span class="sr-only">{{t "core.action.edit"}}</span></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-line">
+      {{range .Roles}}
+      <tr class="hover:bg-bg">
+        <td class="px-3 py-2">
+          <a href="/admin/roles/{{.Slug}}" class="font-medium hover:text-blue">{{.DisplayName}}</a>
+          {{if .System}}<span class="ms-1 inline-flex rounded-chip border border-line px-1.5 py-0.5 text-[11px] font-mono text-muted">{{t "admin.roles.system"}}</span>{{end}}
+        </td>
+        <td class="px-3 py-2 font-mono text-xs" dir="ltr">{{.Slug}}</td>
+        <td class="px-3 py-2 font-mono text-xs text-muted">{{len .Permissions}}</td>
+        <td class="px-3 py-2 font-mono text-xs text-muted">{{.UserCount}}</td>
+        <td class="px-3 py-2 text-end"><a href="/admin/roles/{{.Slug}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "core.action.edit"}}</a></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<div class="admin-empty">{{t "admin.roles.empty"}}</div>
+{{end}}
+</div>
+{{end}}

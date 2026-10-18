@@ -39,6 +39,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Custom roles UI and REST API: Settings → Roles (`/admin/roles`) and `/api/v1/roles`
+  (`users.manage`) create bilingual packs with explicit permissions on the existing
+  `roles` / `role_permissions` tables. System roles stay undeletable; Administrator `*`
+  is locked; actors may only grant permissions they hold; UI permission changes and
+  deletes require recent password confirmation.
 - Optional Prometheus text scrape at `GET /metrics` when `GORUN_METRICS=true` (stdlib exposition:
   HTTP status-class counters, job gauges including dead/failed, backup last-success timestamp).
   Optional `GORUN_METRICS_TOKEN` Bearer; off by default. Operator guide: `docs/OBSERVABILITY.md`.

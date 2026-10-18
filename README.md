@@ -206,7 +206,7 @@ Screenshots come from an isolated local instance with fictional demo content (Na
 
 ## For your team
 
-- **Roles that match how editors work.** Seeded `admin`, `editor`, `author` and `contributor` roles with explicit permissions.
+- **Roles that match how editors work.** Seeded `admin`, `editor`, `author` and `contributor` roles with explicit permissions; agencies can add custom packs under Settings → Roles or `/api/v1/roles`.
 - **Review before it goes live.** Drafts, pending review, scheduled publishing, revisions with restore, and trash.
 - **A record of who did what.** An append-only audit log covers people and keys, including every MCP tool call.
 - **Structured content.** Posts, pages, custom types and fields, taxonomies, menus and media in one admin.

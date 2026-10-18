@@ -88,8 +88,8 @@ func guardAdminRemoval(ctx context.Context, d *sql.DB, target *auth.User) error 
 // roleOption is a role for select inputs.
 type roleOption struct{ Slug, Name string }
 
-// roles lists roles with names in locale (the roles table belongs to auth;
-// auth exposes no roles API yet).
+// roles lists roles with names in locale for user forms. Full role CRUD
+// lives on auth.RoleService and /admin/roles + /api/v1/roles.
 func roles(ctx context.Context, d *sql.DB, locale string) ([]roleOption, error) {
 	rows, err := d.QueryContext(ctx, `SELECT slug, name_json FROM roles ORDER BY system DESC, slug`)
 	if err != nil {

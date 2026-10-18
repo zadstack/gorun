@@ -41,9 +41,9 @@ func (*Module) Migrations() fs.FS { return migrations }
 func (*Module) Catalogs() fs.FS { return catalogs }
 
 // Register declares permissions, publishes the services
-// (kernel.ServiceAuth, ServiceAPIKeys, ServiceAdminTemplates), installs the
-// auth middleware on Admin, API and Public, mounts the auth routes and
-// finally calls Router.SetAuthenticator.
+// (kernel.ServiceAuth, ServiceAPIKeys, ServiceRoles, ServiceAdminTemplates),
+// installs the auth middleware on Admin, API and Public, mounts the auth
+// routes and finally calls Router.SetAuthenticator.
 func (*Module) Register(d *kernel.Deps) error {
 	if err := ReloadRoles(context.Background(), d.DB); err != nil {
 		return err
@@ -57,6 +57,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	svc := newService(d.DB, d.Audit)
 	d.Services.Set(kernel.ServiceAuth, Service(svc))
 	d.Services.Set(kernel.ServiceAPIKeys, NewKeyService(d.DB, d.Audit, d.Perms))
+	d.Services.Set(kernel.ServiceRoles, NewRoleService(d.DB, d.Audit, d.Perms))
 
 	tpl, err := httpx.NewTemplates(web.FS, d.Config.Env != "prod", d.I18n, templateFuncs(d), d.Log)
 	if err != nil {

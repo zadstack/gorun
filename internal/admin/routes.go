@@ -30,6 +30,14 @@ func (h *handlers) routes() {
 	users.Post("/users/{id}/delete", h.userDelete)
 	users.Post("/users/{id}/magic-link", h.userMagicLink)
 
+	roles := r.With(auth.RequirePerm(PermUsers))
+	roles.Get("/roles", h.rolesList)
+	roles.Get("/roles/new", h.roleNew)
+	roles.Post("/roles", h.roleCreate)
+	roles.Get("/roles/{slug}", h.roleEdit)
+	roles.Post("/roles/{slug}", h.roleUpdate)
+	roles.Post("/roles/{slug}/delete", h.roleDelete)
+
 	st := r.With(auth.RequirePerm(PermSettings))
 	st.Get("/settings/general", h.settingsGeneral)
 	st.Post("/settings/general", h.settingsGeneralSave)

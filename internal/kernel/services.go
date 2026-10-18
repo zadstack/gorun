@@ -5,6 +5,7 @@ package kernel
 const (
 	ServiceAuth           = "auth"            // auth.Service
 	ServiceAPIKeys        = "auth.keys"       // auth.KeyService
+	ServiceRoles          = "auth.roles"      // auth.RoleService
 	ServiceAdminTemplates = "admin.templates" // *httpx.Templates (admin renderer)
 
 	ServiceContent   = "content"   // content.Service
