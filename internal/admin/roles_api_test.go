@@ -2,7 +2,6 @@ package admin_test
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -36,8 +35,8 @@ func TestRolesAPI(t *testing.T) {
 	}
 
 	code, out = apiCall(t, s, admin, "GET", "/api/v1/roles/marketing", "")
-	if code != http.StatusOK {
-		t.Fatalf("get: %d", code)
+	if code != http.StatusOK || out["data"].(map[string]any)["slug"] != "marketing" {
+		t.Fatalf("get: %d %v", code, out)
 	}
 
 	code, out = apiCall(t, s, admin, "PATCH", "/api/v1/roles/marketing", `{
@@ -107,14 +106,8 @@ func TestRolesAPIValidation(t *testing.T) {
 	if code != http.StatusUnprocessableEntity {
 		t.Fatalf("bad slug: %d %v", code, out)
 	}
-	code, raw := apiRaw(s, admin, "GET", "/api/v1/roles/nope", "")
-	if code != http.StatusNotFound {
-		t.Fatalf("missing: %d %s", code, raw)
-	}
-	var envelope map[string]any
-	_ = json.Unmarshal(raw, &envelope)
-	if envelope["error"] == nil && envelope["code"] == nil {
-		// httpx.Error uses code field inside error object — either shape is fine if 404.
+	if code, _ := apiRaw(s, admin, "GET", "/api/v1/roles/nope", ""); code != http.StatusNotFound {
+		t.Fatalf("missing: %d", code)
 	}
 }
 
