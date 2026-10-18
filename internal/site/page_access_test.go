@@ -96,7 +96,7 @@ func TestPageAccessNativeAdminCASAndNoSecretReflection(t *testing.T) {
 	if r.StatusCode != 303 {
 		t.Fatal("save", r.StatusCode, b)
 	}
-	r, b = e.get(path)
+	_, b = e.get(path)
 	mustNotContain(t, b, "admin fixture password", "$argon2")
 	mustContain(t, b, "Private visitor note")
 	form.Set("message", "Unsaved stale message")

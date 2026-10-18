@@ -136,7 +136,7 @@ func TestAPIContentCRUDEnvelope(t *testing.T) {
 	if code, _ = c.do("DELETE", "/v1/content/"+id, nil); code != 200 {
 		t.Fatalf("trash: %d", code)
 	}
-	code, env = c.do("GET", "/v1/content/"+id, nil)
+	_, env = c.do("GET", "/v1/content/"+id, nil)
 	json.Unmarshal(env.Data, &it)
 	if it["status"] != "trash" {
 		t.Fatalf("after trash: %v", it)

@@ -68,8 +68,7 @@ func TestRequestReceiptUncertainNeverResent(t *testing.T) {
 	ctx := context.Background()
 	p := serviceProduct(t, e, "uncertain", 1000)
 	req := CartCheckout{Items: []CartItem{{p.ID, 1}}, Email: "customer@example.test", IdempotencyKey: "uncertain-receipt-unique"}
-	o, err := e.svc.SubmitCart(ctx, req)
-	if err != nil {
+	if _, err := e.svc.SubmitCart(ctx, req); err != nil {
 		t.Fatal(err)
 	}
 	calls := 0
@@ -78,11 +77,11 @@ func TestRequestReceiptUncertainNeverResent(t *testing.T) {
 		return errors.New("transport failure secret-token")
 	}
 	for range 3 {
-		if err = e.svc.deliverRequestReceipts(ctx); err != nil {
+		if err := e.svc.deliverRequestReceipts(ctx); err != nil {
 			t.Fatal(err)
 		}
 	}
-	o, err = e.svc.SubmitCart(ctx, req)
+	o, err := e.svc.SubmitCart(ctx, req)
 	if err != nil {
 		t.Fatal(err)
 	}

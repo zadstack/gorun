@@ -196,7 +196,7 @@ func TestMenusAPI(t *testing.T) {
 		t.Fatalf("list: %d %s", resp.StatusCode, out)
 	}
 	// Copying menu A's items (with their IDs) into menu B must not collide.
-	resp, out = s.do("POST", "/api/v1/menus", `{"name":"Copy"}`, "application/json")
+	_, out = s.do("POST", "/api/v1/menus", `{"name":"Copy"}`, "application/json")
 	var envB struct {
 		Data menus.Menu `json:"data"`
 	}

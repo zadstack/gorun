@@ -217,7 +217,7 @@ func TestCommerceAPI(t *testing.T) {
 	if st, body = c.Post("/v1/commerce/products", map[string]any{"name": ""}); st != 422 || apitest.ErrorCode(body) != "validation_failed" {
 		t.Fatalf("invalid product: %d %v", st, body)
 	}
-	if st, body = c.Get("/v1/commerce/products"); st != 200 {
+	if st, _ = c.Get("/v1/commerce/products"); st != 200 {
 		t.Fatalf("list: %d", st)
 	}
 	for _, p := range []string{"/v1/commerce/orders", "/v1/commerce/entitlements", "/v1/commerce/servers"} {

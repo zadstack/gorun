@@ -7,12 +7,12 @@ import (
 
 func TestSlugArabicPreserved(t *testing.T) {
 	for in, want := range map[string]string{
-		"مرحبا بالعالم":     "مرحبا-بالعالم",
-		"Hello, World!":     "hello-world",
-		"  Go_Run -- CMS  ": "go-run-cms",
-		"مَرْحَبًا ٢٠٢٦":    "مرحبا-٢٠٢٦",
-		"‏مرحبا‏ عالم":      "مرحبا-عالم",
-		"Café Déjà":         "café-déjà",
+		"مرحبا بالعالم":          "مرحبا-بالعالم",
+		"Hello, World!":          "hello-world",
+		"  Go_Run -- CMS  ":      "go-run-cms",
+		"مَرْحَبًا ٢٠٢٦":         "مرحبا-٢٠٢٦",
+		"\u200fمرحبا\u200f عالم": "مرحبا-عالم",
+		"Café Déjà":              "café-déjà",
 	} {
 		if got := Slugify(in, false); got != want {
 			t.Errorf("Slugify(%q) = %q want %q", in, got, want)

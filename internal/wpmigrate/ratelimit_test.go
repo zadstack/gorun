@@ -61,7 +61,7 @@ func TestRateResolutionAndSharedBucket(t *testing.T) {
 	if r := s.rate(Options{}); r != defaultRatePerSecond {
 		t.Fatalf("default rate = %v", r)
 	}
-	if s.limiter("src1", 4) != s.limiter("src1", 4) || s.limiter("src1", 4) == s.limiter("src2", 4) {
+	if a, b := s.limiter("src1", 4), s.limiter("src1", 4); a != b || a == s.limiter("src2", 4) {
 		t.Fatal("one bucket per source")
 	}
 
