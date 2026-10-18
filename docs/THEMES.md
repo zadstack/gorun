@@ -39,7 +39,18 @@ Ship-with themes share one contract in `pkg/themekit` (`CatalogOptions` / `Valid
 - Primary stylesheet declares tokens under `:where(html[data-theme="<slug>"])`
 - No third-party script CDN hosts in theme HTML/CSS/JS
 
-CI covers this through `TestShipWithCatalogMeetsThemekitContract` and `pkg/themekit` tests. Prefer inheriting parts and components from `default` over copy-paste; theme-specific chrome stays in each theme’s CSS. When `gorun theme doctor` lands, it should call the same validators.
+CI covers this through `TestShipWithCatalogMeetsThemekitContract` and `pkg/themekit` tests. Prefer inheriting parts and components from `default` over copy-paste; theme-specific chrome stays in each theme’s CSS.
+
+Check the same validators from the CLI (no database):
+
+```sh
+gorun theme doctor              # every theme under GORUN_THEMES (+ EXTRA)
+gorun theme doctor business     # one slug
+gorun theme doctor --json       # machine-readable Results
+gorun theme doctor --warnings   # also soft {{t}} key scans (do not fail exit)
+```
+
+Full contract write-up: [THEME-CONTRACT.md](THEME-CONTRACT.md).
 
 ### Retired slugs
 
