@@ -5,6 +5,21 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-18
+
+The first tagged release: a multi-arch image on `ghcr.io/zadstack/gorun` and binary archives for
+linux and darwin (amd64, arm64) with checksums.
+
+### Release
+
+- `.github/workflows/release.yml` runs on `v*` tags: it builds and pushes `ghcr.io/zadstack/gorun`
+  for linux/amd64 and linux/arm64 (tags `X.Y.Z`, `X.Y`, `latest`; `VERSION` from the tag; OCI labels
+  for source and license), checks that `gorun version` in the image matches, builds the binary
+  archives with `SHA256SUMS`, and creates the GitHub release from this file. Pull requests that change
+  the Dockerfile or the workflow run the builds without publishing.
+- `deploy/Dockerfile` cross-compiles on the build platform (`TARGETOS`/`TARGETARCH`) and carries OCI
+  source and license labels.
+
 ### Media privacy
 
 - New JPEG, PNG and WebP uploads are stored without camera metadata (GPS, device serials, names,
@@ -87,3 +102,6 @@ All notable changes to GoRun are recorded here. The format follows
   a downstream build can set another one with `cli.WithSitePolicyDirectory`.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
+
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/zadstack/gorun/releases/tag/v0.1.0
