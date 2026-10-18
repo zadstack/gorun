@@ -148,18 +148,18 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **153 operations** in 22 tags.
+Generated from the current locally booted OpenAPI document: **156 operations** in 22 tags.
 
 ### builder
 
 | Method | Path | Summary | Scopes |
 |---|---|---|---|
+| GET | `/api/v1/builder/{id}/revisions/{revision}` | Read one page-builder layout revision | `content.edit` |
+| GET | `/api/v1/builder/{id}/revisions` | List page-builder layout revisions (newest first) | `content.edit` |
 | GET | `/api/v1/builder/{id}` | Read a private structured page layout and optimistic draft token | `content.edit` |
 | POST | `/api/v1/builder/{id}/publish` | Publish a saved layout using its current opaque draft token | `content.edit`, `content.publish` |
-| PUT | `/api/v1/builder/{id}/draft` | Save a validated page layout as a separate private draft | `content.edit` |
-| GET | `/api/v1/builder/{id}/revisions` | List page-builder layout revisions (newest first) | `content.edit` |
-| GET | `/api/v1/builder/{id}/revisions/{revision}` | Read one page-builder layout revision | `content.edit` |
 | POST | `/api/v1/builder/{id}/revisions/{revision}/restore` | Restore a layout revision into the private draft | `content.edit` |
+| PUT | `/api/v1/builder/{id}/draft` | Save a validated page layout as a separate private draft | `content.edit` |
 
 ### comments
 
