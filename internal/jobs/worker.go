@@ -120,10 +120,17 @@ func (q *Queue) work(ctx context.Context, workerID string) {
 
 // runOnce claims and runs one due job. It reports whether a job was claimed.
 func (q *Queue) runOnce(ctx context.Context, workerID string) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, nil // shutting down: claim nothing new
+	}
 	now := db.FormatTime(q.now())
 	var id, kind, payload string
 	var attempts, maxAttempts int
-	err := q.db.QueryRowContext(ctx, `UPDATE jobs SET status = 'running', locked_by = ?, locked_at = ?, updated_at = ?
+	// The claim must not be interruptible: if ctx were cancelled after the
+	// UPDATE committed but before RETURNING was scanned, the job would be
+	// left 'running' and locked by this worker until recoverStale noticed.
+	// Once claimed, the job is always requeued or finished below.
+	err := q.db.QueryRowContext(context.WithoutCancel(ctx), `UPDATE jobs SET status = 'running', locked_by = ?, locked_at = ?, updated_at = ?
 		WHERE id = (SELECT id FROM jobs WHERE status = 'queued' AND run_at <= ? ORDER BY run_at, id LIMIT 1)
 		AND status = 'queued'
 		RETURNING id, kind, payload_json, attempts, max_attempts`,

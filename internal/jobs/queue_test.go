@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -210,6 +211,43 @@ func TestStartRequeuesStaleRunningJobs(t *testing.T) {
 	cancel()
 	q.Wait()
 	if j := getJob(t, q, id); j.Status != "queued" || j.LockedBy != "" {
+		t.Fatalf("%+v", j)
+	}
+}
+
+// cancelAfterCheck is cancelled by its first Err call (runOnce's shutdown
+// check, which still sees nil), so the cancellation deterministically lands
+// while the job is being claimed.
+type cancelAfterCheck struct {
+	context.Context
+	once sync.Once
+	done chan struct{}
+}
+
+func (c *cancelAfterCheck) Done() <-chan struct{} { return c.done }
+func (c *cancelAfterCheck) Err() error {
+	first := false
+	c.once.Do(func() { first = true; close(c.done) })
+	if first {
+		return nil
+	}
+	return context.Canceled
+}
+
+func TestClaimRacingShutdownNeverLeavesJobRunning(t *testing.T) {
+	q := newQueue(t)
+	var ran atomic.Bool
+	q.Register("k", func(hctx context.Context, _ json.RawMessage) error {
+		ran.Store(true)
+		return hctx.Err()
+	}, 3)
+	id, _ := q.Enqueue(context.Background(), "k", nil)
+	ctx := &cancelAfterCheck{Context: context.Background(), done: make(chan struct{})}
+	claimed, err := q.runOnce(ctx, "w")
+	if err != nil || !claimed || !ran.Load() {
+		t.Fatalf("claimed=%v ran=%v err=%v", claimed, ran.Load(), err)
+	}
+	if j := getJob(t, q, id); j.Status != "queued" || j.LockedBy != "" || j.Attempts != 0 {
 		t.Fatalf("%+v", j)
 	}
 }
