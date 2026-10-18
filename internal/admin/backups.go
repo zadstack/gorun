@@ -20,6 +20,7 @@ var backupMu sync.Mutex
 type backupsPage struct {
 	RemoteName string
 	RemoteLast remoteBackupState
+	Schedule   backupSchedulePolicy
 	Backups    []backupRow
 	Dir        string
 }
@@ -45,6 +46,7 @@ func (h *handlers) backupsList(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
+	h.backupScheduleView(r.Context(), &d)
 	for _, e := range list {
 		row := backupRow{Stamp: e.Stamp, Time: e.Time.Format(time.RFC3339),
 			DBSize: humanSize(e.DBSize), FilesSize: humanSize(e.FilesSize), HasDB: e.DBSize >= 0, HasFiles: e.FilesSize >= 0, LocalState: e.LocalState, HasManifest: e.HasManifest, Remote: e.Remote}

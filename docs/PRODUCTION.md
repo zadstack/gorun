@@ -86,9 +86,13 @@ Docker وCompose غير مطلوبين للتشغيل المحلي من الحز
 
 ```sh
 gorun backup --data /var/lib/gorun
+# اختياري: أبقِ أحدث N زوجًا مكتملًا واحذف الأقدم (مفيد مع cron المضيف)
+gorun backup --data /var/lib/gorun --retain 7
 ```
 
 النسخة زوج ملفات `.db` و`.tar.gz` يحمل الاسم الزمني نفسه. الأرشيف يشمل `media/` و`overrides/` و`extensions/` و`form-uploads/`. **لا يشمل `secret.key` ولا `gorun.toml` افتراضيًا**، لأنهما يحملان مفتاح الموقع وأسرارًا أخرى (Stripe وS3 ورمز الإعداد) بنص صريح. احتفظ بنسخة مستقلة ومحمية من `secret.key` أو `GORUN_SECRET_KEY` ومن `gorun.toml`؛ بدون المفتاح الأصلي لا تُفك الإعدادات المشفرة في القاعدة. لإدراجهما عمدًا في أرشيف تحفظه مشفرًا خارج الخادم استخدم `gorun backup --include-secrets`؛ لوحة الإدارة لا تدرجهما أبدًا. تنزيل نسخة من لوحة الإدارة يتطلب إدخال كلمة المرور مجددًا إن مضى على آخر دخول أكثر من 10 دقائق. الملفات بصلاحية `0600`؛ احتفظ بها خارج مضيف الخدمة بصورة آمنة.
+
+**جدولة محلية:** من **تشغيل النظام ← النسخ الاحتياطية** عيّن كل N ساعة (1–168؛ 0 = متوقف) واختياريًا احتفظ بـ N زوجًا محليًا. يعمل ذلك فقط بينما `gorun serve` يعمل مع عمال المهام؛ لا يرفع إلى S3 ولا يحذف كائنات الحاوية. بدلًا من ذلك استخدم cron المضيف / `docker exec … /app/gorun backup --retain N` (انظر [Coolify](../deploy/coolify.md)).
 
 متغيرات البيئة الخارجية ومحتوى bucket الخاص بـS3 لا تدخل في الأرشيف. احتفظ بالمفتاح الأصلي والاعتمادات الخارجية، وانسخ bucket ضمن خطة التخزين الخاصة بك. تغيير المفتاح يجعل أسرار قاعدة البيانات غير قابلة للفك.
 
@@ -149,7 +153,7 @@ gorun backup-restore --input /var/lib/gorun/backups/<timestamp>.manifest.json --
 1. **Secrets:** `GORUN_ENV=prod`, public `GORUN_BASE_URL`, stable `GORUN_SECRET_KEY`, persistent `GORUN_DATA`, optional `GORUN_SETUP_TOKEN` for web bootstrap.
 2. **One process per data dir:** stop-then-start on Docker/Coolify; lock file is `<data>/gorun.lock`.
 3. **HTTPS / proxy:** terminate TLS at the proxy; set `GORUN_TRUSTED_PROXIES` to that hop only; confirm audit IPs. HSTS is one year on HTTPS; subdomain and preload flags are opt-in.
-4. **Backup:** `gorun backup` (or admin). Default archive omits `secret.key` / `gorun.toml` unless `--include-secrets`.
+4. **Backup:** `gorun backup` (or admin). Optional local schedule + retain-N on **System → Backups**, or host cron with `gorun backup --retain N`. Default archive omits `secret.key` / `gorun.toml` unless `--include-secrets`. Encrypted S3 upload stays manual.
 5. **Restore:** never merges into the live dir. Online: **Operations → Backups → Inspect / restore** → `<data>/restores/<stamp>/` → move out → stop old process → `serve --data` the moved copy with original secrets. Offline: `gorun backup-restore --dest <new-empty-dir>` while stopped.
 6. **Upgrade:** pin `ghcr.io/zadstack/gorun:X.Y.Z` or the matching binary archive; migrate on `serve`; roll back with previous artifact + restored data + original key.
 7. **Problems:** [TROUBLESHOOTING.md](TROUBLESHOOTING.md). Coolify: [deploy/coolify.md](../deploy/coolify.md).

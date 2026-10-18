@@ -11,6 +11,30 @@
     <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "archive"}}<span>{{t "admin.backups.create"}}</span></button>
   </form>
 </div>
+<section class="border border-line bg-panel p-4 mb-5 space-y-3" data-backup-schedule>
+  <h2 class="font-bold">{{t "admin.backups.schedule_title"}}</h2>
+  <p class="text-muted text-sm">{{t "admin.backups.schedule_help"}}</p>
+  <form method="post" action="/admin/system/backups/schedule" class="flex flex-wrap items-end gap-3">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <label class="block text-sm">
+      <span class="text-muted">{{t "admin.backups.schedule_hours"}}</span>
+      <input type="number" name="schedule_hours" min="0" max="168" value="{{.Schedule.Hours}}" class="mt-1 block w-28 h-9 px-2 rounded border border-line bg-panel-2 font-mono" dir="ltr">
+    </label>
+    <label class="block text-sm">
+      <span class="text-muted">{{t "admin.backups.retain"}}</span>
+      <input type="number" name="retain" min="0" max="100" value="{{.Schedule.Retain}}" class="mt-1 block w-28 h-9 px-2 rounded border border-line bg-panel-2 font-mono" dir="ltr">
+    </label>
+    <button type="submit" class="h-9 px-3 rounded border border-line bg-panel-2 font-medium hover:bg-panel">{{t "admin.backups.schedule_save"}}</button>
+  </form>
+  {{if .Schedule.Enabled}}
+  <p class="text-sm" data-schedule-enabled="1">{{t "admin.backups.schedule_on"}}
+    {{if .Schedule.Last}} · {{t "admin.backups.schedule_last"}}: <time dir="ltr">{{.Schedule.Last}}</time>{{end}}
+    {{if .Schedule.NextHint}} · {{t "admin.backups.schedule_next"}}: <time dir="ltr">{{.Schedule.NextHint}}</time>{{end}}
+  </p>
+  {{else}}
+  <p class="text-muted text-sm" data-schedule-enabled="0">{{t "admin.backups.schedule_off"}}</p>
+  {{end}}
+</section>
 <section class="border border-line bg-panel p-4 mb-5 space-y-3"><h2 class="font-bold">{{t "admin.storage.backup"}}</h2><p class="text-muted">{{t "admin.storage.remote_note"}}</p>
 {{if .RemoteName}}<p>{{t "admin.storage.remote_ready"}}: <strong>{{.RemoteName}}</strong></p><form method="post" action="/admin/system/backups/remote"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="admin-primary-button">{{t "admin.storage.remote_create"}}</button></form>{{else}}<p>{{t "admin.storage.remote_unconfigured"}}</p>{{end}}
 <a href="/admin/settings/storage" class="text-blue underline">{{t "admin.storage.title"}}</a>

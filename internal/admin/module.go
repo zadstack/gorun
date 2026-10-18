@@ -96,6 +96,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.apiOperations()
 	h.keyAPIOperations()
 	d.Jobs.Cron("jobs.prune", time.Hour, h.pruneJobs)
+	d.Jobs.Cron("backup.schedule", time.Hour, h.backupScheduleTick)
 	return nil
 }
 

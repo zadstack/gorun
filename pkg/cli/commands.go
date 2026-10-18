@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -109,6 +110,18 @@ func mcpStdio(args []string, in io.ReadCloser, out io.WriteCloser) error {
 // only with --include-secrets.
 func backup(args []string, out io.Writer) error {
 	includeSecrets, args := boolFlag(args, "include-secrets")
+	retainStr, args, err := stringFlag(args, "retain")
+	if err != nil {
+		return err
+	}
+	retain := 0
+	if retainStr != "" {
+		n, atoiErr := strconv.Atoi(retainStr)
+		if atoiErr != nil || n < 1 {
+			return errors.New("backup: --retain needs an integer >= 1")
+		}
+		retain = n
+	}
 	cfg, err := config.Load(args)
 	if err != nil {
 		return err
@@ -122,6 +135,13 @@ func backup(args []string, out io.Writer) error {
 		fmt.Fprintln(out, "secrets:  secret.key and gorun.toml are in the archive in plain text; keep it offline and encrypted")
 	} else {
 		fmt.Fprintln(out, "secrets:  not archived; keep secret.key / GORUN_SECRET_KEY separately (needed to restore encrypted settings and sessions)")
+	}
+	if retain >= 1 {
+		removed, pruneErr := gpbackup.Prune(cfg.DataDir, retain)
+		if pruneErr != nil {
+			return pruneErr
+		}
+		fmt.Fprintf(out, "retain:   kept %d newest complete pair(s); removed %d file(s)\n", retain, removed)
 	}
 	return nil
 }
