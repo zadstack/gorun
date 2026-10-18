@@ -27,9 +27,11 @@ shasum -a 256 -c SHA256SUMS-0.1.0-rc.6.txt
 من مجلد المصدر، شغّل Docker Compose الموجود في `deploy/` خلف HTTPS، أو الملف التنفيذي تحت مدير خدمات. لا تشغّل نسختين أو worker منفصلًا على قاعدة البيانات نفسها: العملية التي تشغّل workers (`gorun serve` و`gorun mcp --jobs` و`gorun reindex` دون `--no-jobs`) تأخذ قفلًا حصريًا من نظام التشغيل على `<data>/gorun.lock`، وترفض عملية ثانية التشغيل وتذكر رقم العملية التي تملك القفل. يتحرر القفل عند الإيقاف أو إذا توقفت العملية فجأة، فلا يحتاج الملف المتبقي إلى حذف. في النشر عبر Docker أو Coolify أوقف الحاوية القديمة قبل تشغيل الجديدة على الـvolume نفسه؛ وإلا تخرج الجديدة فورًا برسالة القفل. المهام التي تعمل حاليًا تحدّث `locked_at` كل 30 ثانية، ولا يُعاد إلى الطابور عند التشغيل إلا ما توقف تحديثه أكثر من دقيقتين. `GORUN_ALLOW_PRIVATE_NET` مغلق إلا عندما تحتاج خادم فوترة أو مصدرًا داخل الشبكة المحلية.
 
 ```sh
-docker compose -f deploy/docker-compose.yml up -d
+VERSION=$(git describe --tags --always --dirty) docker compose -f deploy/docker-compose.yml up -d --build
 docker exec <container> /app/gorun healthcheck
 ```
+
+يمرّر `VERSION` رقم النسخة إلى الصورة فيظهر في `gorun version` ولوحة الإدارة بدل `dev`. في Coolify فعّل "Include Source Commit in Build" فيُستخدم `SOURCE_COMMIT` تلقائيًا.
 
 Docker وCompose غير مطلوبين للتشغيل المحلي من الحزمة. يظل اختبار صورة Docker الفعلي مطلوبًا على مضيف تتوفر عليه الأدوات قبل نشرها.
 

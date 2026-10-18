@@ -9,6 +9,8 @@ GoRun is one container with one persistent volume. Coolify deploys it from
 2. Set **Base Directory** to `/` and **Docker Compose Location** to
    `deploy/docker-compose.yml`. The compose file builds with the repository root
    as context (`context: ..`), so the Dockerfile can copy `go.mod` and `themes/`.
+3. Turn on **Include Source Commit in Build** so the image reports the commit
+   (`SOURCE_COMMIT`) instead of `dev`, or set a `VERSION` build variable yourself.
 
 ## 2. Environment variables
 
