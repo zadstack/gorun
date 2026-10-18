@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -105,10 +106,16 @@ func (s *service) baseURL(ctx context.Context) string {
 	return kernel.BaseURLOf(ctx, s.settings, s.cfg.BaseURL)
 }
 
-// httpCheck probes the public base URL (our own server). Media has a GET-only
-// route; closing the response without reading avoids downloading entire files.
+// httpCheck probes our own server. Media has a GET-only route; closing the
+// response without reading avoids downloading entire files.
+//
+// The probe targets the public base URL (site.base_url, else GORUN_BASE_URL),
+// as before. It may resolve to a private address only when that URL has the
+// same origin as the operator-configured GORUN_BASE_URL / base_url, which names
+// this server, or when GORUN_ALLOW_PRIVATE_NET is set. Otherwise anyone who can
+// edit settings and run a migration could aim requests at the internal network.
 func (s *service) httpCheck(ctx context.Context, path string) int {
-	base := s.baseURL(ctx)
+	base, allowPrivate := s.checkTarget(ctx)
 	if base == "" {
 		return 0
 	}
@@ -120,7 +127,7 @@ func (s *service) httpCheck(ctx context.Context, path string) int {
 	if err != nil {
 		return 0
 	}
-	c := httpx.NewSafeClientOpts(httpx.SafeClientOptions{AllowPrivate: true, Timeout: 15 * time.Second})
+	c := httpx.NewSafeClientOpts(httpx.SafeClientOptions{AllowPrivate: allowPrivate, Timeout: 15 * time.Second})
 	c.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	resp, err := c.Do(req)
 	if err != nil {
@@ -128,6 +135,28 @@ func (s *service) httpCheck(ctx context.Context, path string) int {
 	}
 	resp.Body.Close()
 	return resp.StatusCode
+}
+
+// checkTarget is the base URL httpCheck probes and whether it may resolve to
+// a private address (see httpCheck).
+func (s *service) checkTarget(ctx context.Context) (string, bool) {
+	base := strings.TrimRight(strings.TrimSpace(s.baseURL(ctx)), "/")
+	return base, s.cfg.AllowPrivateNet || sameOrigin(base, s.cfg.BaseURL)
+}
+
+// sameOrigin reports whether a and b are absolute http(s) URLs with the same
+// scheme and host (including port).
+func sameOrigin(a, b string) bool {
+	ua, err := url.Parse(strings.TrimSpace(a))
+	if err != nil || ua.Host == "" {
+		return false
+	}
+	ub, err := url.Parse(strings.TrimSpace(b))
+	if err != nil || ub.Host == "" {
+		return false
+	}
+	return strings.EqualFold(ua.Scheme, ub.Scheme) && strings.EqualFold(ua.Host, ub.Host) &&
+		(ua.Scheme == "http" || ua.Scheme == "https")
 }
 
 func (s *service) locale(ctx context.Context) string {
