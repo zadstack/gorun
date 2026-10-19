@@ -1,7 +1,7 @@
 # Set up a production server
 
 This assistant-neutral setup path deploys a **new, single-host GoRun site** in
-production mode using the released GoRun image, Docker Compose and Caddy. It does
+production mode using the checksum-verified public release binary, Docker Compose and Caddy. It does
 not run `gorun start` on the internet. The script asks for a domain, a new absolute
 installation directory and the server's public addresses, and reports the URL and
 paths only after HTTPS and health checks pass.
@@ -9,7 +9,7 @@ paths only after HTTPS and health checks pass.
 ## Before running
 
 Use a Linux server with **root access, Python 3, curl, rootful Docker Engine and
-Docker Compose v2** already installed. No Go toolchain is needed. Docker must use
+Docker Compose v2** already installed. No Go toolchain or GitHub registry authentication is needed. Docker must use
 the local Unix socket, without user namespace remapping. Install Docker using
 [Docker's distribution-specific instructions](https://docs.docker.com/engine/install/).
 This script does not install Docker, change a firewall, edit DNS, stop another
@@ -68,13 +68,26 @@ No existing folder, database, account or configuration is adopted or overwritten
 - `deployment.json`: metadata and configuration hashes used to detect accidental
   changes on resume. This is an integrity guard, not a signature against root.
 
-The GoRun image is pinned to release `0.4.0` by default, and Caddy to `2.11.7-alpine`.
-Only official numeric GoRun release tags are accepted with `--image`. Tags are not
-immutable digests; review upstream image updates and follow the upgrade runbook.
+The default GoRun release is `0.4.0`; `--version X.Y.Z` accepts official numeric
+release versions. The script downloads the platform's public GitHub release archive
+and `SHA256SUMS`, verifies the archive **before extracting or running anything**,
+then builds a local runtime image from the binary and bundled themes. This does
+not compile Go or depend on anonymous access to the GoRun GHCR package. Both Linux
+amd64 and arm64 are supported.
+
+The runtime base is the official `gcr.io/distroless/static:nonroot` image, resolved
+to a `RepoDigest` before building. Caddy `2.11.7-alpine` is also resolved to its
+immutable `RepoDigest`. Compose pins GoRun's resulting local image ID and Caddy's
+digest; release archive hash/base digest/image identities are recorded in the
+manifest. Resume uses `--pull never`, does not download a new release or rebuild,
+and cannot silently upgrade mutable tags. If local Docker images were pruned,
+restore the reviewed image/backup rather than expecting resume to fetch a moving
+tag. The requested numeric version remains separate metadata; upgrades use the
+explicit runbook.
 
 Caddy requests a publicly trusted certificate for the domain and redirects HTTP
 to HTTPS. GoRun's site URL is HTTPS, and the script verifies certificate trust,
-HSTS and successful health/readiness/home responses at every supplied IP before
+HSTS and successful health/readiness/home/admin sign-in responses at every supplied IP before
 reporting success. See [Caddy's automatic HTTPS requirements](https://caddyserver.com/docs/automatic-https).
 
 Open the reported `/admin/setup` URL and enter the setup token directly from the
@@ -90,7 +103,7 @@ If certificate issuance, firewall reachability or health verification fails, the
 script exits with an error. The containers and private deployment files remain
 available for inspection and retry; **it does not report a successful public
 installation**. Inspect Caddy/container logs locally, fix the cause, then repeat
-the same arguments with `--resume`. Existing domain, image, network and configuration
+the same arguments with `--resume`. Existing domain, release version, network and configuration
 must match; credentials and data remain unchanged. An incomplete folder created
 before the deployment manifest was written requires manual inspection; it is not
 automatically adopted or deleted.
@@ -104,7 +117,7 @@ Back up both the GoRun data and `secrets.env` securely outside this server. Norm
 GoRun backups intentionally omit external environment secrets and Caddy keys.
 Keep `tls-data/` private too. Use [UPGRADE.md](UPGRADE.md) for backup, stop, pinned
 image replacement and restore; `--resume` is a retry tool, **not an upgrade or
-migration command**. A changed image/domain/configuration is refused rather than
+migration command**. A changed version/domain/configuration is refused rather than
 silently replacing a site. This is one GoRun process and one SQLite data directory,
 not a multi-replica or multi-tenant deployment orchestrator.
 
@@ -113,7 +126,7 @@ not a multi-replica or multi-tenant deployment orchestrator.
 The regression suite covers DNS/AAAA mismatch, invalid or injected input,
 secret-free dry runs, safe file creation, existing-path refusal, configuration
 integrity, resume preservation, private file permissions and HTTPS failure.
-The Linux integration workflow starts the actual released image with Caddy using
+The Linux integration workflow starts the actual checksum-verified released binary in its local runtime image with Caddy using
 an isolated **private test CA**, verifies TLS/hostname/HSTS and app routes, creates
 a synthetic admin, stops/resumes and checks that its identity/password hash and
 site secrets remain unchanged. DNS and certificate issuance are fixtures in that

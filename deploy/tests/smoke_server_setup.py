@@ -29,14 +29,13 @@ def main():
                    "-f", str(directory / "compose.json")]
         state = None
         try:
-            state = setup.create_deployment(directory, domain, setup.DEFAULT_IMAGE, name)
+            state = setup.create_deployment(directory, domain, setup.DEFAULT_VERSION, name)
             # Only the test uses Caddy's private CA. Production always uses automatic public TLS.
             (directory / "Caddyfile").write_text("{\n    skip_install_trust\n}\n" + domain + " {\n    tls internal\n    reverse_proxy gorun:8080\n}\n")
             state["files"]["Caddyfile"] = setup.hashlib.sha256((directory / "Caddyfile").read_bytes()).hexdigest()
             (directory / "deployment.json").write_text(json.dumps(state))
             setup.run(command + ["config", "--quiet"])
-            setup.run(command + ["pull"])
-            setup.run(command + ["up", "-d", "--wait", "--wait-timeout", "120"])
+            setup.run(command + ["up", "-d", "--pull", "never", "--wait", "--wait-timeout", "120"])
             root = directory / "tls-data/caddy/pki/authorities/local/root.crt"
             deadline = time.monotonic() + 60
             while not root.exists():
@@ -60,7 +59,7 @@ def main():
                 # The real resume flow runs against existing containers/data. DNS alone is a fixture;
                 # TLS is a real certificate/hostname check trusting only this test's private CA.
                 output = io.StringIO()
-                with patch.object(setup, "check_dns", return_value=["127.0.0.1"]), contextlib.redirect_stdout(output):
+                with patch.object(setup, "check_dns", return_value=["127.0.0.1"]), patch.object(setup, "build_runtime", side_effect=AssertionError("Resume rebuilt image")), patch.object(setup, "resolve_image", side_effect=AssertionError("Resume repulled tag")), contextlib.redirect_stdout(output):
                     setup.main(["--domain", domain, "--directory", str(directory), "--server-ip", "8.8.8.8", "--resume", "--https-timeout", "60"])
                 if "HTTPS and health checks passed" not in output.getvalue():
                     raise RuntimeError("Resume acceptance did not complete")

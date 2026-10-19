@@ -6,17 +6,22 @@ import http.client
 import ipaddress
 import json
 import os
-from pathlib import Path
+import platform
+from pathlib import Path, PurePosixPath
 import re
 import secrets
 import shlex
 import socket
 import ssl
 import subprocess
+import tarfile
+import tempfile
+import urllib.request
 import sys
 import time
 
-DEFAULT_IMAGE = "ghcr.io/zadstack/gorun:0.4.0"
+DEFAULT_VERSION = "0.4.0"
+RUNTIME_IMAGE = "gcr.io/distroless/static:nonroot"
 CADDY_IMAGE = "caddy:2.11.7-alpine"
 
 
@@ -70,7 +75,7 @@ def check_ports():
                 raise RuntimeError("Port " + str(port) + " is occupied or unavailable; use your existing reverse proxy instead") from exc
 
 
-def compose_config(domain, image, network, proxy_ip):
+def compose_config(domain, image, network, proxy_ip, proxy_image=CADDY_IMAGE):
     return {
         "services": {
             "gorun": {
@@ -79,12 +84,12 @@ def compose_config(domain, image, network, proxy_ip):
                                 "GORUN_BASE_URL": "https://" + domain,
                                 "GORUN_ADDR": ":8080", "GORUN_TRUSTED_PROXIES": proxy_ip},
                 "volumes": [{"type": "bind", "source": "./data", "target": "/data"}],
-                "networks": ["site"],
+                "networks": {"site": {"ipv4_address": str(ipaddress.ip_address(proxy_ip) + 1)}},
                 "healthcheck": {"test": ["CMD", "/app/gorun", "healthcheck"],
                                 "interval": "5s", "timeout": "3s", "retries": 20, "start_period": "10s"},
             },
             "proxy": {
-                "image": CADDY_IMAGE, "restart": "unless-stopped",
+                "image": proxy_image, "restart": "unless-stopped",
                 "ports": ["80:80", "443:443"],
                 "volumes": [
                     {"type": "bind", "source": "./Caddyfile", "target": "/etc/caddy/Caddyfile", "read_only": True},
@@ -110,15 +115,15 @@ def project_name(directory):
     return "gorun-" + hashlib.sha256(str(directory).encode()).hexdigest()[:12]
 
 
-def load_state(directory, domain, image):
+def load_state(directory, domain, version):
     manifest = directory / "deployment.json"
     if manifest.is_symlink():
         raise ValueError("Deployment manifest must not be a symlink")
     state = json.loads(manifest.read_text())
     if state.get("schema") != 1 or set(state.get("files", {})) != {"compose.json", "Caddyfile", "secrets.env"}:
         raise ValueError("Unrecognized deployment manifest")
-    if state["domain"] != domain or state["image"] != image:
-        raise ValueError("Existing deployment uses another domain/image; use the documented upgrade procedure")
+    if state["domain"] != domain or state["version"] != version:
+        raise ValueError("Existing deployment uses another domain/version; use the documented upgrade procedure")
     for name, expected in state["files"].items():
         file = directory / name
         if file.is_symlink() or hashlib.sha256(file.read_bytes()).hexdigest() != expected:
@@ -135,16 +140,124 @@ def network_address(network):
     return str(ipv4.network_address + 2)
 
 
-def create_deployment(directory, domain, image, name):
+def resolve_image(image):
+    # Pull only while provisioning a new site, then persist the immutable identity.
+    run(["docker", "pull", image])
+    digests = json.loads(run(["docker", "image", "inspect", image, "--format", "{{json .RepoDigests}}"]))
+    repository = image.rsplit(":", 1)[0]
+    # Docker normalizes official images to their short repository name in RepoDigests.
+    for digest in digests or []:
+        if re.fullmatch(re.escape(repository) + r"@sha256:[a-f0-9]{64}", digest):
+            return digest
+    raise RuntimeError("Could not resolve immutable image identity for " + image)
+
+
+def download(url, destination, limit):
+    with urllib.request.urlopen(url, timeout=60) as response, destination.open("xb") as output:
+        if not response.url.startswith("https://"):
+            raise RuntimeError("Release download did not remain on HTTPS")
+        total = 0
+        while True:
+            chunk = response.read(1024 * 1024)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > limit:
+                raise RuntimeError("Release download exceeds size limit")
+            output.write(chunk)
+
+
+def extract_verified_release(archive, destination, root):
+    selected = set()
+    expanded = 0
+    with tarfile.open(archive, "r:gz") as package:
+        for member in package:
+            path = PurePosixPath(member.name)
+            if path.parts and path.parts[0] == root:
+                relative = PurePosixPath(*path.parts[1:])
+                if not relative.parts:
+                    continue
+                if relative.parts[0] not in ("gorun", "themes", "LICENSE", "NOTICE"):
+                    continue
+                if path.is_absolute() or ".." in path.parts or member.issym() or member.islnk() or not (member.isfile() or member.isdir()):
+                    raise ValueError("Unsafe release archive entry")
+                if relative in selected or len(selected) >= 20000:
+                    raise ValueError("Duplicate or excessive release archive entries")
+                selected.add(relative)
+                expanded += member.size
+                if expanded > 128 * 1024 * 1024:
+                    raise ValueError("Expanded release archive exceeds size limit")
+                target = destination.joinpath(*relative.parts)
+                if member.isdir():
+                    target.mkdir(parents=True, exist_ok=True, mode=0o755)
+                else:
+                    target.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
+                    with package.extractfile(member) as source, target.open("xb") as output:
+                        while True:
+                            chunk = source.read(1024 * 1024)
+                            if not chunk:
+                                break
+                            output.write(chunk)
+                    target.chmod(0o755 if str(relative) == "gorun" else 0o644)
+    if not (destination / "gorun").is_file() or not (destination / "themes/default").is_dir():
+        raise ValueError("Release is missing executable or default theme")
+    for name in ("LICENSE", "NOTICE"):
+        if not (destination / name).is_file():
+            raise ValueError("Release is missing license information")
+
+
+def build_runtime(version, name):
+    architecture = {"x86_64": "amd64", "aarch64": "arm64", "arm64": "arm64"}.get(platform.machine())
+    if architecture is None:
+        raise ValueError("Production release supports Linux amd64/arm64 only")
+    asset = "gorun-" + version + "-linux-" + architecture + ".tar.gz"
+    base_url = "https://github.com/zadstack/gorun/releases/download/v" + version + "/"
+    runtime = resolve_image(RUNTIME_IMAGE)
+    with tempfile.TemporaryDirectory(prefix="gorun-runtime-build-") as temporary:
+        folder = Path(temporary)
+        archive = folder / asset
+        sums = folder / "SHA256SUMS.txt"
+        download(base_url + asset, archive, 64 * 1024 * 1024)
+        download(base_url + "SHA256SUMS-" + version + ".txt", sums, 65536)
+        matches = [line.split()[0] for line in sums.read_text().splitlines()
+                   if len(line.split()) == 2 and line.split()[1].lstrip("*") == asset]
+        if len(matches) != 1 or not re.fullmatch(r"[a-fA-F0-9]{64}", matches[0]):
+            raise ValueError("Release checksum is missing or duplicated")
+        digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+        if digest != matches[0].lower():
+            raise ValueError("Release archive checksum mismatch; no binary will run")
+        context = folder / "context"
+        context.mkdir()
+        extract_verified_release(archive, context, asset[:-7])
+        (context / "data").mkdir()
+        dockerfile = ("FROM " + runtime + "\nWORKDIR /app\n"
+                      "COPY gorun /app/gorun\nCOPY themes /app/themes\n"
+                      "COPY LICENSE NOTICE /app/\nCOPY --chown=65532:65532 data /data\n"
+                      "LABEL org.opencontainers.image.source=\"https://github.com/zadstack/gorun\"\n"
+                      "USER 65532:65532\nENTRYPOINT [\"/app/gorun\",\"serve\"]\n")
+        (context / "Dockerfile").write_text(dockerfile)
+        tag = name + ":verified-release"
+        run(["docker", "build", "--tag", tag, str(context)])
+        image = run(["docker", "image", "inspect", tag, "--format", "{{.Id}}"])
+        if not re.fullmatch(r"sha256:[a-f0-9]{64}", image):
+            raise RuntimeError("Local runtime image identity is missing")
+        if run(["docker", "run", "--rm", "--entrypoint", "/app/gorun", image, "version"]) != "GoRun " + version:
+            raise RuntimeError("Verified runtime version mismatch")
+        return image, {"release": version, "archive": asset, "sha256": digest, "runtime_base": runtime}
+
+
+def create_deployment(directory, domain, version, name):
     if directory.exists():
         raise ValueError("Choose a new installation directory; existing paths are never adopted or overwritten")
-    # Parents must already exist, so a typo cannot create an unexpected directory tree.
-    directory.mkdir(mode=0o700)
     network = name + "-site"
     # Refuse an existing network rather than adopting resources belonging to another installation.
     existing = run(["docker", "network", "ls", "--format", "{{.Name}}"])
     if network in existing.splitlines():
         raise ValueError("Deployment network already exists; inspect it manually")
+    runtime, release = build_runtime(version, name)
+    images = {"gorun": runtime, "proxy": resolve_image(CADDY_IMAGE)}
+    # Parents must already exist, so a typo cannot create an unexpected directory tree.
+    directory.mkdir(mode=0o700)
     run(["docker", "network", "create", "--label", "org.gorun.setup=" + name, network])
     proxy_ip = network_address(network)
     for child in ("data", "tls-data", "tls-config"):
@@ -154,11 +267,11 @@ def create_deployment(directory, domain, image, name):
         "secrets.env": "GORUN_SECRET_KEY=" + secrets.token_hex(32) +
                        "\nGORUN_SETUP_TOKEN=" + secrets.token_urlsafe(32) + "\n",
         "Caddyfile": domain + " {\n    reverse_proxy gorun:8080\n}\n",
-        "compose.json": json.dumps(compose_config(domain, image, network, proxy_ip), indent=2) + "\n",
+        "compose.json": json.dumps(compose_config(domain, images["gorun"], network, proxy_ip, images["proxy"]), indent=2) + "\n",
     }
     for filename, content in files.items():
         write_private(directory / filename, content)
-    state = {"schema": 1, "domain": domain, "image": image, "network": network, "proxy_ip": proxy_ip,
+    state = {"schema": 1, "domain": domain, "version": version, "release": release, "images": images, "network": network, "proxy_ip": proxy_ip,
              "files": {name: hashlib.sha256(content.encode()).hexdigest() for name, content in files.items()}}
     write_private(directory / "deployment.json", json.dumps(state, indent=2) + "\n")
     return state
@@ -175,8 +288,13 @@ def probe_https(domain, address, path):
             response = http.client.HTTPResponse(tls)
             response.begin()
             body = response.read(65536)
+            if path == "/admin/login" and response.status == 303 and response.getheader("Location") == "/admin/setup":
+                probe_https(domain, address, "/admin/setup")
+                return
             if response.status != 200:
                 raise RuntimeError("Public HTTPS check did not return 200")
+            if path in ("/admin/login", "/admin/setup") and b'name="email"' not in body:
+                raise RuntimeError("Admin sign-in/setup form is missing")
             if not response.getheader("Strict-Transport-Security", "").startswith("max-age="):
                 raise RuntimeError("HTTPS proxy trust/HSTS check failed")
             if path == "/healthz" and not body:
@@ -188,7 +306,7 @@ def wait_https(domain, addresses, timeout):
     while True:
         try:
             for address in addresses:
-                for path in ("/healthz", "/readyz", "/"):
+                for path in ("/healthz", "/readyz", "/", "/admin/login"):
                     probe_https(domain, address, path)
             return
         except (OSError, http.client.HTTPException, RuntimeError):
@@ -202,7 +320,7 @@ def main(argv=None):
     parser.add_argument("--domain")
     parser.add_argument("--directory", type=Path)
     parser.add_argument("--server-ip", action="append", help="Repeat for every public A/AAAA address")
-    parser.add_argument("--image", default=DEFAULT_IMAGE)
+    parser.add_argument("--version", default=DEFAULT_VERSION, help="Official numeric release; fetched from public GitHub assets")
     parser.add_argument("--dry-run", action="store_true", help="Validate inputs/DNS and print a secret-free plan; no Docker or filesystem changes")
     parser.add_argument("--resume", action="store_true", help="Retry a deployment created by this script, preserving configuration and data")
     parser.add_argument("--https-timeout", type=int, default=180)
@@ -213,20 +331,20 @@ def main(argv=None):
         raise ValueError("Use an absolute, non-symlink installation directory other than /")
     directory = raw_directory.resolve()
     expected = public_ips(args.server_ip or input("Server public IPs (space separated; include IPv6 if AAAA exists): ").split())
-    if not re.fullmatch(r"ghcr\.io/zadstack/gorun:[0-9]+\.[0-9]+\.[0-9]+", args.image):
-        raise ValueError("Pin an official numeric GoRun release image; latest/custom images are not accepted")
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", args.version):
+        raise ValueError("Pin an official numeric GoRun release version; latest/custom versions are not accepted")
     if not 1 <= args.https_timeout <= 1800:
         raise ValueError("HTTPS timeout must be between 1 and 1800 seconds")
     addresses = check_dns(domain, expected)
     name = project_name(directory)
     if args.resume:
-        state = load_state(directory, domain, args.image)
+        state = load_state(directory, domain, args.version)
     elif directory.exists():
         raise ValueError("Directory already exists; use a new directory or --resume for this script's deployment")
     if args.dry_run:
         print(json.dumps({"mode": "dry-run; nothing changed", "domain": domain,
                           "resolved_addresses": addresses, "installation": str(directory),
-                          "data": str(directory / "data"), "image": args.image,
+                          "data": str(directory / "data"), "release": args.version,
                           "proxy": CADDY_IMAGE, "ports": [80, 443],
                           "requirements": "Linux root, Docker Engine + Compose v2, externally reachable TCP 80/443"}, indent=2))
         return 0
@@ -245,9 +363,12 @@ def main(argv=None):
     run(["docker", "compose", "version"])
     if not args.resume:
         check_ports()
-        state = create_deployment(directory, domain, args.image, name)
+        state = create_deployment(directory, domain, args.version, name)
     elif directory.stat().st_uid != 0 or directory.stat().st_mode & 0o077:
         raise ValueError("Deployment directory must be root-owned and private (0700)")
+    elif any((directory / file).stat().st_uid != 0 or (directory / file).stat().st_mode & 0o077
+             for file in ("deployment.json", "secrets.env", "compose.json", "Caddyfile")):
+        raise ValueError("Deployment configuration must remain root-owned and private (0600)")
     elif any((directory / child).is_symlink() or not (directory / child).is_dir()
              for child in ("data", "tls-data", "tls-config")):
         raise ValueError("Deployment data directories must remain real directories")
@@ -255,8 +376,7 @@ def main(argv=None):
         raise ValueError("Deployment network changed; inspect manually before starting")
     command = ["docker", "compose", "--project-directory", str(directory), "-p", name, "-f", str(directory / "compose.json")]
     run(command + ["config", "--quiet"])
-    run(command + ["pull"])
-    run(command + ["up", "-d", "--wait", "--wait-timeout", "120"])
+    run(command + ["up", "-d", "--pull", "never", "--wait", "--wait-timeout", "120"])
     wait_https(domain, addresses, args.https_timeout)
     print("HTTPS and health checks passed for every configured origin address.")
     print("Site: https://" + domain)
@@ -265,7 +385,7 @@ def main(argv=None):
     print("Setup token is stored privately in " + str(directory / "secrets.env") + "; enter it directly in the browser, never in an assistant chat.")
     print("No admin account was recreated. Complete first admin setup in your browser; existing accounts are preserved.")
     print("Stop (preserves data): " + shlex.join(command + ["stop"]))
-    print("Start: " + shlex.join(command + ["up", "-d", "--wait"]))
+    print("Start: " + shlex.join(command + ["up", "-d", "--pull", "never", "--wait"]))
     return 0
 
 

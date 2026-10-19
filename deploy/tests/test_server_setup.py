@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import socket
+import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -42,36 +43,40 @@ class ServerSetupTests(unittest.TestCase):
             self.assertEqual(json.loads(output.getvalue())["data"], str(directory.resolve() / "data"))
 
     def test_no_host_app_port_and_exact_proxy_trust(self):
-        config = setup.compose_config("site.com", setup.DEFAULT_IMAGE, "site-network", "172.31.0.2")
+        config = setup.compose_config("site.com", setup.DEFAULT_VERSION, "site-network", "172.31.0.2")
         app = config["services"]["gorun"]
         self.assertNotIn("ports", app)
         self.assertEqual(app["environment"]["GORUN_ENV"], "prod")
         self.assertEqual(app["environment"]["GORUN_TRUSTED_PROXIES"], "172.31.0.2")
         self.assertEqual(app["restart"], "unless-stopped")
+        self.assertEqual(app["networks"]["site"]["ipv4_address"], "172.31.0.3")
         self.assertEqual(config["services"]["proxy"]["depends_on"]["gorun"]["condition"], "service_healthy")
 
     def test_preserves_secrets_and_data_on_resume_and_detects_modified_config(self):
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp) / "new site with spaces"
-            with patch.object(setup, "run", return_value=""), patch.object(setup, "network_address", return_value="172.31.0.2"), patch.object(setup.os, "chown"):
-                state = setup.create_deployment(directory, "site.com", setup.DEFAULT_IMAGE, "test-project")
+            with patch.object(setup, "run", return_value=""), patch.object(setup, "network_address", return_value="172.31.0.2"), patch.object(setup.os, "chown"), patch.object(setup, "build_runtime", return_value=("sha256:" + "b" * 64, {"release": "0.4.0"})), patch.object(setup, "resolve_image", side_effect=lambda image: image.rsplit(":", 1)[0] + "@sha256:" + "a" * 64):
+                state = setup.create_deployment(directory, "site.com", setup.DEFAULT_VERSION, "test-project")
             secrets = (directory / "secrets.env").read_bytes()
             (directory / "data" / "existing.db").write_bytes(b"existing account")
-            self.assertEqual(setup.load_state(directory, "site.com", setup.DEFAULT_IMAGE), state)
+            self.assertEqual(setup.load_state(directory, "site.com", setup.DEFAULT_VERSION), state)
+            compose = json.loads((directory / "compose.json").read_text())
+            self.assertEqual(compose["services"]["gorun"]["image"], "sha256:" + "b" * 64)
+            self.assertIn("@sha256:", compose["services"]["proxy"]["image"])
             self.assertEqual((directory / "secrets.env").read_bytes(), secrets)
             self.assertEqual((directory / "data" / "existing.db").read_bytes(), b"existing account")
             self.assertEqual((directory / "secrets.env").stat().st_mode & 0o777, 0o600)
             self.assertEqual(directory.stat().st_mode & 0o777, 0o700)
             with self.assertRaises(ValueError):
-                setup.load_state(directory, "other.com", setup.DEFAULT_IMAGE)
+                setup.load_state(directory, "other.com", setup.DEFAULT_VERSION)
             (directory / "Caddyfile").write_text("changed")
             with self.assertRaisesRegex(ValueError, "changed"):
-                setup.load_state(directory, "site.com", setup.DEFAULT_IMAGE)
+                setup.load_state(directory, "site.com", setup.DEFAULT_VERSION)
 
     def test_existing_directory_never_overwritten_even_if_empty(self):
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaisesRegex(ValueError, "existing"):
-                setup.create_deployment(Path(temp), "site.com", setup.DEFAULT_IMAGE, "test-project")
+                setup.create_deployment(Path(temp), "site.com", setup.DEFAULT_VERSION, "test-project")
             file = Path(temp) / "existing"
             file.write_text("keep")
             with self.assertRaises(FileExistsError):
@@ -82,6 +87,34 @@ class ServerSetupTests(unittest.TestCase):
         with patch.object(setup, "probe_https", side_effect=OSError("no certificate")), patch.object(setup.time, "monotonic", side_effect=[0, 2]):
             with self.assertRaisesRegex(RuntimeError, "No public deployment success"):
                 setup.wait_https("site.com", ["8.8.8.8"], 1)
+
+    def test_verified_release_build_rejects_bad_or_duplicate_checksums_before_build(self):
+        for sums in ("0" * 64 + "  gorun-0.4.0-linux-amd64.tar.gz\n",
+                     "a" * 64 + "  gorun-0.4.0-linux-amd64.tar.gz\n" + "a" * 64 + "  gorun-0.4.0-linux-amd64.tar.gz\n"):
+            calls = []
+            def download(url, destination, limit):
+                destination.write_bytes(b"archive" if url.endswith("tar.gz") else sums.encode())
+            with patch.object(setup.platform, "machine", return_value="x86_64"), patch.object(setup, "resolve_image", return_value="base@sha256:" + "a" * 64), patch.object(setup, "download", side_effect=download), patch.object(setup, "run", side_effect=lambda args: calls.append(args)):
+                with self.assertRaisesRegex(ValueError, "checksum"):
+                    setup.build_runtime("0.4.0", "fixture")
+            self.assertEqual(calls, [])
+
+    def test_archive_extraction_rejects_links_and_parent_traversal(self):
+        for suffix, kind in (("themes/../outside", tarfile.REGTYPE), ("themes/link", tarfile.SYMTYPE)):
+            with tempfile.TemporaryDirectory() as temporary:
+                folder = Path(temporary)
+                archive = folder / "archive.tar.gz"
+                root = "gorun-0.4.0-linux-amd64"
+                with tarfile.open(archive, "w:gz") as package:
+                    member = tarfile.TarInfo(root + "/" + suffix)
+                    member.type = kind
+                    member.linkname = "/etc/passwd" if kind == tarfile.SYMTYPE else ""
+                    package.addfile(member, io.BytesIO())
+                target = folder / "out"
+                target.mkdir()
+                with self.assertRaisesRegex(ValueError, "Unsafe"):
+                    setup.extract_verified_release(archive, target, root)
+                self.assertFalse((folder / "outside").exists())
 
     def test_subprocess_failure_redacts_stderr_and_environment(self):
         import subprocess
