@@ -18,6 +18,12 @@ func (p canvasPrepared) managedAgent() bool {
 // Both dispatch and append use a fresh transactional authority snapshot.
 func agentModelAuthorityTx(ctx context.Context, tx *sql.Tx, p canvasPrepared) (connectionRecord, error) {
 	var conn connectionRecord
+	if p.KeyID != "" {
+		bundle, err := currentAgentBundle(ctx, tx, p.OwnerID, p.KeyID)
+		if err != nil || bundle.Version != p.AgentBundleVersion {
+			return conn, errCanvasConsent
+		}
+	}
 	if p.AgentModel == nil {
 		return conn, nil
 	}

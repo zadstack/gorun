@@ -130,7 +130,7 @@ Switch between **Workflow**, **Grid** and **List** views. Arrange cards using th
 
 *Screenshots use a fictional business and synthetic content. The example assistant response is supplied by a test client through the real MCP workflow; it is not a model-quality benchmark. [Arabic view](assets/branding/screenshots/canvas-ar.png) · [Mobile view](assets/branding/screenshots/canvas-mobile.png).*
 
-**Available now:** external agent execution or managed text generation with a linked model. A visual agent bundle that manages Skills and multiple MCP-server connections is planned; it is not a shipped runtime capability.
+**Agent bundles:** add bounded inline skill instructions and reference text to reviewed external-agent or managed-text requests, and attach version-pinned MCP connection profiles with saved discovery status. [Manage skills and MCP references](docs/AGENT-BUNDLES.md). External clients configure their own endpoints, credentials and tools; managed text execution does not automatically call the attached MCP tools.
 
 [MCP and permissions](docs/MCP.md) · [Canvases](docs/CANVASES.md) · [REST API](docs/API.md)
 

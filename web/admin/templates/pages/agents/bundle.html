@@ -1,0 +1,23 @@
+{{define "title"}}{{t "agentbundles.title"}}{{end}}
+{{define "content"}}
+<div class="max-w-5xl mx-auto space-y-4" data-agent-bundle>
+<header><a href="/admin/agents/keys" class="text-green underline">{{t "agentbundles.back"}}</a><h1 class="text-2xl font-bold mt-2">{{t "agentbundles.title"}} · {{.Name}}</h1><p class="text-muted mt-2">{{t "agentbundles.intro"}}</p></header>
+{{if .Error}}<p role="alert" class="border border-red rounded p-3 text-red">{{t .Error}}</p>{{end}}
+<form method="post" action="/admin/agents/keys/{{.ID}}/bundle" class="space-y-4">
+<input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="version" value="{{.Bundle.Version}}">
+<div class="grid gap-4 lg:grid-cols-2">
+<section class="rounded border border-line bg-panel p-4" aria-labelledby="bundle-skills"><h2 id="bundle-skills" class="font-bold text-lg">{{t "agentbundles.skills"}}</h2><p class="text-muted text-sm my-2">{{t "agentbundles.skill_help"}}</p>
+{{range $i,$s:=.Skills}}<details class="border border-line rounded p-3 mb-2" {{if $s.Name}}open{{end}}><summary class="cursor-pointer font-medium">{{if $s.Name}}{{$s.Name}}{{else}}{{t "agentbundles.new_skill"}}{{end}}</summary>
+<label for="bundle-name-{{$i}}" class="block mt-3 mb-1">{{t "agentbundles.name"}}</label><input id="bundle-name-{{$i}}" name="skill_name" maxlength="80" value="{{$s.Name}}" class="w-full rounded border border-line bg-panel p-2">
+<label for="bundle-instructions-{{$i}}" class="block mt-3 mb-1">{{t "agentbundles.instructions"}}</label><textarea id="bundle-instructions-{{$i}}" name="skill_instructions" maxlength="4000" rows="5" class="w-full rounded border border-line bg-panel p-2">{{$s.Instructions}}</textarea>
+<label for="bundle-resource-name-{{$i}}" class="block mt-3 mb-1">{{t "agentbundles.resource_name"}}</label><input id="bundle-resource-name-{{$i}}" name="resource_name" maxlength="80" value="{{$s.ResourceName}}" class="w-full rounded border border-line bg-panel p-2">
+<label for="bundle-resource-text-{{$i}}" class="block mt-3 mb-1">{{t "agentbundles.resource_text"}}</label><textarea id="bundle-resource-text-{{$i}}" name="resource_text" maxlength="4000" rows="4" class="w-full rounded border border-line bg-panel p-2">{{$s.ResourceText}}</textarea>
+</details>{{end}}</section>
+<section class="rounded border border-line bg-panel p-4" aria-labelledby="bundle-mcp"><h2 id="bundle-mcp" class="font-bold text-lg">{{t "agentbundles.mcp"}}</h2><p class="text-muted text-sm my-2">{{t "agentbundles.mcp_help"}}</p>
+{{if .Missing}}<p role="alert" class="text-amber-text my-3">{{t "agentbundles.missing"}}</p>{{end}}
+{{range .Connections}}<label class="block border border-line rounded p-3 mb-2"><span class="flex gap-2 items-center"><input type="checkbox" name="mcp" value="{{.ID}}" {{if .Selected}}checked{{end}}><strong>{{.Name}}</strong></span><span class="block text-xs text-muted break-all mt-2" dir="ltr">{{.Endpoint}}</span><span class="block text-sm mt-2">{{if eq .Status "pass"}}{{t "agentbundles.pass"}}{{else if eq .Status "fail"}}{{t "agentbundles.fail"}}{{else if eq .Status "changed"}}{{t "agentbundles.changed"}}{{else}}{{t "agentbundles.configured"}}{{end}}</span>{{if .TestedAt}}<time class="block text-xs text-muted" dir="ltr">{{.TestedAt}}</time>{{end}}<input type="hidden" name="version_{{.ID}}" value="{{.Version}}"></label>{{else}}<p class="text-muted my-3">{{t "agentbundles.no_mcp"}}</p>{{end}}
+<a href="/admin/settings/connections" class="inline-flex min-h-11 items-center text-green underline">{{t "agentbundles.connections"}}</a><p class="text-muted text-sm mt-3">{{t "agentbundles.external"}}</p>
+</section></div>
+<section class="border border-line rounded bg-panel p-4"><label class="flex items-start gap-2"><input type="checkbox" name="reviewed" value="1" required class="mt-1"><span>{{t "agentbundles.review"}}</span></label><div class="flex flex-wrap gap-3 items-center mt-3"><button class="rounded bg-green hover:bg-green-hover text-white px-4 min-h-11" type="submit">{{t "agentbundles.save"}}</button><a href="/admin/agents/keys/{{.ID}}/bundle/export" class="inline-flex min-h-11 items-center text-green underline">{{t "agentbundles.export"}}</a><a href="/admin/agents/keys/{{.ID}}/bundle" class="inline-flex min-h-11 items-center text-muted underline">{{t "agentbundles.reload"}}</a></div></section>
+</form></div>
+{{end}}

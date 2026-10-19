@@ -22,6 +22,7 @@ type agentsDockEntry struct {
 	Model      string `json:"model,omitempty"`
 	Prompt     string `json:"prompt,omitempty"`
 	Configured bool   `json:"configured"`
+	BundleURL  string `json:"bundle_url,omitempty"`
 }
 
 func (h *handlers) agentsDock(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +67,9 @@ func (h *handlers) agentsDock(w http.ResponseWriter, r *http.Request) {
 				// this user's canvas. Revoked and expired keys are unavailable.
 				if k, e := h.canvasAgentKey(r.Context(), c.AgentID); e == nil {
 					x.AgentID, x.AgentName = k.ID, k.Name
+					if auth.Can(r.Context(), PermAPIKeys) && auth.Can(r.Context(), "settings.manage") {
+						x.BundleURL = "/admin/agents/keys/" + k.ID + "/bundle"
+					}
 					if m, e := h.loadAgentModel(r.Context(), k.ID); e == nil {
 						x.Mode = m.Mode
 					}
