@@ -166,7 +166,8 @@ func (s *service) create(ctx context.Context, email, name, password, role string
 	q := `INSERT INTO users (id, email, name, password_hash, role, status, created_at, updated_at)
 		SELECT ?, ?, ?, ?, ?, 'active', ?, ?`
 	if onlyIfEmpty {
-		q += ` WHERE NOT EXISTS (SELECT 1 FROM users)`
+		q = `INSERT INTO users (id, email, name, password_hash, role, status, created_at, updated_at, login_name)
+		SELECT ?, ?, ?, ?, ?, 'active', ?, ?, 'admin' WHERE NOT EXISTS (SELECT 1 FROM users)`
 	}
 	res, err := s.db.ExecContext(ctx, q, id, email, name, hash, role, now, now)
 	if err != nil {
@@ -329,6 +330,17 @@ func (s *service) Count(ctx context.Context) (int, error) {
 // audited as user.login_failed.
 func (s *service) CheckPassword(ctx context.Context, email, password string) (*User, error) {
 	email = normalizeEmail(email)
+	// Resolve the persistent alias before rate limiting so alternating email
+	// and username cannot double the account's attempt allowance.
+	if !strings.Contains(email, "@") {
+		var canonical string
+		err := s.db.QueryRowContext(ctx, `SELECT email FROM users WHERE login_name = ?`, email).Scan(&canonical)
+		if err == nil {
+			email = canonical
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+	}
 	ip := audit.IPFromContext(ctx)
 	ipCount, err := s.limiter.hit(ctx, "ip:"+ip)
 	if err != nil {
@@ -410,4 +422,10 @@ func scanUserWithHash(row *sql.Row, hash *string) (*User, error) {
 // touchLogin records a successful login.
 func (s *service) touchLogin(ctx context.Context, id string) {
 	_, _ = s.db.ExecContext(ctx, `UPDATE users SET last_login_at = ? WHERE id = ?`, db.FormatTime(s.now()), id)
+}
+
+// BootstrapAdmin creates the first admin atomically, assigning the durable admin
+// login alias. ErrSetupDone means an account already exists; it never resets it.
+func BootstrapAdmin(ctx context.Context, d *sql.DB, a *audit.Writer, password string) (*User, error) {
+	return newService(d, a).createFirstAdmin(ctx, "admin@localhost.invalid", "Administrator", password)
 }
