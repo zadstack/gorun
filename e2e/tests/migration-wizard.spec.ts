@@ -62,6 +62,16 @@ test.describe.serial('WordPress migration wizard (fixture example.org)', () => {
     const after = (await (await request.get('/api/v1/content?type=page&per_page=100')).json()).meta;
     expect(after?.total).toBe(before?.total);
     expect(rows()).toEqual(rowsBefore); // no media, redirects or terms written
+    await page.goto('/admin/migrations');
+    const listRow=page.locator(`[data-migration="${base.split('/').pop()}"]`);
+    await listRow.locator('details summary').click();
+    const contentProgress=listRow.locator('[data-migration-kind=content]');
+    await expect(contentProgress).toBeVisible();
+    await expect(contentProgress).toHaveAttribute('data-done','0');
+    const planned=db().prepare("SELECT count(*) AS n FROM migration_items WHERE migration_id=? AND kind='content' AND status='preview'").get(base.split('/').pop()) as {n:number};
+    expect(planned.n).toBeGreaterThan(0);
+    await expect(contentProgress).toHaveAttribute('data-preview',String(planned.n));
+
   });
 
   test('import runs to "validated" with live progress', async ({ page }) => {
