@@ -46,6 +46,7 @@ func (h *handlers) dashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) registerWidgets() {
+	h.d.Admin.AddWidget("review_queue", h.widgetReviewQueue)
 	h.d.Admin.AddWidget("workspace_choice", h.widgetWorkspaceChoice)
 	h.d.Admin.AddWidget("workspace_guide", h.widgetWorkspaceGuide)
 	h.d.Admin.AddWidget("setup_status", h.widgetSetupStatus)

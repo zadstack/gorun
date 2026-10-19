@@ -6,10 +6,11 @@
 <h1 class="text-[22px] font-bold mb-1">{{t "core.dashboard.title"}}</h1>
 {{with user}}<p class="text-muted mb-6">{{t "core.dashboard.welcome" .Name}}</p>{{end}}
 {{if .Widgets}}
+<details class="audit-customize" data-dashboard-customize><summary>{{t "auditworkspace.customize"}}</summary>
 <div class="dashboard-layout-toolbar" data-layout-toolbar data-saving="{{t "dashboardlayout.saving"}}" data-saved="{{t "dashboardlayout.saved"}}" data-error="{{t "dashboardlayout.error"}}" data-conflict="{{t "dashboardlayout.conflict"}}">
  <p>{{t "dashboardlayout.help"}}</p><button type="button" data-layout-reset>{{t "dashboardlayout.reset"}}</button>
  <span role="status" aria-live="polite" data-layout-status></span><button type="button" data-layout-retry hidden>{{t "dashboardlayout.retry"}}</button><a href="/admin" data-layout-reload hidden>{{t "dashboardlayout.reload"}}</a>
-</div>
+</div></details>
 <div class="dashboard-grid" data-dashboard-layout>
   {{range .Widgets}}{{if .}}{{template "partials/dashboard_widget" .}}{{end}}{{end}}
 </div>

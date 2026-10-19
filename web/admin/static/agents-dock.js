@@ -15,7 +15,8 @@
     const focusedTab = detail.contains(document.activeElement) ? document.activeElement.dataset.dockTab : '';
     selected = identity(item); detail.replaceChildren(); detail.hidden = false;
     const heading = el('h3', title(item)); heading.tabIndex = -1; heading.dataset.dockFocus = 'heading'; detail.append(heading);
-    detail.append(el('p', item.configured ? labels.configured : labels.setup));
+    const state = el('p', item.configured ? labels.configured : labels.setup); state.className='agents-dock-state'; detail.append(state);
+    const next = el('a', item.configured ? labels.open : labels.integrationSetup); next.href=item.href; next.className='agents-dock-next'; next.dataset.dockFocus='open'; detail.append(next);
     const tabs = el('div'); tabs.className = 'agents-dock-tabs'; tabs.setAttribute('role','tablist'); tabs.setAttribute('aria-label',labels.details);
     const panels = new Map(), buttons = new Map(), order = ['integrations','instructions','defaults'];
     const activate = (name, moveFocus = false) => {
@@ -43,10 +44,16 @@
     detail.append(tabs,...panels.values());
     const fields = el('dl');
     const field = (label, value) => { if (value) fields.append(el('dt', label), el('dd', value)); };
-    field(labels.key, item.agent_id ? `${item.agent_name || ''} · ${item.agent_id}` : '');
+    field(labels.key, item.agent_name || '');
     field(labels.model, item.model);
     field(labels.execution, labels[item.mode] || labels[item.kind === 'provider' ? 'provider' : 'external']);
     const integrations = panels.get('integrations'); integrations.append(fields);
+    if(item.bundle && Array.isArray(item.bundle.skills) && Array.isArray(item.bundle.connections)) {
+      const summary=el('section');summary.className='agents-dock-bundle';
+      summary.append(el('h4',labels.skills));
+      const skills=el('ul');for(const name of item.bundle.skills.slice(0,8))skills.append(el('li',String(name)));if(!skills.children.length)skills.append(el('li',labels.none));summary.append(skills,el('h4',labels.mcp));
+      const connections=el('ul');for(const connection of item.bundle.connections.slice(0,8)){const row=el('li');row.append(el('strong',connection.name||labels.unnamed),el('small',labels['connection_'+connection.status]||labels.connection_configured));if(connection.tested_at){const time=el('time',new Date(connection.tested_at).toLocaleString());time.dateTime=connection.tested_at;row.append(time);}connections.append(row);}if(!connections.children.length)connections.append(el('li',labels.none));summary.append(connections);if(item.bundle.missing)summary.append(el('p',labels.missing));integrations.append(summary);
+    }
     if (typeof item.bundle_url === 'string' && /^\/admin\/agents\/keys\/[0-9A-HJKMNP-TV-Z]{26}\/bundle$/.test(item.bundle_url)) { const bundle = el('a',labels.bundle); bundle.href=item.bundle_url; bundle.dataset.dockFocus='bundle'; integrations.append(bundle); }
     if (item.mode === 'external') integrations.append(el('p',labels.externalHelp));
     integrations.append(el('p',labels.limits));
@@ -59,7 +66,7 @@
     if (['text','image','audio','video'].includes(item.generation)) identityFields.append(el('dt',labels.output),el('dd',labels[item.generation]));
     defaults.append(identityFields,el('p',labels.defaultsHelp));
     activate(order.includes(activeTab) ? activeTab : order[0]);
-    const link = el('a', labels.open); link.href = item.href; link.dataset.dockFocus = 'open'; detail.append(link);
+
     for (const button of list.querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.identity === selected));
     if (focus) { heading.focus(); heading.scrollIntoView({block:'nearest'}); }
     else if (focusedTab && buttons.has(focusedTab)) buttons.get(focusedTab).focus({preventScroll:true});
@@ -121,6 +128,15 @@
   launcher.addEventListener('click', () => open(launcher));
   root.querySelector('[data-dock-close]').addEventListener('click',close);
   dialog.addEventListener('click', event => { if (event.target === dialog) { const r=dialog.getBoundingClientRect(); if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close(); } });
+  // Keep keyboard focus in the modal at both tab boundaries, including when
+  // the native dialog would otherwise move focus to browser chrome.
+  dialog.addEventListener('keydown', event => {
+    if(event.key!=='Tab'||!dialog.open)return;
+    const controls=[...dialog.querySelectorAll('a[href],button,input,select,textarea,[tabindex]')].filter(node=>!node.disabled&&node.tabIndex>=0&&node.getClientRects().length&&!node.closest('[hidden]'));
+    const first=controls[0],last=controls[controls.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+  });
   dialog.addEventListener('close', () => {
     ++generation; selected = ''; detail.hidden = true; detail.replaceChildren();
     launcher.setAttribute('aria-expanded','false'); document.body.style.overflow = previousOverflow || '';
