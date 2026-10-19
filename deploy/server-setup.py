@@ -46,7 +46,7 @@ def domain_name(value):
 
 def public_ips(values):
     addresses = {ipaddress.ip_address(value) for value in values}
-    if not addresses or any(not address.is_global for address in addresses):
+    if not addresses or any(not address.is_global or address.is_multicast for address in addresses):
         raise ValueError("Provide the server's public IPv4/IPv6 addresses")
     return {str(address) for address in addresses}
 
@@ -139,6 +139,21 @@ def network_address(network):
     if ipv4 is None:
         raise RuntimeError("Docker did not allocate an IPv4 bridge subnet")
     return str(ipv4.network_address + 2)
+
+
+def create_network(name):
+    # Ask Docker's allocator for a free subnet, then explicitly configure it so
+    # Docker permits stable per-container addresses. No global hard-coded CIDR.
+    allocation = name + "-allocation"
+    run(["docker", "network", "create", allocation])
+    try:
+        info = json.loads(run(["docker", "network", "inspect", allocation]))[0]
+        subnet = next(item["Subnet"] for item in info["IPAM"]["Config"]
+                      if ipaddress.ip_network(item["Subnet"]).version == 4)
+    finally:
+        run(["docker", "network", "rm", allocation])
+    run(["docker", "network", "create", "--subnet", subnet,
+         "--label", "org.gorun.setup=" + name, name])
 
 
 def resolve_image(image):
@@ -259,7 +274,7 @@ def create_deployment(directory, domain, version, name):
     images = {"gorun": runtime, "proxy": resolve_image(CADDY_IMAGE)}
     # Parents must already exist, so a typo cannot create an unexpected directory tree.
     directory.mkdir(mode=0o700)
-    run(["docker", "network", "create", "--label", "org.gorun.setup=" + name, network])
+    create_network(network)
     proxy_ip = network_address(network)
     for child in ("data", "tls-data", "tls-config"):
         (directory / child).mkdir(mode=0o700)

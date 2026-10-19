@@ -21,7 +21,7 @@ class ServerSetupTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 setup.domain_name(value)
         self.assertEqual(setup.domain_name("Shop.Example.COM."), "shop.example.com")
-        for value in ("127.0.0.1", "10.0.0.1", "::1", "169.254.169.254"):
+        for value in ("127.0.0.1", "10.0.0.1", "::1", "169.254.169.254", "224.0.0.1", "ff02::1"):
             with self.assertRaises(ValueError):
                 setup.public_ips([value])
 
@@ -55,7 +55,7 @@ class ServerSetupTests(unittest.TestCase):
     def test_preserves_secrets_and_data_on_resume_and_detects_modified_config(self):
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp) / "new site with spaces"
-            with patch.object(setup, "run", return_value=""), patch.object(setup, "network_address", return_value="172.31.0.2"), patch.object(setup.os, "chown"), patch.object(setup, "build_runtime", return_value=("sha256:" + "b" * 64, {"release": "0.4.0"})), patch.object(setup, "resolve_image", side_effect=lambda image: image.rsplit(":", 1)[0] + "@sha256:" + "a" * 64):
+            with patch.object(setup, "run", return_value=""), patch.object(setup, "network_address", return_value="172.31.0.2"), patch.object(setup.os, "chown"), patch.object(setup, "create_network"), patch.object(setup, "build_runtime", return_value=("sha256:" + "b" * 64, {"release": "0.4.0"})), patch.object(setup, "resolve_image", side_effect=lambda image: image.rsplit(":", 1)[0] + "@sha256:" + "a" * 64):
                 state = setup.create_deployment(directory, "site.com", setup.DEFAULT_VERSION, "test-project")
             secrets = (directory / "secrets.env").read_bytes()
             key = secrets.decode().splitlines()[0].split("=", 1)[1]
@@ -89,6 +89,18 @@ class ServerSetupTests(unittest.TestCase):
         with patch.object(setup, "probe_https", side_effect=OSError("no certificate")), patch.object(setup.time, "monotonic", side_effect=[0, 2]):
             with self.assertRaisesRegex(RuntimeError, "No public deployment success"):
                 setup.wait_https("site.com", ["8.8.8.8"], 1)
+
+    def test_network_uses_docker_allocated_subnet_explicitly_for_stable_endpoints(self):
+        calls = []
+        def run(args):
+            calls.append(args)
+            if "inspect" in args:
+                return json.dumps([{"IPAM": {"Config": [{"Subnet": "172.31.96.0/20"}]}}])
+            return ""
+        with patch.object(setup, "run", side_effect=run):
+            setup.create_network("fixture-site")
+        self.assertEqual(calls[-1], ["docker", "network", "create", "--subnet", "172.31.96.0/20", "--label", "org.gorun.setup=fixture-site", "fixture-site"])
+        self.assertIn(["docker", "network", "rm", "fixture-site-allocation"], calls)
 
     def test_verified_release_build_rejects_bad_or_duplicate_checksums_before_build(self):
         for sums in ("0" * 64 + "  gorun-0.4.0-linux-amd64.tar.gz\n",
