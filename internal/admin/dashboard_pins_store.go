@@ -31,6 +31,27 @@ func (h *handlers) dashboardPinNav(ctx context.Context) map[string]kernel.NavIte
 	}
 	return out
 }
+
+// Canonicalization is a read projection, not a migration. The destination must
+// be present in the current permission/workspace-filtered registry.
+func canonicalDashboardPin(id string, allowed map[string]kernel.NavItem) string {
+	if id == "builder.identity" {
+		if _, ok := allowed["site-builder"]; ok {
+			return "site-builder"
+		}
+		return ""
+	}
+	if _, ok := allowed[id]; ok {
+		return id
+	}
+	return ""
+}
+func dashboardPinFamily(id string) (string, string) {
+	if id == "site-builder" || id == "builder.identity" {
+		return "site-builder", "builder.identity"
+	}
+	return id, id
+}
 func (h *handlers) dashboardPinned(ctx context.Context) ([]dashboardPin, error) {
 	out := []dashboardPin{}
 	u := auth.UserFromContext(ctx)
@@ -43,14 +64,17 @@ func (h *handlers) dashboardPinned(ctx context.Context) ([]dashboardPin, error) 
 		return nil, e
 	}
 	defer rows.Close()
+	seen := map[string]bool{}
 	for rows.Next() {
 		var id string
 		var position int
 		if e = rows.Scan(&id, &position); e != nil {
 			return nil, e
 		}
-		if n, ok := allowed[id]; ok {
+		id = canonicalDashboardPin(id, allowed)
+		if n, ok := allowed[id]; ok && !seen[id] {
 			out = append(out, dashboardPin{id, n.LabelKey, n.Href, n.Icon, position})
+			seen[id] = true
 		}
 	}
 	return out, rows.Err()
@@ -67,9 +91,10 @@ func restorePinVisibility(ctx context.Context, tx *sql.Tx, userID, id string) er
 			return e
 		}
 	}
+	first, second := dashboardPinFamily(id)
 	out := make([]string, 0, len(ids)+1)
 	for _, v := range ids {
-		if v != id {
+		if v != first && v != second {
 			out = append(out, v)
 		}
 	}
@@ -89,23 +114,30 @@ func (h *handlers) setDashboardPin(ctx context.Context, id string, pin bool) err
 	if id == "" || len(id) > 256 {
 		return errDashboardPinInvalid
 	}
-	if _, ok := h.dashboardPinNav(ctx)[id]; pin && !ok {
-		return errDashboardPinInvalid
+	if pin {
+		id = canonicalDashboardPin(id, h.dashboardPinNav(ctx))
+		if id == "" {
+			return errDashboardPinInvalid
+		}
 	}
+	first, second := dashboardPinFamily(id)
 	return db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
 		if pin {
 			var count, existing int
-			if e := tx.QueryRowContext(ctx, `SELECT count(*),COALESCE(sum(nav_id=?),0) FROM admin_dashboard_pins WHERE user_id=?`, id, u.ID).Scan(&count, &existing); e != nil {
+			if e := tx.QueryRowContext(ctx, `SELECT count(*),COALESCE(sum(nav_id IN (?,?)),0) FROM admin_dashboard_pins WHERE user_id=?`, first, second, u.ID).Scan(&count, &existing); e != nil {
 				return e
 			}
-			if count >= maxDashboardPins && existing == 0 {
+			if existing > 0 {
+				return nil
+			}
+			if count >= maxDashboardPins {
 				return errDashboardPinLimit
 			}
 			if _, e := tx.ExecContext(ctx, `INSERT INTO admin_dashboard_pins(user_id,nav_id,position,created_at) SELECT ?,?,COALESCE(max(position),-1)+1,? FROM admin_dashboard_pins WHERE user_id=? ON CONFLICT(user_id,nav_id) DO NOTHING`, u.ID, id, db.Now(), u.ID); e != nil {
 				return e
 			}
 		} else {
-			result, e := tx.ExecContext(ctx, `DELETE FROM admin_dashboard_pins WHERE user_id=? AND nav_id=?`, u.ID, id)
+			result, e := tx.ExecContext(ctx, `DELETE FROM admin_dashboard_pins WHERE user_id=? AND nav_id IN (?,?)`, u.ID, first, second)
 			if e != nil {
 				return e
 			}
@@ -133,8 +165,11 @@ func (h *handlers) orderDashboardPins(ctx context.Context, ids []string) error {
 	if len(ids) > maxDashboardPins {
 		return errDashboardPinInvalid
 	}
-	for _, id := range ids {
-		if _, ok := allowed[id]; !ok || seen[id] {
+	ids = slices.Clone(ids)
+	for i, id := range ids {
+		id = canonicalDashboardPin(id, allowed)
+		ids[i] = id
+		if id == "" || seen[id] {
 			return errDashboardPinInvalid
 		}
 		seen[id] = true
@@ -159,22 +194,32 @@ func (h *handlers) orderDashboardPins(ctx context.Context, ids []string) error {
 			return e
 		}
 		extras := []string{}
-		count := 0
-		for _, id := range current {
-			if _, ok := allowed[id]; ok {
-				count++
-				if !seen[id] {
+		present := map[string]bool{}
+		for _, raw := range current {
+			logical := canonicalDashboardPin(raw, allowed)
+			if logical != "" {
+				if !seen[logical] {
 					return errDashboardPinInvalid
 				}
+				present[logical] = true
 			} else {
-				extras = append(extras, id)
+				extras = append(extras, raw)
 			}
 		}
-		if count != len(ids) {
+		if len(present) != len(ids) {
 			return errDashboardPinInvalid
 		}
-		for position, id := range append(slices.Clone(ids), extras...) {
-			if _, e = tx.ExecContext(ctx, `UPDATE admin_dashboard_pins SET position=? WHERE user_id=? AND nav_id=?`, position, u.ID, id); e != nil {
+		for position, logical := range ids {
+			for _, raw := range current {
+				if canonicalDashboardPin(raw, allowed) == logical {
+					if _, e = tx.ExecContext(ctx, `UPDATE admin_dashboard_pins SET position=? WHERE user_id=? AND nav_id=?`, position, u.ID, raw); e != nil {
+						return e
+					}
+				}
+			}
+		}
+		for i, raw := range extras {
+			if _, e = tx.ExecContext(ctx, `UPDATE admin_dashboard_pins SET position=? WHERE user_id=? AND nav_id=?`, len(ids)+i, u.ID, raw); e != nil {
 				return e
 			}
 		}

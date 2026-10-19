@@ -1,0 +1,13 @@
+{{/* Shared saved-state summary; no form submission or activation from navigation. */}}
+<link rel="stylesheet" href="{{asset "site-design.css"}}">
+<noscript><link rel="stylesheet" href="{{asset "site-design-nojs.css"}}"></noscript>
+<script defer src="{{asset "site-design.js"}}"></script>
+<div data-site-design-workspace class="site-design-workspace" data-design-leave="{{t "sitedesign.leave"}}">
+<header class="site-design-header"><div><p class="site-design-eyebrow">{{t "sitedesign.area"}}</p><h1>{{t "sitedesign.title"}}</h1><p>{{t "sitedesign.intro"}}</p></div><a class="site-design-view" href="/" target="_blank" rel="noopener">{{t "sitedesign.view"}} ↗</a>
+<div class="site-design-saved"><span class="site-design-saved-label">{{t "sitedesign.saved"}}</span><strong>{{.Title}}</strong><span>{{t "sitedesign.theme"}}: <bdi>{{.Theme}}</bdi></span><span class="site-design-swatches" aria-label="{{t "sitedesign.palette"}}"><i style="background-color:{{.Accent}}" title="{{.Accent}}"></i><i style="background-color:{{.Background}}" title="{{.Background}}"></i><i style="background-color:{{.Text}}" title="{{.Text}}"></i></span></div>
+</header>
+<nav class="site-design-tabs" aria-label="{{t "sitedesign.title"}}">
+{{if .CanBuild}}<a href="/admin/site-builder" {{if .Build}}aria-current="page"{{end}}><span aria-hidden="true">1</span><span><strong>{{t "sitedesign.build"}}</strong><small>{{t "sitedesign.build_help"}}</small></span></a>{{end}}
+<a href="/admin/appearance/identity" {{if not .Build}}aria-current="page"{{end}}><span aria-hidden="true">{{if .CanBuild}}2{{else}}✓{{end}}</span><span><strong>{{t "sitedesign.identity"}}</strong><small>{{t "sitedesign.identity_help"}}</small></span></a>
+</nav>
+</div>

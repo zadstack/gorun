@@ -60,6 +60,7 @@ type NavItem struct {
 
 // Funcs supplies request-scoped data to the template funcs. Any may be nil.
 type Funcs struct {
+	PinnedNav     func(ctx context.Context) []NavItem // authorized personal shortcuts, in saved order
 	NavGroupOrder func(ctx context.Context) []string
 	Nav           func(ctx context.Context) []NavItem // already permission-filtered and sorted
 	AllNav        func(ctx context.Context) []NavItem // authorized items before personal visibility preferences
@@ -435,6 +436,12 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 			return groups
 		},
 		"navigationSections": sectionView,
+		"quickAccess": func() []QuickAccessItem {
+			if t.funcs.PinnedNav == nil {
+				return nil
+			}
+			return quickAccessItems(t.funcs.PinnedNav(ctx), pathOf(r))
+		},
 		"allNavigationSections": func() []NavigationSection {
 			if t.funcs.AllNav == nil {
 				return nil
@@ -461,7 +468,7 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 				return false
 			}
 			p := r.URL.Path
-			return p == href || (href != "/admin" && strings.HasPrefix(p, strings.TrimSuffix(href, "/")+"/"))
+			return navPathMatches(p, href)
 		},
 		"path":  func() string { return pathOf(r) },
 		"icon":  icon,

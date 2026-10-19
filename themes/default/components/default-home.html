@@ -1,49 +1,46 @@
-{{/* Default home: shared hero + section anatomy on tokens. Real content only. */}}
+{{/* Default editorial home. Identity and every linked item come from this site. */}}
 {{$first := eq .Pagination.Page 1}}{{if eq .Pagination.Page 0}}{{$first = true}}{{end}}
-{{if $first}}
-{{component "hero" .}}
-{{end}}
-
-{{if .Items}}
 {{$rest := .Items}}
-{{if and $first (gt (len .Items) 1)}}
-{{with index .Items 0}}{{$f := .}}
-<section class="gr-section gr-section-panel dt-featured-wrap" aria-labelledby="dt-featured-title">
-  {{component "section-head" (dict "Path" "/featured" "Title" (t "featured") "TitleID" "dt-featured-title")}}
-  <article class="dt-featured">
+{{if $first}}
+<section class="dt-home-hero gr-hero" aria-labelledby="gr-hero-title">
+  <div class="dt-home-intro">
+    <p class="gr-hero-kicker">{{t "home_kicker"}}</p>
+    <h1 id="gr-hero-title">{{.Site.Title}}</h1>
+    <p class="gr-hero-dek">{{with .Site.Tagline}}{{.}}{{else}}{{t "home_intro"}}{{end}}</p>
+    {{$ctaLabel := setting "theme.default.cta_label"}}{{$ctaURL := setting "theme.default.cta_url"}}
+    {{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "start_reading"}}{{$ctaURL = "#gr-latest"}}{{end}}
+    <div class="gr-hero-actions"><a class="gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}} <span class="gr-go-arrow" aria-hidden="true">→</span></a><a class="gr-btn-text" href="{{url "/search"}}">{{t "search"}}</a></div>
+    {{component "hero-facts" .}}
+  </div>
+  {{if .Items}}{{with index .Items 0}}{{$feature := .}}
+  <article class="dt-home-feature dt-featured" aria-labelledby="dt-featured-title">
+    <div class="dt-home-feature-top"><span>{{t "featured"}}</span><span aria-hidden="true">01 /</span></div>
     {{with media .FeaturedMediaID}}
-    <a class="dt-featured-media" href="{{url $f}}" tabindex="-1" aria-hidden="true">{{img . "large" "dt-cover"}}</a>
+    <a href="{{url $feature}}" tabindex="-1" aria-hidden="true" class="dt-home-feature-image">{{img . "large" "dt-cover"}}</a>
     {{else}}
-    <div class="dt-featured-media gr-card-cover" aria-hidden="true">
-      <svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" focusable="false">
-        <path d="M0 120 C80 80 120 160 200 110 S300 40 320 70 L320 180 L0 180 Z" fill="currentColor" opacity=".12"/>
-        <circle cx="248" cy="48" r="28" fill="currentColor" opacity=".1"/>
-      </svg>
-    </div>
+    <div class="dt-home-art" aria-hidden="true"><svg viewBox="0 0 480 200" focusable="false"><rect x="92" y="28" width="220" height="145" rx="6" fill="currentColor" opacity=".12"/><rect x="138" y="12" width="220" height="145" rx="6" fill="var(--panel)" stroke="currentColor" stroke-width="2"/><path d="M163 45h100M163 61h159M163 77h132M163 112h66" stroke="currentColor" stroke-width="5" opacity=".6"/><circle cx="338" cy="150" r="26" fill="currentColor"/><path d="m328 150 7 7 14-15" stroke="var(--panel)" stroke-width="3" fill="none"/></svg></div>
     {{end}}
-    <div class="dt-featured-copy">
-      <p class="dt-kicker"><span class="dt-kicker-label">{{t "featured"}}</span>{{range terms . "category"}}<a class="gr-chip" href="{{url .}}">{{.Name}}</a>{{end}}</p>
-      <h2 class="dt-featured-title"><a href="{{url .}}">{{.Title}}</a></h2>
-      {{with excerpt . 36}}<p class="dt-excerpt">{{.}}</p>{{end}}
-      <p class="dt-meta">{{with .PublishedAt}}<time datetime="{{.}}"><bdi>{{date .}}</bdi></time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
-    </div>
+    <div class="dt-home-feature-copy"><p class="dt-home-category">{{range terms . "category"}}<a href="{{url .}}">{{.Name}}</a>{{end}}</p><h2 id="dt-featured-title"><a href="{{url .}}">{{.Title}}</a></h2>{{with excerpt . 27}}<p>{{.}}</p>{{end}}<a class="gr-btn-text" href="{{url .}}">{{t "read_more"}} <span aria-hidden="true" class="gr-go-arrow">→</span></a></div>
   </article>
+  {{end}}{{$rest = slice .Items 1}}{{else}}
+  <aside class="dt-home-empty"><span class="dt-home-empty-number" aria-hidden="true">Aa</span><h2>{{t "empty"}}</h2><p>{{t "home_empty_note"}}</p></aside>
+  {{end}}
 </section>
-{{end}}
-{{$rest = slice .Items 1}}
 {{end}}
 
 <section id="gr-latest" class="gr-section dt-latest" aria-labelledby="dt-latest-title">
-  {{component "section-head" (dict "Path" "/posts" "Title" (t "latest_posts") "Note" (t "latest_note") "TitleID" "dt-latest-title")}}
-  <div class="dt-grid">
-  {{range $rest}}{{component "card" .}}{{end}}
-  </div>
+  {{component "section-head" (dict "Title" (t "home_latest_title") "Note" (t "home_latest_note") "TitleID" "dt-latest-title" "ActionURL" "/blog" "ActionLabel" (t "all_posts"))}}
+  {{if $rest}}<div class="dt-grid">{{range $rest}}{{component "card" .}}{{end}}</div>{{else}}<p class="dt-empty">{{if .Items}}{{t "home_caught_up"}}{{else}}{{t "empty"}}{{end}}</p>{{end}}
   {{component "pagination" .}}
 </section>
-{{else}}
-<p class="dt-empty">{{t "empty"}}</p>
-{{end}}
 
 {{if $first}}
+{{$pages := query (dict "type" "page" "per_page" 3)}}
+{{if $pages.Items}}
+<section class="dt-home-guides" aria-labelledby="dt-guides-title">
+  <div><p class="gr-hero-kicker">{{t "home_pages_kicker"}}</p><h2 id="dt-guides-title">{{t "home_pages_title"}}</h2><p>{{t "home_pages_note"}}</p></div>
+  <div class="dt-home-guide-list">{{range $pages.Items}}<a href="{{url .}}"><span>{{.Title}}</span><span class="gr-go-arrow" aria-hidden="true">→</span></a>{{end}}</div>
+</section>
+{{end}}
 {{part "closing-band" .}}
 {{end}}
