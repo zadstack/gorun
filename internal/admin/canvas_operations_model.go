@@ -45,25 +45,27 @@ func validateCanvasEdges(cards []canvasCard, edges []canvasEdge) error {
 }
 
 type canvasPrepared struct {
-	AgentModel   *agentModelConfig `json:"agent_model,omitempty"`
-	SourceTokens map[string]string `json:"source_tokens,omitempty"`
-	RemoteJob    string            `json:"remote_job,omitempty"`
-	ScheduleID   string            `json:"schedule_id,omitempty"`
-	BoardID      string            `json:"board_id"`
-	OwnerID      string            `json:"owner_id"`
-	NodeID       string            `json:"node_id"`
-	Version      int64             `json:"version"`
-	MediaSize    int64             `json:"media_size,omitempty"`
-	MediaMIME    string            `json:"media_mime,omitempty"`
-	MediaFile    string            `json:"media_file,omitempty"`
-	Candidate    studioCandidate   `json:"candidate"`
-	KeyID        string            `json:"key_id,omitempty"`
-	Context      string            `json:"context"`
-	Prompt       string            `json:"prompt"`
-	GraphHash    string            `json:"graph_hash"`
-	ReviewHash   string            `json:"review_hash"`
-	Provider     map[string]string `json:"provider"`
-	Nodes        []string          `json:"nodes"`
+	InboundID       string            `json:"inbound_id,omitempty"`
+	InboundRevision int64             `json:"inbound_revision,omitempty"`
+	AgentModel      *agentModelConfig `json:"agent_model,omitempty"`
+	SourceTokens    map[string]string `json:"source_tokens,omitempty"`
+	RemoteJob       string            `json:"remote_job,omitempty"`
+	ScheduleID      string            `json:"schedule_id,omitempty"`
+	BoardID         string            `json:"board_id"`
+	OwnerID         string            `json:"owner_id"`
+	NodeID          string            `json:"node_id"`
+	Version         int64             `json:"version"`
+	MediaSize       int64             `json:"media_size,omitempty"`
+	MediaMIME       string            `json:"media_mime,omitempty"`
+	MediaFile       string            `json:"media_file,omitempty"`
+	Candidate       studioCandidate   `json:"candidate"`
+	KeyID           string            `json:"key_id,omitempty"`
+	Context         string            `json:"context"`
+	Prompt          string            `json:"prompt"`
+	GraphHash       string            `json:"graph_hash"`
+	ReviewHash      string            `json:"review_hash"`
+	Provider        map[string]string `json:"provider"`
+	Nodes           []string          `json:"nodes"`
 }
 
 func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID string) (canvasPrepared, error) {
