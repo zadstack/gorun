@@ -45,7 +45,7 @@
           <td class="px-3 py-2 align-top">
             <p class="font-medium">{{.Name}} <span class="ms-1 inline-flex rounded-chip border border-line {{if eq .Kind "agent"}}bg-blue-soft text-blue{{else}}bg-panel-2 text-muted{{end}} px-1.5 py-0.5 text-[11px]" data-key-kind="{{.Kind}}">{{if eq .Kind "agent"}}{{t "admin.keys.kind_agent"}}{{else}}{{t "admin.keys.kind_api"}}{{end}}</span></p>
             {{if .Model}}<p class="font-mono text-xs text-muted mt-1" dir="ltr" data-agent-selected-model>{{.Model}} · {{.ModelMode}}</p>{{end}}
-            {{if .CanModel}}<a class="inline-block text-xs text-green underline mt-1" href="/admin/agents/keys?agent_model={{.ID}}">{{t "agentmodels.configure"}}</a>{{end}}
+            {{if .CanModel}}<a class="inline-block text-xs text-green underline mt-1" href="/admin/agents/keys?agent_model={{.ID}}">{{t "agentmodels.configure"}}</a>{{if ne (setting "site.workspace") "simple"}} · <a class="inline-block text-xs text-green underline mt-1" href="/admin/agents/keys/{{.ID}}/bundle">{{t "agentbundles.title"}}</a>{{end}}{{end}}
             <p class="font-mono text-[11px] text-muted" dir="ltr">gp_{{.Prefix}}…</p>
             <p class="text-[11px] text-muted" dir="ltr">{{.Owner}} · {{t "admin.keys.per_min" .RatePerMin}}</p>
             {{if .RevokedAt}}<span class="mt-1 inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px] font-mono">{{t "admin.keys.revoked_on" (date .RevokedAt)}}</span>

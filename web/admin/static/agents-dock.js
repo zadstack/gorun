@@ -47,6 +47,7 @@
     field(labels.model, item.model);
     field(labels.execution, labels[item.mode] || labels[item.kind === 'provider' ? 'provider' : 'external']);
     const integrations = panels.get('integrations'); integrations.append(fields);
+    if (typeof item.bundle_url === 'string' && /^\/admin\/agents\/keys\/[0-9A-HJKMNP-TV-Z]{26}\/bundle$/.test(item.bundle_url)) { const bundle = el('a',labels.bundle); bundle.href=item.bundle_url; bundle.dataset.dockFocus='bundle'; integrations.append(bundle); }
     if (item.mode === 'external') integrations.append(el('p',labels.externalHelp));
     integrations.append(el('p',labels.limits));
     const setupLink = el('a',labels.integrationSetup); setupLink.href = item.href; setupLink.dataset.dockFocus = 'setup'; integrations.append(setupLink);

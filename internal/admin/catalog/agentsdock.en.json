@@ -13,7 +13,7 @@
   "unavailable": "Open the canvas to complete setup and review its saved instructions.",
   "open": "Open and review in canvas",
   "external_help": "An external client must be connected and polling to perform this action. This panel does not verify that it is online.",
-  "limits": "Skills and MCP servers are not assembled or verified by this panel. No action runs when you open it.",
+  "limits": "Skills and MCP connections are managed in the agent bundle when you have permission. A saved reference is not a live connection or automatic tool execution. No action runs when you open this drawer.",
   "truncated": "Showing the first 36 actions from your recent canvases. Open all canvases for more.",
   "error": "Could not refresh agents. Try opening this panel again.",
   "unnamed": "Untitled action",

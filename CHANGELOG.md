@@ -5,6 +5,44 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-19
+
+### Agent skills and connection bundles
+
+- Manage a private bundle for an owned, active agent key: bounded inline skill
+  instructions and reference text, plus multiple version-pinned MCP connection
+  profiles. Review the combined effective instructions in the canvas before
+  execution. Skills become part of real managed-text and external-agent requests.
+- Recheck the current bundle version and authority at execution/result boundaries.
+  Bundle changes retire previous incoming-event and schedule consent; restoring
+  old text does not restore previous consent. Keep ownership, permission, size and
+  configuration-version checks active when a saved profile changes or disappears.
+- Show the saved discovery result and timestamp separately from live availability.
+  Export a manifest without stored credentials or endpoint URLs for an external
+  client to configure explicitly. Attaching MCP profiles does not grant every tool,
+  install server packages or create an automatic managed-model tool loop.
+
+### Current interface screenshots
+
+- Refresh the English/Arabic README campaign story and admin screenshots for
+  grouped navigation, contextual page links and the opposite-side agent drawer.
+  Include real desktop and mobile captures using isolated synthetic data, with
+  configured status distinguished from an online external client.
+
+### Separate Edge read-only proof of concept
+
+- Add a locally runnable Workers implementation with its own D1 schema and
+  explicitly public R2 media. Scope reads to one site, expose published content
+  only, escape text output and reject write/admin routes. Keep the prototype
+  separate from the GoRun Full database and release binary.
+- Test the Worker through the actual local workerd runtime with D1/R2 bindings.
+  Remote Cloudflare deployment remains unverified; this is not a complete Edge
+  CMS, manager pairing, a deploy template/button or an Edge benchmark result.
+
+Existing sites require an operator deployment to receive application changes.
+Publishing this release does not upgrade a running installation.
+
+
 ## [0.6.0] - 2026-10-19
 
 ### Admin navigation
@@ -416,7 +454,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/zadstack/gorun/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/zadstack/gorun/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/zadstack/gorun/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/zadstack/gorun/compare/v0.3.0...v0.4.0

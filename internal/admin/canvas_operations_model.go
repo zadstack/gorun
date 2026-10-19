@@ -45,27 +45,28 @@ func validateCanvasEdges(cards []canvasCard, edges []canvasEdge) error {
 }
 
 type canvasPrepared struct {
-	InboundID       string            `json:"inbound_id,omitempty"`
-	InboundRevision int64             `json:"inbound_revision,omitempty"`
-	AgentModel      *agentModelConfig `json:"agent_model,omitempty"`
-	SourceTokens    map[string]string `json:"source_tokens,omitempty"`
-	RemoteJob       string            `json:"remote_job,omitempty"`
-	ScheduleID      string            `json:"schedule_id,omitempty"`
-	BoardID         string            `json:"board_id"`
-	OwnerID         string            `json:"owner_id"`
-	NodeID          string            `json:"node_id"`
-	Version         int64             `json:"version"`
-	MediaSize       int64             `json:"media_size,omitempty"`
-	MediaMIME       string            `json:"media_mime,omitempty"`
-	MediaFile       string            `json:"media_file,omitempty"`
-	Candidate       studioCandidate   `json:"candidate"`
-	KeyID           string            `json:"key_id,omitempty"`
-	Context         string            `json:"context"`
-	Prompt          string            `json:"prompt"`
-	GraphHash       string            `json:"graph_hash"`
-	ReviewHash      string            `json:"review_hash"`
-	Provider        map[string]string `json:"provider"`
-	Nodes           []string          `json:"nodes"`
+	AgentBundleVersion string            `json:"agent_bundle_version,omitempty"`
+	InboundID          string            `json:"inbound_id,omitempty"`
+	InboundRevision    int64             `json:"inbound_revision,omitempty"`
+	AgentModel         *agentModelConfig `json:"agent_model,omitempty"`
+	SourceTokens       map[string]string `json:"source_tokens,omitempty"`
+	RemoteJob          string            `json:"remote_job,omitempty"`
+	ScheduleID         string            `json:"schedule_id,omitempty"`
+	BoardID            string            `json:"board_id"`
+	OwnerID            string            `json:"owner_id"`
+	NodeID             string            `json:"node_id"`
+	Version            int64             `json:"version"`
+	MediaSize          int64             `json:"media_size,omitempty"`
+	MediaMIME          string            `json:"media_mime,omitempty"`
+	MediaFile          string            `json:"media_file,omitempty"`
+	Candidate          studioCandidate   `json:"candidate"`
+	KeyID              string            `json:"key_id,omitempty"`
+	Context            string            `json:"context"`
+	Prompt             string            `json:"prompt"`
+	GraphHash          string            `json:"graph_hash"`
+	ReviewHash         string            `json:"review_hash"`
+	Provider           map[string]string `json:"provider"`
+	Nodes              []string          `json:"nodes"`
 }
 
 func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID string) (canvasPrepared, error) {
@@ -182,6 +183,17 @@ func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID str
 			return p, e
 		}
 		p.KeyID = target.AgentID
+		bundle, err := currentAgentBundle(ctx, h.d.DB, p.OwnerID, p.KeyID)
+		if err != nil {
+			return p, errCanvasConsent
+		}
+		p.AgentBundleVersion = bundle.Version
+		if instructions := agentBundleInstructions(bundle); instructions != "" {
+			p.Prompt = instructions + "\n\n" + p.Prompt
+		}
+		if len(p.Prompt) > 16000 {
+			return p, errCanvasInvalid
+		}
 		model, e := h.loadAgentModel(ctx, target.AgentID)
 		if e != nil {
 			return p, e
@@ -248,7 +260,11 @@ func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID str
 		}
 	}
 	// Recurring consent binds selection, prompt and destination; current source text may evolve.
+	p.Candidate.Input.Prompt = p.Prompt
 	hashInput := map[string]any{"nodes": graph, "provider": p.Provider, "binding": p.Candidate.Binding, "native": p.Candidate.Native, "prompt": p.Prompt}
+	if p.AgentBundleVersion != "" {
+		hashInput["agent_bundle_version"] = p.AgentBundleVersion
+	}
 	if p.AgentModel != nil {
 		hashInput["agent_model"] = p.AgentModel
 	}

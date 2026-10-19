@@ -89,7 +89,7 @@ func (h *handlers) canvasEnqueueTx(ctx context.Context, tx *sql.Tx, p canvasPrep
 	if p.InboundID != "" && !canvasInboundActiveTx(ctx, tx, p) {
 		return run, errCanvasConsent
 	}
-	if p.AgentModel != nil {
+	if p.KeyID != "" || p.AgentModel != nil {
 		if _, e = agentModelAuthorityTx(ctx, tx, p); e != nil {
 			return run, e
 		}
@@ -301,7 +301,7 @@ func (h *handlers) canvasAppend(ctx context.Context, runID string, p canvasPrepa
 		if e := tx.QueryRowContext(ctx, `SELECT count(*) FROM users WHERE id=? AND status='active' AND EXISTS(SELECT 1 FROM role_permissions WHERE role=users.role AND permission IN ('*','content.edit'))`, p.OwnerID).Scan(&active); e != nil || active != 1 {
 			return errCanvasConsent
 		}
-		if p.AgentModel != nil {
+		if p.KeyID != "" || p.AgentModel != nil {
 			if _, e := agentModelAuthorityTx(ctx, tx, p); e != nil {
 				return e
 			}
