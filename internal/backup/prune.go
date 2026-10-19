@@ -65,3 +65,41 @@ func removeStamp(dir, stamp string) (int, error) {
 	}
 	return n, first
 }
+
+// PruneVerified counts only pairs that pass a fresh integrity/archive inspection.
+// Incomplete, legacy, and corrupt copies never displace a known-good copy and
+// are left for the operator to inspect rather than silently deleted.
+func PruneVerified(dataDir string, keep int) (removed int, err error) {
+	if keep < 1 {
+		return 0, nil
+	}
+	list, err := List(dataDir)
+	if err != nil {
+		return 0, err
+	}
+	var verified []Entry
+	for _, entry := range list {
+		if !entry.HasManifest {
+			continue
+		}
+		manifest, err := ManifestFile(dataDir, entry.Stamp)
+		if err != nil {
+			continue
+		}
+		report, err := Inspect(manifest)
+		if err == nil && report.Readiness != "blocked" && report.IntegrityOK {
+			verified = append(verified, entry)
+		}
+	}
+	if len(verified) <= keep {
+		return 0, nil
+	}
+	for _, entry := range verified[keep:] {
+		n, removeErr := removeStamp(Dir(dataDir), entry.Stamp)
+		removed += n
+		if removeErr != nil && err == nil {
+			err = removeErr
+		}
+	}
+	return removed, err
+}

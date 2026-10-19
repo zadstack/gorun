@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -16,11 +17,12 @@ import (
 
 // backupInspectPage shows a read-only preflight for one local backup pair.
 type backupInspectPage struct {
-	Stamp   string
-	Dest    string
-	Partial string // leftover staging directory of an interrupted restore
-	Done    bool
-	Report  *backup.Inspection
+	Stamp          string
+	Dest           string
+	Partial        string // leftover staging directory of an interrupted restore
+	Done           bool
+	PreviewCommand string
+	Report         *backup.Inspection
 }
 
 // backupInspect runs Inspect on the stamp's manifest and renders the result.
@@ -36,7 +38,10 @@ func (h *handlers) backupInspect(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	page := backupInspectPage{Stamp: stamp, Report: rep}
+	if absolute, err := filepath.Abs(manifest); err == nil {
+		manifest = absolute
+	}
+	page := backupInspectPage{Stamp: stamp, Report: rep, PreviewCommand: "gorun backup-preview --input '" + strings.ReplaceAll(manifest, "'", "'\"'\"'") + "'"}
 	if dest, ok := backup.Restored(h.d.Config.DataDir, stamp); ok {
 		page.Dest, page.Done = dest, true
 	} else if dest, err := backup.RestoreDestination(h.d.Config.DataDir, stamp); err == nil {

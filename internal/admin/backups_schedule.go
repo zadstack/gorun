@@ -2,11 +2,15 @@ package admin
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/zadstack/gorun/internal/backup"
+	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 )
@@ -16,6 +20,8 @@ const (
 	SettingBackupScheduleHours = "backup.schedule_hours"
 	SettingBackupRetain        = "backup.retain"
 	SettingBackupScheduleLast  = "backup.schedule.last"
+	SettingBackupScheduleState = "backup.schedule.state"
+	SettingBackupLastSuccess   = "backup.local.last_success"
 )
 
 const (
@@ -30,6 +36,7 @@ type backupSchedulePolicy struct {
 	Last     string
 	NextHint string
 	Enabled  bool
+	State    backupScheduleState
 }
 
 func backupScheduleHours(ctx context.Context, d *kernel.Deps) int {
@@ -77,7 +84,9 @@ func (h *handlers) backupScheduleView(ctx context.Context, page *backupsPage) {
 			p.NextHint = last.Add(time.Duration(hours) * time.Hour).Format(time.RFC3339)
 		}
 	}
+	_ = h.d.Settings.Get(ctx, SettingBackupScheduleState, &p.State)
 	page.Schedule = p
+	_ = h.d.Settings.Get(ctx, SettingBackupLastSuccess, &page.LastSuccess)
 }
 
 // backupScheduleSave stores schedule hours and local retain-N from the form.
@@ -95,18 +104,22 @@ func (h *handlers) backupScheduleSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	if err := h.d.Settings.Set(ctx, SettingBackupScheduleHours, hours); err != nil {
-		h.serverError(w, r, err)
-		return
-	}
-	if err := h.d.Settings.Set(ctx, SettingBackupRetain, retain); err != nil {
-		h.serverError(w, r, err)
-		return
-	}
-	h.d.Audit.Record(ctx, "system.backup_schedule", "backup", "policy", map[string]any{
-		"schedule_hours": hours,
-		"retain":         retain,
+	backupMu.Lock()
+	err := db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
+		if err := h.d.Settings.SetTx(ctx, tx, SettingBackupScheduleHours, hours); err != nil {
+			return err
+		}
+		if err := h.d.Settings.SetTx(ctx, tx, SettingBackupRetain, retain); err != nil {
+			return err
+		}
+		h.d.Audit.RecordTx(ctx, tx, "system.backup_schedule", "backup", "policy", map[string]any{"schedule_hours": hours, "retain": retain})
+		return nil
 	})
+	backupMu.Unlock()
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
 	httpx.SetFlash(w, "success", "admin.backups.schedule_saved")
 	http.Redirect(w, r, "/admin/system/backups", http.StatusSeeOther)
 }
@@ -129,32 +142,89 @@ func backupScheduleAt(ctx context.Context, d *kernel.Deps, now time.Time) error 
 	}
 	backupMu.Lock()
 	defer backupMu.Unlock()
-	// Re-check under the create lock so a concurrent tick does not double-create.
+	// Re-check policy and last success under the shared lock: an operator may
+	// have disabled the schedule while this tick waited for another backup.
+	hours = backupScheduleHours(ctx, d)
+	if hours < 1 {
+		return nil
+	}
+	// A concurrent tick must not double-create.
 	last = backupScheduleLast(ctx, d)
 	if !last.IsZero() && now.Before(last.Add(time.Duration(hours)*time.Hour)) {
 		return nil
 	}
+	state := backupScheduleState{AttemptAt: now.Format(time.RFC3339), Status: "running", Stage: "create"}
+	if err := d.Settings.Set(ctx, SettingBackupScheduleState, state); err != nil {
+		return err
+	}
+	fail := func(stage string, cause error) error {
+		state.Status, state.Stage = "failed", stage
+		saveErr := d.Settings.Set(ctx, SettingBackupScheduleState, state)
+		d.Audit.Record(ctx, "system.backup_schedule_failed", "backup", "schedule", map[string]string{"stage": stage})
+		d.Log.Error("backup.schedule: failed", "stage", stage, "err", cause)
+		return errors.Join(cause, saveErr)
+	}
 	res, err := backup.Create(d.Config.DataDir, d.Config.DBPath(), now)
 	if err != nil {
-		d.Log.Error("backup.schedule: create failed", "err", err)
-		return err
+		return fail("create", err)
+	}
+	state.Stamp = res.Stamp
+	success, err := verifiedBackup(res, now)
+	if err != nil {
+		return fail("verify", err)
+	}
+	state.Status, state.Stage = "success", "verified"
+	err = db.InTx(ctx, d.DB, func(tx *sql.Tx) error {
+		if err := d.Settings.SetTx(ctx, tx, SettingBackupLastSuccess, success); err != nil {
+			return err
+		}
+		if err := d.Settings.SetTx(ctx, tx, SettingBackupScheduleLast, now.Format(time.RFC3339)); err != nil {
+			return err
+		}
+		return d.Settings.SetTx(ctx, tx, SettingBackupScheduleState, state)
+	})
+	if err != nil {
+		return fail("record", err)
 	}
 	pruned := 0
-	if keep := backupRetain(ctx, d); keep >= 1 {
-		pruned, err = backup.Prune(d.Config.DataDir, keep)
+	if keep := backupRetain(ctx, d); keep > 0 {
+		pruned, err = backup.PruneVerified(d.Config.DataDir, keep)
 		if err != nil {
-			d.Log.Error("backup.schedule: prune failed", "err", err, "stamp", res.Stamp)
-			// Still record last success for create; prune can retry next tick.
+			state.Status, state.Stage = "warning", "prune"
+			stateErr := d.Settings.Set(ctx, SettingBackupScheduleState, state)
+			err = errors.Join(err, stateErr)
+			d.Audit.Record(ctx, "system.backup_retention_failed", "backup", res.Stamp, map[string]string{"stage": "prune"})
+			d.Log.Error("backup.schedule: retention failed", "err", err)
 		}
 	}
-	if err := d.Settings.Set(ctx, SettingBackupScheduleLast, now.Format(time.RFC3339)); err != nil {
-		return err
+	d.Audit.Record(ctx, "system.backup_scheduled", "backup", res.Stamp, map[string]any{"files": res.Count, "pruned": pruned, "retain": backupRetain(ctx, d), "verified": true})
+	d.Log.Info("backup.schedule: verified", "stamp", res.Stamp, "pruned", pruned)
+	return err
+}
+
+type backupScheduleState struct {
+	AttemptAt string `json:"attempt_at"`
+	Status    string `json:"status"`
+	Stage     string `json:"stage"`
+	Stamp     string `json:"stamp,omitempty"`
+}
+type backupSuccess struct {
+	At    string `json:"at"`
+	Stamp string `json:"stamp"`
+	Bytes int64  `json:"bytes"`
+}
+
+func verifiedBackup(res backup.Result, now time.Time) (backupSuccess, error) {
+	report, err := backup.Inspect(res.Manifest)
+	if err != nil {
+		return backupSuccess{}, err
 	}
-	d.Audit.Record(ctx, "system.backup_scheduled", "backup", res.Stamp, map[string]any{
-		"files":  res.Count,
-		"pruned": pruned,
-		"retain": backupRetain(ctx, d),
-	})
-	d.Log.Info("backup.schedule: created", "stamp", res.Stamp, "pruned", pruned)
-	return nil
+	if report.Readiness == "blocked" || !report.IntegrityOK {
+		return backupSuccess{}, fmt.Errorf("backup: verification failed")
+	}
+	manifest, err := backup.ReadManifest(res.Manifest)
+	if err != nil {
+		return backupSuccess{}, err
+	}
+	return backupSuccess{At: now.UTC().Format(time.RFC3339), Stamp: res.Stamp, Bytes: manifest.Database.Size + manifest.Archive.Size}, nil
 }

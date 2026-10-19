@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ADMIN, env, setLocale, expectNoServerError } from '../lib/helpers.ts';
+import { DatabaseSync } from 'node:sqlite';
+import { ADMIN, env, setLocale, expectNoServerError, submitAndLand } from '../lib/helpers.ts';
 
 test('native backup presence and upload receipts remain distinct from verified restore', async ({ page }, info) => {
   await page.goto('/admin/system/backups');
@@ -66,5 +67,42 @@ test('native backup presence and upload receipts remain distinct from verified r
       await page.screenshot({ path: info.outputPath(`backups-${locale}-${width}.png`), fullPage: true });
       await expectNoServerError(page);
     }
+  }
+});
+
+
+test('backup schedule choices and failure alerts work in both languages', async ({ page }, info) => {
+  await page.goto('/admin/system/backups');
+  const form = page.locator('form[action="/admin/system/backups/schedule"]');
+  await expect(page.locator('[data-backup-storage]')).toBeVisible();
+  await expect(page.locator('[data-backup-last-success]')).toBeVisible();
+  for (const hours of ['24', '168', '0']) {
+    await form.locator('[name="schedule_hours"]').selectOption(hours);
+    await form.locator('[name="retain"]').fill('3');
+    await submitAndLand(page, form.locator('button[type="submit"]'), '/admin/system/backups/schedule');
+    await expect(form.locator('[name="schedule_hours"]')).toHaveValue(hours);
+  }
+  const db = new DatabaseSync(join(env('E2E_DATA'), 'gorun.db'));
+  db.exec('PRAGMA busy_timeout=5000');
+  const prior = db.prepare('SELECT value_json, updated_at FROM settings WHERE key = ?').get('backup.schedule.state') as {value_json: string; updated_at: string} | undefined;
+  db.prepare('INSERT INTO settings(key,value_json,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=excluded.updated_at')
+    .run('backup.schedule.state', JSON.stringify({status:'failed', stage:'verify', attempt_at:new Date().toISOString()}), new Date().toISOString());
+  try {
+    for (const locale of ['ar', 'en'] as const) {
+      await setLocale(page, locale);
+      await expect(page.locator('[role="alert"][data-schedule-status="failed"]')).toBeVisible();
+      for (const width of [1440, 390]) {
+        await page.setViewportSize({width, height:1000});
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+        await page.screenshot({path:info.outputPath(`backup-alert-${locale}-${width}.png`), fullPage:true});
+        await expectNoServerError(page);
+      }
+    }
+    await page.goto('/admin/system/health');
+    await expect(page.locator('[data-check="backups"][data-status="fail"]')).toBeVisible();
+  } finally {
+    if (prior) db.prepare('UPDATE settings SET value_json=?,updated_at=? WHERE key=?').run(prior.value_json, prior.updated_at, 'backup.schedule.state');
+    else db.prepare('DELETE FROM settings WHERE key=?').run('backup.schedule.state');
+    db.close();
   }
 });

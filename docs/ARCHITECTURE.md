@@ -198,6 +198,23 @@ Everything lives under the data directory (`GORUN_DATA`, default `./data`):
   directory outside the data directory instead. Staging / promote-to-live is a second data dir
   plus cutover, not a shared database — see [STAGING.md](STAGING.md).
 
+### Backup scheduling and disposable recovery previews
+
+`backup.schedule` serializes with manual creation/restore. Policy saves and verified
+success metadata use transactions; state in `backup.schedule.state` records attempt,
+status and stage without raw errors. `backup.local.last_success` records the last
+locally verified admin/manual or scheduled copy; CLI creation does not write that setting.
+Scheduled and CLI retention use `backup.PruneVerified`, rechecking integrity before
+counting a pair and leaving incomplete/unverified pairs untouched.
+
+`backup-preview` restores to an owner-only OS temp tree, strips deployment settings,
+credentials and queued jobs, supplies a fresh in-memory secret and local base URL,
+and boots a fixed subset of built-in public-content modules without workers. It
+ignores downstream module options and archived/environment credentials. A loopback
+HTTP guard rejects writes/privileged routes, sanitizes HTML and enforces restrictive
+CSP; cleanup happens after shutdown. It never mutates the original backup or serves
+the live data tree. See [backup and recovery](BACKUPS.md).
+
 ### Migrations must be additive
 
 A fleet upgrades one site at a time, and a rollback runs the previous binary on a database the new
