@@ -18,6 +18,8 @@ jobs:
           # Latest 1.27 patch (not the go.mod minimum) so govulncheck sees stdlib fixes.
           go-version: '1.27.x'
           check-latest: true
+      - name: installer regression checks
+        run: sh -n install.sh && python3 tools/test-install.py
       - name: build (CGO disabled)
         run: CGO_ENABLED=0 go build ./...
       - name: vet
