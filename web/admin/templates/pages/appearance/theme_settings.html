@@ -6,9 +6,10 @@
   <p class="text-muted">{{t "theme.settings.intro" .Theme.Name}}</p>
 </div>
 {{if .Fields}}
-<form method="post" action="/admin/appearance/theme-settings" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate>
+<script defer src="{{asset "theme-settings-tabs.js"}}"></script><form data-theme-settings method="post" action="/admin/appearance/theme-settings" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
-  {{range .Fields}}{{template "fields/field" .}}{{end}}
+  <nav data-theme-tabs hidden class="flex flex-wrap gap-2" aria-label="{{t "theme.settings.groups"}}">{{range .Groups}}<button type="button" data-theme-tab="{{.Key}}" class="border border-line rounded px-3 min-h-11">{{t (printf "theme.settings.group_%s" .Key)}}</button>{{end}}</nav>
+  {{range .Groups}}<section data-theme-panel="{{.Key}}" {{if .HasError}}data-has-error="true"{{end}} class="space-y-4"><h2 class="font-bold">{{t (printf "theme.settings.group_%s" .Key)}}</h2>{{range .Fields}}<div class="border-b border-line pb-4">{{template "fields/field" .}}{{if .CanResetIdentity}}<p data-theme-source class="text-xs text-muted mt-2">{{if .HasOverride}}{{t "theme.settings.source_custom"}}{{else}}{{t "theme.settings.source_default"}}{{end}}</p><button type="button" data-theme-reset="{{.Key}}" data-pending="{{t "theme.settings.reset_pending"}}" class="text-blue underline text-sm min-h-11">{{t "theme.settings.reset_default"}}</button>{{end}}</div>{{end}}</section>{{end}}
   <div><button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
 </form>
 {{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}

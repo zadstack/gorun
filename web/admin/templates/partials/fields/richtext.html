@@ -4,6 +4,22 @@
      element (el.gpQuill), not in Alpine state: Alpine's reactive proxy breaks Quill's events. */}}
 {{define "fields/richtext"}}
 <div class="gp-field" data-field-type="richtext" data-field-key="{{.Key}}" {{if .StartHTML}}data-editor-start="html"{{end}}
+     data-tool-bold="{{t "content.editor.tool_bold"}}"
+     data-tool-italic="{{t "content.editor.tool_italic"}}"
+     data-tool-underline="{{t "content.editor.tool_underline"}}"
+     data-tool-link="{{t "content.editor.tool_link"}}"
+     data-tool-heading2="{{t "content.editor.tool_heading2"}}"
+     data-tool-heading3="{{t "content.editor.tool_heading3"}}"
+     data-tool-ordered="{{t "content.editor.tool_ordered"}}"
+     data-tool-bullet="{{t "content.editor.tool_bullet"}}"
+     data-tool-quote="{{t "content.editor.tool_quote"}}"
+     data-tool-code="{{t "content.editor.tool_code"}}"
+     data-tool-rtl="{{t "content.editor.tool_rtl"}}"
+     data-tool-left="{{t "content.editor.tool_left"}}"
+     data-tool-center="{{t "content.editor.tool_center"}}"
+     data-tool-right="{{t "content.editor.tool_right"}}"
+     data-tool-clean="{{t "content.editor.tool_clean"}}"
+     data-tool-body="{{t "content.editor.tool_body"}}"
      data-warn="{{t "content.editor.visual_warning"}}"
      x-data="{ tab: $el.dataset.editorStart || 'visual', confirmed: false,
        boot() {
@@ -12,6 +28,14 @@
          if (el.gpQuill) return;
          const rtl = document.documentElement.dir === 'rtl';
          const q = new Quill(el, { theme: 'snow', modules: { toolbar: [[{ header: 2 }, { header: 3 }], ['bold', 'italic', 'underline', 'link'], [{ list: 'ordered' }, { list: 'bullet' }], ['blockquote', 'code-block'], [{ direction: 'rtl' }, { align: '' }, { align: 'center' }, { align: 'right' }], ['clean']] } });
+         const toolbar = q.getModule('toolbar').container;
+         toolbar.querySelectorAll('button').forEach(button => {
+           const format = [...button.classList].find(name => name.startsWith('ql-'))?.slice(3);
+           const key = format === 'header' ? 'heading' + button.value : format === 'list' ? button.value : format === 'blockquote' ? 'quote' : format === 'code-block' ? 'code' : format === 'direction' ? 'rtl' : format === 'align' ? (button.value || 'left') : format;
+           const label = this.$root.getAttribute('data-tool-' + key);
+           if (label) { button.setAttribute('aria-label', label); button.title = label; }
+         });
+         q.root.setAttribute('aria-label', this.$root.dataset.toolBody);
          el.gpQuill = q;
          q.root.setAttribute('dir', rtl ? 'rtl' : 'ltr');
          if (src.value.trim()) q.setContents(q.clipboard.convert({ html: src.value }), 'silent');

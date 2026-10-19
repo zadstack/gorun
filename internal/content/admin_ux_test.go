@@ -74,3 +74,31 @@ func TestPublishedEditorHasOneClearUpdateAction(t *testing.T) {
 		t.Fatal("update semantics changed", e)
 	}
 }
+
+func TestAdminPageTreeIsFilteredAndKeepsSelectionPermission(t *testing.T) {
+	s := loggedIn(t, "author")
+	cs := contentService(t, s.app)
+	us, _ := kernel.Get[auth.Service](s.app.Deps, kernel.ServiceAuth)
+	users, _, _ := us.List(context.Background(), auth.ListQuery{PerPage: 100})
+	owner := ""
+	for _, u := range users {
+		if u.Email == "author@example.com" {
+			owner = u.ID
+		}
+	}
+	parent, e := cs.Create(context.Background(), content.Input{Type: "page", Title: "Owned parent", AuthorID: owner, Locale: "en"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	child, e := cs.Create(context.Background(), content.Input{Type: "page", Title: "Owned child", ParentID: parent.ID, AuthorID: owner, Locale: "en"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if _, e = cs.Create(context.Background(), content.Input{Type: "page", Title: "Filtered Arabic page", ParentID: parent.ID, AuthorID: owner, Locale: "ar"}); e != nil {
+		t.Fatal(e)
+	}
+	response, page := s.do("GET", "/admin/content/page?layout=tree&locale=en", nil, nil)
+	if response.StatusCode != 200 || !strings.Contains(page, `data-tree-row="`+child.ID+`"`) || !strings.Contains(page, `<details open>`) || !strings.Contains(page, "Owned parent") || strings.Contains(page, "Filtered Arabic page") {
+		t.Fatal("filtered page tree failed", response.StatusCode)
+	}
+}
