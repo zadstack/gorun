@@ -68,9 +68,9 @@ GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 
 
 ## A workspace that stays organized
 
-Up to six primary sections keep related tools together, with contextual page tabs above the screen you are using. You see the tools your permissions allow; Store adds an optional seventh section when permitted commerce tools are available. Personal visibility, navigation order and dashboard pins stay yours.
+Up to six primary sections keep related tools together, with contextual page tabs above the screen you are using. You see the tools your permissions allow; Store adds an optional seventh section when permitted commerce tools are available. Colored categories keep their text labels and selected borders. Personal visibility, navigation order and dashboard pins stay yours; pinned tools remain within reach under **Quick access** in the main sidebar.
 
-![GoRun 0.6 content workspace with grouped sections, contextual page tabs and the opposite-side agents rail](assets/branding/screenshots/admin-navigation-en.png)
+![GoRun 0.9 content workspace with grouped sections, contextual page tabs and the opposite-side agents rail](assets/branding/screenshots/admin-navigation-en.png)
 
 The screenshots use an isolated demo site with fictional content. The layout mirrors for Arabic and stays usable on mobile. [Arabic mobile menu](assets/branding/screenshots/admin-navigation-ar-mobile.png) · [Workspace guide](docs/ADMIN_WORKSPACE.md).
 
@@ -90,7 +90,13 @@ Manage posts, pages, custom content types, fields, media and navigation in one p
 
 ## Build a site you can make your own
 
-Start with a bundled theme, create pages with section-based layouts, and preview before publishing. Child themes and filesystem templates let developers customize the result. Activating a theme does not create starter pages; use the site builder for starter content.
+Start with a bundled theme, create pages with section-based layouts, and preview before publishing. Child themes and filesystem templates let developers customize the result. Activating a theme does not create starter pages; use the site builder for starter content. The default reading theme presents a featured article, recent posts and guide links drawn from actual published content. [Default-theme demo](assets/branding/screenshots/theme-home-en.png) · [Arabic article on mobile](assets/branding/screenshots/theme-post-ar-mobile.png).
+
+**Website → Design → Site design** brings **Build site** and **Visual identity** into one workspace. Prepare pages as drafts, review activation separately, and preview colors and typography locally before explicitly saving identity. Existing site content and theme settings remain yours. [Site design guide](docs/SITE-DESIGN-WORKSPACE.md).
+
+![Unified Site design workspace with saved-site summary, visual identity controls and a local sample](assets/branding/screenshots/site-design-identity-en.png)
+
+[Build-site step](assets/branding/screenshots/site-design-build-en.png) · [Arabic mobile identity](assets/branding/screenshots/site-design-identity-ar-mobile.png).
 
 ![Page builder with an Arabic interface and live preview](assets/branding/screenshots/builder-ar.png)
 
@@ -131,6 +137,12 @@ Switch between **Workflow**, **Grid** and **List** views. Arrange cards using th
 *Screenshots use a fictional business and synthetic content. The example assistant response is supplied by a test client through the real MCP workflow; it is not a model-quality benchmark. [Arabic view](assets/branding/screenshots/canvas-ar.png) · [Mobile view](assets/branding/screenshots/canvas-mobile.png).*
 
 **Agent bundles:** add bounded inline skill instructions and reference text to reviewed external-agent or managed-text requests, and attach version-pinned MCP connection profiles with saved discovery status. [Manage skills and MCP references](docs/AGENT-BUNDLES.md). External clients configure their own endpoints, credentials and tools. Named OpenAI-compatible managed text agents can use [explicitly selected MCP tools](docs/MANAGED-MCP-TOOLS.md), with owner review of every exact call and a private final note. This mode starts disabled and supports manual runs only.
+
+**Start from an inspectable role.** Six compact bilingual examples combine five inline skills each. Inspect the instructions, then prepare an unsaved bundle for an owned agent. A role grants no permissions, chooses no provider and makes no tool call. [Role templates](docs/AGENT-ROLE-TEMPLATES.md).
+
+![Compact agent role catalog with labeled categories and expandable skill instructions](assets/branding/screenshots/agent-roles-en.png)
+
+[Arabic mobile roles](assets/branding/screenshots/agent-roles-ar-mobile.png). The catalog shows example instructions; it is not a team of running agents.
 
 [MCP and permissions](docs/MCP.md) · [Canvases](docs/CANVASES.md) · [REST API](docs/API.md)
 

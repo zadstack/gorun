@@ -9,6 +9,9 @@ All notable changes to GoRun are recorded here. The format follows
 
 This release improves daily administration and adds inspectable agent role templates.
 
+- Colored, labeled navigation categories and private Quick access shortcuts in the main sidebar, rechecking current permissions and visibility without changing roles. Legacy identity pins map to the authorized unified Site design entry.
+- A unified Site design workspace for draft preparation and visual identity, with separate explicit save/activation, preserved deep links and a local identity sample.
+- A refreshed default reading theme with genuine starter examples, a featured article, recent posts and guide links; existing authored content and stored identity are preserved.
 - A work-first dashboard, explicit customization, clearer content publishing actions, page hierarchy, media list/details and guided website setup.
 - Shared staff navigation for agent management and app subscriptions, with customer-facing routes and permissions preserved.
 - A detailed MCP/AI/S3 connection directory with searchable columns, saved credential presence and historical test results. Browsing the directory never probes a provider.
@@ -515,7 +518,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/zadstack/gorun/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/zadstack/gorun/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/zadstack/gorun/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/zadstack/gorun/compare/v0.5.0...v0.6.0
