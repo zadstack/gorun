@@ -28,6 +28,16 @@ def main():
         command = ["docker", "compose", "--project-directory", str(directory), "-p", name,
                    "-f", str(directory / "compose.json")]
         state = None
+        def diagnostic_run(args, capture=True):
+            result = subprocess.run(args, text=True, capture_output=True)
+            if result.returncode:
+                message = result.stderr
+                if (directory / "secrets.env").exists():
+                    for line in (directory / "secrets.env").read_text().splitlines():
+                        message = message.replace(line.split("=", 1)[1], "[REDACTED]")
+                raise RuntimeError("Synthetic fixture command failed: " + message)
+            return result.stdout.strip()
+        setup.run = diagnostic_run
         try:
             state = setup.create_deployment(directory, domain, setup.DEFAULT_VERSION, name)
             # Only the test uses Caddy's private CA. Production always uses automatic public TLS.
