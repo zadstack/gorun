@@ -196,7 +196,7 @@ If you lack terminal access or a prerequisite, explain exactly what is needed.
 
 ### Cloudflare Edge — قيد التطوير
 
-GoRun Edge نسخة تجريبية مستقلة مبنية على Workers. يتوفر بجانب عقود صلاحيات المديرين [نموذج Worker للقراءة فقط](docs/EDGE.md) يعمل محليًا مع D1 وR2 منفصلين واختبارات تكامل فعلية على workerd. لم يُتحقق من نشر Cloudflare فعلي بعد؛ الإدارة وربط المديرين وقالب النشر المدعوم ضمن [خطة Edge](https://github.com/zadstack/gorun/issues/46)، ولا يوجد زر نشر جاهز. النموذج منفصل عن ملف إصدار GoRun Full.
+GoRun Edge نسخة تجريبية مستقلة مبنية على Workers مع D1 وR2 منفصلين. اجتاز [نموذج القراءة فقط](docs/EDGE.md) اختبارات HTTPS فعلية على Cloudflare. تضيف [إدارة المالك الاختيارية](docs/EDGE-ADMIN.md) مسودات خاصة ومراجعة ونشرًا ومراجعات محفوظة واستعادة وصول باختبارات محلية، وتظل معطلة افتراضيًا؛ التحقق البعيد من الإدارة خطوة مستقلة. ربط المديرين وقالب النشر المدعوم ضمن [خطة Edge](https://github.com/zadstack/gorun/issues/46)، ولا يوجد زر نشر أو نتيجة قياس أداء. Edge منفصل عن ملف إصدار GoRun Full.
 
 ### البدء السريع
 

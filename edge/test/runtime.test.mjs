@@ -2,6 +2,7 @@ import {after,before,test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {Miniflare,convertV4MiniflareOptions} from 'miniflare';
+const modules=['index','admin','admin-auth'].map(name=>({type:'ESModule',path:new URL('../dist/'+name+'.js',import.meta.url).pathname}));
 const runtime=options=>new Miniflare(convertV4MiniflareOptions(options));
 let mf,db,bucket;
 const fetch=(path,init)=>mf.dispatchFetch('https://edge.example'+path,init);
@@ -13,7 +14,7 @@ async function media(id,key,visibility='public',type='text/plain',size=6) {
   await db.prepare('INSERT INTO edge_media VALUES (?1,?2,?3,?4,?5,?6)').bind('demo',id,key,type,size,visibility).run();
 }
 before(async()=>{
-  mf=runtime({modules:true,scriptPath:new URL('../dist/index.js',import.meta.url).pathname,compatibilityDate:'2026-10-01',bindings:{SITE_ID:'demo'},d1Databases:{DB:'edge-test'},r2Buckets:{MEDIA:'edge-test'}});
+  mf=runtime({modules,compatibilityDate:'2026-10-01',bindings:{SITE_ID:'demo'},d1Databases:{DB:'edge-test'},r2Buckets:{MEDIA:'edge-test'}});
   db=await mf.getD1Database('DB');bucket=await mf.getR2Bucket('MEDIA');
   const sql=await readFile(new URL('../migrations/0001_readonly.sql',import.meta.url),'utf8');
   for(const statement of sql.split(';').map(s=>s.trim()).filter(Boolean)) await db.prepare(statement).run();
@@ -68,11 +69,11 @@ test('HEAD has GET metadata and no response body; readiness uses actual D1 schem
   await db.prepare('DELETE FROM edge_schema').run();assert.equal((await fetch('/readyz')).status,503);await db.prepare('INSERT INTO edge_schema VALUES (1)').run();
 });
 test('missing site/schema/bindings fail closed without exposing storage errors',async()=>{
-  const broken=runtime({modules:true,scriptPath:new URL('../dist/index.js',import.meta.url).pathname,compatibilityDate:'2026-10-01',bindings:{SITE_ID:'unknown'},d1Databases:{DB:'empty'},r2Buckets:{MEDIA:'empty'}});
+  const broken=runtime({modules,compatibilityDate:'2026-10-01',bindings:{SITE_ID:'unknown'},d1Databases:{DB:'empty'},r2Buckets:{MEDIA:'empty'}});
   try{const r=await broken.dispatchFetch('https://edge.example/');assert.equal(r.status,503);assert.deepEqual(await r.json(),{ok:false,error:{code:'unavailable'}});assert.equal((await broken.dispatchFetch('https://edge.example/healthz')).status,200);}finally{await broken.dispose();}
 });
 
 test('missing bindings return generic503 while liveness remains independent',async()=>{
-  const broken=runtime({modules:true,scriptPath:new URL('../dist/index.js',import.meta.url).pathname,compatibilityDate:'2026-10-01',bindings:{SITE_ID:'demo'}});
+  const broken=runtime({modules,compatibilityDate:'2026-10-01',bindings:{SITE_ID:'demo'}});
   try {assert.equal((await broken.dispatchFetch('https://edge.example/readyz')).status,503);assert.equal((await broken.dispatchFetch('https://edge.example/healthz')).status,200);} finally {await broken.dispose();}
 });
