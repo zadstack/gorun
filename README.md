@@ -107,6 +107,10 @@ If a tool requests approval, report its request ID and wait for the decision.
   </tr>
 </table>
 
+### نسخ تلقائي واستعادة آمنة
+
+جدولة يومية أو أسبوعية، وحالة آخر نسخة سليمة والمساحة المستخدمة، وتنبيهات الفشل. يعرض `gorun backup-preview` نسخة مؤقتة للقراءة فقط على localhost قبل الاستعادة إلى مجلد جديد. [التفاصيل](docs/BACKUPS.md).
+
 ### تشغيل محلي بأمر واحد
 
 ```sh
@@ -303,6 +307,10 @@ Provider-dependent features need valid credentials. Saving a connection or loadi
     <td><strong>Mobile</strong><br />Full RTL.</td>
   </tr>
 </table>
+
+## Automatic backup and safe recovery
+
+Choose daily or weekly backups, track verified success and storage, and see failure alerts. `gorun backup-preview` opens a disposable read-only localhost preview before restoring into a new directory. [Details](docs/BACKUPS.md).
 
 ## One-command local start
 

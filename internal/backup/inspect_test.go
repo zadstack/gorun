@@ -92,3 +92,33 @@ func TestInspectForeignKeysAndMissingExternalDestinations(t *testing.T) {
 		t.Fatal("inspection generated recovery secret")
 	}
 }
+
+func TestInspectRelativePathsWithURICharacters(t *testing.T) {
+	parent := t.TempDir()
+	dataDir := filepath.Join(parent, "site ? # %")
+	if err := os.Mkdir(dataDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	database := filepath.Join(dataDir, "gorun.db")
+	d, err := db.Open(database)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.Exec(`CREATE TABLE fixture(id TEXT)`); err != nil {
+		t.Fatal(err)
+	}
+	d.Close()
+	res, err := Create(dataDir, database, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(parent)
+	relative, err := filepath.Rel(parent, res.Manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	report, err := Inspect(relative)
+	if err != nil || report.Readiness == "blocked" || !report.IntegrityOK {
+		t.Fatalf("relative manifest rejected: %+v %v", report, err)
+	}
+}

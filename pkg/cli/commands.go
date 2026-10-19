@@ -130,18 +130,26 @@ func backup(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	report, err := gpbackup.Inspect(res.Manifest)
+	if err != nil {
+		return fmt.Errorf("backup: verification: %w", err)
+	}
+	if report.Readiness == "blocked" || !report.IntegrityOK {
+		return fmt.Errorf("backup: local verification failed (%s); previous copies preserved", strings.Join(report.Errors, ", "))
+	}
 	fmt.Fprintf(out, "database: %s\nfiles:    %s (%d files)\n", res.DB, res.Files, res.Count)
+	fmt.Fprintln(out, "integrity: local checks passed; original secrets and external recovery requirements still need review")
 	if includeSecrets {
 		fmt.Fprintln(out, "secrets:  secret.key and gorun.toml are in the archive in plain text; keep it offline and encrypted")
 	} else {
 		fmt.Fprintln(out, "secrets:  not archived; keep secret.key / GORUN_SECRET_KEY separately (needed to restore encrypted settings and sessions)")
 	}
 	if retain >= 1 {
-		removed, pruneErr := gpbackup.Prune(cfg.DataDir, retain)
+		removed, pruneErr := gpbackup.PruneVerified(cfg.DataDir, retain)
 		if pruneErr != nil {
 			return pruneErr
 		}
-		fmt.Fprintf(out, "retain:   kept %d newest complete pair(s); removed %d file(s)\n", retain, removed)
+		fmt.Fprintf(out, "retain:   kept %d newest verified pair(s); removed %d file(s)\n", retain, removed)
 	}
 	return nil
 }

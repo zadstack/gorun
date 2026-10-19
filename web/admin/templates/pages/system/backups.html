@@ -11,6 +11,18 @@
     <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "archive"}}<span>{{t "admin.backups.create"}}</span></button>
   </form>
 </div>
+<section class="border border-line bg-panel p-4 mb-5 space-y-2" data-backup-storage>
+  <h2 class="font-bold">{{t "admin.backups.summary_title"}}</h2>
+  <p>{{t "admin.backups.copy_count"}}: {{.Count}} · {{t "admin.backups.space_used"}}: <span dir="ltr">{{.UsedSpace}}</span>{{if .FreeSpace}} · {{t "admin.backups.space_free"}}: <span dir="ltr">{{.FreeSpace}}</span>{{end}}</p>
+  <p data-backup-last-success>{{t "admin.backups.last_verified"}}: {{if .LastSuccess.At}}<time dir="ltr">{{.LastSuccess.At}}</time> · <span dir="ltr">{{.LastSuccess.Stamp}}</span>{{else}}{{t "admin.backups.no_verified"}}{{end}}</p>
+</section>
+{{if eq .Schedule.State.Status "failed"}}
+<div role="alert" class="border border-red bg-red-soft text-red p-4 mb-5" data-schedule-status="failed"><p>{{t "admin.backups.alert_failed"}}</p><p class="text-sm mt-1">{{t "admin.backups.attempt_at"}}: <time dir="ltr">{{.Schedule.State.AttemptAt}}</time> · {{t (print "admin.backups.stage." .Schedule.State.Stage)}}</p></div>
+{{else if eq .Schedule.State.Status "warning"}}
+<div role="alert" class="border border-amber bg-amber-soft p-4 mb-5" data-schedule-status="warning">{{t "admin.backups.alert_retention"}}</div>
+{{else if eq .Schedule.State.Status "running"}}
+<p role="status" class="mb-5" data-schedule-status="running">{{t "admin.backups.running"}}</p>
+{{end}}
 <section class="border border-line bg-panel p-4 mb-5 space-y-3" data-backup-schedule>
   <h2 class="font-bold">{{t "admin.backups.schedule_title"}}</h2>
   <p class="text-muted text-sm">{{t "admin.backups.schedule_help"}}</p>
@@ -18,7 +30,12 @@
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <label class="block text-sm">
       <span class="text-muted">{{t "admin.backups.schedule_hours"}}</span>
-      <input type="number" name="schedule_hours" min="0" max="168" value="{{.Schedule.Hours}}" class="mt-1 block w-28 h-9 px-2 rounded border border-line bg-panel-2 font-mono" dir="ltr">
+      <select name="schedule_hours" class="mt-1 block h-9 px-2 rounded border border-line bg-panel-2">
+      <option value="0" {{if eq .Schedule.Hours 0}}selected{{end}}>{{t "admin.backups.frequency_off"}}</option>
+      <option value="24" {{if eq .Schedule.Hours 24}}selected{{end}}>{{t "admin.backups.frequency_daily"}}</option>
+      <option value="168" {{if eq .Schedule.Hours 168}}selected{{end}}>{{t "admin.backups.frequency_weekly"}}</option>
+      {{if and .Schedule.Enabled (ne .Schedule.Hours 24) (ne .Schedule.Hours 168)}}<option value="{{.Schedule.Hours}}" selected>{{t "admin.backups.frequency_custom" .Schedule.Hours}}</option>{{end}}
+      </select>
     </label>
     <label class="block text-sm">
       <span class="text-muted">{{t "admin.backups.retain"}}</span>

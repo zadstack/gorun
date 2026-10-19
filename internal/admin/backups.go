@@ -3,6 +3,7 @@ package admin
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -18,11 +19,14 @@ var backupMu sync.Mutex
 
 // backupsPage is the data of System → Backups.
 type backupsPage struct {
-	RemoteName string
-	RemoteLast remoteBackupState
-	Schedule   backupSchedulePolicy
-	Backups    []backupRow
-	Dir        string
+	RemoteName           string
+	RemoteLast           remoteBackupState
+	Schedule             backupSchedulePolicy
+	Backups              []backupRow
+	Dir                  string
+	LastSuccess          backupSuccess
+	UsedSpace, FreeSpace string
+	Count                int
 }
 
 type backupRow struct {
@@ -47,6 +51,19 @@ func (h *handlers) backupsList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.backupScheduleView(r.Context(), &d)
+	d.Count = len(list)
+	var used int64
+	if entries, err := os.ReadDir(d.Dir); err == nil {
+		for _, entry := range entries {
+			if info, err := entry.Info(); err == nil && info.Mode().IsRegular() {
+				used += info.Size()
+			}
+		}
+	}
+	d.UsedSpace = humanSize(used)
+	if free, _, ok := diskUsage(h.d.Config.DataDir); ok {
+		d.FreeSpace = humanBytes(free)
+	}
 	for _, e := range list {
 		row := backupRow{Stamp: e.Stamp, Time: e.Time.Format(time.RFC3339),
 			DBSize: humanSize(e.DBSize), FilesSize: humanSize(e.FilesSize), HasDB: e.DBSize >= 0, HasFiles: e.FilesSize >= 0, LocalState: e.LocalState, HasManifest: e.HasManifest, Remote: e.Remote}
@@ -61,13 +78,22 @@ func (h *handlers) backupsList(w http.ResponseWriter, r *http.Request) {
 // backupCreate makes a backup now (the same as `gorun backup`) and audits it.
 func (h *handlers) backupCreate(w http.ResponseWriter, r *http.Request) {
 	backupMu.Lock()
-	res, err := backup.Create(h.d.Config.DataDir, h.d.Config.DBPath(), time.Now())
+	now := time.Now()
+	res, err := backup.Create(h.d.Config.DataDir, h.d.Config.DBPath(), now)
+	if err == nil {
+		var success backupSuccess
+		success, err = verifiedBackup(res, now)
+		if err == nil {
+			err = h.d.Settings.Set(r.Context(), SettingBackupLastSuccess, success)
+		}
+	}
 	backupMu.Unlock()
 	if err != nil {
 		h.d.Log.Error("admin: backup", "err", err)
+		h.d.Audit.Record(r.Context(), "system.backup_failed", "backup", "manual", nil)
 		httpx.SetFlash(w, "error", "admin.backups.failed")
 	} else {
-		h.d.Audit.Record(r.Context(), "system.backup", "backup", res.Stamp, map[string]any{"files": res.Count})
+		h.d.Audit.Record(r.Context(), "system.backup", "backup", res.Stamp, map[string]any{"files": res.Count, "verified": true})
 		httpx.SetFlash(w, "success", "admin.backups.created")
 	}
 	http.Redirect(w, r, "/admin/system/backups", http.StatusSeeOther)
