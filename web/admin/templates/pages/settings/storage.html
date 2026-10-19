@@ -3,6 +3,7 @@
 <link rel="stylesheet" href="{{asset "connection-setup.css"}}">
 <div class="connection-setup max-w-5xl space-y-5">
  <header class="admin-page-heading"><h1>{{t "admin.storage.title"}}</h1><p class="text-muted mt-2">{{t "admin.storage.intro"}}</p></header>
+<p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.storage_boundary"}}</p>
  <p class="connection-setup-help">{{t "connectionsetup.storage"}} <a href="/admin/settings/connections#connection-editor">{{t "admin.connections.add"}} →</a></p>
  <div class="grid gap-4 md:grid-cols-2">
   <section class="border border-line bg-panel p-4"><h2 class="font-bold">{{t "admin.storage.media"}}</h2><p class="mt-2">{{if .MediaName}}{{.MediaName}}{{else}}{{t "admin.storage.media_default"}}{{end}}</p><p class="text-muted text-sm my-3">{{t "admin.storage.media_help"}}</p>{{if .MediaName}}<form action="/admin/settings/storage/disable" method="post"><input name="_csrf" type="hidden" value="{{csrf}}"><input name="purpose" type="hidden" value="media"><input name="destination_id" type="hidden" value="{{.MediaID}}"><button class="admin-secondary-button">{{t "admin.storage.disable_media"}}</button></form>{{end}}</section>

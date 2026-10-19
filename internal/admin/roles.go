@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -25,12 +26,14 @@ type roleInput struct {
 
 type rolesListPage struct {
 	Roles  []roleListItem
+	Tasks  []roleTaskRow
 	Locale string
 }
 
 type roleListItem struct {
 	auth.Role
-	DisplayName string
+	DisplayName    string
+	AllPermissions bool
 }
 
 type roleEditPage struct {
@@ -51,9 +54,9 @@ func (h *handlers) rolesList(w http.ResponseWriter, r *http.Request) {
 	locale := i18n.Locale(r.Context())
 	items := make([]roleListItem, 0, len(list))
 	for _, role := range list {
-		items = append(items, roleListItem{Role: role, DisplayName: roleDisplayName(role.Name, locale)})
+		items = append(items, roleListItem{Role: role, DisplayName: roleDisplayName(role.Name, locale), AllPermissions: slices.Contains(role.Permissions, "*")})
 	}
-	h.tpl.Render(w, r, "pages/roles/list.html", rolesListPage{Roles: items, Locale: locale})
+	h.tpl.Render(w, r, "pages/roles/list.html", rolesListPage{Roles: items, Locale: locale, Tasks: roleTaskRows(list)})
 }
 
 func (h *handlers) roleNew(w http.ResponseWriter, r *http.Request) {
@@ -284,4 +287,24 @@ func sameStringSet(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+type roleTaskRow struct {
+	LabelKey string
+	Grants   []bool
+}
+
+func roleTaskRows(roles []auth.Role) []roleTaskRow {
+	specs := []struct{ key, permission string }{
+		{"edit", "content.edit"}, {"publish", "content.publish"}, {"keys", PermAPIKeys}, {"users", PermUsers}, {"settings", PermSettings}, {"backups", PermBackup},
+	}
+	rows := make([]roleTaskRow, 0, len(specs))
+	for _, task := range specs {
+		row := roleTaskRow{LabelKey: "operator.task." + task.key}
+		for _, role := range roles {
+			row.Grants = append(row.Grants, slices.Contains(role.Permissions, "*") || slices.Contains(role.Permissions, task.permission))
+		}
+		rows = append(rows, row)
+	}
+	return rows
 }

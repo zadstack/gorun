@@ -91,6 +91,7 @@ func queryJobs(ctx context.Context, d *sql.DB, q string, args ...any) ([]jobs.Jo
 // jobView adds display fields to a job.
 type jobView struct {
 	jobs.Job
+	LabelKey  string
 	Preview   string
 	Retryable bool
 }
@@ -98,7 +99,7 @@ type jobView struct {
 func viewJobs(list []jobs.Job) []jobView {
 	out := make([]jobView, len(list))
 	for i, j := range list {
-		out[i] = jobView{Job: j, Preview: prettyJSON(j.Payload, payloadPreviewMax), Retryable: j.Status == "dead" || (j.Status == "queued" && j.Attempts > 0)}
+		out[i] = jobView{Job: j, LabelKey: operatorJobLabel(j.Kind), Preview: prettyJSON(j.Payload, payloadPreviewMax), Retryable: j.Status == "dead" || (j.Status == "queued" && j.Attempts > 0)}
 	}
 	return out
 }
@@ -211,4 +212,17 @@ func pruneJobsAt(ctx context.Context, d *kernel.Deps, now time.Time) error {
 		d.Log.Info("jobs: pruned finished jobs", "rows", n)
 	}
 	return nil
+}
+
+func operatorJobLabel(kind string) string {
+	switch kind {
+	case "hooks.event":
+		return "operator.jobs.hooks"
+	case "mail.send":
+		return "operator.jobs.mail"
+	case "canvas.generate", "canvas.tools", "studio.generate":
+		return "operator.jobs.canvas"
+	default:
+		return ""
+	}
 }

@@ -4,20 +4,21 @@
 <h1 class="text-[22px] font-bold mb-3">{{t "admin.settings.title"}}</h1>
 {{template "partials/settings_tabs" "mail"}}
 {{if not .Configured}}<div role="status" class="mb-4 max-w-3xl rounded border border-amber bg-amber-soft text-amber-text px-3 py-2">{{t "admin.mail.not_configured"}}</div>{{end}}
-<form method="post" action="/admin/settings/mail" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate>
+<p class="mb-3 max-w-3xl text-sm text-muted">{{t "operator.mail_steps"}}</p>
+<form method="post" action="/admin/settings/mail" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate x-data="{ provider: $el.dataset.provider }" data-provider="{{.Form.Provider}}">
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <input type="hidden" name="edit_token" value="{{.Form.EditToken}}">
   {{with index .Fields "conflict"}}<p role="alert" class="text-red">{{t .}}</p>{{end}}
   <div>
     <label for="m-provider" class="block font-medium mb-1">{{t "admin.mail.provider"}}</label>
-    <select id="m-provider" name="provider" class="h-11 w-full rounded border border-line bg-panel px-3">
+    <select id="m-provider" name="provider" x-model="provider" class="h-11 w-full rounded border border-line bg-panel px-3">
       <option value="smtp" {{if eq .Form.Provider "smtp"}}selected{{end}}>SMTP</option>
       <option value="resend" {{if eq .Form.Provider "resend"}}selected{{end}}>Resend</option>
     </select>
     {{template "partials/field_errors" (index .Fields "provider")}}
     <p class="mt-1 text-xs text-muted">{{t "admin.mail.provider_help"}}</p>
   </div>
-  <fieldset class="border border-line rounded p-3 space-y-2">
+  <fieldset x-show="provider === 'resend'" class="border border-line rounded p-3 space-y-2">
     <legend class="px-1 font-medium">Resend</legend>
     <p class="text-sm">{{t "admin.mail.resend_setup"}}</p>
     <p class="flex flex-wrap gap-4 text-sm"><a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" class="underline">{{t "admin.mail.verify_domain"}}</a><a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" class="underline">{{t "admin.mail.create_key"}}</a><a href="https://resend.com/docs/api-reference/emails/send-email" target="_blank" rel="noopener noreferrer" class="underline">{{t "admin.mail.resend_docs"}}</a></p>
@@ -27,6 +28,8 @@
     {{if .APIKeySet}}<label class="inline-flex min-h-11 items-center gap-2"><input type="checkbox" name="clear_resend_api_key">{{t "admin.mail.key_clear"}}</label>{{end}}
     {{template "partials/field_errors" (index .Fields "resend_api_key")}}
   </fieldset>
+  <fieldset x-show="provider === 'smtp'" class="space-y-4">
+    <legend class="sr-only">{{t "operator.mail_smtp"}}</legend>
   <h2 class="font-medium">{{t "admin.mail.smtp_options"}}</h2>
   <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem_10rem]">
     <div>
@@ -60,6 +63,7 @@
       {{template "partials/field_errors" (index .Fields "password")}}
     </div>
   </div>
+  </fieldset>
   <h2 class="font-medium">{{t "admin.mail.sender_options"}}</h2>
   <div class="grid gap-4 sm:grid-cols-2">
     <div>

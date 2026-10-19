@@ -32,9 +32,10 @@ const (
 
 // HealthCheck is one line of the System Health "Checks" list.
 type HealthCheck struct {
-	Name   string `json:"name"`
-	Status string `json:"status"` // ok | warn | fail
-	Detail string `json:"detail"`
+	Name        string `json:"name"`
+	Status      string `json:"status"` // ok | warn | fail
+	Detail      string `json:"detail"`
+	OptionalOff bool   `json:"-"`
 }
 
 const (
@@ -274,6 +275,7 @@ func (h *handlers) backupHealth(ctx context.Context, tr func(string, ...any) str
 		return check
 	}
 	if hours < 1 {
+		check.OptionalOff = true
 		return check
 	}
 	last := backupScheduleLast(ctx, h.d)

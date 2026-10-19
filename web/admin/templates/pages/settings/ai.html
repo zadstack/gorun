@@ -17,7 +17,7 @@
       </select>
       {{template "partials/field_errors" (index .Fields "provider")}}
     </div>
-    <div>
+    <div x-show="provider !== ''">
       <label for="ai-model" class="block font-medium mb-1">{{t "admin.ai.model"}}</label>
       <input id="ai-model" name="model" value="{{.Form.Model}}" dir="ltr" autocomplete="off" aria-describedby="ai-model-help" :placeholder="provider === 'anthropic' ? 'claude-sonnet-5-5' : ''"
              class="h-9 w-full rounded border {{if index .Fields "model"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
@@ -25,14 +25,14 @@
       {{template "partials/field_errors" (index .Fields "model")}}
     </div>
   </div>
-  <div x-show="provider !== 'anthropic'">
+  <div x-show="provider === 'openai'">
     <label for="ai-base-url" class="block font-medium mb-1">{{t "admin.ai.base_url"}}</label>
     <input id="ai-base-url" name="base_url" value="{{.Form.BaseURL}}" dir="ltr" placeholder="{{.DefaultURL}}" aria-describedby="ai-base-url-help"
            class="h-9 w-full rounded border {{if index .Fields "base_url"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
     <p id="ai-base-url-help" class="mt-1 text-xs text-muted">{{t "admin.ai.base_url_help"}}</p>
     {{template "partials/field_errors" (index .Fields "base_url")}}
   </div>
-  <div>
+  <div x-show="provider !== ''">
     <label for="ai-key" class="block font-medium mb-1">{{t "admin.ai.api_key"}}</label>
     <input id="ai-key" name="api_key" type="password" autocomplete="new-password" dir="ltr" aria-describedby="ai-key-help" class="h-9 w-full rounded border {{if index .Fields "api_key"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
     <p id="ai-key-help" class="mt-1 text-xs text-muted">{{if .KeySet}}{{t "admin.ai.key_set"}}{{else}}{{t "admin.ai.key_unset"}}{{end}}</p>
