@@ -188,3 +188,35 @@ func TestConcurrentPasswordVerificationBounded(t *testing.T) {
 		t.Fatal("overloaded request blocked")
 	}
 }
+
+func TestAdminAliasSharesLimitAndDisabledStatus(t *testing.T) {
+	s := testService(newDB(t))
+	ctx := withIP("10.0.0.1")
+	u, err := s.createFirstAdmin(ctx, "owner@example.com", "Owner", "correct strong password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < maxLoginFailures; i++ {
+		identity := "admin"
+		if i%2 == 0 {
+			identity = u.Email
+		}
+		if _, err := s.CheckPassword(ctx, identity, "wrong"); !errors.Is(err, ErrInvalidCredentials) {
+			t.Fatalf("attempt %d: %v", i, err)
+		}
+	}
+	if _, err := s.CheckPassword(ctx, " ADMIN ", "correct strong password"); !errors.Is(err, ErrLocked) {
+		t.Fatalf("alias bypassed lockout: %v", err)
+	}
+	// A separate IP avoids the previous lockout; disabling still blocks the alias.
+	if _, err := s.Create(ctx, "second@example.com", "Second", "second strong password", RoleAdmin); err != nil {
+		t.Fatal(err)
+	}
+	disabled := StatusDisabled
+	if _, err := s.Update(ctx, u.ID, UserPatch{Status: &disabled}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.CheckPassword(withIP("10.0.0.2"), "admin", "correct strong password"); !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatalf("disabled alias accepted: %v", err)
+	}
+}
