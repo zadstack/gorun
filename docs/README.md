@@ -13,6 +13,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | [PRODUCTION.md](PRODUCTION.md) | Production env, HTTPS / reverse proxy / HSTS, backup + restore (CLI and admin), cutover, acceptance checks |
 | [STAGING.md](STAGING.md) | Staging site (second data dir) + promote-to-live via `gorun staging seed\|promote` |
 | [OBSERVABILITY.md](OBSERVABILITY.md) | Optional `GET /metrics` (Prometheus text) + JSON log shipping notes |
+| [LOADTEST.md](LOADTEST.md) | Local HTTP load harness: p50/p95, error rate, RSS/CPU, concurrent readers (`make loadtest`) |
 | [../deploy/coolify.md](../deploy/coolify.md) | Coolify Compose or GHCR image, Traefik, trusted proxies, volume, health, restore, [HTTPS acceptance checklist](../deploy/coolify.md#9-https-acceptance-checklist), upgrade |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common boot, proxy, lock, backup, theme, upgrade, and MCP failures |
 
@@ -50,7 +51,8 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | Doc | Covers |
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Modular monolith, boot order, data dir, building on `pkg/cli` |
-| [EXTENSIONS.md](EXTENSIONS.md) | Hosted extension packages |
+| [PLUGIN-DEVELOPMENT.md](PLUGIN-DEVELOPMENT.md) | Step-by-step plugin tutorial: manifest, signed HTTP hooks, install and test (AR/EN) |
+| [EXTENSIONS.md](EXTENSIONS.md) | Full hosted extension manifest and HTTP bridge reference |
 | [E2E.md](E2E.md) | Playwright suite (not a runtime dependency) |
 
 ## Also in the repository root / أيضًا في جذر المستودع

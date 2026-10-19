@@ -141,7 +141,7 @@ func TestSetupCreatesFirstAdminAndLogsIn(t *testing.T) {
 		t.Fatalf("setup without csrf must be rejected: %d", resp.StatusCode)
 	}
 	resp, _ = s.do("POST", "/admin/setup", url.Values{"_csrf": {token}, "name": {"Ahmed"}, "email": {"admin@example.com"}, "password": {"correct horse battery"}})
-	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/admin" {
+	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/admin/workspace" {
 		t.Fatalf("setup submit: %d %q", resp.StatusCode, resp.Header.Get("Location"))
 	}
 	resp, page = s.do("GET", "/admin", nil)

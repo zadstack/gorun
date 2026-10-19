@@ -2,11 +2,7 @@
 {{define "title"}}{{t "admin.settings.title"}}{{end}}
 {{define "content"}}
 <h1 class="text-[22px] font-bold mb-3">{{t "admin.settings.title"}}</h1>
-<nav class="flex gap-1 mb-4 border-b border-line" aria-label="{{t "admin.settings.title"}}">
-  <a href="/admin/settings/general" aria-current="page" class="px-3 py-2 -mb-px border border-line border-b-panel bg-panel rounded-t font-medium">{{t "admin.settings.tab_general"}}</a>
-  <a href="/admin/settings/mail" class="px-3 py-2 text-muted hover:text-ink">{{t "admin.settings.tab_mail"}}</a>
-  <a href="/admin/settings/ai" class="px-3 py-2 text-muted hover:text-ink">{{t "admin.settings.tab_ai"}}</a>
-</nav>
+{{template "partials/settings_tabs" "general"}}
 <form method="post" action="/admin/settings/general" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <input type="hidden" name="edit_token" value="{{.EditToken}}">

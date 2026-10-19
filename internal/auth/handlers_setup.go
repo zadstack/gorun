@@ -97,7 +97,8 @@ func (h *handlers) setupSubmit(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+	// First-run: pick Simple CMS vs Agents + Commerce before the full admin.
+	http.Redirect(w, r, "/admin/workspace", http.StatusSeeOther)
 }
 
 // urlPath returns the path (+query) of an absolute or relative URL.

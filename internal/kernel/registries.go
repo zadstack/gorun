@@ -37,6 +37,7 @@ type AdminRegistry struct {
 	widgets   []Widget
 	canvas    []CanvasWidget
 	can       func(ctx context.Context, perm string) bool
+	navFilter func(ctx context.Context, items []NavItem) []NavItem
 }
 
 // NewAdminRegistry returns an empty registry.
@@ -80,6 +81,15 @@ func (a *AdminRegistry) SetPermissionCheck(can func(ctx context.Context, perm st
 	a.can = can
 }
 
+// SetNavFilter installs a post-permission filter (e.g. workspace mode).
+// The filter runs after permission checks and before sorting is finalized;
+// it may drop items but should not invent IDs already filtered out.
+func (a *AdminRegistry) SetNavFilter(fn func(ctx context.Context, items []NavItem) []NavItem) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.navFilter = fn
+}
+
 // Nav returns the items visible in ctx (static and provided), sorted by
 // Position then ID.
 func (a *AdminRegistry) Nav(ctx context.Context) []NavItem {
@@ -87,6 +97,7 @@ func (a *AdminRegistry) Nav(ctx context.Context) []NavItem {
 	items := slices.Clone(a.nav)
 	providers := slices.Clone(a.providers)
 	can := a.can
+	navFilter := a.navFilter
 	a.mu.RUnlock()
 	// Providers run without the lock: they may query the database.
 	seen := make(map[string]bool, len(items))
@@ -107,6 +118,9 @@ func (a *AdminRegistry) Nav(ctx context.Context) []NavItem {
 			continue
 		}
 		out = append(out, n)
+	}
+	if navFilter != nil {
+		out = navFilter(ctx, out)
 	}
 	sort.SliceStable(out, func(i, j int) bool {
 		if out[i].Position != out[j].Position {

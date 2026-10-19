@@ -87,6 +87,9 @@ func (h *handlers) search(r *http.Request) (searchResults, error) {
 		if !can(r, p.Perm) {
 			continue
 		}
+		if p.Href == "/admin/settings/ai" && !WorkspaceShowsAdvanced(ctx, h.d.Settings) {
+			continue
+		}
 		if label, ok := match(p.LabelKey); ok {
 			res.Pages = append(res.Pages, searchHit{Title: label, Href: p.Href, Icon: p.Icon})
 		}

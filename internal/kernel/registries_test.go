@@ -20,6 +20,18 @@ func TestAdminNavSortedAndPermissionFiltered(t *testing.T) {
 	if got := a.Nav(context.Background()); len(got) != 2 {
 		t.Fatalf("want media filtered out: %+v", got)
 	}
+	a.SetNavFilter(func(_ context.Context, items []NavItem) []NavItem {
+		out := make([]NavItem, 0, len(items))
+		for _, n := range items {
+			if n.ID != "aaa" {
+				out = append(out, n)
+			}
+		}
+		return out
+	})
+	if got := a.Nav(context.Background()); len(got) != 1 || got[0].ID != "content" {
+		t.Fatalf("want nav filter applied: %+v", got)
+	}
 	a.AddWidget("stats", func(context.Context, *http.Request) (template.HTML, error) { return "<b>1</b>", nil })
 	if w := a.Widgets(); len(w) != 1 || w[0].ID != "stats" {
 		t.Fatalf("%+v", w)

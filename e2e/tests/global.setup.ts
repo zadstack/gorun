@@ -13,7 +13,10 @@ setup('first admin via /admin/setup, then login', async ({ page }) => {
   await page.fill('input[name="email"]', ADMIN.email);
   await page.fill('input[name="password"]', ADMIN.password);
   await page.locator('form[action="/admin/setup"] button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/admin\/?$/);
+  await expect(page).toHaveURL(/\/admin\/workspace/);
+  await page.locator('input[name="mode"][value="full"]').check();
+  await page.locator('form[action="/admin/workspace"] button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/admin\/workspace/);
 
   // setup is closed now
   await page.goto('/admin/setup');

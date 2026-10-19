@@ -39,6 +39,8 @@ func (h *handlers) routes() {
 	roles.Post("/roles/{slug}/delete", h.roleDelete)
 
 	st := r.With(auth.RequirePerm(PermSettings))
+	st.Get("/workspace", h.workspaceGet)
+	st.Post("/workspace", h.workspaceSave)
 	st.Get("/settings/general", h.settingsGeneral)
 	st.Post("/settings/general", h.settingsGeneralSave)
 	st.Get("/x/settings/front-page", h.frontPagePicker)
