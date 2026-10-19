@@ -1,0 +1,19 @@
+{
+  "create_draft": "Create content draft",
+  "new_draft": "Agent result",
+  "draft_help": "Creates one new draft from this text. The source and run are recorded. Nothing is published or overwritten. Repeating this action opens the same draft.",
+  "content_type": "Content type",
+  "draft_error": "Could not create the draft. Check required fields for the content type and retry.",
+  "save_template": "Save structure as template",
+  "templates": "Your workflow templates",
+  "template_safety": "Only card types, positions and connections are saved. Text, URLs, content selections, agent and provider bindings, results, checklists and automation permissions are removed. New instructions and connections are required. Save this structure?",
+  "template_help": "Private structural templates. Reuse starts with blank instructions and no connected content, agent, provider, results, sharing or enabled schedules. Configure and review every new workflow before running it.",
+  "template_name": "Template name",
+  "template_board_title": "Name the new board",
+  "templates_empty": "No saved templates yet.",
+  "reuse_template": "Create board",
+  "delete_template": "Delete template",
+  "delete_template_confirm": "Delete this template? Existing boards are kept.",
+  "template_saved": "Private structure saved.",
+  "lifecycle_error": "Could not complete this action. Try again."
+}
