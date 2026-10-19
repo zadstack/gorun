@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="{{asset "dashboard-pins.css"}}">
 <link rel="stylesheet" href="{{asset "sidebar-brand.css"}}">
 <script defer src="{{asset "dashboard-pins.js"}}"></script>
+<script defer src="{{asset "sidebar-scroll.js"}}"></script>
 <div hidden data-dashboard-pin-config data-csrf="{{csrf}}" data-saving="{{t "dashboardpins.saving"}}" data-error="{{t "dashboardpins.error"}}" data-stale="{{t "dashboardpins.stale"}}" data-saved="{{t "dashboardpins.saved"}}" data-reload="{{t "dashboardpins.reload"}}"></div>
 <aside x-ref="sidebar" id="admin-sidebar" class="admin-sidebar w-60 shrink-0 border-e border-line bg-panel hidden md:flex md:flex-col"
        :class="sidebarOpen && '!flex flex-col fixed inset-y-0 start-0 z-40'"

@@ -26,7 +26,7 @@ document.addEventListener('alpine:init', () => {
     toggleSidebar() {
       if (this.sidebarOpen) { this.closeSidebar(); return; }
       this.sidebarOpen = true;
-      this.$nextTick(() => this.$refs.sidebar.querySelector('a, button')?.focus());
+      this.$nextTick(() => this.$refs.sidebar.querySelector('a, button')?.focus({ preventScroll: true }));
     },
     closeSidebar() {
       this.sidebarOpen = false;
