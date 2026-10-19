@@ -7,7 +7,7 @@ Scope: findings 26, 28–34, 36–48 and 50–53 from the October19 administrati
 | Finding | Status | Implemented | Still open |
 |---|---|---|---|
 |26 General settings|Incremental|Site/language sections, dirty indicator and sticky save area; shared identity source explained|Consolidate duplicate identity/theme editing across pages|
-|28 Users|Incremental|Localized relative sign-in time with full timestamp tooltip; role/account distinction|Dedicated team/customer views and effective permission preview per user|
+|28 Users|Fixed audience/time defects; incremental permissions|Localized relative sign-in time/full timestamp; server-filtered team/non-customer and customer views preserve search/role/pagination|Saved-role grant preview now available per user with ownership/status/recent-auth caveats; a full effective item-by-item access simulator remains out of scope|
 |29 Login security|Incremental|Visible-sample counters before history, limitations folded; existing reasons/durations preserved|Aggregate historical metrics beyond the bounded50 failures/512 blocks are not collected here|
 |30 Mail|Fixed selected-provider defect|Only selected provider fields shown, common sender retained; save→send→confirm sequence; secrets remain write-only|Actual inbox receipt remains an operator check, not a delivery claim|
 |31 AI writing|Incremental|Off hides model/key/base URL; Anthropic hides OpenAI URL|A saved-connection selector replacing legacy settings requires a separate binding/migration design|
@@ -18,7 +18,7 @@ Scope: findings 26, 28–34, 36–48 and 50–53 from the October19 administrati
 |37 Availability|Fixed conditional-field defect|Password controls appear only for password mode; visitor impact explained|A fully rendered visitor-page preview remains open|
 |38 Page protection|Incremental|Saved policy and locale beside every bounded row; site/platform precedence and translation independence explicit|Effective cascade/source computation and a tabular policy editor|
 |39 Report intake setup|Incremental|Pre-enable reviewer/privacy/follow-up checklist, explicitly not automatic verification|Reviewer assignment/readiness verification workflow|
-|40 Roles|Fixed wildcard defect; comparison added|Global wildcard says “All permissions”; exact-permission task comparison with scope/recent-auth caveats|Team presets and before-save change review|
+|40 Roles|Fixed wildcard/comparison/review defects|Global wildcard says “All permissions”; exact-permission task matrix; saved-role clone entry points; before-save diff against saved permissions (including validation retries and administrator wildcard)|Dedicated named team bundles beyond existing role starting points remain optional product work|
 |41 Health|Incremental|Automatic backup off presented as optional/off, actual warn/fail preserved; friendly core names and folded runtime diagnostics|Contextual optional billing checks and broader repair links|
 |42 Errors|Incremental|Technical collector diagnostics folded below actual rows; recorded/retried does not imply resolved|Cross-source actionable default view needs a clear common status contract|
 |43 Updates|Incremental|Backup→request→verify sequence and concrete deployment guide|Automatic post-deployment polling is not implemented; accepted request remains distinct from completion|
@@ -39,3 +39,10 @@ Scope: findings 26, 28–34, 36–48 and 50–53 from the October19 administrati
 - Audit-name search tests include literal `%`/`_`; existing actor-ID/API filtering remains available.
 - Real Chromium tests use a fresh synthetic installation: selected mail/AI/access fields, mobile backup summary/inbox hierarchy, navigation preview/search and task comparison, and an actual published page in SEO inventory.
 - No live site, backup destination or provider is contacted by the new browser cases. No screenshot or report contains credentials.
+
+
+## Guided operator follow-up
+
+The account audience views use the saved `customer` role rather than guessing from activity or permissions. The team/other view is its complement and does not assert administration access. Invalid audience values are rejected; the same SQL predicate applies to both rows and pagination totals. API behavior and authentication are unchanged.
+
+Role starting points use the existing clone route and existing grant validation. Administrator wildcard exclusion remains enforced by that route. The permission change panel compares current form fields with the actual saved role, not the last rendered checkbox state, so a validation retry still shows unsaved additions/removals. It is an informational preview; server permissions and recent-authentication checks remain authoritative at save.

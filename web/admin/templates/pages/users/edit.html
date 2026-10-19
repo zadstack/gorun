@@ -55,6 +55,8 @@
   </form>
   {{with .User}}
   <aside class="space-y-4">
+    <details data-user-role-summary class="rounded border border-line bg-panel p-4"><summary class="cursor-pointer font-bold">{{t "operator.saved_role_grants"}}</summary><p class="text-xs text-muted mt-2">{{t "operator.saved_role_boundary"}}</p>{{if not $.RoleSummaryAvailable}}<p class="mt-2">{{t "operator.role_unavailable"}}</p>{{else if $.RoleAll}}<p class="mt-2 font-medium">{{t "operator.all_permissions"}}</p>{{else}}<ul class="mt-2 font-mono text-xs break-all">{{range $.RolePermissions}}<li>{{.}}</li>{{else}}<li>—</li>{{end}}</ul>{{end}}</details>
+
     <section class="rounded border border-line bg-panel p-4">
       <h2 class="text-base font-bold mb-2">{{t "admin.users.details"}}</h2>
       <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">

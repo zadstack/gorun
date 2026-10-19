@@ -3,6 +3,7 @@ package admin
 import (
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/zadstack/gorun/internal/auth"
@@ -12,20 +13,26 @@ import (
 )
 
 type usersListPage struct {
-	Users  []auth.User
-	Query  string
-	Role   string
-	Roles  []roleOption
-	RoleOf map[string]string
-	Pager  pager
-	SelfID string
+	Users    []auth.User
+	Query    string
+	Audience string
+	Role     string
+	Roles    []roleOption
+	RoleOf   map[string]string
+	Pager    pager
+	SelfID   string
 }
 
 func (h *handlers) usersList(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	q := r.URL.Query()
 	page, perPage := pageParams(q)
-	uq := userQuery{Search: strings.TrimSpace(q.Get("q")), Role: q.Get("role"), Page: page, PerPage: perPage}
+	audience := q.Get("audience")
+	if audience != "" && audience != "team" && audience != "customers" {
+		http.Error(w, "Invalid account view", http.StatusBadRequest)
+		return
+	}
+	uq := userQuery{Audience: audience, Search: strings.TrimSpace(q.Get("q")), Role: q.Get("role"), Page: page, PerPage: perPage}
 	list, total, err := listUsers(ctx, h.d.DB, uq)
 	if err != nil {
 		h.serverError(w, r, err)
@@ -40,7 +47,17 @@ func (h *handlers) usersList(w http.ResponseWriter, r *http.Request) {
 	for _, ro := range rs {
 		roleOf[ro.Slug] = ro.Name
 	}
-	data := usersListPage{Users: list, Query: uq.Search, Role: uq.Role, Roles: rs, RoleOf: roleOf,
+	choices := make([]roleOption, 0, len(rs))
+	for _, option := range rs {
+		if audience == "team" && option.Slug == auth.RoleCustomer {
+			continue
+		}
+		if audience == "customers" && option.Slug != auth.RoleCustomer {
+			continue
+		}
+		choices = append(choices, option)
+	}
+	data := usersListPage{Users: list, Query: uq.Search, Audience: audience, Role: uq.Role, Roles: choices, RoleOf: roleOf,
 		Pager: newPager("/admin/users", q, page, perPage, total)}
 	if u := auth.UserFromContext(ctx); u != nil {
 		data.SelfID = u.ID
@@ -49,13 +66,15 @@ func (h *handlers) usersList(w http.ResponseWriter, r *http.Request) {
 }
 
 type userEditPage struct {
-	User     *auth.User // nil when creating
-	Form     userInput
-	Fields   map[string]string
-	Roles    []roleOption
-	Locales  []string
-	Statuses []string
-	IsSelf   bool
+	User                          *auth.User // nil when creating
+	Form                          userInput
+	Fields                        map[string]string
+	Roles                         []roleOption
+	Locales                       []string
+	Statuses                      []string
+	IsSelf                        bool
+	RolePermissions               []string
+	RoleAll, RoleSummaryAvailable bool
 	// MagicLink is a freshly created sign-in link, shown once when mail
 	// is not configured (never stored in a flash cookie or the audit log).
 	MagicLink string
@@ -68,6 +87,14 @@ func (h *handlers) renderUserForm(w http.ResponseWriter, r *http.Request, status
 		return
 	}
 	data.Roles, data.Locales, data.Statuses = rs, i18n.Supported, []string{auth.StatusActive, auth.StatusDisabled}
+	if data.User != nil {
+		if role, err := h.roles.Get(r.Context(), data.User.Role); err == nil {
+			data.RolePermissions = role.Permissions
+			data.RoleAll = slices.Contains(role.Permissions, "*")
+			data.RoleSummaryAvailable = true
+		}
+	}
+
 	if u := auth.UserFromContext(r.Context()); u != nil && data.User != nil {
 		data.IsSelf = u.ID == data.User.ID
 	}
