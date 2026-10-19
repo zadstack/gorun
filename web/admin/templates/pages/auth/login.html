@@ -8,8 +8,8 @@
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <input type="hidden" name="next" value="{{.Next}}">
     <div>
-      <label for="email" class="block font-medium mb-1">{{t "auth.field.email"}}</label>
-      <input id="email" name="email" type="email" autocomplete="username" required value="{{.Email}}" class="w-full h-9 border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <label for="email" class="block font-medium mb-1">{{t "auth.login.identity"}}</label>
+      <input id="email" name="email" type="text" autocomplete="username" required value="{{.Email}}" class="w-full h-9 border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
     </div>
     <div>
       <label for="password" class="block font-medium mb-1">{{t "auth.field.password"}}</label>
