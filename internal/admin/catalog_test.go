@@ -28,7 +28,7 @@ func loadCatalog(t *testing.T, locale string) map[string]string {
 
 var (
 	tmplKeyRe   = regexp.MustCompile(`\bt "admin\.([a-z_.]+)"`)
-	goKeyRe     = regexp.MustCompile(`"admin\.((?:nav|common|locale|dashboard|users|settings|mail|health|jobs|keys|audit|search|api|ai)\.[a-z_.]+)"`)
+	goKeyRe     = regexp.MustCompile(`"admin\.((?:nav|common|locale|dashboard|users|settings|mail|health|jobs|keys|audit|search|api|ai|workspace)\.[a-z_.]+)"`)
 	dynamicKeys = map[string][]string{ // printf "admin.<prefix>%s" expansions
 		"audit.kind_":   {"user", "api_key", "system", "extension"},
 		"jobs.status_":  {"queued", "retrying", "running", "dead", "done"},
@@ -54,7 +54,9 @@ func TestCatalogCoversAllKeys(t *testing.T) {
 	}
 	used := map[string]bool{}
 	owned := []string{"admin/templates/pages/dashboard.html", "admin/templates/pages/users", "admin/templates/pages/settings/general.html",
-		"admin/templates/pages/settings/mail.html", "admin/templates/pages/settings/ai.html", "admin/templates/pages/system", "admin/templates/pages/agents", "admin/templates/partials/dashboard_widget.html"}
+		"admin/templates/pages/settings/mail.html", "admin/templates/pages/settings/ai.html", "admin/templates/pages/settings/workspace.html",
+		"admin/templates/pages/system", "admin/templates/pages/agents", "admin/templates/partials/dashboard_widget.html",
+		"admin/templates/partials/settings_tabs.html"}
 	for _, root := range owned {
 		_ = fs.WalkDir(web.FS, root, func(p string, d fs.DirEntry, err error) error {
 			if err != nil || d.IsDir() {

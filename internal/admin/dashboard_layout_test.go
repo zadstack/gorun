@@ -2,13 +2,15 @@ package admin_test
 
 import (
 	"context"
-	"github.com/zadstack/gorun/internal/auth"
 	"html/template"
 	"net/http"
 	"regexp"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/zadstack/gorun/internal/admin"
+	"github.com/zadstack/gorun/internal/auth"
 )
 
 func layoutIDs(t *testing.T, s *site) []string {
@@ -29,6 +31,9 @@ func layoutIDs(t *testing.T, s *site) []string {
 
 func TestDashboardLayoutOwnershipCASResetAndNewWidgets(t *testing.T) {
 	s := boot(t)
+	if err := s.app.Deps.Settings.Set(context.Background(), admin.SettingWorkspace, admin.WorkspaceFull); err != nil {
+		t.Fatal(err)
+	}
 	u := s.login("layout@example.com", "admin", "en")
 	original := layoutIDs(t, s)
 	if original[0] != "quick_actions" {

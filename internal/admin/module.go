@@ -89,6 +89,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	tpl.SetSidebarBrandResolver(h.sidebarBrand)
 	d.Services.Set(kernel.ServiceNavigationPins, kernel.NavigationPins(h))
 	addNav(d)
+	h.registerWorkspaceFilter()
 	h.errorInventoryNav()
 	h.registerWidgets()
 	h.routes()
@@ -131,6 +132,7 @@ func addNav(d *kernel.Deps) {
 		{ID: "roles", LabelKey: "admin.nav.roles", Icon: "shield", Href: "/admin/roles", Permission: PermUsers, Group: "settings", Position: 725},
 		{ID: "settings.connections", LabelKey: "admin.connections.title", Icon: "plug", Href: "/admin/settings/connections", Permission: PermSettings, Group: "integrations", Position: 800},
 		{ID: "settings", LabelKey: "admin.nav.settings", Icon: "settings", Href: "/admin/settings/general", Permission: PermSettings, Group: "settings", Position: 700},
+		{ID: "settings.workspace", LabelKey: "admin.workspace.nav", Icon: "layout-template", Href: "/admin/workspace", Permission: PermSettings, Group: "settings", Position: 702},
 		{ID: "system.health", LabelKey: "admin.nav.health", Icon: "activity", Href: "/admin/system/health", Permission: PermHealth, Group: "system", Position: 900},
 		{ID: "system.jobs", LabelKey: "admin.nav.jobs", Icon: "list-checks", Href: "/admin/system/jobs", Permission: PermHealth, Group: "system", Position: 910},
 		{ID: "system.backups", LabelKey: "admin.nav.backups", Icon: "archive", Href: "/admin/system/backups", Permission: PermBackup, Group: "system", Position: 920},
