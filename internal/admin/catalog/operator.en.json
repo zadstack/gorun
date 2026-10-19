@@ -74,5 +74,19 @@
   "workspace_full": "Advanced: installed content, agent and commerce modules can appear when the current user has permission. This does not activate providers, billing or integrations.",
   "migration_failed": "Failed items: %d",
   "migration_preview": "Preview / dry run",
-  "recovery_guide": "Recovery guide"
+  "recovery_guide": "Recovery guide",
+  "users_all": "All accounts",
+  "users_team": "Team / other roles",
+  "users_customers": "Customers",
+  "users_audience_note": "Customers have the saved customer role. Team / other roles includes every other role; this grouping does not grant staff access.",
+  "role_clone": "Use as a starting point",
+  "role_clone_help": "Copies the saved permissions into a new role. The administrator wildcard is excluded; saving remains subject to your grant permissions and recent authentication.",
+  "role_diff": "Review permission changes before saving",
+  "role_added": "Permissions to add",
+  "role_removed": "Permissions to remove",
+  "role_no_changes": "No permission changes. Name changes can still be saved.",
+  "role_diff_boundary": "This is a preview of the current form against the saved role. The server checks current permissions and recent authentication again when saving.",
+  "saved_role_grants": "Saved role permissions",
+  "saved_role_boundary": "These are the account’s currently saved role grants, not unsaved role selections. Content scope, ownership, account status, recent authentication and integration grants can impose additional limits.",
+  "role_unavailable": "Role permissions are unavailable. No access result is inferred."
 }
