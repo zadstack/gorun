@@ -84,7 +84,21 @@ Connect an MCP client with an **AI agent** key. Its scopes are bounded by its ow
 
 Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish content automatically. Configure your provider or agent connection before running it.
 
-![Canvas connecting content, instructions and a reviewed agent result](assets/branding/screenshots/canvas-en.png)
+### A campaign, from brief to review
+
+**1. Choose the context.** Bring an approved product story and a bilingual campaign brief onto the canvas. Connect only those cards to your named assistant.
+
+![Campaign brief and selected product content connected to a named assistant](assets/branding/screenshots/canvas-brief-en.png)
+
+**2. Review before running.** Inspect the destination, instructions and selected context. Confirm explicitly before starting the work.
+
+![Review the exact context and destination before running the assistant](assets/branding/screenshots/canvas-review-en.png)
+
+**3. Keep the publishing decision.** The returned draft appears as a separate private note with its source. Review it alongside your checklist; running a canvas does not publish the content.
+
+![Bilingual campaign draft and editorial checklist in the updated canvas](assets/branding/screenshots/canvas-en.png)
+
+*Screenshots use a fictional business and synthetic content. The example assistant response is supplied by a test client through the real MCP workflow; it is not a model-quality benchmark. [Arabic view](assets/branding/screenshots/canvas-ar.png) · [Mobile view](assets/branding/screenshots/canvas-mobile.png).*
 
 [MCP and permissions](docs/MCP.md) · [Canvases](docs/CANVASES.md) · [REST API](docs/API.md)
 

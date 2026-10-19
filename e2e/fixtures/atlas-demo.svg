@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+<rect width="1280" height="800" fill="#e9eee8"/>
+<path d="M0 540L1280 240V800H0Z" fill="#d5dfd0"/>
+<circle cx="1040" cy="160" r="210" fill="#c6d7c8"/>
+<rect x="140" y="140" width="1000" height="520" rx="20" fill="#1c493b"/>
+<path d="M140 160Q140 140 160 140H1120Q1140 140 1140 160V220H140Z" fill="#245744"/>
+<circle cx="180" cy="180" r="6" fill="#a9c2a6"/><circle cx="204" cy="180" r="6" fill="#a9c2a6"/><circle cx="228" cy="180" r="6" fill="#a9c2a6"/>
+<text x="186" y="308" fill="#eaf0df" font-family="Arial,sans-serif" font-size="20" letter-spacing="4">ATLAS STUDIO</text>
+<text x="182" y="385" fill="#ffffff" font-family="Arial,sans-serif" font-size="52" font-weight="700">Make room for</text>
+<text x="182" y="447" fill="#ffffff" font-family="Arial,sans-serif" font-size="52" font-weight="700">your next idea.</text>
+<rect x="186" y="506" width="180" height="48" rx="5" fill="#d1e4a7"/>
+<text x="212" y="538" fill="#234b37" font-family="Arial,sans-serif" font-size="18">Explore the story</text>
+<rect x="740" y="278" width="286" height="238" rx="8" fill="#f0f3e9"/>
+<rect x="766" y="306" width="68" height="8" rx="4" fill="#749377"/>
+<rect x="766" y="344" width="226" height="12" rx="6" fill="#b7c7ae"/>
+<rect x="766" y="368" width="186" height="12" rx="6" fill="#d1dac8"/>
+<rect x="766" y="412" width="96" height="66" rx="4" fill="#d1e4a7"/>
+<rect x="876" y="412" width="116" height="66" rx="4" fill="#c2d2c2"/>
+<path d="M680 596L1060 596" stroke="#9fb99f" stroke-width="2"/>
+<text x="186" y="610" fill="#9fb99f" font-family="Arial,sans-serif" font-size="15">Content · People · Considered launches</text>
+</svg>

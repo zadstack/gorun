@@ -192,7 +192,7 @@
     if (card.kind === 'widget') { body.dataset.widgetId = card.widget_id; widgetBody(body, card.widget_id); }
     operations?.cardBody(body, card);
     const footer = element('footer', undefined, 'canvas-card-footer');
-    const actions = element('div'); if (card.kind !== 'result') actions.append(button(t('edit'), () => editCard(card.id)));
+    const actions = element('div', undefined, 'canvas-card-actions'); if (card.kind !== 'result') actions.append(button(t('edit'), () => editCard(card.id)));
     const remove = button(t('remove'), () => { if (!confirm(t('remove_confirm'))) return; documentState.cards = documentState.cards.filter(c => c.id !== card.id); documentState.edges = CanvasGraph.withoutNode(documentState.edges, card.id); changed(); render(); root.querySelector('[data-action=add]').focus(); }); remove.dataset.remove = ''; actions.append(remove);
     const moves = element('div', undefined, 'canvas-move-controls');
     [['left', '←', -24, 0], ['up', '↑', 0, -24], ['down', '↓', 0, 24], ['right', '→', 24, 0]].forEach(([key, symbol, dx, dy]) => { const control = button(symbol, () => move(card, dx, dy, el)); control.dataset.direction = key; control.title = t(key); control.setAttribute('aria-label', `${t(key)}: ${card.title}`); moves.append(control); });

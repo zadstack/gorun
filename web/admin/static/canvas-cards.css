@@ -1,0 +1,54 @@
+/* Compact task cards retain real editing and movement controls in both locales. */
+.canvas-workspace .canvas-viewport {
+  border-radius: 6px;
+  background-color: #f5f7f8;
+  background-image: radial-gradient(#d4dce3 .8px, transparent .8px);
+  background-size: 20px 20px;
+}
+.canvas-workspace .canvas-card {
+  border-radius: 6px;
+  box-shadow: 0 2px 5px #17202c08;
+}
+.canvas-workspace .canvas-card-heading {
+  padding: .5rem .625rem;
+  gap: .375rem;
+  background: linear-gradient(180deg, #f8fafb, var(--cv-bg));
+}
+.canvas-workspace .canvas-card-heading small {
+  display: block;
+  font-size: .625rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: .025em;
+}
+.canvas-workspace:dir(rtl) .canvas-card-heading small { letter-spacing: 0; }
+.canvas-workspace .canvas-card-heading h2 { font-size: .875rem; line-height: 1.5; }
+.canvas-workspace .canvas-card-body { padding: .75rem; line-height: 1.6; font-size: .8125rem; }
+.canvas-workspace .canvas-card-body > p:last-child { margin-bottom: 0; }
+.canvas-workspace .canvas-card-body > a { padding-block: .25rem; }
+.canvas-workspace .canvas-card-body > small { line-height: 1.5; }
+.canvas-workspace .canvas-card-footer { padding: .25rem .375rem; gap: .125rem; background: #fbfcfd; }
+.canvas-workspace .canvas-card-actions { display: flex; align-items: center; gap: .125rem; }
+.canvas-workspace .canvas-card-footer button { white-space: nowrap; font-size: .6875rem; padding-inline: .375rem; }
+.canvas-workspace .canvas-move-controls { gap: 0; }
+.canvas-workspace .canvas-move-controls button { padding: 0; color: var(--cv-muted); }
+.canvas-workspace .canvas-card-body .canvas-operation-button { font-weight: 600; border-color: #b9d3c8; background: #f0f8f4; color: #185e45; }
+.canvas-workspace .canvas-provenance { font-size: .65rem; }
+@media (min-width: 768px) and (pointer: fine) {
+  .canvas-workspace .canvas-card-heading .canvas-handle { width: 28px; min-height: 32px; }
+  .canvas-workspace .canvas-card-footer { flex-wrap: nowrap; }
+  .canvas-workspace .canvas-card-footer button { min-height: 32px; }
+  .canvas-workspace .canvas-move-controls button { min-width: 28px; }
+  .canvas-workspace .canvas-card-body .canvas-operation-button { min-height: 34px; }
+}
+@media (max-width: 767px), (pointer: coarse) {
+  .canvas-workspace .canvas-card-footer { flex-wrap: wrap; }
+  .canvas-workspace .canvas-card-footer button { min-height: 44px; }
+  .canvas-workspace .canvas-move-controls button { min-width: 44px; }
+}
+.canvas-workspace .canvas-toolbar { border-radius: 6px; padding: .625rem .75rem; gap: .5rem; }
+.canvas-workspace .canvas-toolbar [data-action="add"] { font-weight: 600; border-color: #b7c7d5; background: #f4f7fa; }
+.canvas-workspace .canvas-state { gap: .5rem; font-size: .6875rem; }
+.canvas-workspace .canvas-help { margin-block: .5rem; }
+.canvas-workspace .canvas-heading { margin-bottom: .75rem; }
+.canvas-workspace .canvas-heading > .canvas-primary { border-radius: 5px; }
