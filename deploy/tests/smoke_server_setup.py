@@ -22,11 +22,18 @@ spec.loader.exec_module(setup)
 def main():
     if os.geteuid() != 0:
         raise RuntimeError("Disposable integration test requires Linux root")
-    # The fixture must consume published binaries without a Go compiler available.
-    os.environ["PATH"] = os.pathsep.join(part for part in os.get_exec_path() if not (Path(part) / "go").is_file())
-    if shutil.which("go") or not shutil.which("docker"):
-        raise RuntimeError("Fixture requires Docker and a PATH without Go")
+    docker_binary = shutil.which("docker")
+    if not docker_binary:
+        raise RuntimeError("Disposable integration test requires Docker")
     with tempfile.TemporaryDirectory(prefix="gorun-production-fixture-") as temp:
+        # Go and Docker may share /usr/bin on a hosted runner. Expose just Docker
+        # through a private allowlist instead of removing their entire directory.
+        tools = Path(temp) / "no-go-bin"
+        tools.mkdir()
+        (tools / "docker").symlink_to(docker_binary)
+        os.environ["PATH"] = str(tools)
+        if shutil.which("go") or not shutil.which("docker"):
+            raise RuntimeError("Fixture requires Docker and a PATH without Go")
         directory = Path(temp) / "site with spaces"
         domain = "gorun-fixture.example.com"
         name = setup.project_name(directory)
