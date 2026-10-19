@@ -26,7 +26,7 @@ The quick start requires **GoRun 0.4.0 or newer**. The installer refuses older r
 
 The executable lives at `~/.local/bin/gorun`; your local site lives at `~/.local/share/gorun/site`. Stop the server with **Ctrl+C**. Repeating the block uses the same site. LAN access is a public, read-only preview; administration stays on localhost. Use `--local-only` when starting manually to disable LAN access. [Local setup and recovery](docs/local-start.md).
 
-For a public deployment, follow the [production guide](docs/PRODUCTION.md) or [Docker / Coolify guide](deploy/coolify.md). The local preview is intended for development.
+For a domain with HTTPS and a persistent service, use the [guided Linux server setup](docs/SERVER-SETUP.md). It asks for your domain and installation directory, verifies DNS, and reports the final URL and data path after acceptance checks. It requires Linux root access, Python 3 and Docker Compose; it uses verified public release downloads without a GHCR login. For an existing proxy or Coolify deployment, follow the [Docker / Coolify guide](deploy/coolify.md). The local preview is intended for development.
 
 ## Start with your AI assistant
 
