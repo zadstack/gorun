@@ -35,6 +35,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | [AGENT-MODELS.md](AGENT-MODELS.md) | How agent models connect |
 | [API.md](API.md) | REST `/api/v1` |
 | [CANVASES.md](CANVASES.md) | Canvases as operational workspaces |
+| [OPERATOR-WORKFLOWS-MCP.md](OPERATOR-WORKFLOWS-MCP.md) | Solo-operator flows via MCP only (no custom connections) |
 | [WEBHOOKS.md](WEBHOOKS.md) | Outbound change notifications |
 | [COMMERCE.md](COMMERCE.md) | Stripe Checkout and MCP entitlements |
 

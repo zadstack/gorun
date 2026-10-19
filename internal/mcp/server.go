@@ -26,8 +26,8 @@ const (
 	rpcForbidden    = -32003
 	serviceName     = "mcp"
 	maxRequestBytes = 16 << 20 // base64 uploads up to 10 MB plus JSON overhead
-	instructions    = "GoRun CMS. Start with get_site_structure. Sensitive tools (publish, unpublish, delete, settings) " +
-		"may return status pending_approval: poll check_approval with the approval_id until a human decides."
+	instructions    = "GoRun CMS. Start with get_site_structure and read gorun://operator-workflows for solo-operator canvas playbooks (MCP-only). " +
+		"Sensitive tools (publish, unpublish, delete, settings) may return status pending_approval: poll check_approval with the approval_id until a human decides."
 )
 
 // server holds the tool pipeline shared by the HTTP and stdio transports.
@@ -202,6 +202,9 @@ func (s *server) addResources(srv *sdk.Server, with func(context.Context) (conte
 		return s.contentTypes(ctx)
 	})
 	add("gorun://site", "site", "Site structure: identity, types, taxonomies, menus, theme, templates", s.siteStructure)
+	add("gorun://operator-workflows", "operator-workflows", "Suggested solo-operator canvas workflows and MCP playbooks (no custom connections)", func(context.Context) (any, error) {
+		return operatorWorkflowCatalogData(), nil
+	})
 }
 
 // httpHandler serves /mcp: streamable HTTP in stateless JSON mode, one MCP

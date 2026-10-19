@@ -37,7 +37,7 @@ permissions and validation as the admin and the REST API.
 
 - **Streamable HTTP:** `POST https://<your-site>/mcp` (stateless, JSON responses).
 - **stdio:** `gorun mcp --key gp_…`, or set `GORUN_MCP_KEY` (one session per process).
-- **Resources:** `gorun://types` (content types and field schemas), `gorun://site` (site structure).
+- **Resources:** `gorun://types` (content types and field schemas), `gorun://site` (site structure), `gorun://operator-workflows` (solo-operator canvas starters and MCP playbooks; see [OPERATOR-WORKFLOWS-MCP.md](OPERATOR-WORKFLOWS-MCP.md)).
 - **Prompts:** none in v1.
 
 ## Authentication
