@@ -4,9 +4,9 @@ The [README](../README.md#start-with-your-ai-assistant) includes a tool-neutral 
 
 ## What the assistant needs
 
-Installation requires terminal access on the computer where GoRun will run. A chat-only assistant can give instructions; a cloud coding workspace installs into that workspace, not automatically onto your laptop.
+Choose a local trial or a public server deployment first. Installation requires terminal access on the machine where GoRun will run. A chat-only assistant can give instructions; a cloud coding workspace installs into that workspace, not automatically onto your laptop.
 
-Release installation supports macOS and Linux on Intel/AMD x86-64 and ARM64. It uses ordinary `curl`, `tar` and SHA-256 tools, and does not require Go, Docker or administrator access. The quick start needs version 0.4.0 or newer.
+For a local trial, release installation supports macOS and Linux on Intel/AMD x86-64 and ARM64. It uses ordinary `curl`, `tar` and SHA-256 tools, and does not require Go, Docker or administrator access. The quick start needs version 0.4.0 or newer.
 
 ## Preserve what is already there
 
@@ -22,6 +22,16 @@ The local URL is printed using the explicit IPv4 loopback address, and the brows
 
 The default LAN URL is for public, read-only preview. Administration, authentication and writes stay local. `--local-only` disables LAN access. This development command does not replace a [production deployment](PRODUCTION.md).
 
+## Deploy to a public domain
+
+Ask for the domain, installation directory and expected public server addresses before making changes. Verify the domain's A and AAAA records against those addresses; an unrelated or stale address must be resolved before deployment. A domain name by itself does not provide access to the server.
+
+Use the [production guide](PRODUCTION.md) or [Docker / Coolify guide](../deploy/coolify.md) for the supported deployment. Check prerequisites and existing services first. Public deployment needs HTTPS, persistent data, a stable secret, protected first-admin setup and a service that restarts after logout or reboot. The local `gorun start` command is a development preview, not this production setup.
+
+Preserve an existing installation and proxy configuration. Do not stop another site's service, replace its configuration, reset credentials or move live data to make a new installation fit. Report a conflicting port or directory and agree on the appropriate destination first.
+
+Confirm the final HTTPS public page and sign-in page from the target environment. Report the installation directory, persistent data path, final URL and service management instructions. DNS verification alone does not prove that HTTPS or the application works. If a prerequisite or network check fails, report the incomplete step instead of claiming a deployed site.
+
 ## Leave credentials with the user
 
 The first administrator's strong random password appears once in the local terminal. It does not belong in chat messages, screenshots, exported logs, URLs or shared files. The user signs in and chooses a new password, email, site name and language in the browser. Existing accounts are not recreated or reset.
@@ -30,6 +40,6 @@ An assistant does not need an administrator password or API key to confirm that 
 
 ## Confirm the result
 
-A successful setup has an installed executable, a responding local public page, a working sign-in page, and the expected data directory. Ctrl+C stops the server and preserves data. Restarting with the same data directory keeps the accounts and does not display the generated password again. Report those results and the local URL without reporting secrets.
+A successful local setup has an installed executable, a responding local public page, a working sign-in page, and the expected data directory. Ctrl+C stops the server and preserves data. Restarting with the same data directory keeps the accounts and does not display the generated password again. Report those results and the local URL without reporting secrets.
 
 This is a setup guide and copyable request, not a packaged Agent Skill or an automatic MCP connection.

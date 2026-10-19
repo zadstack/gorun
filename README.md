@@ -4,9 +4,9 @@
 
 [العربية](README.ar.md) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Use an assistant](#start-with-your-ai-assistant) · [Contribute](CONTRIBUTING.md)
 
-## Try it locally
+## Run it now
 
-On **macOS or Linux**, copy and paste this whole block. No Go, Docker, database setup or administrator privileges required.
+For a local trial on **macOS or Linux**, copy and paste this whole block. No Go, Docker, database setup or administrator privileges required.
 
 ```sh
 (
@@ -30,19 +30,23 @@ For a public deployment, follow the [production guide](docs/PRODUCTION.md) or [D
 
 ## Start with your AI assistant
 
-Prefer help from an assistant? Copy this into any assistant that can use a terminal on your computer:
+On your computer or a server, copy this into an assistant with terminal access to the target machine:
 
 ```text
-Set up GoRun locally from https://github.com/zadstack/gorun.
-Read the official README and installation guide first.
-Check my operating system, architecture, and any existing GoRun site.
-Use the official release installer with its checksum verification.
+Set up GoRun from https://github.com/zadstack/gorun.
+Read the official README and assistant setup guide first.
+Ask whether this is a local trial or a public server deployment.
+Check the operating system, architecture, and any existing site before changing anything.
 Preserve existing data, users, themes, settings, and credentials.
-Start the site and verify the public page and admin sign-in page respond.
-Keep generated passwords and keys in the local terminal, out of chat and logs.
-Let me sign in and complete first-login setup in the browser.
-Report the local URL, data directory, and how to stop and restart the server.
-If you cannot run a local terminal, provide the official commands for me to run.
+For a local trial, use the official release installer with checksum verification.
+For a server, ask for the domain and installation directory; verify DNS points to it.
+Follow the supported production setup, with HTTPS, persistent data, and automatic restart.
+Do not replace an existing site or proxy configuration without explicit approval.
+Verify the public page and admin sign-in page at the final URL before reporting success.
+Keep generated passwords, setup tokens, and keys out of chat, screenshots, and shared logs.
+Let me complete first-login setup securely in the browser.
+Report the final URL, installation and data paths, and stop/restart/update instructions.
+If you lack terminal access or a prerequisite, explain exactly what is needed.
 ```
 
 The instructions are tool-neutral. A chat-only assistant can explain the steps but cannot install software on your computer. [Assistant setup guide](docs/AI-ASSISTED-SETUP.md).
