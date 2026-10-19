@@ -109,7 +109,9 @@ func (h *handlers) page(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/account?next=/agents", 303)
 		return
 	}
-	if manager(r.Context()) && h.adminTpl != nil && r.URL.Path != "/admin/workagents" {
+	user := auth.UserFromContext(r.Context())
+	adminWorkspace := manager(r.Context()) && user != nil && user.Role != auth.RoleCustomer
+	if adminWorkspace && h.adminTpl != nil && r.URL.Path != "/admin/workagents" {
 		w.Header().Set("Cache-Control", "no-store")
 		http.Redirect(w, r, "/admin/workagents", http.StatusSeeOther)
 		return
@@ -173,7 +175,7 @@ func (h *handlers) page(w http.ResponseWriter, r *http.Request) {
 	}{a, runs, workflows, artifacts, approvals, auth.CSRFToken(r.Context()), manager(r.Context()), owners}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	if data.Manage && h.adminTpl != nil {
+	if adminWorkspace && h.adminTpl != nil {
 		h.adminTpl.Render(w, r, "pages/workagents/workspace.html", data)
 		return
 	}
