@@ -19,6 +19,7 @@ func (h *handlers) routes() {
 	r.Get("/", h.dashboard)
 	r.Get("/x/canvas-activity", h.canvasActivityFragment)
 	r.Get("/x/agents-dock", h.agentsDock)
+	r.Get("/agents/templates", h.agentRolesHTTP)
 	r.Get("/search", h.searchPage)
 	r.Get("/website", h.websiteOverview)
 	r.Get("/x/search", h.searchFragment)

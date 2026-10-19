@@ -8,6 +8,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/i18n"
 )
 
 type agentBundleConnection struct {
@@ -21,6 +22,7 @@ type agentBundleConnection struct {
 }
 type agentBundlePage struct {
 	ID, Name, Error string
+	RoleDraft       string
 	Bundle          agentBundle
 	Skills          []agentSkill
 	Connections     []agentBundleConnection
@@ -80,6 +82,18 @@ func (h *handlers) agentBundleHTTP(w http.ResponseWriter, r *http.Request) {
 	if e != nil || b.Version != "" && b.OwnerID != k.UserID {
 		http.Error(w, "Unavailable", 422)
 		return
+	}
+	roleDraft := ""
+	if r.Method == "GET" && r.URL.Query().Get("role") != "" {
+		role, ok := findAgentRole(i18n.Locale(r.Context()), r.URL.Query().Get("role"))
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		b.Skills = append([]agentSkill{}, role.Skills...)
+		b.MCP = nil
+		b.Tools = nil
+		roleDraft = role.Name
 	}
 	message := ""
 	status := 200
@@ -149,6 +163,7 @@ func (h *handlers) agentBundleHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	page.Error = message
+	page.RoleDraft = roleDraft
 	h.tpl.RenderWith(w, r, status, "admin", "pages/agents/bundle.html", page)
 }
 func (h *handlers) agentBundleExport(w http.ResponseWriter, r *http.Request) {
