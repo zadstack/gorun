@@ -59,6 +59,10 @@ func (h *handlers) routes() {
 	st.Post("/settings/connections/{id}/remove", h.connectionsRemove)
 	st.Post("/settings/connections/{id}/use-ai", h.connectionsUseAI)
 
+	updates := r.With(auth.RequirePerm(PermUpdate))
+	updates.With(auth.RequireRecentAuth).Get("/system/updates", h.updatesPage)
+	updates.With(auth.RequireRecentAuth).Post("/system/updates", h.updateDeploy)
+
 	sys := r.With(auth.RequirePerm(PermHealth))
 	sys.Get("/system/health", h.health)
 	sys.Get("/system/jobs", h.jobsList)

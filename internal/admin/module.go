@@ -30,6 +30,7 @@ const (
 	PermHealth   = "system.health"
 	PermAPIKeys  = "api_keys.manage"
 	PermBackup   = "system.backup"
+	PermUpdate   = "system.update"
 )
 
 // Module is the admin kernel.Module.
@@ -59,7 +60,8 @@ type handlers struct {
 	started time.Time
 	// userMu serialises user guard checks with the mutation they protect
 	// (last-admin / self rules); GoRun is a single process.
-	userMu sync.Mutex
+	userMu   sync.Mutex
+	updateMu sync.Mutex
 }
 
 // Register declares permissions, publishes the mailer, adds nav items,
@@ -115,6 +117,7 @@ func declarePermissions(d *kernel.Deps) {
 		{PermUsers, "Manage users", "إدارة المستخدمين"},
 		{PermSettings, "Manage settings", "إدارة الإعدادات"},
 		{PermHealth, "View system health", "عرض حالة النظام"},
+		{PermUpdate, "Deploy configured site updates", "نشر تحديثات الموقع المهيأة"},
 		{PermAPIKeys, "Manage API keys", "إدارة مفاتيح API"},
 		{PermBackup, "Make, download and restore backups", "إنشاء النسخ الاحتياطية وتنزيلها واستعادتها"},
 	} {
@@ -133,6 +136,7 @@ func addNav(d *kernel.Deps) {
 		{ID: "settings.connections", LabelKey: "admin.connections.title", Icon: "plug", Href: "/admin/settings/connections", Permission: PermSettings, Group: "integrations", Position: 800},
 		{ID: "settings", LabelKey: "admin.nav.settings", Icon: "settings", Href: "/admin/settings/general", Permission: PermSettings, Group: "settings", Position: 700},
 		{ID: "settings.workspace", LabelKey: "admin.workspace.nav", Icon: "layout-template", Href: "/admin/workspace", Permission: PermSettings, Group: "settings", Position: 702},
+		{ID: "system.updates", LabelKey: "admin.updates.title", Icon: "download", Href: "/admin/system/updates", Permission: PermUpdate, Group: "system", Position: 905},
 		{ID: "system.health", LabelKey: "admin.nav.health", Icon: "activity", Href: "/admin/system/health", Permission: PermHealth, Group: "system", Position: 900},
 		{ID: "system.jobs", LabelKey: "admin.nav.jobs", Icon: "list-checks", Href: "/admin/system/jobs", Permission: PermHealth, Group: "system", Position: 910},
 		{ID: "system.backups", LabelKey: "admin.nav.backups", Icon: "archive", Href: "/admin/system/backups", Permission: PermBackup, Group: "system", Position: 920},

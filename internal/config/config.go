@@ -33,6 +33,9 @@ const (
 
 // Config is the resolved runtime configuration.
 type Config struct {
+	// Coolify deployment integration: operator-only environment, never editable by a web request.
+	UpdateURL, UpdateToken, UpdateResource string
+
 	Addons          map[string]string // Optional addon modes: enabled, disabled or auto.
 	TrustedProxies  []string          // GORUN_TRUSTED_PROXIES; empty trusts no forwarded headers
 	CSPScriptSrc    []string          // GORUN_CSP_SCRIPT_SRC: extra public-page script sources (see PublicScriptSources)
@@ -271,6 +274,9 @@ func setStr(dst *string, v *string) {
 }
 
 func applyEnv(c *Config, secret *string) error {
+	envStr(&c.UpdateURL, "GORUN_UPDATE_COOLIFY_URL")
+	envStr(&c.UpdateToken, "GORUN_UPDATE_COOLIFY_TOKEN")
+	envStr(&c.UpdateResource, "GORUN_UPDATE_COOLIFY_RESOURCE")
 	if raw, ok := os.LookupEnv("GORUN_ADDONS"); ok {
 		var modes map[string]string
 		if err := json.Unmarshal([]byte(raw), &modes); err != nil {

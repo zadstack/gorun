@@ -5,6 +5,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+- Add an optional admin update page for a server-configured Coolify resource,
+  with recent authentication, a verified backup, audited deployment requests
+  and duplicate-request cooldown. Existing sites require a manual deployment
+  before this page becomes available.
+
 ## [0.4.0] - 2026-10-19
 
 ### Installation and documentation
