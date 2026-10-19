@@ -158,10 +158,12 @@ test('capture current README product screens with synthetic campaign data', asyn
   await page.goto('/admin/agents/approvals');
   await shot('approvals-ar.png');
   await setLocale(page,'en');
-  await page.goto('/?lang=en');
+  await page.goto('/en/');
+  await expect(page.locator('html')).toHaveAttribute('lang','en');
   await shot('theme-home-en.png');
   await page.setViewportSize({width:390,height:844});
-  await page.goto('/post/your-next-idea?lang=ar');
+  await page.goto('/ar/post/your-next-idea');
+  await expect(page.locator('html')).toHaveAttribute('lang','ar');
   await shot('theme-post-ar-mobile.png',true);
   expect(errors).toEqual([]);
 });
