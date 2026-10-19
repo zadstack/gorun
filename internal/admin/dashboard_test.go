@@ -3,7 +3,6 @@ package admin_test
 import (
 	"net/http"
 	"net/url"
-	"regexp"
 	"testing"
 )
 
@@ -53,11 +52,13 @@ func TestSidebarRTLWhenArabic(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("/admin: %d", resp.StatusCode)
 	}
-	mustContain(t, page, `dir="rtl"`, "المستخدمون", "سجل التدقيق", "حالة النظام")
+	mustContain(t, page, `dir="rtl"`, "الكانفس والوكلاء", "الإعدادات")
+	_, page = s.do("GET", "/admin/users", nil)
+	mustContain(t, page, "المستخدمون", "الفريق والأدوار")
 
 	s.login("en@example.com", "admin", "en")
-	_, page = s.do("GET", "/admin", nil)
-	mustContain(t, page, `dir="ltr"`, ">Users<", ">Audit log<")
+	_, page = s.do("GET", "/admin/users", nil)
+	mustContain(t, page, `dir="ltr"`, ">Users<", "Team &amp; roles")
 	mustNotContain(t, page, "المستخدمون")
 }
 
@@ -65,9 +66,12 @@ func TestAgentsNavGroup(t *testing.T) {
 	s := boot(t)
 	s.login("admin@example.com", "admin", "en")
 	_, page := s.do("GET", "/admin", nil)
-	// Agent keys, site settings and operational audit each have a clear home.
-	re := regexp.MustCompile(`(?s)>AI Agents</p>.*?href="/admin/agents/keys".*?>Settings</p>.*?href="/admin/users".*?>Operations</p>.*?href="/admin/agents/audit"`)
-	if !re.MatchString(page) {
-		t.Fatalf("agents nav group missing or misordered:\n%s", page)
-	}
+	// Only section destinations occupy the primary sidebar. The detailed
+	// key and audit links live in the corresponding contextual page tabs.
+	mustContain(t, page, `data-navigation-section="canvas"`, `data-navigation-section="settings"`)
+	_, page = s.do("GET", "/admin/agents/keys", nil)
+	mustContain(t, page, `data-navigation-context="canvas"`, `href="/admin/agents/keys"`)
+	mustNotContain(t, page, `href="/admin/agents/audit"`)
+	_, page = s.do("GET", "/admin/agents/audit", nil)
+	mustContain(t, page, `data-navigation-context="settings"`, `href="/admin/agents/audit"`)
 }

@@ -45,7 +45,8 @@ test.describe.serial('admin setup and content', () => {
     await expect(page).toHaveURL(/\/admin\/?$/);
     await setLocale(page, 'en');
     await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
-    await expect(page.locator('a[href="/admin/types"]').first()).toContainText(/Content types/i);
+    await page.goto('/admin/types');
+    await expect(page.locator('.admin-section-pages a[href="/admin/types"]').first()).toContainText(/Content types/i);
     await setLocale(page, 'ar'); // the user's locale is stored on the account: restore it
     await ctx.close();
   });
@@ -80,10 +81,10 @@ test.describe.serial('admin setup and content', () => {
   // BUG-01 (fixed): the content-type sidebar entries come from a nav
   // provider evaluated per request, so a type created at runtime is listed.
   test('BUG-01 sidebar links a content type created at runtime', async ({ page }) => {
-    await page.goto('/admin');
-    // positive control: a built-in type is in the sidebar
-    await expect(page.locator('aside a[href="/admin/content/post"]')).toHaveCount(1);
-    await expect(page.locator(`aside a[href="/admin/content/${TYPE}"]`)).toHaveCount(1, { timeout: 2_000 });
+    await page.goto('/admin/content/post');
+    // Built-in and new runtime types share the contextual Content tabs
+    await expect(page.locator('.admin-section-pages a[href="/admin/content/post"]')).toHaveCount(1);
+    await expect(page.locator(`.admin-section-pages a[href="/admin/content/${TYPE}"]`)).toHaveCount(1, { timeout: 2_000 });
   });
 
   test('create Arabic content with fields, publish, see it public (RTL) and in revisions', async ({ page }) => {

@@ -43,5 +43,16 @@
   "search": "بحث",
   "nav.group.inbox": "صندوق الوارد",
   "nav.group.settings": "الإعدادات",
-  "nav.group.integrations": "التكاملات"
+  "nav.group.integrations": "التكاملات",
+  "nav.section.home": "الرئيسية",
+  "nav.section.content": "المحتوى",
+  "nav.section.site": "الموقع",
+  "nav.section.canvas": "الكانفس والوكلاء",
+  "nav.section.inbox": "الوارد",
+  "nav.section.settings": "الإعدادات",
+  "nav.section.commerce": "المتجر",
+  "nav.section.team": "الفريق والأدوار",
+  "nav.section.other": "أدوات أخرى",
+  "nav.section.pages": "صفحات هذا القسم",
+  "nav.section.categories": "تصنيفات القسم"
 }
