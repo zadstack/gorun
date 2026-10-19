@@ -121,11 +121,13 @@ If a tool requests approval, report its request ID and wait for the decision.
   installer="$(mktemp)"
   trap 'rm -f "$installer"' EXIT
   curl -fsSL https://raw.githubusercontent.com/zadstack/gorun/main/install.sh -o "$installer"
-  sh "$installer" --start
-)
+  sh "$installer"
+) &&
+export PATH="$HOME/.local/bin:$PATH" &&
+gorun start --data "$HOME/.local/share/gorun/site"
 ```
 
-يكتشف المُثبّت نظامك، وينزّل آخر إصدار ويتحقق من SHA-256، ثم يشغّل البرنامج مباشرة دون إعداد PATH. يفتح المتصفح، ويجهّز SQLite والثيم الافتراضي وحساب `admin`، وتظهر كلمة مرور قوية مرة واحدة. يحتفظ بالموقع تحت `~/.local/share/gorun/site`، وبالبرنامج تحت `~/.local/bin/gorun`. أوقف الخادم بـCtrl+C؛ تظل البيانات محفوظة. رابط LAN للمعاينة العامة؛ الإدارة محصورة في localhost.
+يكتشف المُثبّت نظامك، وينزّل آخر إصدار ويتحقق من SHA-256، ويضبط مسار البرنامج في ملف بدء التيرمينال. الكتلة تضبط التيرمينال الحالي تلقائيًا ثم تشغّل الموقع؛ لا تحتاج تعديل PATH يدويًا. يفتح المتصفح، ويجهّز SQLite والثيم الافتراضي وحساب `admin`، وتظهر كلمة مرور قوية مرة واحدة. يحتفظ بالموقع تحت `~/.local/share/gorun/site`، وبالبرنامج تحت `~/.local/bin/gorun`. أوقف الخادم بـCtrl+C؛ تظل البيانات محفوظة. رابط LAN للمعاينة العامة؛ الإدارة محصورة في localhost.
 
 تحتاج التجربة إلى **GoRun 0.4.0 أو أحدث**. يرفض المُثبّت الإصدارات الأقدم دون تغيير تثبيت قائم. في أول دخول تختار كلمة مرور جديدة وبريدك واسم الموقع واللغة.
 

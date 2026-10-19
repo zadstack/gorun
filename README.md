@@ -14,11 +14,13 @@ On **macOS or Linux**, copy and paste this whole block. No Go, Docker, database 
   installer="$(mktemp)"
   trap 'rm -f "$installer"' EXIT
   curl -fsSL https://raw.githubusercontent.com/zadstack/gorun/main/install.sh -o "$installer"
-  sh "$installer" --start
-)
+  sh "$installer"
+) &&
+export PATH="$HOME/.local/bin:$PATH" &&
+gorun start --data "$HOME/.local/share/gorun/site"
 ```
 
-The installer detects Intel or ARM, downloads the latest release, verifies its SHA-256 checksum, and starts GoRun directly. No manual PATH setup. Your browser opens, SQLite and the default theme are prepared, and your first `admin` password appears **once** in the terminal. Save it. On first sign-in, choose your own password, email, site name and language. Restarting preserves your site and accounts.
+The installer detects Intel or ARM, downloads the latest release, verifies its SHA-256 checksum, and installs GoRun for your user. The block configures this terminal automatically, and the installer adds the default executable directory to your shell startup file for future terminals. No manual PATH setup. Your browser opens, SQLite and the default theme are prepared, and your first `admin` password appears **once** in the terminal. Save it. On first sign-in, choose your own password, email, site name and language. Restarting preserves your site and accounts.
 
 The quick start requires **GoRun 0.4.0 or newer**. The installer refuses older releases without changing an existing installation.
 

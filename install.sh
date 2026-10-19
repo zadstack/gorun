@@ -12,7 +12,7 @@ case "${1:-}" in
 esac
 [ "$#" -eq 0 ] || fail 'Unexpected arguments.'
 [ -n "${HOME:-}" ] || fail 'HOME must be set.'
-for tool in curl tar uname mktemp awk; do
+for tool in curl tar uname mktemp awk grep; do
   command -v "$tool" >/dev/null 2>&1 || fail "Required tool is missing: $tool"
 done
 if command -v sha256sum >/dev/null 2>&1; then
@@ -74,6 +74,39 @@ staged=$(mktemp "$bin/.gorun.XXXXXXXX")
 if ! cp "$work/gorun" "$staged" || ! chmod 755 "$staged" || ! mv -f "$staged" "$bin/gorun"; then
   rm -f "$staged"
   fail 'Could not install GoRun; check destination permissions.'
+fi
+# Make the default executable discoverable in future interactive terminals.
+# The README also exports PATH in the calling terminal, which a child cannot do.
+if [ "$bin" = "$HOME/.local/bin" ]; then
+  profile=
+  login_profile=
+  line='export PATH="$HOME/.local/bin:$PATH"'
+  case "${SHELL:-sh}" in
+    */*) shell_name=${SHELL##*/} ;;
+    *) shell_name=${SHELL:-sh} ;;
+  esac
+  case "$shell_name" in
+    zsh) profile=${ZDOTDIR:-$HOME}/.zshrc ;;
+    bash)
+      profile=$HOME/.bashrc
+      if [ -f "$HOME/.bash_profile" ]; then login_profile=$HOME/.bash_profile
+      elif [ -f "$HOME/.bash_login" ]; then login_profile=$HOME/.bash_login
+      else login_profile=$HOME/.profile
+      fi
+      ;;
+    fish)
+      profile=${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/gorun.fish
+      line='contains -- "$HOME/.local/bin" $PATH; or set -gx PATH "$HOME/.local/bin" $PATH'
+      ;;
+    sh|'') profile=$HOME/.profile ;;
+  esac
+  for profile in "$profile" "$login_profile"; do
+    [ -n "$profile" ] || continue
+    mkdir -p "$(dirname "$profile")"
+    if ! grep -Fq "$line" "$profile" 2>/dev/null; then
+      printf '\n# GoRun user-local executable\n%s\n' "$line" >> "$profile" || fail 'Installed binary, but could not configure the shell PATH.'
+    fi
+  done
 fi
 printf 'Installed: %s/gorun\n' "$bin"
 if [ "$start" -eq 1 ]; then

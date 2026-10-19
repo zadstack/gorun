@@ -25,9 +25,11 @@ class InstallTest(unittest.TestCase):
         self.mocks.mkdir()
         self.env = dict(os.environ, HOME=str(self.home), GORUN_VERSION="9.9.9",
                         PATH=str(self.mocks) + os.pathsep + os.environ["PATH"],
-                        TEST_RELEASES=str(self.fixture), TEST_OS="Linux", TEST_ARCH="x86_64")
+                        TEST_RELEASES=str(self.fixture), TEST_OS="Linux", TEST_ARCH="x86_64", SHELL="/bin/sh")
         self.env.pop("GORUN_INSTALL_DIR", None)
         self.env.pop("GORUN_DATA", None)
+        self.env.pop("ZDOTDIR", None)
+        self.env["XDG_CONFIG_HOME"] = str(self.home / ".config")
         self.mock("uname", '#!/bin/sh\ncase "$1" in -s) echo "$TEST_OS";; -m) echo "$TEST_ARCH";; esac\n')
         self.mock("curl", '''#!/usr/bin/env python3
 import os, pathlib, shutil, sys
@@ -76,6 +78,20 @@ shutil.copyfile(source, args[args.index('-o') + 1])
         self.assertEqual((self.home / "start-args").read_text().splitlines(),
                          ["start", "--data", str(self.home / ".local/share/gorun/site")])
         self.assertEqual(list(self.installed.parent.glob(".gorun.*")), [])
+
+    def test_shell_path_is_idempotent(self):
+        for shell, profile in [("/bin/sh", ".profile"), ("/bin/zsh", ".zshrc"),
+                               ("/bin/bash", ".bashrc"), ("/bin/fish", ".config/fish/conf.d/gorun.fish")]:
+            with self.subTest(shell=shell):
+                self.env["SHELL"] = shell
+                config = self.home / profile
+                config.parent.mkdir(parents=True, exist_ok=True)
+                config.write_text("# Existing shell configuration\n")
+                for _ in range(2):
+                    result = self.run_installer()
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(config.read_text().count("# GoRun"), 1)
+                self.assertTrue(config.read_text().startswith("# Existing shell configuration\n"))
 
     def test_latest_macos_arm(self):
         self.env.pop("GORUN_VERSION")
