@@ -16,6 +16,7 @@ import (
 
 func (h *handlers) canvasRoutes() {
 	h.canvasOperationRoutes()
+	h.canvasLifecycleRoutes()
 	r := h.d.Router.Admin
 	r.Get("/canvases", h.canvasList)
 	r.Post("/canvases", h.canvasNew)
@@ -78,9 +79,10 @@ func (h *handlers) canvasEditor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.tpl.RenderWith(w, r, 200, "admin", "pages/canvases/editor.html", struct {
-		Board   *canvasBoard
-		Widgets []canvasWidgetOption
-	}{b, h.canvasWidgetOptions(r)})
+		Board    *canvasBoard
+		Widgets  []canvasWidgetOption
+		CanDraft bool
+	}{b, h.canvasWidgetOptions(r), auth.Can(r.Context(), "content.create")})
 }
 func (h *handlers) canvasError(w http.ResponseWriter, r *http.Request, e error) {
 	if errors.Is(e, sql.ErrNoRows) {
