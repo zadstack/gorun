@@ -66,6 +66,14 @@ GoRun Edge is being developed as a separate Workers-based edition. The current m
 - **A complete editorial workflow.** Structured content, drafts, reviews, scheduled publishing, revision history and explicit staff permissions.
 - **Agents with boundaries.** MCP tools, scoped agent keys, human approvals for sensitive changes and an audit trail. Separate REST keys serve other integrations.
 
+## A workspace that stays organized
+
+Up to six primary sections keep related tools together, with contextual page tabs above the screen you are using. You see the tools your permissions allow; Store adds an optional seventh section when permitted commerce tools are available. Personal visibility, navigation order and dashboard pins stay yours.
+
+![GoRun 0.6 content workspace with grouped sections, contextual page tabs and the opposite-side agents rail](assets/branding/screenshots/admin-navigation-en.png)
+
+The screenshots use an isolated demo site with fictional content. The layout mirrors for Arabic and stays usable on mobile. [Arabic mobile menu](assets/branding/screenshots/admin-navigation-ar-mobile.png) · [Workspace guide](docs/ADMIN_WORKSPACE.md).
+
 ## Measured, with context
 
 In a controlled minimal article test at **50 requests/s**, median run p95 latency was **2.66 ms for GoRun**, **16.85 ms for WordPress + MariaDB**, and **0.66 ms for Astro static + Nginx**. Sampled peak working set was **114.54 MiB**, **203.78 MiB**, and **4.09 MiB**, respectively.
@@ -95,6 +103,14 @@ Connect an MCP client with an **AI agent** key. Its scopes are bounded by its ow
 Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish content automatically. Configure your provider or agent connection before running it.
 
 Each agent or provider card shows its own ID and selected agent/provider identity, with a signed webhook matched to a saved command and reviewed instructions. Incoming-event rules start disabled and require explicit review and enablement; external agents still need their MCP client running. [Configure canvas events](docs/CANVASES.md#incoming-events-on-agent-and-provider-cards).
+
+### Your saved actions, within reach
+
+The opposite-side agents rail opens your own canvas cards. Inspect **Integrations**, **Instructions** and **Defaults**, then open the original card to configure or review it. The drawer reads saved configuration; opening it does not run an agent. **Configured** does not mean online, and an external agent still needs its connected client.
+
+![Agent drawer showing a named external campaign assistant, configured status and read-only details](assets/branding/screenshots/agents-drawer-en.png)
+
+[Arabic mobile drawer](assets/branding/screenshots/agents-drawer-ar-mobile.png). Skills and multiple MCP-server resources are not assembled or verified by this drawer.
 
 ### A campaign, from brief to review
 

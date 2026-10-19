@@ -173,6 +173,48 @@ test('capture current README product screens with synthetic campaign data', asyn
   expect((await moves.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   await page.setViewportSize({width:1600,height:1040});
   await setLocale(page,'en');
+  // Capture the released shell and read-only agent projection using the same
+  // real, permission-scoped campaign above, never an invented online state.
+  await page.setViewportSize({width:1440,height:800});
+  await page.goto('/admin/content/post');
+  await expect(page.locator('[data-navigation-context="content"]')).toBeVisible();
+  await expect(page.locator('[data-navigation-sections] [data-navigation-section]')).toHaveCount(7);
+  const dock=page.locator('[data-agents-dock]'),drawer=dock.locator('dialog');
+  await expect(dock.locator('[data-dock-open]')).toBeVisible();
+  await shot('admin-navigation-en.png');
+  const runsDB=db(),runsBefore=(runsDB.prepare('SELECT count(*) n FROM admin_canvas_runs').get() as any).n;runsDB.close();
+  await dock.locator('[data-dock-open]').click();
+  await drawer.locator('[data-dock-list] button').filter({hasText:'03 · Prepare the draft'}).click();
+  await expect(drawer.locator('[data-dock-detail]')).toContainText('Campaign assistant');
+  await expect(drawer.locator('[data-dock-detail]')).toContainText('Configured · review before running');
+  await expect(drawer.locator('[data-dock-detail]')).toContainText('An external client must be connected');
+  await expect(drawer.locator('[data-dock-detail]')).not.toContainText(agent);
+  await shot('agents-drawer-en.png');
+  await drawer.locator('[data-dock-close]').click();
+  await setLocale(page,'ar');
+  await shot('admin-navigation-ar.png');
+  await dock.locator('[data-dock-open]').click();
+  await drawer.locator('[data-dock-list] button').filter({hasText:'03 · Prepare the draft'}).click();
+  await expect(drawer.locator('[data-dock-detail]')).toContainText('Campaign assistant');
+  await shot('agents-drawer-ar.png');
+  await drawer.locator('[data-dock-close]').click();
+  await page.setViewportSize({width:390,height:844});
+  await page.locator('[data-sidebar-toggle]').click();
+  await expect(page.locator('#admin-sidebar')).toBeVisible();
+  await shot('admin-navigation-ar-mobile.png');
+  // Opening the opposite drawer must dismiss the primary mobile menu.
+  await dock.locator('[data-dock-open]').click();
+  await expect(page.locator('[data-sidebar-toggle]')).toHaveAttribute('aria-expanded','false');
+  await drawer.locator('[data-dock-list] button').filter({hasText:'03 · Prepare the draft'}).click();
+  await drawer.getByRole('tab',{name:'التعليمات',exact:true}).click();
+  await expect(drawer.getByRole('tabpanel',{name:'التعليمات',exact:true})).toContainText(cards[1].body!);
+  await expect(page.locator('body')).not.toContainText('Internal Server Error');
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);
+  await shot('agents-drawer-ar-mobile.png');
+  await drawer.locator('[data-dock-close]').click();
+  const afterDockDB=db();expect((afterDockDB.prepare('SELECT count(*) n FROM admin_canvas_runs').get() as any).n).toBe(runsBefore);afterDockDB.close();
+  await page.setViewportSize({width:1600,height:1040});
+  await setLocale(page,'en');
   await page.goto('/admin/agents/keys');
   await expect(page.locator('#k-plaintext')).toHaveCount(0);
   await shot('agent-keys-en.png');
