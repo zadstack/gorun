@@ -192,8 +192,17 @@ async function auditPage(page: Page): Promise<Audit> {
     const tailwindRuntime =
       html.includes('cdn.tailwindcss.com') || html.includes('tailwindcss-3.4.17.js') || html.includes('tailwind.config');
 
+    // Theme chrome only (brand, skip, CTA, locale). CMS menu items are content
+    // and may 404 in shared e2e DBs without being a theme regression.
     const brokenChromeLinks: string[] = [];
-    for (const a of Array.from(document.querySelectorAll('header a[href], footer a[href], nav a[href]'))) {
+    const chromeSel = [
+      'a.gr-skip', 'a.sb-skip', 'a.ed-skip', 'a.studio-skip',
+      'header a.dt-brand', 'header a.sb-brand', 'header a.studio-brand', 'header a.ed-wordmark',
+      'header a.gr-btn', 'header a.sb-header-cta', 'header a.studio-cta',
+      'header a[hreflang]', 'footer a.dt-brand', 'footer a.sb-brand',
+      '.gr-closing a.gr-btn',
+    ].join(', ');
+    for (const a of Array.from(document.querySelectorAll(chromeSel))) {
       const href = (a as HTMLAnchorElement).getAttribute('href') || '';
       if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) {
         continue;
@@ -201,7 +210,6 @@ async function auditPage(page: Page): Promise<Audit> {
       try {
         const u = new URL(href, location.origin);
         if (u.origin !== location.origin) continue;
-        // Checked via request outside evaluate; collect candidates.
         brokenChromeLinks.push(u.pathname + u.search);
       } catch {
         brokenChromeLinks.push(href);
@@ -273,9 +281,9 @@ test.describe.serial('theme acceptance (§6)', () => {
           // Body/text contrast: allow a small number of decorative/icon-only misses; fail hard if many.
           expect(result.contrastFails, `${slug} ${kind}: contrast fails`).toBe(0);
 
-          for (const href of result.brokenChromeLinks) {
+          for (const href of [...new Set(result.brokenChromeLinks)]) {
             const r = await page.request.get(href);
-            expect(r.status(), `${slug} ${kind}: chrome link ${href}`).toBeLessThan(400);
+            expect(r.status(), `${slug} ${kind}: theme chrome link ${href}`).toBeLessThan(400);
           }
         }
 
