@@ -29,6 +29,9 @@ for(const locale of ['en','ar'] as const) for(const width of [1440,390,320]) {
     await info.attach('initial-preview-count', {body:JSON.stringify(initial),contentType:'application/json'});
     console.log(JSON.stringify({overview:locale,width,initial}));
     await expect(frames.last()).not.toHaveAttribute('src',/.+/);
+    // Contextual page tabs can place the first preview below a small screen.
+    // Enter its actual viewport before requiring lazy loading to start.
+    await page.locator('.ov-page').first().scrollIntoViewIfNeeded();
     await expect.poll(()=>frames.evaluateAll(fs=>fs.filter(f=>f.hasAttribute('src')).length)).toBeGreaterThan(0);
     expect(await frames.evaluateAll(fs=>fs.filter(f=>f.hasAttribute('src')).length)).toBeLessThan(await frames.count());
     await expect(frames.first()).toHaveAttribute('sandbox','');
