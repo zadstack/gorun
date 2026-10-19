@@ -1,0 +1,429 @@
+{
+  "measured_commit": "44e44ba4abcd64773ea0fb042062848dbeb62415",
+  "measured_utc": "2026-10-19T09:54:01Z",
+  "rows": [
+    {
+      "product": "gorun",
+      "repetition": 1,
+      "target_rps": 50,
+      "issued_requests": 1500,
+      "actual_issued_rps": 50.033089635663764,
+      "successful_rps": 50.02878550757368,
+      "p95_ms": 2.656533,
+      "cpu_ms_per_request": 2.8825693333333335,
+      "peak_working_set_mib": 114.53515625,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "gorun",
+      "repetition": 1,
+      "target_rps": 200,
+      "issued_requests": 6000,
+      "actual_issued_rps": 200.03329685581363,
+      "successful_rps": 200.02064862494183,
+      "p95_ms": 2.611207,
+      "cpu_ms_per_request": 2.542393166666667,
+      "peak_working_set_mib": 117.40234375,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "wordpress",
+      "repetition": 1,
+      "target_rps": 50,
+      "issued_requests": 1500,
+      "actual_issued_rps": 50.033254457478726,
+      "successful_rps": 50.0053034274672,
+      "p95_ms": 17.022862,
+      "cpu_ms_per_request": 15.523519333333333,
+      "peak_working_set_mib": 203.453125,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "wordpress",
+      "repetition": 1,
+      "target_rps": 200,
+      "issued_requests": 2753,
+      "actual_issued_rps": 91.73848253765729,
+      "successful_rps": 90.23652244535997,
+      "p95_ms": 1208.95086,
+      "cpu_ms_per_request": 22.147721758082092,
+      "peak_working_set_mib": 779.1015625,
+      "success": 1,
+      "target_reached": false
+    },
+    {
+      "product": "astro-static",
+      "repetition": 1,
+      "target_rps": 50,
+      "issued_requests": 1500,
+      "actual_issued_rps": 50.03309650641638,
+      "successful_rps": 50.032206256505475,
+      "p95_ms": 0.6568,
+      "cpu_ms_per_request": 0.20304733333333336,
+      "peak_working_set_mib": 3.94921875,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "astro-static",
+      "repetition": 1,
+      "target_rps": 200,
+      "issued_requests": 6000,
+      "actual_issued_rps": 200.0325058489592,
+      "successful_rps": 200.02890278958606,
+      "p95_ms": 0.444997,
+      "cpu_ms_per_request": 0.11807233333333333,
+      "peak_working_set_mib": 4.078125,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "wordpress",
+      "repetition": 2,
+      "target_rps": 50,
+      "issued_requests": 1500,
+      "actual_issued_rps": 50.03380255848701,
+      "successful_rps": 50.00765546694405,
+      "p95_ms": 16.539149,
+      "cpu_ms_per_request": 14.560124666666669,
+      "peak_working_set_mib": 203.78125,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "wordpress",
+      "repetition": 2,
+      "target_rps": 200,
+      "issued_requests": 2747,
+      "actual_issued_rps": 91.53897594336584,
+      "successful_rps": 90.0978236306664,
+      "p95_ms": 1244.486991,
+      "cpu_ms_per_request": 22.182975609756095,
+      "peak_working_set_mib": 780.85546875,
+      "success": 1,
+      "target_reached": false
+    },
+    {
+      "product": "astro-static",
+      "repetition": 2,
+      "target_rps": 50,
+      "issued_requests": 1500,
+      "actual_issued_rps": 50.032536258393904,
+      "successful_rps": 50.03155046274605,
+      "p95_ms": 0.659149,
+      "cpu_ms_per_request": 0.18119133333333332,
+      "peak_working_set_mib": 4.0859375,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "astro-static",
+      "repetition": 2,
+      "target_rps": 200,
+      "issued_requests": 6000,
+      "actual_issued_rps": 200.03346892657478,
+      "successful_rps": 200.0308826746284,
+      "p95_ms": 0.452263,
+      "cpu_ms_per_request": 0.1239465,
+      "peak_working_set_mib": 3.9609375,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "gorun",
+      "repetition": 2,
+      "target_rps": 50,
+      "issued_requests": 1500,
+      "actual_issued_rps": 50.03384148442912,
+      "successful_rps": 50.03057559090853,
+      "p95_ms": 2.708755,
+      "cpu_ms_per_request": 2.9903253333333337,
+      "peak_working_set_mib": 116.12890625,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "gorun",
+      "repetition": 2,
+      "target_rps": 200,
+      "issued_requests": 6000,
+      "actual_issued_rps": 200.02895063675697,
+      "successful_rps": 200.01682270823187,
+      "p95_ms": 2.545688,
+      "cpu_ms_per_request": 2.567535,
+      "peak_working_set_mib": 117.375,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "astro-static",
+      "repetition": 3,
+      "target_rps": 50,
+      "issued_requests": 1500,
+      "actual_issued_rps": 50.0333594121679,
+      "successful_rps": 50.03271379151491,
+      "p95_ms": 0.611735,
+      "cpu_ms_per_request": 0.162848,
+      "peak_working_set_mib": 4.0859375,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "astro-static",
+      "repetition": 3,
+      "target_rps": 200,
+      "issued_requests": 6000,
+      "actual_issued_rps": 200.0363706529194,
+      "successful_rps": 200.03443141325747,
+      "p95_ms": 0.401257,
+      "cpu_ms_per_request": 0.1116425,
+      "peak_working_set_mib": 4.1484375,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "gorun",
+      "repetition": 3,
+      "target_rps": 50,
+      "issued_requests": 1500,
+      "actual_issued_rps": 50.0333695123005,
+      "successful_rps": 50.02970643897051,
+      "p95_ms": 2.655041,
+      "cpu_ms_per_request": 2.860153333333333,
+      "peak_working_set_mib": 114.40234375,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "gorun",
+      "repetition": 3,
+      "target_rps": 200,
+      "issued_requests": 6000,
+      "actual_issued_rps": 200.0349135603864,
+      "successful_rps": 200.02274419953227,
+      "p95_ms": 2.800677,
+      "cpu_ms_per_request": 2.5778828333333332,
+      "peak_working_set_mib": 117.10546875,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "wordpress",
+      "repetition": 3,
+      "target_rps": 50,
+      "issued_requests": 1500,
+      "actual_issued_rps": 50.03338745623418,
+      "successful_rps": 50.009630971421615,
+      "p95_ms": 16.853391,
+      "cpu_ms_per_request": 14.862414,
+      "peak_working_set_mib": 204.390625,
+      "success": 1,
+      "target_reached": true
+    },
+    {
+      "product": "wordpress",
+      "repetition": 3,
+      "target_rps": 200,
+      "issued_requests": 2889,
+      "actual_issued_rps": 96.260693662392,
+      "successful_rps": 94.66836703650098,
+      "p95_ms": 1157.523183,
+      "cpu_ms_per_request": 21.1114177916234,
+      "peak_working_set_mib": 779.48046875,
+      "success": 1,
+      "target_reached": false
+    }
+  ],
+  "aggregates": [
+    {
+      "product": "gorun",
+      "target_rps": 50,
+      "repetitions": 3,
+      "all_targets_reached": true,
+      "p95_ms": {
+        "median": 2.656533,
+        "min": 2.655041,
+        "max": 2.708755
+      },
+      "actual_issued_rps": {
+        "median": 50.0333695123005,
+        "min": 50.033089635663764,
+        "max": 50.03384148442912
+      },
+      "successful_rps": {
+        "median": 50.02970643897051,
+        "min": 50.02878550757368,
+        "max": 50.03057559090853
+      },
+      "cpu_ms_per_request": {
+        "median": 2.8825693333333335,
+        "min": 2.860153333333333,
+        "max": 2.9903253333333337
+      },
+      "peak_working_set_mib": {
+        "median": 114.53515625,
+        "min": 114.40234375,
+        "max": 116.12890625
+      }
+    },
+    {
+      "product": "wordpress",
+      "target_rps": 50,
+      "repetitions": 3,
+      "all_targets_reached": true,
+      "p95_ms": {
+        "median": 16.853391,
+        "min": 16.539149,
+        "max": 17.022862
+      },
+      "actual_issued_rps": {
+        "median": 50.03338745623418,
+        "min": 50.033254457478726,
+        "max": 50.03380255848701
+      },
+      "successful_rps": {
+        "median": 50.00765546694405,
+        "min": 50.0053034274672,
+        "max": 50.009630971421615
+      },
+      "cpu_ms_per_request": {
+        "median": 14.862414,
+        "min": 14.560124666666669,
+        "max": 15.523519333333333
+      },
+      "peak_working_set_mib": {
+        "median": 203.78125,
+        "min": 203.453125,
+        "max": 204.390625
+      }
+    },
+    {
+      "product": "astro-static",
+      "target_rps": 50,
+      "repetitions": 3,
+      "all_targets_reached": true,
+      "p95_ms": {
+        "median": 0.6568,
+        "min": 0.611735,
+        "max": 0.659149
+      },
+      "actual_issued_rps": {
+        "median": 50.03309650641638,
+        "min": 50.032536258393904,
+        "max": 50.0333594121679
+      },
+      "successful_rps": {
+        "median": 50.032206256505475,
+        "min": 50.03155046274605,
+        "max": 50.03271379151491
+      },
+      "cpu_ms_per_request": {
+        "median": 0.18119133333333332,
+        "min": 0.162848,
+        "max": 0.20304733333333336
+      },
+      "peak_working_set_mib": {
+        "median": 4.0859375,
+        "min": 3.94921875,
+        "max": 4.0859375
+      }
+    },
+    {
+      "product": "gorun",
+      "target_rps": 200,
+      "repetitions": 3,
+      "all_targets_reached": true,
+      "p95_ms": {
+        "median": 2.611207,
+        "min": 2.545688,
+        "max": 2.800677
+      },
+      "actual_issued_rps": {
+        "median": 200.03329685581363,
+        "min": 200.02895063675697,
+        "max": 200.0349135603864
+      },
+      "successful_rps": {
+        "median": 200.02064862494183,
+        "min": 200.01682270823187,
+        "max": 200.02274419953227
+      },
+      "cpu_ms_per_request": {
+        "median": 2.567535,
+        "min": 2.542393166666667,
+        "max": 2.5778828333333332
+      },
+      "peak_working_set_mib": {
+        "median": 117.375,
+        "min": 117.10546875,
+        "max": 117.40234375
+      }
+    },
+    {
+      "product": "wordpress",
+      "target_rps": 200,
+      "repetitions": 3,
+      "all_targets_reached": false,
+      "p95_ms": {
+        "median": 1208.95086,
+        "min": 1157.523183,
+        "max": 1244.486991
+      },
+      "actual_issued_rps": {
+        "median": 91.73848253765729,
+        "min": 91.53897594336584,
+        "max": 96.260693662392
+      },
+      "successful_rps": {
+        "median": 90.23652244535997,
+        "min": 90.0978236306664,
+        "max": 94.66836703650098
+      },
+      "cpu_ms_per_request": {
+        "median": 22.147721758082092,
+        "min": 21.1114177916234,
+        "max": 22.182975609756095
+      },
+      "peak_working_set_mib": {
+        "median": 779.48046875,
+        "min": 779.1015625,
+        "max": 780.85546875
+      }
+    },
+    {
+      "product": "astro-static",
+      "target_rps": 200,
+      "repetitions": 3,
+      "all_targets_reached": true,
+      "p95_ms": {
+        "median": 0.444997,
+        "min": 0.401257,
+        "max": 0.452263
+      },
+      "actual_issued_rps": {
+        "median": 200.03346892657478,
+        "min": 200.0325058489592,
+        "max": 200.0363706529194
+      },
+      "successful_rps": {
+        "median": 200.0308826746284,
+        "min": 200.02890278958606,
+        "max": 200.03443141325747
+      },
+      "cpu_ms_per_request": {
+        "median": 0.11807233333333333,
+        "min": 0.1116425,
+        "max": 0.1239465
+      },
+      "peak_working_set_mib": {
+        "median": 4.078125,
+        "min": 3.9609375,
+        "max": 4.1484375
+      }
+    }
+  ],
+  "metadata_sha256": "e45831dbb9c02115643690debda61e5d6a2a3c3fbb10d5c9fa31a3175d06798d"
+}

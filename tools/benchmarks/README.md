@@ -1,7 +1,6 @@
 # Reproducible CMS comparison (measurement harness)
 
-No results or superiority claims are published until a complete run has been
-validated. GoRun Full and WordPress are CMS deployments. Astro is a separately
+The [validated 19 October 2026 results](../../docs/BENCHMARKS.md) include raw evidence and an executed notebook. GoRun Full and WordPress are CMS deployments. Astro is a separately
 labelled static-delivery reference. GoRun Edge is unavailable for measurement:
 this repository currently contains permission contracts, not a runnable Edge CMS.
 
@@ -16,7 +15,7 @@ logical CPUs. Images run sequentially with three rotated repetitions to reduce
 ordering bias. No TLS, CDN, plugins or full-page cache is enabled. Astro's output
 is served by Nginx and has no CMS editing or database workload.
 
-Fixed offered rates of 50 and 200 HTTP requests/second each run for 30 seconds
+Nominal target rates of 50 and 200 HTTP requests/second each run for 30 seconds
 after warmup. Achieved throughput is not maximum server capacity. Raw Vegeta
 reports retain per-run percentiles and errors; do not average request
 percentiles across runs. Report medians across repetitions with their range,
@@ -36,3 +35,5 @@ python3 tools/benchmarks/run.py --output work/benchmark-results
 Dependencies and conditions, raw reports, restart timings and sampled Docker
 statistics are saved in the output folder. The workflow uploads this folder on
 success and failure. Incomplete runs must remain labelled incomplete.
+
+The 100-worker limit can reduce issued traffic below the target. Publish actual issued rate and successful throughput separately; the `offered_rps` metadata field is only the configured target. Do not rank deployments at unequal delivered rates.
