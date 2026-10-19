@@ -23,7 +23,9 @@ Integration setup status reads local configuration only: opening the dashboard d
 
 ## Pin tools to the dashboard
 
-Use **Add to dashboard** beside an authorized contextual page tab (with touch, mouse or keyboard). The item becomes a personal dashboard panel and a main-sidebar **Quick access** shortcut, and leaves the contextual navigation; **Return to navigation** puts it back. Pins and their order survive reload and are private to your account. Quick access rechecks current permissions and workspace visibility; hidden or unavailable destinations are not exposed. An old `builder.identity` pin projects to the authorized `site-builder` entry and duplicates are combined without rewriting saved preferences. Pinning never changes roles, calls a provider or publishes content, and panels recheck your current permissions.
+Use **Add to quick access** beside an authorized contextual page tab (with touch, mouse or keyboard). The item becomes a personal dashboard panel and a main-sidebar **Quick access** shortcut immediately; its contextual page tab is hidden on the next page navigation or reload. Use **Remove from quick access** beside the sidebar shortcut, or **Return to navigation** on its dashboard panel, to unpin it. The sidebar and an on-page dashboard widget refresh immediately; the contextual tab returns on the next page navigation or reload. Pins and their order survive reload and are private to your account. Quick access rechecks current permissions and workspace visibility; hidden or unavailable destinations are not exposed. An old `builder.identity` pin projects to the authorized `site-builder` entry and duplicates are combined without rewriting saved preferences. Pinning never changes roles, calls a provider or publishes content, and panels recheck your current permissions.
+
+See [Personal quick access](SIDEBAR-QUICK-ACCESS.md) for saved-state refresh, legacy pin compatibility and permission filtering.
 
 The canvas gallery shows only your own saved canvases, with a few safe content previews per board.
 
@@ -45,7 +47,7 @@ Ordering and hiding never grant or revoke permissions. New permitted module link
 
 الرئيسية تبدأ بدليل قصير وحالة إعداد التكاملات والإجراءات السريعة، ثم أدواتك المثبّتة وآخر المحتوى والنشاط والمهام والنظام ولوحاتك المحفوظة. افتح «تخصيص» ثم رتّب الأقسام بالسحب أو أزرار الأسهم، ويُحفظ الترتيب لحسابك. الكاتب والمساهم يشاهدان محتواهما فقط، ولا تدخل البلاغات الخاصة في الجدول. حالة الإعداد تقرأ الإعدادات المحلية فقط ولا تختبر أي مزوّد.
 
-استخدم زر «إضافة إلى لوحة التحكم» بجانب تبويب الصفحة داخل قسمها، فيصبح لوحة شخصية واختصارًا ضمن «الوصول السريع» في القائمة الرئيسية، ويختفي من تبويبات الصفحات. «إرجاع إلى التنقل» يعيده. التثبيت لا يغيّر الصلاحيات ولا ينشر أي محتوى.
+استخدم زر «إضافة إلى الوصول السريع» بجانب تبويب الصفحة داخل قسمها؛ يظهر الاختصار في القائمة الرئيسية واللوحة الشخصية فورًا، ويختفي تبويب الصفحة عند الانتقال التالي أو إعادة التحميل. لإلغاء التثبيت استخدم «إزالة من الوصول السريع» بجانب اختصار القائمة، أو «إرجاع إلى التنقل» في لوحته داخل الرئيسية. تتحدث القائمة واللوحة الموجودة في الصفحة فورًا، ويعود تبويب الصفحة عند الانتقال التالي أو إعادة التحميل. التثبيت لا يغيّر الصلاحيات ولا ينشر أي محتوى.
 
 القائمة الرئيسية تجمع الصفحات في ستة أقسام كحد أقصى: الرئيسية، المحتوى، الموقع، الكانفس والوكلاء، الوارد والإعدادات. يظهر المتجر عند توفر أدوات تجارة مسموح بها. اختر القسم ثم التبويب المطلوب؛ الإعدادات تجمع العام والفريق والتكاملات والنظام. تختفي الأقسام الفارغة، وتبقى روابط الإضافات الجديدة متاحة داخل الإعدادات.
 
