@@ -5,6 +5,52 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-19
+
+### Reviewed MCP tool execution
+
+- Let an owned, named OpenAI-compatible managed text agent use an explicitly
+  selected set of MCP tools. Discover and pin the server configuration, catalog
+  and bounded input schemas; existing bundles stay disabled by default.
+- Pause every proposed call for the owner's review of its destination, tool and
+  exact arguments. Require recent authentication, reject replay and claim the
+  attempt before making the call. Return its bounded text result to the model
+  and save the final answer as a private canvas note.
+- Preserve limits and consent across pauses and restarts. Revoking and restoring
+  permissions cannot restore an old approval. Recheck source, graph, profile,
+  model, bundle and owner authority at execution and result boundaries; never
+  automatically repeat a call with an ambiguous external outcome.
+- Restrict this increment to manually reviewed text runs, with at most three
+  tool calls and four model turns. Scheduled and incoming-webhook runs cannot
+  use a tool-enabled policy. Executable skill packages, unattended tool use and
+  automatic publishing are not added.
+
+### Separate Edge owner administration
+
+- Add an optional, default-off owner interface to the standalone Workers/D1/R2
+  edition. Generate its owner key through an offline operator command, store
+  only the hash and rotate access without replacing content. Recovery revokes
+  existing sessions; there is no public bootstrap or reset endpoint.
+- Edit private drafts separately from published articles, review the exact saved
+  version before publishing, restore saved revisions into drafts and export
+  content without authentication state. Guard writes, revisions and audit
+  records atomically against stale versions and expired or revoked sessions.
+- Support compact English and Arabic owner pages, including mobile. Require a
+  pinned origin, secure production cookies and same-origin CSRF protection.
+  Keep public reads site-scoped, escaped and restricted to published content
+  and explicitly public R2 records.
+- Edge remains a separate experimental edition, outside the Full binary. Media
+  upload, Full themes and agents, manager pairing, a supported public deployment
+  template and an Edge benchmark are not part of this increment.
+- Verify the owner flow through actual HTTPS on an isolated Cloudflare Worker,
+  including offline initialization/recovery, private drafts, exact publication,
+  Arabic mobile, export, unpublish and session revocation. Recheck public D1/R2
+  boundaries and revoke temporary owner access, remove the test secret and return
+  administration to disabled after acceptance. Record the source and limits
+  without credentials; this is functional validation, not a performance result.
+
+Publishing a release does not update an existing running installation.
+
 ## [0.7.0] - 2026-10-19
 
 ### Agent skills and connection bundles
@@ -454,7 +500,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/zadstack/gorun/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/zadstack/gorun/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/zadstack/gorun/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/zadstack/gorun/compare/v0.4.0...v0.5.0
