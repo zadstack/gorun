@@ -5,6 +5,14 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Operations
+
+- Local load harness (`tools/loadtest`, `make loadtest`): boots a real SQLite
+  `gorun serve`, seeds published posts, and reports p50/p95/p99 latency, error
+  rate, throughput, and approximate server RSS/CPU under N concurrent readers
+  (optional light write mix). Docs: [docs/LOADTEST.md](docs/LOADTEST.md). Not
+  wired into CI (avoids flaky host-noisy gates).
+
 ### Local startup
 
 - Add `gorun start` with SQLite migrations, bundled default-theme provisioning,
