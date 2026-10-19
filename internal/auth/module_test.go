@@ -155,9 +155,14 @@ func TestSetupCreatesFirstAdminAndLogsIn(t *testing.T) {
 			t.Errorf("topbar lacks %s", want)
 		}
 	}
-	// sidebar group headings: catalog label, or a title-cased fallback, never the raw key
-	if !strings.Contains(page, "وكلاء الذكاء الاصطناعي") || !strings.Contains(page, "Field Kit") || strings.Contains(page, "core.nav.group.") {
-		t.Fatalf("sidebar group headings:\n%s", page)
+	// Compact sections use localized labels; custom groups remain in the
+	// recovery/customization page without adding another primary section.
+	if !strings.Contains(page, "الكانفس والوكلاء") || !strings.Contains(page, `data-navigation-section="settings"`) || strings.Contains(page, "core.nav.section.") {
+		t.Fatalf("sidebar section labels:\n%s", page)
+	}
+	_, preferences := s.do("GET", "/admin/navigation", nil)
+	if !strings.Contains(preferences, "Field Kit") || strings.Contains(preferences, "core.nav.group.") {
+		t.Fatalf("custom group missing from preferences:\n%s", preferences)
 	}
 	if resp, _ := s.do("GET", "/admin/setup", nil); resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("setup must close once a user exists: %d", resp.StatusCode)

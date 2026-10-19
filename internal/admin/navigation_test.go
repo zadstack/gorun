@@ -30,14 +30,14 @@ func TestNavigationPreferencesPersistAndDoNotChangeAccess(t *testing.T) {
 		t.Fatalf("hiding changed authorization: %d", response.StatusCode)
 	}
 	s.login("other@example.com", "admin", "en")
-	_, page = s.do("GET", "/admin", nil)
+	_, page = s.do("GET", "/admin/users", nil)
 	mustContain(t, page, `href="/admin/users"`)
 	s.signIn(u.Email)
 	s.app.Deps.Admin.AddNav(kernel.NavItem{ID: "new.module", LabelKey: "New module", Href: "/admin/new-module"})
 	_, page = s.do("GET", "/admin", nil)
 	mustContain(t, page, `href="/admin/new-module"`)
 	s.post("/admin/navigation", url.Values{"intent": {"reset"}})
-	_, page = s.do("GET", "/admin", nil)
+	_, page = s.do("GET", "/admin/users", nil)
 	mustContain(t, page, `href="/admin/users"`)
 }
 
@@ -86,7 +86,7 @@ func TestNavigationAllHiddenKeepsRecoveryAndNewEntriesVisible(t *testing.T) {
 		t.Fatal("hidden navigation still contains items")
 	}
 	s.post("/admin/navigation", url.Values{"intent": {"reset"}})
-	_, page = s.do("GET", "/admin", nil)
+	_, page = s.do("GET", "/admin/users", nil)
 	mustContain(t, page, `href="/admin/users"`)
 }
 
@@ -120,18 +120,18 @@ func TestNavigationOrderingPersistsWithHiddenItemsPermissionsAndReset(t *testing
 		t.Fatal("hidden item lost saved order")
 	}
 	s.app.Deps.Admin.AddNav(kernel.NavItem{ID: "order.new", LabelKey: "New", Href: "/admin/order.new", Group: "system", Position: 1})
-	_, page = s.do("GET", "/admin", nil)
+	_, page = s.do("GET", "/admin/system/jobs", nil)
 	if strings.Index(page, `href="/admin/order.beta"`) > strings.Index(page, `href="/admin/order.new"`) {
 		t.Fatal("new item displaced personal order")
 	}
 	s.login("isolated-order@example.com", "admin", "en")
-	_, page = s.do("GET", "/admin", nil)
+	_, page = s.do("GET", "/admin/system/jobs", nil)
 	if strings.Index(page, `href="/admin/order.alpha"`) > strings.Index(page, `href="/admin/order.beta"`) {
 		t.Fatal("another user's order leaked")
 	}
 	s.signIn(u.Email)
 	s.post("/admin/navigation", url.Values{"intent": {"reset"}})
-	_, page = s.do("GET", "/admin", nil)
+	_, page = s.do("GET", "/admin/system/jobs", nil)
 	mustContain(t, page, `href="/admin/order.alpha"`)
 	if strings.Index(page, `href="/admin/order.alpha"`) > strings.Index(page, `href="/admin/order.beta"`) {
 		t.Fatal("reset did not reset ordering")

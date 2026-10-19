@@ -10,7 +10,7 @@ import (
 	"github.com/zadstack/gorun/internal/kernel"
 )
 
-// I8 (BUG-01/BUG-05): a public type created at runtime is in the sidebar on
+// I8 (BUG-01/BUG-05): a public type created at runtime is in Content tabs on
 // the next admin request, labelled in the admin user's locale.
 func TestAdminNavListsRuntimeTypeInRequestLocale(t *testing.T) {
 	s := loggedIn(t, "admin")
@@ -30,10 +30,10 @@ func TestAdminNavListsRuntimeTypeInRequestLocale(t *testing.T) {
 		t.Fatal(err)
 	}
 	nav := func() string {
-		_, page := s.do("GET", "/admin/types", nil, nil)
-		i, j := strings.Index(page, "<aside"), strings.Index(page, "</aside>")
+		_, page := s.do("GET", "/admin/content/post", nil, nil)
+		i, j := strings.Index(page, `data-navigation-context="content"`), strings.Index(page, "</main>")
 		if i < 0 || j < i {
-			t.Fatalf("no sidebar:\n%s", page)
+			t.Fatalf("no contextual navigation:\n%s", page)
 		}
 		return page[i:j]
 	}

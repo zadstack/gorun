@@ -23,9 +23,15 @@ Integration setup status reads local configuration only: opening the dashboard d
 
 ## Pin tools to the dashboard
 
-Drag an authorized sidebar item onto **Your dashboard**, or use its **Add to dashboard** button (for touch and keyboard users). The item becomes a personal panel and leaves the sidebar; **Return to sidebar** puts it back. Pins and their order survive reload and are private to your account. Pinning never changes roles, calls a provider or publishes content, and panels recheck your current permissions.
+Use **Add to dashboard** beside an authorized contextual page tab (with touch, mouse or keyboard). The item becomes a personal panel and leaves the contextual navigation; **Return to navigation** puts it back. Pins and their order survive reload and are private to your account. Pinning never changes roles, calls a provider or publishes content, and panels recheck your current permissions.
 
 The canvas gallery shows only your own saved canvases, with a few safe content previews per board.
+
+## Sections and contextual tabs
+
+The primary sidebar has up to six entries: **Home**, **Content**, **Website**, **Canvas & agents**, **Inbox** and **Settings**. **Store** appears only when a permitted commerce entry is available. Empty sections are omitted. Content includes content types and taxonomies; Website combines appearance, menus, SEO and redirects. Settings contains general settings, team/roles, integrations and system tools. Unknown extension groups remain accessible under Settings.
+
+Select a section to see its page tabs above the current screen. Larger sections have a category row (for example **Settings → Team & roles → Users**). These are ordinary links and work without JavaScript. Nested editors keep their parent section selected. Existing URLs and route permissions are unchanged.
 
 ## Arrange the sidebar
 
@@ -39,7 +45,9 @@ Ordering and hiding never grant or revoke permissions. New permitted module link
 
 الرئيسية تبدأ بدليل قصير وحالة إعداد التكاملات والإجراءات السريعة، ثم أدواتك المثبّتة وآخر المحتوى والنشاط والمهام والنظام ولوحاتك المحفوظة. رتّب الأقسام بالسحب أو أزرار الأسهم، ويُحفظ الترتيب لحسابك. الكاتب والمساهم يشاهدان محتواهما فقط، ولا تدخل البلاغات الخاصة في الجدول. حالة الإعداد تقرأ الإعدادات المحلية فقط ولا تختبر أي مزوّد.
 
-اسحب عنصرًا من القائمة الجانبية إلى «لوحة التحكم الخاصة بك»، أو استخدم زر «إضافة إلى لوحة التحكم»، فيصبح لوحة شخصية ويختفي من القائمة. «إرجاع إلى القائمة» يعيده. التثبيت لا يغيّر الصلاحيات ولا ينشر أي محتوى.
+استخدم زر «إضافة إلى لوحة التحكم» بجانب تبويب الصفحة داخل قسمها، فيصبح لوحة شخصية ويختفي من القائمة. «إرجاع إلى التنقل» يعيده. التثبيت لا يغيّر الصلاحيات ولا ينشر أي محتوى.
+
+القائمة الرئيسية تجمع الصفحات في ستة أقسام كحد أقصى: الرئيسية، المحتوى، الموقع، الكانفس والوكلاء، الوارد والإعدادات. يظهر المتجر عند توفر أدوات تجارة مسموح بها. اختر القسم ثم التبويب المطلوب؛ الإعدادات تجمع العام والفريق والتكاملات والنظام. تختفي الأقسام الفارغة، وتبقى روابط الإضافات الجديدة متاحة داخل الإعدادات.
 
 من «تخصيص القائمة» يمكنك تحريك المجموعات والعناصر بأزرار لأعلى ولأسفل، وإظهارها أو إخفاؤها، ثم حفظ الترتيب لحسابك فقط. «استعادة الافتراضي» تعيد الترتيب والظهور الأصليين. الصلاحيات لا تتغير.
 

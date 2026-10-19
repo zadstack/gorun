@@ -58,7 +58,7 @@ func TestWorkspaceChooserAndSimpleHidesAdvancedNav(t *testing.T) {
 	}
 
 	_, page = s.do("GET", "/admin", nil)
-	mustContain(t, page, `href="/admin/settings/general"`, `href="/admin/workspace"`)
+	mustContain(t, page, `href="/admin/settings/general"`)
 	mustNotContain(t, page,
 		`href="/admin/agents/keys"`,
 		`href="/admin/canvases"`,
@@ -70,7 +70,7 @@ func TestWorkspaceChooserAndSimpleHidesAdvancedNav(t *testing.T) {
 
 	_, page = s.do("GET", "/admin/settings/general", nil)
 	mustNotContain(t, page, `href="/admin/settings/ai"`)
-	mustContain(t, page, `href="/admin/settings/mail"`)
+	mustContain(t, page, `href="/admin/settings/mail"`, `href="/admin/workspace"`)
 
 	resp, _ = s.do("GET", "/admin/settings/ai", nil)
 	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/admin/workspace" {
@@ -80,7 +80,7 @@ func TestWorkspaceChooserAndSimpleHidesAdvancedNav(t *testing.T) {
 	if resp, _ = s.post("/admin/workspace", url.Values{"mode": {"full"}}); resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("save full: %d", resp.StatusCode)
 	}
-	_, page = s.do("GET", "/admin", nil)
+	_, page = s.do("GET", "/admin/agents/keys", nil)
 	mustContain(t, page, `href="/admin/agents/keys"`, `href="/admin/canvases"`)
 }
 

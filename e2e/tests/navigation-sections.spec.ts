@@ -1,0 +1,48 @@
+import { test, expect } from '@playwright/test';
+import { csrf, setLocale } from '../lib/helpers.ts';
+for (const locale of ['en', 'ar'] as const) {
+  test(`grouped navigation discovers pages and respects pins (${locale})`, async ({ page }) => {
+    await page.goto('/admin');
+    await setLocale(page, locale);
+    const sidebar = page.locator('[data-navigation-sections]');
+    expect(await sidebar.locator('[data-navigation-section]').evaluateAll(nodes => nodes.map(n => n.getAttribute('data-navigation-section')))).toEqual(['home', 'content', 'site', 'canvas', 'inbox', 'settings', 'commerce']);
+    await page.goto('/admin/content/post/new');
+    await expect(sidebar.locator('[data-navigation-section="content"] a')).toHaveAttribute('aria-current', 'true');
+    await expect(page.locator('.admin-section-pages a[href="/admin/content/post"]')).toHaveAttribute('aria-current', 'page');
+    await page.locator('[data-navigation-category="structure"]').click();
+    await expect(page.locator('.admin-section-pages a[href="/admin/taxonomies"]')).toBeVisible();
+    await sidebar.locator('[data-navigation-section="site"] a').click();
+    await expect(page.locator('.admin-section-pages a[href="/admin/menus"]')).toBeVisible();
+    await page.locator('.admin-section-pages a[href="/admin/settings/seo"]').click();
+    await expect(sidebar.locator('[data-navigation-section="site"] a')).toHaveAttribute('aria-current', 'true');
+    await sidebar.locator('[data-navigation-section="settings"] a').click();
+    await page.locator('[data-navigation-category="team"]').click();
+    await expect(page.locator('.admin-section-pages a[href="/admin/users"]')).toBeVisible();
+    await expect(page.locator('.admin-section-pages a[href="/admin/roles"]')).toBeVisible();
+    await page.locator('[data-nav-id="roles"] [data-sidebar-pin-add]').click();
+    await expect(page).toHaveURL(/\/admin\/?$/);
+    await expect(page.locator('[data-pin-id="roles"]')).toBeVisible();
+    await page.goto('/admin/users');
+    await expect(page.locator('.admin-section-pages a[href="/admin/roles"]')).toHaveCount(0);
+    await page.goto('/admin/roles');
+    await expect(page.locator('h1')).toBeVisible();
+    expect((await page.request.post('/admin/dashboard/pins/roles/remove', {form: {_csrf: await csrf(page)}})).status()).toBe(200);
+    await page.reload();
+    await expect(page.locator('.admin-section-pages a[href="/admin/roles"]')).toBeVisible();
+    await setLocale(page, 'ar');
+  });
+}
+test('tabs wrap on small screens and navigate without scripts', async ({ page, browser }) => {
+  await page.setViewportSize({width: 320, height: 800});
+  await page.goto('/admin/appearance/themes');
+  await expect(page.locator('[data-navigation-context="site"]')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const context = await browser.newContext({javaScriptEnabled: false,storageState: '.auth/admin.json'});
+  const plain = await context.newPage();
+  await plain.goto(new URL('/admin', page.url()).href);
+  await plain.locator('[data-navigation-section="settings"] a').click();
+  await plain.locator('[data-navigation-category="system"]').click();
+  await plain.locator('.admin-section-pages a[href="/admin/system/jobs"]').click();
+  await expect(plain).toHaveURL(/\/admin\/system\/jobs/);
+  await context.close();
+});

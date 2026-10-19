@@ -1,0 +1,20 @@
+{{define "partials/navigation-tabs"}}
+{{range navigationSections}}{{if .Active}}{{if ne .Key "home"}}
+<div class="admin-section-navigation" data-navigation-context="{{.Key}}">
+  {{if gt (len .Groups) 1}}
+  <nav class="admin-section-categories" aria-label="{{t "core.nav.section.categories"}}">
+    {{range .Groups}}<a href="{{.Href}}" data-navigation-category="{{.Key}}" {{if .Active}}aria-current="true"{{end}}>{{navigationLabel .LabelKey}}</a>{{end}}
+  </nav>
+  {{end}}
+  {{$single := eq (len .Groups) 1}}
+  {{range .Groups}}{{if or .Active $single}}
+  <nav class="admin-section-pages" aria-label="{{t "core.nav.section.pages"}}">
+    <ul>{{range .Items}}<li class="dashboard-pinnable" data-nav-id="{{.ID}}">
+      <a href="{{.Href}}" {{if active .Href}}aria-current="page"{{end}}>{{icon .Icon}}<span>{{t .LabelKey}}</span></a>
+      {{if ne .ID "dashboard"}}<button type="button" class="dashboard-pin-add" data-sidebar-pin-add aria-label="{{t "dashboardpins.add"}}: {{t .LabelKey}}" title="{{t "dashboardpins.add"}}">＋</button>{{end}}
+    </li>{{end}}</ul>
+  </nav>
+  {{end}}{{end}}
+</div>
+{{end}}{{end}}{{end}}
+{{end}}

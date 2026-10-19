@@ -375,6 +375,26 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 		}
 		return t.i18n.T(locale, key, args...)
 	}
+	var sections []NavigationSection
+	sectionsLoaded := false
+	sectionView := func() []NavigationSection {
+		if sectionsLoaded {
+			return sections
+		}
+		sectionsLoaded = true
+		if t.funcs.Nav == nil {
+			return nil
+		}
+		items := t.funcs.Nav(ctx)
+		authorized := items
+		if t.funcs.AllNav != nil {
+			authorized = t.funcs.AllNav(ctx)
+		}
+		preferred := t.preferredNavGroups(ctx)
+		sections = navigationSections(groupNav(items, preferred), authorized, pathOf(r), preferred)
+		return sections
+	}
+
 	return template.FuncMap{
 		"t":            translate,
 		"sidebarBrand": func() SidebarBrand { return t.sidebarBrand(ctx) },
@@ -413,6 +433,10 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 				groups[i].Label = groupLabel(func(k string) string { return translate(k) }, groups[i].LabelKey)
 			}
 			return groups
+		},
+		"navigationSections": sectionView,
+		"navigationLabel": func(key string) string {
+			return groupLabel(func(k string) string { return translate(k) }, key)
 		},
 		"allNav": func() []NavGroup {
 			if t.funcs.AllNav == nil {
