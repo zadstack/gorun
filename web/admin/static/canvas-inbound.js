@@ -69,14 +69,16 @@
       const status=el('span',undefined,'canvas-sr-only');status.setAttribute('role','status');row.append(status);return row;
     }
     function paint(container,card){
-      container.replaceChildren();const data=metadata(card),record=records.get(card.id);
-      container.append(line(t('inbound_card_id'),card.id));
-      container.append(line(t(card.kind==='agent'?'inbound_agent_id':'inbound_provider_id'),card.kind==='agent'?card.agent_id:card.provider_id));
-      if(data?.model)container.append(line(t('inbound_model'),data.model,false));
-      const url=endpoint(data);container.append(line(t('inbound_webhook'),url||'',!!url));
+      const expanded=container.querySelector('details')?.open;container.replaceChildren();const data=metadata(card),record=records.get(card.id);
+      const details=el('details');details.open=!!expanded;details.append(el('summary',t('card_details')));
+      details.append(line(t('inbound_card_id'),card.id));
+      details.append(line(t(card.kind==='agent'?'inbound_agent_id':'inbound_provider_id'),card.kind==='agent'?card.agent_id:card.provider_id));
+      if(data?.model)details.append(line(t('inbound_model'),data.model,false));
+      const url=endpoint(data);details.append(line(t('inbound_webhook'),url||'',!!url));
       const state=el('span',record?.error?t('inbound_unavailable'):record?.pending?t('inbound_loading'):statusText(data),'canvas-inbound-state');state.dataset.inboundState=data?.status==='needs_review'?'needs_review':data?.enabled?'enabled':data?.status||'unconfigured';container.append(state);
       const prompts=promptsFor(card),effective=typeof data?.prompt==='string'&&data.prompt.trim()?data.prompt:'';
-      const promptText=effective||prompts.map(node=>node.body).join('\n\n');if(promptText){const promptLabel=t(effective?'inbound_effective_prompt':'inbound_prompt');const sample=el('p',promptText,'canvas-inbound-prompt-preview');sample.title=promptLabel;container.append(el('small',promptLabel),sample);}
+      const promptText=effective||prompts.map(node=>node.body).join('\n\n');if(promptText){const promptLabel=t(effective?'inbound_effective_prompt':'inbound_prompt');const sample=el('p',promptText,'canvas-inbound-prompt-preview');sample.title=promptLabel;details.append(el('small',promptLabel),sample);}
+      container.append(details);
       const open=btn(t('inbound_settings'),()=>action(operation=>openSettings(card.id,operation),card.id,true));open.dataset.inboundOpen=card.id;container.append(open);
     }
     function repaint(){for(const box of root.querySelectorAll('[data-inbound-card]')){const card=api.document()?.cards.find(node=>node.id===box.dataset.inboundCard);if(card)paint(box,card);}}

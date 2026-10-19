@@ -132,7 +132,7 @@
   function refreshReferences() {
     root.querySelectorAll('[data-reference]').forEach(el => {
       const ref = documentState.references?.[el.dataset.reference];
-      el.replaceChildren(ref ? link(ref.title, ref.href, true) : element('p', t('unavailable')));
+      el.replaceChildren(ref ? link(ref.title, ref.href, true) : element('p', el.dataset.reference ? t('unavailable') : t('choose_content')));
     });
   }
   function updateBounds() {
@@ -233,7 +233,7 @@
       checkbox.addEventListener('change', () => { card.items[index].checked = checkbox.checked; changed(); }); label.append(checkbox, element('span', item.text)); body.append(label);
     });
     if (card.kind === 'link') body.append(link(card.url, card.url));
-    if (card.kind === 'content') { const ref = element('div'); ref.dataset.reference = card.content_id; body.append(ref); }
+    if (card.kind === 'content') { const ref = element('div'); ref.dataset.reference = card.content_id || ''; body.append(ref); }
     if (card.kind === 'widget') { body.dataset.widgetId = card.widget_id; widgetBody(body, card.widget_id); }
     operations?.cardBody(body, card);
     const footer = element('footer', undefined, 'canvas-card-footer');

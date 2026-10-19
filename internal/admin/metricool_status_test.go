@@ -1,6 +1,7 @@
 package admin_test
 
 import (
+	"golang.org/x/net/html"
 	"net/url"
 	"strings"
 	"testing"
@@ -12,8 +13,39 @@ func TestMetricoolConnectionStatusRequiresCredentials(t *testing.T) {
 	check := func(want, unwanted string) {
 		t.Helper()
 		r, body := s.do("GET", "/admin/settings/metricool", nil)
-		if r.StatusCode != 200 || !strings.Contains(body, want) || strings.Contains(body, unwanted) {
-			t.Fatalf("connection status should contain %q and exclude %q", want, unwanted)
+		// Status assertions belong to the actual settings status, not hidden
+		// translations for other components (such as the agent drawer).
+		doc, err := html.Parse(strings.NewReader(body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var status string
+		var found bool
+		var text func(*html.Node)
+		text = func(n *html.Node) {
+			if n.Type == html.TextNode {
+				status += n.Data
+			}
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				text(c)
+			}
+		}
+		var visit func(*html.Node)
+		visit = func(n *html.Node) {
+			for _, a := range n.Attr {
+				if a.Key == "data-metricool-connection-status" {
+					found = true
+					text(n)
+					return
+				}
+			}
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				visit(c)
+			}
+		}
+		visit(doc)
+		if r.StatusCode != 200 || !found || !strings.Contains(status, want) || strings.Contains(status, unwanted) {
+			t.Fatalf("actual connection status %q should contain %q and exclude %q (HTTP %d)", status, want, unwanted, r.StatusCode)
 		}
 	}
 	check("Not configured", "Saved · not tested")

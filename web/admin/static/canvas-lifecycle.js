@@ -14,7 +14,7 @@
         const list=await response.json();templates.replaceChildren();
         if (!list.length) templates.append(element('p',t('templates_empty')));
         for(const item of list){
-          const row=element('div',undefined,'canvas-template-row');row.append(element('strong',item.title));
+          const row=element('div',undefined,'canvas-template-row');row.append(element('strong',item.title),element('small',t('template_safety')));
           row.append(button(t('reuse_template'),async()=>{
             const title=prompt(t('template_board_title'),item.title);if(!title?.trim())return;
             if(save&&!await save())return;
