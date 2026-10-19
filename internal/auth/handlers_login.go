@@ -96,6 +96,10 @@ func (h *handlers) loginSubmit(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
+	if u.onboardingRequired {
+		http.Redirect(w, r, onboardingPath, http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, safeNext(f.Next), http.StatusSeeOther)
 }
 
@@ -133,6 +137,10 @@ func (h *handlers) magicSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := h.startSession(w, r, u, "user.magic_login"); err != nil {
 		h.serverError(w, r, err)
+		return
+	}
+	if u.onboardingRequired {
+		http.Redirect(w, r, onboardingPath, http.StatusSeeOther)
 		return
 	}
 	http.Redirect(w, r, "/account", http.StatusSeeOther)

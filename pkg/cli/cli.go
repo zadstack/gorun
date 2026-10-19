@@ -42,6 +42,7 @@ const (
 const usageHead = `usage: gorun <command> [flags]
 
 commands:
+  doctor        inspect configuration, SQLite, themes, modules and port without migrations [--json]
   start         prepare and run a local site (LAN preview; --local-only disables LAN)
   serve         run the HTTP server
   migrate       apply database migrations and exit
@@ -134,6 +135,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return c.Run(args[1:], in, out)
 	}
 	switch args[0] {
+	case "doctor":
+		return doctorCmd(args[1:], out)
 	case "start":
 		return start(args[1:], out)
 	case "serve":

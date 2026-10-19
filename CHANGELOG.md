@@ -5,6 +5,16 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### First-login setup and diagnostics
+
+- Require the auto-generated administrator to replace the temporary password and
+  choose email, site name and site/dashboard language before admin or authenticated
+  API/MCP access. Save all fields atomically, rotate the browser session and revoke
+  old sessions, keys and magic links; completed/existing configured accounts skip it.
+- Add read-only `gorun doctor [--json]` with configuration, permissions, SQLite,
+  migration drift, module activation, admin, theme and local port checks plus recovery
+  advice; do not initialize a site, generate secrets or apply migrations.
+
 ### Operations
 
 - Local load harness (`tools/loadtest`, `make loadtest`): boots a real SQLite

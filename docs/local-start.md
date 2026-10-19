@@ -50,6 +50,64 @@ production configuration for deployment; `start` rejects production mode.
 IPv6-only LANs are not advertised. If no private IPv4 interface is available,
 the terminal says so and localhost still works. Firewalls may block LAN access.
 
+## First sign-in
+
+The generated administrator signs in with `admin` and the one-time terminal
+password. Before the dashboard or authenticated API/MCP becomes available,
+`/admin/onboarding` asks for a real email, a new password and confirmation, site
+name, and Arabic or English for both the site and dashboard. The new password
+must differ from the temporary password and follow the normal password policy.
+
+Saving is atomic: identity, password, site title and language either all change
+or all remain unchanged. Completion ends old sessions, revokes previously issued
+API keys and magic links, then starts a fresh browser session and opens the
+dashboard. A session older than ten minutes must confirm its password again.
+Failed validation never echoes passwords. The `admin` alias continues to work
+with the new password, as does the new email.
+
+Regular existing accounts and browser-setup accounts skip this screen. An
+unconfigured account from the preceding `start` release (the `admin` alias still
+using `admin@localhost.invalid`) is recognized once when upgrading. Finishing the
+screen survives restarts; it is never automatically offered again. A CLI password
+reset does not skip unfinished site setup.
+
+If the new password was saved but a fresh browser session could not be started,
+sign in again with your new password. The account changes remain saved.
+
+## Diagnose a local site
+
+```sh
+gorun doctor --data ./data
+gorun doctor --data ./data --json
+gorun doctor --addr :9090
+```
+
+`doctor` checks the existing configuration and secret, data-directory permissions,
+SQLite integrity, migration drift, enabled/disabled module activation, an active
+administrator, unfinished first-login setup, the active theme's filesystem
+contract, and the configured port. Every failure or warning includes a next step.
+JSON contains `ok` and a `checks` array with `id`, `status`, `message` and optional
+`action`; statuses are `ok`, `warn`, and `fail`. Exit status is 0 for healthy sites
+and warnings, 1 when a check fails.
+
+It does not create a site or secret, run migrations, repair files, start workers,
+reset accounts or take the worker lock. SQLite is opened in read-only/query-only
+mode; normal SQLite WAL coordination may use its shared-memory sidecars. It can
+run beside the server. Integrity/schema checks have a bounded timeout. Permission
+checks inspect permission bits rather than writing test files; ACLs and the actual
+server account may impose additional restrictions.
+
+The port check briefly attempts a local bind. If the port is occupied, it probes
+only that local address's `/healthz` with redirects and environment proxies
+disabled. A responding health endpoint is a warning: it may be the running site
+or another service, so verify ownership. It never probes a remote configured
+address. This is a diagnostic snapshot; another process can take the port later.
+
+A new or misconfigured site fails with instructions to run `gorun start` or
+review its existing configuration. Diagnostics suppress configuration values,
+credentials and database contents. `doctor` is separate from `gorun theme doctor`,
+which provides detailed theme-only checks.
+
 ## LAN security
 
 The LAN URL is an unauthenticated, read-only **public preview**, served over

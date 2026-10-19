@@ -114,7 +114,7 @@ gorun start
 # Local only: gorun start --local-only
 ```
 
-يجهّز SQLite والثيم الافتراضي، وينشئ الحساب `admin` إذا لم يوجد أي مستخدم، ويعرض كلمة مرور عشوائية قوية مرة واحدة، ثم يفتح المتصفح. يحتفظ بالحساب وكلمة المرور عند إعادة التشغيل. رابط LAN لمعاينة الصفحات العامة فقط؛ الإدارة وتسجيل الدخول وطلبات الكتابة محلية. [التفاصيل والأمان والاستعادة](docs/local-start.md).
+يجهّز SQLite والثيم الافتراضي، وينشئ الحساب `admin` إذا لم يوجد أي مستخدم، ويعرض كلمة مرور عشوائية قوية مرة واحدة، ثم يفتح المتصفح. أول دخول يطلب كلمة مرور جديدة وبريد المدير واسم الموقع واللغة قبل فتح لوحة التحكم. يحتفظ بالإعدادات عند إعادة التشغيل. استخدم `gorun doctor` لفحص الموقع وعرض خطوات إصلاح المشاكل. رابط LAN لمعاينة الصفحات العامة فقط؛ الإدارة وتسجيل الدخول وطلبات الكتابة محلية. [التفاصيل والأمان والاستعادة](docs/local-start.md).
 
 ### البدء السريع
 
@@ -312,8 +312,10 @@ gorun start
 ```
 
 This prepares SQLite and the default theme, creates `admin` only when no user
-exists, prints a strong random password once, and opens the browser. Restarts
-preserve accounts and passwords. The LAN URL is a public read-only preview;
+exists, prints a strong random password once, and opens the browser. First sign-in
+asks for a new password, owner email, site name and language before the dashboard
+opens. Restarts preserve completed setup. Use `gorun doctor` for site diagnostics
+and suggested recovery steps. The LAN URL is a public read-only preview;
 administration, accounts and writes stay on localhost.
 [Setup, security and recovery](docs/local-start.md).
 

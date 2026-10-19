@@ -1,0 +1,45 @@
+{{define "title"}}{{t "auth.onboarding.title"}}{{end}}
+{{define "content"}}
+<div class="admin-auth-panel">
+<p class="admin-auth-brand">{{t "core.app.name"}}</p>
+<h1>{{t "auth.onboarding.title"}}</h1>
+<p class="text-muted mt-2 mb-4">{{t "auth.onboarding.intro"}}</p>
+<form method="post" action="/admin/onboarding" class="space-y-4">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<div>
+<label for="name" class="block font-medium mb-1">{{t "auth.field.name"}}</label>
+<input id="name" name="name" type="text" autocomplete="name"   value="{{.Name}}" aria-describedby="name-error" {{with index .Fields "name"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+<div id="name-error">{{template "partials/field_errors" (index .Fields "name")}}</div>
+</div>
+<div>
+<label for="email" class="block font-medium mb-1">{{t "auth.field.email"}}</label>
+<input id="email" name="email" type="email" autocomplete="username" required  value="{{.Email}}" aria-describedby="email-error" {{with index .Fields "email"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+<div id="email-error">{{template "partials/field_errors" (index .Fields "email")}}</div>
+</div>
+<div>
+<label for="title" class="block font-medium mb-1">{{t "auth.onboarding.site_title"}}</label>
+<input id="title" name="title" type="text" autocomplete="organization" required  value="{{.Title}}" aria-describedby="title-error" {{with index .Fields "title"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+<div id="title-error">{{template "partials/field_errors" (index .Fields "title")}}</div>
+</div>
+<div>
+<label for="password" class="block font-medium mb-1">{{t "auth.onboarding.password"}}</label>
+<input id="password" name="password" type="password" autocomplete="new-password" required minlength="10" maxlength="4096"  aria-describedby="password-error" {{with index .Fields "password"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+<div id="password-error">{{template "partials/field_errors" (index .Fields "password")}}</div>
+</div>
+<div>
+<label for="confirm_password" class="block font-medium mb-1">{{t "auth.onboarding.confirm"}}</label>
+<input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" required   aria-describedby="confirm_password-error" {{with index .Fields "confirm_password"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+<div id="confirm_password-error">{{template "partials/field_errors" (index .Fields "confirm_password")}}</div>
+</div>
+<div>
+<label for="locale" class="block font-medium mb-1">{{t "auth.onboarding.locale"}}</label>
+<select id="locale" name="locale" required aria-describedby="locale-error" {{with index .Fields "locale"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3">
+<option value="ar" {{if eq .Locale "ar"}}selected{{end}}>العربية</option>
+<option value="en" {{if eq .Locale "en"}}selected{{end}}>English</option>
+</select>
+<div id="locale-error">{{template "partials/field_errors" (index .Fields "locale")}}</div>
+</div>
+<button type="submit" class="w-full h-9 bg-green text-white hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.onboarding.submit"}}</button>
+</form>
+</div>
+{{end}}
