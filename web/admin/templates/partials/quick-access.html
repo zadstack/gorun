@@ -1,0 +1,6 @@
+{{define "partials/quick-access"}}
+<section class="sidebar-quick-access" aria-labelledby="sidebar-quick-heading" data-quick-access>
+<h2 id="sidebar-quick-heading" tabindex="-1">{{t "quickaccess.title"}}</h2>
+<ul>{{range quickAccess}}<li data-quick-id="{{.ID}}" data-quick-category="{{.Category}}"><a href="{{.Href}}" class="sidebar-quick-link {{if .Active}}is-active{{end}}" {{if .Active}}aria-current="page"{{end}}><span aria-hidden="true">{{icon .Icon}}</span><span>{{t .LabelKey}}</span></a><button type="button" data-quick-remove="{{.ID}}" aria-label="{{t "quickaccess.remove"}}: {{t .LabelKey}}" title="{{t "quickaccess.remove"}}">{{icon "x"}}</button></li>{{else}}<li class="sidebar-quick-empty">{{t "quickaccess.empty"}}</li>{{end}}</ul>
+</section>
+{{end}}

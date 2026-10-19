@@ -103,6 +103,14 @@ func (*Module) Register(d *kernel.Deps) error {
 
 func templateFuncs(d *kernel.Deps) httpx.Funcs {
 	return httpx.Funcs{
+		PinnedNav: func(ctx context.Context) []httpx.NavItem {
+			items, err := pinnedNavigationItems(ctx, d)
+			if err != nil {
+				d.Log.Error("auth: load quick access", "err", err)
+				return nil
+			}
+			return items
+		},
 		Nav: func(ctx context.Context) []httpx.NavItem {
 			items := orderedNavigation(ctx, d)
 			hidden, err := hiddenNavigation(ctx, d)

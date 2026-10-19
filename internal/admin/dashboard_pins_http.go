@@ -9,6 +9,7 @@ import (
 
 func (h *handlers) dashboardPinRoutes() {
 	r := h.d.Router.Admin
+	r.Get("/dashboard/pins", h.sidebarQuickAccess)
 	r.Post("/dashboard/pins", h.dashboardPinAdd)
 	r.Post("/dashboard/pins/order", h.dashboardPinOrder)
 	r.Post("/dashboard/pins/{navID}/remove", h.dashboardPinRemove)
