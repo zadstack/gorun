@@ -1,6 +1,6 @@
 # GoRun Edge: read-only Worker proof of concept
 
-This is the second milestone of [issue #46](https://github.com/zadstack/gorun/issues/46): a separate Cloudflare Worker in [`edge/`](../edge), with its own D1 database and R2 binding. It runs locally in Cloudflare's `workerd` runtime. **No real Cloudflare deployment has been verified for this milestone.** It is not a supported replacement for GoRun Full, is not included in the GoRun release binary, and has no measured benchmark result or Deploy to Cloudflare button.
+This is a local step toward the second milestone of [issue #46](https://github.com/zadstack/gorun/issues/46): a separate Cloudflare Worker in [`edge/`](../edge), with its own D1 database and R2 binding. It runs locally in Cloudflare's `workerd` runtime. **No real Cloudflare deployment has been verified for this milestone.** It is not a supported replacement for GoRun Full, is not included in the GoRun release binary, and has no measured benchmark result or Deploy to Cloudflare button.
 
 The existing Go [`pkg/edge`](../pkg/edge) package defines future site-scoped manager capabilities. This Worker does not yet authenticate managers, pair with Full, run MCP tools, invoke models, or expose those capabilities. It has no admin, write API, agent, shell, webhook or publication endpoint. Edge admin/storage editing, owner recovery, revisions, audit and manager pairing remain later milestones; do not infer that local read tests implement them.
 
