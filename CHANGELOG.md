@@ -15,6 +15,11 @@ Third tagged release: theme quality brief (#33–#37) and compact admin/default 
 - Compact density (#32): tighter admin shell padding, gaps, and control heights plus denser
   default-theme layout/type tokens; other ship-with themes unchanged; 44px touch targets kept.
 
+### Documentation
+
+- `SECURITY.md` supported-versions table lists `0.3.x` and `0.2.x` (Arabic summary matches);
+  `0.1.x` is no longer supported.
+
 ### Themes
 
 - Starter content honesty (PR5 / #37): company starter omits testimonials (no invented
