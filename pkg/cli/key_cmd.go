@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +17,34 @@ import (
 )
 
 const keyUsage = "usage: gorun key list | create --name N --user EMAIL --scopes a,b|* [--kind api|agent] [--rate N] [--expires YYYY-MM-DD|RFC3339] | revoke <id> | rotate <id> [--grace 1h] [--data dir]"
+
+// keyHelpArgs reports -h / --help / help before any boot or config parse.
+func keyHelpArgs(args []string) bool {
+	for _, a := range args {
+		if a == "-h" || a == "--help" || a == "help" {
+			return true
+		}
+	}
+	return false
+}
+
+// formatKeyValidation turns auth ValidationError i18n keys into CLI text.
+// Unknown scopes name the submitted values and point at real permission names
+// (content.write is a common mistake; the real ones are content.edit/create).
+func formatKeyValidation(fields map[string]string, scopes []string) string {
+	if fields["scopes"] == "auth.error.scope_invalid" {
+		return fmt.Sprintf(
+			"unknown permission scope(s) %q; use names like content.view, content.edit, content.create, content.publish, or *",
+			strings.Join(scopes, ","),
+		)
+	}
+	parts := make([]string, 0, len(fields))
+	for k, v := range fields {
+		parts = append(parts, k+": "+v)
+	}
+	slices.Sort(parts)
+	return "invalid input (" + strings.Join(parts, "; ") + ")"
+}
 
 // cliKey is a key as the CLI prints it (never the hash; the token only once).
 type cliKey struct {
@@ -61,7 +90,7 @@ func cliExpiry(v string) (string, error) {
 // keyCmd is the key console on the command line: list, create, revoke and
 // rotate API/agent keys. Tokens are printed once and never stored.
 func keyCmd(args []string, out io.Writer) error {
-	if len(args) == 0 {
+	if len(args) == 0 || keyHelpArgs(args) {
 		return errors.New(keyUsage)
 	}
 	sub, args := args[0], args[1:]
@@ -79,6 +108,9 @@ func keyCmd(args []string, out io.Writer) error {
 			return err
 		}
 		flags[f], args = v, rest
+	}
+	if keyHelpArgs(args) {
+		return errors.New(keyUsage)
 	}
 	cfg, err := config.Load(args)
 	if err != nil {
@@ -136,7 +168,7 @@ func keyCmd(args []string, out io.Writer) error {
 		if err != nil {
 			var ve *auth.ValidationError
 			if errors.As(err, &ve) {
-				return fmt.Errorf("key: invalid %v", ve.Fields)
+				return fmt.Errorf("key: %s", formatKeyValidation(ve.Fields, scopes))
 			}
 			return err
 		}
