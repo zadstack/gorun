@@ -53,7 +53,7 @@ The instructions are tool-neutral. A chat-only assistant can explain the steps b
 
 ## Cloudflare Edge — in development
 
-GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 storage. The [read-only runtime](docs/EDGE.md) has passed actual Cloudflare HTTPS acceptance checks; optional [owner administration](docs/EDGE-ADMIN.md) adds locally tested private drafts, review/publication, revisions and offline recovery, disabled by default. Remote admin acceptance remains a separate gate. Manager pairing and a supported deployment template remain on the [roadmap](https://github.com/zadstack/gorun/issues/46); no Deploy button is available. Edge is separate from the Full release binary and has no measured benchmark result.
+GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 storage. Both [public reading](docs/EDGE.md) and optional [owner administration](docs/EDGE-ADMIN.md)—private drafts, review/publication, revisions and offline recovery—have passed actual Cloudflare HTTPS acceptance with isolated synthetic data. Administration stays disabled by default; temporary test access was revoked. [Validation record](docs/validation/edge-cloudflare-2026-10-19.json). Manager pairing and a supported deployment template remain on the [roadmap](https://github.com/zadstack/gorun/issues/46); no Deploy button is available. Edge is separate from the Full release binary and has no measured benchmark result.
 
 [![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 
@@ -130,7 +130,7 @@ Switch between **Workflow**, **Grid** and **List** views. Arrange cards using th
 
 *Screenshots use a fictional business and synthetic content. The example assistant response is supplied by a test client through the real MCP workflow; it is not a model-quality benchmark. [Arabic view](assets/branding/screenshots/canvas-ar.png) · [Mobile view](assets/branding/screenshots/canvas-mobile.png).*
 
-**Agent bundles:** add bounded inline skill instructions and reference text to reviewed external-agent or managed-text requests, and attach version-pinned MCP connection profiles with saved discovery status. [Manage skills and MCP references](docs/AGENT-BUNDLES.md). External clients configure their own endpoints, credentials and tools; managed text execution does not automatically call the attached MCP tools.
+**Agent bundles:** add bounded inline skill instructions and reference text to reviewed external-agent or managed-text requests, and attach version-pinned MCP connection profiles with saved discovery status. [Manage skills and MCP references](docs/AGENT-BUNDLES.md). External clients configure their own endpoints, credentials and tools. Named OpenAI-compatible managed text agents can use [explicitly selected MCP tools](docs/MANAGED-MCP-TOOLS.md), with owner review of every exact call and a private final note. This mode starts disabled and supports manual runs only.
 
 [MCP and permissions](docs/MCP.md) · [Canvases](docs/CANVASES.md) · [REST API](docs/API.md)
 

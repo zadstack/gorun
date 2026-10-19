@@ -1,6 +1,6 @@
 # Optional Edge owner administration
 
-This is a separate, small administration interface for the standalone Edge Worker. It is not the Full GoRun dashboard: no agents, uploads, arbitrary HTML, provider execution or automatic Skills/MCP provisioning. Public reading remains available with administration disabled. The read-only v0.7 Worker has passed real Cloudflare HTTPS checks; administration must pass its own remote acceptance before being described as deployed.
+This is a separate, small administration interface for the standalone Edge Worker. It is not the Full GoRun dashboard: no agents, uploads, arbitrary HTML, provider execution or automatic Skills/MCP provisioning. Public reading remains available with administration disabled. Both public reading and the separate owner workflow have passed real Cloudflare HTTPS checks with synthetic data: [source, scope and cleanup record](validation/edge-cloudflare-2026-10-19.json). Test owner access and sessions were revoked, its signing secret removed and the public preview returned to administration disabled. Repeat acceptance for your own account before relying on a deployment.
 
 ## Local installation
 

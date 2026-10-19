@@ -1,0 +1,263 @@
+{
+  "scope": "Isolated real Cloudflare HTTPS functional acceptance, synthetic data only",
+  "edge_source_commit": "5b18d350324351bc2ac2aad7294231f6a51fde93",
+  "public_read": {
+    "tested_at": "2026-10-19T15:38:04.451757+00:00",
+    "source_commit": "5b18d350324351bc2ac2aad7294231f6a51fde93",
+    "url": "https://gorun-edge-poc-261019-496a6d358dd6.zadstack-5brands.workers.dev",
+    "worker_version": null,
+    "checks": [
+      {
+        "path": "/healthz",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/readyz",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/ar/",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/post/welcome",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/ar/post/welcome",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/v1/content",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/v1/content/post/welcome",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/post/welcome",
+        "method": "HEAD",
+        "status": 200
+      },
+      {
+        "path": "/admin",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/mcp",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/api/v1/manager",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/api/v1/content/post/missing",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/api/v1/content",
+        "method": "POST",
+        "status": 405
+      },
+      {
+        "path": "/api/v1/content",
+        "method": "PUT",
+        "status": 405
+      },
+      {
+        "path": "/api/v1/content",
+        "method": "DELETE",
+        "status": 405
+      },
+      {
+        "path": "/api/v1/content",
+        "method": "PATCH",
+        "status": 405
+      },
+      {
+        "path": "/?x=1",
+        "method": "GET",
+        "status": 400
+      },
+      {
+        "path": "/api/v1/content?locale=en&locale=ar",
+        "method": "GET",
+        "status": 400
+      },
+      {
+        "path": "/api/v1/content?page=0",
+        "method": "GET",
+        "status": 400
+      },
+      {
+        "path": "/api/v1/content?per_page=51",
+        "method": "GET",
+        "status": 400
+      },
+      {
+        "path": "/api/v1/content?type=users",
+        "method": "GET",
+        "status": 400
+      },
+      {
+        "path": "/api/v1/content?locale=%27OR%201=1--",
+        "method": "GET",
+        "status": 400
+      },
+      {
+        "path": "/post/test-draft",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/api/v1/content/post/test-draft",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/post/test-private",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/api/v1/content/post/test-private",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/post/test-future",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/api/v1/content/post/test-future",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/post/test-tenant",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/api/v1/content/post/test-tenant",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/api/v1/content",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/media/acceptance",
+        "method": "GET",
+        "status": 200
+      },
+      {
+        "path": "/media/acceptance",
+        "method": "HEAD",
+        "status": 200
+      },
+      {
+        "path": "/media/private-test",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/media/namespace-test",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/media/html-test",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/media/size-test",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/media/missing-test",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/media/acceptance",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/post/welcome",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/api/v1/content/post/welcome",
+        "method": "GET",
+        "status": 404
+      },
+      {
+        "path": "/post/welcome",
+        "method": "GET",
+        "status": 200
+      }
+    ],
+    "passed": true,
+    "r2_public_access_enabled": false,
+    "client_user_agent": "GoRunAcceptance/1.0",
+    "scope": "isolated real Cloudflare public-read acceptance; no performance benchmark claim"
+  },
+  "owner_admin": {
+    "passed": true,
+    "tested_at": "2026-10-19T15:34:58.362673+00:00",
+    "source_commit": "5b18d350324351bc2ac2aad7294231f6a51fde93",
+    "tested_worker_version": "e8184d37-b3e8-4c18-aeb9-80a43e6011e2",
+    "url": "https://gorun-edge-poc-261019-496a6d358dd6.zadstack-5brands.workers.dev",
+    "cleanup": [
+      "test owner disabled; sessions revoked",
+      "admin flag removed",
+      "test secret removed"
+    ],
+    "admin_default_off": true,
+    "node_version": "24.22.0",
+    "post_cleanup_database_check": {
+      "owner_active": 0,
+      "owner_epoch": 3,
+      "sessions": 0,
+      "served_by_primary": true
+    }
+  },
+  "r2_direct_public_access": {
+    "enabled": false,
+    "verification": "wrangler r2 bucket dev-url get reported disabled; no enabling command used"
+  },
+  "provider_mcp_note": "Full managed-tool orchestration is validated separately using mocked HTTP protocol transports, not this Edge Worker.",
+  "benchmark": false,
+  "public_preview_is_production_supported": false
+}

@@ -1,8 +1,8 @@
-# GoRun Edge: read-only Worker proof of concept
+# GoRun Edge: experimental Worker and optional owner administration
 
-The standalone Cloudflare Worker in [`edge/`](../edge) has its own D1 database and private R2 binding. The released v0.7 read-only runtime has passed 44 actual HTTPS acceptance checks on a dedicated Cloudflare deployment, including site/publication isolation and immediate content/media revocation. It remains an experimental implementation of [issue #46](https://github.com/zadstack/gorun/issues/46), separate from the Full binary, with no measured benchmark or Deploy to Cloudflare button.
+The standalone Cloudflare Worker in [`edge/`](../edge) has its own D1 database and private R2 binding. The public runtime has passed 44 actual HTTPS acceptance checks on a dedicated Cloudflare deployment, including site/publication isolation and immediate content/media revocation. It remains an experimental implementation of [issue #46](https://github.com/zadstack/gorun/issues/46), separate from the Full binary, with no measured benchmark or Deploy to Cloudflare button.
 
-The default public runtime has no write endpoint. Optional [owner administration](EDGE-ADMIN.md) adds local-tested, explicitly enabled draft/review/publication, revisions, audit and offline recovery. Its remote acceptance is separate from the verified read-only deployment. The Go [`pkg/edge`](../pkg/edge) package describes future site-scoped manager capabilities; this Worker does not pair with Full, run MCP tools, invoke models or provision agent skills.
+The default public runtime has no write endpoint. Optional [owner administration](EDGE-ADMIN.md) adds explicitly enabled draft/review/publication, revisions, audit and offline recovery. Its separate actual Cloudflare HTTPS browser acceptance passed on 19 October 2026 at source `5b18d350324351bc2ac2aad7294231f6a51fde93`; test access was then revoked and administration disabled. The [validation record](validation/edge-cloudflare-2026-10-19.json) distinguishes this from local tests and performance measurements. The Go [`pkg/edge`](../pkg/edge) package describes future site-scoped manager capabilities; this Worker does not pair with Full, run MCP tools, invoke models or provision agent skills.
 
 ## Run locally
 
@@ -32,15 +32,15 @@ Local CLI commands use Wrangler's persistent `.wrangler/state` inside `edge/`: r
 | `/healthz` | Liveness only; does not check storage |
 | `/readyz` | Required binding presence, configured site record and D1 schema version; does **not** probe R2 availability or prove production readiness |
 
-GET and HEAD only; every other method returns 405. Missing/private/unpublished/future content returns 404. All queries bind the configured `SITE_ID`, locale and type; callers cannot select another site or status. Paging is bounded to 50 entries per page and 100 pages. Unknown or repeated query parameters are rejected. API envelopes are `{ "ok": true, "data": … }` or `{ "ok": false, "error": { "code": … } }`. These are a small POC contract, not Full REST compatibility.
+Public routes accept GET and HEAD only; every other method returns 405. The separately enabled owner interface has its own protected POST contract. Missing/private/unpublished/future content returns 404. All queries bind the configured `SITE_ID`, locale and type; callers cannot select another site or status. Paging is bounded to 50 entries per page and 100 pages. Unknown or repeated query parameters are rejected. API envelopes are `{ "ok": true, "data": … }` or `{ "ok": false, "error": { "code": … } }`. These are a small POC contract, not Full REST compatibility.
 
-All HTML values are escaped, including titles, excerpts and `body_text`; the POC deliberately does not render stored HTML, JavaScript, Markdown or Go themes. Security headers disallow scripts, framing, forms and cross-origin resource embedding. Responses use `Cache-Control: no-store`; there is no CDN/Cache API optimization yet, so a publication or media visibility change takes effect on repeat requests without a stale public copy.
+All HTML values are escaped, including titles, excerpts and `body_text`; the POC deliberately does not render stored HTML, JavaScript, Markdown or Go themes. Public security headers disallow scripts, framing, forms and cross-origin resource embedding. Public responses use `Cache-Control: no-store`; there is no CDN/Cache API optimization yet, so a publication or media visibility change takes effect on repeat requests without a stale public copy. Administration has private/no-store responses and permits only same-origin forms.
 
 ## Storage boundary
 
 `edge/migrations/0001_readonly.sql` creates `edge_sites`, `edge_content`, `edge_media` and a schema marker. Use a dedicated D1/R2 pair per deployed site. Queries additionally isolate records by `SITE_ID` as a defensive boundary; this is not a claim of a managed multi-tenant service.
 
-Only `status='published'` content with a nonfuture `published_at` in UTC `YYYY-MM-DDTHH:MM:SSZ` is readable. Bodies are bounded plain text. Private/draft data may exist in the database but is not returned. There is no public import or editing operation; the owner currently manages data using explicit Cloudflare administrative tooling.
+Only `status='published'` content with a nonfuture `published_at` in UTC `YYYY-MM-DDTHH:MM:SSZ` is publicly readable. Bodies are bounded plain text. Private/draft data may exist in the database but is not returned publicly. There is no public import or editing operation; use explicit Cloudflare operator tooling or the separately enabled owner interface. Additive migration `0002_owner_admin.sql` stores drafts, sessions, revisions and audit separately; editing a draft preserves the existing public article.
 
 An R2 object is readable only when the same site's D1 record explicitly says `visibility='public'`, the exact key is under `sites/<SITE_ID>/public/`, its path components are safe, its actual size matches metadata (maximum 10 MiB), and its configured MIME is one of PNG/JPEG/GIF/WebP/AVIF/plain text/PDF. HTML/SVG/JavaScript are refused. Plain text and PDFs are forced downloads. R2 object metadata is not trusted for MIME, headers or caching. There is no bucket listing, raw-key URL, redirect to storage, private object fallback, or public-bucket requirement. Keep R2's own public access disabled: otherwise direct bucket URLs would bypass this Worker.
 
@@ -57,9 +57,9 @@ Tests execute the actual compiled Worker in local `workerd` using real emulated 
 
 Dependencies and the upload tool are exact versions in `package-lock.json`. Miniflare is deliberately pinned to Wrangler's own current runtime dependency (which currently has a beta version), using its exported v4-options adapter; this POC is experimental. A dry-run build validates packaging without uploading or provisioning anything. Node or dependency upgrades should repeat the integration suite.
 
-## Remote deployment: operator-run, not yet verified
+## Remote deployment and acceptance
 
-These steps are an explicit acceptance path, **not evidence that a deployment has happened**. The operator needs an existing Cloudflare account with Workers, D1 and R2 enabled, and credentials for the selected account/resources. No credential was available during implementation. Do not paste tokens into issues, README, commit history or an assistant conversation.
+The [recorded isolated deployment](validation/edge-cloudflare-2026-10-19.json) passed public reading and owner-workflow HTTPS acceptance. These steps create a new deployment in the operator's own account and still require validation there; the record does not establish production readiness, a supported template or equivalent performance. Use an existing account with Workers, D1 and R2 enabled and credentials for the selected resources. Authenticate through the supported browser/keychain or token flow; keep credentials out of issues, README and commit history.
 
 1. Authenticate your installed Wrangler using Cloudflare's supported login/token flow; verify the intended account with `npx wrangler whoami`. Use dedicated POC resource names and review the account's quotas/billing.
 2. From `edge/`, create an independent D1 database and a **private** R2 bucket. Copy the returned database ID; these commands create resources and must be run intentionally in your account:
@@ -70,8 +70,8 @@ These steps are an explicit acceptance path, **not evidence that a deployment ha
    cp wrangler.jsonc wrangler.production.jsonc
    ```
 
-3. Edit the ignored `wrangler.production.jsonc`: choose an unused Worker name, set the D1 `database_name`/`database_id` to the created database, and set the R2 `bucket_name`. Leave `SITE_ID="demo"` for the synthetic acceptance fixture. No custom-domain route, existing Worker, proxy or Full deployment is modified by these instructions.
-4. Apply only the new Edge migration and explicitly load the public synthetic fixture:
+3. Edit the ignored `wrangler.production.jsonc`: pin the selected `account_id`, choose an unused Worker name, set the D1 `database_name`/`database_id` to the created database, and set the R2 `bucket_name`. Leave `SITE_ID="demo"` for the synthetic acceptance fixture. No custom-domain route, existing Worker, proxy or Full deployment is modified by these instructions.
+4. Apply only the standalone Edge migrations and explicitly load the public synthetic fixture:
 
    ```sh
    npx wrangler d1 migrations apply DB --remote --config wrangler.production.jsonc
@@ -79,9 +79,9 @@ These steps are an explicit acceptance path, **not evidence that a deployment ha
    npx wrangler deploy --config wrangler.production.jsonc
    ```
 
-5. At the actual HTTPS URL Wrangler reports, verify `/healthz`, `/readyz`, both language homepages, an article/API response and a bodyless HEAD. Using administrative D1/R2 tools, repeat private/draft/future/cross-site and media allowlist tests on synthetic records, including an object that is private in D1 and an object from another namespace. Confirm POST is 405 and `/admin`/`mcp` are 404. Confirm response security/no-store headers and publication revocation. Record the commit, date, public URL, tested resource IDs and results **without credentials**.
-6. Only after those checks succeed can this milestone be called remotely deployed. Owner recovery, write workflows and production support still require later implementation and review. Tear down only the dedicated POC resources if finished; do not remove shared resources.
+5. At the actual HTTPS URL Wrangler reports, verify `/healthz`, `/readyz`, both language homepages, an article/API response and a bodyless HEAD. Using administrative D1/R2 tools, repeat private/draft/future/cross-site and media allowlist tests on synthetic records, including an object that is private in D1 and an object from another namespace. Confirm public POST is 405 and default-off `/admin` plus `/mcp` are 404. Confirm security/no-store headers and publication revocation. Record the commit, date, public URL, selected resources and results **without credentials**.
+6. To test optional owner workflows, follow [the separate owner setup and HTTPS acceptance](EDGE-ADMIN.md). After a temporary test, revoke its owner access and sessions and return administration to disabled. Keep R2 direct public access disabled. Tear down only dedicated POC resources if finished; do not remove shared resources.
 
 Official sources: [D1 prepared queries](https://developers.cloudflare.com/d1/worker-api/prepared-statements/), [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/), [R2 Worker bindings](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/), [Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/), [Workers testing](https://developers.cloudflare.com/workers/testing/).
 
-**بالعربية:** هذا نموذج مستقل للقراءة فقط يعمل محليًا على `workerd` مع D1 وR2، وليس لوحة Edge أو بديلًا كاملًا لـGoRun. لا توجد تجربة نشر Cloudflare موثقة أو قياسات أداء أو زر نشر جاهز. بياناته منفصلة عن SQLite الخاص بـFull؛ لا تمنح صفحة `/readyz` ضمان جاهزية إنتاجية أو تحققًا من R2. الإدارة والكتابة وربط المديرين واستعادة المالك مراحل لاحقة.
+**بالعربية:** هذا Worker تجريبي مستقل مع D1 وR2، وقراءة عامة وإدارة اختيارية للمالك تشمل المسودات والمراجعة والنشر واستعادة الوصول. اجتاز التشغيل الفعلي على Cloudflare ببيانات تجريبية، ثم أُلغي وصول الاختبار وعادت الإدارة إلى الوضع المقفول. بياناته منفصلة عن SQLite الخاص بـFull؛ ولا يشغّل وكلاء Full أو قوالبه. لا توجد قياسات أداء أو زر نشر جاهز، ولا تمنح `/readyz` ضمان جاهزية إنتاجية أو تحققًا فعليًا من R2. ربط المديرين وقالب النشر المدعوم مراحل لاحقة.
