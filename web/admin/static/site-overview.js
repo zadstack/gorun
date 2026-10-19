@@ -13,6 +13,44 @@
       }
     });
   }
+  const search = root.querySelector('[data-overview-search]');
+  const clearFocus = root.querySelector('[data-overview-clear-focus]');
+  const searchStatus = root.querySelector('[data-overview-search-status]');
+  let focusKey = '';
+  const filterPreviews = () => {
+    let matches = 0;
+    const query = search?.value.trim().toLocaleLowerCase() || '';
+    for (const frame of frames) {
+      const card = frame.closest('.ov-page');
+      const value = [card.querySelector('footer b')?.textContent, card.querySelector('footer code')?.textContent].join(' ').toLocaleLowerCase();
+      card.hidden = !!((query && !value.includes(query)) || (focusKey && focusKey !== frame.dataset.previewKey));
+      if (!card.hidden) matches++;
+    }
+    root.querySelectorAll('[data-overview-group]').forEach(group => {
+      group.hidden = ![...group.querySelectorAll('.ov-page')].some(card => !card.hidden);
+    });
+    if (clearFocus) clearFocus.hidden = !focusKey;
+    if (searchStatus) searchStatus.textContent = matches ? '' : searchStatus.dataset.empty;
+  };
+  search?.addEventListener('input', () => { focusKey = ''; filterPreviews(); });
+  clearFocus?.addEventListener('click', () => { focusKey = ''; filterPreviews(); });
+  root.querySelector(':scope > nav')?.addEventListener('click', event => {
+    if (!event.target.closest('button')) return;
+    focusKey = '';
+    filterPreviews();
+  });
+  root.addEventListener('click', event => {
+    const button = event.target.closest('[data-overview-focus]');
+    if (!button) return;
+    const frame = frames.find(frame => frame.dataset.previewKey === button.dataset.overviewFocus);
+    if (!frame) return;
+    focusKey = frame.dataset.previewKey;
+    filterPreviews();
+    activate(frame);
+    const expand = frame.closest('.ov-page').querySelector('button[aria-expanded]');
+    if (expand?.getAttribute('aria-expanded') !== 'true') expand?.click();
+    frame.closest('.ov-page').scrollIntoView({block: 'start'});
+  });
   let observer;
   const activate = frame => {
     if (!frame || frame.hasAttribute('src')) return;

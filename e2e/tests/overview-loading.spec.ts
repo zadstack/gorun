@@ -140,3 +140,12 @@ test('overview print timeout stays usable and does not print incomplete previews
     expect(await page.locator('html').getAttribute('data-test-printed')).toBeNull();
   }finally{release();await page.unrouteAll({behavior:'wait'});}
 });
+
+
+test('overview search and single-preview focus preserve real edit links and source states',async({page})=>{
+  await page.goto('/admin');await setLocale(page,'en');await page.goto('/admin/appearance/overview');
+  const all=page.locator('.ov-page'),count=await all.count(),search=page.locator('[data-overview-search]');
+  await search.fill('Overview page 12');const visible=page.locator('.ov-page:visible');await expect(visible).toHaveCount(1);await expect(visible).toContainText(/published/i);await expect(visible.locator('a[href="/admin/content/page/overview-latency-12"]')).toBeVisible();
+  await visible.locator('[data-overview-focus]').click();await expect(visible.locator('button[aria-expanded]')).toHaveAttribute('aria-expanded','true');await expect(visible.locator('iframe')).toHaveAttribute('src',/.+/);await expect(page.locator('[data-overview-clear-focus]')).toBeVisible();await page.locator('.site-overview > nav button').first().click();await expect(page.locator('[data-overview-clear-focus]')).toBeHidden();await expect(visible).toHaveCount(1);
+  await search.fill('');await expect(page.locator('.ov-page:visible')).toHaveCount(count);await search.fill('no such preview fixture');await expect(page.locator('.ov-page:visible')).toHaveCount(0);await expect(page.locator('[data-overview-search-status]')).not.toHaveText('');await search.fill('');await expect(page.locator('.ov-page:visible')).toHaveCount(count);
+});

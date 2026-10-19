@@ -30,6 +30,7 @@
         <dt class="text-muted">{{t "theme.themes.locations"}}</dt><dd>{{range $i, $l := .Locations}}{{if $i}}, {{end}}<span class="font-mono">{{$l}}</span>{{else}}—{{end}}</dd>
         <dt class="text-muted">{{t "theme.themes.supports"}}</dt><dd>{{range $i, $s := .Supports}}{{if $i}}, {{end}}<span class="font-mono">{{$s}}</span>{{else}}—{{end}}</dd>
       </dl></details>
+      {{if .HasScreenshot}}<a href="/admin/appearance/themes/{{.Slug}}/screenshot.png" target="_blank" rel="noopener" class="inline-flex min-h-11 items-center text-blue underline mt-3">{{t "theme.themes.preview_image"}}</a>{{end}}
       {{if not .Active}}
       <form method="post" action="/admin/appearance/themes/{{.Slug}}/activate" class="mt-4">
         <input type="hidden" name="_csrf" value="{{csrf}}">

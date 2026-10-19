@@ -140,5 +140,20 @@
   "overview.inferred_note": "العينات مستنتجة من متغيرات CSS وليست قياسًا للصفحة المعروضة. قد تختلف القيم بسبب قواعد القالب. راجع المعاينات لمشاهدة التصميم الحالي.",
   "identity.error_color": "استخدم لونًا بصيغة hex مثل ‎#1f6feb.",
   "identity.error_css": "لا يقبل CSS المخصص وسوم HTML أو ‎@import أو ‎expression()‎ أو روابط javascript:.",
-  "identity.error_css_size": "الحد الأقصى لـ CSS المخصص 20000 حرف."
+  "identity.error_css_size": "الحد الأقصى لـ CSS المخصص 20000 حرف.",
+  "settings.groups": "خيارات القالب",
+  "settings.group_header": "الهيدر",
+  "settings.group_footer": "الفوتر",
+  "settings.group_design": "التصميم والكتابة",
+  "settings.group_advanced": "خيارات أخرى ومتقدمة",
+  "settings.source_custom": "قيمة مخصصة محفوظة لهذا القالب.",
+  "settings.source_default": "لا توجد قيمة مخصصة للقالب: تُستخدم الهوية المشتركة أو القيم الافتراضية للقالب.",
+  "settings.reset_default": "استخدام القيمة الموروثة",
+  "settings.reset_pending": "تُطبّق القيمة الموروثة بعد الحفظ.",
+  "themes.preview_image": "معاينة صورة القالب",
+  "overview.search_previews": "ابحث ضمن المعاينات المعروضة في هذه الصفحة",
+  "overview.show_all_previews": "عرض كل المعاينات",
+  "overview.no_preview_match": "لا توجد معاينة مطابقة للبحث.",
+  "overview.focus_preview": "التركيز على هذه الصفحة",
+  "overview.link_preview": "رابط في الموقع"
 }

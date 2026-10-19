@@ -311,10 +311,26 @@ var sortColumns = map[string]string{"created_at": "created_at", "filename": "fil
 func (s *service) List(ctx context.Context, q ListQuery) ([]Media, int, error) {
 	page, perPage := normalizePage(q.Page, q.PerPage)
 	where, args := "", []any{}
+	clauses := []string{}
 	if term := strings.TrimSpace(q.Search); term != "" {
 		like := "%" + escapeLike(term) + "%"
-		where = ` WHERE filename LIKE ? ESCAPE '\' OR title LIKE ? ESCAPE '\' OR alt LIKE ? ESCAPE '\'`
+		clauses = append(clauses, `(filename LIKE ? ESCAPE '\' OR title LIKE ? ESCAPE '\' OR alt LIKE ? ESCAPE '\')`)
 		args = append(args, like, like, like)
+	}
+	if q.MimePrefix != "" {
+		clauses = append(clauses, `mime LIKE ? ESCAPE '\'`)
+		args = append(args, escapeLike(q.MimePrefix)+"%")
+	}
+	if q.MinSize > 0 {
+		clauses = append(clauses, `size>=?`)
+		args = append(args, q.MinSize)
+	}
+	if q.MaxSize > 0 {
+		clauses = append(clauses, `size<=?`)
+		args = append(args, q.MaxSize)
+	}
+	if len(clauses) > 0 {
+		where = " WHERE " + strings.Join(clauses, " AND ")
 	}
 	var total int
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM media`+where, args...).Scan(&total); err != nil {

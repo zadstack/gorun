@@ -6,9 +6,9 @@ Scope: administrative audit steps 1, 3–20 and 55–59 from the 2026-10-19 loca
 | --- | --- | --- |
 | 1 | In-place English/Arabic labels and layout, including returned field errors; account and site sections. Changing language keeps entered fields and does not store credentials. | None for the audited language/section issue. |
 | 3, 59 | Language/author filters, My drafts/For review, row language/author, selection-only bulk bar, compact mobile filters. Author restrictions remain enforced by the server. | Further mobile contextual-navigation changes belong to the shared shell. |
-| 4 | One explicit update action for published content, selected-status labels, unsaved notice, sticky publishing panel, optional SEO/studio sections. Changing a published item to Draft explicitly says it unpublishes. | Full editor tabs and rich-text toolbar accessibility naming audit. |
-| 5 | Visible parent title in page rows. | Complete collapsible tree, cross-page hierarchy handling, dedicated preview shortcut and locale-specific new-page grammar. |
-| 6 | Grid/list switching; clearer empty guidance. Existing upload progress remains. | Server-side type/size filters, usage graph and metadata drawer. |
+| 4 | One explicit update action for published content, selected-status labels, unsaved notice, sticky publishing panel, optional SEO/studio sections, and translated accessible names for rich-text toolbar controls. Changing a published item to Draft explicitly says it unpublishes. | Full editor-wide writing/SEO/revision tabs. |
+| 5 | Collapsible authorized page tree with parent paths, filtered table switch, cycle/depth protection and an explicit 500-page bound; table rows retain parent titles. | Dedicated per-row public preview and locale-specific new-page grammar. |
+| 6 | Grid/list switching, server-side type/size/search filters with correct totals/pagination, and read-only metadata dialog showing alternative text, caption and dimensions. Delayed responses cannot reopen a closed dialog. Existing upload progress remains. | Content usage graph. |
 | 7 | Empty-state moderation guidance. | Article context snippets and inline moderation redesign. |
 | 8 | Permission-filtered direct setup link when Metricool is not ready. Existing explicit destination review/no automatic publication remains. | Rich composed-post preview. |
 | 9 | “Custom fields” distinguishes extra fields from built-in editor fields. | Type presets and generated-editor preview. |
@@ -18,9 +18,9 @@ Scope: administrative audit steps 1, 3–20 and 55–59 from the 2026-10-19 loca
 | 13 | Local bilingual identity sample updates title, tagline, colors and font without saving; inheritance caveat is explicit. | Curated palettes and per-field effective-source display. |
 | 14 | Failures first, then other unresolved checks, passed checks folded. Existing evidence and fix URLs stay intact. | More specific per-check action labels. |
 | 15 | Human header/footer location labels. | Visual menu placement preview and new tree editor. |
-| 16 | Existing separate theme preview/activation controls retained. | No additional theme-catalog redesign in this increment. |
-| 17 | Existing site-reference behavior retained. | Searchable single-preview workspace and source-state badges. |
-| 18 | Removed storage-key jargon; clarified theme overrides versus shared identity. | Full header/footer/typography tabs, live preview and per-value inheritance/reset controls. |
+| 16 | Real screenshot preview link stays separate from activation; no screenshot is presented as a live configured site. | Full live temporary theme preview. |
+| 17 | Search the previews already shown, focus one existing preview, clear focus, actual source-state badges and permission-filtered editor links. Existing sandbox/lazy-load/print guards remain. | Search beyond the existing bounded per-group preview catalog. |
+| 18 | Keyboard-accessible header/footer/design/advanced tabs retain unsaved fields; inherited versus saved identity values are labeled, with explicit reset that applies only after Save. Unknown custom fields remain editable. | Live theme-specific settings preview. |
 | 19 | Advanced title, filename search and page/part grouping over existing template controls. | New original-versus-override comparison UI; existing native draft/publication guards remain. |
 | 20 | Local title/description search sample, crawler rules folded, explicit warning for root-path blocking. | Dedicated social-card preview. |
 | 55 | Explains text versus sections, separate section draft, public-body replacement and saving before switching. | Persistent layout-state badges across both editors. |

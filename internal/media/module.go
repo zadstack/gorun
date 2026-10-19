@@ -93,6 +93,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	upload.Get("/media/{id}", h.edit)
 	upload.Post("/media/{id}", h.update)
 	upload.Get("/x/media/picker", h.picker)
+	upload.Get("/x/media/{id}/details", h.metadata)
 	d.Router.Admin.Get("/x/media/{id}/thumb", h.thumb) // permission checked in the handler
 	d.Router.Admin.With(auth.RequirePerm("media.delete")).Post("/media/{id}/delete", h.remove)
 	d.Admin.AddNav(kernel.NavItem{ID: "media", LabelKey: "media.nav", Icon: "image", Href: "/admin/media",

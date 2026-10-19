@@ -63,6 +63,7 @@
     </div>
   </div>
 
+  <div class="flex flex-wrap items-end gap-3 print:hidden"><label class="block flex-1 min-w-0">{{t "theme.overview.search_previews"}}<input data-overview-search type="search" class="block w-full h-10 border border-line bg-panel rounded px-3 mt-1"></label><button type="button" data-overview-clear-focus hidden class="min-h-11 border border-line rounded px-3">{{t "theme.overview.show_all_previews"}}</button><p data-overview-search-status class="text-sm text-muted" role="status" data-empty="{{t "theme.overview.no_preview_match"}}"></p></div>
   <nav class="flex flex-wrap gap-1 border-b border-line print:hidden" aria-label="{{t "theme.overview.title"}}">
     <button type="button" @click="filter = '*'" :aria-pressed="filter === '*'" :class="filter === '*' ? 'border-line border-b-panel bg-panel text-ink font-medium' : 'border-transparent text-muted hover:text-ink'" class="px-3 py-2 -mb-px border rounded-t focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.overview.all"}} <span class="font-mono text-[11px] text-muted">{{.Total}}</span></button>
     {{range .Groups}}
@@ -71,7 +72,7 @@
   </nav>
 
   {{range $g := .Groups}}
-  <section x-show="filter === '*' || filter === '{{$g.ID}}'" aria-labelledby="ov-{{$g.ID}}">
+  <section data-overview-group x-show="filter === '*' || filter === '{{$g.ID}}'" aria-labelledby="ov-{{$g.ID}}">
     <h3 id="ov-{{$g.ID}}" class="flex items-center gap-2 mb-3 text-[16px] font-bold">{{if $g.LabelKey}}{{t $g.LabelKey}}{{else}}{{$g.Label}}{{end}}<span class="rounded-chip border border-line bg-panel px-1.5 font-mono text-[11px] font-normal text-muted">{{$g.Count}}</span></h3>
     <div class="grid gap-4" :class="{ 'md:grid-cols-2 2xl:grid-cols-3': device === 'desktop', 'md:grid-cols-2 xl:grid-cols-3': device === 'tablet', 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4': device === 'mobile' }">
       {{range $i, $p := $g.Pages}}
@@ -85,8 +86,9 @@
             class="absolute top-0 border-0 bg-white origin-top-left" :class="open !== '{{$key}}' && 'pointer-events-none'" :style="frame(w, '{{$key}}')"></iframe>
         </div>
         <footer class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-t border-line">
-          <div class="min-w-0"><b class="block truncate">{{if $p.LabelKey}}{{t $p.LabelKey}}{{else}}{{or $p.Label $p.Path}}{{end}}</b><code class="block font-mono text-[11px] text-muted truncate" dir="ltr">{{$p.Path}}</code></div>
+          <div class="min-w-0"><b class="block truncate">{{if $p.LabelKey}}{{t $p.LabelKey}}{{else}}{{or $p.Label $p.Path}}{{end}}</b><code class="block font-mono text-[11px] text-muted truncate" dir="ltr">{{$p.Path}}</code><small class="text-muted">{{if $p.Status}}{{t (printf "content.status.%s" $p.Status)}}{{else}}{{t "theme.overview.link_preview"}}{{end}}</small></div>
           <div class="flex flex-wrap gap-2 print:hidden">
+            {{if $p.EditURL}}<a href="{{$p.EditURL}}" class="inline-flex min-h-8 items-center px-3 text-blue underline">{{t "core.action.edit"}}</a>{{end}}<button type="button" data-overview-focus="{{$key}}" class="min-h-8 border border-line rounded px-3">{{t "theme.overview.focus_preview"}}</button>
             {{if $p.ContentID}}<button type="button" data-page-assistant="{{$p.ContentID}}" class="h-8 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "pageassistant.open"}}</button>{{end}}
             <button type="button" @click="open = open === '{{$key}}' ? '' : '{{$key}}'; $dispatch('overview-load', { key: '{{$key}}' })" :aria-expanded="open === '{{$key}}'" class="h-8 px-3 rounded border border-line bg-panel hover:border-line-strong whitespace-nowrap" x-text="open === '{{$key}}' ? '{{t "theme.overview.collapse"}}' : '{{t "theme.overview.expand"}}'">{{t "theme.overview.expand"}}</button>
             <a href="{{$p.URL}}" target="_blank" rel="noopener" class="h-8 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong whitespace-nowrap">{{t "theme.overview.open"}} ↗</a>

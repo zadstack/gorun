@@ -140,5 +140,20 @@
   "overview.inferred_note": "These samples are inferred from CSS variables, not measured from the rendered page. Selector overrides may differ. Use the page previews to inspect the current design.",
   "identity.error_color": "Use a hex color such as #1f6feb.",
   "identity.error_css": "Custom CSS cannot contain HTML tags, @import, expression() or javascript: URLs.",
-  "identity.error_css_size": "Custom CSS is limited to 20000 characters."
+  "identity.error_css_size": "Custom CSS is limited to 20000 characters.",
+  "settings.groups": "Theme options",
+  "settings.group_header": "Header",
+  "settings.group_footer": "Footer",
+  "settings.group_design": "Design & typography",
+  "settings.group_advanced": "Other & advanced",
+  "settings.source_custom": "Saved theme customization.",
+  "settings.source_default": "No theme customization: shared identity or theme defaults apply.",
+  "settings.reset_default": "Use inherited default",
+  "settings.reset_pending": "The inherited default will apply after saving.",
+  "themes.preview_image": "Preview screenshot",
+  "overview.search_previews": "Search the previews shown on this page",
+  "overview.show_all_previews": "Show all previews",
+  "overview.no_preview_match": "No preview matches this search.",
+  "overview.focus_preview": "Focus this page",
+  "overview.link_preview": "Site link"
 }
