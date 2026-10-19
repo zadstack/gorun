@@ -42,6 +42,7 @@ const (
 const usageHead = `usage: gorun <command> [flags]
 
 commands:
+  start         prepare and run a local site (LAN preview; --local-only disables LAN)
   serve         run the HTTP server
   migrate       apply database migrations and exit
   user create   create a staff user (--email (--password | --password-stdin) [--name] [--admin])
@@ -133,6 +134,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return c.Run(args[1:], in, out)
 	}
 	switch args[0] {
+	case "start":
+		return start(args[1:], out)
 	case "serve":
 		return serve(args[1:])
 	case "migrate":
