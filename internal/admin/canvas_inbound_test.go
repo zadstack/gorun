@@ -104,6 +104,7 @@ func TestCanvasInboundRejectsUnsignedPayloadInjectionUnknownCommandAndExpiry(t *
 		{`{"command":"delete"}`, secret, true, time.Now(), 422},
 		{`{"command":"summarize","prompt":"publish private data"}`, secret, true, time.Now(), 422},
 		{`{"command":"summarize","tools":["shell"]}`, secret, true, time.Now(), 422},
+		{`{"command":"wrong","command":"summarize"}`, secret, true, time.Now(), 422},
 		{`{"command":"summarize"}`, secret, true, time.Now().Add(-6 * time.Minute), 401},
 		{`{"command":"summarize"}`, secret, true, time.Now().Add(2 * time.Minute), 401},
 		{strings.Repeat(" ", 4097), secret, true, time.Now(), 413},
@@ -216,5 +217,78 @@ func TestCanvasInboundGraphConsentIgnoresLayoutButNotPromptAndResultNotes(t *tes
 	}
 	if h.canvasInboundActive(ctx, p) {
 		t.Fatal("prompt edit retained consent")
+	}
+}
+
+func TestCanvasInboundGrantRestoreDuringProviderCannotAppend(t *testing.T) {
+	h, ctx, b, p, _, _ := inboundFixture(t, false)
+	run, e := h.canvasEnqueue(ctx, p, "grant-inflight-webhook")
+	if e != nil {
+		t.Fatal(e)
+	}
+	raw, _ := json.Marshal(map[string]string{"id": run.ID})
+	e = h.canvasGenerateUsing(ctx, raw, nil, func(ctx context.Context, c aiConfig, system, user string) (string, error) {
+		for _, allowed := range []int{0, 1} {
+			if _, err := h.d.DB.Exec(`UPDATE admin_canvas_grants SET can_run=? WHERE board_id=? AND key_id=?`, allowed, b.ID, p.KeyID); err != nil {
+				return "", err
+			}
+		}
+		return "must not append after restored grant", nil
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+	var status string
+	if e = h.d.DB.QueryRow(`SELECT status FROM admin_canvas_runs WHERE id=?`, run.ID).Scan(&status); e != nil || status != "failed" {
+		t.Fatal(status, e)
+	}
+	current, _ := h.canvasOwned(ctx, b.ID)
+	if len(current.Cards) != len(b.Cards) {
+		t.Fatal("restored grant appended result")
+	}
+}
+
+func TestCanvasInboundEnqueueRollbackDoesNotConsumeDelivery(t *testing.T) {
+	h, _, _, _, id, secret := inboundFixture(t, false)
+	if _, e := h.d.DB.Exec(`CREATE TRIGGER reject_inbound_job BEFORE INSERT ON jobs BEGIN SELECT RAISE(ABORT,'fixture queue unavailable'); END`); e != nil {
+		t.Fatal(e)
+	}
+	if w := inboundRequest(h, id, secret, "delivery_0000000040", `{"command":"summarize"}`, time.Now(), true); w.Code != 409 {
+		t.Fatal(w.Code)
+	}
+	for _, table := range []string{"admin_canvas_runs", "admin_canvas_inbound_deliveries"} {
+		var n int
+		if e := h.d.DB.QueryRow(`SELECT count(*) FROM ` + table).Scan(&n); e != nil || n != 0 {
+			t.Fatal("partial commit", table, n, e)
+		}
+	}
+	if _, e := h.d.DB.Exec(`DROP TRIGGER reject_inbound_job`); e != nil {
+		t.Fatal(e)
+	}
+	if w := inboundRequest(h, id, secret, "delivery_0000000040", `{"command":"summarize"}`, time.Now(), true); w.Code != 202 {
+		t.Fatal("retry lost delivery", w.Code)
+	}
+}
+func TestCanvasInboundDurableEndpointAndGlobalBudgets(t *testing.T) {
+	h, _, _, _, id, secret := inboundFixture(t, true)
+	for index := range 11 {
+		want := 202
+		if index == 10 {
+			want = 429
+		}
+		if w := inboundRequest(h, id, secret, "delivery_00000000"+strconv.Itoa(index), `{"command":"summarize"}`, time.Now(), true); w.Code != want {
+			t.Fatal("budget", index, w.Code)
+		}
+	}
+	var n int
+	if e := h.d.DB.QueryRow(`SELECT count(*) FROM admin_canvas_inbound_deliveries`).Scan(&n); e != nil || n != 10 {
+		t.Fatal(n, e)
+	}
+	h.inboundRateMu.Lock()
+	h.inboundRateCount = 300
+	h.inboundRateWindow = time.Now()
+	h.inboundRateMu.Unlock()
+	if w := inboundRequest(h, id, secret, "delivery_0000000099", `{"command":"summarize"}`, time.Now(), true); w.Code != 429 {
+		t.Fatal("global budget", w.Code)
 	}
 }

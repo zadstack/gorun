@@ -311,8 +311,11 @@ func (h *handlers) canvasInboundReceive(w http.ResponseWriter, r *http.Request) 
 		Command string `json:"command"`
 	}
 	decoder := json.NewDecoder(strings.NewReader(string(body)))
-	decoder.DisallowUnknownFields()
-	if decoder.Decode(&in) != nil || decoder.Decode(new(any)) != io.EOF || in.Command != endpoint.Command {
+	open, openErr := decoder.Token()
+	field, fieldErr := decoder.Token()
+	valueErr := decoder.Decode(&in.Command)
+	close, closeErr := decoder.Token()
+	if openErr != nil || fieldErr != nil || valueErr != nil || closeErr != nil || open != json.Delim('{') || field != "command" || close != json.Delim('}') || decoder.Decode(new(any)) != io.EOF || in.Command != endpoint.Command {
 		fail(422)
 		return
 	}
