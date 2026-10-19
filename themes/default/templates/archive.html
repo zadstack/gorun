@@ -2,7 +2,7 @@
 {{part "header" .}}
 {{$title := t "latest_posts"}}{{with .Extra.title}}{{$title = .}}{{end}}
 <section class="gr-section" aria-labelledby="archive-title">
-  {{component "section-head" (dict "Path" "/archive" "Title" $title "TitleID" "archive-title")}}
+  {{component "section-head" (dict "Path" "/archive" "Title" $title "TitleID" "archive-title" "Level" 1)}}
   {{component "list" .}}
 </section>
 {{part "footer" .}}

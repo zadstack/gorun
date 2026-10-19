@@ -23,7 +23,7 @@
   align-items: center;
   gap: .4rem;
   margin: 0 0 var(--space-3);
-  font-family: var(--font-mono);
+  font-family: var(--font-ui, var(--font));
   font-size: .75rem;
   font-weight: 600;
   color: var(--accent-ink);

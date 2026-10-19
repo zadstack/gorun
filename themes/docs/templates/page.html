@@ -8,7 +8,7 @@
   <article class="docs-article">
     <nav aria-label="{{t "docs.breadcrumb"}}" class="docs-breadcrumb"><a href="{{url "/"}}">{{$.Site.Title}}</a>{{with .ParentID}}{{with content .}}<span aria-hidden="true">/</span><a href="{{url .}}">{{.Title}}</a>{{end}}{{end}}<span aria-hidden="true">/</span><span aria-current="page">{{.Title}}</span></nav>
     <h1>{{.Title}}</h1>
-    <p class="docs-meta">{{with .UpdatedAt}}{{t "docs.updated"}} <time datetime="{{.}}">{{date .}}</time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
+    <p class="docs-meta">{{with .UpdatedAt}}{{t "docs.updated"}} <time datetime="{{.}}"><bdi>{{date .}}</bdi></time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
     {{if gt (len $t.Items) 1}}
     <details class="docs-toc-mobile"><summary>{{t "docs.on_this_page"}}</summary><ul>{{range $t.Items}}<li class="docs-toc-l{{.Level}}"><a href="#{{.ID}}">{{.Text}}</a></li>{{end}}</ul></details>
     {{end}}

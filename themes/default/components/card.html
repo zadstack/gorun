@@ -13,9 +13,9 @@
   </div>
   {{end}}
   <div class="gr-card-copy">
-    <h3 class="text-lg font-bold leading-snug"><a href="{{url .}}">{{.Title}}</a></h3>
+    <h2 class="text-lg font-bold leading-snug"><a href="{{url .}}">{{.Title}}</a></h2>
     {{with .PublishedAt}}<p class="gr-card-meta"><time datetime="{{.}}"><bdi>{{date .}}</bdi></time></p>{{end}}
     {{with excerpt . 30}}<p class="gr-card-excerpt">{{.}}</p>{{end}}
-    <a class="gr-btn-text" href="{{url .}}">{{t "read_more"}} <span aria-hidden="true">→</span></a>
+    <a class="gr-btn-text" href="{{url .}}">{{t "read_more"}} <span class="gr-go-arrow" aria-hidden="true">→</span></a>
   </div>
 </article>

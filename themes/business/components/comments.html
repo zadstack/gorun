@@ -9,10 +9,10 @@
   <ol>
     {{range .Items}}
     <li id="comment-{{.ID}}">
-      <p class="sb-comment-meta"><b>{{.AuthorName}}</b> <time datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></p>
+      <p class="sb-comment-meta"><b>{{.AuthorName}}</b> <time datetime="{{.CreatedAt}}"><bdi>{{date .CreatedAt}}</bdi></time></p>
       <p dir="auto">{{.Body}}</p>
       {{if .Replies}}<ol>{{range .Replies}}
-        <li id="comment-{{.ID}}"><p class="sb-comment-meta"><b>{{.AuthorName}}</b> <time datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></p><p dir="auto">{{.Body}}</p></li>
+        <li id="comment-{{.ID}}"><p class="sb-comment-meta"><b>{{.AuthorName}}</b> <time datetime="{{.CreatedAt}}"><bdi>{{date .CreatedAt}}</bdi></time></p><p dir="auto">{{.Body}}</p></li>
       {{end}}</ol>{{end}}
     </li>
     {{end}}

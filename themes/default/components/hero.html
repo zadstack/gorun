@@ -14,7 +14,7 @@
   {{with $dek}}<p class="gr-hero-dek">{{.}}</p>{{end}}
   <div class="gr-hero-actions">
     <a class="gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>
-    <a class="gr-btn-text" href="{{url $secondaryURL}}">{{$secondaryLabel}} <span aria-hidden="true">↗</span></a>
+    <a class="gr-btn-text" href="{{url $secondaryURL}}">{{$secondaryLabel}} <span class="gr-ext-arrow" aria-hidden="true">↗</span></a>
   </div>
   {{component "hero-facts" .}}
 </section>

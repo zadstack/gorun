@@ -18,7 +18,8 @@
   --head: #141816;
   --ink: #141816;
   --ink-2: #2a322e;
-  --muted: #637069;
+  /* Muted must stay ≥ 4.5:1 on --bg, --panel, and --panel-2. */
+  --muted: #5a665f;
   --muted-tinted: #4a5650;
 
   /* Accent (one per theme; themes remap) */

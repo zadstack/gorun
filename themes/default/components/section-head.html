@@ -1,8 +1,10 @@
-{{/* Usage: {{component "section-head" (dict "Path" "…" "Title" "…" "Note" "…" "ActionURL" "…" "ActionLabel" "…" "TitleID" "…")}} */}}
+{{/* Usage: {{component "section-head" (dict "Path" "…" "Title" "…" "Note" "…" "ActionURL" "…" "ActionLabel" "…" "TitleID" "…" "Level" 1|2)}}
+     Level 1 for page titles (archive); default Level 2 for in-page sections. */}}
 {{$id := .TitleID}}{{if not $id}}{{$id = "gr-section-title"}}{{end}}
+{{$level := .Level}}{{if not $level}}{{$level = 2}}{{end}}
 <header class="gr-section-head">
   {{with .Path}}<p class="gr-section-path"><span dir="ltr">{{.}}</span></p>{{end}}
-  <h2 id="{{$id}}">{{.Title}}</h2>
+  {{if eq $level 1}}<h1 id="{{$id}}">{{.Title}}</h1>{{else}}<h2 id="{{$id}}">{{.Title}}</h2>{{end}}
   {{with .Note}}<p class="gr-section-note">{{.}}</p>{{end}}
-  {{if and .ActionURL .ActionLabel}}<a class="gr-section-action" href="{{url .ActionURL}}">{{.ActionLabel}} <span aria-hidden="true">→</span></a>{{end}}
+  {{if and .ActionURL .ActionLabel}}<a class="gr-section-action" href="{{url .ActionURL}}">{{.ActionLabel}} <span class="gr-go-arrow" aria-hidden="true">→</span></a>{{end}}
 </header>

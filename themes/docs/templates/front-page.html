@@ -26,7 +26,7 @@
 {{with $recent.Items}}
 <section class="docs-recent" aria-labelledby="docs-recent-title">
   <h2 id="docs-recent-title">{{t "docs.recent"}}</h2>
-  <ul>{{range .}}<li><a href="{{url .}}"><span>{{.Title}}</span>{{with .UpdatedAt}}<time datetime="{{.}}">{{date .}}</time>{{end}}</a></li>{{end}}</ul>
+  <ul>{{range .}}<li><a href="{{url .}}"><span>{{.Title}}</span>{{with .UpdatedAt}}<time datetime="{{.}}"><bdi>{{date .}}</bdi></time>{{end}}</a></li>{{end}}</ul>
 </section>
 {{end}}
 {{end}}

@@ -1,4 +1,3 @@
-/* Served copy of themes/_base/tokens.css — keep identical (PR1). */
 /* GoRun shared theme tokens (PR1).
    Every catalog theme loads this first (served as default/assets/tokens.css).
    Child themes override under :where(html[data-theme="<slug>"]), not in components. */
@@ -19,7 +18,8 @@
   --head: #141816;
   --ink: #141816;
   --ink-2: #2a322e;
-  --muted: #637069;
+  /* Muted must stay ≥ 4.5:1 on --bg, --panel, and --panel-2. */
+  --muted: #5a665f;
   --muted-tinted: #4a5650;
 
   /* Accent (one per theme; themes remap) */

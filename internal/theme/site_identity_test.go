@@ -25,7 +25,7 @@ func TestIdentityCSSRendersTokensFontsAndCustomCSS(t *testing.T) {
 	for _, want := range []string{
 		`<style nonce="abc" data-gorun-identity>`,
 		":root:root[data-theme]{",
-		"--bg:#111418;", "color-scheme:dark;",
+		"--bg:#111418;", "color-scheme:dark;", "--focus-ring:#d7dee8;",
 		"--green:#c2410c;", "--gp-accent:#c2410c;",
 		"--font-heading:'Readex Pro'", "--font:Zad,",
 		"--radius:16px;",

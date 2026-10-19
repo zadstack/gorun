@@ -49,7 +49,7 @@ html[data-theme="docs"] .docs-search:focus-within { border-color: var(--docs-acc
 html[data-theme="docs"] .docs-search input { flex: 1 1 auto; min-width: 0; border: 0; background: transparent; font: inherit; font-size: .9375rem; color: var(--ink); outline: none; }
 html[data-theme="docs"] .docs-header-actions { margin-inline-start: auto; display: flex; align-items: center; gap: .5rem 1rem; flex-wrap: wrap; }
 html[data-theme="docs"] .docs-top-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .25rem; }
-html[data-theme="docs"] .docs-top-nav a { display: inline-flex; align-items: center; min-height: 40px; padding-inline: .75rem; border-radius: 6px; color: var(--muted); text-decoration: none; }
+html[data-theme="docs"] .docs-top-nav a { display: inline-flex; align-items: center; min-height: 44px; padding-inline: .75rem; border-radius: 6px; color: var(--muted); text-decoration: none; }
 html[data-theme="docs"] .docs-top-nav a:hover { color: var(--ink); background: var(--panel-2); }
 html[data-theme="docs"] .docs-lang { display: inline-flex; align-items: center; min-height: 44px; padding-inline: .875rem; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); text-decoration: none; font-size: .9375rem; }
 .docs-mobile-menu, .docs-aside-mobile { display: none; }
@@ -68,7 +68,7 @@ html[data-theme="docs"] .docs-toc { flex: 0 1 13rem; position: sticky; top: 4.5r
 html[data-theme="docs"] .docs-sidebar ul { list-style: none; margin: 0; padding: 0; }
 html[data-theme="docs"] .docs-nav-group { margin-bottom: 1.25rem; }
 html[data-theme="docs"] .docs-nav-heading { display: block; padding: .25rem .75rem; color: var(--ink); font-size: .875rem; font-weight: 700; text-decoration: none; }
-html[data-theme="docs"] .docs-sidebar li a { display: flex; align-items: center; min-height: 38px; padding: .25rem .75rem; border-radius: 6px; color: #3a4654; text-decoration: none; font-size: .9375rem; }
+html[data-theme="docs"] .docs-sidebar li a { display: flex; align-items: center; min-height: 44px; padding: .25rem .75rem; border-radius: 6px; color: #3a4654; text-decoration: none; font-size: .9375rem; }
 html[data-theme="docs"] .docs-sidebar li li a { padding-inline-start: 1.5rem; font-size: .875rem; }
 html[data-theme="docs"] .docs-sidebar a:hover { color: var(--ink); background: var(--panel-2); }
 html[data-theme="docs"] .docs-sidebar a[aria-current="page"] { background: var(--docs-soft); color: var(--green-hover); font-weight: 600; }

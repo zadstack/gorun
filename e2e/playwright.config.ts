@@ -37,15 +37,16 @@ export default defineConfig({
     {
       name: 'chromium',
       dependencies: ['setup'],
-      testIgnore: [/global\.setup\.ts/, /public-theme\.spec\.ts/, /visual\.spec\.ts/, /catalog-themes\.spec\.ts/],
+      testIgnore: [/global\.setup\.ts/, /public-theme\.spec\.ts/, /visual\.spec\.ts/, /catalog-themes\.spec\.ts/, /theme-acceptance\.spec\.ts/],
       use: { storageState: '.auth/admin.json' },
     },
     {
       // Design QA: activates each catalog theme in turn (page kinds × widths),
       // exercises the site identity settings, then restores the default theme.
+      // Also runs brief §6 acceptance (home + 3 inners @ 1440/390).
       name: 'catalog',
       dependencies: ['chromium'],
-      testMatch: /catalog-themes\.spec\.ts/,
+      testMatch: /catalog-themes\.spec\.ts|theme-acceptance\.spec\.ts/,
       use: { storageState: '.auth/admin.json' },
     },
     {

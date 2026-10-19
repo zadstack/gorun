@@ -1,0 +1,156 @@
+/* GoRun shared a11y + RTL hardening (PR3).
+   Loaded after tokens.css on every catalog theme. */
+
+:root {
+  --focus-ring: var(--accent);
+  --focus-ring-on-dark: #d7dee8;
+  --tap-min: 44px;
+}
+
+/* Skip link: off-screen until focused; ≥ 4.5:1 on accent fill. */
+.gr-skip,
+.sb-skip,
+.ed-skip,
+.studio-skip {
+  position: absolute;
+  inset-inline-start: var(--space-4, 1rem);
+  top: -100px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding: var(--space-2, .5rem) var(--space-4, 1rem);
+  background: var(--accent);
+  color: var(--on-accent, #fff);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius, 6px);
+  font-weight: 700;
+  text-decoration: none;
+  outline: none;
+}
+.gr-skip:focus,
+.gr-skip:focus-visible,
+.sb-skip:focus,
+.sb-skip:focus-visible,
+.ed-skip:focus,
+.ed-skip:focus-visible,
+.studio-skip:focus,
+.studio-skip:focus-visible {
+  top: var(--space-3, .75rem);
+  outline: 2px solid var(--focus-ring-on-dark);
+  outline-offset: 3px;
+}
+
+/* Focus-visible: accent on light; light tint available via --focus-ring (dark scheme). */
+:where(
+  a,
+  button,
+  summary,
+  input:not([type="hidden"]),
+  select,
+  textarea,
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 2px solid var(--focus-ring, var(--accent));
+  outline-offset: 3px;
+}
+
+/* Tap targets ≥ 44×44 (interactive chrome only; prose inline links excluded).
+   inline-flex so min-height applies (min-height is ignored on pure inline). */
+:where(header, footer, nav, .gr-hero, .gr-closing, .gr-list-row, .gr-section-head)
+  :is(a, button, summary),
+:where(button, summary),
+:where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  select,
+  textarea
+),
+:where(.gr-btn, .gp-button, .gp-s-btn) {
+  min-height: var(--tap-min);
+}
+:where(header, footer, nav) :is(a, button, summary) {
+  display: inline-flex;
+  align-items: center;
+}
+:where(header, footer, nav)
+  :is(a[hreflang], a.gr-btn, button, summary, .sb-language, .studio-locale, .dt-lang, .docs-lang) {
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Checkbox / radio keep native size but enlarge hit via padding on label when present. */
+:where(label):has(> :is(input[type="checkbox"], input[type="radio"])) {
+  min-height: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2, .5rem);
+}
+
+/* Arabic / RTL: zero tracking everywhere; no mono on prose/body/dates. */
+html[dir="rtl"] {
+  letter-spacing: 0;
+}
+html[dir="rtl"] :where(h1, h2, h3, h4, h5, h6, p, li, label, a, button, span, td, th, dd, dt, figcaption) {
+  letter-spacing: 0;
+}
+html[dir="rtl"] :where(body, .prose-gp, main, article) {
+  font-family: var(--font-ui, var(--font));
+}
+html[dir="rtl"] :where(time, .font-mono:not(code):not(pre):not(kbd):not(samp)) {
+  font-family: var(--font-ui, var(--font));
+  letter-spacing: 0;
+}
+/* Labels/kickers are prose, not paths — never mono on Arabic. */
+html[dir="rtl"] :where(
+  .gr-hero-kicker,
+  .dt-footer-nav-label,
+  .dt-kicker-label,
+  .sb-eyebrow,
+  .studio-kicker,
+  .ed-eyebrow,
+  .ed-topline,
+  .ed-story-meta,
+  .ed-colophon,
+  .ed-read
+) {
+  font-family: var(--font-ui, var(--font));
+}
+/* Mono only for code islands (always LTR). */
+:where(pre, code, kbd, samp) {
+  font-family: var(--font-mono);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Isolate Latin names, paths, prices, metrics. */
+:where(bdi, [dir="ltr"]) {
+  unicode-bidi: isolate;
+}
+
+/* Mirror go / external arrows under RTL. */
+html[dir="rtl"] :where(.gr-go-arrow, .gr-ext-arrow, .ed-go-arrow) {
+  transform: scaleX(-1);
+  display: inline-block;
+}
+
+/* Reduced motion: no decorative motion; pause marquees/canvas starters. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  :where([data-marquee], [data-canvas], canvas, .gr-marquee) {
+    animation: none !important;
+  }
+}
+
+/* Small text floor (12px) for chrome and editorial micro-labels. */
+:where(header, footer, nav, .ed-topline, .ed-story-meta, .ed-eyebrow, .ed-colophon, .ed-read, .sb-eyebrow, .studio-kicker, .dt-kicker-label, .gr-section-path) {
+  font-size: max(12px, 0.8125rem);
+}
