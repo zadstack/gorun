@@ -1,5 +1,7 @@
+import {admin} from './admin.js';
+import type {AdminEnv} from './admin-auth.js';
 /** Read-only GoRun Edge milestone. No Full runtime, manager auth or write API. */
-interface Env { SITE_ID: string; DB: D1Database; MEDIA: R2Bucket }
+interface Env extends AdminEnv {}
 interface Site { id: string; title: string; default_locale: string }
 interface Summary { id: string; type: string; slug: string; locale: string; title: string; excerpt: string; published_at: string }
 interface Article extends Summary { body_text: string }
@@ -98,7 +100,7 @@ async function serve(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request,env: Env): Promise<Response> {
     let result: Response;
-    try {result=await serve(request,env);} catch {result=json('unavailable',503);}
+    try {const p=new URL(request.url).pathname;result=(p==='/admin'||p.startsWith('/admin/'))?await admin(request,env):await serve(request,env);} catch {result=json('unavailable',503);}
     return request.method==='HEAD'?new Response(null,{status:result.status,headers:result.headers}):result;
   },
 } satisfies ExportedHandler<Env>;

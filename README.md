@@ -53,7 +53,7 @@ The instructions are tool-neutral. A chat-only assistant can explain the steps b
 
 ## Cloudflare Edge — in development
 
-GoRun Edge is a separate, experimental Workers-based edition. Alongside the site-scoped manager contracts, a [read-only Worker proof of concept](docs/EDGE.md) runs locally with its own D1/R2 storage and real workerd integration tests. No real Cloudflare deployment is verified yet. Edge admin, manager pairing and a supported deployment template remain on the [roadmap](https://github.com/zadstack/gorun/issues/46); no Deploy button is available. The prototype is separate from the GoRun Full release binary.
+GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 storage. The [read-only runtime](docs/EDGE.md) has passed actual Cloudflare HTTPS acceptance checks; optional [owner administration](docs/EDGE-ADMIN.md) adds locally tested private drafts, review/publication, revisions and offline recovery, disabled by default. Remote admin acceptance remains a separate gate. Manager pairing and a supported deployment template remain on the [roadmap](https://github.com/zadstack/gorun/issues/46); no Deploy button is available. Edge is separate from the Full release binary and has no measured benchmark result.
 
 [![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 

@@ -1,0 +1,144 @@
+import {type AdminEnv,type Context,type Session,context,random,hash,equal,ownerHash,sessionHash,escape as e,reply,redirect,cookie,cookieName,readCookie,sign,verify,form,sameOrigin,guard,guardArgs,audit} from './admin-auth.js';
+interface Body { type: string; slug: string; locale: string; title: string; excerpt: string; body_text: string }
+interface Draft { id: string; version: number; source_version: number; body_json: string }
+const idPattern=/^[a-zA-Z0-9_-]{1,120}$/;
+const slugPattern=/^[\p{L}\p{N}][\p{L}\p{N}_-]{0,119}$/u;
+const now=()=>new Date().toISOString();
+const language=(r: Request)=>new URL(r.url).searchParams.get('lang')==='ar'?'ar':'en';
+const tr=(lang: string,en: string,ar: string)=>lang==='ar'?ar:en;
+function page(lang: string,title: string,body: string,c?: Context) {
+  const session=c?.session;
+  return reply(`<!doctype html><html lang="${lang}" dir="${lang==='ar'?'rtl':'ltr'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(title)} · Edge</title><style>body{font:15px/1.6 system-ui,sans-serif;max-width:960px;margin:20px auto;padding:0 16px;color:#17272a;background:#f7f8f8}nav{display:flex;gap:16px;align-items:center;flex-wrap:wrap}a{color:#126b63}section,.card,form{background:white;border:1px solid #d6dfde;border-radius:6px;padding:14px;margin:12px 0}input,textarea,select,button{font:inherit;box-sizing:border-box;max-width:100%;padding:7px;border:1px solid #a8b9b6;border-radius:4px}input,textarea{width:100%}textarea{min-height:240px}label{display:block;margin:8px 0}button{cursor:pointer;background:#e5f3ef}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #ddd;text-align:start}pre,article{white-space:pre-wrap;overflow-wrap:anywhere}input[type=checkbox]{width:auto}.muted{color:#506461}.warning{border-inline-start:4px solid #aa6800;padding:8px}</style></head><body><nav><strong>GoRun Edge</strong><a href="/admin?lang=${lang}">${tr(lang,'Content','المحتوى')}</a>${session?`<a href="/admin/media?lang=${lang}">${tr(lang,'Media','الوسائط')}</a><a href="/admin/audit?lang=${lang}">${tr(lang,'Audit','السجل')}</a><a href="/admin/export">${tr(lang,'Export content','تصدير المحتوى')}</a>`:''}<a href="/admin?lang=${lang==='ar'?'en':'ar'}">${lang==='ar'?'English':'العربية'}</a><a href="/">${tr(lang,'Public site','الموقع العام')}</a></nav><h1>${e(title)}</h1>${body}${session?`<form method="post" action="/admin/logout?lang=${lang}">${hidden(c!)}<button>${tr(lang,'Sign out','تسجيل الخروج')}</button></form>`:''}</body></html>`);
+}
+function hidden(c: Context) {return `<input type="hidden" name="csrf" value="${e(c.session!.csrf)}">`;}
+function fail(lang: string,message: string,status: number) {const r=page(lang,message,`<p>${e(message)}</p><p><a href="/admin?lang=${lang}">${tr(lang,'Back to content','العودة إلى المحتوى')}</a></p>`);return new Response(r.body,{status,headers:r.headers});}
+function version(s: string|null) {return s!==null&&/^(0|[1-9][0-9]{0,8})$/.test(s)?Number(s):null;}
+function bodyInput(f: URLSearchParams): Body|null {
+  const b={type:f.get('type')??'',slug:(f.get('slug')??'').trim(),locale:f.get('locale')??'',title:(f.get('title')??'').trim(),excerpt:f.get('excerpt')??'',body_text:f.get('body_text')??''};
+  return ['post','page'].includes(b.type)&&slugPattern.test(b.slug)&&['en','ar'].includes(b.locale)&&b.title.length>0&&b.title.length<=200&&b.excerpt.length<=600&&b.body_text.length<=100000&&!Object.values(b).some(v=>v.includes('\0'))?b:null;
+}
+async function loginPage(c: Context,lang: string,message='') {
+  const token=await sign(c,{nonce:random(),issued:Date.now(),epoch:c.owner.auth_epoch});
+  const r=page(lang,tr(lang,'Owner sign-in','دخول المالك'),`<p>${tr(lang,'Use the owner access key created by the offline owner tool. There is no public setup or recovery endpoint.','استخدم مفتاح المالك الصادر من أداة الإعداد الخاصة. لا يوجد إعداد أو استعادة عبر رابط عام.')}</p>${message?`<p class="warning">${e(message)}</p>`:''}<form method="post" action="/admin/login?lang=${lang}"><input type="hidden" name="challenge" value="${token}"><label>${tr(lang,'Owner access key','مفتاح المالك')}<input name="key" type="password" autocomplete="off" required maxlength="43"></label><button>${tr(lang,'Sign in','دخول')}</button></form>`);
+  r.headers.append('set-cookie',cookie(c,'login',token,300));return r;
+}
+async function login(r: Request,c: Context,f: URLSearchParams,lang: string) {
+  const token=f.get('challenge')??'';
+  if(!equal(readCookie(r,cookieName(c,'login')),token))return fail(lang,'Invalid sign-in challenge',403);
+  const challenge=await verify(c,token);
+  if(!challenge||typeof challenge.issued!=='number'||typeof challenge.nonce!=='string'||challenge.epoch!==c.owner.auth_epoch||Date.now()-challenge.issued>300000||challenge.issued>Date.now())return fail(lang,'Expired sign-in challenge',403);
+  const raw=f.get('key')??'';const matched=/^[A-Za-z0-9_-]{43}$/.test(raw)&&equal(await ownerHash(c.env.SITE_ID,raw),c.owner.key_hash);
+  if(!matched) {
+    const minute=Math.floor(Date.now()/60000);
+    const result=await c.env.DB.prepare('INSERT INTO edge_login_limits VALUES (?1,?2,1) ON CONFLICT(site_id) DO UPDATE SET window=excluded.window,attempts=CASE WHEN window=excluded.window THEN min(attempts+1,1000) ELSE 1 END RETURNING attempts').bind(c.env.SITE_ID,minute).first<{attempts:number}>();
+    const out=await loginPage(c,lang,tr(lang,'Invalid access key.','مفتاح الدخول غير صحيح.'));return new Response(out.body,{status:(result?.attempts??0)>10?429:401,headers:out.headers});
+  }
+  const rawSession=random(),tokenHash=await sessionHash(rawSession),csrf=random(),at=Date.now();
+  const auth="EXISTS(SELECT 1 FROM edge_owners WHERE site_id=? AND active=1 AND auth_epoch=? AND key_hash=?) AND CAST(unixepoch('subsec')*1000 AS INTEGER)<?";
+  const authArgs=[c.env.SITE_ID,c.owner.auth_epoch,c.owner.key_hash,challenge.issued+300000];
+  let results: D1Result[];
+  try {results=await c.env.DB.batch([
+    c.env.DB.prepare(`DELETE FROM edge_login_used WHERE site_id=? AND expires_at<? AND ${auth}`).bind(c.env.SITE_ID,at,...authArgs),
+    c.env.DB.prepare(`INSERT INTO edge_login_used SELECT ?,?,? WHERE ${auth}`).bind(c.env.SITE_ID,challenge.nonce,at+300000,...authArgs),
+    c.env.DB.prepare(`DELETE FROM edge_sessions WHERE site_id=? AND (expires_at<? OR token_hash=?) AND ${auth}`).bind(c.env.SITE_ID,at,c.session?.token_hash??'',...authArgs),
+    c.env.DB.prepare(`INSERT INTO edge_sessions(site_id,token_hash,csrf,owner_epoch,issued_at,expires_at) SELECT ?,?,?,?,?,? WHERE ${auth}`).bind(c.env.SITE_ID,tokenHash,csrf,c.owner.auth_epoch,at,at+3600000,...authArgs),
+    audit(c,'owner.login','','EXISTS(SELECT 1 FROM edge_sessions WHERE site_id=? AND token_hash=?)',[c.env.SITE_ID,tokenHash]),
+    c.env.DB.prepare(`DELETE FROM edge_sessions WHERE site_id=? AND token_hash NOT IN (SELECT token_hash FROM edge_sessions WHERE site_id=? ORDER BY issued_at DESC LIMIT 20) AND ${auth}`).bind(c.env.SITE_ID,c.env.SITE_ID,...authArgs),
+  ]);}catch{return fail(lang,'Sign-in challenge was already used; reload and try again',409);}
+  if(!results[3].meta.changes)return fail(lang,'Owner access changed; reload and try again',409);
+  const out=redirect('/admin?lang='+lang);out.headers.append('set-cookie',cookie(c,'session',rawSession,3600));out.headers.append('set-cookie',cookie(c,'login','',0));return out;
+}
+async function record(c: Context,id: string) {
+  const item=await c.env.DB.prepare('SELECT * FROM edge_content WHERE site_id=? AND id=?').bind(c.env.SITE_ID,id).first<Record<string,unknown>>();
+  const draft=await c.env.DB.prepare('SELECT * FROM edge_drafts WHERE site_id=? AND id=?').bind(c.env.SITE_ID,id).first<Draft>();return{item,draft};
+}
+function sourceGuard() {return 'COALESCE((SELECT version FROM edge_content WHERE site_id=? AND id=?),0)=?';}
+export async function save(c: Context,id: string,b: Body,dv: number,sv: number,action='draft.saved') {
+  const op=crypto.randomUUID(),json=JSON.stringify(b),v=dv+1;
+  const cond=`${guard(c)} AND ${sourceGuard()} AND ((?=0 AND NOT EXISTS(SELECT 1 FROM edge_drafts WHERE site_id=? AND id=?)) OR EXISTS(SELECT 1 FROM edge_drafts WHERE site_id=? AND id=? AND version=? AND source_version=?))`;
+  const args=[...guardArgs(c),c.env.SITE_ID,id,sv,dv,c.env.SITE_ID,id,c.env.SITE_ID,id,dv,sv];
+  const proof='EXISTS(SELECT 1 FROM edge_drafts WHERE site_id=? AND id=? AND op_token=?)';const proofArgs=[c.env.SITE_ID,id,op];
+  const results=await c.env.DB.batch([
+    c.env.DB.prepare(`INSERT INTO edge_drafts(site_id,id,version,source_version,body_json,op_token,updated_at) SELECT ?,?,?,?,?,?,? WHERE ${cond} ON CONFLICT(site_id,id) DO UPDATE SET version=excluded.version,body_json=excluded.body_json,op_token=excluded.op_token,updated_at=excluded.updated_at WHERE edge_drafts.version=?`).bind(c.env.SITE_ID,id,v,sv,json,op,now(),...args,dv),
+    c.env.DB.prepare(`INSERT INTO edge_revisions SELECT ?,?,?,?,?,? WHERE ${proof}`).bind(c.env.SITE_ID,crypto.randomUUID(),id,action,json,now(),...proofArgs),audit(c,action,id,proof,proofArgs),
+  ]);return Boolean(results[0].meta.changes);
+}
+export async function publish(c: Context,id: string,d: Draft,review: Record<string,unknown>) {
+  if(review.id!==id||review.dv!==d.version||review.sv!==d.source_version||review.session!==c.session!.token_hash||review.epoch!==c.session!.owner_epoch||typeof review.expires!=='number'||review.expires<Date.now()||review.body!==await hash(d.body_json))return false;
+  const b=JSON.parse(d.body_json) as Body,op=crypto.randomUUID();
+  const cond=`${guard(c)} AND CAST(unixepoch('subsec')*1000 AS INTEGER)<? AND ?+600000>CAST(unixepoch('subsec')*1000 AS INTEGER) AND ${sourceGuard()} AND EXISTS(SELECT 1 FROM edge_drafts WHERE site_id=? AND id=? AND version=? AND source_version=? AND body_json=?)`;
+  const args=[...guardArgs(c),review.expires,c.session!.issued_at,c.env.SITE_ID,id,d.source_version,c.env.SITE_ID,id,d.version,d.source_version,d.body_json];
+  const proof='EXISTS(SELECT 1 FROM edge_content WHERE site_id=? AND id=? AND admin_operation=?)',pa=[c.env.SITE_ID,id,op];
+  const result=await c.env.DB.batch([
+    c.env.DB.prepare(`INSERT INTO edge_content(site_id,id,type,slug,locale,title,excerpt,body_text,status,published_at,version,admin_operation) SELECT ?,?,?,?,?,?,?,?,'published',?,1,? WHERE ${cond} ON CONFLICT(site_id,id) DO UPDATE SET type=excluded.type,slug=excluded.slug,locale=excluded.locale,title=excluded.title,excerpt=excluded.excerpt,body_text=excluded.body_text,status='published',published_at=excluded.published_at,version=edge_content.version+1,admin_operation=excluded.admin_operation WHERE edge_content.version=?`).bind(c.env.SITE_ID,id,b.type,b.slug,b.locale,b.title,b.excerpt,b.body_text,new Date().toISOString().replace(/\.\d{3}Z$/,'Z'),op,...args,d.source_version),
+    c.env.DB.prepare(`INSERT INTO edge_revisions SELECT ?,?,?,?,?,? WHERE ${proof}`).bind(c.env.SITE_ID,crypto.randomUUID(),id,'content.published',d.body_json,now(),...pa),audit(c,'content.published',id,proof,pa),
+    c.env.DB.prepare(`DELETE FROM edge_drafts WHERE site_id=? AND id=? AND ${proof}`).bind(c.env.SITE_ID,id,...pa),
+  ]);return Boolean(result[0].meta.changes);
+}
+
+export async function discard(c: Context,id: string,dv: number) {
+  const op=crypto.randomUUID(),proof='EXISTS(SELECT 1 FROM edge_drafts WHERE site_id=? AND id=? AND op_token=?)',pa=[c.env.SITE_ID,id,op];
+  const result=await c.env.DB.batch([
+    c.env.DB.prepare(`UPDATE edge_drafts SET op_token=? WHERE site_id=? AND id=? AND version=? AND ${guard(c)}`).bind(op,c.env.SITE_ID,id,dv,...guardArgs(c)),
+    audit(c,'draft.discarded',id,proof,pa),
+    c.env.DB.prepare('DELETE FROM edge_drafts WHERE site_id=? AND id=? AND op_token=?').bind(...pa),
+  ]);return Boolean(result[0].meta.changes&&result[2].meta.changes);
+}
+async function logout(c: Context) {
+  const op=crypto.randomUUID(),proof='EXISTS(SELECT 1 FROM edge_sessions WHERE site_id=? AND token_hash=? AND op_token=?)',pa=[c.env.SITE_ID,c.session!.token_hash,op];
+  await c.env.DB.batch([c.env.DB.prepare(`UPDATE edge_sessions SET op_token=? WHERE site_id=? AND token_hash=? AND ${guard(c)}`).bind(op,c.env.SITE_ID,c.session!.token_hash,...guardArgs(c)),audit(c,'owner.logout','',proof,pa),c.env.DB.prepare('DELETE FROM edge_sessions WHERE site_id=? AND token_hash=? AND op_token=?').bind(...pa)]);
+}
+async function editor(c: Context,id: string,lang: string) {
+  const {item,draft}=await record(c,id);const b=(draft?JSON.parse(draft.body_json):item)??{type:'post',slug:'',locale:lang,title:'',excerpt:'',body_text:''};
+  const source=Number(item?.version??0),dv=draft?.version??0;
+  const stale=draft&&draft.source_version!==source;
+  const fields=`${hidden(c)}<input type="hidden" name="id" value="${id}"><input type="hidden" name="draft_version" value="${dv}"><input type="hidden" name="source_version" value="${source}">`;
+  const revisions=await c.env.DB.prepare('SELECT id,action,at FROM edge_revisions WHERE site_id=? AND content_id=? ORDER BY at DESC LIMIT 20').bind(c.env.SITE_ID,id).all<{id:string;action:string;at:string}>();
+  return page(lang,tr(lang,'Edit content','تحرير المحتوى'),`<p class="muted">${tr(lang,'Saving a draft keeps the current public article unchanged. Plain text only. Review is required before publication.','حفظ المسودة لا يغيّر النسخة العامة. النص عادي فقط، وتلزم المراجعة قبل النشر.')}</p>${stale?`<p class="warning">${tr(lang,'The public version changed. Discard this draft before starting from the current version.','تغيّرت النسخة العامة. تجاهل المسودة قبل البدء من النسخة الحالية.')}</p>`:''}<form method="post" action="/admin/save?lang=${lang}">${fields}<label>${tr(lang,'Title','العنوان')}<input name="title" value="${e(b.title)}" maxlength="200" required></label><label>${tr(lang,'Slug','المسار')}<input name="slug" value="${e(b.slug)}" maxlength="120" required></label><label>${tr(lang,'Type','النوع')}<select name="type"><option value="post"${b.type==='post'?' selected':''}>Post / مقال</option><option value="page"${b.type==='page'?' selected':''}>Page / صفحة</option></select></label><label>${tr(lang,'Language','اللغة')}<select name="locale"><option value="en"${b.locale==='en'?' selected':''}>English</option><option value="ar"${b.locale==='ar'?' selected':''}>العربية</option></select></label><label>${tr(lang,'Summary','الملخص')}<input name="excerpt" value="${e(b.excerpt)}" maxlength="600"></label><label>${tr(lang,'Body','المحتوى')}<textarea name="body_text" maxlength="100000">${e(b.body_text)}</textarea></label><button${stale?' disabled':''}>${tr(lang,'Save draft','حفظ المسودة')}</button></form>${draft&&!stale?`<form method="post" action="/admin/review?lang=${lang}">${fields}<button>${tr(lang,'Review publication','مراجعة النشر')}</button></form>`:''}${draft?`<form method="post" action="/admin/discard?lang=${lang}">${fields}<label><input type="checkbox" name="confirm" value="yes" required> ${tr(lang,'Discard this draft; its saved revisions remain available.','تجاهل المسودة مع الاحتفاظ بالمراجعات المحفوظة.')}</label><button>${tr(lang,'Discard draft','تجاهل المسودة')}</button></form>`:''}${item?.status==='published'?`<form method="post" action="/admin/unpublish?lang=${lang}">${fields}<label><input type="checkbox" name="confirm" value="yes" required> ${tr(lang,'Remove the article from public view.','إزالة المقال من العرض العام.')}</label><button>${tr(lang,'Unpublish','إلغاء النشر')}</button></form>`:''}<section><h2>${tr(lang,'Saved revisions','المراجعات المحفوظة')}</h2>${revisions.results.map(v=>`<form method="post" action="/admin/restore?lang=${lang}">${fields}<input type="hidden" name="revision" value="${v.id}"><p>${e(v.at)} · ${e(v.action)}</p><button>${tr(lang,'Restore as draft','استعادة كمسودة')}</button></form>`).join('')||'—'}</section>`,c);
+}
+export async function admin(r: Request,env: AdminEnv): Promise<Response> {
+  const lang=language(r);let c: Context|null;try{c=await context(r,env);}catch{return reply('Unavailable',503);}if(!c)return reply('Not found',404);
+  const path=new URL(r.url).pathname;
+  if(!['/admin','/admin/login','/admin/logout','/admin/edit','/admin/save','/admin/review','/admin/publish','/admin/restore','/admin/discard','/admin/unpublish','/admin/export','/admin/audit','/admin/media'].includes(path))return reply('Not found',404);
+  if(!['GET','POST'].includes(r.method))return reply(null,405,{allow:'GET, POST'});
+  if(r.method==='GET'&&path==='/admin/login')return loginPage(c,lang);
+  if(r.method==='POST'&&!sameOrigin(r,c))return fail(lang,'Same-origin request required',403);
+  const f=r.method==='POST'?await form(r):null;if(r.method==='POST'&&!f)return fail(lang,'Invalid or oversized form',400);
+  if(path==='/admin/login'&&f)return login(r,c,f,lang);
+  if(!c.session)return redirect('/admin/login?lang='+lang);
+  if(f&&!equal(f.get('csrf')??'',c.session.csrf))return fail(lang,'Invalid CSRF token',403);
+  if(r.method==='GET') {
+    if(path==='/admin/export') {
+      const contents=(await env.DB.prepare('SELECT site_id,id,type,slug,locale,title,excerpt,body_text,status,published_at,version FROM edge_content WHERE site_id=? LIMIT 1000').bind(env.SITE_ID).all()).results;
+      const drafts=(await env.DB.prepare('SELECT id,version,source_version,body_json,updated_at FROM edge_drafts WHERE site_id=? LIMIT 1000').bind(env.SITE_ID).all()).results;
+      const revisions=(await env.DB.prepare('SELECT id,content_id,action,snapshot_json,at FROM edge_revisions WHERE site_id=? ORDER BY at DESC LIMIT 1000').bind(env.SITE_ID).all()).results;
+      return reply(JSON.stringify({format:'gorun-edge-content-v1',contents,drafts,revisions,limits:{per_section:1000}},null,2),200,{'content-type':'application/json; charset=utf-8','content-disposition':'attachment; filename="gorun-edge-content.json"'});
+    }
+    if(path==='/admin/audit') {const rows=await env.DB.prepare('SELECT action,content_id,at FROM edge_audit WHERE site_id=? ORDER BY at DESC LIMIT 100').bind(env.SITE_ID).all<{action:string;content_id:string;at:string}>();return page(lang,tr(lang,'Audit','السجل'),'<section>'+rows.results.map(v=>`<p>${e(v.at)} · ${e(v.action)} · ${e(v.content_id)}</p>`).join('')+'</section>',c);}
+    if(path==='/admin/media') {const rows=await env.DB.prepare('SELECT id,content_type,visibility FROM edge_media WHERE site_id=? LIMIT 100').bind(env.SITE_ID).all<{id:string;content_type:string;visibility:string}>();return page(lang,tr(lang,'Media metadata','بيانات الوسائط'),`<p>${tr(lang,'Existing R2 records only. Upload and private download are not implemented; no private object is exposed.','سجلات R2 الموجودة فقط. الرفع والتنزيل الخاص غير متاحين؛ لا تُعرض أي ملفات خاصة.')}</p><section>`+rows.results.map(v=>`<p>${e(v.id)} · ${e(v.content_type)} · ${e(v.visibility)}</p>`).join('')+'</section>',c);}
+    if(path==='/admin/edit') {const id=new URL(r.url).searchParams.get('id')??crypto.randomUUID();return idPattern.test(id)?editor(c,id,lang):fail(lang,'Invalid content ID',400);}
+    if(path==='/admin') {const rows=await env.DB.prepare('SELECT id,title,status FROM edge_content WHERE site_id=? UNION SELECT id,json_extract(body_json,\'$.title\') title,\'draft\' status FROM edge_drafts d WHERE site_id=? AND NOT EXISTS(SELECT 1 FROM edge_content c WHERE c.site_id=d.site_id AND c.id=d.id) LIMIT 100').bind(env.SITE_ID,env.SITE_ID).all<{id:string;title:string;status:string}>();return page(lang,tr(lang,'Content','المحتوى'),`<a href="/admin/edit?lang=${lang}">${tr(lang,'New content','محتوى جديد')}</a><section><table><tr><th>${tr(lang,'Title','العنوان')}</th><th>${tr(lang,'State','الحالة')}</th></tr>`+rows.results.map(v=>`<tr><td><a href="/admin/edit?id=${encodeURIComponent(v.id)}&amp;lang=${lang}">${e(v.title)}</a></td><td>${e(v.status)}</td></tr>`).join('')+'</table></section>',c);}
+    return reply('Not found',404);
+  }
+  if(path==='/admin/logout') {await logout(c);const out=redirect('/admin/login?lang='+lang);out.headers.append('set-cookie',cookie(c,'session','',0));return out;}
+  const id=f!.get('id')??'',dv=version(f!.get('draft_version')),sv=version(f!.get('source_version'));
+  if(!idPattern.test(id)||dv===null||sv===null)return fail(lang,'Invalid content version',400);
+  try {
+    if(path==='/admin/save'||path==='/admin/restore') {
+      let b: Body|null;
+      if(path==='/admin/restore') {const revision=await env.DB.prepare('SELECT snapshot_json FROM edge_revisions WHERE site_id=? AND content_id=? AND id=?').bind(env.SITE_ID,id,f!.get('revision')).first<{snapshot_json:string}>();if(!revision)return fail(lang,'Revision not found',404);const saved=JSON.parse(revision.snapshot_json);const fields=new URLSearchParams(Object.entries(saved) as [string,string][]);b=bodyInput(fields);}else b=bodyInput(f!);
+      if(!b)return fail(lang,'Invalid content fields',400);if(!await save(c,id,b,dv,sv,path==='/admin/restore'?'draft.restored':'draft.saved'))return fail(lang,'Content changed; reload before saving',409);
+      return redirect(`/admin/edit?id=${id}&lang=${lang}`);
+    }
+    if(path==='/admin/review'||path==='/admin/publish') {
+      if(Date.now()-c.session.issued_at>600000)return fail(lang,'Sign in again before publishing',401);
+      const {draft,item}=await record(c,id);if(!draft||draft.version!==dv||draft.source_version!==sv||Number(item?.version??0)!==sv)return fail(lang,'Content changed; review again',409);
+      if(path==='/admin/publish') {const review=await verify(c,f!.get('review')??'');if(f!.get('approve')!=='yes'||!review)return fail(lang,'Explicit publication approval required',403);if(!await publish(c,id,draft,review))return fail(lang,'Content or authority changed; review again',409);return redirect('/admin?lang='+lang);}
+      const review=await sign(c,{id,dv,sv,body:await hash(draft.body_json),session:c.session.token_hash,epoch:c.session.owner_epoch,expires:Date.now()+120000});const b=JSON.parse(draft.body_json) as Body;
+      return page(lang,tr(lang,'Review publication','مراجعة النشر'),`<p>${tr(lang,'This saved draft will become public at the shown locale and path.','ستصبح المسودة المحفوظة عامة باللغة والمسار المعروضين.')}</p><section><h2>${e(b.title)}</h2><p>${e(b.locale)} · ${e(b.type)}/${e(b.slug)}</p><p>${e(b.excerpt)}</p><article>${e(b.body_text)}</article></section><form method="post" action="/admin/publish?lang=${lang}">${hidden(c)}<input type="hidden" name="id" value="${id}"><input type="hidden" name="draft_version" value="${dv}"><input type="hidden" name="source_version" value="${sv}"><input type="hidden" name="review" value="${review}"><label><input type="checkbox" name="approve" value="yes" required> ${tr(lang,'I reviewed this exact saved draft and approve publication.','راجعت هذه المسودة المحفوظة وأوافق على نشرها.')}</label><button>${tr(lang,'Publish','نشر')}</button></form>`,c);
+    }
+    if(path==='/admin/discard'&&f!.get('confirm')==='yes')return await discard(c,id,dv)?redirect(`/admin/edit?id=${id}&lang=${lang}`):fail(lang,'Draft changed; reload',409);
+    if(path==='/admin/unpublish'&&f!.get('confirm')==='yes') {const op=crypto.randomUUID(),proof='EXISTS(SELECT 1 FROM edge_content WHERE site_id=? AND id=? AND admin_operation=?)',args=[env.SITE_ID,id,op];const result=await env.DB.batch([env.DB.prepare(`UPDATE edge_content SET status='private',version=version+1,admin_operation=? WHERE site_id=? AND id=? AND version=? AND ${guard(c)}`).bind(op,env.SITE_ID,id,sv,...guardArgs(c)),env.DB.prepare(`INSERT INTO edge_revisions SELECT ?,?,?,'content.unpublished',json_object('type',type,'slug',slug,'locale',locale,'title',title,'excerpt',excerpt,'body_text',body_text),? FROM edge_content WHERE site_id=? AND id=? AND admin_operation=?`).bind(env.SITE_ID,crypto.randomUUID(),id,now(),...args),audit(c,'content.unpublished',id,proof,args)]);return result[0].meta.changes?redirect(`/admin/edit?id=${id}&lang=${lang}`):fail(lang,'Content changed; reload',409);}
+  }catch{return fail(lang,'Conflict or storage error; reload before retrying',409);}
+  return reply('Not found',404);
+}
