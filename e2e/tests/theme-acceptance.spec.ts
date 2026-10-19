@@ -95,11 +95,13 @@ async function auditPage(page: Page): Promise<Audit> {
     };
 
     let contrastFails = 0;
-    for (const el of Array.from(document.querySelectorAll('body, p, li, h1, h2, h3, a, button, label, td, th'))) {
+    for (const el of Array.from(document.querySelectorAll('body, p, li, h1, h2, h3, button, label, td, th, a.gr-btn, a.gp-button, .gr-btn-text'))) {
       const cs = getComputedStyle(el);
-      if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+      if (cs.visibility === 'hidden' || cs.display === 'none' || Number(cs.opacity) === 0) continue;
       const size = parseFloat(cs.fontSize);
       if (!Number.isFinite(size) || size < 1) continue;
+      const r = (el as HTMLElement).getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
       const need = size >= 24 || (size >= 18.66 && (parseInt(cs.fontWeight, 10) >= 700)) ? 3 : 4.5;
       if (ratio(cs.color, opaqueBg(el)) < need - 0.05) contrastFails++;
     }
@@ -146,14 +148,24 @@ async function auditPage(page: Page): Promise<Audit> {
     let arabicNegativeTracking = 0;
     let monoOnArabic = 0;
     const rtl = document.documentElement.getAttribute('dir') === 'rtl';
+    const ownText = (el: Element) =>
+      Array.from(el.childNodes)
+        .filter((n) => n.nodeType === Node.TEXT_NODE)
+        .map((n) => n.textContent || '')
+        .join('');
+    const hasArabic = (s: string) => /[\u0600-\u06FF]/.test(s);
+    const isMonoStack = (ff: string) =>
+      /ui-monospace|sfmono|menlo|monaco|consolas|courier|\bmonospace\b/i.test(ff);
     if (rtl) {
-      for (const el of Array.from(document.querySelectorAll('h1, h2, h3, h4, p, li, time, .prose-gp, main'))) {
+      // Prose/chrome with Arabic glyphs only — Latin path/metric mono labels are allowed.
+      for (const el of Array.from(document.querySelectorAll('h1, h2, h3, h4, p, li, time, label, a, span, td, th, dd, dt'))) {
+        if (el.closest('pre, code, kbd, samp, .gr-section-path, .gr-list-num')) continue;
+        const text = ownText(el);
+        if (!hasArabic(text)) continue;
         const cs = getComputedStyle(el);
         const ls = parseFloat(cs.letterSpacing);
         if (Number.isFinite(ls) && ls < -0.01) arabicNegativeTracking++;
-        if (/mono|menlo|consolas|courier/i.test(cs.fontFamily) && !el.closest('pre, code, kbd, samp')) {
-          monoOnArabic++;
-        }
+        if (isMonoStack(cs.fontFamily)) monoOnArabic++;
       }
     }
 
