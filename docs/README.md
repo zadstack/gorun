@@ -10,6 +10,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | --- | --- |
 | [GORUN-INSTALLATION.md](GORUN-INSTALLATION.md) | Fresh install: release binary, GHCR/Docker, build from source, first admin, config map, upgrade from release tags |
 | [UPGRADE.md](UPGRADE.md) | Upgrade / rollback runbook: tag → binary or GHCR/Coolify → migrate → smoke → prior artifact + backup pair |
+| [SERVER-SETUP.md](SERVER-SETUP.md) | Guided Linux domain setup: verified public release, DNS, Caddy HTTPS, persistent data, safe resume and acceptance checks |
 | [PRODUCTION.md](PRODUCTION.md) | Production env, HTTPS / reverse proxy / HSTS, backup + restore (CLI and admin), cutover, acceptance checks |
 | [STAGING.md](STAGING.md) | Staging site (second data dir) + promote-to-live via `gorun staging seed\|promote` |
 | [OBSERVABILITY.md](OBSERVABILITY.md) | Optional `GET /metrics` (Prometheus text) + JSON log shipping notes |

@@ -1,0 +1,25 @@
+name: production-server-setup
+on:
+  pull_request:
+    paths:
+      - deploy/server-setup.py
+      - deploy/tests/**
+      - .github/workflows/server-setup.yml
+  push:
+    branches: [main]
+    paths:
+      - deploy/server-setup.py
+      - deploy/tests/**
+      - .github/workflows/server-setup.yml
+permissions:
+  contents: read
+jobs:
+  production-setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate setup behavior without external services
+        run: python3 -m unittest discover -s deploy/tests -p 'test_*.py' -v
+      - name: Exercise real released containers with an isolated private test CA
+        run: sudo --preserve-env=PATH python3 deploy/tests/smoke_server_setup.py
