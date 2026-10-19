@@ -223,7 +223,7 @@ test.describe.serial('catalog themes', () => {
     await expect(page.locator('select[name="settings[identity_scheme]"]')).toHaveValue('dark');
 
     await page.goto('/');
-    await expect(page.locator('style[data-gorun-identity]')).toHaveCount(1);
+    await expect(page.locator('link[data-gorun-identity]')).toHaveCount(1);
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     expect(bg, 'dark body background').toBe('rgb(17, 20, 24)');
     expect(await bodyContrast(page)).toBeGreaterThanOrEqual(4.5);
@@ -251,7 +251,7 @@ test.describe.serial('catalog themes', () => {
     await page.selectOption('select[name="settings[identity_heading_font]"]', '');
     await submitAndLand(page, page.locator('form button[type="submit"]').last(), '/admin/appearance/theme-settings');
     await page.goto('/');
-    await expect(page.locator('style[data-gorun-identity]')).toHaveCount(0);
+    await expect(page.locator('link[data-gorun-identity]')).toHaveCount(0);
   });
 
   test('restore the default theme', async ({ page }) => {

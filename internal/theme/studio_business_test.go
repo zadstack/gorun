@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/zadstack/gorun/internal/brand"
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/kernel"
@@ -75,7 +76,11 @@ func TestStudioBusinessLocalAssetsAndRenderedIdentity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mustContain(t, rec.Body.String(), "--gp-width:1280px", "--bg:#101010", "ui-monospace")
+	body := rec.Body.String()
+	mustContain(t, body, `/site/builder-identity.css?v=`, `data-gorun-builder-identity`)
+	mustContain(t, BuilderIdentityStylesheet(brand.Identity{
+		Accent: "#167252", Background: "#101010", Text: "#eeeeee", Font: "mono", Width: "wide",
+	}), "--gp-width:1280px", "--bg:#101010", "ui-monospace")
 	for _, asset := range []string{"site.css", "images/strategy.svg", "images/identity.svg", "images/delivery.svg"} {
 		body, err := os.ReadFile(filepath.Join(root, "business", "assets", filepath.FromSlash(asset)))
 		if err != nil || len(body) == 0 {

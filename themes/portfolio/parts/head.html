@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="{{asset "a11y.css"}}">
 {{with .Content}}{{if eq .Template "builder"}}<link rel="stylesheet" href="/static/builder/builder.css">{{end}}{{end}}
 {{part "head-extra" .}}
-<style nonce="{{nonce}}">{{builderStyle}}</style>
+{{builderIdentity}}
 <link rel="stylesheet" href="{{asset "sections.css"}}">{{identity .}}</head>
 <body>
 <a href="#main" class="studio-skip">{{t "skip_to_content"}}</a>

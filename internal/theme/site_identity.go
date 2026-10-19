@@ -1,6 +1,8 @@
 package theme
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"html/template"
 	"regexp"
 	"slices"
@@ -44,6 +46,10 @@ const supportIdentity = "identity"
 // supportsIdentity reports whether the theme itself (not its parents)
 // declares the identity capability.
 func supportsIdentity(info Info) bool { return slices.Contains(info.Supports, supportIdentity) }
+
+// SupportsIdentity is the exported form of supportsIdentity for public
+// handlers (e.g. /site/identity.css).
+func SupportsIdentity(info Info) bool { return supportsIdentity(info) }
 
 // identityFont is a font offered by the identity settings: Arabic-capable
 // families from Google Fonts (allowed by the CSP), plus the bundled Zad font.
@@ -168,10 +174,14 @@ var darkPalette = [][2]string{
 	{"--focus-ring", "#d7dee8"},
 }
 
-// identityCSS builds the font links and stylesheet for the stored values
-// (already read from settings); "" when nothing is set. Every value is
-// validated again here, so a hand-edited setting cannot inject markup.
-func identityCSS(get func(key string) string, nonce string) template.HTML {
+// identityParts holds the validated identity CSS body and optional Google Fonts
+// families (already vetted against identityFonts).
+type identityParts struct {
+	CSS    string
+	Google []string
+}
+
+func buildIdentity(get func(key string) string) identityParts {
 	var vars [][2]string
 	var rules []string
 	var google []string
@@ -219,15 +229,9 @@ func identityCSS(get func(key string) string, nonce string) template.HTML {
 		custom = ""
 	}
 	if len(vars) == 0 && len(rules) == 0 && custom == "" {
-		return ""
+		return identityParts{}
 	}
 	var b strings.Builder
-	if len(google) > 0 {
-		// Families come from identityFonts only; Google Fonts expects them unescaped.
-		q := "family=" + strings.Join(google, "&family=") + "&display=swap"
-		b.WriteString(`<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?` + template.HTMLEscapeString(q) + `">`)
-	}
-	b.WriteString(`<style nonce="` + template.HTMLEscapeString(nonce) + `" data-gorun-identity>`)
 	if len(vars) > 0 {
 		// :root:root[data-theme] (0,3,0) outranks the themes' html[data-theme="…"] tokens.
 		b.WriteString(":root:root[data-theme]{")
@@ -243,6 +247,39 @@ func identityCSS(get func(key string) string, nonce string) template.HTML {
 	if custom != "" {
 		b.WriteString("\n/* custom css */\n" + custom)
 	}
-	b.WriteString("</style>")
+	return identityParts{CSS: b.String(), Google: google}
+}
+
+// IdentityStylesheet returns the cached site-identity CSS body for settings
+// (empty when nothing is set). Used by /site/identity.css.
+func IdentityStylesheet(get func(key string) string) string {
+	return buildIdentity(get).CSS
+}
+
+// contentHash returns a short hex digest for cache-busting stylesheet URLs.
+func contentHash(css string) string {
+	sum := sha256.Sum256([]byte(css))
+	return hex.EncodeToString(sum[:8])
+}
+
+// identityCSS builds font <link>s plus a cached stylesheet href for the stored
+// values (already read from settings); "" when nothing is set. Every value is
+// validated again here, so a hand-edited setting cannot inject markup.
+// nonce is unused (kept for call-site compatibility); identity CSS is no longer
+// an inline <style> block.
+func identityCSS(get func(key string) string, _ string) template.HTML {
+	parts := buildIdentity(get)
+	if parts.CSS == "" && len(parts.Google) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	if len(parts.Google) > 0 {
+		// Families come from identityFonts only; Google Fonts expects them unescaped.
+		q := "family=" + strings.Join(parts.Google, "&family=") + "&display=swap"
+		b.WriteString(`<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?` + template.HTMLEscapeString(q) + `">`)
+	}
+	if parts.CSS != "" {
+		b.WriteString(`<link rel="stylesheet" href="/site/identity.css?v=` + contentHash(parts.CSS) + `" data-gorun-identity>`)
+	}
 	return template.HTML(b.String())
 }

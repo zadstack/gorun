@@ -118,6 +118,17 @@ html[data-theme="default"] .default-empty { padding: 1.5rem; border-style: dashe
 html[data-theme="default"] .default-pagination { border-top: 1px solid var(--line); padding-top: 1.15rem; }
 html[data-theme="default"] .default-site-footer { margin-top: 1.5rem; }
 html[data-theme="default"] .default-site-footer > div { padding-block: 1.15rem; font-size: .8125rem; }
+
+/* Fatal template error page (500.html): no inline style=. */
+.gr-error-page {
+  font-family: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+  padding: 48px 16px;
+  text-align: center;
+}
+.gr-error-page h1 { font-size: 22px; font-weight: 700; }
+.gr-error-page p { color: var(--muted); }
+.gr-error-page a { color: var(--blue); }
+
 @media (max-width: 639px) {
   html[data-theme="default"] .default-site-header > div { gap: .375rem .75rem; }
   html[data-theme="default"] .default-site-search { flex: 1 1 100%; order: 4; }

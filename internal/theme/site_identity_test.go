@@ -18,24 +18,36 @@ func TestIdentityCSSEmptyKeepsTheme(t *testing.T) {
 }
 
 func TestIdentityCSSRendersTokensFontsAndCustomCSS(t *testing.T) {
-	got := string(identityCSS(identityGetter(map[string]string{
+	get := identityGetter(map[string]string{
 		idAccent: "#c2410c", idScheme: "dark", idHeading: "readex", idBody: "zad", idRadius: "round",
 		idCustomCSS: ".hero h1{letter-spacing:-.02em}",
-	}), "abc"))
+	})
+	css := IdentityStylesheet(get)
 	for _, want := range []string{
-		`<style nonce="abc" data-gorun-identity>`,
 		":root:root[data-theme]{",
 		"--bg:#111418;", "color-scheme:dark;", "--focus-ring:#d7dee8;",
 		"--green:#c2410c;", "--gp-accent:#c2410c;",
 		"--font-heading:'Readex Pro'", "--font:Zad,",
 		"--radius:16px;",
-		"family=Readex+Pro:wght@400;500;600;700&amp;display=swap",
 		":root:root[data-theme] body{background:var(--bg);color:var(--ink)}",
 		".hero h1{letter-spacing:-.02em}",
 	} {
-		if !strings.Contains(got, want) {
-			t.Errorf("identity CSS missing %q in:\n%s", want, got)
+		if !strings.Contains(css, want) {
+			t.Errorf("identity stylesheet missing %q in:\n%s", want, css)
 		}
+	}
+	got := string(identityCSS(get, "abc"))
+	for _, want := range []string{
+		`data-gorun-identity`,
+		`/site/identity.css?v=`,
+		"family=Readex+Pro:wght@400;500;600;700&amp;display=swap",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("identity HTML missing %q in:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "<style") {
+		t.Error("identity must use a cached <link>, not an inline <style>")
 	}
 	if strings.Contains(got, "family=Zad") {
 		t.Error("the bundled Zad font must not be requested from Google Fonts")
@@ -110,7 +122,7 @@ func TestIdentityDerivesReadableOnAccent(t *testing.T) {
 		if r := contrast(accent, got); r < 4.5 {
 			t.Errorf("identityOnAccent(%s) = %s has contrast %.2f < 4.5", accent, got, r)
 		}
-		css := string(identityCSS(identityGetter(map[string]string{idAccent: accent}), "n"))
+		css := IdentityStylesheet(identityGetter(map[string]string{idAccent: accent}))
 		mustContain(t, css, "--on-accent:"+want+";", "--gp-on-accent:"+want+";")
 	}
 	// Exhaustive over a grid of accents: never below 4.5:1.

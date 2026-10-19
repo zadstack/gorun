@@ -1,7 +1,7 @@
 {{/* Opt-in only for custom child themes / overrides — never include from shipped catalog themes.
      Local Play build (no CDN). Prefer rebuilding assets/tailwind.css (tools/tailwind/build.sh).
      Include from parts/head-extra.html: {{part "tailwind-runtime" .}}. See docs/THEMES.md. */}}
-<script src="/static/admin/vendor/tailwindcss-3.4.17.js" integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K" crossorigin="anonymous"></script>
+<script nonce="{{nonce}}" src="/static/admin/vendor/tailwindcss-3.4.17.js" integrity="sha384-igm5BeiBt36UU4gqwWS7imYmelpTsZlQ45FZf+XBn9MuJbn4nQr7yx1yFydocC/K" crossorigin="anonymous"></script>
 <script nonce="{{nonce}}">
 tailwind.config = {
   theme: {

@@ -6,11 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>{{t "error_title"}} · {{.Site.Title}}</title>
+<link rel="stylesheet" href="{{asset "tokens.css"}}">
 <link rel="stylesheet" href="{{asset "style.css"}}">
 </head>
-<body style="font-family: system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif; padding: 48px 16px; text-align: center">
-  <h1 style="font-size: 22px; font-weight: 700">{{t "error_title"}}</h1>
-  <p style="color: var(--muted)">{{t "error_body"}}</p>
-  <p><a href="{{url "/"}}" style="color: var(--blue)">{{t "back_home"}}</a></p>
+<body class="gr-error-page">
+  <h1>{{t "error_title"}}</h1>
+  <p>{{t "error_body"}}</p>
+  <p><a href="{{url "/"}}">{{t "back_home"}}</a></p>
 </body>
 </html>

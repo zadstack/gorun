@@ -171,8 +171,8 @@ func ValidateDir(dir string, roots []string, opts Options) Result {
 	if !headProvides(chain, "sections.css") {
 		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must load sections.css (own or inherited)", Path: "parts/head.html"})
 	}
-	if !headProvides(chain, "builderStyle") {
-		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call builderStyle (own or inherited)", Path: "parts/head.html"})
+	if !headProvides(chain, "builderIdentity") && !headProvides(chain, "builderStyle") {
+		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call builderIdentity or builderStyle (own or inherited)", Path: "parts/head.html"})
 	}
 	if !headProvides(chain, "identity") {
 		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call identity (own or inherited)", Path: "parts/head.html"})

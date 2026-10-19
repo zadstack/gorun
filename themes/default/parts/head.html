@@ -13,7 +13,7 @@
 {{if .Extra.commerce}}<link rel="stylesheet" href="{{asset "commerce.css"}}">{{end}}
 {{part "head-extra" .}}
 {{with .Content}}{{if eq .Template "builder"}}<link rel="stylesheet" href="/static/builder/builder.css">{{end}}{{end}}
-<style nonce="{{nonce}}">{{builderStyle}}</style>
+{{builderIdentity}}
 <link rel="stylesheet" href="{{asset "sections.css"}}">{{identity .}}
 {{/* Precompiled Tailwind (tools/tailwind/build.sh); last. No CDN/Play runtime in shipped themes. */}}
 <link rel="stylesheet" href="{{asset "tailwind.css"}}"></head>
