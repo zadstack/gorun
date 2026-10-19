@@ -16,19 +16,19 @@ CREATE TABLE admin_canvas_inbound_deliveries (
 CREATE INDEX admin_canvas_inbound_delivery_time ON admin_canvas_inbound_deliveries(created_at);
 -- A monotonic revision prevents revoke-and-restore from reviving old consent.
 CREATE TRIGGER canvas_inbound_grant_update AFTER UPDATE ON admin_canvas_grants BEGIN
- UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE board_id=NEW.board_id AND key_id=NEW.key_id;
+ UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE board_id=NEW.board_id;
 END;
 CREATE TRIGGER canvas_inbound_grant_delete AFTER DELETE ON admin_canvas_grants BEGIN
- UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE board_id=OLD.board_id AND key_id=OLD.key_id;
+ UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE board_id=OLD.board_id;
 END;
 CREATE TRIGGER canvas_inbound_grant_insert AFTER INSERT ON admin_canvas_grants BEGIN
- UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE board_id=NEW.board_id AND key_id=NEW.key_id;
+ UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE board_id=NEW.board_id;
 END;
 CREATE TRIGGER canvas_inbound_key_update AFTER UPDATE OF user_id,scopes_json,revoked_at,expires_at,kind ON api_keys BEGIN
- UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE key_id=NEW.id;
+ UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE owner_id IN(OLD.user_id,NEW.user_id) OR key_id=NEW.id;
 END;
 CREATE TRIGGER canvas_inbound_key_delete AFTER DELETE ON api_keys BEGIN
- UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE key_id=OLD.id;
+ UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE owner_id=OLD.user_id OR key_id=OLD.id;
 END;
 CREATE TRIGGER canvas_inbound_owner_update AFTER UPDATE OF role,status ON users BEGIN
  UPDATE admin_canvas_inbound SET enabled=0,status='needs_review',revision=revision+1 WHERE owner_id=NEW.id;

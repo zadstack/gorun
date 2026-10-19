@@ -1,9 +1,12 @@
 package admin_test
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/kernel"
 	"io"
 	"net/http"
 	"strconv"
@@ -35,8 +38,8 @@ func inboundHTTP(t *testing.T, s *site, path, secret, body string) int {
 func TestCanvasInboundHTTPConsentSecretRotationOwnerAndSessionBoundaries(t *testing.T) {
 	f := coreCanvasHTTPFixture(t)
 	path := "/cards/" + coreAgent + "/inbound"
-	_, out := studioJSON(t, f.s, f.path+path, map[string]any{"action": "configure", "command": "summarize"}, false)
-	if out["error"] == nil {
+	code, _ := studioJSON(t, f.s, f.path+path, map[string]any{"action": "configure", "command": "summarize"}, false)
+	if code != 403 {
 		t.Fatal("configure bypassed CSRF")
 	}
 	configured := f.post(t, path, map[string]any{"action": "configure", "command": "summarize"}, 200)
@@ -92,8 +95,45 @@ func TestCanvasInboundHTTPConsentSecretRotationOwnerAndSessionBoundaries(t *test
 		t.Fatal(response)
 	}
 	f.s.login("second-owner@example.invalid", "admin", "en")
-	code, _ := studioJSON(t, f.s, f.path+path, map[string]any{"action": "configure", "command": "steal"}, true)
+	code, _ = studioJSON(t, f.s, f.path+path, map[string]any{"action": "configure", "command": "steal"}, true)
 	if code != 404 {
 		t.Fatal("cross-owner mutation", code)
+	}
+}
+
+func TestCanvasInboundTargetRebindCannotReviveOldConsent(t *testing.T) {
+	f := coreCanvasHTTPFixture(t)
+	path := "/cards/" + coreAgent + "/inbound"
+	configured := f.post(t, path, map[string]any{"action": "configure", "command": "summarize"}, 200)
+	secret := configured["secret"].(string)
+	endpoint := configured["inbound"].(map[string]any)["endpoint_path"].(string)
+	keys, _ := kernel.Get[auth.KeyService](f.s.app.Deps, kernel.ServiceAPIKeys)
+	_, second, err := keys.CreateKind(context.Background(), auth.KeyKindAgent, "Second worker", f.owner.ID, []string{"canvas.read", "canvas.append", "canvas.run", "content.view"}, 60, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.cards[1]["agent_id"] = second.ID
+	f.save(t)
+	f.post(t, "/operations/grants", map[string]any{"agent_id": second.ID, "read": true, "append": true, "run": true, "node_ids": []string{corePrompt, coreSource}}, 200)
+	reviewed := f.post(t, path, map[string]any{"action": "review"}, 200)
+	for _, allowed := range []bool{false, true} {
+		if _, err = f.s.app.Deps.DB.Exec(`UPDATE admin_canvas_grants SET can_run=? WHERE board_id=? AND key_id=?`, allowed, f.board, second.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	f.post(t, path, map[string]any{"action": "enable", "review_token": reviewed["review_token"]}, 409)
+	reviewed = f.post(t, path, map[string]any{"action": "review"}, 200)
+	f.post(t, path, map[string]any{"action": "enable", "review_token": reviewed["review_token"]}, 200)
+	var bound string
+	if err = f.s.app.Deps.DB.QueryRow(`SELECT key_id FROM admin_canvas_inbound`).Scan(&bound); err != nil || bound != second.ID {
+		t.Fatal("stale key binding", bound, err)
+	}
+	for _, revoked := range []string{time.Now().UTC().Format(time.RFC3339), ""} {
+		if _, err = f.s.app.Deps.DB.Exec(`UPDATE api_keys SET revoked_at=? WHERE id=?`, revoked, second.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if code := inboundHTTP(t, f.s, endpoint, secret, `{"command":"summarize"}`); code != 409 {
+		t.Fatal("restored B authority revived consent", code)
 	}
 }
