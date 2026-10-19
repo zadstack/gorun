@@ -29,11 +29,11 @@
       </tbody>
     </table>
   </div>
-  <section class="rounded border border-line bg-panel p-4">
-    <h2 class="text-base font-bold mb-3">{{t "taxonomy.list.new"}}</h2>
+  <details class="rounded border border-line bg-panel p-4" {{if or .Form.FormError .Form.Errors}}open{{end}}>
+    <summary class="text-base font-bold mb-3 cursor-pointer">{{t "taxonomy.list.new"}} · {{if eq locale "ar"}}متقدم{{else}}Advanced{{end}}</summary>
     {{with .Form.FormError}}<div role="alert" class="mb-3 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
     {{template "taxonomy/settings_form" .Form}}
-  </section>
+  </details>
 </div>
 {{end}}
 

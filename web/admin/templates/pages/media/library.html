@@ -1,16 +1,19 @@
 {{define "title"}}{{t "media.title"}}{{end}}
 {{define "content"}}
+<script defer src="{{asset "media-view.js"}}"></script><link rel="stylesheet" href="{{asset "media-view.css"}}">
 <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
   <div>
     <h1 class="text-[22px] font-bold">{{t "media.title"}}</h1>
     <p class="text-muted">{{t "media.intro"}}</p>
   </div>
-  <form role="search" method="get" action="/admin/media" class="w-full sm:w-72"
+  <form role="search" method="get" action="/admin/media" class="w-full sm:w-auto grid grid-cols-2 gap-2"
         hx-get="/admin/media" hx-target="#media-results" hx-select="#media-results" hx-swap="outerHTML" hx-push-url="true"
-        hx-trigger="submit, input changed delay:300ms from:find input">
+        hx-trigger="submit, input changed delay:300ms from:find input, change">
     <label for="media-q" class="sr-only">{{t "media.search.label"}}</label>
     <input id="media-q" name="q" type="search" value="{{.Q}}" placeholder="{{t "media.search.placeholder"}}"
-           class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+           class="col-span-2 w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+<label class="text-xs">{{if eq locale "ar"}}نوع الملف{{else}}File type{{end}}<select name="kind" class="block w-full border border-line bg-panel rounded p-2"><option value="">{{if eq locale "ar"}}كل الأنواع{{else}}All types{{end}}</option><option value="image" {{if eq .Kind "image"}}selected{{end}}>{{if eq locale "ar"}}صور{{else}}Images{{end}}</option><option value="video" {{if eq .Kind "video"}}selected{{end}}>{{if eq locale "ar"}}فيديو{{else}}Video{{end}}</option><option value="audio" {{if eq .Kind "audio"}}selected{{end}}>{{if eq locale "ar"}}صوت{{else}}Audio{{end}}</option><option value="document" {{if eq .Kind "document"}}selected{{end}}>{{if eq locale "ar"}}مستندات وأرشيفات{{else}}Documents & archives{{end}}</option></select></label>
+<label class="text-xs">{{if eq locale "ar"}}حجم الملف{{else}}File size{{end}}<select name="size" class="block w-full border border-line bg-panel rounded p-2"><option value="">{{if eq locale "ar"}}كل الأحجام{{else}}All sizes{{end}}</option><option value="small" {{if eq .SizeFilter "small"}}selected{{end}}>{{if eq locale "ar"}}أقل من 1 MB{{else}}Under 1 MB{{end}}</option><option value="large" {{if eq .SizeFilter "large"}}selected{{end}}>1 MB +</option><option value="huge" {{if eq .SizeFilter "huge"}}selected{{end}}>10 MB +</option></select></label><noscript><button type="submit">{{if eq locale "ar"}}تصفية{{else}}Filter{{end}}</button></noscript>
   </form>
 </div>
 
@@ -38,14 +41,15 @@
   </div>
 </form>
 
-<section id="media-results" aria-live="polite">
+<section id="media-results" data-media-view="grid" aria-live="polite">
   {{if .Uploaded}}<div role="status" class="mb-4 rounded border border-green bg-green-soft text-green px-3 py-2">{{t "media.upload.done" .Uploaded}}</div>{{end}}
   {{range .Errors}}
   <div role="alert" class="mb-2 rounded border border-red bg-red-soft text-red px-3 py-2">{{if .Filename}}<span class="font-mono">{{.Filename}}</span> — {{end}}{{t .Key}}</div>
   {{end}}
   {{if .Items}}
   <p class="mb-2 text-xs text-muted font-mono">{{t "media.total" .Total}}</p>
-  <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+  <div class="flex gap-2 mb-3" role="group" aria-label="{{if eq locale "ar"}}طريقة العرض{{else}}Library view{{end}}"><button type="button" data-media-view-button="grid" aria-pressed="true" class="border border-line rounded px-3 min-h-11">{{if eq locale "ar"}}شبكة{{else}}Grid{{end}}</button><button type="button" data-media-view-button="list" aria-pressed="false" class="border border-line rounded px-3 min-h-11">{{if eq locale "ar"}}قائمة{{else}}List{{end}}</button></div>
+  <ul data-media-items class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
     {{range .Items}}
     <li>
       <a href="/admin/media/{{.ID}}" class="group block rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft overflow-hidden">
@@ -56,7 +60,7 @@
           <span class="block truncate font-medium">{{.Title}}</span>
           <span class="block truncate text-xs text-muted font-mono"><bdi>{{.Size}}</bdi>{{if .Dims}} · <bdi>{{.Dims}}</bdi>{{end}}</span>
         </span>
-      </a>
+      </a><button type="button" data-media-details="{{.ID}}" class="text-blue underline text-sm min-h-11 px-2">{{if eq locale "ar"}}التفاصيل{{else}}Details{{end}}</button>
     </li>
     {{end}}
   </ul>
@@ -64,13 +68,14 @@
   <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
     <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
     <div class="flex gap-2">
-      {{if .HasPrev}}<a href="/admin/media?q={{.Q}}&amp;page={{.Prev}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
-      {{if .HasNext}}<a href="/admin/media?q={{.Q}}&amp;page={{.Next}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}
+      {{if .HasPrev}}<a href="{{.PrevURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
+      {{if .HasNext}}<a href="{{.NextURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}
     </div>
   </nav>
   {{end}}
   {{else}}
-  <div class="admin-empty">{{if .Q}}{{t "media.empty_search"}}{{else}}{{t "media.empty"}}{{end}}</div>
+  <div class="admin-empty">{{if .Q}}{{t "media.empty_search"}}{{else}}{{t "media.empty"}}<p class="mt-2 text-sm">{{if eq locale "ar"}}ارفع الصور والملفات من الأعلى، ثم اخترها داخل محرر المحتوى أو إعدادات الهوية. افتح الملف لاحقًا لتعديل وصف الصورة وبياناته.{{else}}Upload images and files above, then choose them in the content editor or identity settings. Open a file later to edit its description and details.{{end}}</p>{{end}}</div>
   {{end}}
 </section>
+<dialog data-media-dialog class="rounded border border-line bg-panel text-ink p-4 w-full max-w-md max-h-[85vh] overflow-auto" aria-labelledby="media-details-title" data-title="{{if eq locale "ar"}}تفاصيل الملف{{else}}File details{{end}}" data-close="{{if eq locale "ar"}}إغلاق{{else}}Close{{end}}" data-loading="{{if eq locale "ar"}}جارٍ تحميل التفاصيل…{{else}}Loading details…{{end}}" data-error="{{if eq locale "ar"}}تعذّر تحميل التفاصيل. جرّب مجددًا.{{else}}Could not load details. Try again.{{end}}" data-edit="{{if eq locale "ar"}}تعديل الوصف والبيانات{{else}}Edit description and metadata{{end}}" data-alt="{{if eq locale "ar"}}النص البديل{{else}}Alternative text{{end}}" data-caption="{{if eq locale "ar"}}الوصف{{else}}Caption{{end}}"></dialog>
 {{end}}

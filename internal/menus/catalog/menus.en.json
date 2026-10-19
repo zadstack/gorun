@@ -18,7 +18,7 @@
   "field.locale_help": "A location can hold one menu per language; pages in a language without its own menu use the one for every language.",
   "field.location": "Location",
   "field.location_none": "Not assigned",
-  "location.primary": "Primary",
+  "location.primary": "Header navigation",
   "location.footer": "Footer",
   "edit.title": "Edit menu",
   "edit.back": "All menus",

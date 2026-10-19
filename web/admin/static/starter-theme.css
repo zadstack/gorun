@@ -21,3 +21,5 @@
 .theme-technical dd {min-width:0;overflow-wrap:anywhere}
 @media(max-width:640px) {.starter-form>fieldset:not(:first-of-type){padding:1rem}.starter-choice-body{padding-block:1rem}.starter-primary{width:100%}}
 @media(prefers-reduced-motion:reduce) {.starter-design{transition:none}}
+
+[data-wizard-step][hidden],[data-preview-fallback][hidden],[data-starter-preview][hidden]{display:none!important}[data-wizard-nav]{display:flex;flex-wrap:wrap;gap:.5rem}[data-wizard-nav] button{min-height:44px;padding:.5rem;border:1px solid var(--line);border-radius:var(--radius)}[data-wizard-nav] [aria-current=step]{border-color:var(--green);color:var(--green)}.starter-preview-fallback{aspect-ratio:8/5;align-content:center;background:var(--panel-2)}

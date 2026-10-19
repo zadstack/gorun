@@ -1,5 +1,6 @@
 {{define "title"}}{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{.Item.Title}}{{end}}{{end}}
 {{define "content"}}
+<link rel="stylesheet" href="{{asset "content-ux.css"}}"><script defer src="{{asset "content-ux.js"}}"></script>
 {{/* $ai: the AI writing helper is configured (a non-empty ai.provider is only saved with a model and a key)
      and the type has a body to work from. */}}
 {{$ai := and .Supports.body (setting "ai.provider")}}
@@ -8,9 +9,9 @@
   <a href="{{.ListURL}}" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "arrow-left" "w-4 h-4 rtl:rotate-180"}}<span>{{t "content.editor.back"}}</span></a>
   <h1 class="text-[22px] font-bold mt-1" dir="auto">{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{t "content.editor.edit" .TypeName}}{{end}}</h1>
 </div>
-{{if and (not .IsNew) (eq .Type.Slug "page")}}<a href="/admin/builder/{{.Item.ID}}" class="inline-flex border border-line px-3 py-2 mb-4 text-blue">{{t "builder.open"}}</a>{{end}}
+{{if and (not .IsNew) (eq .Type.Slug "page")}}<p class="content-page-path border border-line p-3 mb-3">{{t "content.ux.page_paths"}}</p><a href="/admin/builder/{{.Item.ID}}" class="inline-flex border border-line px-3 py-2 mb-4 text-blue">{{t "builder.open"}}</a>{{end}}
 {{with .FormError}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
-<form method="post" action="{{.Action}}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate>
+<form method="post" action="{{.Action}}" data-content-editor data-was-published="{{if eq .Item.Status "published"}}true{{else}}false{{end}}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   {{if not .IsNew}}<input type="hidden" name="edit_token" value="{{.EditToken}}"><input type="hidden" name="terms_token" value="{{.TermsToken}}">{{end}}
   <div class="space-y-4 min-w-0">
@@ -55,8 +56,8 @@
     {{end}}
 
     {{if .Supports.seo}}
-    <section class="rounded border border-line bg-panel p-4 space-y-3" x-data="{ st: '', sd: '' }" x-init="st = $refs.st.value; sd = $refs.sd.value">
-      <h2 class="text-base font-bold mb-3">{{t "content.seo.title"}}</h2>
+    <details class="content-secondary rounded border border-line bg-panel p-4 space-y-3" {{if or .Errors .SEODrift}}open{{end}} x-data="{ st: '', sd: '' }" x-init="st = $refs.st.value; sd = $refs.sd.value">
+      <summary class="text-base font-bold mb-3">{{t "content.seo.title"}}</summary>
       {{range .SEODrift}}<p class="rounded border border-line bg-bg px-3 py-2 text-sm" role="status" data-seo-drift="{{.}}">{{if eq . "title"}}{{t "content.seo.drift_title"}}{{else}}{{t "content.seo.drift_description"}}{{end}}</p>{{end}}
       <div>
         <label for="seo-title" class="block font-medium mb-1">{{t "content.seo.meta_title"}}</label>
@@ -90,13 +91,13 @@
         <p class="text-blue text-base" dir="auto" x-text="st || $root.closest('form').querySelector('#title').value"></p>
         <p class="text-muted text-sm" dir="auto" x-text="sd"></p>
       </div>
-    </section>
+    </details>
     {{end}}
   </div>
 
   <aside class="space-y-4">
-    <section class="rounded border border-line bg-panel p-4 space-y-3">
-      <h2 class="text-base font-bold mb-3">{{t "content.publish.title"}}</h2>
+    <section class="content-publish-panel rounded border border-line bg-panel p-4 space-y-3">
+      <h2 class="text-base font-bold mb-3">{{t "content.publish.title"}}</h2><p data-save-state role="status" data-clean="{{t "content.ux.saved_state"}}" data-dirty="{{t "content.ux.unsaved_state"}}">{{t "content.ux.saved_state"}}</p><p class="text-muted text-sm">{{if eq .Item.Status "published"}}{{t "content.ux.live_help"}}{{else}}{{t "content.ux.save_help"}}{{end}}</p>
       <div>
         <label for="status" class="block font-medium mb-1">{{t "content.list.status"}}</label>
         <select id="status" name="status" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
@@ -112,8 +113,8 @@
       </div>
       {{if not .IsNew}}<p class="text-xs text-muted">{{t "content.publish.updated"}} <span class="font-mono">{{date .Item.UpdatedAt}}</span>{{if .Item.PublishedAt}} · {{t "content.publish.published"}} <span class="font-mono">{{date .Item.PublishedAt}}</span>{{end}}</p>{{end}}
       <div class="flex flex-wrap gap-2 pt-1">
-        <button type="submit" name="intent" value="save" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center justify-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft flex-1">{{icon "save"}}<span>{{t "content.publish.save"}}</span></button>
-        {{if .CanPublish}}<button type="submit" name="intent" value="publish" class="h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center justify-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft flex-1">{{icon "send"}}<span>{{if eq .Item.Status "published"}}{{t "content.publish.update"}}{{else}}{{t "content.publish.publish"}}{{end}}</span></button>{{end}}
+        <button type="submit" name="intent" value="save" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center justify-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft flex-1">{{icon "save"}}<span data-save-label data-published="{{t "content.ux.update_live"}}" data-draft="{{t "content.ux.save_draft"}}" data-unpublish="{{t "content.ux.save_unpublish"}}" data-other="{{t "content.ux.save_status"}}">{{if eq .Item.Status "published"}}{{t "content.ux.update_live"}}{{else}}{{t "content.ux.save_status"}}{{end}}</span></button>
+        {{if and .CanPublish (ne .Item.Status "published")}}<button type="submit" name="intent" value="publish" class="h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center justify-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft flex-1">{{icon "send"}}<span>{{if eq .Item.Status "published"}}{{t "content.publish.update"}}{{else}}{{t "content.publish.publish"}}{{end}}</span></button>{{end}}
       </div>
       {{if and (not .IsNew) .CanDelete}}
       <div class="pt-2 border-t border-line">
@@ -211,7 +212,7 @@
     {{end}}
   </aside>
 </form>
-{{if .Supports.body}}{{template "content/studio" .}}{{end}}
+{{if .Supports.body}}<details class="content-secondary"><summary>{{t "content.ux.studio"}}</summary>{{template "content/studio" .}}</details>{{end}}
 {{/* Outside the form: the picker body has its own search and upload forms. */}}
 {{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}
 {{end}}

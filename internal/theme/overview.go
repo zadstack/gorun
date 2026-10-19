@@ -34,7 +34,7 @@ const (
 // Label is shown as is; LabelKey (when set) is translated in the template.
 type overviewPage struct {
 	URL, Path, Label, LabelKey string
-	ContentID                  string
+	ContentID, EditURL, Status string
 }
 
 type overviewGroup struct {
@@ -210,8 +210,10 @@ func (a *admin) overviewGroups(ctx context.Context) ([]overviewGroup, error) {
 		switch {
 		case e.Item != nil:
 			p.Label = e.Item.Title
+			p.Status = string(e.Item.Status)
 			if assistantTypes[e.Item.Type] && e.Item.Status != "trash" && ((user.Role != "author" && user.Role != "contributor") || e.Item.AuthorID == user.ID) {
 				p.ContentID = e.Item.ID
+				p.EditURL = "/admin/content/" + url.PathEscape(e.Item.Type) + "/" + url.PathEscape(e.Item.ID)
 			}
 			put(overviewGroup{ID: "type-" + e.Item.Type, Label: or(types[e.Item.Type], e.Item.Type)}, p)
 		case e.Term != nil:

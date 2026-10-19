@@ -1,0 +1,5 @@
+{{define "title"}}{{t "websiteux.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-2">{{t "websiteux.title"}}</h1><p class="text-muted mb-6 max-w-3xl">{{t "websiteux.intro"}}</p>
+<div class="grid gap-4 lg:grid-cols-3">{{range .Groups}}<section data-website-group="{{.Key}}" class="border border-line bg-panel rounded p-4"><h2 class="font-bold text-lg mb-3">{{t (printf "websiteux.%s" .Key)}}</h2><ul class="space-y-2">{{range .Links}}<li><a class="flex items-center gap-2 min-h-11 text-blue underline" href="{{.Href}}">{{icon .Icon}}{{t .LabelKey}}</a></li>{{end}}</ul></section>{{end}}</div>
+{{end}}

@@ -24,7 +24,9 @@ import (
 const adminPerPage = 20
 
 type listRow struct {
+	ParentID                                    string
 	ID, Title, Slug, Status, UpdatedAt, EditURL string
+	Locale, AuthorName, ParentTitle             string
 }
 
 type listView struct {
@@ -33,9 +35,14 @@ type listView struct {
 	BaseURL              string
 	Rows                 []listRow
 	Search, Status       string
+	Locale, Author, View string
+	Authors              []choice
 	Statuses             []Status
 	Links                pageLinks
 	CanCreate, CanDelete bool
+	Tree, TreeTruncated  bool
+	TreeURL, TableURL    string
+	TreeRoots            []*contentTreeNode
 }
 
 func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
@@ -51,30 +58,109 @@ func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
 	if q.Status != "" && !slices.Contains(Statuses, Status(q.Status)) {
 		q.Status = ""
 	}
-	if u := auth.UserFromContext(ctx); ownOnly(u) {
+	view := qs.Get("view")
+	if view != "mine" && view != "review" {
+		view = ""
+	}
+	if lang := qs.Get("locale"); lang == "ar" || lang == "en" {
+		q.Locale = lang
+	}
+	u := auth.UserFromContext(ctx)
+	if ownOnly(u) || view == "mine" {
 		q.AuthorID = u.ID
+	} else {
+		q.AuthorID = qs.Get("author")
+	}
+	if view == "mine" {
+		q.Status = "draft"
+	}
+	if view == "review" {
+		q.Status = "pending"
+	}
+	tree := t.Hierarchical && qs.Get("layout") == "tree"
+	if tree {
+		q.Page = 1
+		q.PerPage = 100
+		q.Order = []Order{{By: "menu_order", Dir: "asc"}, {By: "title", Dir: "asc"}}
 	}
 	res, err := h.svc.Query(ctx, q)
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
+	if tree {
+		for page := 2; len(res.Items) < res.Total && page <= 5; page++ {
+			q.Page = page
+			next, e := h.svc.Query(ctx, q)
+			if e != nil {
+				h.fail(w, r, e)
+				return
+			}
+			res.Items = append(res.Items, next.Items...)
+			if len(next.Items) == 0 {
+				break
+			}
+		}
+	}
 	locale := i18n.Locale(ctx)
 	base := "/admin/content/" + t.Slug
 	v := listView{Type: t, TypeName: localized(t.Singular, locale, localized(t.Name, locale, t.Slug)), PluralName: localized(t.Plural, locale, localized(t.Name, locale, t.Slug)),
-		BaseURL: base, Search: q.Search, Status: q.Status, Statuses: Statuses,
-		CanCreate: auth.Can(ctx, "content.create"), CanDelete: auth.Can(ctx, "content.delete")}
+		BaseURL: base, Search: q.Search, Status: q.Status, Statuses: Statuses, Locale: q.Locale, Author: q.AuthorID, View: view,
+		CanCreate: auth.Can(ctx, "content.create"), CanDelete: auth.Can(ctx, "content.delete"), Tree: tree, TreeTruncated: tree && res.Total > len(res.Items)}
+	if !ownOnly(u) {
+		rows, err := h.d.DB.QueryContext(ctx, `SELECT DISTINCT u.id,u.name FROM users u JOIN content c ON c.author_id=u.id WHERE c.type=? ORDER BY u.name,u.id`, t.Slug)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id, name string
+				if rows.Scan(&id, &name) == nil {
+					if name == "" {
+						name = "—"
+					}
+					v.Authors = append(v.Authors, choice{Value: id, Label: name, Selected: id == q.AuthorID})
+				}
+			}
+		}
+	}
 	filters := url.Values{}
+	for k, val := range map[string]string{"locale": q.Locale, "author": q.AuthorID, "view": view} {
+		if val != "" {
+			filters.Set(k, val)
+		}
+	}
 	if q.Search != "" {
 		filters.Set("search", q.Search)
 	}
 	if q.Status != "" {
 		filters.Set("status", q.Status)
 	}
-	v.Links = newPageLinks(base, filters, res.Page, res.PerPage, res.Total)
+	v.TableURL = base + "?" + filters.Encode()
+	filters.Set("layout", "tree")
+	v.TreeURL = base + "?" + filters.Encode()
+	if !tree {
+		filters.Del("layout")
+		v.Links = newPageLinks(base, filters, res.Page, res.PerPage, res.Total)
+	}
+	authorNames := map[string]string{}
+	for _, author := range v.Authors {
+		authorNames[author.Value] = author.Label
+	}
+	authorNames[u.ID] = u.Name
 	for _, it := range res.Items {
-		v.Rows = append(v.Rows, listRow{ID: it.ID, Title: it.Title, Slug: it.Slug, Status: string(it.Status), UpdatedAt: it.UpdatedAt,
+		authorName := authorNames[it.AuthorID]
+		parentTitle := ""
+		if !tree && it.ParentID != "" {
+			if parent, err := h.svc.Get(ctx, it.ParentID); err == nil {
+				if !ownOnly(u) || parent.AuthorID == u.ID {
+					parentTitle = parent.Title
+				}
+			}
+		}
+		v.Rows = append(v.Rows, listRow{ParentID: it.ParentID, Locale: it.Locale, AuthorName: authorName, ParentTitle: parentTitle, ID: it.ID, Title: it.Title, Slug: it.Slug, Status: string(it.Status), UpdatedAt: it.UpdatedAt,
 			EditURL: base + "/" + it.ID})
+	}
+	if tree {
+		v.TreeRoots = contentTree(v.Rows, v.CanDelete)
 	}
 	h.tpl.Render(w, r, "pages/content/list.html", v)
 }

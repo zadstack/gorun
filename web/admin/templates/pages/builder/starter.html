@@ -21,10 +21,11 @@
 <a href="/admin/site-builder" class="block underline">{{t "starters.another"}}</a>
 </section>
 {{else}}
-<form method="post" action="/admin/site-builder" class="starter-form space-y-6 max-w-6xl">
+<form method="post" action="/admin/site-builder" data-starter-wizard class="starter-form space-y-6 max-w-6xl">
+<nav data-wizard-nav hidden aria-label="{{if $ar}}خطوات إعداد الموقع{{else}}Site setup steps{{end}}" data-next="{{if $ar}}التالي{{else}}Next{{end}}" data-back="{{if $ar}}السابق{{else}}Back{{end}}"></nav>
 <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="token" value="{{.Form.Token}}">
-<fieldset><legend class="font-bold mb-3">1 · {{t "starters.choose"}}</legend><div class="grid gap-3 md:grid-cols-3">{{range .Choices}}<label class="starter-design border border-line bg-panel cursor-pointer"><img src="{{.Preview}}" alt="{{.Name}}" loading="lazy" width="1280" height="800"><span class="starter-choice-body block p-4"><input data-identity="{{json .Identity}}" type="radio" name="starter" value="{{.ID}}" {{if eq $.Form.Starter .ID}}checked{{end}} required><strong class="block my-2">{{.Name}}</strong><span class="text-sm text-muted">{{.Description}}</span></span></label>{{end}}</div></fieldset>
-<fieldset class="border border-line p-4 space-y-4"><legend class="font-bold px-2">2 · {{if $ar}}عرّف بمشروعك{{else}}Introduce your project{{end}}</legend>
+<fieldset data-wizard-step="0"><legend class="font-bold mb-3">1 · {{t "starters.choose"}}</legend><div class="grid gap-3 md:grid-cols-3">{{range .Choices}}<label class="starter-design border border-line bg-panel cursor-pointer"><img data-starter-preview src="{{.Preview}}" alt="{{.Name}}" loading="lazy" width="1280" height="800"><span data-preview-fallback hidden class="starter-preview-fallback p-4">{{.Name}} · {{.Description}}</span><span class="starter-choice-body block p-4"><input data-identity="{{json .Identity}}" type="radio" name="starter" value="{{.ID}}" {{if eq $.Form.Starter .ID}}checked{{end}} required><strong class="block my-2">{{.Name}}</strong><span class="text-sm text-muted">{{.Description}}</span></span></label>{{end}}</div></fieldset>
+<div data-wizard-step="1"><fieldset class="border border-line p-4 space-y-4"><legend class="font-bold px-2">2 · {{if $ar}}عرّف بمشروعك{{else}}Introduce your project{{end}}</legend>
 <div class="grid gap-4 md:grid-cols-2">
 <label class="block">{{t "starters.name"}}<input name="title" required maxlength="200" value="{{.Form.Title}}" class="block w-full bg-panel border border-line px-3 py-2 mt-1"></label>
 <label class="block">{{t "starters.locale"}}<select name="locale" class="block w-full bg-panel border border-line px-3 py-2 mt-1"><option value="ar" {{if eq .Form.Locale "ar"}}selected{{end}}>العربية</option><option value="en" {{if eq .Form.Locale "en"}}selected{{end}}>English</option></select></label>
@@ -34,7 +35,7 @@
 <p id="starter-description-help" class="text-sm text-muted">{{if $ar}}ماذا تقدم ولمن؟ يظهر الوصف في الرئيسية ووصف الصفحة لمحركات البحث.{{else}}What do you offer, and to whom? This appears on the home page and in its search description.{{end}}</p>
 <label class="block">{{if $ar}}نبذة وقصة المشروع (اختياري){{else}}About your project (optional){{end}}<textarea name="about" maxlength="6000" rows="5" class="block w-full bg-panel border border-line px-3 py-2 mt-1">{{.Form.About}}</textarea></label>
 </fieldset>
-<fieldset class="border border-line p-4 space-y-3"><legend class="font-bold px-2">3 · {{if $ar}}الخدمات أو الموضوعات{{else}}Services or topics{{end}}</legend>
+<details class="border border-line p-4"><summary>{{if $ar}}تفاصيل إضافية اختيارية{{else}}Optional details{{end}}</summary><fieldset class="border border-line p-4 space-y-3"><legend class="font-bold px-2">3 · {{if $ar}}الخدمات أو الموضوعات{{else}}Services or topics{{end}}</legend>
 <label class="block">{{if $ar}}اكتب من خدمة أو موضوع واحد إلى 6، كل منها في سطر (اختياري){{else}}List 1 to 6 services or topics, one per line (optional){{end}}<textarea name="services" rows="6" maxlength="800" class="block w-full bg-panel border border-line px-3 py-2 mt-1" aria-describedby="starter-services-help">{{.Form.Services}}</textarea></label>
 <p id="starter-services-help" class="text-sm text-muted">{{if $ar}}كل سطر يصبح عنوان خدمة. للمجلة، اكتب الموضوعات التي تغطيها. اتركه فارغًا للاحتفاظ بالأمثلة القابلة للتعديل.{{else}}Each line becomes an offering title. For a magazine, list the subjects you cover. Leave it empty to keep editable examples.{{end}}</p>
 </fieldset>
@@ -55,8 +56,8 @@
 <label>{{t "starters.font"}}<select name="font" class="block w-full mt-2 bg-panel border border-line px-2 py-2"><option value="zad" {{if eq .Form.Font "zad"}}selected{{end}}>Zad · زاد</option><option value="system" {{if eq .Form.Font "system"}}selected{{end}}>{{t "starters.system"}}</option><option value="serif" {{if eq .Form.Font "serif"}}selected{{end}}>{{t "starters.serif"}}</option><option value="mono" {{if eq .Form.Font "mono"}}selected{{end}}>{{t "starters.mono"}}</option></select></label>
 <label>{{t "starters.width"}}<select name="width" class="block w-full mt-2 bg-panel border border-line px-2 py-2"><option value="narrow" {{if eq .Form.Width "narrow"}}selected{{end}}>{{t "starters.narrow"}}</option><option value="standard" {{if eq .Form.Width "standard"}}selected{{end}}>{{t "starters.standard"}}</option><option value="wide" {{if eq .Form.Width "wide"}}selected{{end}}>{{t "starters.wide"}}</option></select></label>
 </div></fieldset>
-<p class="text-muted text-sm">{{t "starters.draft_notice"}}</p>
-<button type="submit" class="starter-primary bg-green px-4 py-2 font-semibold">{{t "starters.create"}}</button>
+</details></div><section data-wizard-step="2" class="border border-line bg-panel p-4"><h2 class="font-bold">{{if $ar}}3 · راجع ثم أنشئ المسودة{{else}}3 · Review and create drafts{{end}}</h2><dl data-wizard-review class="space-y-2 my-4"></dl><p class="text-muted text-sm">{{t "starters.draft_notice"}}</p>
+<button type="submit" class="starter-primary bg-green px-4 py-2 font-semibold">{{t "starters.create"}}</button></section>
 </form>
 {{if .Logo.CanPick}}{{template "partials/media_picker.html" .}}{{end}}
 {{end}}
