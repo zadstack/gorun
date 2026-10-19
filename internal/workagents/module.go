@@ -42,12 +42,14 @@ func (m *Module) Register(d *kernel.Deps) error {
 	d.Perms.Declare("workagents.manage", map[string]string{"en": "Manage agent workflows", "ar": "إدارة الإيجنتس والفلوهات"})
 	d.Perms.Declare("workagents.read", map[string]string{"en": "Read owned agents", "ar": "قراءة الإيجنتس المملوكة"})
 	d.Perms.Declare("workagents.run", map[string]string{"en": "Run owned agents", "ar": "تشغيل الإيجنتس المملوكة"})
-	d.Admin.AddNav(kernel.NavItem{ID: "workagents.workspace", LabelKey: "workagents.title", Icon: "bot", Href: "/agents", Permission: "workagents.manage", Group: "system", Position: 28})
+	d.Admin.AddNav(kernel.NavItem{ID: "workagents.workspace", LabelKey: "workagents.title", Icon: "bot", Href: "/admin/workagents", Permission: "workagents.manage", Group: "system", Position: 28})
 	d.Jobs.Register(jobKind, s.execute, 1)
 	d.Jobs.Cron("workagents.schedules", 30*time.Second, s.schedule)
 	d.Jobs.Cron("workagents.linear", 30*time.Second, s.tickLinearFlows)
 	d.Hooks.Filter("system.health.checks", 50, s.healthChecks)
-	h := &handlers{s: s, tpl: tpl}
+	adminTpl, _ := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates)
+	h := &handlers{s: s, tpl: tpl, adminTpl: adminTpl}
+	d.Router.Admin.With(auth.RequirePerm("workagents.manage")).Get("/workagents", h.page)
 	d.Router.Public.Group(func(r chi.Router) {
 		r.Use(auth.CSRFMiddleware())
 		r.Get("/agents", h.page)
@@ -70,8 +72,9 @@ func (m *Module) Register(d *kernel.Deps) error {
 }
 
 type handlers struct {
-	s   *service
-	tpl *template.Template
+	s        *service
+	tpl      *template.Template
+	adminTpl *httpx.Templates
 }
 type archived struct {
 	ID         string `json:"id"`
@@ -104,6 +107,11 @@ func (s *service) archive(r *http.Request, approvals bool) ([]archived, error) {
 func (h *handlers) page(w http.ResponseWriter, r *http.Request) {
 	if owner(r.Context()) == "" {
 		http.Redirect(w, r, "/account?next=/agents", 303)
+		return
+	}
+	if manager(r.Context()) && h.adminTpl != nil && r.URL.Path != "/admin/workagents" {
+		w.Header().Set("Cache-Control", "no-store")
+		http.Redirect(w, r, "/admin/workagents", http.StatusSeeOther)
 		return
 	}
 	a, e := h.s.agents(r.Context())
@@ -165,6 +173,10 @@ func (h *handlers) page(w http.ResponseWriter, r *http.Request) {
 	}{a, runs, workflows, artifacts, approvals, auth.CSRFToken(r.Context()), manager(r.Context()), owners}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
+	if data.Manage && h.adminTpl != nil {
+		h.adminTpl.Render(w, r, "pages/workagents/workspace.html", data)
+		return
+	}
 	if e = h.tpl.Execute(w, data); e != nil {
 		h.s.d.Log.Error("workagents page render failed", "err", e)
 	}

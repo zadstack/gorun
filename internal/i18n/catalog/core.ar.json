@@ -54,5 +54,8 @@
   "nav.section.team": "الفريق والأدوار",
   "nav.section.other": "أدوات أخرى",
   "nav.section.pages": "صفحات هذا القسم",
-  "nav.section.categories": "تصنيفات القسم"
+  "nav.section.categories": "تصنيفات القسم",
+  "nav.group.site-pages": "الصفحات والتنقل",
+  "nav.group.site-design": "التصميم",
+  "nav.group.site-search": "البحث والجاهزية"
 }
