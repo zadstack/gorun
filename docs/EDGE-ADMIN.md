@@ -53,7 +53,7 @@ Select a dedicated account, Worker, D1 and private R2 bucket according to [the E
 npm run owner -- init --remote --config wrangler.production.jsonc --site demo
 ```
 
-This only provisions the selected site's owner. It does not deploy or enable administration. Privately configure a generated `EDGE_ADMIN_SECRET`, `EDGE_ADMIN_ENABLED=true` and the exact public HTTPS `EDGE_ADMIN_ORIGIN`; omit `EDGE_ADMIN_LOCAL`. Set the secret through Wrangler's secret input, never a committed variable or command argument. Deploy only after reviewing the selected account/resources. Verify `/admin/login`, secure cookie flags, login, private draft, stale save, exact review/publication, Arabic mobile, export isolation, unpublish, recovery/session revocation and logout over actual HTTPS.
+Remote reads use Wrangler's query protocol, while credential-hash mutations use private SQL files. Import progress/metadata is never interpreted as query rows; the tool privately verifies the resulting epoch and generated key hash before issuing a credential. This only provisions the selected site's owner. It does not deploy or enable administration. Privately configure a generated `EDGE_ADMIN_SECRET`, `EDGE_ADMIN_ENABLED=true` and the exact public HTTPS `EDGE_ADMIN_ORIGIN`; omit `EDGE_ADMIN_LOCAL`. Set the secret through Wrangler's secret input, never a committed variable or command argument. Deploy only after reviewing the selected account/resources. Verify `/admin/login`, secure cookie flags, login, private draft, stale save, exact review/publication, Arabic mobile, export isolation, unpublish, recovery/session revocation and logout over actual HTTPS.
 
 An opt-in browser helper accepts credentials only through a private mode-0600 file:
 

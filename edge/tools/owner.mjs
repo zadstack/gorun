@@ -12,12 +12,12 @@ if(!['init','recover','revoke'].includes(command)||local===remote||!/^[a-z0-9][a
 const pkg=JSON.parse(await readFile('package.json','utf8'));if(pkg.name!=='gorun-edge-readonly-poc')throw Error('Run from the standalone edge/ directory');
 const quote=s=>"'"+s.replaceAll("'","''")+"'";
 const privateDir=await mkdtemp(join(tmpdir(),'gorun-edge-owner-'));let sequence=0;
-async function sql(command) {
+async function sql(command,query=false) {
  const file=join(privateDir,`${sequence++}.sql`);await writeFile(file,command,{mode:0o600});
- try {const r=spawnSync(process.execPath,['node_modules/wrangler/bin/wrangler.js','d1','execute','DB',local?'--local':'--remote','--json','--file',file,...(config?['--config',config]:[])],{encoding:'utf8',env:{...process.env,WRANGLER_SEND_METRICS:'false'},maxBuffer:1024*1024});if(r.status!==0)throw Error('D1 command failed; no credential issued. Check the selected Edge database and migrations.');return JSON.parse(r.stdout);}finally{await unlink(file);}
+ try {const input=remote&&query?['--command',command]:['--file',file];const r=spawnSync(process.execPath,['node_modules/wrangler/bin/wrangler.js','d1','execute','DB',local?'--local':'--remote','--json',...input,...(config?['--config',config]:[])],{encoding:'utf8',env:{...process.env,WRANGLER_SEND_METRICS:'false'},maxBuffer:1024*1024});if(r.status!==0)throw Error('D1 command failed; no credential issued. Check the selected Edge database and migrations.');return remote&&!query?null:JSON.parse(r.stdout);}finally{await unlink(file);}
 }
 function rows(output){return output.flatMap(x=>x.results??[]);}
-const existing=rows(await sql(`SELECT auth_epoch FROM edge_owners WHERE site_id=${quote(site)};`));
+const existing=rows(await sql(`SELECT auth_epoch,key_hash FROM edge_owners WHERE site_id=${quote(site)};`,true));
 let newConfig=false;
 try {
  let raw,keyHash;
@@ -32,7 +32,17 @@ try {
  if(command!=='init'&&existing.length!==1)throw Error('No owner exists for selected site');
  const epoch=existing[0]?.auth_epoch;
  const statement=command==='init'?`INSERT INTO edge_owners(site_id,key_hash) VALUES(${quote(site)},${quote(keyHash)}) ON CONFLICT(site_id) DO NOTHING RETURNING auth_epoch;`:`UPDATE edge_owners SET auth_epoch=auth_epoch+1${command==='recover'?`,key_hash=${quote(keyHash)},active=1`:''} WHERE site_id=${quote(site)} AND auth_epoch=${Number(epoch)} RETURNING auth_epoch;`;
- const changed=rows(await sql(statement));if(changed.length!==1)throw Error('Owner changed concurrently; no credential issued. Rerun from the current state.');
+ let changed;
+ if(remote) {
+  // Remote --file uses D1 import: output is progress/metadata, never query rows.
+  // Only this static public-site SELECT is placed on argv. Hashes stay captured.
+  await sql(statement.replace(/ RETURNING auth_epoch;$/,';'));
+  changed=rows(await sql(`SELECT auth_epoch,key_hash FROM edge_owners WHERE site_id=${quote(site)};`,true));
+  const expectedEpoch=command==='init'?1:Number(epoch)+1;
+  const expectedHash=command==='revoke'?existing[0].key_hash:keyHash;
+  if(changed.length!==1||changed[0].auth_epoch!==expectedEpoch||changed[0].key_hash!==expectedHash)changed=[];
+ } else changed=rows(await sql(statement));
+ if(changed.length!==1)throw Error('Owner changed concurrently; no credential issued. Rerun from the current state.');
  newConfig=false;
  console.log(`Owner ${command} succeeded for site ${site}; current auth epoch ${changed[0].auth_epoch}. Content is unchanged.`);
  if(raw)console.log(`Owner access key (shown once; save privately): ${raw}`);
