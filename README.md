@@ -94,6 +94,8 @@ Connect an MCP client with an **AI agent** key. Its scopes are bounded by its ow
 
 Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish content automatically. Configure your provider or agent connection before running it.
 
+Each agent or provider card shows its own ID and selected agent/provider identity, with a signed webhook matched to a saved command and reviewed instructions. Incoming-event rules start disabled and require explicit review and enablement; external agents still need their MCP client running. [Configure canvas events](docs/CANVASES.md#incoming-events-on-agent-and-provider-cards).
+
 ### A campaign, from brief to review
 
 **1. Choose the context.** Bring an approved product story and a bilingual campaign brief onto the canvas. Connect only those cards to your named assistant.

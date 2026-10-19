@@ -1,0 +1,27 @@
+.canvas-inbound-card{display:grid;gap:.35rem;padding:.5rem .625rem;border-bottom:1px solid var(--cv-line);background:var(--cv-bg)}
+.canvas-inbound-line{display:grid;grid-template-columns:minmax(4.5rem,auto) minmax(0,1fr) auto;align-items:center;gap:.4rem;min-width:0;font-size:.6875rem}
+.canvas-inbound-line>span:first-child{color:var(--cv-muted)}
+.canvas-inbound-line code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:text;font-size:.6875rem;max-width:100%}
+.canvas-inbound-line button{min-height:32px;min-width:36px;padding:.2rem .35rem;font-size:.6875rem;border-radius:4px}
+.canvas-inbound-card>button{justify-self:start;min-height:34px;font-size:.75rem;padding:.3rem .5rem}
+.canvas-inbound-state{font-size:.6875rem;color:var(--cv-muted)}
+.canvas-inbound-state[data-inbound-state=enabled]{color:#236a4c}
+.canvas-inbound-prompt-preview{font-size:.75rem;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;margin:.15rem 0}
+.canvas-inbound-dialog,.canvas-inbound-secret{width:min(44rem,calc(100vw - 2rem));max-height:90vh;padding:1rem;overflow:auto}
+.canvas-inbound-dialog>header{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-bottom:1rem}
+.canvas-inbound-dialog h2,.canvas-inbound-secret h2{font-weight:650;font-size:1.125rem;margin:0}
+.canvas-inbound-dialog>label,.canvas-inbound-secret>label{display:grid;gap:.4rem;font-size:.875rem;margin-block:1rem}
+.canvas-inbound-dialog input:not([type=checkbox]),.canvas-inbound-dialog textarea,.canvas-inbound-secret textarea{box-sizing:border-box;width:100%;padding:.625rem;border:1px solid var(--cv-line);border-radius:6px;background:var(--cv-bg)}
+.canvas-inbound-dialog p,.canvas-inbound-secret p{font-size:.8125rem;line-height:1.65;margin-block:.5rem;overflow-wrap:anywhere}
+.canvas-inbound-summary{display:grid;gap:.5rem;padding:.75rem;border:1px solid var(--cv-line);border-radius:6px}
+.canvas-inbound-controls{display:flex;flex-wrap:wrap;gap:.5rem;margin-block:1rem}
+.canvas-inbound-dialog button,.canvas-inbound-secret button{min-height:40px;padding:.4rem .625rem;border:1px solid var(--cv-line);border-radius:5px}
+.canvas-inbound-hint button{display:block;margin-block:.375rem;text-align:start}
+.canvas-inbound-error{color:#9b2c2c}
+.canvas-inbound-review{padding:.75rem;border:1px solid var(--cv-line);border-radius:6px}
+.canvas-inbound-review h3{font-size:.875rem;font-weight:650;margin-block:.5rem}
+.canvas-inbound-review pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:14rem;overflow:auto;font-size:.75rem;background:#f4f6f8;padding:.625rem;border-radius:4px}
+.canvas-inbound-review>label{display:flex;align-items:flex-start;gap:.5rem;margin-block:1rem;font-size:.8125rem;line-height:1.6}
+.canvas-inbound-review input[type=checkbox]{flex:none;width:20px;height:20px;margin-block-start:.2rem}
+.canvas-inbound-secret textarea{font-family:monospace;font-size:.875rem;user-select:all}
+@media(max-width:767px){.canvas-inbound-card button{min-height:44px}.canvas-inbound-dialog,.canvas-inbound-secret{width:calc(100vw - 1rem);max-height:94dvh;padding:.75rem}.canvas-inbound-controls>button{flex:1 1 45%;min-height:44px}.canvas-inbound-line{grid-template-columns:5rem minmax(0,1fr) auto}.canvas-inbound-card .canvas-inbound-line{grid-template-columns:4.5rem minmax(0,1fr) auto}}

@@ -21,6 +21,7 @@ test('capture current README product screens with synthetic campaign data', asyn
   const errors: string[]=[];
   page.on('pageerror',e=>errors.push(e.message));
   async function shot(name:string,fullPage=false) {
+    if(process.env.README_CANVAS_ONLY==='1'&&!name.startsWith('canvas-'))return;
     await page.waitForLoadState('networkidle');
     await page.evaluate(()=>document.fonts.ready);
     await expect(page.locator('body')).not.toContainText('Internal Server Error');
@@ -111,6 +112,9 @@ test('capture current README product screens with synthetic campaign data', asyn
   }
   await boardPost('/document',{title:'Launch a bilingual campaign',version:1,cards,edges:[{from:sourceID,to:actorID},{from:promptID,to:actorID}]});
   await boardPost('/operations/grants',{agent_id:agentID,read:true,append:true,run:true,node_ids:[sourceID,promptID]});
+  // A real signed receiver, deliberately disabled; its one-time signing secret
+  // is never inserted into the page or captured in documentation screenshots.
+  await boardPost(`/cards/${actorID}/inbound`,{action:'configure',command:'prepare-campaign-draft'});
   await page.reload();
   await expect(page.locator('.canvas-card')).toHaveCount(4);
   await page.locator('[data-action=arrange]').click();
