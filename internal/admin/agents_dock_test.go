@@ -63,6 +63,11 @@ func TestAgentsDockOwnedProjectionEffectivePromptAndNoDispatch(t *testing.T) {
 	_, body = s.do("GET", "/admin/x/agents-dock", nil)
 	mustContain(t, body, `"available":false`)
 	mustNotContain(t, body, "Private saved instructions")
+	response, body = s.do("GET", "/admin", nil)
+	if response.StatusCode != 200 {
+		t.Fatal(response.StatusCode)
+	}
+	mustNotContain(t, body, "data-agents-dock", "agents-dock.js", "agents-dock.css", `href="/admin/canvases"`)
 }
 
 func TestAgentsDockDoesNotResolveForeignRevokedOrAPIKeys(t *testing.T) {

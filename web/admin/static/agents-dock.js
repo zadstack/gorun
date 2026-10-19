@@ -14,7 +14,7 @@
   function showDetail(item, focus = false) {
     const focusedTab = detail.contains(document.activeElement) ? document.activeElement.dataset.dockTab : '';
     selected = identity(item); detail.replaceChildren(); detail.hidden = false;
-    const heading = el('h3', title(item)); heading.tabIndex = -1; detail.append(heading);
+    const heading = el('h3', title(item)); heading.tabIndex = -1; heading.dataset.dockFocus = 'heading'; detail.append(heading);
     detail.append(el('p', item.configured ? labels.configured : labels.setup));
     const tabs = el('div'); tabs.className = 'agents-dock-tabs'; tabs.setAttribute('role','tablist'); tabs.setAttribute('aria-label',labels.details);
     const panels = new Map(), buttons = new Map(), order = ['integrations','instructions','defaults'];
@@ -26,7 +26,9 @@
     for (const name of order) {
       const button = el('button',labels[name]); button.type = 'button'; button.id = 'agents-dock-tab-'+name;
       button.dataset.dockTab = name; button.setAttribute('role','tab'); button.setAttribute('aria-controls','agents-dock-panel-'+name);
+      button.dataset.dockFocus = 'tab-'+name;
       const panel = el('div'); panel.id = 'agents-dock-panel-'+name; panel.setAttribute('role','tabpanel'); panel.setAttribute('aria-labelledby',button.id); panel.tabIndex = 0;
+      panel.dataset.dockFocus = 'panel-'+name;
       button.addEventListener('click',()=>activate(name));
       button.addEventListener('keydown',event=>{
         let index = order.indexOf(name);
@@ -47,7 +49,7 @@
     const integrations = panels.get('integrations'); integrations.append(fields);
     if (item.mode === 'external') integrations.append(el('p',labels.externalHelp));
     integrations.append(el('p',labels.limits));
-    const setupLink = el('a',labels.integrationSetup); setupLink.href = item.href; integrations.append(setupLink);
+    const setupLink = el('a',labels.integrationSetup); setupLink.href = item.href; setupLink.dataset.dockFocus = 'setup'; integrations.append(setupLink);
     const instructions = panels.get('instructions');
     if (item.prompt) instructions.append(el('h4',labels.prompt),el('pre',item.prompt));
     else instructions.append(el('p',labels.unavailable));
@@ -56,17 +58,22 @@
     if (['text','image','audio','video'].includes(item.generation)) identityFields.append(el('dt',labels.output),el('dd',labels[item.generation]));
     defaults.append(identityFields,el('p',labels.defaultsHelp));
     activate(order.includes(activeTab) ? activeTab : order[0]);
-    const link = el('a', labels.open); link.href = item.href; detail.append(link);
+    const link = el('a', labels.open); link.href = item.href; link.dataset.dockFocus = 'open'; detail.append(link);
     for (const button of list.querySelectorAll('button')) button.setAttribute('aria-pressed', String(button.dataset.identity === selected));
     if (focus) { heading.focus(); heading.scrollIntoView({block:'nearest'}); }
     else if (focusedTab && buttons.has(focusedTab)) buttons.get(focusedTab).focus({preventScroll:true});
   }
   function render(data) {
+    // A refresh may replace a cached entry while its details are being read.
+    // Preserve logical focus, including non-tab controls, inside the modal.
+    const before = document.activeElement, hadFocus = dialog.open && dialog.contains(before);
+    const focusKey = hadFocus ? before.dataset.dockFocus : '';
     entries = Array.isArray(data.agents) ? data.agents.filter(valid) : [];
     list.replaceChildren(); shortcuts.replaceChildren();
     status.textContent = data.truncated ? labels.truncated : entries.length ? '' : labels.empty;
     entries.forEach((item,index) => {
       const button = el('button'); button.type = 'button'; button.dataset.identity = identity(item);
+      button.dataset.dockFocus = 'entry-'+identity(item);
       button.setAttribute('aria-pressed', String(identity(item) === selected));
       button.append(el('strong', title(item)), el('small', `${item.board} · ${item.configured ? labels.configured : labels.setup}`));
       button.addEventListener('click', () => showDetail(item, true)); list.append(button);
@@ -78,6 +85,11 @@
     });
     const current = entries.find(item => identity(item) === selected);
     if (current) showDetail(current); else { selected = ''; detail.hidden = true; detail.replaceChildren(); }
+    if (active && dialog.open && hadFocus) {
+      const target = focusKey && [...dialog.querySelectorAll('[data-dock-focus]')].find(node => node.dataset.dockFocus === focusKey && node.getClientRects().length);
+      if (target) target.focus({preventScroll:true});
+      else if (!dialog.contains(document.activeElement)) (list.querySelector('button') || root.querySelector('[data-dock-close]')).focus({preventScroll:true});
+    }
   }
   async function refresh() {
     const ownGeneration = ++generation;

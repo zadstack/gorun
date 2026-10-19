@@ -1,4 +1,5 @@
 {{define "partials/agents-dock"}}
+{{if ne (setting "site.workspace") "simple"}}
 <link rel="stylesheet" href="{{asset "agents-dock.css"}}">
 <script defer src="{{asset "agents-dock.js"}}"></script>
 <div data-agents-dock hidden>
@@ -27,4 +28,5 @@
     </div>
   </dialog>
 </div>
+{{end}}
 {{end}}

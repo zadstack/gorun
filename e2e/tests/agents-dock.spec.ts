@@ -73,3 +73,23 @@ test('closing or leaving the agents drawer discards delayed responses and render
  delay=false;await launcher.click();await dialog.getByRole('button',{name:/<img src=x/}).click();await expect(dialog.locator('[data-dock-detail] img')).toHaveCount(0);await expect(dialog.locator('[data-dock-detail]')).toContainText('<img src=x onerror=alert(1)>');await dialog.locator('[data-dock-close]').click();
  held=undefined;delay=true;await launcher.click();await expect.poll(()=>!!held).toBe(true);await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide')));const leftResponse=page.waitForResponse('**/admin/x/agents-dock');await held.fulfill({json:{available:true,agents:[{...item,title:'LATE_AFTER_PAGEHIDE'}]}});await(await leftResponse).finished();await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));await expect(root).toBeHidden();await expect(dialog).not.toBeVisible();await expect(root).not.toContainText('LATE_AFTER_PAGEHIDE');
 });
+
+test('delayed changed refresh preserves logical modal focus and falls back safely when the selected card disappears',async({page})=>{
+ let held:any,delay=false;
+ const item={id:'22222222-2222-4222-8222-222222222222',board:'Synthetic board',title:'Cached writer',kind:'agent',href:'/admin/canvases/01J00000000000000000000001#card-22222222-2222-4222-8222-222222222222',mode:'external',configured:false};
+ await page.route('**/admin/x/agents-dock',async route=>{if(delay){held=route;return;}await route.fulfill({json:{available:true,agents:[item]}});});
+ await page.goto('/admin');await setLocale(page,'en');
+ const root=page.locator('[data-agents-dock]'),dialog=root.locator('dialog'),launcher=root.locator('[data-dock-open]');await expect(launcher).toBeVisible();
+ for(const key of ['open','heading','tab-integrations','panel-integrations','setup','entry-'+item.href]) {
+  held=undefined;delay=true;await launcher.click();await expect.poll(()=>!!held).toBe(true);
+  await dialog.locator('[data-dock-list] button').click();await dialog.getByRole('tab',{name:'Integrations',exact:true}).click();
+  await page.evaluate(key=>{const node=[...document.querySelectorAll<HTMLElement>('#agents-dock-dialog [data-dock-focus]')].find(el=>el.dataset.dockFocus===key);node!.focus();},key);
+  const response=page.waitForResponse('**/admin/x/agents-dock');await held.fulfill({json:{available:true,agents:[{...item,title:'Updated writer'}]}});await(await response).finished();await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  expect(await page.evaluate(()=>document.activeElement instanceof HTMLElement?document.activeElement.dataset.dockFocus:null)).toBe(key);
+  expect(await dialog.evaluate(el=>el.contains(document.activeElement))).toBe(true);
+  await dialog.locator('[data-dock-close]').click();
+ }
+ held=undefined;await launcher.click();await expect.poll(()=>!!held).toBe(true);await dialog.locator('[data-dock-list] button').click();await dialog.locator('[data-dock-focus="open"]').focus();
+ const removed=page.waitForResponse('**/admin/x/agents-dock');await held.fulfill({json:{available:true,agents:[]}});await(await removed).finished();await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ await expect(dialog).toBeVisible();await expect(dialog.locator('[data-dock-close]')).toBeFocused();await expect(dialog.locator('[data-dock-detail]')).toBeHidden();
+});
