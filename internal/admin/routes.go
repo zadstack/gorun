@@ -18,6 +18,7 @@ func (h *handlers) routes() {
 	r := h.d.Router.Admin
 	r.Get("/", h.dashboard)
 	r.Get("/x/canvas-activity", h.canvasActivityFragment)
+	r.Get("/x/agents-dock", h.agentsDock)
 	r.Get("/search", h.searchPage)
 	r.Get("/x/search", h.searchFragment)
 	r.Post("/x/ai/write", h.aiWrite) // content.edit or content.create, checked inside (JSON 403)
