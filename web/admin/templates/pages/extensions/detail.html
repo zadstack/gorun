@@ -8,7 +8,7 @@
   <div>
     <h1 class="text-[22px] font-bold">{{$x.DisplayName locale}}</h1>
     <p class="flex flex-wrap items-center gap-2 text-muted">
-      <span class="font-mono text-xs" dir="ltr">{{$x.Slug}} · v{{$x.Version}}</span>{{template "ext_status" $x.Status}}
+      <span class="font-mono text-xs" dir="ltr">{{$x.Slug}} · v{{$x.Version}}</span>{{template "ext_status" $x.Status}}<span class="text-xs" data-extension-source>{{t $x.InstallSourceKey}}</span>
     </p>
   </div>
   <div class="flex gap-2">

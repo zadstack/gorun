@@ -1,7 +1,7 @@
 {
   "nav": "Extensions",
   "title": "Extensions",
-  "intro": "External programs that react to GoRun hooks over signed HTTP and call back through the REST API.",
+  "intro": "External programs that react to GoRun hooks over signed HTTP and call back through the REST API. Installation method does not verify a package’s author, signature or safety.",
   "back": "All extensions",
   "empty": "No extensions installed yet.",
   "install.title": "Install an extension",
@@ -9,7 +9,7 @@
   "install.file": "Extension package (.zip)",
   "install.submit": "Upload and install",
   "install.failed": "The package could not be installed:",
-  "available.title": "Found in the extensions folder",
+  "available.title": "Install from this server’s directory",
   "available.install": "Install",
   "col.name": "Extension",
   "col.version": "Version",
@@ -107,5 +107,15 @@
   "package.no_manifest": "manifest.json was not found.",
   "package.bad_manifest": "manifest.json is not valid JSON or has unknown fields.",
   "install.detail": "Technical detail:",
-  "package.duplicate_entry": "The package contains the same file twice."
+  "package.duplicate_entry": "The package contains the same file twice.",
+  "source.directory": "Server directory",
+  "source.upload": "Uploaded ZIP",
+  "source.legacy_unknown": "Legacy: method not recorded",
+  "group.directory": "Installed from a server directory",
+  "group.directory_help": "Recorded by InstallDir. A directory may contain a package copied by an operator or previously uploaded; this is not proof that it shipped with GoRun.",
+  "group.upload": "Installed from an uploaded ZIP",
+  "group.upload_help": "Recorded by InstallZip for this installation. Review the manifest, permissions and destination separately.",
+  "group.legacy_unknown": "Existing installations with unknown method",
+  "group.legacy_unknown_help": "These records predate installation-method tracking. Their original method cannot be established from the saved data.",
+  "group.empty": "No installed extensions in this group."
 }

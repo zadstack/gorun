@@ -113,7 +113,7 @@ func (s *service) InstallDir(ctx context.Context, dir string) (*InstallResult, e
 			return nil, err
 		}
 	}
-	return s.install(ctx, m, placed)
+	return s.install(ctx, m, placed, InstallSourceDirectory)
 }
 
 func (s *service) InstallZip(ctx context.Context, r io.ReaderAt, size int64) (*InstallResult, error) {
@@ -137,7 +137,7 @@ func (s *service) InstallZip(ctx context.Context, r io.ReaderAt, size int64) (*I
 	if err := s.place(staging, m.Slug); err != nil {
 		return nil, err
 	}
-	return s.install(ctx, m, true)
+	return s.install(ctx, m, true, InstallSourceUpload)
 }
 
 // place moves a staged package to <DataDir>/extensions/<slug>, replacing a
@@ -227,7 +227,10 @@ func (s *service) owner(ctx context.Context) (string, error) {
 // types, setting defaults, the scoped API key. On failure every step done
 // so far is undone; placed reports whether this install put the package
 // directory in place (and may therefore remove it).
-func (s *service) install(ctx context.Context, m *Manifest, placed bool) (*InstallResult, error) {
+func (s *service) install(ctx context.Context, m *Manifest, placed bool, source string) (*InstallResult, error) {
+	if source != InstallSourceDirectory && source != InstallSourceUpload {
+		return nil, errors.New("ext: invalid installation method")
+	}
 	var undo []func(context.Context)
 	fail := func(err error) (*InstallResult, error) {
 		uctx := context.WithoutCancel(ctx)
@@ -259,8 +262,8 @@ func (s *service) install(ctx context.Context, m *Manifest, placed bool) (*Insta
 	raw, _ := json.Marshal(m)
 	now := db.FormatTime(s.now())
 	err = db.InTx(ctx, s.db, func(tx *sql.Tx) error {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO extensions (slug, name, version, manifest_json, status, endpoint_url, secret_enc, installed_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, m.Slug, m.DisplayName("en"), m.Version, string(raw), StatusInstalled, m.Endpoint.URL, enc, now); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO extensions (slug, name, version, manifest_json, status, endpoint_url, secret_enc, installed_at, install_source)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, m.Slug, m.DisplayName("en"), m.Version, string(raw), StatusInstalled, m.Endpoint.URL, enc, now, source); err != nil {
 			return fmt.Errorf("ext: insert: %w", err)
 		}
 		for _, h := range m.Hooks {

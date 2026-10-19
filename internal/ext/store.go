@@ -14,6 +14,11 @@ const (
 	StatusActive    = "active"
 	StatusDisabled  = "disabled"
 	StatusError     = "error"
+
+	// Installation method, not author identity, signature verification or trust.
+	InstallSourceDirectory     = "directory"
+	InstallSourceUpload        = "upload"
+	InstallSourceLegacyUnknown = "legacy_unknown"
 )
 
 // Extension is an installed extension. The HMAC secret and API key
@@ -31,7 +36,21 @@ type Extension struct {
 	ActivatedAt   string            `json:"activated_at"`
 	LastError     string            `json:"last_error"`
 	Manifest      Manifest          `json:"manifest"`
+	InstallSource string            `json:"install_source"`
 	secretEnc     string
+}
+
+// InstallSourceKey labels the recorded installation method. Missing or unknown
+// metadata never becomes a claim of a server-shipped or trusted package.
+func (x Extension) InstallSourceKey() string {
+	switch x.InstallSource {
+	case InstallSourceDirectory:
+		return "ext.source.directory"
+	case InstallSourceUpload:
+		return "ext.source.upload"
+	default:
+		return "ext.source.legacy_unknown"
+	}
 }
 
 // HooksCount is the number of hook subscriptions declared.
@@ -63,13 +82,13 @@ type InstallResult struct {
 }
 
 const extColumns = `slug, version, manifest_json, status, endpoint_url, secret_enc, api_key_id, failures, total_failures,
-	installed_at, activated_at, last_error`
+	installed_at, activated_at, last_error, install_source`
 
 func scanExt(row interface{ Scan(...any) error }) (*Extension, error) {
 	var x Extension
 	var raw string
 	err := row.Scan(&x.Slug, &x.Version, &raw, &x.Status, &x.EndpointURL, &x.secretEnc, &x.APIKeyID, &x.Failures,
-		&x.TotalFailures, &x.InstalledAt, &x.ActivatedAt, &x.LastError)
+		&x.TotalFailures, &x.InstalledAt, &x.ActivatedAt, &x.LastError, &x.InstallSource)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
