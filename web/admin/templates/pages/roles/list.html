@@ -6,7 +6,7 @@
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <div>
     <h1 class="text-[22px] font-bold">{{t "admin.roles.title"}}</h1>
-    <p class="mt-1 text-sm text-muted">{{t "admin.roles.lead"}}</p>
+    <p class="mt-1 text-sm text-muted">{{t "admin.roles.lead"}}</p><p class="mt-2 text-xs text-muted max-w-3xl">{{t "operator.role_clone_help"}}</p>
   </div>
   <a href="/admin/roles/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "shield"}}<span>{{t "admin.roles.new"}}</span></a>
 </div>
@@ -32,7 +32,7 @@
         <td class="px-3 py-2 font-mono text-xs" dir="ltr">{{.Slug}}</td>
         <td class="px-3 py-2 font-mono text-xs text-muted">{{if .AllPermissions}}{{t "operator.all_permissions"}}{{else}}{{len .Permissions}}{{end}}</td>
         <td class="px-3 py-2 font-mono text-xs text-muted">{{.UserCount}}</td>
-        <td class="px-3 py-2 text-end"><a href="/admin/roles/{{.Slug}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "core.action.edit"}}</a></td>
+        <td class="px-3 py-2 text-end"><a href="/admin/roles/{{.Slug}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "core.action.edit"}}</a> <a href="/admin/roles/new?clone={{.Slug}}" class="block text-sm text-blue underline mt-1">{{t "operator.role_clone"}}</a></td>
       </tr>
       {{end}}
     </tbody>

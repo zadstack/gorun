@@ -1,11 +1,13 @@
 {{/* Data: roleEditPage (.Record is nil when creating) */}}
 {{define "title"}}{{if .IsNew}}{{t "admin.roles.new"}}{{else}}{{t "admin.roles.edit"}}{{end}}{{end}}
 {{define "content"}}
+<script defer src="{{asset "role-permission-preview.js"}}"></script>
 <nav class="mb-2 text-xs"><a href="/admin/roles" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.roles.back"}}</a></nav>
 <h1 class="text-[22px] font-bold mb-4">{{if .IsNew}}{{t "admin.roles.new"}}{{else}}{{t "admin.roles.edit"}}{{end}}</h1>
 <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
-  <form method="post" action="{{if .IsNew}}/admin/roles{{else}}/admin/roles/{{.Record.Slug}}{{end}}" class="rounded border border-line bg-panel p-4 space-y-4" novalidate>
+  <form method="post" action="{{if .IsNew}}/admin/roles{{else}}/admin/roles/{{.Record.Slug}}{{end}}" class="rounded border border-line bg-panel p-4 space-y-4" novalidate data-role-preview>
     <input type="hidden" name="_csrf" value="{{csrf}}">
+    <template data-role-baseline>{{with .Record}}{{range .Permissions}}<span data-permission="{{.}}"></span>{{end}}{{end}}</template>
     <div>
       <label for="r-slug" class="block font-medium mb-1">{{t "admin.roles.slug"}}</label>
       <input id="r-slug" name="slug" value="{{.Form.Slug}}" dir="ltr" autocomplete="off" required {{if not .IsNew}}readonly{{end}}
@@ -50,6 +52,7 @@
       {{end}}
       {{template "partials/field_errors" (index .Fields "permissions")}}
     </fieldset>
+    <section class="border border-line bg-panel-2 p-3" data-role-changes><h2 class="font-bold">{{t "operator.role_diff"}}</h2><p class="text-sm text-muted mt-1">{{t "operator.role_diff_boundary"}}</p><p class="mt-2" data-role-unchanged>{{t "operator.role_no_changes"}}</p><div class="grid gap-3 sm:grid-cols-2 mt-2"><div><h3 class="text-sm font-medium">{{t "operator.role_added"}}</h3><ul data-role-added class="text-xs font-mono break-all"></ul></div><div><h3 class="text-sm font-medium">{{t "operator.role_removed"}}</h3><ul data-role-removed class="text-xs font-mono break-all"></ul></div></div></section>
     <div class="flex gap-2">
       <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{if .IsNew}}{{t "admin.roles.create"}}{{else}}{{t "core.action.save"}}{{end}}</button>
       <a href="/admin/roles" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.action.cancel"}}</a>

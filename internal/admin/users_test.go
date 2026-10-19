@@ -243,3 +243,26 @@ func TestConcurrentMutualDemotionKeepsAnAdmin(t *testing.T) {
 		s.app.Deps.DB.Exec(`DELETE FROM users WHERE role = 'admin' OR id IN (?, ?)`, a.ID, b.ID)
 	}
 }
+
+func TestUsersAudienceViewsUseSavedRoleAndPreserveSearch(t *testing.T) {
+	s := boot(t)
+	s.login("admin@example.com", "admin", "en")
+	s.createUser("staff-other@example.com", "editor", "en")
+	s.createUser("buyer-one@example.com", auth.RoleCustomer, "en")
+	s.createUser("buyer-two@example.com", auth.RoleCustomer, "en")
+	resp, body := s.do("GET", "/admin/users?audience=customers", nil)
+	if resp.StatusCode != 200 {
+		t.Fatal(resp.StatusCode)
+	}
+	mustContain(t, body, "buyer-one@example.com", "buyer-two@example.com", `name="audience" value="customers"`)
+	mustNotContain(t, body, "staff-other@example.com")
+	_, body = s.do("GET", "/admin/users?audience=team", nil)
+	mustContain(t, body, "staff-other@example.com")
+	mustNotContain(t, body, "buyer-one@example.com", "buyer-two@example.com")
+	_, body = s.do("GET", "/admin/users?audience=customers&q=buyer-one", nil)
+	mustContain(t, body, "buyer-one@example.com")
+	mustNotContain(t, body, "buyer-two@example.com", "staff-other@example.com")
+	if resp, _ = s.do("GET", "/admin/users?audience=untrusted", nil); resp.StatusCode != 400 {
+		t.Fatal("invalid audience", resp.StatusCode)
+	}
+}
