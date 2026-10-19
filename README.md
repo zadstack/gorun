@@ -47,6 +47,10 @@ If you cannot run a local terminal, provide the official commands for me to run.
 
 The instructions are tool-neutral. A chat-only assistant can explain the steps but cannot install software on your computer. [Assistant setup guide](docs/AI-ASSISTED-SETUP.md).
 
+## Cloudflare Edge — in development
+
+GoRun Edge is being developed as a separate Workers-based edition. The current milestone provides site-scoped manager permission contracts. The Worker runtime, storage/admin integration and a tested deployment template remain on the [Edge roadmap](https://github.com/zadstack/gorun/issues/46). A Deploy to Cloudflare button will be added after the template passes a real deployment test.
+
 [![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 
 ![GoRun content editor and publishing controls](assets/branding/screenshots/editor-en.png)

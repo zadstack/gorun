@@ -152,6 +152,10 @@ If you cannot run a local terminal, provide the official commands for me to run.
 
 المساعد النصي وحده يستطيع شرح الخطوات، لكنه لا يثبّت برامج على جهازك. [دليل الإعداد بمساعدة وكيل](docs/AI-ASSISTED-SETUP.md).
 
+### Cloudflare Edge — قيد التطوير
+
+يجري تطوير GoRun Edge كنسخة مستقلة مبنية على Workers. المتاح حاليًا هو أساس صلاحيات مديري المواقع. تشغيل Worker، وربط التخزين والإدارة، وقالب النشر المختبَر ضمن [خطة Edge](https://github.com/zadstack/gorun/issues/46). يُضاف زر Deploy to Cloudflare بعد نجاح تجربة نشر فعلية للقالب.
+
 ### البدء السريع
 
 **صورة Docker:** تُنشر الإصدارات صورةً متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.4.0` و`0.4` و`latest`:
