@@ -2,7 +2,7 @@
 
 **A self-hosted CMS for your team and AI agents.**
 
-[العربية](README.ar.md) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Use an assistant](#start-with-your-ai-assistant) · [Contribute](CONTRIBUTING.md)
+[العربية](README.ar.md) · [Website guides](https://gorun.gocloud.run/gorun-guides) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Use an assistant](#start-with-your-ai-assistant) · [Contribute](CONTRIBUTING.md)
 
 ## Run it now
 

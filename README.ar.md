@@ -4,7 +4,7 @@
 
 ![GoRun — your content, your team, your agents](assets/branding/github-banner.svg)
 
-**العربية** · [English](README.md)
+**العربية** · [English](README.md) · [أدلة الموقع](https://gorun.gocloud.run/ar/gorun-guides-ar)
 
 **نظام إدارة محتوى يعمل فيه فريقك ووكلاء الذكاء الاصطناعي معًا، وتبقى القرارات الحساسة بيد البشر.**
 
