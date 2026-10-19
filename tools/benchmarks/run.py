@@ -75,12 +75,14 @@ def get(url):
             raise RuntimeError('Unexpected redirect or status')
         return response.read()
 
-def ready(url):
+def ready(url, expected=None):
     deadline = time.monotonic() + 120
     while time.monotonic() < deadline:
         try:
             data = get(url)
             if b'GORUN_COMPARISON_BODY' in data:
+                if expected and (expected['body'].encode() not in data or expected['title'].encode() not in data):
+                    raise RuntimeError('Article content does not match the requested fixture')
                 return len(data)
         except Exception:
             pass
@@ -184,9 +186,11 @@ const {title,body}=Astro.props;
     products={'gorun':{'containers':[gorun],'port':18080},'wordpress':{'containers':[wordpress,database],'port':18081},'astro-static':{'containers':[static],'port':18082}}
     metadata['wordpress_version']=wp('core','version').strip()
     metadata['php_version']=docker('exec',wordpress,'php','-v').splitlines()[0]
+    metadata['php_ini']=json.loads(docker('exec',wordpress,'php','-r',"echo json_encode(array_combine(['opcache.enable','opcache.memory_consumption','opcache.validate_timestamps','memory_limit'],array_map('ini_get',['opcache.enable','opcache.memory_consumption','opcache.validate_timestamps','memory_limit'])));"))
+    metadata['apache_mpm_config']=docker('exec',wordpress,'cat','/etc/apache2/mods-enabled/mpm_prefork.conf')
     metadata['gorun_version']=gcli('version').strip()
     for name,p in products.items():
-        p['response_bytes']=[ready(f"http://127.0.0.1:{p['port']}/post/{post['slug']}") for post in posts]
+        p['response_bytes']=[ready(f"http://127.0.0.1:{p['port']}/post/{post['slug']}",post) for post in posts]
         p['targets']=out/(name+'-targets.txt')
         p['targets'].write_text(''.join(f"GET http://127.0.0.1:{p['port']}/post/{post['slug']}\n" for post in posts))
         for container in p['containers']: docker('stop',container)
