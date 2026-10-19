@@ -1,0 +1,15 @@
+{
+  "title": "Activity canvas",
+  "hint": "Recent agent results and webhook deliveries visible to you. Open a card for details.",
+  "refresh": "Refresh",
+  "empty": "Agent results and permitted webhook activity will appear here.",
+  "kind.note": "Agent result",
+  "kind.webhook": "Webhook",
+  "status.received": "Result received",
+  "status.queued": "Queued",
+  "status.delivered": "Delivered",
+  "status.retrying": "Retrying",
+  "status.failed": "Failed",
+  "privacy": "Canvas notes are private to your account. Webhook delivery metadata follows your webhook management permission.",
+  "webhooks_unavailable": "Webhook activity is available when the module is enabled and you have permission to manage webhooks."
+}
