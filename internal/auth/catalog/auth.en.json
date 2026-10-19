@@ -1,4 +1,5 @@
 {
+  "login.identity": "Email or username",
   "login.title": "Sign in",
   "login.submit": "Sign in",
   "login.invalid": "Incorrect email or password.",
