@@ -7,6 +7,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Themes
 
+- Performance (PR4): site identity and builder brand tokens ship as cached `/site/identity.css`
+  and `/site/builder-identity.css` (hash `?v=`) instead of per-request inline `<style>`; default
+  500 page drops `style=` attributes; theme scripts carry CSP nonce; docs fonts trimmed to ≤4
+  weights; catalog themes `1.4.0`.
+
 - A11y + RTL hardening (PR3): shared `a11y.css` (after tokens) across catalog themes with
   contrast-safe `--muted`, `:focus-visible` rings (light accent / dark `--focus-ring`), 44px tap
   targets (prose inline links excluded), visible skip links, `prefers-reduced-motion`, Arabic

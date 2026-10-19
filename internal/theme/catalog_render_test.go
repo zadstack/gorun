@@ -46,12 +46,23 @@ func TestIdentityRendersOnceThroughTheDefaultHead(t *testing.T) {
 			}
 			body := rec.Body.String()
 			if n := len(identityStyle.FindAllString(body, -1)); n != want {
-				t.Fatalf("identity <style> blocks = %d, want %d", n, want)
+				t.Fatalf("identity stylesheet links = %d, want %d", n, want)
 			}
 			if want == 1 {
-				mustContain(t, body, "--green:#c2410c;", "--on-accent:#ffffff;", "--radius:16px;")
+				mustContain(t, body, "/site/identity.css?v=", "data-gorun-identity")
+				css := IdentityStylesheet(func(k string) string {
+					switch k {
+					case idAccent:
+						return "#c2410c"
+					case idRadius:
+						return "round"
+					default:
+						return ""
+					}
+				})
+				mustContain(t, css, "--green:#c2410c;", "--on-accent:#ffffff;", "--radius:16px;")
 				if strings.Index(body, "data-gorun-identity") > strings.Index(body, "</head>") {
-					t.Fatal("the identity block must be inside <head>")
+					t.Fatal("the identity link must be inside <head>")
 				}
 			}
 		})

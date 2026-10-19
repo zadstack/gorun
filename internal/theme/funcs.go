@@ -83,7 +83,8 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 		"locale":       func() string { return st.tc.Locale },
 		"site":         func() SiteInfo { return st.tc.Site },
 		"setting":      f.setting,
-		"builderStyle": f.builderStyle,
+		"builderStyle":    f.builderStyle,
+		"builderIdentity": f.builderIdentity,
 		"identity": func(...any) template.HTML {
 			// Only a theme that declares the capability itself is restyled.
 			if st.tc == nil || st.tc.Theme.Slug == "" || !supportsIdentity(st.tc.Theme) {

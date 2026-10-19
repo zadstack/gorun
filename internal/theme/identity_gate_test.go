@@ -11,7 +11,7 @@ import (
 	"github.com/zadstack/gorun/internal/kernel"
 )
 
-var identityStyle = regexp.MustCompile(`<style nonce="[^"]*" data-gorun-identity>`)
+var identityStyle = regexp.MustCompile(`<link rel="stylesheet" href="/site/identity\.css\?v=[0-9a-f]+" data-gorun-identity>`)
 
 // extraThemes is a custom theme kept outside themes/ (see testdata/extra).
 const extraThemes = "testdata/extra"
@@ -57,11 +57,11 @@ func TestIdentityRenderedOnlyForThemesThatDeclareIt(t *testing.T) {
 			n := len(identityStyle.FindAllString(body, -1))
 			switch {
 			case want && n != 1:
-				t.Fatalf("want exactly one identity <style>, got %d", n)
+				t.Fatalf("want exactly one identity stylesheet link, got %d", n)
 			case !want && n != 0:
-				t.Fatalf("a theme without the identity capability printed %d identity <style> blocks", n)
+				t.Fatalf("a theme without the identity capability printed %d identity links", n)
 			case !want:
-				mustNotContain(t, body, ".identity-probe", "--green:#c2410c")
+				mustNotContain(t, body, ".identity-probe", "--green:#c2410c", "/site/identity.css")
 			}
 		})
 	}
@@ -89,20 +89,26 @@ func TestSiteIdentityOutranksBuilderIdentity(t *testing.T) {
 				t.Fatal(err)
 			}
 			body := rec.Body.String()
-			builder := strings.Index(body, ":root{--gp-accent:#167252;")
+			builder := strings.Index(body, `data-gorun-builder-identity`)
 			site := identityStyle.FindStringIndex(body)
 			if builder < 0 || site == nil {
-				t.Fatalf("both identity blocks must render (builder at %d, site %v)", builder, site)
+				t.Fatalf("both identity links must render (builder at %d, site %v)", builder, site)
 			}
 			if site[0] < builder {
-				t.Fatal("the site identity block must come after the builder identity block")
+				t.Fatal("the site identity link must come after the builder identity link")
 			}
-			rest := body[site[1]:]
-			block := rest[:strings.Index(rest, "</style>")]
-			mustContain(t, block, ":root:root[data-theme]{", "--green:#c2410c;", "--gp-accent:#c2410c;")
+			siteCSS := IdentityStylesheet(func(k string) string {
+				switch k {
+				case idAccent:
+					return "#c2410c"
+				default:
+					return ""
+				}
+			})
+			mustContain(t, siteCSS, ":root:root[data-theme]{", "--green:#c2410c;", "--gp-accent:#c2410c;")
 			// Tokens the site identity leaves empty keep the builder's values.
-			mustNotContain(t, block, "--bg:", "--ink:")
-			mustContain(t, body, "--bg:#fafafa;", "--ink:#111111;")
+			mustNotContain(t, siteCSS, "--bg:", "--ink:")
+			mustContain(t, body, `/site/builder-identity.css?v=`)
 		})
 	}
 }

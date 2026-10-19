@@ -184,16 +184,16 @@ The capability is **not inherited**: a child theme gets it only when its own `th
 | `identity_radius` | `square`, `soft`, `round` | `--radius` 0 / 8px / 16px |
 | `custom_css` | ≤ 20000 chars, no HTML, `@import`, `expression()` or `javascript:` | Appended after the theme's styles and kept across theme updates |
 
-Themes print them with `{{identity .}}` as the last thing before `</head>` (after their stylesheets and `head-extra`). The output is a `<style nonce data-gorun-identity>` whose tokens use `:root:root[data-theme]`, which outranks the catalog themes' `:where(html[data-theme="…"])` tokens without `!important`. Values are validated on save and again at render, so a hand-edited setting cannot inject markup. Use identity settings and custom CSS instead of overriding `parts.head*.html` to restyle a site.
+Themes print them with `{{identity .}}` as the last thing before `</head>` (after their stylesheets and `head-extra`). The output is optional Google Fonts `<link>`s plus a cached `<link rel="stylesheet" href="/site/identity.css?v=…" data-gorun-identity>` whose tokens use `:root:root[data-theme]`, which outranks the catalog themes' `:where(html[data-theme="…"])` tokens without `!important`. Values are validated on save and again at render, so a hand-edited setting cannot inject markup. Use identity settings and custom CSS instead of overriding `parts.head*.html` to restyle a site.
 
 ### Builder identity and site identity together
 
 Two settings can restyle the same tokens:
 
-- `builder.identity` (accent, background, text, font, width) comes from the site builder and starters. `{{builderStyle}}` prints it as `:root{…}` (specificity 0,1,0) and sets the whole palette (`--green`, `--bg`, `--ink`, `--panel`, `--line`, `--font`, …).
+- `builder.identity` (accent, background, text, font, width) comes from the site builder and starters. `{{builderIdentity}}` links a cached `/site/builder-identity.css?v=…` whose body is `:root{…}` (specificity 0,1,0) and sets the whole palette (`--green`, `--bg`, `--ink`, `--panel`, `--line`, `--font`, …). (`{{builderStyle}}` still returns the raw CSS for previews/tests.)
 - The site identity settings above are per theme. `{{identity .}}` prints them as `:root:root[data-theme]{…}` (0,3,0) after the builder block.
 
-Precedence, per token: **site identity › builder identity › the theme's own tokens**. A token the site identity leaves empty keeps the builder value, and one neither sets keeps the theme default. For example, a builder accent of `#167252` with a site identity accent of `#c2410c` gives `#c2410c`, and the builder's background and text colors stay. Every catalog head prints `{{builderStyle}}` before `{{identity .}}`; `TestSiteIdentityOutranksBuilderIdentity` checks this. Custom CSS comes last in the identity block, so it can override both.
+Precedence, per token: **site identity › builder identity › the theme's own tokens**. A token the site identity leaves empty keeps the builder value, and one neither sets keeps the theme default. For example, a builder accent of `#167252` with a site identity accent of `#c2410c` gives `#c2410c`, and the builder's background and text colors stay. Every catalog head prints `{{builderIdentity}}` before `{{identity .}}`; `TestSiteIdentityOutranksBuilderIdentity` checks this. Custom CSS comes last in the identity stylesheet, so it can override both.
 
 ### Writing theme CSS that others can restyle
 

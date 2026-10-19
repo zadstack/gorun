@@ -68,6 +68,8 @@ func (*Module) Register(d *kernel.Deps) error {
 	get(pub, "/sitemap.xml", h.sitemap)
 	get(pub, "/robots.txt", h.robots)
 	get(pub, "/themes/{slug}/assets/*", h.asset)
+	get(pub, "/site/identity.css", h.identityCSS)
+	get(pub, "/site/builder-identity.css", h.builderIdentityCSS)
 
 	// The site locale is unprefixed; another supported locale lives under /<locale>/.
 	// CSRF is attached per route (not on the group) so the contact form can
