@@ -1,0 +1,16 @@
+{
+  "title": "Site design",
+  "area": "Website workspace",
+  "intro": "Build pages as drafts, then refine the shared identity. Review each change before applying it to your site.",
+  "view": "View site",
+  "saved": "Saved site",
+  "theme": "Theme",
+  "palette": "Saved shared palette",
+  "build": "Build site",
+  "build_help": "Choose a design · prepare drafts · review activation",
+  "identity": "Visual identity",
+  "identity_help": "Name, logo, colors and typography",
+  "unsaved_preview": "Local sample · no automatic save",
+  "manual_save": "This sample does not change your site. Save identity explicitly to apply these settings.",
+  "leave": "Leave this page and discard unsaved changes?"
+}

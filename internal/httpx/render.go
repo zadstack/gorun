@@ -468,7 +468,7 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 				return false
 			}
 			p := r.URL.Path
-			return p == href || (href != "/admin" && strings.HasPrefix(p, strings.TrimSuffix(href, "/")+"/"))
+			return navPathMatches(p, href)
 		},
 		"path":  func() string { return pathOf(r) },
 		"icon":  icon,

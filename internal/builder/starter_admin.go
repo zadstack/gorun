@@ -15,6 +15,7 @@ import (
 
 type starterReviewPage struct{ ID, Title, Preview string }
 type starterView struct {
+	Design    siteDesignView
 	Form      starterForm
 	Choices   []starterChoice
 	Run       *starterRun
@@ -31,13 +32,14 @@ func registerStarters(d *kernel.Deps, s *service) error {
 	}
 	h := &starterHandler{d: d, svc: s}
 	r := d.Router.Admin.With(auth.RequirePerm("settings.manage"), auth.RequirePerm("content.create"), auth.RequirePerm("content.edit"), auth.RequirePerm("content.publish"), auth.RequirePerm("menus.manage"))
-	d.Admin.AddNav(kernel.NavItem{ID: "site-builder", LabelKey: "starters.title", Icon: "panels-top-left", Href: "/admin/site-builder", Permission: "settings.manage", Group: "appearance", Position: 1})
+	d.Admin.AddNav(kernel.NavItem{ID: "site-builder", LabelKey: "sitedesign.title", Icon: "palette", Href: "/admin/site-design", Permission: "settings.manage", Group: "appearance", Position: 1})
 	r.Get("/site-builder", h.home)
 	r.Post("/site-builder", h.submit)
 	r.Post("/site-builder/{token}/activate", h.publish)
 	return nil
 }
 func (h *starterHandler) render(w http.ResponseWriter, r *http.Request, status int, data starterView) {
+	data.Design = designView(h.d, r.Context(), true)
 	ar := i18n.Locale(r.Context()) == "ar"
 	data.Choices = starterChoices(ar)
 	logoLabel, heroLabel := "Logo (optional)", "Hero image (optional)"
