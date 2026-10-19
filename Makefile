@@ -1,7 +1,7 @@
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: build test run lint e2e css css-check
+.PHONY: build test run lint e2e css css-check loadtest
 
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/gorun ./cmd/gorun
@@ -53,3 +53,10 @@ lint:
 # See docs/E2E.md.
 e2e:
 	cd e2e && npm ci && npx playwright install chromium && npx playwright test
+
+# loadtest boots a local SQLite gorun serve and reports p50/p95 latency, error
+# rate, throughput, and approximate RSS/CPU. Not part of CI (host-noisy).
+# See docs/LOADTEST.md. Override: LOADTEST_FLAGS='-concurrency 50 -duration 20s'
+LOADTEST_FLAGS ?=
+loadtest:
+	go run ./tools/loadtest $(LOADTEST_FLAGS)
