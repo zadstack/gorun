@@ -2,6 +2,7 @@
 {{define "content"}}
 <div class="max-w-5xl mx-auto space-y-4" data-agent-bundle>
 <header><a href="/admin/agents/keys" class="text-green underline">{{t "agentbundles.back"}}</a><h1 class="text-2xl font-bold mt-2">{{t "agentbundles.title"}} · {{.Name}}</h1><p class="text-muted mt-2">{{t "agentbundles.intro"}}</p></header>
+{{if .RoleDraft}}<section role="status" class="border border-amber rounded p-4"><h2 class="font-bold">{{t "agentroles.draft"}} · {{.RoleDraft}}</h2><p>{{t "agentroles.replace"}}</p><a href="/admin/agents/keys?agent_model={{.ID}}" class="underline inline-flex min-h-11 items-center">{{t "agentroles.model"}}</a></section>{{end}}
 {{if .Error}}<p role="alert" class="border border-red rounded p-3 text-red">{{t .Error}}</p>{{end}}
 <form method="post" action="/admin/agents/keys/{{.ID}}/bundle" class="space-y-4">
 <a href="/admin/agents/keys/{{.ID}}/tools" class="inline-flex min-h-11 items-center text-green underline">{{t "managedtools.title"}}</a><p class="text-sm text-muted">{{t "managedtools.bundle_edit"}}</p>
