@@ -23,7 +23,7 @@ def main():
         raise RuntimeError("Disposable integration test requires Linux root")
     with tempfile.TemporaryDirectory(prefix="gorun-production-fixture-") as temp:
         directory = Path(temp) / "site with spaces"
-        domain = "gorun-fixture.test"
+        domain = "gorun-fixture.example.com"
         name = setup.project_name(directory)
         command = ["docker", "compose", "--project-directory", str(directory), "-p", name,
                    "-f", str(directory / "compose.json")]
