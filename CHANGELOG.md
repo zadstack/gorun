@@ -5,31 +5,41 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-19
+
+Third tagged release: theme quality brief (#33–#37) and compact admin/default density
+(#32) after v0.2.0.
+
+### Changed
+
+- Compact density (#32): tighter admin shell padding, gaps, and control heights plus denser
+  default-theme layout/type tokens; other ship-with themes unchanged; 44px touch targets kept.
+
 ### Themes
 
-- Starter content honesty (PR5): company starter omits testimonials (no invented
+- Starter content honesty (PR5 / #37): company starter omits testimonials (no invented
   quotes/clients); illustrative project blurbs stay labeled as concepts; regression
   tests lock theme lang (no em dash / lorem), starter copy honesty, and catalog home
   OG + indexable (never `robots: noindex`). Theme versions `1.5.0`.
-
-- Performance (PR4): site identity and builder brand tokens ship as cached `/site/identity.css`
-  and `/site/builder-identity.css` (hash `?v=`) instead of per-request inline `<style>`; default
-  500 page drops `style=` attributes; theme scripts carry CSP nonce; docs fonts trimmed to ≤4
-  weights; catalog themes `1.4.0`.
-
-- A11y + RTL hardening (PR3): shared `a11y.css` (after tokens) across catalog themes with
+- Performance (PR4 / #36): site identity and builder brand tokens ship as cached
+  `/site/identity.css` and `/site/builder-identity.css` (hash `?v=`) instead of per-request
+  inline `<style>`; default 500 page drops `style=` attributes; theme scripts carry CSP
+  nonce; docs fonts trimmed to ≤4 weights; catalog themes `1.4.0`.
+- A11y + RTL hardening (PR3 / #35): shared `a11y.css` (after tokens) across catalog themes with
   contrast-safe `--muted`, `:focus-visible` rings (light accent / dark `--focus-ring`), 44px tap
   targets (prose inline links excluded), visible skip links, `prefers-reduced-motion`, Arabic
   `letter-spacing: 0` + no mono on body/dates, mirrored go arrows. Headless §6 acceptance audit in
   Playwright (`theme-acceptance.spec.ts`: home + 3 inners @ 1440 & 390). Theme versions `1.3.0`.
-- Page anatomy (PR2): shared `anatomy.css` via `parts/shell.html`, reusable hero / section-head /
-  list-row / closing-band components, default header with filled CTA + 44px mobile `<details>`,
-  facts `<dl>` from real content/product counts, hairline cards with CSS cover fallback, numbered
-  archive rows, footer `aria-labelledby` columns, and reading rhythm (~18px / 1.9 / 760px) on
-  inner templates. Catalog themes keep personality CSS; versions bump to 1.2.0.
-- Shared base design tokens (`themes/_base/tokens.css`, served as `default/assets/tokens.css`)
-  load first in every catalog theme (`default`, `business`, `magazine`, `portfolio`, `docs`).
-  Themes override personality tokens; default migrates off hard-coded `:root` hex/spacing.
+- Page anatomy (PR2 / #34): shared `anatomy.css` via `parts/shell.html`, reusable hero /
+  section-head / list-row / closing-band components, default header with filled CTA + 44px
+  mobile `<details>`, facts `<dl>` from real content/product counts, hairline cards with CSS
+  cover fallback, numbered archive rows, footer `aria-labelledby` columns, and reading rhythm
+  (~18px / 1.9 / 760px) on inner templates. Catalog themes keep personality CSS; versions bump
+  to 1.2.0.
+- Shared base design tokens (#33): `themes/_base/tokens.css` (served as
+  `default/assets/tokens.css`) load first in every catalog theme (`default`, `business`,
+  `magazine`, `portfolio`, `docs`). Themes override personality tokens; default migrates off
+  hard-coded `:root` hex/spacing.
 - Default RTL ship-blockers: dates no longer force LTR on `<time>` (isolate + `<bdi>`), Arabic
   headings keep `letter-spacing: 0` (home + editorial shell), magazine RTL drops Latin-only
   Georgia fallthrough, `/shop` product grid uses real CSS columns (3 / 2 / 1).
@@ -240,6 +250,7 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/zadstack/gorun/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/zadstack/gorun/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/zadstack/gorun/releases/tag/v0.1.0
