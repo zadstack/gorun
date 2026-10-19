@@ -1,12 +1,14 @@
-{{define "title"}}{{t "starters.title"}}{{end}}
+{{define "title"}}{{t "sitedesign.title"}} · {{t "sitedesign.build"}}{{end}}
 {{define "content"}}
 {{$ar := eq locale "ar"}}
 <script defer src="{{asset "starter-theme.js"}}"></script>
 <link rel="stylesheet" href="{{asset "starter-theme.css"}}">
-<h1 class="text-[22px] font-bold mb-2">{{t "starters.title"}}</h1>
+{{template "partials/site-design.html" .Design}}
+<div class="site-design-body site-design-build">
+<h2 class="site-design-page-title">{{t "sitedesign.build"}}</h2>
 <p class="text-muted mb-6">{{t "starters.intro"}}</p>
 <p class="mb-6 text-muted">{{if $ar}}اختر التصميم، ثم أضف ما تعرفه عن مشروعك. يمكنك ترك الحقول الاختيارية فارغة وتعديل كل صفحة لاحقًا. لن يتغيّر موقعك الحالي حتى تراجع الصفحات وتفعّل الموقع الجديد.{{else}}Choose a design, then add what you know about your project. Optional fields can stay empty; every page remains editable. Your current site stays unchanged until you review and activate the new site.{{end}}</p>
-{{if .Error}}<p role="alert" class="border border-red p-3 mb-4">{{.Error}}</p>{{end}}
+{{if .Error}}<p role="alert" data-design-error tabindex="-1" class="border border-red p-3 mb-4">{{.Error}}</p>{{end}}
 {{if .Run}}
 <section class="border border-line bg-panel p-4 space-y-4">
 <h2 class="text-lg font-bold">{{.Run.Title}}</h2>
@@ -61,4 +63,5 @@
 </form>
 {{if .Logo.CanPick}}{{template "partials/media_picker.html" .}}{{end}}
 {{end}}
+</div>
 {{end}}

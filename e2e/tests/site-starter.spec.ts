@@ -15,7 +15,7 @@ test('three site starters prepare private drafts, activate usable sites and appl
  await publicPage.route('**/*',route=>{const url=route.request().url();if(url.startsWith('http')&&new URL(url).origin!==env('E2E_BASE_URL')){external.push(url);return route.abort()}return route.continue()});
  try{
   await page.goto('/admin/site-builder');await setLocale(page,'ar');
-  await expect(page.getByRole('heading',{level:1})).toContainText('ابنِ موقعك');
+  await expect(page.getByRole('heading',{level:1})).toContainText('تصميم الموقع');
   for(const kind of ['company','portfolio','magazine'] as const){
    const design=designs[kind];
    const siteTitle={company:'شركة وخدمات',portfolio:'Project portfolio',magazine:'مجلة تحريرية'}[kind];
@@ -137,7 +137,7 @@ test('three site starters prepare private drafts, activate usable sites and appl
   await publicPage.goto('/');await expect(publicPage.locator('body')).toHaveCSS('color','rgb(17, 24, 39)');
   expect((database.prepare('SELECT count(*) AS n FROM content').get() as any).n).toBeGreaterThan(oldItems.n);
   await publicPage.screenshot({path:testInfo.outputPath('starter-magazine-identity-edited.png'),fullPage:true});
-  await setLocale(page,'en');await expect(page.locator('h1')).toContainText('Site identity');await setLocale(page,'ar');
+  await setLocale(page,'en');await expect(page.locator('h1')).toContainText('Site design');await setLocale(page,'ar');
   expect(errors).toEqual([]);expect(external).toEqual([]);
  }finally{
   // Restore only this throwaway E2E site's mutable settings/menu locations, preserving other specs' fixtures.

@@ -1,13 +1,15 @@
-{{define "title"}}{{if eq locale "ar"}}الهوية البصرية{{else}}Site identity{{end}}{{end}}
+{{define "title"}}{{t "sitedesign.title"}} · {{t "sitedesign.identity"}}{{end}}
 {{define "content"}}
 {{$ar := eq locale "ar"}}
-<h1 class="text-[22px] font-bold">{{if $ar}}الهوية البصرية للموقع{{else}}Site identity{{end}}</h1>
+{{template "partials/site-design.html" .Design}}
+<div class="site-design-body site-design-identity">
+<h2 class="site-design-page-title">{{t "sitedesign.identity"}}</h2>
 <p class="text-muted mt-2 mb-6">{{if $ar}}هوية مشتركة للألوان والخطوط وعرض الصفحات. قد تتجاوزها قيم مخصصة للقالب. راجع المعاينة المحلية قبل الحفظ؛ تظهر التغييرات على الموقع عند الحفظ.{{else}}Shared colors, fonts and page width. Theme-specific values may override them. Review the local sample before saving; saving applies changes to your site.{{end}}</p>
 {{if .Saved}}<p role="status" class="border border-green p-3 my-4">{{t "identity.saved"}}</p>{{end}}
-{{with .Error}}<p role="alert" class="border border-red text-red p-3 mb-4">{{.}}</p>{{end}}
-<script defer src="{{asset "identity-preview.js"}}"></script><form data-identity-form method="post" class="max-w-3xl space-y-5">
+{{with .Error}}<p role="alert" data-design-error tabindex="-1" class="border border-red text-red p-3 mb-4">{{.}}</p>{{end}}
+<script defer src="{{asset "identity-preview.js"}}"></script><form data-identity-form method="post" class="site-design-identity-layout">
 <input type="hidden" name="_csrf" value="{{csrf}}">
-<label class="block">{{if $ar}}اسم الموقع{{else}}Site name{{end}}<input name="title" required maxlength="200" value="{{.Form.Title}}" class="block w-full border border-line bg-panel p-2 mt-1"></label>
+<div class="site-design-fields space-y-5"><label class="block">{{if $ar}}اسم الموقع{{else}}Site name{{end}}<input name="title" required maxlength="200" value="{{.Form.Title}}" class="block w-full border border-line bg-panel p-2 mt-1"></label>
 <label class="block">{{if $ar}}الوصف المختصر{{else}}Tagline{{end}}<input name="tagline" maxlength="500" value="{{.Form.Tagline}}" class="block w-full border border-line bg-panel p-2 mt-1"></label>
 {{template "media_picker_slot" .Logo}}
 <fieldset class="border border-line p-4"><legend class="px-2">{{if $ar}}ألوان الموقع{{else}}Site colors{{end}}</legend><div class="grid gap-4 sm:grid-cols-3">
@@ -19,8 +21,9 @@
 <label>{{if $ar}}الخط{{else}}Font{{end}}<select name="font" class="block w-full border border-line bg-panel p-2 mt-2"><option value="zad" {{if eq .Form.Identity.Font "zad"}}selected{{end}}>Zad · زاد</option><option value="system" {{if eq .Form.Identity.Font "system"}}selected{{end}}>{{if $ar}}النظام{{else}}System{{end}}</option><option value="serif" {{if eq .Form.Identity.Font "serif"}}selected{{end}}>Serif</option><option value="mono" {{if eq .Form.Identity.Font "mono"}}selected{{end}}>Monospace</option></select></label>
 <label>{{if $ar}}عرض الصفحة{{else}}Page width{{end}}<select name="width" class="block w-full border border-line bg-panel p-2 mt-2"><option value="narrow" {{if eq .Form.Identity.Width "narrow"}}selected{{end}}>{{if $ar}}ضيق{{else}}Narrow{{end}}</option><option value="standard" {{if eq .Form.Identity.Width "standard"}}selected{{end}}>{{if $ar}}متوسط{{else}}Standard{{end}}</option><option value="wide" {{if eq .Form.Identity.Width "wide"}}selected{{end}}>{{if $ar}}واسع{{else}}Wide{{end}}</option></select></label>
 </div>
-<section data-identity-preview class="border border-line p-4 rounded space-y-3" aria-label="{{if $ar}}معاينة محلية للهوية{{else}}Local identity preview{{end}}"><p class="text-sm">{{if $ar}}معاينة محلية فقط؛ حفظ الهوية يطبّقها على الموقع. تخصيصات القالب المحفوظة قد تتجاوز القيم العامة.{{else}}Local sample only; saving applies the identity. Saved theme overrides can take priority over shared values.{{end}}</p><h2 data-preview-title class="text-xl font-bold"></h2><p data-preview-tagline></p><p lang="ar" dir="rtl">نص عربي يوضح هوية موقعك.</p><p lang="en" dir="ltr">A clear identity for your website.</p><span data-preview-button class="inline-block rounded px-3 py-2">{{if $ar}}زر تجريبي{{else}}Sample button{{end}}</span></section>
-<div class="flex flex-wrap gap-4 items-center"><button type="submit" class="bg-green text-white px-4 py-2">{{if $ar}}حفظ الهوية{{else}}Save identity{{end}}</button><a href="/" target="_blank" rel="noopener" class="underline">{{if $ar}}عرض الموقع{{else}}View site{{end}}</a></div>
+</div><aside class="site-design-sample"><p class="site-design-preview-label">{{t "sitedesign.unsaved_preview"}}</p><section data-identity-preview class="border border-line p-4 rounded space-y-3" aria-label="{{if $ar}}معاينة محلية للهوية{{else}}Local identity preview{{end}}"><p class="text-sm">{{if $ar}}معاينة محلية فقط؛ حفظ الهوية يطبّقها على الموقع. تخصيصات القالب المحفوظة قد تتجاوز القيم العامة.{{else}}Local sample only; saving applies the identity. Saved theme overrides can take priority over shared values.{{end}}</p><h2 data-preview-title class="text-xl font-bold">{{.Form.Title}}</h2><p data-preview-tagline>{{.Form.Tagline}}</p><p lang="ar" dir="rtl">نص عربي يوضح هوية موقعك.</p><p lang="en" dir="ltr">A clear identity for your website.</p><span data-preview-button class="inline-block rounded px-3 py-2">{{if $ar}}زر تجريبي{{else}}Sample button{{end}}</span></section><p class="site-design-sample-note">{{t "sitedesign.manual_save"}}</p></aside>
+<div class="site-design-save flex flex-wrap gap-4 items-center"><button type="submit" class="bg-green text-white px-4 py-2">{{if $ar}}حفظ الهوية{{else}}Save identity{{end}}</button><a href="/" target="_blank" rel="noopener" class="underline">{{if $ar}}عرض الموقع{{else}}View site{{end}}</a></div>
 </form>
 {{if .Logo.CanPick}}{{template "partials/media_picker.html" .}}{{end}}
+</div>
 {{end}}
