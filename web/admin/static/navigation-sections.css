@@ -1,1 +1,21 @@
 .admin-section-navigation{margin-block-end:1rem;min-width:0}.admin-section-categories{display:flex;flex-wrap:wrap;gap:.25rem;border-block-end:1px solid var(--line);padding-block-end:.375rem;margin-block-end:.5rem}.admin-section-categories a{display:inline-flex;align-items:center;min-height:2rem;padding:.375rem .75rem;border-radius:var(--radius);color:var(--muted);text-decoration:none}.admin-section-categories a[aria-current]{color:var(--green-hover);background:var(--green-soft);font-weight:650}.admin-section-pages ul{display:flex;flex-wrap:wrap;gap:.375rem}.admin-section-pages li{display:flex;max-width:100%;min-width:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}.admin-section-pages li:has(a[aria-current]){border-color:var(--green);background:var(--green-soft)}.admin-section-pages li>a{display:flex;align-items:center;gap:.375rem;min-width:0;padding:.375rem .625rem;flex:1;color:var(--muted);text-decoration:none;overflow-wrap:anywhere}.admin-section-pages li>a[aria-current]{color:var(--green-hover);font-weight:650}.admin-section-pages li>a svg{flex-shrink:0}.admin-section-pages .dashboard-pin-add{opacity:1;visibility:visible;height:2rem;width:2rem;border-radius:var(--radius);color:var(--muted)}.admin-section-pages a:hover,.admin-section-categories a:hover{color:var(--ink);background:var(--panel-2)}@media(max-width:767px){.admin-section-pages li>a,.admin-section-categories a{min-height:44px}.admin-section-pages li>a{padding-inline-end:3rem}.admin-section-pages .dashboard-pin-add{width:44px;min-height:44px}}
+
+/* Color identifies a workspace area; labels and current-state borders remain explicit. */
+:is([data-navigation-section],[data-navigation-context]){--nav-ink:#1e56a0;--nav-soft:#e7effd}
+:is([data-navigation-section="home"],[data-navigation-context="home"]){--nav-ink:#116149;--nav-soft:#e0f2ea}
+:is([data-navigation-section="site"],[data-navigation-context="site"]){--nav-ink:#6941a5;--nav-soft:#f0e9fb}
+:is([data-navigation-section="canvas"],[data-navigation-context="canvas"]){--nav-ink:#45409e;--nav-soft:#ecebfc}
+:is([data-navigation-section="inbox"],[data-navigation-context="inbox"]){--nav-ink:#854d0e;--nav-soft:#fcf0d7}
+:is([data-navigation-section="settings"],[data-navigation-context="settings"]){--nav-ink:#34546b;--nav-soft:#e7f0f5}
+:is([data-navigation-section="commerce"],[data-navigation-context="commerce"]){--nav-ink:#9d3153;--nav-soft:#fbe7ee}
+[data-navigation-section] .admin-nav-link>svg{color:var(--nav-ink);background:var(--nav-soft);padding:.2rem;border-radius:.35rem;box-sizing:content-box;flex-shrink:0}
+[data-navigation-section] .admin-nav-link.is-active{color:var(--nav-ink);background:var(--nav-soft);border-color:var(--nav-ink)}
+.admin-section-categories [data-navigation-category]{color:var(--nav-ink);background:var(--nav-soft);border:1px solid transparent}
+.admin-section-categories [data-navigation-category="team"],.admin-section-categories [data-navigation-category="site-design"]{--nav-ink:#6941a5;--nav-soft:#f0e9fb}
+.admin-section-categories [data-navigation-category="integrations"],.admin-section-categories [data-navigation-category="site-search"]{--nav-ink:#116149;--nav-soft:#e0f2ea}
+.admin-section-categories [data-navigation-category="system"]{--nav-ink:#854d0e;--nav-soft:#fcf0d7}
+.admin-section-categories a[aria-current]{border-color:var(--nav-ink);font-weight:700;box-shadow:inset 0 -2px var(--nav-ink)}
+.admin-section-pages li:has(a[aria-current]){border-color:var(--nav-ink);background:var(--nav-soft)}
+.admin-section-pages li>a[aria-current],.admin-section-pages li:has(a[aria-current]) .dashboard-pin-add{color:var(--nav-ink)}
+.admin-section-pages li>a>svg{color:var(--nav-ink)}
+@media(forced-colors:active){[data-navigation-section] .admin-nav-link.is-active,.admin-section-categories a[aria-current],.admin-section-pages li:has(a[aria-current]){border-color:Highlight;box-shadow:none}}

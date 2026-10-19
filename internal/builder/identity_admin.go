@@ -37,8 +37,8 @@ func registerIdentity(d *kernel.Deps) error {
 		return errors.New("builder: admin templates unavailable")
 	}
 	h := &identityHandler{d: d, tpl: tpl}
-	d.Admin.AddNav(kernel.NavItem{ID: "builder.identity", LabelKey: "identity.title", Icon: "palette", Href: "/admin/appearance/identity", Permission: "settings.manage", Group: "appearance", Position: 15})
 	r := d.Router.Admin.With(auth.RequirePerm("settings.manage"))
+	r.Get("/site-design", siteDesignHome)
 	r.Get("/appearance/identity", h.view)
 	r.Post("/appearance/identity", h.save)
 	return nil
@@ -54,11 +54,12 @@ func (h *identityHandler) render(w http.ResponseWriter, r *http.Request, status 
 		label = "الشعار"
 	}
 	h.tpl.RenderWith(w, r, status, "admin", "pages/builder/identity.html", struct {
-		Form  identityForm
-		Error string
-		Saved bool
-		Logo  identityMedia
-	}{form, message, r.URL.Query().Get("saved") == "1", identityMedia{Name: "logo", ID: "identity-logo", Value: form.Logo, Label: label, CanPick: auth.Can(r.Context(), "media.upload")}})
+		Design siteDesignView
+		Form   identityForm
+		Error  string
+		Saved  bool
+		Logo   identityMedia
+	}{designView(h.d, r.Context(), false), form, message, r.Method == http.MethodGet && r.URL.Query().Get("saved") == "1", identityMedia{Name: "logo", ID: "identity-logo", Value: form.Logo, Label: label, CanPick: auth.Can(r.Context(), "media.upload")}})
 }
 func (h *identityHandler) view(w http.ResponseWriter, r *http.Request) {
 	h.render(w, r, 200, h.values(r.Context()), "")

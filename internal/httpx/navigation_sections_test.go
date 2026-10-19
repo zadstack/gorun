@@ -134,3 +134,17 @@ func TestSubscriptionsOnlySectionUsesActualPurpose(t *testing.T) {
 		t.Fatal("store management hidden by subscription label", sections)
 	}
 }
+
+func TestSiteDesignDeepLinksUseOnlyAuthorizedEntry(t *testing.T) {
+	item := NavItem{ID: "site-builder", Href: "/admin/site-design", Group: "appearance"}
+	for _, path := range []string{"/admin/site-design", "/admin/site-builder", "/admin/site-builder/review/activate", "/admin/appearance/identity"} {
+		section, group := navigationLocation([]NavItem{item}, path)
+		if section != "site" || group != "site-design" || !navPathMatches(path, item.Href) {
+			t.Fatalf("wrong alias %s: %s/%s", path, section, group)
+		}
+		section, group = navigationLocation(nil, path)
+		if section != "" || group != "" {
+			t.Fatal("unauthorized alias inferred")
+		}
+	}
+}

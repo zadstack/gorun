@@ -268,7 +268,17 @@ test.describe.serial('theme acceptance (§6)', () => {
         const cspViolations: string[] = [];
         page.on('pageerror', (e) => consoleErrors.push(e.message));
         page.on('console', (msg) => {
-          if (msg.type() === 'error') consoleErrors.push(msg.text());
+          if (msg.type() !== 'error') return;
+          // This test deliberately navigates to a 404 page and checks its HTTP
+          // status below. Ignore only Chromium's exact error for that document;
+          // missing assets and every other console/CSP error must still fail.
+          try {
+            const resource = new URL(msg.location().url);
+            if (msg.text() === 'Failed to load resource: the server responded with a status of 404 (Not Found)' &&
+                resource.origin === new URL(page.url()).origin &&
+                resource.pathname === '/no-such-page-acceptance' && !resource.search && !resource.hash) return;
+          } catch { /* Unknown locations remain unexpected errors. */ }
+          consoleErrors.push(msg.text());
         });
         page.on('response', async () => {
           /* CSP reports arrive as console/securitypolicyviolation in Chromium via page events below */

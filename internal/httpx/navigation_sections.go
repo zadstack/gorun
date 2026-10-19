@@ -52,6 +52,9 @@ func navigationBucket(it NavItem) (string, string) {
 	}
 }
 func navPathMatches(p, href string) bool {
+	if href == "/admin/site-design" && (p == "/admin/appearance/identity" || p == "/admin/site-builder" || strings.HasPrefix(p, "/admin/site-builder/")) {
+		return true
+	}
 	return href != "" && (p == href || (href != "/admin" && strings.HasPrefix(p, strings.TrimSuffix(href, "/")+"/")))
 }
 func navigationLocation(items []NavItem, p string) (string, string) {
@@ -66,6 +69,8 @@ func navigationLocation(items []NavItem, p string) (string, string) {
 	}
 	alias := ""
 	switch {
+	case p == "/admin/site-builder" || strings.HasPrefix(p, "/admin/site-builder/") || p == "/admin/appearance/identity":
+		alias = "site-builder"
 	case p == "/admin/navigation":
 		return "settings", "settings"
 	case p == "/admin/website" || strings.HasPrefix(p, "/admin/builder/"):
