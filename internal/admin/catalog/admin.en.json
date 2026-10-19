@@ -368,7 +368,6 @@
   "workspace.choice_title": "Choose your workspace",
   "workspace.choice_hint": "Simple CMS or Agents + Commerce",
   "workspace.choose": "Choose workspace",
-
   "settings.error_ai_provider": "Choose a provider",
   "settings.error_ai_base_url_required": "Enter the provider endpoint explicitly",
   "settings.error_ai_base_url": "Enter an https URL (http only for localhost) without a query",
@@ -596,5 +595,17 @@
   "keys.grace_none": "Revoke old now",
   "keys.grace_hour": "Old works 1 hour",
   "keys.grace_day": "Old works 24 hours",
-  "keys.rotate_denied": "Only the key's owner can rotate an active key, within their own permissions."
+  "keys.rotate_denied": "Only the key's owner can rotate an active key, within their own permissions.",
+  "updates.title": "System updates",
+  "updates.current": "Running version",
+  "updates.help": "Deploy the source already configured for this site in Coolify. A verified local backup is created before requesting deployment. The hosting platform builds and restarts the application; brief downtime is expected.",
+  "updates.last": "Last deployment request",
+  "updates.confirm": "I have reviewed the deployment source and have an off-host backup and the site secrets. Request the update now.",
+  "updates.deploy": "Update from configured source",
+  "updates.setup": "Deployment is not connected. Configure this site’s Coolify integration on the server to enable this button.",
+  "updates.verify": "An accepted request means deployment was queued, not completed. Check the deployment in Coolify, then reopen System Health and verify the running version.",
+  "updates.accepted": "Coolify accepted the deployment request. Check its progress in Coolify.",
+  "updates.unconfirmed": "Deployment acceptance could not be confirmed. Check Coolify before trying again; a deployment may already have started.",
+  "updates.cooldown": "A deployment was requested recently. Check Coolify before submitting another request. Requests are spaced ten minutes apart.",
+  "updates.backup_failed": "The backup could not be verified. No deployment request was sent."
 }

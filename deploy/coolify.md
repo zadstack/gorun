@@ -339,3 +339,43 @@ Traefik in front of `ghcr.io/zadstack/gorun:0.1` — only the CIDR discovery
 commands change (inspect the network your reverse proxy shares with GoRun).
 Troubleshooting: [TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md#https-proxy-hsts).
 Production overview: [PRODUCTION.md](../docs/PRODUCTION.md).
+
+## Optional update button in GoRun admin
+
+After manually deploying a version with **System → System updates**, the site
+owner can request subsequent deployments from that page. This integration is for
+Coolify deployments; it does not run a shell or modify the application's binary.
+
+Configure these **server-side environment secrets** in the GoRun resource:
+
+| Variable | Value |
+| --- | --- |
+| `GORUN_UPDATE_COOLIFY_URL` | Your trusted Coolify HTTPS origin, e.g. `https://coolify.example.com` (no path, query or credentials). |
+| `GORUN_UPDATE_COOLIFY_TOKEN` | A Coolify API token permitted to deploy the intended resource. Use the narrowest available permissions. Never place it in a browser URL or client-side configuration. |
+| `GORUN_UPDATE_COOLIFY_RESOURCE` | The single Coolify resource UUID belonging to this site. |
+
+In Coolify, first verify the repository, branch or image tag configured for that
+resource. The button deploys **that configured source**; it does not select a
+GitHub commit, promise that `main` is tested, or automatically change a pinned
+image tag. A resource pinned to an old release will remain on that release until
+you change its tag in Coolify. Keep the existing `/data` volume and secret key,
+and retain the stop-then-start strategy described above.
+
+The button requires the `system.update` permission, a recent password sign-in,
+CSRF validation and explicit confirmation. It creates and verifies a local
+backup before sending an authenticated `POST /api/v1/deploy` for the configured
+resource. Local backups are not a substitute for an off-host backup and a
+separate copy of the site secrets. Requests are spaced ten minutes apart,
+including uncertain failures, to reduce accidental duplicate deployments.
+
+An accepted request means **queued**, not deployed. Check progress in Coolify,
+then open GoRun System Health to verify the running version. A timeout can occur
+after Coolify accepts a request; check there before retrying. There is no
+automatic rollback, deployment polling or recovery from incompatible database
+migrations in this first integration. The admin page never exposes the API token,
+the deployment URL or upstream response bodies, and redirects are not followed.
+Without all three environment variables, the page explains setup and keeps its
+button disabled. The integration may reach an operator-selected private Coolify
+host over verified HTTPS without enabling private URL fetching elsewhere.
+
+Protocol reference: [Coolify Deploy API](https://coolify.io/docs/api/endpoints/deployments/deploy-by-tag-or-uuid).

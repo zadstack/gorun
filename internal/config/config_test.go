@@ -161,3 +161,18 @@ func TestLoadS3FromTOMLAndEnv(t *testing.T) {
 		t.Fatalf("env: %+v", c.S3)
 	}
 }
+
+func TestOperatorUpdateEnvironment(t *testing.T) {
+	t.Setenv("GORUN_DATA", t.TempDir())
+	t.Setenv("GORUN_ENV", "dev")
+	t.Setenv("GORUN_UPDATE_COOLIFY_URL", "https://coolify.example")
+	t.Setenv("GORUN_UPDATE_COOLIFY_TOKEN", "synthetic-test-token")
+	t.Setenv("GORUN_UPDATE_COOLIFY_RESOURCE", "site_123")
+	cfg, err := Load(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.UpdateURL != "https://coolify.example" || cfg.UpdateToken != "synthetic-test-token" || cfg.UpdateResource != "site_123" {
+		t.Fatal("update environment was not loaded")
+	}
+}
