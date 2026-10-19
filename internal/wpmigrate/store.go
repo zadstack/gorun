@@ -41,19 +41,26 @@ type sourceRow struct {
 
 // MigrationView is a migration summary.
 type MigrationView struct {
-	ID         string  `json:"id"`
-	SourceID   string  `json:"source_id"`
-	SourceName string  `json:"source_name"`
-	SourceURL  string  `json:"source_url"`
-	SourceKind string  `json:"source_kind"`
-	Status     string  `json:"status"`
-	DryRun     bool    `json:"dry_run"`
-	Step       string  `json:"step"`
-	Failed     int     `json:"failed"` // failed items
-	Options    Options `json:"options"`
-	CreatedAt  string  `json:"created_at"`
-	StartedAt  string  `json:"started_at"`
-	FinishedAt string  `json:"finished_at"`
+	ID           string                  `json:"id"`
+	SourceID     string                  `json:"source_id"`
+	SourceName   string                  `json:"source_name"`
+	SourceURL    string                  `json:"source_url"`
+	SourceKind   string                  `json:"source_kind"`
+	Status       string                  `json:"status"`
+	DryRun       bool                    `json:"dry_run"`
+	Step         string                  `json:"step"`
+	Failed       int                     `json:"failed"` // failed items
+	ItemProgress []MigrationItemProgress `json:"-"`      // operator view only; not a new API contract
+	Options      Options                 `json:"options"`
+	CreatedAt    string                  `json:"created_at"`
+	StartedAt    string                  `json:"started_at"`
+	FinishedAt   string                  `json:"finished_at"`
+}
+
+// MigrationItemProgress preserves actual pipeline statuses: preview never means imported.
+type MigrationItemProgress struct {
+	Kind                                           string
+	Total, Done, Preview, Pending, Failed, Skipped int
 }
 
 type migrationRow struct {
@@ -335,7 +342,8 @@ func (s *service) Migrations(ctx context.Context) ([]MigrationView, error) {
 
 func (s *service) listMigrations(ctx context.Context, tail string, args ...any) ([]MigrationView, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT m.id, m.source_id, w.name, w.url, w.kind, m.status, m.dry_run, m.current_step,
-		(SELECT count(*) FROM migration_items i WHERE i.migration_id = m.id AND i.status = 'failed'), m.options_json, m.created_at, COALESCE(m.started_at, ''), COALESCE(m.finished_at, '')
+		(SELECT count(*) FROM migration_items i WHERE i.migration_id = m.id AND i.status = 'failed'),
+        (SELECT json_group_object(kind || ':' || status,n) FROM (SELECT kind,status,count(*) n FROM migration_items i WHERE i.migration_id=m.id GROUP BY kind,status)), m.options_json, m.created_at, COALESCE(m.started_at, ''), COALESCE(m.finished_at, '')
 		FROM migrations m JOIN wp_sources w ON w.id = m.source_id `+tail, args...)
 	if err != nil {
 		return nil, err
@@ -344,10 +352,21 @@ func (s *service) listMigrations(ctx context.Context, tail string, args ...any) 
 	out := []MigrationView{}
 	for rows.Next() {
 		var v MigrationView
-		var opts string
+		var opts, countsJSON string
 		if err := rows.Scan(&v.ID, &v.SourceID, &v.SourceName, &v.SourceURL, &v.SourceKind, &v.Status, &v.DryRun, &v.Step,
-			&v.Failed, &opts, &v.CreatedAt, &v.StartedAt, &v.FinishedAt); err != nil {
+			&v.Failed, &countsJSON, &opts, &v.CreatedAt, &v.StartedAt, &v.FinishedAt); err != nil {
 			return nil, err
+		}
+		counts := map[string]int{}
+		if err := json.Unmarshal([]byte(countsJSON), &counts); err != nil {
+			return nil, fmt.Errorf("wpmigrate: read item counts: %w", err)
+		}
+		for _, kind := range []string{"content", "media", "product", "redirect", "rewrite", "user", "term", "menu"} {
+			row := MigrationItemProgress{Kind: kind, Done: counts[kind+":done"], Preview: counts[kind+":preview"], Pending: counts[kind+":pending"], Failed: counts[kind+":failed"], Skipped: counts[kind+":skipped"]}
+			row.Total = row.Done + row.Preview + row.Pending + row.Failed + row.Skipped
+			if row.Total > 0 {
+				v.ItemProgress = append(v.ItemProgress, row)
+			}
 		}
 		_ = json.Unmarshal([]byte(opts), &v.Options)
 		v.Options = v.Options.normalized()
