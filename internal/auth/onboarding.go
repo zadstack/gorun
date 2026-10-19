@@ -18,6 +18,21 @@ const onboardingPath = "/admin/onboarding"
 type onboardingPage struct {
 	Name, Email, Title, Locale string
 	Fields                     map[string]string
+	Languages                  map[string]map[string]string
+}
+
+func (h *handlers) onboardingLanguages(fields map[string]string) map[string]map[string]string {
+	out := map[string]map[string]string{}
+	for _, locale := range []string{"ar", "en"} {
+		out[locale] = map[string]string{}
+		for _, key := range []string{"auth.onboarding.title", "auth.onboarding.intro", "auth.field.name", "auth.field.email", "auth.onboarding.site_title", "auth.onboarding.password", "auth.onboarding.confirm", "auth.onboarding.locale", "auth.onboarding.submit", "auth.onboarding.secure_section", "auth.onboarding.site_section"} {
+			out[locale][key] = h.deps.I18n.T(locale, key)
+		}
+		for _, key := range fields {
+			out[locale][key] = h.deps.I18n.T(locale, key)
+		}
+	}
+	return out
 }
 
 func (h *handlers) onboardingForm(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +41,7 @@ func (h *handlers) onboardingForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
 	}
-	page := onboardingPage{Name: u.Name, Title: h.deps.Settings.GetString(r.Context(), "site.title", ""), Locale: i18n.LocaleFromRequest(r, u.Locale)}
+	page := onboardingPage{Languages: h.onboardingLanguages(nil), Name: u.Name, Title: h.deps.Settings.GetString(r.Context(), "site.title", ""), Locale: i18n.LocaleFromRequest(r, u.Locale)}
 	if u.Email != "admin@localhost.invalid" {
 		page.Email = u.Email
 	}
@@ -56,7 +71,7 @@ func (h *handlers) onboardingSubmit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad request", 400)
 		return
 	}
-	page := onboardingPage{Name: strings.TrimSpace(f.Name), Email: normalizeEmail(f.Email), Title: strings.TrimSpace(f.Title), Locale: f.Locale, Fields: map[string]string{}}
+	page := onboardingPage{Languages: h.onboardingLanguages(nil), Name: strings.TrimSpace(f.Name), Email: normalizeEmail(f.Email), Title: strings.TrimSpace(f.Title), Locale: f.Locale, Fields: map[string]string{}}
 	if !validEmail(page.Email) || strings.HasSuffix(page.Email, ".invalid") {
 		page.Fields["email"] = "auth.error.email_invalid"
 	}
@@ -84,6 +99,10 @@ func (h *handlers) onboardingSubmit(w http.ResponseWriter, r *http.Request) {
 		page.Fields["password"] = "auth.onboarding.password_different"
 	}
 	render := func() {
+		page.Languages = h.onboardingLanguages(page.Fields)
+		if slices.Contains(i18n.Supported, page.Locale) {
+			r = r.WithContext(i18n.WithLocale(r.Context(), page.Locale))
+		}
 		h.tpl.RenderWith(w, r, http.StatusUnprocessableEntity, "auth", "pages/auth/onboarding.html", page)
 	}
 	if len(page.Fields) > 0 {

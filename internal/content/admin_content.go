@@ -25,6 +25,7 @@ const adminPerPage = 20
 
 type listRow struct {
 	ID, Title, Slug, Status, UpdatedAt, EditURL string
+	Locale, AuthorName, ParentTitle             string
 }
 
 type listView struct {
@@ -33,6 +34,8 @@ type listView struct {
 	BaseURL              string
 	Rows                 []listRow
 	Search, Status       string
+	Locale, Author, View string
+	Authors              []choice
 	Statuses             []Status
 	Links                pageLinks
 	CanCreate, CanDelete bool
@@ -51,8 +54,24 @@ func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
 	if q.Status != "" && !slices.Contains(Statuses, Status(q.Status)) {
 		q.Status = ""
 	}
-	if u := auth.UserFromContext(ctx); ownOnly(u) {
+	view := qs.Get("view")
+	if view != "mine" && view != "review" {
+		view = ""
+	}
+	if lang := qs.Get("locale"); lang == "ar" || lang == "en" {
+		q.Locale = lang
+	}
+	u := auth.UserFromContext(ctx)
+	if ownOnly(u) || view == "mine" {
 		q.AuthorID = u.ID
+	} else {
+		q.AuthorID = qs.Get("author")
+	}
+	if view == "mine" {
+		q.Status = "draft"
+	}
+	if view == "review" {
+		q.Status = "pending"
 	}
 	res, err := h.svc.Query(ctx, q)
 	if err != nil {
@@ -62,9 +81,29 @@ func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
 	locale := i18n.Locale(ctx)
 	base := "/admin/content/" + t.Slug
 	v := listView{Type: t, TypeName: localized(t.Singular, locale, localized(t.Name, locale, t.Slug)), PluralName: localized(t.Plural, locale, localized(t.Name, locale, t.Slug)),
-		BaseURL: base, Search: q.Search, Status: q.Status, Statuses: Statuses,
+		BaseURL: base, Search: q.Search, Status: q.Status, Statuses: Statuses, Locale: q.Locale, Author: q.AuthorID, View: view,
 		CanCreate: auth.Can(ctx, "content.create"), CanDelete: auth.Can(ctx, "content.delete")}
+	if !ownOnly(u) {
+		rows, err := h.d.DB.QueryContext(ctx, `SELECT DISTINCT u.id,u.name FROM users u JOIN content c ON c.author_id=u.id WHERE c.type=? ORDER BY u.name,u.id`, t.Slug)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id, name string
+				if rows.Scan(&id, &name) == nil {
+					if name == "" {
+						name = "—"
+					}
+					v.Authors = append(v.Authors, choice{Value: id, Label: name, Selected: id == q.AuthorID})
+				}
+			}
+		}
+	}
 	filters := url.Values{}
+	for k, val := range map[string]string{"locale": q.Locale, "author": q.AuthorID, "view": view} {
+		if val != "" {
+			filters.Set(k, val)
+		}
+	}
 	if q.Search != "" {
 		filters.Set("search", q.Search)
 	}
@@ -73,7 +112,17 @@ func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
 	}
 	v.Links = newPageLinks(base, filters, res.Page, res.PerPage, res.Total)
 	for _, it := range res.Items {
-		v.Rows = append(v.Rows, listRow{ID: it.ID, Title: it.Title, Slug: it.Slug, Status: string(it.Status), UpdatedAt: it.UpdatedAt,
+		authorName := ""
+		_ = h.d.DB.QueryRowContext(ctx, `SELECT name FROM users WHERE id=?`, it.AuthorID).Scan(&authorName)
+		parentTitle := ""
+		if it.ParentID != "" {
+			if parent, err := h.svc.Get(ctx, it.ParentID); err == nil {
+				if !ownOnly(u) || parent.AuthorID == u.ID {
+					parentTitle = parent.Title
+				}
+			}
+		}
+		v.Rows = append(v.Rows, listRow{Locale: it.Locale, AuthorName: authorName, ParentTitle: parentTitle, ID: it.ID, Title: it.Title, Slug: it.Slug, Status: string(it.Status), UpdatedAt: it.UpdatedAt,
 			EditURL: base + "/" + it.ID})
 	}
 	h.tpl.Render(w, r, "pages/content/list.html", v)

@@ -1,5 +1,6 @@
 {{define "title"}}{{t "media.title"}}{{end}}
 {{define "content"}}
+<script defer src="{{asset "media-view.js"}}"></script><link rel="stylesheet" href="{{asset "media-view.css"}}">
 <div class="flex flex-wrap items-end justify-between gap-3 mb-4">
   <div>
     <h1 class="text-[22px] font-bold">{{t "media.title"}}</h1>
@@ -38,14 +39,15 @@
   </div>
 </form>
 
-<section id="media-results" aria-live="polite">
+<section id="media-results" data-media-view="grid" aria-live="polite">
   {{if .Uploaded}}<div role="status" class="mb-4 rounded border border-green bg-green-soft text-green px-3 py-2">{{t "media.upload.done" .Uploaded}}</div>{{end}}
   {{range .Errors}}
   <div role="alert" class="mb-2 rounded border border-red bg-red-soft text-red px-3 py-2">{{if .Filename}}<span class="font-mono">{{.Filename}}</span> — {{end}}{{t .Key}}</div>
   {{end}}
   {{if .Items}}
   <p class="mb-2 text-xs text-muted font-mono">{{t "media.total" .Total}}</p>
-  <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+  <div class="flex gap-2 mb-3" role="group" aria-label="{{if eq locale "ar"}}طريقة العرض{{else}}Library view{{end}}"><button type="button" data-media-view-button="grid" aria-pressed="true" class="border border-line rounded px-3 min-h-11">{{if eq locale "ar"}}شبكة{{else}}Grid{{end}}</button><button type="button" data-media-view-button="list" aria-pressed="false" class="border border-line rounded px-3 min-h-11">{{if eq locale "ar"}}قائمة{{else}}List{{end}}</button></div>
+  <ul data-media-items class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
     {{range .Items}}
     <li>
       <a href="/admin/media/{{.ID}}" class="group block rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft overflow-hidden">
@@ -70,7 +72,7 @@
   </nav>
   {{end}}
   {{else}}
-  <div class="admin-empty">{{if .Q}}{{t "media.empty_search"}}{{else}}{{t "media.empty"}}{{end}}</div>
+  <div class="admin-empty">{{if .Q}}{{t "media.empty_search"}}{{else}}{{t "media.empty"}}<p class="mt-2 text-sm">{{if eq locale "ar"}}ارفع الصور والملفات من الأعلى، ثم اخترها داخل محرر المحتوى أو إعدادات الهوية. افتح الملف لاحقًا لتعديل وصف الصورة وبياناته.{{else}}Upload images and files above, then choose them in the content editor or identity settings. Open a file later to edit its description and details.{{end}}</p>{{end}}</div>
   {{end}}
 </section>
 {{end}}
