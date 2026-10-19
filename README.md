@@ -53,7 +53,7 @@ The instructions are tool-neutral. A chat-only assistant can explain the steps b
 
 ## Cloudflare Edge — in development
 
-GoRun Edge is being developed as a separate Workers-based edition. The current milestone provides site-scoped manager permission contracts. The Worker runtime, storage/admin integration and a tested deployment template remain on the [Edge roadmap](https://github.com/zadstack/gorun/issues/46). A Deploy to Cloudflare button will be added after the template passes a real deployment test.
+GoRun Edge is a separate, experimental Workers-based edition. Alongside the site-scoped manager contracts, a [read-only Worker proof of concept](docs/EDGE.md) runs locally with its own D1/R2 storage and real workerd integration tests. No real Cloudflare deployment is verified yet. Edge admin, manager pairing and a supported deployment template remain on the [roadmap](https://github.com/zadstack/gorun/issues/46); no Deploy button is available. The prototype is separate from the GoRun Full release binary.
 
 [![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 
@@ -78,7 +78,7 @@ The screenshots use an isolated demo site with fictional content. The layout mir
 
 In a controlled minimal article test at **50 requests/s**, median run p95 latency was **2.66 ms for GoRun**, **16.85 ms for WordPress + MariaDB**, and **0.66 ms for Astro static + Nginx**. Sampled peak working set was **114.54 MiB**, **203.78 MiB**, and **4.09 MiB**, respectively.
 
-Three repetitions on one disposable host; two logical server CPUs and a 2 GiB budget per deployment; 100 identical synthetic articles; no TLS, CDN or full-page cache. Astro is a static-delivery reference, not a full CMS. **Edge is not yet runnable and has no measured result.** These numbers describe this workload, not general product superiority. [Full results, limitations, raw evidence and reproducible notebook](docs/BENCHMARKS.md).
+Three repetitions on one disposable host; two logical server CPUs and a 2 GiB budget per deployment; 100 identical synthetic articles; no TLS, CDN or full-page cache. Astro is a static-delivery reference, not a full CMS. **The experimental Edge prototype has no measured result.** These numbers describe this workload, not general product superiority. [Full results, limitations, raw evidence and reproducible notebook](docs/BENCHMARKS.md).
 
 ## Write, review and publish
 
