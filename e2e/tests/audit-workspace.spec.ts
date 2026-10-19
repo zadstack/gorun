@@ -41,3 +41,37 @@ test('structured Studio saves exact reviewed config, preserves untouched setting
 test('connection type guidance preserves saved input and provides explicit provider examples',async({page})=>{
  await page.goto('/admin/settings/connections');await setLocale(page,'en');const form=page.locator('[data-connection-setup]');await form.locator('[name=kind]').selectOption('ai');await expect(form.locator('[data-connection-purpose]')).toContainText('Writing model');await form.locator('[name=endpoint]').fill('https://custom.example/v1');await form.locator('[name=provider]').selectOption('anthropic');await expect(form.locator('[name=endpoint]')).toHaveValue('https://custom.example/v1');await form.locator('[name=kind]').selectOption('s3');await expect(form.locator('[data-connection-purpose]')).toContainText('does not move files');await expect(form.locator('[name=bucket]')).toBeVisible();await expect(form.locator('[name=token]')).not.toBeVisible();
 });
+
+test('structured and Advanced JSON modes roundtrip actual saved settings without dropping provider mappings',async({page})=>{
+ const database=db(),saved=database.prepare("SELECT value_json,updated_at FROM settings WHERE key='ai.studio'").get() as any;
+ const id='01'+randomUUID().replaceAll('-','').slice(0,24).toUpperCase(),version='01'+randomUUID().replaceAll('-','').slice(0,24).toUpperCase();
+ const profileKey='connections.profile.'+id,discoveryKey='ai.studio.discovery.'+id;
+ // A synthetic saved profile/catalog permits the real settings-save contract;
+ // the fixture performs no network discovery or third-party tool execution.
+ const binding={id:'audit-roundtrip',name:'Archive draft',kind:'text',connection_id:id,tool:'draft',arguments:{prompt:'{{prompt}}',vendor_options:{mode:'source-only',limit:3}},text_path:'structuredContent.text',job_path:'structuredContent.job',status_tool:'status',status_arguments:{job_id:'{{job_id}}',vendor_poll:{source:'exact'}},status_path:'structuredContent.state',ready_value:'ready',failed_value:'failed'};
+ const put=database.prepare('INSERT INTO settings(key,value_json,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json');
+ const candidates=()=>Number((database.prepare('SELECT count(*) n FROM admin_studio_candidates').get() as any).n);
+ try{
+ put.run(profileKey,JSON.stringify({id,version,kind:'mcp',name:'Synthetic archive',endpoint:'https://archive.example/mcp'}),new Date().toISOString());
+ put.run(discoveryKey,JSON.stringify({version,tools:[{name:'draft',inputSchema:{type:'object'}},{name:'status',inputSchema:{type:'object'}}]}),new Date().toISOString());
+ put.run('ai.studio',JSON.stringify({image_model:'',bindings:[binding],presets:[]}),new Date().toISOString());
+ await page.goto('/admin/settings/studio');await setLocale(page,'en');
+ let discovery=0;page.on('request',r=>{if(r.url().includes('/settings/studio/discover'))discovery++;});const before=candidates();
+ const form=page.locator('[data-studio-structured]'),card=form.locator('article'),advanced=page.locator('[data-studio-advanced]'),raw=page.locator('[data-studio-config]'),mode=page.locator('[data-studio-editor-mode]');
+ await card.getByLabel('Name',{exact:true}).fill('Edited in fields');await advanced.locator('summary').click();await expect.poll(async()=>JSON.parse(await raw.inputValue()).bindings[0].name).toBe('Edited in fields');
+ const changed=JSON.parse(await raw.inputValue());changed.bindings[0].name='Edited in JSON';changed.bindings[0].arguments.vendor_options.mode='strict';await raw.fill(JSON.stringify(changed,null,2));
+ await expect(mode).toContainText('Save uses Advanced JSON');expect(await form.locator('input,textarea,select,button').evaluateAll(nodes=>nodes.every(n=>(n as HTMLInputElement).disabled))).toBe(true);
+ const rawSave=page.waitForRequest(r=>new URL(r.url()).pathname==='/admin/settings/studio'&&r.method()==='POST');await page.locator('[data-studio-config-save]').click();expect((await rawSave).postDataJSON().bindings[0].name).toBe('Edited in JSON');await expect(page.locator('[data-studio-config-status]')).toContainText('Saved. No generation was executed.');
+ await page.locator('[data-studio-json-load]').click();await expect(mode).not.toBeVisible();await expect(card.getByLabel('Name',{exact:true})).toBeEnabled();await expect(card.getByLabel('Name',{exact:true})).toHaveValue('Edited in JSON');
+ await card.getByLabel('Name',{exact:true}).fill('Final structured name');await advanced.locator('summary').click();await advanced.locator('summary').click();await expect.poll(async()=>JSON.parse(await raw.inputValue()).bindings[0].name).toBe('Final structured name');
+ const finalSave=page.waitForRequest(r=>new URL(r.url()).pathname==='/admin/settings/studio'&&r.method()==='POST');await page.locator('[data-studio-config-save]').click();const sent=(await finalSave).postDataJSON().bindings[0];
+ expect(sent.status_arguments).toEqual(binding.status_arguments);for(const key of ['job_path','status_tool','status_path','ready_value','failed_value'])expect(sent[key]).toBe((binding as any)[key]);expect(sent.arguments.vendor_options).toEqual({mode:'strict',limit:3});
+ await expect(page.locator('[data-studio-config-status]')).toContainText('Saved. No generation was executed.');await page.reload();await expect(page.locator('[data-studio-structured]').getByLabel('Name',{exact:true})).toHaveValue('Final structured name');
+ // A broken mapping must not expose stale JSON as if it reflected the fields.
+ await page.locator('[data-studio-structured]').getByLabel('Input mapping (JSON object)',{exact:true}).fill('{broken');await page.locator('[data-studio-advanced]>summary').click();await expect(page.locator('[data-studio-advanced]')).not.toHaveAttribute('open');await expect(page.locator('[data-studio-config-status]')).toContainText('valid JSON object');await expect(page.locator('[data-studio-structured] [aria-invalid=true]')).toBeFocused();
+ expect(discovery).toBe(0);expect(candidates()).toBe(before);
+ }finally{
+ database.prepare('DELETE FROM settings WHERE key IN(?,?)').run(profileKey,discoveryKey);
+ if(saved)database.prepare("UPDATE settings SET value_json=?,updated_at=? WHERE key='ai.studio'").run(saved.value_json,saved.updated_at);else database.prepare("DELETE FROM settings WHERE key='ai.studio'").run();database.close();
+ }
+});
