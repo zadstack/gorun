@@ -1,5 +1,15 @@
 # Workspace canvases
 
+The **Agents** rail on the opposite side of the admin navigation opens your saved
+agent and model cards across your own canvases. Its read-only drawer distinguishes
+the canvas card ID from the selected agent key and shows the effective saved
+instructions and model only when the current graph passes preparation checks.
+“Configured” still requires review before running; it does not mean an external
+client is online. Opening the drawer never runs an action or publishes content.
+External clients must remain connected and polling. The drawer does not assemble
+or verify Skills or MCP servers. It is hidden in the simple workspace and requires
+content-edit permission; source context and credentials are excluded.
+
 Open **Dashboard → Canvases** (`/admin/canvases`). Create a named canvas, then add
 notes, checklists, links, article/page references, or operational widgets.
 Canvases are private to the signed-in user on the current site.
