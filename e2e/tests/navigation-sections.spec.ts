@@ -12,7 +12,11 @@ for (const locale of ['en', 'ar'] as const) {
     await page.locator('[data-navigation-category="structure"]').click();
     await expect(page.locator('.admin-section-pages a[href="/admin/taxonomies"]')).toBeVisible();
     await sidebar.locator('[data-navigation-section="site"] a').click();
+    await expect(page).toHaveURL(/\/admin\/website$/);
+    await expect(page.locator('[data-website-group]')).toHaveCount(3);
+    await expect(page.locator('.admin-section-categories a')).toHaveCount(3);
     await expect(page.locator('.admin-section-pages a[href="/admin/menus"]')).toBeVisible();
+    await page.locator('[data-navigation-category="site-search"]').click();
     await page.locator('.admin-section-pages a[href="/admin/settings/seo"]').click();
     await expect(sidebar.locator('[data-navigation-section="site"] a')).toHaveAttribute('aria-current', 'true');
     await sidebar.locator('[data-navigation-section="settings"] a').click();
