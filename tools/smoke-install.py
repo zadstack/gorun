@@ -15,6 +15,7 @@ import signal
 import subprocess
 import tempfile
 import threading
+import time
 import urllib.parse
 import urllib.request
 
@@ -100,7 +101,11 @@ def main():
                 with browser.open(local + "/admin/login", data=values, timeout=15) as response:
                     if urllib.parse.urlparse(response.url).path != "/admin/onboarding":
                         raise RuntimeError("Generated credentials did not reach first-login setup")
-                if not (home / "browser-request").exists():
+                for _ in range(50):
+                    if (home / "browser-request").exists():
+                        break
+                    time.sleep(0.1)
+                else:
                     raise RuntimeError("Browser launcher was not invoked")
             finally:
                 if child.poll() is None:
