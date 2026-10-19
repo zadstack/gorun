@@ -4,7 +4,8 @@
   function create(api) {
     const {root, t, element:el, button:btn, request, csrf, save, changed} = api;
     const records=new Map(), generations=new Map(), endpointBase=`/admin/canvases/${encodeURIComponent(root.dataset.id)}/cards/`;
-    let selected='', review=null, busy=false;
+    let selected='', review=null, busy=false, lastAuthorityShape='';
+    const authorityShape=()=>JSON.stringify({cards:(api.document()?.cards||[]).map(({x,y,...card})=>card),edges:api.document()?.edges||[]});
     const dialog=el('dialog',undefined,'canvas-dialog canvas-inbound-dialog');dialog.setAttribute('aria-labelledby','canvas-inbound-title');root.append(dialog);
     const secretDialog=el('dialog',undefined,'canvas-dialog canvas-inbound-secret');secretDialog.setAttribute('aria-labelledby','canvas-inbound-secret-title');root.append(secretDialog);
     const secretHeading=el('h2',t('inbound_secret_title'));secretHeading.id='canvas-inbound-secret-title';
@@ -61,7 +62,8 @@
       if(data?.model)container.append(line(t('inbound_model'),data.model,false));
       const url=endpoint(data);container.append(line(t('inbound_webhook'),url||'',!!url));
       const state=el('span',record?.error?t('inbound_unavailable'):record?.pending?t('inbound_loading'):statusText(data),'canvas-inbound-state');state.dataset.inboundState=data?.status==='needs_review'?'needs_review':data?.enabled?'enabled':data?.status||'unconfigured';container.append(state);
-      const prompts=promptsFor(card);if(prompts.length){const sample=el('p',prompts.map(node=>node.body).join('\n\n'),'canvas-inbound-prompt-preview');sample.title=t('inbound_prompt');container.append(sample);}
+      const prompts=promptsFor(card),effective=typeof data?.prompt==='string'&&data.prompt.trim()?data.prompt:'';
+      const promptText=effective||prompts.map(node=>node.body).join('\n\n');if(promptText){const promptLabel=t(effective?'inbound_effective_prompt':'inbound_prompt');const sample=el('p',promptText,'canvas-inbound-prompt-preview');sample.title=promptLabel;container.append(el('small',promptLabel),sample);}
       const open=btn(t('inbound_settings'),()=>action(()=>openSettings(card.id)));open.dataset.inboundOpen=card.id;container.append(open);
     }
     function repaint(){for(const box of root.querySelectorAll('[data-inbound-card]')){const card=api.document()?.cards.find(node=>node.id===box.dataset.inboundCard);if(card)paint(box,card);}}
@@ -129,8 +131,8 @@
       finally{busy=false;dialog.removeAttribute('aria-busy');dismiss.disabled=false;configure.disabled=false;const data=selected?records.get(selected)?.data:null;preview.disabled=!data?.id;disable.disabled=!data?.enabled;rotate.disabled=!data?.id;}
     }
     return {
-      cardHeader(card){if(!['agent','provider'].includes(card.kind))return null;const box=el('section',undefined,'canvas-inbound-card');box.dataset.inboundCard=card.id;paint(box,card);fetchMetadata(card);return box;},
-      saved(){for(const card of api.document()?.cards||[])if(['agent','provider'].includes(card.kind)){generations.set(card.id,(generations.get(card.id)||0)+1);records.delete(card.id);fetchMetadata(card,true);}}
+      cardHeader(card){if(!['agent','provider'].includes(card.kind))return null;if(!lastAuthorityShape)lastAuthorityShape=authorityShape();const box=el('section',undefined,'canvas-inbound-card');box.dataset.inboundCard=card.id;paint(box,card);fetchMetadata(card);return box;},
+      saved(){const shape=authorityShape();if(shape===lastAuthorityShape)return;lastAuthorityShape=shape;for(const card of api.document()?.cards||[])if(['agent','provider'].includes(card.kind)){generations.set(card.id,(generations.get(card.id)||0)+1);records.delete(card.id);fetchMetadata(card,true);}}
     };
   }
 })();

@@ -98,3 +98,38 @@ select content, agents and providers explicitly. No run history, sharing grants,
 consent records or enabled schedules are inherited. A schedule-shaped card may
 remain as part of the structure, but it has no active automation until the new
 workflow is configured, reviewed and explicitly enabled.
+
+## Incoming events on agent and provider cards
+
+At the top of each agent/provider card, **Card ID** identifies that particular
+canvas node. **Agent ID** identifies the selected agent-key record; it is not the
+API key value. **Provider ID** identifies a selected generation binding. A model
+name is shown only when the backend supplies an actual configured model.
+
+**Incoming events** configures a signed receiver for that card. Enter a matching
+command and review the saved instructions. With one connected prompt card, the
+dialog edits that existing card; with multiple prompts, edit them separately.
+The card preview uses the backend's effective saved instructions when available,
+including preset instructions. A clearly labeled connected-card fallback is
+shown while effective instructions are unavailable. The final action review
+always comes from the backend and shows the actual destination, instructions
+and context.
+
+**Save disabled** never enables automation. **Review action** prepares a review
+bound to this rule and revision; the explicit checkbox and **Enable reviewed
+action** authorize matching events. Changes to the rule, workflow or authority
+can require a new review. **Disable** stops new accepted runs. Rotating the
+signing secret disables the rule and invalidates the previous secret. The new
+secret appears once, is cleared from the dialog on close, and is never embedded
+in the public URL. Reopen settings to inspect the command/status; rotate if the
+signing secret was lost.
+
+The sender must implement GoRun's [signed command protocol](CANVAS-INBOUND-WEBHOOKS.md).
+A URL or endpoint ID alone cannot authorize a request, and arbitrary webhook
+provider payloads are not accepted. Accepted events queue the reviewed canvas
+action and its private note result; they do not publish content. An external
+named agent requires its MCP client to remain running and poll for work.
+**Enabled** describes the event rule, not an online or verified agent.
+
+Structural workflow templates do not copy receivers, signing secrets, enabled
+rules or consent. Configure and review a new receiver for each reused workflow.

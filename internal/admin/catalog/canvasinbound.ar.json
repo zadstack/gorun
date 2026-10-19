@@ -43,5 +43,6 @@
   "inbound_changed": "تغيّرت القاعدة أو سير العمل. احفظ دون تفعيل وراجع مجددًا.",
   "inbound_reauthenticate": "تأكيد هويتك",
   "inbound_sender_guide": "ربط مرسل الأحداث",
-  "inbound_close": "إغلاق"
+  "inbound_close": "إغلاق",
+  "inbound_effective_prompt": "التعليمات الفعلية المحفوظة"
 }

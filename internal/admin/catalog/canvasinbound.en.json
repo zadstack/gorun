@@ -43,5 +43,6 @@
   "inbound_changed": "The rule or workflow changed. Save disabled and review it again.",
   "inbound_reauthenticate": "Confirm your identity",
   "inbound_sender_guide": "Connect an event sender",
-  "inbound_close": "Close"
+  "inbound_close": "Close",
+  "inbound_effective_prompt": "Saved effective instructions"
 }

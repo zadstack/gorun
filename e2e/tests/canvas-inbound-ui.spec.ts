@@ -11,7 +11,7 @@ test('incoming-event UI distinguishes identifiers, requires review and clears on
  const cards=[{id:promptID,kind:'prompt',title:'Editorial instructions',body:'Summarize approved campaign updates.',x:24,y:24},{id:agentID,kind:'agent',title:'Editorial assistant',body:'',agent_id:keyID,x:400,y:24},{id:providerID,kind:'provider',title:'Managed writer',body:'',provider_id:'native-text',generation_kind:'text',x:760,y:24}];
  const payload={version:1,title:'Weekly editorial briefing',cards,edges:[{from:promptID,to:agentID},{from:promptID,to:providerID}]};
  expect((await page.request.post(path+'/document',{data:payload,headers:{'X-CSRF-Token':await csrf(page)}})).status()).toBe(200);
- let state:any={id:'',node_id:agentID,agent_id:keyID,provider_id:'',command:'',enabled:false,status:'unconfigured',revision:0,execution_mode:'external',can_manage:true,endpoint:'',endpoint_path:''};
+ let state:any={id:'',node_id:agentID,agent_id:keyID,provider_id:'',command:'',enabled:false,status:'unconfigured',revision:0,execution_mode:'external',prompt:'PRESET · Follow the saved editorial policy.\n\nSummarize approved campaign updates.',can_manage:true,endpoint:'',endpoint_path:''};
  let rotations=0;
  await page.route('**/admin/canvases/*/cards/*/inbound',async route=>{
   const node=route.request().url().split('/').at(-2);
@@ -27,8 +27,8 @@ test('incoming-event UI distinguishes identifiers, requires review and clears on
  });
  await page.reload();
  const card=page.locator(`[data-card-id="${agentID}"]`);
- await expect(card.locator('.canvas-inbound-card')).toContainText('Card ID');await expect(card.locator('.canvas-inbound-card')).toContainText(agentID);await expect(card.locator('.canvas-inbound-card')).toContainText(keyID);
- await card.locator('[data-inbound-open]').click();const dialog=page.locator('.canvas-inbound-dialog');await expect(dialog).toContainText('MCP client must stay connected');
+ await expect(card.locator('.canvas-inbound-card')).toContainText('Card ID');await expect(card.locator('.canvas-inbound-card')).toContainText(agentID);await expect(card.locator('.canvas-inbound-card')).toContainText(keyID);await expect(card.locator('.canvas-inbound-prompt-preview')).toContainText('PRESET · Follow the saved editorial policy.');
+ await card.locator('[data-inbound-open]').click();const dialog=page.locator('.canvas-inbound-dialog');await expect(dialog).toContainText('MCP client must stay connected');await expect(dialog.locator('[name=inbound_prompt]')).not.toHaveValue(/PRESET/);
  await dialog.locator('[name=inbound_command]').fill('weekly-summary');await dialog.locator('[name=inbound_prompt]').fill('Summarize approved campaign updates as a private draft.');
  await dialog.getByRole('button',{name:'Save disabled',exact:true}).click();
  const secretDialog=page.locator('.canvas-inbound-secret');await expect(secretDialog).toBeVisible();await expect(secretDialog.locator('textarea')).toHaveValue('SYNTHETIC_ONE_TIME_SIGNING_SECRET');
