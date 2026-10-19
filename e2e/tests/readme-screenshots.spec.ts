@@ -43,8 +43,8 @@ test('capture current README product screens with synthetic campaign data', asyn
   const agent=await key('agent','Campaign assistant',['content.view','content.create','content.publish','canvas.read','canvas.append','canvas.run']);
   const headers={Authorization:`Bearer ${rest}`};
   const stories=[
-    {title:'A calmer workspace for your next big idea',slug:'a-calmer-workspace',locale:'en',status:'published',excerpt:'One place to plan a launch, shape the story and keep your team moving.',body:'<p>Good work starts with a clear brief. Atlas Studio brings people, content and the next decision into one shared workspace.</p><h2>From an idea to a considered launch</h2><p>Keep the product story, the Arabic edition and your review checklist together. Let your assistant prepare a draft, then let your team make the publishing decision.</p>'},
-    {title:'مساحة أهدأ لفكرتك القادمة',slug:'your-next-idea',locale:'ar',status:'published',excerpt:'من الفكرة إلى الإطلاق، بمحتوى واضح وفريق يعمل معًا.',body:'<p>كل مشروع جيد يبدأ بفكرة واضحة. في أطلس ستوديو نجمع المحتوى والفريق وخطوة العمل التالية في مساحة واحدة.</p><h2>قصة واحدة بلغتين</h2><p>جهز المسودة، وراجع التفاصيل مع فريقك، ثم اتخذ قرار النشر. تبقى النسخة العربية والإنجليزية ضمن خطة واحدة.</p>'},
+    {title:'A calmer workspace for your next big idea',slug:'a-calmer-workspace',locale:'en',status:'published',excerpt:'One place to plan a launch, shape the story and keep your team moving.',body:'<p>Good work starts with a clear brief. A clear workspace brings people, content and the next decision together.</p><h2>From an idea to a considered launch</h2><p>Keep the product story, the Arabic edition and your review checklist together. Let your assistant prepare a draft, then let your team make the publishing decision.</p>'},
+    {title:'مساحة أهدأ لفكرتك القادمة',slug:'your-next-idea',locale:'ar',status:'published',excerpt:'من الفكرة إلى الإطلاق، بمحتوى واضح وفريق يعمل معًا.',body:'<p>كل مشروع جيد يبدأ بفكرة واضحة. نجمع المحتوى والفريق وخطوة العمل التالية في مساحة واحدة.</p><h2>قصة واحدة بلغتين</h2><p>جهز المسودة، وراجع التفاصيل مع فريقك، ثم اتخذ قرار النشر. تبقى النسخة العربية والإنجليزية ضمن خطة واحدة.</p>'},
     {title:'Meet the team behind the launch',slug:'meet-the-team',locale:'en',status:'draft',excerpt:'The people and small decisions that shape our work.',body:'<p>A behind-the-scenes story ready for editorial review.</p>'},
     {title:'دليل الفريق لإطلاق الحملة',slug:'campaign-guide',locale:'ar',status:'draft',excerpt:'قائمة مراجعة عملية قبل النشر.',body:'<p>راجِع الرسالة والروابط والصور قبل إطلاق الحملة.</p>'},
   ];
@@ -184,10 +184,23 @@ test('capture current README product screens with synthetic campaign data', asyn
   await setLocale(page,'ar');
   await page.goto('/admin/agents/approvals');
   await shot('approvals-ar.png');
+  // Public theme previews use a descriptive category title and neutral artwork,
+  // independently of the fictional campaign identity shown in admin screenshots.
+  await page.goto('/admin/media');
+  await page.locator('#media-file').setInputFiles(resolve('fixtures/theme-preview.svg'));
+  await expect(page.locator('#media-results')).toContainText('theme-preview');
+  const themeDB=db();
+  const themeMedia=themeDB.prepare('SELECT id FROM media WHERE filename=? ORDER BY created_at DESC,rowid DESC LIMIT 1').get('theme-preview.svg') as any;
+  for(const id of ids.slice(0,2))themeDB.prepare('UPDATE content SET featured_media_id=? WHERE id=?').run(themeMedia.id,id);
+  themeDB.prepare("UPDATE settings SET value_json=? WHERE key='site.title'").run(JSON.stringify('Reading & blog'));
+  themeDB.close();
   await setLocale(page,'en');
   await page.goto('/en/');
   await expect(page.locator('html')).toHaveAttribute('lang','en');
   await shot('theme-home-en.png');
+  const arabicThemeDB=db();
+  arabicThemeDB.prepare("UPDATE settings SET value_json=? WHERE key='site.title'").run(JSON.stringify('مدونة وقراءة'));
+  arabicThemeDB.close();
   await page.setViewportSize({width:390,height:844});
   await page.goto('/ar/post/your-next-idea');
   await expect(page.locator('html')).toHaveAttribute('lang','ar');

@@ -19,13 +19,25 @@ Five general themes ship in `themes/` and appear in **Appearance → Themes** (o
 
 **Switching themes in the admin:** open **Appearance → Themes**, activate a catalog slug (`site.theme`). That changes public rendering immediately for new requests. It does **not** create starter pages — use **Appearance → Build your site** for that ([SITE_BUILDER.md](SITE_BUILDER.md)). Initial install can also set `theme` in `gorun.toml` / `GORUN_THEME` before the first boot; afterwards prefer the admin so the change is audited.
 
-| Slug | For | Character |
+| Slug (unchanged) | Display name | For and visual treatment |
 |---|---|---|
-| `default` | personal blogs and general sites | calm reading layout, featured story, card grid with reading time, site search |
-| `business` | companies and service businesses | full native shell, light surfaces, teal accent, 5 starter pages |
-| `magazine` | magazines and editorial teams | paper tone, rust accent, serif, 4 starter pages |
-| `portfolio` | independent professionals | light, red accent, 5 starter pages |
-| `docs` | documentation | sticky search bar, page sidebar ordered by menu order |
+| `default` | Reading & blog | general sites and personal writing; warm paper, ink-blue links, calm reading cards |
+| `business` | Company & services | companies and services; forest accents, structured geometry, clear service sections |
+| `portfolio` | Project portfolio | independent professionals; plum accents, oversized type, image-led project layouts |
+| `magazine` | Editorial magazine | editorial teams; warm ivory, rust accents, Latin serif and a ruled masthead |
+| `docs` | Knowledge base | documentation; indigo accents, native type, search and ordered page navigation |
+
+These are descriptive theme categories, not standalone companies. Gallery previews
+use synthetic category titles (مدونة وقراءة، شركة وخدمات، معرض الأعمال، مجلة تحريرية،
+قاعدة المعرفة). Activating a theme preserves your saved site title, logo, menus
+and identity settings; those values take precedence over theme defaults. Starter
+presets are separate, explicit site-creation choices and use matching palettes.
+A local `gorun start` provisions the bundled `default` theme; public release
+archives include all five theme directories. No production identity migration is
+needed when these display names or preview images change. Shared base tokens and
+theme defaults use zero-specificity selectors; saved builder identity and explicit
+per-theme identity settings take precedence. Bundled fonts work without a remote
+font service (a font you explicitly select in identity settings may still use one).
 
 `business`, `magazine` and `portfolio` are complete designs: they style navigation, footer, internal pages, article cards, search, empty results, contact and errors, load no public JavaScript or external fonts, and ship original local SVG artwork to replace before publication.
 

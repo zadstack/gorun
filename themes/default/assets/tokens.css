@@ -2,7 +2,7 @@
    Every catalog theme loads this first (served as default/assets/tokens.css).
    Child themes override under :where(html[data-theme="<slug>"]), not in components. */
 
-:root {
+:where(:root) {
   /* Surfaces */
   --bg: #f3f5f2;
   --panel: #ffffff;

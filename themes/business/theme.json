@@ -1,6 +1,6 @@
 {
-  "name": "Business",
-  "version": "1.5.0",
+  "name": "Company & services",
+  "version": "1.6.0",
   "parent": "default",
   "locations": [
     "primary",

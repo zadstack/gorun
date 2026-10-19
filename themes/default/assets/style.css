@@ -57,24 +57,24 @@ html[data-theme="default"] .reading-card > a:last-child { min-height: 44px; disp
 
 /* Default personality (overrides shared base tokens). */
 :where(html[data-theme="default"]) {
-  --bg: #fafaf8;
+  --bg: #fbfaf7;
   --panel: #ffffff;
-  --panel-2: #f0f2ef;
-  --panel-3: #e4e8e3;
-  --head: #202824;
-  --ink: #202824;
-  --ink-2: #2f3933;
-  --muted: #59665e;
-  --muted-tinted: #4a554e;
-  --line: #dde2dc;
-  --line-2: #e8ebe7;
-  --line-strong: #a4b0a7;
-  --accent: #167252;
-  --accent-hover: #125e44;
-  --accent-ink: #167252;
-  --accent-soft: #dcefe7;
-  --accent-tint: #edf6f1;
-  --accent-line: #9bc4b2;
+  --panel-2: #f0f2f3;
+  --panel-3: #e2e8ec;
+  --head: #26313b;
+  --ink: #26313b;
+  --ink-2: #344452;
+  --muted: #5b6670;
+  --muted-tinted: #4b5965;
+  --line: #dce2e7;
+  --line-2: #e7ebee;
+  --line-strong: #a4b2be;
+  --accent: #345e7c;
+  --accent-hover: #284a62;
+  --accent-ink: #345e7c;
+  --accent-soft: #e0ebf2;
+  --accent-tint: #f0f5f8;
+  --accent-line: #9fb9cc;
   --on-accent: #ffffff;
   --green: var(--accent);
   --green-hover: var(--accent-hover);

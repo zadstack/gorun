@@ -4,7 +4,8 @@
 {{part "shell" .}}
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
-{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
+{{$hasCTA := and $ctaLabel $ctaURL}}
+{{if not $hasCTA}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="studio-header">
  <div class="studio-shell studio-header-inner">
   <a href="{{url "/"}}" class="studio-brand">{{with media (setting "site.logo")}}{{img . "thumbnail" "studio-logo"}}{{else}}<span class="studio-monogram" aria-hidden="true">✳</span>{{end}}<span>{{.Site.Title}}</span></a>
@@ -12,7 +13,7 @@
     {{with menu "primary"}}<nav aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}
     <form action="{{url "/search"}}" method="get" role="search"><label class="sr-only" for="studio-desktop-search">{{t "search"}}</label><input id="studio-desktop-search" type="search" name="q" placeholder="{{t "search_placeholder"}}"><button type="submit">{{t "search"}}</button></form>
     {{range .Alternates}}{{if ne .Locale locale}}<a class="studio-locale" href="{{.URL}}" lang="{{.Locale}}" hreflang="{{.Locale}}">{{.Label}}</a>{{end}}{{end}}
-    <a class="gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>
+    {{if $hasCTA}}<a class="gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>{{end}}
   </div>
   <a class="gr-btn studio-header-cta-mobile" href="{{url $ctaURL}}">{{$ctaLabel}}</a>
   <details class="studio-navigation">

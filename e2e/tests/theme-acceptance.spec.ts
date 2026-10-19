@@ -6,7 +6,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { MARKER_500, env } from '../lib/helpers.ts';
+import { MARKER_500, env, db } from '../lib/helpers.ts';
 
 const THEMES = ['default', 'business', 'magazine', 'portfolio', 'docs'];
 const WIDTHS = [1440, 390];
@@ -244,6 +244,19 @@ async function auditPage(page: Page): Promise<Audit> {
 }
 
 test.describe.serial('theme acceptance (§6)', () => {
+  let savedTitle: {value_json:string,updated_at:string}|undefined;
+  test.beforeAll(() => {
+    const database=db();
+    savedTitle=database.prepare("SELECT value_json,updated_at FROM settings WHERE key='site.title'").get() as typeof savedTitle;
+    if(!savedTitle||!JSON.parse(savedTitle.value_json))database.prepare("INSERT INTO settings(key,value_json,updated_at) VALUES('site.title',?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json").run(JSON.stringify('Theme acceptance preview'),new Date().toISOString());
+    database.close();
+  });
+  test.afterAll(() => {
+    const database=db();
+    if(savedTitle)database.prepare("INSERT INTO settings(key,value_json,updated_at) VALUES('site.title',?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=excluded.updated_at").run(savedTitle.value_json,savedTitle.updated_at);
+    else database.prepare("DELETE FROM settings WHERE key='site.title'").run();
+    database.close();
+  });
   test('use theme-native home (no static front page)', async () => {
     useThemeNativeHome();
   });
