@@ -146,10 +146,12 @@ try:
     wp_env=['-e','WORDPRESS_DB_HOST='+database,'-e','WORDPRESS_DB_USER=wordpress','-e','WORDPRESS_DB_PASSWORD=synthetic-benchmark-only','-e','WORDPRESS_DB_NAME=wordpress', '-e',"WORDPRESS_CONFIG_EXTRA=define('DISABLE_WP_CRON',true); define('AUTOMATIC_UPDATER_DISABLED',true); define('WP_HTTP_BLOCK_EXTERNAL',true);"]
     wordpress=start('wordpress',images['wordpress'],['-v',wpv+':/var/www/html','-p','127.0.0.1:18081:80',*wp_env],memory='1536m')
     def wp(*command):
-        return docker('run','--rm','--network',network,'--user','33:33','-e','HOME=/tmp','-v',wpv+':/var/www/html','-v',str(fixture)+':/fixture:ro',*wp_env,images['wpcli'],*command)
+        return docker('run','--rm','--network',network,'--user','33:33','-e','HOME=/tmp','-v',wpv+':/var/www/html','-v',str(fixture)+':/fixture:ro',*wp_env,images['wpcli'],'wp',*command)
     for _ in range(120):
         try: wp('db','check'); break
         except subprocess.CalledProcessError: time.sleep(1)
+    else:
+        raise RuntimeError('WordPress database did not become ready')
     wp('core','install','--url=http://127.0.0.1:18081','--title=Benchmark','--admin_user=benchmark','--admin_password=Synthetic-benchmark-only-2026','--admin_email=benchmark@example.invalid','--skip-email')
     (fixture/'seed.php').write_text('''<?php
 foreach (json_decode(file_get_contents('/fixture/posts.json'),true) as $p) wp_insert_post(['post_type'=>'post','post_status'=>'publish','post_title'=>$p['title'],'post_name'=>$p['slug'],'post_content'=>$p['body']]);
