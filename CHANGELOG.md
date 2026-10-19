@@ -5,6 +5,45 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-19
+
+### Admin navigation
+
+- Group the admin sidebar into Home, Content, Website, Canvas & agents, Inbox
+  and Settings, with Store shown only when permitted commerce tools are available.
+  Put related pages in contextual category/page tabs; nested editors keep their
+  parent section selected. Preserve existing URLs, permissions, personal visibility,
+  dashboard pins and saved navigation order. Unknown extension groups remain
+  discoverable under Settings.
+- Keep the compact navigation usable in Arabic/RTL and English/LTR, on small
+  screens and without browser storage. Contextual page links also work without
+  JavaScript; dashboard pin buttons are available beside the page tabs.
+
+### Agents rail and details
+
+- Add an opposite-side rail for agent/model cards on the current user's own
+  canvases. Open a compact drawer with Integrations, Instructions and Defaults
+  tabs showing the real saved model/mode, effective instructions, card identity
+  and output type. Links open the original canvas card for configuration/review.
+- Keep card, key and model identities distinct. Exclude source context and
+  credentials, reject foreign/revoked/expired agent keys and recheck current
+  preparation/grants. Opening the panel never dispatches work. Configured does
+  not mean online: external agents still need their clients, and Skills/MCP
+  resource bundles are not assembled or verified by the drawer.
+- Hide the entire agents surface in Simple CMS mode. Support RTL/mobile,
+  keyboard tab navigation, modal focus containment/return and safe sidebar
+  handoff. Discard late responses after closing/leaving, and preserve logical
+  focus when refreshed cards change or disappear.
+
+### Validation and upgrades
+
+- Add bilingual browser and permission/ownership regressions, including dashboard
+  pin/unpin, runtime content types, small-screen lazy previews, unavailable
+  browser storage and delayed drawer responses. The combined interface passed
+  27 focused Chromium checks and race tests before merge.
+- Existing installations need a manual deployment to receive these UI changes;
+  publishing this release does not upgrade a running site.
+
 ## [0.5.0] - 2026-10-19
 
 ### Installation and server operations
@@ -377,7 +416,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/zadstack/gorun/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/zadstack/gorun/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/zadstack/gorun/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zadstack/gorun/compare/v0.2.0...v0.3.0
