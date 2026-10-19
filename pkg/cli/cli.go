@@ -42,6 +42,7 @@ const (
 const usageHead = `usage: gorun <command> [flags]
 
 commands:
+  doctor        inspect configuration, SQLite, themes, modules and port without migrations [--json]
   start         prepare and run a local site (LAN preview; --local-only disables LAN)
   serve         run the HTTP server
   migrate       apply database migrations and exit
@@ -53,13 +54,14 @@ commands:
   reindex       rebuild the content search index and relation rows ([--no-jobs])
   mcp           serve MCP over stdio as an API key (--key gp_… or GORUN_MCP_KEY); no job
                 workers unless --jobs (the running server executes the jobs)
+  backup-preview verify and open a disposable localhost-only read-only preview (--input <stamp>.manifest.json)
   backup-inspect inspect a local pair without writes (--input <timestamp>.manifest.json)
   backup-restore restore a local pair into a new directory path that must not exist (--input, --dest; never merges)
   backup-decrypt decrypt a .gorb backup with the original site secret (--input, --output; never overwrite)
   backup        copy the database (VACUUM INTO) and archive media/, overrides/, extensions/
                 to <data>/backups/<timestamp>.{db,tar.gz}; secret.key and gorun.toml only
                 with --include-secrets (plain text: keep that archive offline); optional
-                --retain N keeps the newest N complete local pairs and deletes older ones
+                --retain N keeps the newest N locally verified pairs and deletes older ones
   staging       staging seed|promote (--from <source-data> | --input <stamp>.manifest.json)
                 --dest <new-directory-path> [--include-secrets]: backup (optional) + restore
                 into a new data dir for a staging site or promote-to-live cutover; never merges
@@ -134,6 +136,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return c.Run(args[1:], in, out)
 	}
 	switch args[0] {
+	case "doctor":
+		return doctorCmd(args[1:], out)
 	case "start":
 		return start(args[1:], out)
 	case "serve":
@@ -160,6 +164,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return reindex(args[1:], out)
 	case "mcp":
 		return mcpStdio(args[1:], readCloser(in), writeCloser(out))
+	case "backup-preview":
+		return backupPreviewCmd(args[1:], out)
 	case "backup-inspect":
 		return backupInspect(args[1:], out)
 	case "backup-restore":

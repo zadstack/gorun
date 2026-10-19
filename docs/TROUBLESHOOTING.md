@@ -48,7 +48,7 @@ Operator acceptance recipe (CIDR, cookie Secure, HSTS, outside health):
 | Tried to point `--data` at `<data>/restores/<stamp>/` while live | Restore dir is inside the live volume | Move it **out** of the live data directory, stop the old process, then `serve --data` the moved copy. |
 | Wanted staging / promote without a second data dir | Single-process SQLite | Staging is a second `--data` + process; promote restores to a **new** dest then cutover. See [STAGING.md](STAGING.md) (`gorun staging seed\|promote`). |
 | `staging … --dest` fails: destination must not exist | Promote never overwrites live | Choose a new path (e.g. `/var/lib/gorun-new`), stop live, then point `--data` at it. |
-| In-app schedule never creates backups | Hours = 0, or process without job workers | Set hours on **System → Backups**, or use host cron: `gorun backup --retain N` / `docker exec … /app/gorun backup --retain N`. Schedule does not upload to S3. |
+| In-app schedule never creates backups | Disabled schedule, or process without job workers | Choose Daily or Weekly on **System → Backups**, or use host cron: `gorun backup --retain N` / `docker exec … /app/gorun backup --retain N`. Schedule does not upload to S3. |
 | Local backups disappeared unexpectedly | Retain-N after schedule or CLI `--retain` | Raise retain, or set retain to `0` (no prune). Manual **Back up now** does not prune. |
 
 ## MCP and agents
@@ -78,3 +78,16 @@ Full runbook (smoke + rollback drill): [UPGRADE.md](UPGRADE.md). Summaries:
 - الصحة خضراء داخل الحاوية والموقع غير متاح → افحص `https://…/healthz` من الخارج.
 - الاستعادة → مجلد جديد فقط؛ انقل `restores/<stamp>/` خارج المجلد الحي قبل `serve`.
 - المفتاح الجديد بعد الاستعادة → استخدم المفتاح الأصلي دائمًا.
+
+### Verified backup / preview checks
+
+- A failed automatic backup shows its stage on Backups and System Health. Check
+  disk space/permissions and inspect the failed manifest; previous successful
+  backups remain. Verification failure never advances the last successful time.
+- More than the retention count may remain: partial, legacy and corrupt copies
+  are preserved and do not displace verified copies.
+- `gorun backup-preview` accepts only loopback addresses. Missing custom themes,
+  external media and JavaScript interactions are preview limitations, not a
+  reason to boot the snapshot with live integrations enabled.
+- Stop preview with Ctrl+C. After a forced termination, check the OS temp folder
+  for an inactive `gorun-backup-preview-*` directory. See [safe recovery](BACKUPS.md).

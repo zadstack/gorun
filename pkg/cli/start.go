@@ -100,7 +100,7 @@ func start(args []string, out io.Writer) error {
 		fmt.Fprintln(out, "LAN uses unencrypted HTTP; use a trusted network or --local-only. Admin, API, accounts and writes are restricted to localhost.")
 	}
 	if password != "" {
-		if _, err := fmt.Fprintf(out, "Username: admin\nEmail: admin@localhost.invalid\nPassword (shown once; save it now): %s\n", password); err != nil {
+		if _, err := fmt.Fprintf(out, "Username: admin\nEmail: admin@localhost.invalid\nPassword (shown once; save it now): %s\nFirst sign-in: replace this password and choose your email, site name and language.\n", password); err != nil {
 			srv.Close()
 			return err
 		}

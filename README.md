@@ -63,6 +63,12 @@ Canvases bring selected content, instructions and agent results into one workspa
 
 [MCP and permissions](docs/MCP.md) · [Canvases](docs/CANVASES.md) · [REST API](docs/API.md)
 
+## Operate with confidence
+
+Schedule daily or weekly local backups, track verified success and storage, and inspect failure alerts. Preview a disposable, read-only restore on localhost before restoring into a new directory. `gorun doctor` diagnoses an existing site without migrating or repairing it.
+
+[Backups and recovery](docs/BACKUPS.md) · [Local diagnostics](docs/local-start.md#diagnose-a-local-site)
+
 ## Find your next step
 
 | I want to… | Start here |
@@ -71,7 +77,7 @@ Canvases bring selected content, instructions and agent results into one workspa
 | Create or customize a theme | [Theme tutorial](docs/THEME-DEVELOPMENT.md) |
 | Build an integration | [Plugin tutorial](docs/PLUGIN-DEVELOPMENT.md) · [REST](docs/API.md) · [MCP](docs/MCP.md) |
 | Build on the Go core | [Architecture](docs/ARCHITECTURE.md) |
-| Operate an existing site | [Backups](docs/README.md) · [Upgrades](docs/UPGRADE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) |
+| Operate an existing site | [Backups](docs/BACKUPS.md) · [Upgrades](docs/UPGRADE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) |
 | Explore everything | [Documentation index](docs/README.md) |
 
 ## Project status

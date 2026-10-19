@@ -5,6 +5,29 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Automatic backup and safe recovery
+
+- Add daily/weekly local scheduling choices, atomic policy saves, recorded verified
+  success and storage usage, persistent failure/retention alerts and System Health checks.
+- Fix relative/URI-character SQLite paths in read-only backup inspection.
+- Verify local admin/CLI backups before success or pruning. Retention counts only
+  freshly inspected pairs; corrupt/legacy/partial copies cannot displace good copies.
+- Add `gorun backup-preview` with a disposable sanitized restore, fresh secret,
+  fixed public-content module allowlist, no workers/extensions/integrations,
+  loopback/Host checks and read-only browser isolation. Source backups and live data
+  remain unchanged; final restore/cutover still uses a separate new directory.
+
+
+### First-login setup and diagnostics
+
+- Require the auto-generated administrator to replace the temporary password and
+  choose email, site name and site/dashboard language before admin or authenticated
+  API/MCP access. Save all fields atomically, rotate the browser session and revoke
+  old sessions, keys and magic links; completed/existing configured accounts skip it.
+- Add read-only `gorun doctor [--json]` with configuration, permissions, SQLite,
+  migration drift, module activation, admin, theme and local port checks plus recovery
+  advice; do not initialize a site, generate secrets or apply migrations.
+
 ### Operations
 
 - Local load harness (`tools/loadtest`, `make loadtest`): boots a real SQLite

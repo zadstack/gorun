@@ -157,6 +157,28 @@ with `kernel.Get[T](d, name)`.
 5. **Hooks and jobs.** `hooks.Do` and `hooks.Apply` run in the request. `hooks.Emit` persists a `hooks.event`
    job that a worker delivers to every action subscriber (including the extension HTTP bridge), with retries.
 
+### Generated administrator first-login setup
+
+`auth.BootstrapAdmin` atomically creates the empty site's administrator with the
+persistent login alias and `users.onboarding_required = 1`. Regular `Create` and
+browser setup do not set this flag. Migration `0011_onboarding.sql` recognizes
+only the previous release's unconfigured bootstrap alias/email combination.
+
+Session/key user reads include the internal flag, which is not exported in user
+JSON. The admin gate redirects pending accounts to `/admin/onboarding` (HTMX uses
+`HX-Redirect`); API/MCP authentication and permission/scope grants are denied.
+Reauthentication, locale changes and logout remain reachable. Completing the form
+requires session CSRF and recent authentication. One immediate transaction
+compares the prior password hash and current session, updates account/site
+identity, clears the flag, revokes old sessions/keys/magic links and records
+`user.onboarding_complete`. A fresh browser session starts after commit.
+
+The CLI `doctor` does not call Boot, OpenDB or migration inspectors that may
+initialize legacy metadata: it loads existing configuration without generating a
+secret, opens SQLite with `mode=ro` and `query_only`, and reads recorded schema
+checksums and optional-module activation directly. It validates the theme through
+`pkg/themekit` and probes only local listen addresses. See [local start](local-start.md).
+
 ## Data
 
 Everything lives under the data directory (`GORUN_DATA`, default `./data`):
@@ -175,6 +197,23 @@ Everything lives under the data directory (`GORUN_DATA`, default `./data`):
   (`gorun backup-restore --dest`, or `gorun staging seed|promote --dest`) should target a new
   directory outside the data directory instead. Staging / promote-to-live is a second data dir
   plus cutover, not a shared database — see [STAGING.md](STAGING.md).
+
+### Backup scheduling and disposable recovery previews
+
+`backup.schedule` serializes with manual creation/restore. Policy saves and verified
+success metadata use transactions; state in `backup.schedule.state` records attempt,
+status and stage without raw errors. `backup.local.last_success` records the last
+locally verified admin/manual or scheduled copy; CLI creation does not write that setting.
+Scheduled and CLI retention use `backup.PruneVerified`, rechecking integrity before
+counting a pair and leaving incomplete/unverified pairs untouched.
+
+`backup-preview` restores to an owner-only OS temp tree, strips deployment settings,
+credentials and queued jobs, supplies a fresh in-memory secret and local base URL,
+and boots a fixed subset of built-in public-content modules without workers. It
+ignores downstream module options and archived/environment credentials. A loopback
+HTTP guard rejects writes/privileged routes, sanitizes HTML and enforces restrictive
+CSP; cleanup happens after shutdown. It never mutates the original backup or serves
+the live data tree. See [backup and recovery](BACKUPS.md).
 
 ### Migrations must be additive
 

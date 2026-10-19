@@ -186,7 +186,7 @@ func (h *handlers) checks(ctx context.Context, rep *healthReport, free, total ui
 		mc = HealthCheck{Name: "mail", Status: CheckOK, Detail: tr("admin.health.detail_mail_ok", host)}
 	}
 	list = append(list, mc)
-	list = append(list, h.schemaCheck(ctx, tr))
+	list = append(list, h.schemaCheck(ctx, tr), h.backupHealth(ctx, tr))
 	out, err := h.d.Hooks.Apply(ctx, HealthCheckFilter, &list)
 	if err != nil {
 		list = append(list, HealthCheck{Name: HealthCheckFilter, Status: CheckFail, Detail: err.Error()})
@@ -258,4 +258,31 @@ func (h *handlers) health(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.tpl.Render(w, r, "pages/system/health.html", rep)
+}
+
+func (h *handlers) backupHealth(ctx context.Context, tr func(string, ...any) string) HealthCheck {
+	check := HealthCheck{Name: "backups", Status: CheckOK, Detail: tr("admin.backups.health_off")}
+	hours := backupScheduleHours(ctx, h.d)
+	var state backupScheduleState
+	_ = h.d.Settings.Get(ctx, SettingBackupScheduleState, &state)
+	if state.Status == "failed" {
+		check.Status, check.Detail = CheckFail, tr("admin.backups.alert_failed")
+		return check
+	}
+	if state.Status == "warning" {
+		check.Status, check.Detail = CheckWarn, tr("admin.backups.alert_retention")
+		return check
+	}
+	if hours < 1 {
+		return check
+	}
+	last := backupScheduleLast(ctx, h.d)
+	if last.IsZero() {
+		check.Status, check.Detail = CheckWarn, tr("admin.backups.health_waiting")
+	} else if time.Since(last) > time.Duration(hours+1)*time.Hour {
+		check.Status, check.Detail = CheckWarn, tr("admin.backups.health_overdue")
+	} else {
+		check.Detail = tr("admin.backups.health_ok")
+	}
+	return check
 }

@@ -8,12 +8,13 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/zadstack/gorun/internal/db"
 )
 
 type ExternalRequirement struct {
@@ -99,8 +100,11 @@ func Inspect(manifestPath string) (*Inspection, error) {
 }
 
 func openReadOnlyDB(path string) (*sql.DB, error) {
-	u := &url.URL{Scheme: "file", Path: path, RawQuery: "mode=ro&immutable=1"}
-	d, err := sql.Open("sqlite", u.String())
+	uri, err := db.FileURI(path)
+	if err != nil {
+		return nil, err
+	}
+	d, err := sql.Open("sqlite", uri+"?mode=ro&immutable=1")
 	if err != nil {
 		return nil, err
 	}

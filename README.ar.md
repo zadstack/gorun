@@ -107,6 +107,10 @@ If a tool requests approval, report its request ID and wait for the decision.
   </tr>
 </table>
 
+### نسخ تلقائي واستعادة آمنة
+
+جدولة يومية أو أسبوعية، وحالة آخر نسخة سليمة والمساحة المستخدمة، وتنبيهات الفشل. يعرض `gorun backup-preview` نسخة مؤقتة للقراءة فقط على localhost قبل الاستعادة إلى مجلد جديد. استخدم `gorun doctor` لفحص موقع قائم دون تغييره. [التفاصيل](docs/BACKUPS.md).
+
 ### جرّبه الآن
 
 على macOS أو Linux (Intel أو ARM)، انسخ الكتلة التالية كاملة. لا تحتاج Go أو Docker:

@@ -86,10 +86,10 @@ func scopeAllows(scopes []string, perm string) bool {
 
 // Can reports whether the principal in ctx holds perm: an active user whose
 // role grants it, and for API keys additionally a matching scope (a key
-// never exceeds its owner's role).
+// never exceeds its owner's role). Pending first-login setup grants no permissions.
 func Can(ctx context.Context, perm string) bool {
 	p := principalFrom(ctx)
-	if p == nil || p.user == nil || p.user.Status != StatusActive {
+	if p == nil || p.user == nil || p.user.Status != StatusActive || p.user.onboardingRequired {
 		return false
 	}
 	if !roleAllows(p.user.Role, perm) {
@@ -143,7 +143,7 @@ func deny(w http.ResponseWriter, r *http.Request, status int, code, msg string) 
 // own scopes). Nobody can therefore mint a key stronger than themselves.
 func CanGrant(ctx context.Context, scopes []string) bool {
 	p := principalFrom(ctx)
-	if p == nil || p.user == nil {
+	if p == nil || p.user == nil || p.user.onboardingRequired {
 		return false
 	}
 	for _, s := range scopes {

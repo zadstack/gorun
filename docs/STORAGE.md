@@ -37,7 +37,7 @@ The limit is **64 MiB per plaintext backup file**. This bounded implementation i
 
 ### Local schedule and retention
 
-On **System → Backups**, set **every N hours** (1–168; `0` = off) and optional **retain N** complete local pairs (`0` = never auto-delete). While `gorun serve` runs with job workers, cron `backup.schedule` creates a normal local pair (secrets still excluded) and then prunes older complete pairs when retain ≥ 1. Manual **Back up now** does not prune. Hosts without a long-running process can use host cron instead:
+On **System → Backups**, choose **Daily** or **Weekly** (existing custom 1–168 hour intervals remain supported; `0` = off) and optional **retain N** locally verified pairs (`0` = never auto-delete). While the server runs with job workers, cron `backup.schedule` creates and verifies a local pair (secrets still excluded) before pruning older verified pairs. Corrupt, legacy and partial entries do not count toward retention and remain for review. Last success, space usage and failure alerts appear on the page and System Health. See [automatic backups and safe recovery](BACKUPS.md). Manual **Back up now** does not prune. Hosts without a long-running process can use host cron instead:
 
 ```sh
 gorun backup --data /var/lib/gorun --retain 7
