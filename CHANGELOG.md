@@ -47,6 +47,13 @@ All notable changes to GoRun are recorded here. The format follows
   are audited without prompts, payloads or secrets. External clients remain in
   `waiting_agent`; no automatic publishing or arbitrary shell/tools are added.
 
+### Bundled themes
+
+- Give the five bundled themes descriptive category names and distinct visual
+  treatments. Replace standalone demo brands in the theme gallery and README
+  previews with generic sample identities. Keep existing theme IDs, saved site
+  titles, logos and identity settings compatible; custom palettes take precedence.
+
 ### Evidence and boundaries
 
 - Publish reproducible GoRun/WordPress/MariaDB article-serving measurements with
