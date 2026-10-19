@@ -62,3 +62,39 @@ a linked model. It does not yet host a general agent bundle that loads Agent
 Skills and maintains multiple external MCP-server clients. A future visual agent
 area must label configuration separately from verified readiness and must not
 infer runtime availability from an API key or a drawn connection.
+
+## Review a text result as content
+
+An attributed text result from a completed agent or provider run offers **Create
+content draft**. Select a public content type and confirm. GoRun creates a new
+draft owned by you; it does not publish, replace an existing article, or change
+the source card. Text is escaped as plain text rather than trusted as HTML.
+Required fields and normal content validation still apply. Media captions and
+unattributed personal notes are not supported by this action.
+
+The content save, revision, audit and source snapshot are committed together.
+The snapshot records the board, card, run, actor and text, and survives deletion
+of the source board. Repeating the action opens the original item, preserving
+any edits made in the content editor. If that item has been deleted permanently,
+the action reports an error rather than silently replacing it.
+
+## Reuse a private workflow structure
+
+Open **Your workflow templates** in a board and choose **Save structure as
+template**. The safety confirmation explains what is retained: card types,
+positions and connections. The template library is also available on the board
+list. Each template belongs to its creator; other users cannot list, reuse or
+delete it. Deleting a template does not delete boards created from it.
+
+Templates are deliberately structural. Free text (including prompts, notes and
+card titles), URLs, content selections, agent/provider/skill bindings, checklist
+entries, generated outputs and run identifiers are not copied. This avoids
+carrying credentials or customer data embedded in those fields into a new
+workflow. Result/link/widget cards become empty notes. Card IDs are regenerated
+and connections are remapped on both save and reuse.
+
+**Create board** makes a separate private board. Enter new instructions and
+select content, agents and providers explicitly. No run history, sharing grants,
+consent records or enabled schedules are inherited. A schedule-shaped card may
+remain as part of the structure, but it has no active automation until the new
+workflow is configured, reviewed and explicitly enabled.

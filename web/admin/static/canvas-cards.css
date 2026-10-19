@@ -72,3 +72,5 @@
   .canvas-workspace .canvas-views button { min-height: 44px; }
 }
 .canvas-workspace:not([data-view=flow]) .canvas-help { display: none; }
+
+.canvas-templates{margin-block:1rem;padding:1rem;border:1px solid var(--border,#ddd);border-radius:8px}.canvas-template-row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-block:.6rem}.canvas-template-row strong{flex:1;min-width:8rem}[data-draft-dialog]{max-width:34rem}[data-draft-dialog] form{display:grid;gap:1rem;padding:1rem}
