@@ -23,8 +23,8 @@ func starterChoices(ar bool) []starterChoice {
 	}
 	out := []starterChoice{}
 	for _, choice := range []struct{ id, nameEN, nameAR, descEN, descAR string }{
-		{"company", "Business studio", "شركة وخدمات", "A light company site: home, about, services, work and contact.", "موقع شركة فاتح متكامل: الرئيسية، من نحن، الخدمات، الأعمال والتواصل."},
-		{"portfolio", "Creative portfolio", "بورتفوليو أعمال", "An image-led portfolio: home, work, about, services and contact.", "بورتفوليو يبرز صور المشاريع: الرئيسية، الأعمال، النبذة، الخدمات والتواصل."},
+		{"company", "Company & services", "شركة وخدمات", "A light company site: home, about, services, work and contact.", "موقع شركة فاتح متكامل: الرئيسية، من نحن، الخدمات، الأعمال والتواصل."},
+		{"portfolio", "Project portfolio", "معرض الأعمال", "An image-led portfolio: home, work, about, services and contact.", "بورتفوليو يبرز صور المشاريع: الرئيسية، الأعمال، النبذة، الخدمات والتواصل."},
 		{"magazine", "Editorial magazine", "مجلة تحريرية", "A complete editorial publication: home, about, topics and contact, with article and archive layouts.", "مجلة متكاملة: الرئيسية، عن المجلة، الموضوعات والتواصل، مع تصميم للمقالات والأرشيف."},
 	} {
 		design := starterDesign(choice.id)

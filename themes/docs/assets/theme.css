@@ -1,4 +1,4 @@
-/* Docs: a calm blue reading theme on top of default/style.css. Layout:
+/* Knowledge base: an indigo reading theme on top of default/style.css. Layout:
    section sidebar, article, "on this page" list; stacked on phones.
    Tokens live under :where() so identity / builder can restyle them. */
 :where(html[data-theme="docs"]) {
@@ -14,22 +14,22 @@
   --line: #d8dee5;
   --line-2: #e6ebf0;
   --line-strong: #a9b5c2;
-  --accent: #1f5f8b;
-  --accent-hover: #174a6c;
-  --accent-ink: #1f5f8b;
-  --accent-soft: #e6eff7;
-  --accent-tint: #f0f5fa;
-  --accent-line: #7aa3c0;
+  --accent: #374fa0;
+  --accent-hover: #293b7c;
+  --accent-ink: #374fa0;
+  --accent-soft: #e9edfb;
+  --accent-tint: #f3f5fd;
+  --accent-line: #9caadd;
   --on-accent: #ffffff;
   --green: var(--accent);
   --green-hover: var(--accent-hover);
   --green-soft: var(--accent-soft);
-  --blue: #1f5f8b;
-  --blue-hover: #174a6c;
-  --blue-soft: #e6eff7;
+  --blue: #374fa0;
+  --blue-hover: #293b7c;
+  --blue-soft: #e9edfb;
   --radius: 8px;
   --radius-card: 12px;
-  --font: "IBM Plex Sans Arabic", "IBM Plex Sans", system-ui, sans-serif;
+  --font: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
   --font-ui: var(--font);
   --font-heading: var(--font);
   --site-width: 1360px;
@@ -37,6 +37,8 @@
   --docs-accent: var(--accent);
   --docs-soft: var(--accent-soft);
 }
+
+:where(html[data-theme="docs"][dir="rtl"]){--font:"Zad","Zad Font",Tahoma,sans-serif;--font-ui:var(--font);--font-heading:var(--font)}
 
 /* Header */
 html[data-theme="docs"] .docs-header { position: sticky; top: 0; z-index: 40; background: var(--panel); border-bottom: 1px solid var(--line); }

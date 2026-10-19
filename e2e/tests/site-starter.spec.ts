@@ -1,17 +1,14 @@
 import {test,expect} from '@playwright/test';
-import {execFileSync} from 'node:child_process';
-import {resolve} from 'node:path';
 import {db,env,setLocale,expectNoServerError} from '../lib/helpers.ts';
 
 test('three site starters prepare private drafts, activate usable sites and apply editable identity',async({page,browser},testInfo)=>{
  test.setTimeout(180_000);
- const designs={company:{theme:'business',pages:5,background:'rgb(248, 250, 249)',accent:'#0f766e',font:'zad'},portfolio:{theme:'portfolio',pages:5,background:'rgb(250, 250, 250)',accent:'#b91c1c',font:'zad'},magazine:{theme:'magazine',pages:4,background:'rgb(250, 249, 246)',accent:'#9f2b19',font:'serif'}};
+ const designs={company:{theme:'business',pages:5,background:'rgb(248, 251, 249)',accent:'#1e6650',font:'zad'},portfolio:{theme:'portfolio',pages:5,background:'rgb(251, 249, 253)',accent:'#6b3fa0',font:'zad'},magazine:{theme:'magazine',pages:4,background:'rgb(244, 240, 232)',accent:'#89402e',font:'serif'}};
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  const keys=['site.title','site.tagline','site.locale','site.front_page','site.theme','site.logo','builder.identity'];
  const database=db();
  const saved=keys.map(key=>({key,value:(database.prepare('SELECT value_json FROM settings WHERE key=?').get(key) as any)?.value_json}));
  const menus=database.prepare("SELECT id,location FROM menus WHERE location='primary'").all() as any[];
- const cli=resolve('.bin/gorun');
  const oldItems=database.prepare('SELECT count(*) AS n FROM content').get() as any;
  const anonymous=await browser.newContext({storageState:{cookies:[],origins:[]}});const publicPage=await anonymous.newPage();
  const external:string[]=[];publicPage.on('pageerror',error=>errors.push(error.message));
@@ -21,7 +18,7 @@ test('three site starters prepare private drafts, activate usable sites and appl
   await expect(page.getByRole('heading',{level:1})).toContainText('ابنِ موقعك');
   for(const kind of ['company','portfolio','magazine'] as const){
    const design=designs[kind];
-   const siteTitle={company:'مدار',portfolio:'Form Studio',magazine:'مساحة'}[kind];
+   const siteTitle={company:'شركة وخدمات',portfolio:'Project portfolio',magazine:'مجلة تحريرية'}[kind];
    const siteTagline={company:'نبني مواقع واضحة وتجارب رقمية تخدم أهداف مشروعك.',portfolio:'Independent design, thoughtful identities and digital experiences.',magazine:'مجلة مستقلة للأفكار والثقافة والتصميم.'}[kind];
    const publicThemeBefore=(database.prepare("SELECT value_json FROM settings WHERE key='site.theme'").get() as any)?.value_json;
    const publicFrontBefore=(database.prepare("SELECT value_json FROM settings WHERE key='site.front_page'").get() as any)?.value_json;
@@ -142,7 +139,7 @@ test('three site starters prepare private drafts, activate usable sites and appl
   expect(errors).toEqual([]);expect(external).toEqual([]);
  }finally{
   // Restore only this throwaway E2E site's mutable settings/menu locations, preserving other specs' fixtures.
-  for(const item of saved){execFileSync(cli,item.value===undefined?['settings','unset',item.key,'--data',env('E2E_DATA')]:['settings','set',item.key,item.value,'--data',env('E2E_DATA')],{stdio:'pipe'})}
+  for(const item of saved){if(item.value===undefined)database.prepare('DELETE FROM settings WHERE key=?').run(item.key);else database.prepare('INSERT INTO settings(key,value_json,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json').run(item.key,item.value,new Date().toISOString())}
   database.exec('BEGIN IMMEDIATE');try{database.prepare("UPDATE menus SET location='' WHERE location='primary'").run();for(const menu of menus)database.prepare('UPDATE menus SET location=? WHERE id=?').run(menu.location,menu.id);database.exec('COMMIT')}catch(error){database.exec('ROLLBACK');throw error}
   database.close();await anonymous.close();
  }
