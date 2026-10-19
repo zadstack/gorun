@@ -435,6 +435,14 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 			return groups
 		},
 		"navigationSections": sectionView,
+		"allNavigationSections": func() []NavigationSection {
+			if t.funcs.AllNav == nil {
+				return nil
+			}
+			items := t.funcs.AllNav(ctx)
+			preferred := t.preferredNavGroups(ctx)
+			return navigationSections(groupNav(items, preferred), items, pathOf(r), preferred)
+		},
 		"navigationLabel": func(key string) string {
 			return groupLabel(func(k string) string { return translate(k) }, key)
 		},

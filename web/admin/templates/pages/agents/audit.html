@@ -11,6 +11,7 @@
       {{range .ActorKinds}}<option value="{{.}}" {{if eq . $.Filter.ActorKind}}selected{{end}}>{{t (printf "admin.audit.kind_%s" .)}}</option>{{end}}
     </select>
   </div>
+  <div><label for="a-name" class="block text-xs font-medium mb-1">{{t "operator.actor_name"}}</label><input id="a-name" name="actor_name" value="{{.Filter.ActorName}}" class="h-9 w-full rounded border border-line bg-panel px-3"></div>
   <div>
     <label for="a-actor" class="block text-xs font-medium mb-1">{{t "admin.audit.actor_id"}}</label>
     <input id="a-actor" name="actor_id" value="{{.Filter.ActorID}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
@@ -44,14 +45,16 @@
     <details>
       <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-green-soft">
         {{if .HasMeta}}{{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}{{else}}<span class="w-4" aria-hidden="true"></span>{{end}}
-        <span class="font-mono text-xs font-medium">{{.Action}}</span>
+        <span class="text-sm font-medium">{{if .LabelKey}}{{t .LabelKey}}{{else}}{{.Action}}{{end}}</span>
         <span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{t (printf "admin.audit.kind_%s" .Actor.Kind)}}</span>
         <span class="text-xs">{{.Actor.Name}}</span>
-        {{if .TargetKind}}<span class="font-mono text-[11px] text-muted" dir="ltr">{{.TargetKind}}{{if .TargetID}}:{{.TargetID}}{{end}}</span>{{end}}
+
         <time class="ms-auto font-mono text-[11px] text-muted" datetime="{{.At}}">{{date .At}}</time>
       </summary>
       <div class="border-t border-line p-3 space-y-2">
         <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+          <dt class="text-muted">{{t "admin.audit.action"}}</dt><dd class="font-mono break-all">{{.Action}}</dd>
+          <dt class="text-muted">{{t "admin.audit.target_kind"}}</dt><dd class="font-mono break-all">{{.TargetKind}} · {{.TargetID}}</dd>
           <dt class="text-muted">{{t "admin.audit.actor_id"}}</dt><dd class="font-mono break-all">{{or .Actor.ID "—"}}</dd>
           <dt class="text-muted">{{t "admin.common.ip"}}</dt><dd class="font-mono">{{or .IP "—"}}</dd>
         </dl>

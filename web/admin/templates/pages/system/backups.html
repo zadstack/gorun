@@ -11,6 +11,11 @@
     <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "archive"}}<span>{{t "admin.backups.create"}}</span></button>
   </form>
 </div>
+<div class="grid gap-3 md:grid-cols-3 mb-4" data-backup-outcomes>
+<section class="border border-line bg-panel p-3"><h2 class="font-bold">{{t "operator.local_verified"}}</h2><p class="mt-2">{{if .LastSuccess.At}}<time dir="ltr">{{.LastSuccess.At}}</time>{{else}}<strong>{{t "admin.backups.no_verified"}}</strong>{{end}}</p></section>
+<section class="border border-line bg-panel p-3"><h2 class="font-bold">{{t "operator.upload_ack"}}</h2><p class="mt-2">{{if .RemoteLast.At}}<time dir="ltr">{{.RemoteLast.At}}</time> · {{if eq .RemoteLast.Status "success"}}{{t "admin.storage.remote_success"}}{{else}}{{t "admin.storage.remote_failed"}}{{end}}{{else}}{{t "admin.storage.remote_pending"}}{{end}}</p><p class="text-xs text-muted mt-2">{{t "operator.upload_boundary"}}</p></section>
+<section class="border border-line bg-panel p-3"><h2 class="font-bold">{{t "operator.restore_test"}}</h2><p class="text-sm mt-2">{{t "operator.not_recorded"}}</p><a href="https://github.com/zadstack/gorun/blob/main/docs/BACKUPS.md" class="underline text-sm">{{t "operator.recovery_guide"}}</a></section>
+</div>
 <section class="border border-line bg-panel p-4 mb-5 space-y-2" data-backup-storage>
   <h2 class="font-bold">{{t "admin.backups.summary_title"}}</h2>
   <p>{{t "admin.backups.copy_count"}}: {{.Count}} · {{t "admin.backups.space_used"}}: <span dir="ltr">{{.UsedSpace}}</span>{{if .FreeSpace}} · {{t "admin.backups.space_free"}}: <span dir="ltr">{{.FreeSpace}}</span>{{end}}</p>
@@ -89,7 +94,7 @@
     </tbody>
   </table>
 </div>
-<p class="text-muted text-xs mt-3">{{t "admin.backups.restore_help"}}</p>
+<details class="mt-3"><summary class="cursor-pointer text-sm">{{t "operator.recovery_guide"}}</summary><p class="text-muted text-xs mt-2">{{t "admin.backups.restore_help"}}</p></details>
 {{else}}
 <div class="admin-empty">{{t "admin.backups.empty"}}</div>
 {{end}}

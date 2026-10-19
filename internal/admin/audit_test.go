@@ -14,6 +14,8 @@ func TestAuditFilterByActor(t *testing.T) {
 	s.login("admin@example.com", "admin", "en")
 	a := s.createUser("alice@example.com", "editor", "")
 	b := s.createUser("bob@example.com", "editor", "")
+	a.Name = "Review Team 100%"
+	b.Name = "Other Team"
 	ctx := context.Background()
 	s.app.Deps.Audit.Record(auth.WithUser(ctx, a), "test.alpha", "thing", "1", map[string]string{"note": "from-alice"})
 	s.app.Deps.Audit.Record(auth.WithUser(ctx, b), "test.beta", "thing", "2", nil)
@@ -25,6 +27,12 @@ func TestAuditFilterByActor(t *testing.T) {
 	}
 	mustContain(t, page, "test.alpha", "&#34;note&#34;: &#34;from-alice&#34;")
 	mustNotContain(t, page, "test.beta", "test.gamma")
+
+	_, page = s.do("GET", "/admin/agents/audit?actor_name="+url.QueryEscape("Review Team 100%"), nil)
+	mustContain(t, page, "test.alpha")
+	mustNotContain(t, page, "test.beta", "test.gamma")
+	_, page = s.do("GET", "/admin/agents/audit?actor_name="+url.QueryEscape("100_"), nil)
+	mustNotContain(t, page, "test.alpha", "test.beta", "test.gamma")
 
 	_, page = s.do("GET", "/admin/agents/audit?actor_kind=system&action=test.", nil)
 	mustContain(t, page, "test.gamma")
