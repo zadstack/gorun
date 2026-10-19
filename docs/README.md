@@ -51,7 +51,8 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | Doc | Covers |
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Modular monolith, boot order, data dir, building on `pkg/cli` |
-| [EXTENSIONS.md](EXTENSIONS.md) | Hosted extension packages |
+| [PLUGIN-DEVELOPMENT.md](PLUGIN-DEVELOPMENT.md) | Step-by-step plugin tutorial: manifest, signed HTTP hooks, install and test (AR/EN) |
+| [EXTENSIONS.md](EXTENSIONS.md) | Full hosted extension manifest and HTTP bridge reference |
 | [E2E.md](E2E.md) | Playwright suite (not a runtime dependency) |
 
 ## Also in the repository root / أيضًا في جذر المستودع
