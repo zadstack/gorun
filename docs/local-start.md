@@ -24,7 +24,8 @@ On an empty database it atomically creates one administrator:
 
 The terminal prints the local URL, available private IPv4 LAN URLs, and the
 new credentials **once**. Save the password before closing the terminal. The
-browser opens the local admin URL after the listener and application are ready.
+browser opens the IPv4 loopback admin URL (`127.0.0.1`) after the listener and
+application are ready, matching the IPv4 listener regardless of localhost DNS.
 If opening fails, use the printed link. Terminal capture and scrollback can
 contain the password: keep them private. Passwords are never embedded in URLs.
 

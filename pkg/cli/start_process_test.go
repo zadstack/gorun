@@ -108,6 +108,9 @@ func TestStartProcess(t *testing.T) {
 			}
 			// A listener bound only to loopback must not accept a connection to a LAN address.
 			u, _ := url.Parse(local)
+			if u.Hostname() != "127.0.0.1" {
+				t.Fatal("IPv4 listener must advertise its IPv4 loopback address")
+			}
 			ips, err := lanIPs()
 			if err != nil {
 				t.Fatal(err)
@@ -121,7 +124,15 @@ func TestStartProcess(t *testing.T) {
 			}
 			jar, _ := cookiejar.New(nil)
 			client := &http.Client{Jar: jar, Timeout: 10 * time.Second}
-			response, err := client.Get(local + "/admin/login")
+			response, err := client.Get(local)
+			if err != nil {
+				t.Fatal(err)
+			}
+			response.Body.Close()
+			if response.StatusCode != http.StatusOK {
+				t.Fatal("installed site did not serve its advertised local URL")
+			}
+			response, err = client.Get(local + "/admin/login")
 			if err != nil {
 				t.Fatal(err)
 			}

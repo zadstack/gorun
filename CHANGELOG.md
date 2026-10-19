@@ -62,6 +62,8 @@ All notable changes to GoRun are recorded here. The format follows
 - Keep administration, accounts, API and writes on localhost; validate Host and
   peer addresses, ignore forwarded identity and discard LAN credentials.
   `--local-only` disables LAN; `--no-browser` supports headless use.
+- Advertise/open the IPv4 loopback address to match the listener and avoid
+  localhost resolving to an unrelated IPv6 listener on the same port.
 - Add a durable `admin` login alias for newly bootstrapped first administrators,
   preserving email login and shared throttling. Existing users are untouched.
 

@@ -52,7 +52,9 @@ func start(args []string, out io.Writer) error {
 	defer listener.Close()
 	port = fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)
 	cfg.Addr = listener.Addr().String()
-	cfg.BaseURL = "http://localhost:" + port
+	// Match the tcp4 listener exactly; localhost can resolve to an unrelated
+	// IPv6 listener/proxy on the same port.
+	cfg.BaseURL = "http://127.0.0.1:" + port
 	cfg.TrustedProxies = nil // Never trust a LAN peer's forwarded identity.
 	themeRoot := theme.ThemesDir(cfg)
 	if _, err := os.Stat(themeRoot); os.IsNotExist(err) {
