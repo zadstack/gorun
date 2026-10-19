@@ -10,6 +10,7 @@ import (
 	"slices"
 
 	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 )
 
@@ -57,6 +58,32 @@ func pinnedNavigation(ctx context.Context, d *kernel.Deps) (map[string]bool, err
 	}
 	return out, nil
 }
+
+// Pins are projected through the current permission/workspace registry again;
+// saved IDs never supply their own labels or URLs.
+func pinnedNavigationItems(ctx context.Context, d *kernel.Deps) ([]httpx.NavItem, error) {
+	source, ok := kernel.Get[kernel.NavigationPins](d, kernel.ServiceNavigationPins)
+	if !ok || UserFromContext(ctx) == nil {
+		return nil, nil
+	}
+	ids, e := source.PinnedNavigation(ctx)
+	if e != nil {
+		return nil, e
+	}
+	allowed := map[string]kernel.NavItem{}
+	for _, n := range d.Admin.Nav(ctx) {
+		allowed[n.ID] = n
+	}
+	out := []httpx.NavItem{}
+	seen := map[string]bool{}
+	for _, id := range ids {
+		if n, ok := allowed[id]; ok && !seen[id] {
+			out = append(out, httpx.NavItem(n))
+			seen[id] = true
+		}
+	}
+	return out, nil
+}
 func hiddenNavigation(ctx context.Context, d *kernel.Deps) (map[string]bool, error) {
 	hidden, e := storedHiddenNavigation(ctx, d)
 	if e != nil {
@@ -65,6 +92,9 @@ func hiddenNavigation(ctx context.Context, d *kernel.Deps) (map[string]bool, err
 	pins, e := pinnedNavigation(ctx, d)
 	if e != nil {
 		return nil, e
+	}
+	if pins["site-builder"] {
+		hidden["builder.identity"] = true
 	}
 	for id := range pins {
 		hidden[id] = true

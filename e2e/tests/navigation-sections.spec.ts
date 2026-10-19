@@ -24,9 +24,9 @@ for (const locale of ['en', 'ar'] as const) {
     await page.locator('[data-navigation-category="team"]').click();
     await expect(page.locator('.admin-section-pages a[href="/admin/users"]')).toBeVisible();
     await expect(page.locator('.admin-section-pages a[href="/admin/roles"]')).toBeVisible();
-    await page.locator('[data-nav-id="roles"] [data-sidebar-pin-add]').click();
-    await expect(page).toHaveURL(/\/admin\/?$/);
-    await expect(page.locator('[data-pin-id="roles"]')).toBeVisible();
+    const beforePin=page.url();await page.locator('[data-nav-id="roles"]').hover();await page.locator('[data-nav-id="roles"] [data-sidebar-pin-add]').click();
+    await expect(page).toHaveURL(beforePin);await expect(page.locator('[data-quick-id="roles"]')).toBeVisible();
+    await page.goto('/admin');await expect(page.locator('[data-pin-id="roles"]')).toBeVisible();
     await page.goto('/admin/users');
     await expect(page.locator('.admin-section-pages a[href="/admin/roles"]')).toHaveCount(0);
     await page.goto('/admin/roles');
