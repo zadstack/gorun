@@ -7,7 +7,8 @@ import {csrf,db,setLocale} from '../lib/helpers.ts';
 // review boundary without weakening SSRF rules or contacting an external server.
 test('managed tool review shows exact destination and arguments, requires consent, rejects safely, and survives late responses',async({page},testInfo)=>{
  await page.goto('/admin/agents/keys');await setLocale(page,'en');
- const name='Reviewed tool agent '+randomUUID();await page.locator('#k-name').fill(name);await page.locator('input[name=all]').check();await page.locator('form[action="/admin/agents/keys"] button[type=submit]').click();
+ const name='Reviewed tool agent '+randomUUID();await page.locator('.audit-key-create > summary').click();await page.locator('[data-key-permissions] > summary').click();
+  await page.locator('#k-name').fill(name);await page.locator('input[name=all]').check();await page.locator('form[action="/admin/agents/keys"] button[type=submit]').click();
  const database=db(),key=(database.prepare('SELECT id,user_id FROM api_keys WHERE name=?').get(name) as any);
  const ids=['01J00000000000000000000101','01J00000000000000000000102','01J00000000000000000000103','01J00000000000000000000104','01J00000000000000000000105','01J00000000000000000000106'];
  const schema={type:'object',properties:{query:{type:'string'}},required:['query'],additionalProperties:false};

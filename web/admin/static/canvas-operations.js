@@ -73,16 +73,16 @@
     }
     function cardBody(body, card) {
       const document = api.document();
-      if (card.kind === 'content' && !card.content_id) body.append(el('small', t('preset_incomplete')));
+
       if (card.kind === 'source') body.append(el('p', `${options.types.find(p => p.id === card.source_type)?.title || card.source_type || t('preset_incomplete')} · ${card.source_limit}`), el('small', t('source_help')));
       if (card.kind === 'provider' || card.kind === 'agent') {
         const provider = card.kind === 'provider';
         const entry = (provider ? options.providers : options.agents).find(p => p.id === (provider ? card.provider_id : card.agent_id));
         body.append(el('p', entry?.title || t('preset_incomplete')));
         if (provider) body.append(el('small', t(card.generation_kind || 'text')));
-        if (provider && entry?.endpoint) body.append(el('small', entry.endpoint));
+
         if (provider && !entry?.configured) body.append(el('small', entry?.reason || t('unconfigured')));
-        if (!provider) body.append(el('small', t('agent_help')));
+
         const button = btn(t('review_run'), () => action(() => preview(card.id)), 'canvas-operation-button'); button.disabled = !entry || (provider && !entry.configured); body.append(button);
       }
       if (card.kind === 'schedule') {

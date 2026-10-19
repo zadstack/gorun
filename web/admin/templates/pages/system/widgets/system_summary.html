@@ -1,6 +1,6 @@
 {{/* Data: systemSummary */}}
 {{define "content"}}
-<div data-widget="system_summary">
+<details data-widget="system_summary"><summary class="min-h-11 cursor-pointer">{{t "admin.dashboard.system"}} · {{.DBSize}} · {{.Uptime}}</summary>
   <div class="flex items-center justify-between mb-3">
     <h2 class="text-base font-bold">{{t "admin.dashboard.system"}}</h2>
     <a href="/admin/system/health" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>
@@ -13,5 +13,5 @@
     <dt class="text-muted">{{t "admin.health.uptime"}}</dt><dd class="font-mono text-xs">{{.Uptime}}</dd>
     <dt class="text-muted">{{t "admin.health.theme"}}</dt><dd class="font-mono text-xs">{{.Theme}}</dd>
   </dl>
-</div>
+</details>
 {{end}}
