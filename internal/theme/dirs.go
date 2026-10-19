@@ -31,12 +31,13 @@ func ExtraThemesDirs() []string {
 
 // ThemesDir returns the themes directory: $GORUN_THEMES, else ./themes
 // (relative to the working directory) when it exists, else /app/themes
-// (the container layout) when it exists, else <DataDir>/../themes.
+// (the container layout), then <DataDir>/themes when present, else
+// <DataDir>/../themes.
 func ThemesDir(cfg config.Config) string {
 	if v := os.Getenv(EnvThemesDir); v != "" {
 		return v
 	}
-	for _, dir := range []string{"themes", "/app/themes"} {
+	for _, dir := range []string{"themes", "/app/themes", filepath.Join(cfg.DataDir, "themes")} {
 		if st, err := os.Stat(dir); err == nil && st.IsDir() {
 			return dir
 		}
