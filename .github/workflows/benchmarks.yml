@@ -1,0 +1,28 @@
+name: cms-benchmarks
+on:
+  pull_request:
+    paths:
+      - tools/benchmarks/**
+      - .github/workflows/benchmarks.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+        with:
+          go-version-file: go.mod
+      - name: install pinned load generator
+        run: go install github.com/tsenart/vegeta/v12@v12.13.0
+      - name: measure isolated deployments
+        run: python3 tools/benchmarks/run.py --output work/benchmark-results
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: cms-benchmark-raw
+          path: work/benchmark-results/
+          if-no-files-found: error
