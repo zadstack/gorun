@@ -26,7 +26,7 @@ func (h *handlers) canvasCancelHTTP(w http.ResponseWriter, r *http.Request) {
 			return nil
 		}
 		switch status {
-		case "requested", "queued", "waiting_agent", "waiting":
+		case "requested", "queued", "waiting_agent", "waiting", "waiting_tool":
 		default:
 			return errCanvasConsent
 		}
