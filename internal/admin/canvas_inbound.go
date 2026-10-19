@@ -270,10 +270,6 @@ func (h *handlers) inboundRateAllowed() bool {
 func (h *handlers) canvasInboundReceive(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	fail := func(code int) { h.canvasOpsError(w, code, "not_accepted") }
-	if !h.inboundRateAllowed() {
-		fail(429)
-		return
-	}
 	timestamp, delivery, signature := r.Header.Get("X-GoRun-Timestamp"), r.Header.Get("X-GoRun-Delivery"), r.Header.Get("X-GoRun-Signature")
 	at, e := strconv.ParseInt(timestamp, 10, 64)
 	if e != nil || !inboundDelivery.MatchString(delivery) || len(signature) != 71 || !strings.HasPrefix(signature, "sha256=") || time.Since(time.Unix(at, 0)) > 5*time.Minute || time.Until(time.Unix(at, 0)) > time.Minute {
@@ -337,6 +333,10 @@ func (h *handlers) canvasInboundReceive(w http.ResponseWriter, r *http.Request) 
 	}
 	prepared.InboundID = endpoint.ID
 	prepared.InboundRevision = endpoint.Revision
+	if !h.inboundRateAllowed() {
+		fail(429)
+		return
+	}
 	sum := sha256.Sum256(body)
 	bodyHash := hex.EncodeToString(sum[:])
 	duplicate := false
@@ -370,6 +370,9 @@ func (h *handlers) canvasInboundReceive(w http.ResponseWriter, r *http.Request) 
 		}
 		status = run.Status
 		_, err = tx.ExecContext(ctx, `INSERT INTO admin_canvas_inbound_deliveries(endpoint_id,delivery_id,body_hash,run_id,created_at) VALUES(?,?,?,?,?)`, endpoint.ID, delivery, bodyHash, run.ID, db.Now())
+		if err == nil {
+			h.d.Audit.RecordTx(ctx, tx, "canvas.inbound.accepted", "canvas", prepared.BoardID, map[string]string{"node_id": prepared.NodeID, "endpoint_id": endpoint.ID, "delivery_id": delivery, "run_id": run.ID})
+		}
 		return err
 	})
 	if errors.Is(e, errInboundRate) || errors.Is(e, errCanvasLimit) {

@@ -13,8 +13,12 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/mailer"
+	"github.com/zadstack/gorun/internal/settings/settingsmod"
 )
 
 func inboundFixture(t *testing.T, external bool) (*handlers, context.Context, *canvasBoard, canvasPrepared, string, string) {
@@ -81,7 +85,7 @@ func TestCanvasInboundSignedDeliveryAtomicConcurrentReplay(t *testing.T) {
 	if accepted != 1 {
 		t.Fatal("accepted", accepted)
 	}
-	for query, want := range map[string]int{`SELECT count(*) FROM admin_canvas_inbound_deliveries`: 1, `SELECT count(*) FROM admin_canvas_runs WHERE status='waiting_agent'`: 1, `SELECT count(*) FROM jobs WHERE kind='canvas.generate'`: 0} {
+	for query, want := range map[string]int{`SELECT count(*) FROM admin_canvas_inbound_deliveries`: 1, `SELECT count(*) FROM admin_canvas_runs WHERE status='waiting_agent'`: 1, `SELECT count(*) FROM jobs WHERE kind='canvas.generate'`: 0, `SELECT count(*) FROM audit_log WHERE action='canvas.inbound.accepted'`: 1} {
 		var n int
 		if e := h.d.DB.QueryRow(query).Scan(&n); e != nil || n != want {
 			t.Fatal(query, n, e)
@@ -290,5 +294,84 @@ func TestCanvasInboundDurableEndpointAndGlobalBudgets(t *testing.T) {
 	h.inboundRateMu.Unlock()
 	if w := inboundRequest(h, id, secret, "delivery_0000000099", `{"command":"summarize"}`, time.Now(), true); w.Code != 429 {
 		t.Fatal("global budget", w.Code)
+	}
+}
+
+func TestCanvasInboundAnonymousTrafficCannotConsumeAuthenticatedBudget(t *testing.T) {
+	h, _, _, _, id, secret := inboundFixture(t, true)
+	for index := range 301 {
+		signed := index%2 == 0
+		if w := inboundRequest(h, id, "wrong-secret", "delivery_0000000088", `{"command":"summarize"}`, time.Now(), signed); w.Code != 401 {
+			t.Fatal("unauthenticated rejection", index, w.Code)
+		}
+	}
+	if w := inboundRequest(h, id, secret, "delivery_0000000088", `{"command":"summarize"}`, time.Now(), true); w.Code != 202 {
+		t.Fatal("anonymous traffic starved legitimate sender", w.Code)
+	}
+}
+func TestCanvasInboundProductionRouterAcceptsSignatureWithoutSessionOrCSRF(t *testing.T) {
+	app, err := kernel.BootWithOptions(context.Background(), config.Config{Env: "prod", DataDir: t.TempDir(), Addr: ":0", BaseURL: "https://cms.example.com", SecretKey: make([]byte, 32)}, []kernel.Module{settingsmod.New(), auth.New(), New()}, kernel.BootOptions{StartJobs: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(app.Close)
+	users, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
+	keys, _ := kernel.Get[auth.KeyService](app.Deps, kernel.ServiceAPIKeys)
+	owner, err := users.Create(context.Background(), "production-inbound@example.invalid", "Owner", "strong synthetic password", "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := auth.WithUser(context.Background(), owner)
+	h := &handlers{d: app.Deps, users: users, keys: keys}
+	for key, value := range map[string]string{"ai.provider": "openai", "ai.base_url": "https://provider.example.com/v1", "ai.model": "synthetic-model"} {
+		if err = app.Deps.Settings.Set(ctx, key, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	boardID, err := h.canvasCreate(ctx, "Production fixture")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := []canvasCard{{ID: "11111111-1111-4111-8111-111111111111", Kind: "prompt", Body: "Create a private factual draft"}, {ID: "22222222-2222-4222-8222-222222222222", Kind: "provider", ProviderID: "native-text"}}
+	edges := []canvasEdge{{From: cards[0].ID, To: cards[1].ID}}
+	if _, err = app.Deps.DB.Exec(`UPDATE admin_canvases SET document_json=?,edges_json=? WHERE id=?`, canvasEncode(cards), canvasEncode(edges), boardID); err != nil {
+		t.Fatal(err)
+	}
+	board, err := h.canvasOwned(ctx, boardID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prepared, err := h.canvasPrepare(ctx, board, cards[1].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secret := strings.Repeat("b", 64)
+	encrypted, err := mailer.EncryptSecret(app.Deps.Config.SecretKey, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := db.NewID()
+	if _, err = app.Deps.DB.Exec(`INSERT INTO admin_canvas_inbound(id,board_id,node_id,owner_id,command,secret,enabled,status,consent_hash,created_at) VALUES(?,?,?,?,'summarize',?,1,'enabled',?,?)`, id, boardID, cards[1].ID, owner.ID, encrypted, prepared.GraphHash, db.Now()); err != nil {
+		t.Fatal(err)
+	}
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+	delivery := "production_delivery_0001"
+	body := `{"command":"summarize"}`
+	request := httptest.NewRequest("POST", "/webhooks/canvas/"+id, strings.NewReader(body))
+	request.Header.Set("X-GoRun-Timestamp", timestamp)
+	request.Header.Set("X-GoRun-Delivery", delivery)
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(timestamp + "." + delivery + "." + body))
+	request.Header.Set("X-GoRun-Signature", "sha256="+hex.EncodeToString(mac.Sum(nil)))
+	response := httptest.NewRecorder()
+	app.Handler.ServeHTTP(response, request)
+	if response.Code != 202 {
+		t.Fatal("production receiver required browser session/CSRF", response.Code, response.Body.String())
+	}
+	var runs, jobs int
+	app.Deps.DB.QueryRow(`SELECT count(*) FROM admin_canvas_runs WHERE status='queued'`).Scan(&runs)
+	app.Deps.DB.QueryRow(`SELECT count(*) FROM jobs WHERE kind='canvas.generate'`).Scan(&jobs)
+	if runs != 1 || jobs != 1 {
+		t.Fatal("production run/queue mismatch", runs, jobs)
 	}
 }

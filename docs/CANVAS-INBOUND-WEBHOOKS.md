@@ -59,10 +59,13 @@ run identifiers, prompts, contexts or signing secrets. Errors return a generic
 `not_accepted`. No browser session or CSRF token is needed at the signed receiver.
 
 Bodies are capped at 4096 bytes. The receiver has a per-process global budget of
-300 requests/minute, plus a durable limit of 10 new accepted deliveries/minute per
+300 authenticated, valid-command requests/minute (unsigned or invalid-signature
+traffic cannot consume this shared budget), plus a durable limit of 10 new accepted deliveries/minute per
 endpoint. Existing board limits (including 20 outstanding/recent runs per hour)
 still apply. These limits may return HTTP 429; use bounded backoff. This is a
 single-node SQLite service, not an unlimited event transport. Dedupe receipt, run
 and queue record are committed atomically; failed enqueue never consumes delivery.
+Each new acceptance records `canvas.inbound.accepted` in the audit trail with
+endpoint/card/delivery/run identifiers only; duplicates add no new acceptance audit.
 Disable/rotate does not erase receipts, so replaying an old accepted delivery cannot
 repeat work after re-enabling. Do not send the signing secret to an AI provider.
