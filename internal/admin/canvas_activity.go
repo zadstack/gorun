@@ -8,10 +8,13 @@ import (
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/kernel"
-	"github.com/zadstack/gorun/internal/webhooks"
 )
 
 const canvasActivityLimit = 8
+
+// The optional webhooks module boots after admin. Check its registered service
+// and permission at request time without depending on its implementation.
+const canvasActivityWebhookPermission = "webhooks.manage"
 
 type canvasActivityEvent struct {
 	Title, Body, Source, Time, Href, Kind, Status string
@@ -53,7 +56,7 @@ func (h *handlers) canvasActivity(ctx context.Context) (canvasActivityPage, erro
 	if err != nil {
 		return page, err
 	}
-	if _, ok := kernel.Get[webhooks.Service](h.d, kernel.ServiceWebhooks); ok && auth.Can(ctx, webhooks.Perm) {
+	if _, ok := kernel.Get[any](h.d, kernel.ServiceWebhooks); ok && auth.Can(ctx, canvasActivityWebhookPermission) {
 		page.WebhooksAvailable = true
 		rows, err := h.d.DB.QueryContext(ctx, `SELECT w.name,d.event,d.status,d.created_at,w.id FROM webhook_deliveries d JOIN webhooks w ON w.id=d.webhook_id ORDER BY d.created_at DESC,d.id DESC LIMIT ?`, canvasActivityLimit)
 		if err != nil {
