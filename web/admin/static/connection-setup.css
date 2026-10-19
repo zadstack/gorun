@@ -9,3 +9,22 @@
 .connections-table-scroll time{display:block;white-space:nowrap;font-size:.7rem}.connections-host{display:block;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.connections-table-scroll :is(th,td){padding:.5rem .6rem}
 
 .connections-table-scroll [data-connection-cell="identity"]{min-width:290px;white-space:nowrap}.connections-row-actions{flex-wrap:nowrap;min-width:max-content}.connections-table-scroll table{width:max-content;min-width:100%}
+
+/* Stored type and historical result colors supplement the existing text labels. */
+.connections-directory .connections-type{display:inline-flex;align-items:center;min-height:26px;padding:.15rem .5rem;border-radius:5px;font-size:.7rem;border:1px solid currentColor;color:#34546b;background:#e7f0f5}
+.connections-directory tr[data-kind="mcp"] .connections-type{color:#6941a5;background:#f0e9fb}
+.connections-directory tr[data-kind="ai"] .connections-type{color:#1e56a0;background:#e7effd}
+.connections-directory tr[data-kind="s3"] .connections-type{color:#854d0e;background:#fcf0d7}
+.connections-directory td[data-test-status]>strong{display:inline-flex;align-items:center;min-height:26px;padding:.15rem .5rem;border-radius:5px;font-size:.7rem;font-weight:650;white-space:nowrap}
+.connections-directory td[data-test-status="pass"]>strong{color:#116149;background:#e0f2ea}
+.connections-directory td[data-test-status="fail"]>strong{color:#9b1c1c;background:#fde8e8}
+.connections-directory .connections-row-actions>a{color:#fff;background:#116149;border-color:#116149}
+.connections-directory .connections-row-actions>a:hover{background:#0d503c;border-color:#0d503c}
+.connections-directory .connections-row-actions button{color:#1e56a0;background:#e7effd;border-color:#abc6ed}
+.connections-directory .connections-row-actions button:hover{background:#d8e6fb;border-color:#1e56a0}
+.connections-directory .connections-row-actions summary{color:#34546b;background:#e7f0f5;border-color:#b9cbd7}
+.connections-directory .connections-row-actions summary:hover{background:#dbe8f0;border-color:#34546b}
+.connections-directory .connections-row-actions button.text-red{color:#9b1c1c;background:#fde8e8;border-color:#e8b2b2}
+.connections-directory .connections-row-actions button.text-red:hover{background:#fbd7d7;border-color:#9b1c1c}
+.connections-directory :is(.connections-add,.connections-row-actions a,.connections-row-actions button,.connections-row-actions summary):focus-visible{outline:2px solid #1e56a0;outline-offset:3px}
+@media(forced-colors:active){.connections-directory :is(.connections-type,td[data-test-status]>strong,.connections-row-actions a,.connections-row-actions button,.connections-row-actions summary){border:1px solid ButtonText}}
