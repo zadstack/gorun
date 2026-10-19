@@ -12,6 +12,9 @@
     host.append(message);
     const connections = section('connections', true), history = section('history'), sharing = section('sharing');
     const reviewDialog = el('dialog', undefined, 'canvas-dialog canvas-review'); reviewDialog.setAttribute('aria-label', t('review')); root.append(reviewDialog);
+    let toolEpoch = 0;
+    reviewDialog.addEventListener('close', () => { toolEpoch++; });
+    window.addEventListener('pagehide', () => { toolEpoch++; if (reviewDialog.open) reviewDialog.close(); });
     const textField = (title, value) => { const box = el('div', undefined, 'canvas-review-field'); box.append(el('h3', title), el('pre', value || '—')); return box; };
     const select = (name, items, value = '') => { const input = el('select'); input.name = name; for (const item of items) { const opt = el('option', item.title); opt.value = item.id; input.append(opt); } if (value) input.value = value; return input; };
     const label = (title, input) => { const box = el('label', title); box.append(input); return box; };
@@ -19,7 +22,11 @@
     async function json(path, body) {
       const response = await request(base + path, body === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json','X-CSRF-Token':csrf}, body:JSON.stringify(body)});
       let data; try { data = await response.json(); } catch (_) { throw new Error(t('operations_error')); }
-      if (!response.ok) throw new Error(data.message || (response.status === 409 ? t('conflict') : t('operations_error')));
+      if (!response.ok) {
+        const error = new Error(data.message || (response.status === 409 ? t('conflict') : t('operations_error')));
+        if (data.error === 'reauth_required') { try { const url = new URL(data.reauth_url, location.origin); if (url.origin === location.origin && url.pathname === '/admin/reauth') error.reauthURL = url.href; } catch (_) {} }
+        throw error;
+      }
       return data;
     }
     async function action(fn) {
@@ -150,6 +157,7 @@
       const heading = el('header'); heading.append(el('h2', t('review')), btn(t('cancel'), () => reviewDialog.close()));
       const content = el('div', undefined, 'canvas-review-content');
       content.append(heading, textField(t('destination'), [review.provider?.title,review.provider?.model,review.provider?.endpoint].filter(Boolean).join('\n')), textField(t('prompt'), review.prompt), textField(t('context'), review.context));
+      if (review.managed_tools?.length) content.append(textField(t('tools_allowlist'), review.managed_tools.join('\n')), el('p', t('tools_manual_warning')));
       if (schedule) { const node = api.document().cards.find(c => c.id === schedule); content.append(el('p', `${t('interval')}: ${t(node?.interval || '')}`)); }
       const consent = el('input'); consent.type = 'checkbox'; const consentLabel = label(t(schedule ? 'recurring_consent' : 'consent'), consent); consentLabel.className = 'canvas-review-consent';
       const error = el('p'); error.setAttribute('role', 'alert');
@@ -166,6 +174,38 @@
       runButton.disabled = true; consent.addEventListener('change', () => { runButton.disabled = attempted || !consent.checked; });
       content.append(consentLabel,error,runButton); reviewDialog.replaceChildren(content); reviewDialog.showModal();
     }
+    async function reviewTool(run) {
+      const epoch = ++toolEpoch;
+      const loading = el('div', undefined, 'canvas-review-content'); loading.append(el('p', t('operations_loading')), btn(t('cancel'), () => reviewDialog.close()));
+      reviewDialog.replaceChildren(loading); reviewDialog.showModal();
+      let data;
+      try { data = await json(`/runs/${encodeURIComponent(run.id)}/tool`); } catch (err) { if (epoch === toolEpoch && reviewDialog.open) { loading.firstChild.textContent = err.message || t('operations_error'); } return; }
+      if (epoch !== toolEpoch || !reviewDialog.open) return;
+      const content = el('div', undefined, 'canvas-review-content');
+      const heading = el('header'), title = el('h2', t('tool_review')); title.tabIndex = -1; heading.append(title, btn(t('cancel'), () => reviewDialog.close()));
+      content.append(heading, textField(t('destination'), `${data.destination} · ${data.host}`), textField(t('tool_name'), data.tool), textField(t('tool_arguments'), JSON.stringify(data.arguments, null, 2)), el('p', t('tool_effect_warning')), el('small', `${t('tool_expires')}: ${new Date(data.expires_at).toLocaleString()}`));
+      const consent = el('input'); consent.type = 'checkbox';
+      const error = el('p'); error.setAttribute('role', 'alert');
+      let attempted = false;
+      async function decide(approve) {
+        if (attempted || epoch !== toolEpoch || !reviewDialog.open || (approve && !consent.checked)) return;
+        attempted = true; approveButton.disabled = rejectButton.disabled = true; consent.disabled = true;
+        try {
+          await json(`/runs/${encodeURIComponent(run.id)}/tool`, {approval_id:data.approval_id, revision:data.revision, approve});
+          if (epoch !== toolEpoch) return;
+          reviewDialog.close(); announce(t(approve ? 'tool_approved' : 'cancelled')); await refreshHistory();
+        } catch (err) {
+          if (epoch !== toolEpoch || !reviewDialog.open) return;
+          error.textContent = err.message || t('operations_error');
+          if (err.reauthURL) { const link = el('a', t('tool_reauthenticate')); link.href = err.reauthURL; error.append(' ', link); }
+        }
+      }
+      const approveButton = btn(t('tool_approve'), () => decide(true), 'canvas-primary');
+      const rejectButton = btn(t('tool_reject'), () => decide(false));
+      approveButton.disabled = true; consent.addEventListener('change', () => { approveButton.disabled = attempted || !consent.checked; });
+      content.append(label(t('tool_exact_consent'), consent), error, approveButton, rejectButton);
+      reviewDialog.replaceChildren(content); title.focus();
+    }
     async function refreshHistory() {
       const data = await json('/runs'); runs = data.runs || []; renderHistory();
     }
@@ -175,10 +215,12 @@
       const list = el('ol', undefined, 'canvas-run-list');
       for (const run of runs) {
         const item = el('li'); item.append(el('strong', t(run.status)), el('span', [run.provider_title,run.actor_name].filter(Boolean).join(' · ')), el('small', new Date(run.created_at).toLocaleString()));
+        if (run.tool_calls_attempted) item.append(el('p', `${t('tool_attempts')}: ${run.tool_calls_attempted}. ${t('tool_effect_warning')}`));
         if (run.error) item.append(el('p', run.error === 'run_stopped' ? t('run_stopped') : run.error));
         if (run.status === 'waiting') item.append(btn(t('check_result'), () => action(async () => { await json(`/runs/${encodeURIComponent(run.id)}/check`, {}); await refreshHistory(); })));
+        if (run.status === 'waiting_tool') item.append(btn(t('tool_review'), () => action(() => reviewTool(run))));
         if (run.status === 'requested') item.append(btn(t('review_run'), () => action(() => preview(run.node_id))));
-        if (['requested','queued','waiting_agent','waiting'].includes(run.status)) item.append(btn(t('cancel_run'), () => action(async () => {
+        if (['requested','queued','waiting_agent','waiting','waiting_tool'].includes(run.status)) item.append(btn(t('cancel_run'), () => action(async () => {
           if (!window.confirm(t('cancel_run_help'))) return;
           await json(`/runs/${encodeURIComponent(run.id)}/cancel`, {}); await refreshHistory(); announce(t('cancelled'));
         })));

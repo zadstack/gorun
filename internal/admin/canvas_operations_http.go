@@ -18,6 +18,8 @@ func (h *handlers) canvasOperationRoutes() {
 	r.Post("/canvases/{id}/operations/runs", h.canvasRunsHTTP)
 	r.Post("/canvases/{id}/operations/runs/{run}/check", h.canvasCheckHTTP)
 	r.Post("/canvases/{id}/operations/runs/{run}/cancel", h.canvasCancelHTTP)
+	r.Get("/canvases/{id}/operations/runs/{run}/tool", h.managedToolApproval)
+	r.Post("/canvases/{id}/operations/runs/{run}/tool", h.managedToolApproval)
 	r.Get("/canvases/{id}/operations/runs/{run}/media", h.canvasMediaHTTP)
 	r.Get("/canvases/{id}/operations/grants", h.canvasGrantHTTP)
 	r.Post("/canvases/{id}/operations/grants", h.canvasGrantHTTP)
@@ -119,7 +121,13 @@ func (h *handlers) canvasReviewHTTP(w http.ResponseWriter, r *http.Request) {
 		h.canvasError(w, r, e)
 		return
 	}
-	h.aiJSON(w, 200, map[string]any{"review_token": token, "expires_at": expires, "board_version": b.Version, "node_id": p.NodeID, "provider": p.Provider, "prompt": p.Prompt, "context": p.Context, "bytes": len(p.Context), "items": []any{}})
+	toolNames := []string{}
+	if managedToolsEnabled(p) {
+		for _, tool := range p.ManagedTools.Allow {
+			toolNames = append(toolNames, tool.Name)
+		}
+	}
+	h.aiJSON(w, 200, map[string]any{"review_token": token, "expires_at": expires, "board_version": b.Version, "node_id": p.NodeID, "provider": p.Provider, "prompt": p.Prompt, "context": p.Context, "bytes": len(p.Context), "items": []any{}, "managed_tools": toolNames})
 }
 func (h *handlers) canvasRunsHTTP(w http.ResponseWriter, r *http.Request) {
 	b, e := h.canvasOwned(r.Context(), chi.URLParam(r, "id"))

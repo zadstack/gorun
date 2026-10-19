@@ -31,6 +31,7 @@ type agentBundle struct {
 	Version string              `json:"version"`
 	Skills  []agentSkill        `json:"skills"`
 	MCP     []agentMCPReference `json:"mcp"`
+	Tools   *agentToolPolicy    `json:"tools,omitempty"`
 }
 type agentBundleReader interface {
 	QueryRowContext(context.Context, string, ...any) *sql.Row
@@ -48,6 +49,9 @@ func agentBundleInstructions(b agentBundle) string {
 	return strings.Join(parts, "\n\n")
 }
 func validateAgentBundle(b agentBundle) error {
+	if b.Tools != nil && validateAgentToolPolicy(*b.Tools, b.MCP) != nil {
+		return errAgentBundle
+	}
 	if len(b.Skills) > 8 || len(b.MCP) > 8 {
 		return errAgentBundle
 	}
