@@ -105,6 +105,9 @@ func (h *handlers) canvasScheduleHTTP(w http.ResponseWriter, r *http.Request) {
 	h.aiJSON(w, 200, map[string]any{"schedule": schedules[node]})
 }
 func (h *handlers) canvasTick(ctx context.Context) error {
+	if _, e := h.d.DB.ExecContext(ctx, `DELETE FROM admin_canvas_inbound_deliveries WHERE created_at<?`, time.Now().Add(-24*time.Hour).UTC().Format(time.RFC3339)); e != nil {
+		return e
+	}
 	if _, e := h.d.DB.ExecContext(ctx, `DELETE FROM admin_canvas_reviews WHERE expires_at<?`, db.Now()); e != nil {
 		return e
 	}
@@ -176,6 +179,9 @@ func (h *handlers) canvasTick(ctx context.Context) error {
 	return nil
 }
 func (h *handlers) canvasScheduleActive(ctx context.Context, p canvasPrepared) bool {
+	if p.InboundID != "" && !h.canvasInboundActive(ctx, p) {
+		return false
+	}
 	if p.ScheduleID == "" {
 		return true
 	}
