@@ -1,9 +1,11 @@
 {{/* Data: keysPage. .Plaintext is set only in the create response. */}}
 {{define "title"}}{{t "admin.keys.title"}}{{end}}
 {{define "content"}}
+<link rel="stylesheet" href="{{asset "audit-workspace.css"}}">
+<script defer src="{{asset "audit-workspace.js"}}"></script>
 <link rel="stylesheet" href="{{asset "admin-contained.css"}}">
 <div class="admin-contained admin-key-directory">
-<h1 class="text-[22px] font-bold mb-4">{{t "admin.keys.title"}}</h1>
+<h1 class="text-[22px] font-bold mb-4">{{t "admin.keys.title"}}</h1><a class="audit-create-link" href="#key-create" data-key-create-open>＋ {{t "admin.keys.new"}}</a>
 {{if .Plaintext}}
 <section role="status" class="mb-4 rounded border border-green bg-green-soft p-4" x-data="{ copied: false }" data-key-created hx-history="false">
   <h2 class="text-base font-bold text-green mb-1">{{t "admin.keys.created_title"}}</h2>
@@ -21,7 +23,7 @@
 {{end}}
 {{if .AgentModel}}{{template "agent-model-editor" .AgentModel}}{{end}}
 <script defer src="{{asset "agent-models.js"}}"></script>
-<div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_26rem]">
+<div class="audit-key-layout">
   <section class="rounded border border-line bg-panel overflow-x-auto" aria-labelledby="k-list" tabindex="0">
     <div class="flex flex-wrap items-center justify-between gap-2 p-4 pb-2">
       <h2 id="k-list" class="text-base font-bold">{{t "admin.keys.list"}}</h2>
@@ -83,7 +85,8 @@
     {{end}}
   </section>
 
-  <form method="post" action="/admin/agents/keys" class="rounded border border-line bg-panel p-4 space-y-4" novalidate
+  <details id="key-create" class="audit-key-create" {{if .Fields}}open{{end}}><summary>{{t "admin.keys.new"}}</summary>
+  <form data-key-create method="post" action="/admin/agents/keys" class="rounded border border-line bg-panel p-4 space-y-4" novalidate
         x-data="{ all: {{if .Form.All}}true{{else}}false{{end}} }" aria-labelledby="k-new">
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <h2 id="k-new" class="text-base font-bold">{{t "admin.keys.new"}}</h2>
@@ -119,7 +122,10 @@
         {{template "partials/field_errors" (index .Fields "expires")}}
       </div>
     </div>
-    <fieldset>
+    <section class="audit-permission-presets" aria-label="{{t "auditworkspace.permission_presets"}}"><h3>{{t "auditworkspace.permission_presets"}}</h3><p>{{t "auditworkspace.preset_safety"}}</p><div>
+      <button type="button" data-key-preset="read">{{t "auditworkspace.read_preset"}}</button><button type="button" data-key-preset="draft">{{t "auditworkspace.draft_preset"}}</button><button type="button" data-key-preset="custom">{{t "auditworkspace.custom_preset"}}</button>
+    </div><p data-key-summary role="status" aria-live="polite" data-empty="{{t "auditworkspace.no_permissions"}}" data-count="{{t "auditworkspace.selected_permissions"}}"></p></section>
+    <details data-key-permissions {{if .Fields}}open{{end}}><summary>{{t "auditworkspace.advanced_permissions"}}</summary><fieldset>
       <legend class="font-medium mb-1">{{t "admin.keys.scopes"}}</legend>
       <label class="flex items-center gap-2 rounded border border-line bg-bg px-3 py-2 mb-2">
         <input type="checkbox" name="all" value="1" x-model="all" class="accent-[var(--green)]">
@@ -139,8 +145,9 @@
       </div>
       {{template "partials/field_errors" (index .Fields "scopes")}}
     </fieldset>
+    </details>
     <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.keys.create"}}</button>
-  </form>
+  </form></details>
 </div>
 </div>
 {{end}}

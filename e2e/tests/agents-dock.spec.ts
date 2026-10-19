@@ -19,6 +19,7 @@ test('owned canvas actions appear in opposite-side agents drawer without dispatc
   expect(await root.locator('.agents-dock-rail').evaluate(el=>Math.round(el.getBoundingClientRect().right))).toBe(await page.evaluate(()=>innerWidth));
   expect(await page.locator('#main').evaluate(el=>el.getBoundingClientRect().right)).toBeLessThanOrEqual(await root.locator('.agents-dock-rail').evaluate(el=>el.getBoundingClientRect().left));
   await launcher.click();await expect(dialog).toBeVisible();
+  await dialog.locator('.agents-dock-all').focus();await page.keyboard.press('Tab');await expect(dialog.locator('[data-dock-close]')).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(dialog.locator('.agents-dock-all')).toBeFocused();
   await dialog.getByRole('button',{name:/Editorial writer/}).click();
   const integrations=dialog.getByRole('tab',{name:'Integrations',exact:true}),instructions=dialog.getByRole('tab',{name:'Instructions',exact:true}),defaults=dialog.getByRole('tab',{name:'Defaults',exact:true});
   await expect(integrations).toHaveAttribute('aria-selected','true');await expect(dialog.getByRole('tabpanel',{name:'Integrations',exact:true})).toBeVisible();

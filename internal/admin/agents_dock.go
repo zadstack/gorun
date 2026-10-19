@@ -10,19 +10,26 @@ import (
 // A dock entry is a canvas operation, not a key, model or live client. Keep
 // those identities separate and never include source context or credentials.
 type agentsDockEntry struct {
-	ID         string `json:"id"`
-	Board      string `json:"board"`
-	Title      string `json:"title"`
-	Kind       string `json:"kind"`
-	Generation string `json:"generation"`
-	Href       string `json:"href"`
-	AgentID    string `json:"agent_id,omitempty"`
-	AgentName  string `json:"agent_name,omitempty"`
-	Mode       string `json:"mode,omitempty"`
-	Model      string `json:"model,omitempty"`
-	Prompt     string `json:"prompt,omitempty"`
-	Configured bool   `json:"configured"`
-	BundleURL  string `json:"bundle_url,omitempty"`
+	ID         string            `json:"id"`
+	Board      string            `json:"board"`
+	Title      string            `json:"title"`
+	Kind       string            `json:"kind"`
+	Generation string            `json:"generation"`
+	Href       string            `json:"href"`
+	AgentID    string            `json:"agent_id,omitempty"`
+	AgentName  string            `json:"agent_name,omitempty"`
+	Mode       string            `json:"mode,omitempty"`
+	Model      string            `json:"model,omitempty"`
+	Prompt     string            `json:"prompt,omitempty"`
+	Configured bool              `json:"configured"`
+	BundleURL  string            `json:"bundle_url,omitempty"`
+	Bundle     *agentsDockBundle `json:"bundle,omitempty"`
+}
+
+type agentsDockBundle struct {
+	Skills      []string                `json:"skills"`
+	Connections []agentBundleConnection `json:"connections"`
+	Missing     int                     `json:"missing"`
 }
 
 func (h *handlers) agentsDock(w http.ResponseWriter, r *http.Request) {
@@ -69,6 +76,24 @@ func (h *handlers) agentsDock(w http.ResponseWriter, r *http.Request) {
 					x.AgentID, x.AgentName = k.ID, k.Name
 					if auth.Can(r.Context(), PermAPIKeys) && auth.Can(r.Context(), "settings.manage") {
 						x.BundleURL = "/admin/agents/keys/" + k.ID + "/bundle"
+						// Match bundle editor authority; never project endpoints, secrets,
+						// resource text, or profiles not selected in this owner's bundle.
+						if agentBundleOwnerCurrent(r.Context(), h.d.DB, k.UserID, k.ID) {
+							if bundle, e := readAgentBundle(r.Context(), h.d.DB, k.ID); e == nil && (bundle.Version == "" || bundle.OwnerID == k.UserID) {
+								if page, e := h.agentBundlePage(r, k, bundle); e == nil {
+									summary := &agentsDockBundle{Skills: []string{}, Connections: []agentBundleConnection{}, Missing: page.Missing}
+									for _, skill := range bundle.Skills {
+										summary.Skills = append(summary.Skills, skill.Name)
+									}
+									for _, c := range page.Connections {
+										if c.Selected {
+											summary.Connections = append(summary.Connections, c)
+										}
+									}
+									x.Bundle = summary
+								}
+							}
+						}
 					}
 					if m, e := h.loadAgentModel(r.Context(), k.ID); e == nil {
 						x.Mode = m.Mode

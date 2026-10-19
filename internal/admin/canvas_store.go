@@ -40,12 +40,13 @@ type canvasEdge struct {
 	To   string `json:"to"`
 }
 type canvasBoard struct {
-	Edges     []canvasEdge `json:"edges"`
-	ID        string       `json:"id"`
-	Title     string       `json:"title"`
-	Version   int64        `json:"version"`
-	UpdatedAt string       `json:"updated_at"`
-	Cards     []canvasCard `json:"cards"`
+	LastRunStatus string       `json:"-"`
+	Edges         []canvasEdge `json:"edges"`
+	ID            string       `json:"id"`
+	Title         string       `json:"title"`
+	Version       int64        `json:"version"`
+	UpdatedAt     string       `json:"updated_at"`
+	Cards         []canvasCard `json:"cards"`
 }
 
 var errCanvasLimit = errors.New("canvas limit")
@@ -56,14 +57,14 @@ func (h *handlers) canvasBoards(ctx context.Context) ([]canvasBoard, error) {
 	if u == nil {
 		return out, sql.ErrNoRows
 	}
-	rows, e := h.d.DB.QueryContext(ctx, `SELECT id,title,version,updated_at FROM admin_canvases WHERE owner_id=? ORDER BY updated_at DESC,id LIMIT 100`, u.ID)
+	rows, e := h.d.DB.QueryContext(ctx, `SELECT b.id,b.title,b.version,b.updated_at,COALESCE((SELECT r.status FROM admin_canvas_runs r WHERE r.board_id=b.id AND r.owner_id=b.owner_id ORDER BY r.created_at DESC,r.id DESC LIMIT 1),'') FROM admin_canvases b WHERE b.owner_id=? ORDER BY b.updated_at DESC,b.id LIMIT 100`, u.ID)
 	if e != nil {
 		return nil, e
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var b canvasBoard
-		if e = rows.Scan(&b.ID, &b.Title, &b.Version, &b.UpdatedAt); e != nil {
+		if e = rows.Scan(&b.ID, &b.Title, &b.Version, &b.UpdatedAt, &b.LastRunStatus); e != nil {
 			return nil, e
 		}
 		out = append(out, b)

@@ -1,8 +1,11 @@
 {{/* Data: mcp.approvalsData. Args and results are JSON shown as escaped text. */}}
 {{define "title"}}{{t "mcp.approvals.title"}}{{end}}
 {{define "content"}}
+<link rel="stylesheet" href="{{asset "audit-workspace.css"}}">
+<script defer src="{{asset "audit-workspace.js"}}"></script>
 <h1 class="text-[22px] font-bold mb-1">{{t "mcp.approvals.title"}}</h1>
 <p class="text-muted mb-4 max-w-3xl">{{t "mcp.approvals.help"}}</p>
+<aside class="audit-notice"><h2>{{t "auditworkspace.approval_sources"}}</h2><p>{{t "auditworkspace.approval_scope"}}</p>{{range nav}}{{range .Items}}{{if eq .ID "canvases"}}<a href="{{.Href}}">{{t "auditworkspace.canvas_reviews"}}</a>{{end}}{{end}}{{end}}</aside>
 {{if .Notice}}<div role="status" class="mb-4 rounded border px-3 py-2 {{if eq .Notice "mcp.approvals.already_decided"}}border-blue bg-blue-soft text-blue{{else}}border-green bg-green-soft text-green{{end}}">{{t .Notice}}</div>{{end}}
 
 <section aria-labelledby="ap-pending" class="mb-6">

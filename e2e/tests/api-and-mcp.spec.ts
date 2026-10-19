@@ -9,6 +9,7 @@ import { csrf, env, mcp, toolPayload } from '../lib/helpers.ts';
 
 async function createKey(page: Page, kind: 'api' | 'agent', name: string, scopes: string[] | '*'): Promise<string> {
   await page.goto('/admin/agents/keys');
+  await page.locator('.audit-key-create > summary').click();await page.locator('[data-key-permissions] > summary').click();
   await page.check(`input[name="kind"][value="${kind}"]`);
   await page.fill('#k-name', name);
   if (scopes === '*') await page.check('input[name="all"]');

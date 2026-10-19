@@ -4,7 +4,8 @@ import {csrf,db,mcp,toolPayload,setLocale} from '../lib/helpers.ts';
 
 test('saved skills reach reviewed external execution, references export no credentials, and edits retire old consent',async({page,request},testInfo)=>{
  await page.goto('/admin/agents/keys');await setLocale(page,'en');
- const name='Bundle writer '+randomUUID();await page.locator('#k-name').fill(name);await page.locator('input[name=all]').check();await page.locator('form[action="/admin/agents/keys"] button[type=submit]').click();
+ const name='Bundle writer '+randomUUID();await page.locator('.audit-key-create > summary').click();await page.locator('[data-key-permissions] > summary').click();
+  await page.locator('#k-name').fill(name);await page.locator('input[name=all]').check();await page.locator('form[action="/admin/agents/keys"] button[type=submit]').click();
  const token=await page.locator('#k-plaintext').inputValue();
  const database=db(),key=(database.prepare('SELECT id FROM api_keys WHERE name=?').get(name) as any).id;
  const profiles=[{id:'01J00000000000000000000011',version:'01J00000000000000000000012',name:'Evidence MCP',kind:'mcp',endpoint:'https://mcp.example/PATH_CAPABILITY_SECRET',secret:'ENCRYPTED_CREDENTIAL_SENTINEL',test_status:'pass',tested_at:'2026-10-19T00:00:00Z',test_count:2},{id:'01J00000000000000000000013',version:'01J00000000000000000000014',name:'Archive MCP',kind:'mcp',endpoint:'https://archive.example/mcp'}];

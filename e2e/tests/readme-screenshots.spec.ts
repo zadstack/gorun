@@ -30,8 +30,9 @@ test('capture current README product screens with synthetic campaign data', asyn
   }
   async function key(kind:'api'|'agent', name:string, scopes:string[]) {
     await page.goto('/admin/agents/keys');
-    await page.check(`input[name="kind"][value="${kind}"]`);
-    await page.fill('#k-name',name);
+    await page.locator('.audit-key-create > summary').click();
+    await page.check(`input[name="kind"][value="${kind}"]`);await page.locator('[data-key-permissions] > summary').click();
+  await page.fill('#k-name',name);
     for(const scope of scopes) await page.check(`input[name="scopes"][value="${scope}"]`);
     await page.locator('form[action="/admin/agents/keys"] button[type="submit"]').click();
     const secret=await page.locator('#k-plaintext').inputValue();
