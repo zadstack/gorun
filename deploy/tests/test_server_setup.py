@@ -37,7 +37,7 @@ class ServerSetupTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp) / "new site"
             output = io.StringIO()
-            with patch.object(setup, "check_dns", return_value=["8.8.8.8"]), patch.object(setup, "run", side_effect=AssertionError("Docker called")), patch.object(setup.secrets, "token_hex", side_effect=AssertionError("secret generated")), contextlib.redirect_stdout(output):
+            with patch.object(setup, "check_dns", return_value=["8.8.8.8"]), patch.object(setup, "run", side_effect=AssertionError("Docker called")), patch.object(setup.secrets, "token_bytes", side_effect=AssertionError("secret generated")), contextlib.redirect_stdout(output):
                 self.assertEqual(setup.main(["--domain", "site.com", "--directory", str(directory), "--server-ip", "8.8.8.8", "--dry-run"]), 0)
             self.assertFalse(directory.exists())
             self.assertEqual(json.loads(output.getvalue())["data"], str(directory.resolve() / "data"))
@@ -58,6 +58,8 @@ class ServerSetupTests(unittest.TestCase):
             with patch.object(setup, "run", return_value=""), patch.object(setup, "network_address", return_value="172.31.0.2"), patch.object(setup.os, "chown"), patch.object(setup, "build_runtime", return_value=("sha256:" + "b" * 64, {"release": "0.4.0"})), patch.object(setup, "resolve_image", side_effect=lambda image: image.rsplit(":", 1)[0] + "@sha256:" + "a" * 64):
                 state = setup.create_deployment(directory, "site.com", setup.DEFAULT_VERSION, "test-project")
             secrets = (directory / "secrets.env").read_bytes()
+            key = secrets.decode().splitlines()[0].split("=", 1)[1]
+            self.assertEqual(len(setup.base64.b64decode(key, validate=True)), 32)
             (directory / "data" / "existing.db").write_bytes(b"existing account")
             self.assertEqual(setup.load_state(directory, "site.com", setup.DEFAULT_VERSION), state)
             compose = json.loads((directory / "compose.json").read_text())

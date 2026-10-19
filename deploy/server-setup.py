@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Provision a new, single-host GoRun site; never replace an existing deployment."""
 import argparse
+import base64
 import hashlib
 import http.client
 import ipaddress
@@ -264,7 +265,7 @@ def create_deployment(directory, domain, version, name):
         (directory / child).mkdir(mode=0o700)
     os.chown(directory / "data", 65532, 65532)
     files = {
-        "secrets.env": "GORUN_SECRET_KEY=" + secrets.token_hex(32) +
+        "secrets.env": "GORUN_SECRET_KEY=" + base64.b64encode(secrets.token_bytes(32)).decode("ascii") +
                        "\nGORUN_SETUP_TOKEN=" + secrets.token_urlsafe(32) + "\n",
         "Caddyfile": domain + " {\n    reverse_proxy gorun:8080\n}\n",
         "compose.json": json.dumps(compose_config(domain, images["gorun"], network, proxy_ip, images["proxy"]), indent=2) + "\n",
