@@ -120,8 +120,8 @@ func validLocale(l string) bool { return slices.Contains(i18n.Supported, l) }
 
 // userQuery filters listUsers.
 type userQuery struct {
-	Search, Role  string
-	Page, PerPage int
+	Search, Role, Audience string
+	Page, PerPage          int
 }
 
 const userColumns = `id, email, name, role, locale, status, last_login_at, created_at, updated_at`
@@ -138,6 +138,14 @@ func listUsers(ctx context.Context, d *sql.DB, q userQuery) ([]auth.User, int, e
 	if q.Role != "" {
 		conds = append(conds, `role = ?`)
 		args = append(args, q.Role)
+	}
+	if q.Audience == "customers" {
+		conds = append(conds, "role = ?")
+		args = append(args, auth.RoleCustomer)
+	}
+	if q.Audience == "team" {
+		conds = append(conds, "role != ?")
+		args = append(args, auth.RoleCustomer)
 	}
 	where := ""
 	if len(conds) > 0 {

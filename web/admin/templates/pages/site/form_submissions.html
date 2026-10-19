@@ -9,41 +9,7 @@
   <a href="/admin/system/form-submissions.csv?view={{.View}}" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "download" "w-4 h-4"}}{{t "site.submissions.export"}}</a>
 </div>
 
-{{template "partials/form_directory" .Sources}}
-<p class="text-xs text-muted mb-4">{{t "formsources.association_help"}}</p>
 
-<details class="rounded border border-line bg-panel mb-4">
-  <summary class="px-4 py-3 cursor-pointer font-bold focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">{{t "site.submissions.settings.title"}}</summary>
-  <form method="post" action="/admin/system/form-submissions/settings" class="px-4 pb-4 grid gap-4 md:grid-cols-2" novalidate>
-    <input type="hidden" name="_csrf" value="{{csrf}}">
-    <div class="space-y-4">
-      <label class="flex items-start gap-2">
-        <input type="checkbox" name="notify" value="1" {{if .Settings.Notify}}checked{{end}} class="mt-1 h-4 w-4 accent-[var(--green)]">
-        <span><span class="font-medium">{{t "site.submissions.settings.notify"}}</span><span class="block text-xs text-muted">{{t "site.submissions.settings.notify_help"}}</span></span>
-      </label>
-      <div>
-        <label for="recipients" class="block font-medium mb-1">{{t "site.submissions.settings.recipients"}}</label>
-        <input id="recipients" name="recipients" type="text" dir="ltr" value="{{.Settings.RecipientsText}}" placeholder="team@example.com, sales@example.com" aria-describedby="recipients-help"
-               class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
-        <p id="recipients-help" class="mt-1 text-xs text-muted">{{t "site.submissions.settings.recipients_help"}}</p>
-      </div>
-    </div>
-    <div class="space-y-4">
-      <label class="flex items-start gap-2">
-        <input type="checkbox" name="attachments" value="1" {{if .Settings.Attachments}}checked{{end}} class="mt-1 h-4 w-4 accent-[var(--green)]">
-        <span><span class="font-medium">{{t "site.submissions.settings.attachments"}}</span><span class="block text-xs text-muted">{{t "site.submissions.settings.attachments_help"}}</span></span>
-      </label>
-      <div>
-        <label for="max_mb" class="block font-medium mb-1">{{t "site.submissions.settings.max_mb"}}</label>
-        <input id="max_mb" name="max_mb" type="number" min="1" max="20" step="1" dir="ltr" value="{{.Settings.MaxMB}}"
-               class="w-28 h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
-      </div>
-    </div>
-    <div class="md:col-span-2">
-      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.submissions.settings.save"}}</button>
-    </div>
-  </form>
-</details>
 
 <nav class="flex flex-wrap gap-1 mb-4" aria-label="{{t "site.submissions.title"}}">
   <a href="/admin/system/form-submissions?view=inbox" {{if eq $.View "inbox"}}aria-current="page"{{end}}
@@ -88,6 +54,41 @@
 </nav>
 {{end}}
 {{else}}
-<p class="rounded border border-line bg-panel p-4 text-muted">{{t "site.submissions.empty"}}</p>
+<p class="rounded border border-line bg-panel p-4 text-muted">{{t "site.submissions.empty"}} <span class="block mt-2">{{t "operator.inbox_next"}}</span></p>
 {{end}}
+<details class="mt-5 border border-line p-3"><summary class="cursor-pointer font-medium">{{t "operator.forms_settings"}}</summary>{{template "partials/form_directory" .Sources}}
+<p class="text-xs text-muted mb-4">{{t "formsources.association_help"}}</p>
+
+<details class="rounded border border-line bg-panel mb-4">
+  <summary class="px-4 py-3 cursor-pointer font-bold focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">{{t "site.submissions.settings.title"}}</summary>
+  <form method="post" action="/admin/system/form-submissions/settings" class="px-4 pb-4 grid gap-4 md:grid-cols-2" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div class="space-y-4">
+      <label class="flex items-start gap-2">
+        <input type="checkbox" name="notify" value="1" {{if .Settings.Notify}}checked{{end}} class="mt-1 h-4 w-4 accent-[var(--green)]">
+        <span><span class="font-medium">{{t "site.submissions.settings.notify"}}</span><span class="block text-xs text-muted">{{t "site.submissions.settings.notify_help"}}</span></span>
+      </label>
+      <div>
+        <label for="recipients" class="block font-medium mb-1">{{t "site.submissions.settings.recipients"}}</label>
+        <input id="recipients" name="recipients" type="text" dir="ltr" value="{{.Settings.RecipientsText}}" placeholder="team@example.com, sales@example.com" aria-describedby="recipients-help"
+               class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <p id="recipients-help" class="mt-1 text-xs text-muted">{{t "site.submissions.settings.recipients_help"}}</p>
+      </div>
+    </div>
+    <div class="space-y-4">
+      <label class="flex items-start gap-2">
+        <input type="checkbox" name="attachments" value="1" {{if .Settings.Attachments}}checked{{end}} class="mt-1 h-4 w-4 accent-[var(--green)]">
+        <span><span class="font-medium">{{t "site.submissions.settings.attachments"}}</span><span class="block text-xs text-muted">{{t "site.submissions.settings.attachments_help"}}</span></span>
+      </label>
+      <div>
+        <label for="max_mb" class="block font-medium mb-1">{{t "site.submissions.settings.max_mb"}}</label>
+        <input id="max_mb" name="max_mb" type="number" min="1" max="20" step="1" dir="ltr" value="{{.Settings.MaxMB}}"
+               class="w-28 h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      </div>
+    </div>
+    <div class="md:col-span-2">
+      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.submissions.settings.save"}}</button>
+    </div>
+  </form>
+</details></details>
 {{end}}

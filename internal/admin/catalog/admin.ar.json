@@ -35,7 +35,7 @@
   "locale.ar": "العربية",
   "locale.en": "English (الإنجليزية)",
   "dashboard.quick_actions": "إجراءات سريعة",
-  "dashboard.new_item": "%s جديد",
+  "dashboard.new_item": "إنشاء %s",
   "dashboard.new_user": "مستخدم جديد",
   "dashboard.new_key": "مفتاح API جديد",
   "dashboard.recent_audit": "آخر النشاطات",

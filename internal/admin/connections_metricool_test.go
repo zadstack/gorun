@@ -47,7 +47,7 @@ func TestConnectionsMetricoolSummaryReadOnlyStates(t *testing.T) {
 	other := boot(t)
 	other.login("other@example.invalid", "admin", "en")
 	_, body := other.do("GET", "/admin/settings/connections", nil)
-	mustContain(t, body, `data-metricool-state="not_configured"`)
+	mustNotContain(t, body, `data-metricool-summary`)
 }
 
 func TestConnectionsMetricoolDraftLinkRequiresPublishing(t *testing.T) {
@@ -56,6 +56,9 @@ func TestConnectionsMetricoolDraftLinkRequiresPublishing(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := auth.ReloadRoles(context.Background(), s.app.Deps.DB); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.app.Deps.Settings.Set(context.Background(), "metricool.config", map[string]string{"version": "saved-legacy-config"}); err != nil {
 		t.Fatal(err)
 	}
 	s.login("settings-only@example.invalid", "contributor", "ar")

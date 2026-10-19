@@ -6,7 +6,7 @@
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <div>
     <h1 class="text-[22px] font-bold">{{t "admin.roles.title"}}</h1>
-    <p class="mt-1 text-sm text-muted">{{t "admin.roles.lead"}}</p>
+    <p class="mt-1 text-sm text-muted">{{t "admin.roles.lead"}}</p><p class="mt-2 text-xs text-muted max-w-3xl">{{t "operator.role_clone_help"}}</p>
   </div>
   <a href="/admin/roles/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "shield"}}<span>{{t "admin.roles.new"}}</span></a>
 </div>
@@ -30,14 +30,15 @@
           {{if .System}}<span class="ms-1 inline-flex rounded-chip border border-line px-1.5 py-0.5 text-[11px] font-mono text-muted">{{t "admin.roles.system"}}</span>{{end}}
         </td>
         <td class="px-3 py-2 font-mono text-xs" dir="ltr">{{.Slug}}</td>
-        <td class="px-3 py-2 font-mono text-xs text-muted">{{len .Permissions}}</td>
+        <td class="px-3 py-2 font-mono text-xs text-muted">{{if .AllPermissions}}{{t "operator.all_permissions"}}{{else}}{{len .Permissions}}{{end}}</td>
         <td class="px-3 py-2 font-mono text-xs text-muted">{{.UserCount}}</td>
-        <td class="px-3 py-2 text-end"><a href="/admin/roles/{{.Slug}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "core.action.edit"}}</a></td>
+        <td class="px-3 py-2 text-end"><a href="/admin/roles/{{.Slug}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "core.action.edit"}}</a> <a href="/admin/roles/new?clone={{.Slug}}" class="block text-sm text-blue underline mt-1">{{t "operator.role_clone"}}</a></td>
       </tr>
       {{end}}
     </tbody>
   </table>
 </div>
+<details data-role-comparison class="mt-4 border border-line bg-panel p-3"><summary class="cursor-pointer font-bold">{{t "operator.task_comparison"}}</summary><p class="text-sm text-muted my-3">{{t "operator.task_boundary"}}</p><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr><th class="text-start p-2">{{t "admin.roles.permissions"}}</th>{{range .Roles}}<th class="text-start p-2">{{.DisplayName}}</th>{{end}}</tr></thead><tbody>{{range .Tasks}}<tr class="border-t border-line"><th class="text-start font-medium p-2">{{t .LabelKey}}</th>{{range .Grants}}<td class="p-2">{{if .}}{{t "admin.common.yes"}}{{else}}{{t "admin.common.no"}}{{end}}</td>{{end}}</tr>{{end}}</tbody></table></div></details>
 {{else}}
 <div class="admin-empty">{{t "admin.roles.empty"}}</div>
 {{end}}

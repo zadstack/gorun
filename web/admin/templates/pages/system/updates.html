@@ -1,6 +1,7 @@
 {{define "title"}}{{t "admin.updates.title"}}{{end}}
 {{define "content"}}
 <h1 class="text-[22px] font-bold mb-4">{{t "admin.updates.title"}}</h1>
+<p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.updates_steps"}}</p>
 <section class="rounded border border-line bg-panel p-4 space-y-4" data-system-updates>
   <p>{{t "admin.updates.current"}}: <span dir="ltr" class="font-mono">{{.Version}}</span></p>
   <p class="text-muted">{{t "admin.updates.help"}}</p>
@@ -13,7 +14,7 @@
     <button type="submit" class="h-9 px-3 rounded bg-green text-white font-medium">{{t "admin.updates.deploy"}}</button>
   </form>
   {{else}}
-  <p role="status">{{t "admin.updates.setup"}}</p>
+  <p role="status">{{t "admin.updates.setup"}} <a href="https://github.com/zadstack/gorun/blob/main/deploy/coolify.md" class="underline">{{t "operator.updates_guide"}}</a></p>
   <button type="button" disabled class="h-9 px-3 rounded border border-line opacity-50">{{t "admin.updates.deploy"}}</button>
   {{end}}
   <p class="text-sm text-muted">{{t "admin.updates.verify"}}</p>

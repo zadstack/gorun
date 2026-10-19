@@ -17,13 +17,13 @@
     <details>
       <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-3 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">
         {{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}
-        <span class="font-mono text-xs font-medium">{{.Kind}}</span>
+        <span class="text-sm font-medium">{{if .LabelKey}}{{t .LabelKey}}{{else}}{{.Kind}}{{end}}</span>
         <span class="inline-flex rounded-chip border {{if eq .Status "dead"}}border-red bg-red-soft text-red{{else if .Retryable}}border-amber bg-amber-soft text-amber-text{{else if eq .Status "done"}}border-green bg-green-soft text-green{{else}}border-line bg-panel-2{{end}} px-1.5 py-0.5 text-[11px] font-mono">{{if .Retryable}}{{if eq .Status "dead"}}{{t "admin.jobs.status_dead"}}{{else}}{{t "admin.jobs.status_retrying"}}{{end}}{{else}}{{t (printf "admin.jobs.status_%s" .Status)}}{{end}}</span>
-        <span class="font-mono text-[11px] text-muted">{{.Attempts}}/{{.MaxAttempts}}</span>
+        <span class="font-mono text-[11px] text-muted">{{t "operator.attempts" .Attempts .MaxAttempts}}</span>
         <time class="ms-auto font-mono text-[11px] text-muted" datetime="{{.RunAt}}">{{date .RunAt}}</time>
       </summary>
       <div class="border-t border-line p-3 space-y-2">
-        <p class="font-mono text-[11px] text-muted break-all">{{t "admin.common.id"}} {{.ID}}</p>
+        <p class="font-mono text-[11px] text-muted break-all">{{.Kind}} · {{t "admin.common.id"}} {{.ID}}</p>
         {{if .LastError}}<p class="text-xs text-red" dir="ltr">{{.LastError}}</p>{{end}}
         <pre class="rounded bg-panel-dark text-panel-2 p-3 text-xs overflow-x-auto" dir="ltr">{{.Preview}}</pre>
         {{if .Retryable}}

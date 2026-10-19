@@ -29,7 +29,7 @@ func TestRolesCRUDUI(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("list: %d", resp.StatusCode)
 	}
-	mustContain(t, page, "admin", "editor", "/admin/roles/new")
+	mustContain(t, page, "admin", "editor", "/admin/roles/new", "All permissions")
 
 	resp, page = s.post("/admin/roles", url.Values{
 		"slug": {"marketing"}, "name_en": {"Marketing"}, "name_ar": {"تسويق"},

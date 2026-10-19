@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -13,18 +14,22 @@ import (
 )
 
 type connectionView struct {
-	ID, Version, Name, Kind, Endpoint, Provider, Model, Bucket, Region, TestedAt, TestStatus, TestProtocol string
-	TestCount                                                                                              int
-	SecretSet                                                                                              bool
+	ID, Version, Name, Kind, Endpoint, Host, Provider, Model, Bucket, Region, TestedAt, TestStatus, TestProtocol string
+	TestCount                                                                                                    int
+	SecretSet                                                                                                    bool
 }
 
 func viewConnection(c connectionRecord) connectionView {
-	return connectionView{ID: c.ID, Version: c.Version, Name: c.Name, Kind: c.Kind, Endpoint: c.Endpoint, Provider: c.Provider, Model: c.Model, Bucket: c.Bucket, Region: c.Region, TestedAt: c.TestedAt, TestStatus: c.TestStatus, TestCount: c.TestCount, TestProtocol: c.TestProtocol, SecretSet: c.Secret != ""}
+	host := ""
+	if u, e := url.Parse(c.Endpoint); e == nil {
+		host = u.Host
+	}
+	return connectionView{Host: host, ID: c.ID, Version: c.Version, Name: c.Name, Kind: c.Kind, Endpoint: c.Endpoint, Provider: c.Provider, Model: c.Model, Bucket: c.Bucket, Region: c.Region, TestedAt: c.TestedAt, TestStatus: c.TestStatus, TestCount: c.TestCount, TestProtocol: c.TestProtocol, SecretSet: c.Secret != ""}
 }
 
 type metricoolConnectionSummary struct {
-	State, TestedAt string
-	CanDrafts       bool
+	State, TestedAt    string
+	CanDrafts, Present bool
 }
 
 type connectionsPage struct {
@@ -53,7 +58,7 @@ func (h *handlers) renderConnections(w http.ResponseWriter, r *http.Request, sta
 		return
 	}
 	mv := metricoolView(metricool)
-	summary := metricoolConnectionSummary{State: "not_configured", CanDrafts: auth.Can(r.Context(), "content.publish")}
+	summary := metricoolConnectionSummary{Present: metricool.Version != "" || metricool.Secret != "" || metricool.UserID != "" || metricool.BlogID != "", State: "not_configured", CanDrafts: auth.Can(r.Context(), "content.publish")}
 	if mv.SecretSet {
 		summary.State = "untested"
 		if mv.TestStatus == "pass" || mv.TestStatus == "fail" {
