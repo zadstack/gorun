@@ -1,0 +1,35 @@
+name: edge-readonly-runtime
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['edge/**', '.github/workflows/edge.yml', 'docs/EDGE.md']
+  push:
+    branches: [main]
+    paths: ['edge/**', '.github/workflows/edge.yml', 'docs/EDGE.md']
+permissions:
+  contents: read
+jobs:
+  workerd:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+    defaults:
+      run:
+        working-directory: edge
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: edge/.node-version
+          cache: npm
+          cache-dependency-path: edge/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run package:check
+      - name: Exercise documented local D1 migration and fixture commands
+        run: |
+          npm run db:migrate
+          npm run seed:local
+          npm run seed:local
+      - run: npm run smoke:local

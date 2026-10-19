@@ -1,0 +1,24 @@
+{
+  "name": "gorun-edge-readonly-poc",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "dev": "wrangler dev --local",
+    "db:migrate": "wrangler d1 migrations apply DB --local",
+    "seed:local": "wrangler d1 execute DB --local --file fixtures/demo.sql",
+    "package:check": "wrangler deploy --dry-run --outdir dist-upload",
+    "smoke:local": "node test/local-smoke.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261019.1",
+    "miniflare": "5.20261019.0-beta",
+    "typescript": "7.0.2",
+    "wrangler": "4.151.2"
+  }
+}
