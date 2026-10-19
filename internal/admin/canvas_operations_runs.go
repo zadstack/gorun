@@ -86,6 +86,9 @@ func (h *handlers) canvasEnqueueTx(ctx context.Context, tx *sql.Tx, p canvasPrep
 	if e = tx.QueryRowContext(ctx, `SELECT version FROM admin_canvases WHERE id=? AND owner_id=?`, p.BoardID, p.OwnerID).Scan(&version); e != nil || version != p.Version {
 		return run, errCanvasConsent
 	}
+	if p.InboundID != "" && !canvasInboundActiveTx(ctx, tx, p) {
+		return run, errCanvasConsent
+	}
 	if p.AgentModel != nil {
 		if _, e = agentModelAuthorityTx(ctx, tx, p); e != nil {
 			return run, e
@@ -330,6 +333,9 @@ func (h *handlers) canvasAppend(ctx context.Context, runID string, p canvasPrepa
 					return errCanvasConsent
 				}
 			}
+		}
+		if p.InboundID != "" && !canvasInboundActiveTx(ctx, tx, p) {
+			return errCanvasConsent
 		}
 		if p.ScheduleID != "" {
 			if e := tx.QueryRowContext(ctx, `SELECT count(*) FROM admin_canvas_schedules WHERE board_id=? AND node_id=? AND enabled=1 AND consent_hash=?`, p.BoardID, p.ScheduleID, p.GraphHash).Scan(&active); e != nil || active != 1 {

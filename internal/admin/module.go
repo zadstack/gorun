@@ -60,8 +60,11 @@ type handlers struct {
 	started time.Time
 	// userMu serialises user guard checks with the mutation they protect
 	// (last-admin / self rules); GoRun is a single process.
-	userMu   sync.Mutex
-	updateMu sync.Mutex
+	userMu            sync.Mutex
+	updateMu          sync.Mutex
+	inboundRateMu     sync.Mutex
+	inboundRateWindow time.Time
+	inboundRateCount  int
 }
 
 // Register declares permissions, publishes the mailer, adds nav items,

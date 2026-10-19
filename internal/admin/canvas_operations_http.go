@@ -10,6 +10,7 @@ import (
 )
 
 func (h *handlers) canvasOperationRoutes() {
+	h.canvasInboundRoutes()
 	r := h.d.Router.Admin
 	r.Get("/canvases/{id}/operations/options", h.canvasOptions)
 	r.Post("/canvases/{id}/operations/preview", h.canvasReviewHTTP)
