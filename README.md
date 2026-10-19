@@ -18,9 +18,9 @@ On **macOS or Linux**, copy and paste this whole block. No Go, Docker, database 
 )
 ```
 
-The installer detects Intel or ARM, downloads the latest release, verifies its SHA-256 checksum, and starts GoRun directly. No manual PATH setup. Your browser opens, SQLite and the default theme are prepared, and your first `admin` password appears **once** in the terminal. Save it. Restarting preserves your site and accounts.
+The installer detects Intel or ARM, downloads the latest release, verifies its SHA-256 checksum, and starts GoRun directly. No manual PATH setup. Your browser opens, SQLite and the default theme are prepared, and your first `admin` password appears **once** in the terminal. Save it. On first sign-in, choose your own password, email, site name and language. Restarting preserves your site and accounts.
 
-**Release availability:** the published 0.3.0 release predates `start`. The installer safely rejects it; this release-based quick start becomes available with the next release containing `start`. To try the current source today, see the [installation guide](docs/GORUN-INSTALLATION.md).
+The quick start requires **GoRun 0.4.0 or newer**. The installer refuses older releases without changing an existing installation.
 
 The executable lives at `~/.local/bin/gorun`; your local site lives at `~/.local/share/gorun/site`. Stop the server with **Ctrl+C**. Repeating the block uses the same site. LAN access is a public, read-only preview; administration stays on localhost. Use `--local-only` when starting manually to disable LAN access. [Local setup and recovery](docs/local-start.md).
 
@@ -76,7 +76,7 @@ Canvases bring selected content, instructions and agent results into one workspa
 
 ## Project status
 
-GoRun is under active development. The current published release is [0.3.0](https://github.com/zadstack/gorun/releases/tag/v0.3.0); the main branch may contain features awaiting release.
+GoRun is under active development. The current release is [0.4.0](https://github.com/zadstack/gorun/releases/tag/v0.4.0); the main branch may contain features awaiting release.
 
 Run one server process per SQLite data directory. Canvases are private to their owner with explicit agent access. Full-site generation from a single prompt and an automatic core updater are not available. Backups restore into a new directory; switching live traffic remains an operator action. Provider-backed generation and payments require valid credentials and deployment-specific checks.
 

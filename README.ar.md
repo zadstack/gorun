@@ -123,20 +123,20 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 يكتشف المُثبّت نظامك، وينزّل آخر إصدار ويتحقق من SHA-256، ثم يشغّل البرنامج مباشرة دون إعداد PATH. يفتح المتصفح، ويجهّز SQLite والثيم الافتراضي وحساب `admin`، وتظهر كلمة مرور قوية مرة واحدة. يحتفظ بالموقع تحت `~/.local/share/gorun/site`، وبالبرنامج تحت `~/.local/bin/gorun`. أوقف الخادم بـCtrl+C؛ تظل البيانات محفوظة. رابط LAN للمعاينة العامة؛ الإدارة محصورة في localhost.
 
-**توفر الإصدار:** الإصدار المنشور 0.3.0 يسبق ميزة `start`. المُثبّت يرفضه برسالة واضحة دون تغيير تثبيت قائم. تعمل الكتلة أعلاه عند نشر إصدار يتضمن الميزة؛ للتجربة من المصدر الآن راجع [دليل التثبيت](docs/GORUN-INSTALLATION.md).
+تحتاج التجربة إلى **GoRun 0.4.0 أو أحدث**. يرفض المُثبّت الإصدارات الأقدم دون تغيير تثبيت قائم. في أول دخول تختار كلمة مرور جديدة وبريدك واسم الموقع واللغة.
 
 [التفاصيل والأمان والاستعادة](docs/local-start.md) · [التثبيت والترقية](docs/GORUN-INSTALLATION.md)
 
 ### البدء السريع
 
-**صورة Docker:** تُنشر الإصدارات صورةً متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.3.0` و`0.3` و`latest`:
+**صورة Docker:** تُنشر الإصدارات صورةً متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.4.0` و`0.4` و`latest`:
 
 ```sh
 docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
   -e GORUN_BASE_URL=https://cms.example.com \
   -e GORUN_SECRET_KEY="<openssl rand -base64 32>" \
   -e GORUN_SETUP_TOKEN="<openssl rand -hex 24>" \
-  ghcr.io/zadstack/gorun:0.3.0
+  ghcr.io/zadstack/gorun:0.4.0
 ```
 
 تعمل الصورة في وضع الإنتاج (`GORUN_ENV=prod`) وتحفظ بياناتها في `/data`. احتفظ بقيمة `GORUN_SECRET_KEY` ثابتة لأنها توقّع الجلسات وتشفّر الأسرار المحفوظة، وأدخل `GORUN_SETUP_TOKEN` في `/admin/setup` عند إنشاء المدير الأول ثم احذفه. ملف Compose الجاهز وخطوات Coolify في [دليل Docker / Coolify](deploy/coolify.md).
@@ -144,10 +144,10 @@ docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
 **الملفات التنفيذية:** كل [إصدار على GitHub](https://github.com/zadstack/gorun/releases) يرفق أرشيفات لنظامي linux وdarwin بمعماريتي amd64 وarm64، وفيها البرنامج ومجلد `themes/` والوثائق، مع ملف `SHA256SUMS`:
 
 ```sh
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.3.0/gorun-0.3.0-linux-amd64.tar.gz
-curl -fLO https://github.com/zadstack/gorun/releases/download/v0.3.0/SHA256SUMS-0.3.0.txt
-sha256sum --ignore-missing -c SHA256SUMS-0.3.0.txt
-tar xzf gorun-0.3.0-linux-amd64.tar.gz && cd gorun-0.3.0-linux-amd64
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.4.0/gorun-0.4.0-linux-amd64.tar.gz
+curl -fLO https://github.com/zadstack/gorun/releases/download/v0.4.0/SHA256SUMS-0.4.0.txt
+sha256sum --ignore-missing -c SHA256SUMS-0.4.0.txt
+tar xzf gorun-0.4.0-linux-amd64.tar.gz && cd gorun-0.4.0-linux-amd64
 GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
 ```
 
@@ -196,7 +196,7 @@ make build && make test && make lint
 
 ### حالة المشروع
 
-GoRun في الإصدار [v0.3.0](https://github.com/zadstack/gorun/releases/tag/v0.3.0) وما زال قيد التطوير النشط؛ استخدم آخر [إصدار](https://github.com/zadstack/gorun/releases) أو ابنِه من الفرع `main`. الحدود الحالية:
+GoRun في الإصدار [v0.4.0](https://github.com/zadstack/gorun/releases/tag/v0.4.0) وما زال قيد التطوير النشط؛ استخدم آخر [إصدار](https://github.com/zadstack/gorun/releases) أو ابنِه من الفرع `main`. الحدود الحالية:
 
 - عملية خادم واحدة لكل مجلد بيانات SQLite (يفرضها القفل `<data>/gorun.lock`)، ولا يوجد تعدد مواقع بقاعدة بيانات مشتركة.
 - اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.
