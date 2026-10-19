@@ -97,6 +97,21 @@ html[dir="rtl"] :where(time, .font-mono:not(code):not(pre):not(kbd):not(samp)) {
   font-family: var(--font-ui, var(--font));
   letter-spacing: 0;
 }
+/* Labels/kickers are prose, not paths — never mono on Arabic. */
+html[dir="rtl"] :where(
+  .gr-hero-kicker,
+  .dt-footer-nav-label,
+  .dt-kicker-label,
+  .sb-eyebrow,
+  .studio-kicker,
+  .ed-eyebrow,
+  .ed-topline,
+  .ed-story-meta,
+  .ed-colophon,
+  .ed-read
+) {
+  font-family: var(--font-ui, var(--font));
+}
 /* Mono only for code islands (always LTR). */
 :where(pre, code, kbd, samp) {
   font-family: var(--font-mono);
