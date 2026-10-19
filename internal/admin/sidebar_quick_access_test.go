@@ -77,6 +77,9 @@ func TestSidebarLegacyIdentityPinAliasIsAuthorizedReadOnlyAndAtomic(t *testing.T
 	if e := s.app.Deps.Settings.Set(context.Background(), "site.workspace", "full"); e != nil {
 		t.Fatal(e)
 	}
+	if _, e := s.app.Deps.DB.Exec(`INSERT INTO user_navigation_preferences(user_id,hidden_json,item_order_json,group_order_json,updated_at) VALUES(?,?,'["roles"]','["system"]','fixture') ON CONFLICT(user_id) DO UPDATE SET hidden_json=excluded.hidden_json,item_order_json=excluded.item_order_json,group_order_json=excluded.group_order_json`, u.ID, `["builder.identity","site-builder","menus"]`); e != nil {
+		t.Fatal(e)
+	}
 	data := quickPayload(t, s, "/admin/dashboard/pins")
 	html := data["quick_html"].(string)
 	if strings.Count(html, `data-quick-id="site-builder"`) != 1 {
@@ -104,9 +107,32 @@ func TestSidebarLegacyIdentityPinAliasIsAuthorizedReadOnlyAndAtomic(t *testing.T
 	}
 	data = quickPayload(t, s, "/admin/dashboard/pins")
 	mustNotContain(t, data["quick_html"].(string), "/admin/site-design", "builder.identity")
-	pinPost(t, s, "/admin/dashboard/pins/site-builder/remove", nil, 200)
+	pinPost(t, s, "/admin/dashboard/pins/builder.identity/remove", nil, 200)
 	s.app.Deps.DB.QueryRow(`SELECT count(*) FROM admin_dashboard_pins WHERE user_id=?`, u.ID).Scan(&count)
 	if count != 0 {
 		t.Fatal("explicit remove left aliases")
 	}
+	var hidden, items, groups string
+	s.app.Deps.DB.QueryRow(`SELECT hidden_json,item_order_json,group_order_json FROM user_navigation_preferences WHERE user_id=?`, u.ID).Scan(&hidden, &items, &groups)
+	if strings.Contains(hidden, "site-builder") || strings.Contains(hidden, "builder.identity") || !strings.Contains(hidden, "menus") || items != `["roles"]` || groups != `["system"]` {
+		t.Fatal("alias visibility changed unrelated preferences", hidden, items, groups)
+	}
+}
+
+func TestSidebarQuickAccessRespectsCurrentWorkspaceWithoutDeletingPins(t *testing.T) {
+	s := boot(t)
+	u := s.login("quick-simple@example.test", "admin", "en")
+	pinPost(t, s, "/admin/dashboard/pins", url.Values{"nav_id": {"canvases"}}, 200)
+	s.app.Deps.Settings.Set(context.Background(), "site.workspace", "simple")
+	data := quickPayload(t, s, "/admin/dashboard/pins")
+	mustNotContain(t, data["quick_html"].(string), `href="/admin/canvases"`)
+	pinPost(t, s, "/admin/dashboard/pins", url.Values{"nav_id": {"canvases"}}, 403)
+	var count int
+	s.app.Deps.DB.QueryRow(`SELECT count(*) FROM admin_dashboard_pins WHERE user_id=?`, u.ID).Scan(&count)
+	if count != 1 {
+		t.Fatal("workspace changed saved placements")
+	}
+	s.app.Deps.Settings.Set(context.Background(), "site.workspace", "full")
+	data = quickPayload(t, s, "/admin/dashboard/pins")
+	mustContain(t, data["quick_html"].(string), `href="/admin/canvases"`)
 }
