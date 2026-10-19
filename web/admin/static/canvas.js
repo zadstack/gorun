@@ -8,13 +8,13 @@
   const csrf = root.querySelector('[name=_csrf]').value;
   const cardsEl = root.querySelector('[data-canvas-cards]');
   const surface = root.querySelector('.canvas-surface');
-  const dialog = root.querySelector('dialog');
+  const dialog = root.querySelector('dialog[aria-labelledby=canvas-dialog-title]');
   const form = root.querySelector('#canvas-card-form');
   const titleInput = root.querySelector('#canvas-title');
   const mobile = matchMedia('(max-width:767px)');
   const widgetCache = new Map();
   const widgetLoading = new Set();
-  let operations = null;
+  let operations = null, inbound = null;
   let view = 'flow';
   try { const stored=sessionStorage.getItem('gorun.canvas.view'); if (['flow','grid','list'].includes(stored)) view=stored; } catch (_) {}
   root.dataset.view=view;
@@ -104,7 +104,7 @@
         documentState.schedules = data.schedules || {};
         savedSerial = capturedSerial;
         status(dirty() ? 'unsaved' : 'saved');
-        refreshReferences(); operations?.saved();
+        refreshReferences(); operations?.saved(); inbound?.saved();
         return true;
       } catch (_) { status('error'); return false; }
       finally { pending = null; }
@@ -225,7 +225,7 @@
     const remove = button(t('remove'), () => { if (!confirm(t('remove_confirm'))) return; documentState.cards = documentState.cards.filter(c => c.id !== card.id); documentState.edges = CanvasGraph.withoutNode(documentState.edges, card.id); changed(); render(); root.querySelector('[data-action=add]').focus(); }); remove.dataset.remove = ''; actions.append(remove);
     const moves = element('div', undefined, 'canvas-move-controls');
     [['left', '←', -24, 0], ['up', '↑', 0, -24], ['down', '↓', 0, 24], ['right', '→', 24, 0]].forEach(([key, symbol, dx, dy]) => { const control = button(symbol, () => move(card, dx, dy, el)); control.dataset.direction = key; control.title = t(key); control.setAttribute('aria-label', `${t(key)}: ${card.title}`); moves.append(control); });
-    footer.append(actions, moves); el.append(heading, body, footer); return el;
+    footer.append(actions, moves); el.append(heading); const identity=inbound?.cardHeader(card);if(identity)el.append(identity);el.append(body,footer); return el;
   }
   function render() {
     resizeCards.disconnect();
@@ -333,6 +333,7 @@
     documentState.cards.forEach(card=>Object.assign(card,positions[card.id]));
     changed();render();
   });
+  inbound = window.CanvasInbound?.create({root,t,element,button,request,csrf,save,changed,editCard,document:()=>documentState});
   selectView(view);
   load();
 })();
