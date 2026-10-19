@@ -9,7 +9,9 @@ Open **Agent role templates** from the opposite-side Agents drawer, or visit `/a
 - Operations reader: read-only diagnosis and operator handoff.
 - Campaign planner: campaign structure and approval handoff.
 
-Each role combines five bounded complementary skills. Each example explains its goal, inputs, private text output, skill instructions and a sample handoff. The catalog contains no company resources, credentials, private endpoints or preselected profile IDs. These roles are teaching recipes, not deployed clients, new runtimes or an unattended team. A person supplies approved sources and transfers or connects reviewed output to the next task. Read the instructions before adopting an example for your organization.
+Each role combines five bounded complementary skills and a role-specific suggested setup: sources for research, supplied research/glossary for editing, provided pages/read-only sources for SEO, approved knowledge for support, sanitized logs/read-only checks for operations, and reviewed drafts with human Metricool handoff for campaigns. These hints never select or authorize a connection. Each example explains its goal, inputs, private text output, skill instructions and a sample handoff. The catalog contains no company resources, credentials, private endpoints or preselected profile IDs. These roles are teaching recipes, not deployed clients, new runtimes or an unattended team. A person supplies approved sources and transfers or connects reviewed output to the next task. Read the instructions before adopting an example for your organization.
+
+The role/category colors distinguish examples, not availability. Connection badges describe saved historical results only. Detailed execution boundaries remain inspectable in the native **Execution details** disclosure.
 
 ## Prepare a configuration
 
