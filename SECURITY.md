@@ -8,6 +8,7 @@
 
 | Version | Supported |
 |---|---|
+| 0.4.x | yes |
 | 0.3.x | yes |
 | 0.2.x | yes |
 | 0.1.x | no |

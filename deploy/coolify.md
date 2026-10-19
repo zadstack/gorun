@@ -17,7 +17,7 @@ production rules (HSTS, backup cutover, upgrades) see
    (`SOURCE_COMMIT`) instead of `dev`, or set a `VERSION` build variable yourself.
 
 To run a released image instead of building, use **New Resource → Docker Image** with
-`ghcr.io/zadstack/gorun:0.3` (or a full version such as `0.3.0`; `latest` follows
+`ghcr.io/zadstack/gorun:0.4` (or a full version such as `0.4.0`; `latest` follows
 every release), port `8080`, and the same environment variables and `/data` volume
 as below. Images are multi-arch (linux/amd64, linux/arm64).
 
@@ -37,7 +37,7 @@ as below. Images are multi-arch (linux/amd64, linux/arm64).
 | `GORUN_S3_ENDPOINT`, `GORUN_S3_BUCKET`, `GORUN_S3_ACCESS_KEY`, `GORUN_S3_SECRET_KEY` | no | New media in an S3-compatible bucket (R2: `https://<account>.r2.cloudflarestorage.com`). Optional `GORUN_S3_REGION` (default `auto`) and `GORUN_S3_PUBLIC_URL`. A misconfigured bucket stops the server at boot. |
 
 `GORUN_ENV=prod`, `GORUN_DATA=/data` and `GORUN_ADDR=:8080` are baked into
-the image. Pin the image tag (`0.3.0` or `0.3`) in production rather than
+the image. Pin the image tag (`0.4.0` or `0.4`) in production rather than
 relying on `latest` alone.
 
 ## 3. Persistent storage
@@ -199,7 +199,7 @@ copy and the **original** `GORUN_SECRET_KEY`. An interrupted restore leaves
 
 ```sh
 docker run --rm -v gorun-data:/data -v /var/lib/gorun-restored:/restore \
-  --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.3.0 \
+  --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.4.0 \
   backup-restore --input /data/backups/<timestamp>.manifest.json --dest /restore
 ```
 

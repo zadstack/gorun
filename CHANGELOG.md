@@ -5,6 +5,24 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-19
+
+### Installation and documentation
+
+- Add a copy-and-paste macOS/Linux installer with Intel/ARM detection, HTTPS
+  release downloads, SHA-256 verification, atomic user-local installation and
+  direct startup without Go, sudo or manual PATH edits. Preserve existing
+  installations on failed verification or when an old release lacks `start`.
+- Put the English quick start first and preserve a complete linked Arabic README.
+  Include hands-on plugin and theme development tutorials.
+
+### Workspace and foundations
+
+- Add Simple CMS and Agents + Commerce workspace modes to tailor the admin UI.
+- Add portable, site-scoped Edge manager capability contracts and regression tests;
+  this is an authorization foundation, not a hosted Edge runtime.
+- Clarify API key and webhook command help and scope errors.
+
 ### Automatic backup and safe recovery
 
 - Add daily/weekly local scheduling choices, atomic policy saves, recorded verified
@@ -298,7 +316,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/zadstack/gorun/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zadstack/gorun/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/zadstack/gorun/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/zadstack/gorun/releases/tag/v0.1.0
