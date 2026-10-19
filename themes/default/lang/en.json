@@ -46,5 +46,14 @@
   "closing_fallback": "More from this site.",
   "fact_posts": "Posts",
   "fact_pages": "Pages",
-  "fact_products": "Products"
+  "fact_products": "Products",
+  "home_kicker": "Notes, guides & considered ideas",
+  "home_intro": "A place to share useful ideas, explore a subject and return to what matters.",
+  "home_empty_note": "Published articles will appear here. Begin with a clear idea and a useful next step.",
+  "home_caught_up": "You have reached the latest articles on this page.",
+  "home_pages_kicker": "Keep exploring",
+  "home_pages_title": "A little more context.",
+  "home_pages_note": "Explore the pages behind the articles, all in one place.",
+  "home_latest_title": "From the journal",
+  "home_latest_note": "Useful ideas and practical perspectives, published here."
 }
