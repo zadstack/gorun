@@ -4,4 +4,5 @@ data/
 bin/
 .git/
 e2e/
+edge/
 dist/
