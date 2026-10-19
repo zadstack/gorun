@@ -43,7 +43,7 @@ def main():
                 f"-s -w -X main.version={args.version}", "-o", str(package / "gorun"), "./cmd/gorun",
             ], cwd=root, env={**os.environ, "CGO_ENABLED": "0", "GOOS": goos, "GOARCH": goarch}, check=True)
             shutil.copytree(root / "themes", package / "themes")
-            for document in ["README.md", "LICENSE", "NOTICE", "SECURITY.md", "CHANGELOG.md"]:
+            for document in ["README.md", "README.ar.md", "LICENSE", "NOTICE", "SECURITY.md", "CHANGELOG.md"]:
                 shutil.copy2(root / document, package / document)
             shutil.copytree(root / "docs", package / "docs")
             archive = Path(temporary) / name

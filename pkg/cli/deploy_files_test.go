@@ -54,14 +54,16 @@ func TestDeployFilesSafety(t *testing.T) {
 }
 
 // T17: the Arabic README keeps code blocks Latin-only and has parity
-// pointers (gorun.toml keys, ARCHITECTURE link) with the English half.
+// pointers (gorun.toml keys, ARCHITECTURE link) with the English README.
 func TestReadmeArabicParity(t *testing.T) {
 	readme := repoFile(t, "README.md")
-	i := strings.Index(readme, "## English")
-	if i < 0 {
-		t.Fatal("no English section")
+	if !strings.Contains(readme, "[العربية](README.ar.md)") {
+		t.Fatal("English README must link to the Arabic README")
 	}
-	ar := readme[:i]
+	ar := repoFile(t, "README.ar.md")
+	if !strings.Contains(ar, "[English](README.md)") {
+		t.Fatal("Arabic README must link back to English")
+	}
 	inBlock := false
 	for n, line := range strings.Split(ar, "\n") {
 		if strings.HasPrefix(line, "```") {
@@ -71,7 +73,7 @@ func TestReadmeArabicParity(t *testing.T) {
 		if inBlock {
 			for _, r := range line {
 				if r >= 0x0600 && r <= 0x06FF {
-					t.Errorf("README.md:%d: Arabic inside a code block: %s", n+1, line)
+					t.Errorf("README.ar.md:%d: Arabic inside a code block: %s", n+1, line)
 					break
 				}
 			}
