@@ -2,7 +2,7 @@
 
 **A self-hosted CMS for your team and AI agents.**
 
-[العربية](README.ar.md) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Contribute](CONTRIBUTING.md)
+[العربية](README.ar.md) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Use an assistant](#start-with-your-ai-assistant) · [Contribute](CONTRIBUTING.md)
 
 ## Try it locally
 
@@ -27,6 +27,25 @@ The quick start requires **GoRun 0.4.0 or newer**. The installer refuses older r
 The executable lives at `~/.local/bin/gorun`; your local site lives at `~/.local/share/gorun/site`. Stop the server with **Ctrl+C**. Repeating the block uses the same site. LAN access is a public, read-only preview; administration stays on localhost. Use `--local-only` when starting manually to disable LAN access. [Local setup and recovery](docs/local-start.md).
 
 For a public deployment, follow the [production guide](docs/PRODUCTION.md) or [Docker / Coolify guide](deploy/coolify.md). The local preview is intended for development.
+
+## Start with your AI assistant
+
+Prefer help from an assistant? Copy this into any assistant that can use a terminal on your computer:
+
+```text
+Set up GoRun locally from https://github.com/zadstack/gorun.
+Read the official README and installation guide first.
+Check my operating system, architecture, and any existing GoRun site.
+Use the official release installer with its checksum verification.
+Preserve existing data, users, themes, settings, and credentials.
+Start the site and verify the public page and admin sign-in page respond.
+Keep generated passwords and keys in the local terminal, out of chat and logs.
+Let me sign in and complete first-login setup in the browser.
+Report the local URL, data directory, and how to stop and restart the server.
+If you cannot run a local terminal, provide the official commands for me to run.
+```
+
+The instructions are tool-neutral. A chat-only assistant can explain the steps but cannot install software on your computer. [Assistant setup guide](docs/AI-ASSISTED-SETUP.md).
 
 [![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 

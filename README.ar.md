@@ -133,6 +133,25 @@ gorun start --data "$HOME/.local/share/gorun/site"
 
 [التفاصيل والأمان والاستعادة](docs/local-start.md) · [التثبيت والترقية](docs/GORUN-INSTALLATION.md)
 
+### ابدأ بمساعدك
+
+انسخ النص التالي إلى أي مساعد يستطيع استخدام التيرمينال على جهازك. النص محايد ولا يتطلب منتجًا بعينه:
+
+```text
+Set up GoRun locally from https://github.com/zadstack/gorun.
+Read the official README and installation guide first.
+Check my operating system, architecture, and any existing GoRun site.
+Use the official release installer with its checksum verification.
+Preserve existing data, users, themes, settings, and credentials.
+Start the site and verify the public page and admin sign-in page respond.
+Keep generated passwords and keys in the local terminal, out of chat and logs.
+Let me sign in and complete first-login setup in the browser.
+Report the local URL, data directory, and how to stop and restart the server.
+If you cannot run a local terminal, provide the official commands for me to run.
+```
+
+المساعد النصي وحده يستطيع شرح الخطوات، لكنه لا يثبّت برامج على جهازك. [دليل الإعداد بمساعدة وكيل](docs/AI-ASSISTED-SETUP.md).
+
 ### البدء السريع
 
 **صورة Docker:** تُنشر الإصدارات صورةً متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.4.0` و`0.4` و`latest`:
