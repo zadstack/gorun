@@ -7,6 +7,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Themes
 
+- Starter content honesty (PR5): company starter omits testimonials (no invented
+  quotes/clients); illustrative project blurbs stay labeled as concepts; regression
+  tests lock theme lang (no em dash / lorem), starter copy honesty, and catalog home
+  OG + indexable (never `robots: noindex`). Theme versions `1.5.0`.
+
 - Performance (PR4): site identity and builder brand tokens ship as cached `/site/identity.css`
   and `/site/builder-identity.css` (hash `?v=`) instead of per-request inline `<style>`; default
   500 page drops `style=` attributes; theme scripts carry CSP nonce; docs fonts trimmed to ≤4
