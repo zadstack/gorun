@@ -216,6 +216,7 @@ test("layout JSON export and validated import preserve private drafts", async ({
     /حُفظت|Draft saved/,
   );
   const pendingDownload = page.waitForEvent("download");
+  await page.locator('[data-action="export"]').locator("..").locator("summary").click();
   await page.locator('[data-action="export"]').click();
   const downloaded = await pendingDownload;
   const portable = JSON.parse(readFileSync((await downloaded.path())!, "utf8"));

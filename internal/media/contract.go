@@ -60,11 +60,13 @@ type Storage interface {
 
 // ListQuery filters Service.List.
 type ListQuery struct {
-	Search  string `json:"search"`
-	Page    int    `json:"page"`
-	PerPage int    `json:"per_page"`
-	Sort    string `json:"sort"`
-	Order   string `json:"order"`
+	MimePrefix       string `json:"-"`
+	MinSize, MaxSize int64  `json:"-"`
+	Search           string `json:"search"`
+	Page             int    `json:"page"`
+	PerPage          int    `json:"per_page"`
+	Sort             string `json:"sort"`
+	Order            string `json:"order"`
 }
 
 // Patch updates only its non-nil fields.

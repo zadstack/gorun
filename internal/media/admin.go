@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -83,29 +84,59 @@ func errorKey(err error) string {
 
 // listData is shared by the library page and the picker.
 type listData struct {
-	Items        []gridItem
-	Q, Target    string
-	Page, Pages  int
-	Total        int
-	HasPrev      bool
-	HasNext      bool
-	Prev, Next   int
-	Errors       []uploadError
-	Uploaded     int
-	CanDelete    bool
-	MaxUploadMB  int64
-	AllowedMimes string
+	Items                         []gridItem
+	Q, Target                     string
+	Kind, SizeFilter, FilterQuery string
+	PrevURL, NextURL              string
+	Page, Pages                   int
+	Total                         int
+	HasPrev                       bool
+	HasNext                       bool
+	Prev, Next                    int
+	Errors                        []uploadError
+	Uploaded                      int
+	CanDelete                     bool
+	MaxUploadMB                   int64
+	AllowedMimes                  string
 }
 
 func (h *adminHandlers) list(r *http.Request, q string, page, perPage int) (listData, error) {
-	items, total, err := h.svc.List(r.Context(), ListQuery{Search: q, Page: page, PerPage: perPage})
+	query := ListQuery{Search: q, Page: page, PerPage: perPage}
+	kind := r.URL.Query().Get("kind")
+	prefix := map[string]string{"image": "image/", "video": "video/", "audio": "audio/", "document": "application/"}[kind]
+	if prefix == "" {
+		kind = ""
+	}
+	query.MimePrefix = prefix
+	size := r.URL.Query().Get("size")
+	switch size {
+	case "small":
+		query.MaxSize = (1 << 20) - 1
+	case "large":
+		query.MinSize = 1 << 20
+	case "huge":
+		query.MinSize = 10 << 20
+	default:
+		size = ""
+	}
+	items, total, err := h.svc.List(r.Context(), query)
 	if err != nil {
 		return listData{}, err
 	}
 	p := httpx.NewPagination(page, perPage, total)
-	d := listData{Q: q, Page: p.Page, Pages: p.Pages, Total: total, HasPrev: p.HasPrev, HasNext: p.HasNext,
+	filters := url.Values{}
+	for key, value := range map[string]string{"q": q, "kind": kind, "size": size} {
+		if value != "" {
+			filters.Set(key, value)
+		}
+	}
+	d := listData{Kind: kind, SizeFilter: size, FilterQuery: filters.Encode(), Q: q, Page: p.Page, Pages: p.Pages, Total: total, HasPrev: p.HasPrev, HasNext: p.HasNext,
 		Prev: p.Prev, Next: p.Next, CanDelete: auth.Can(r.Context(), "media.delete"),
 		MaxUploadMB: h.svc.maxUpload(r.Context()) >> 20, AllowedMimes: strings.Join(h.svc.allowedMimes(r.Context()), ",")}
+	filters.Set("page", strconv.Itoa(p.Prev))
+	d.PrevURL = "/admin/media?" + filters.Encode()
+	filters.Set("page", strconv.Itoa(p.Next))
+	d.NextURL = "/admin/media?" + filters.Encode()
 	for _, m := range items {
 		d.Items = append(d.Items, toGridItem(h.svc, m))
 	}

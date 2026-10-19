@@ -32,6 +32,7 @@ func SettingKey(slug, key string) string { return "theme." + slug + "." + key }
 type settingView struct {
 	Key, Name, ID, Type, Label, Help string
 	Required, Multiple, Checked      bool
+	CanResetIdentity, HasOverride    bool
 	Value                            string
 	Values                           []string
 	Options                          []settingChoice
@@ -49,6 +50,7 @@ type settingsPage struct {
 	Theme        Info
 	Fields       []settingView
 	CanPickMedia bool
+	Groups       []themeSettingsGroup
 }
 
 // schema is the active theme's settings schema with unsupported types
@@ -113,6 +115,8 @@ func (a *admin) settingViews(ctx context.Context, schema []content.Field, values
 				v.Options = append(v.Options, settingChoice{Value: o.Value, Label: pickLabel(o.Label, locale, o.Value), Selected: o.Value == v.Value})
 			}
 		}
+		v.CanResetIdentity = isIdentityResetKey(f.Key)
+		v.HasOverride = v.Value != ""
 		out = append(out, v)
 	}
 	return out
@@ -148,6 +152,12 @@ func (a *admin) storedValues(ctx context.Context, slug string, schema []content.
 func (a *admin) renderSettings(w http.ResponseWriter, r *http.Request, status int, info Info, values map[string]any, errs map[string]string) {
 	ctx := r.Context()
 	page := settingsPage{Theme: info, Fields: a.settingViews(ctx, settingsSchema(info), values, errs), CanPickMedia: a.canPickMedia(ctx)}
+	if !supportsIdentity(info) {
+		for i := range page.Fields {
+			page.Fields[i].CanResetIdentity = false
+		}
+	}
+	page.Groups = themeSettingsGroups(page.Fields)
 	a.tpl.RenderWith(w, r, status, "admin", "pages/appearance/theme_settings.html", page)
 }
 

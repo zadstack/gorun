@@ -1,11 +1,13 @@
 {{define "title"}}{{.PluralName}}{{end}}
 {{define "content"}}
+<link rel="stylesheet" href="{{asset "content-ux.css"}}"><script defer src="{{asset "content-ux.js"}}"></script>
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <h1 class="text-[22px] font-bold">{{.PluralName}}</h1>
   {{if .CanCreate}}<a href="{{.BaseURL}}/new" class="h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "content.list.new" .TypeName}}</span></a>{{end}}
 </div>
+<details class="content-filter-drawer" open {{if or .Search .Status .Locale .Author .View}}data-active="true"{{end}}><summary>{{t "content.ux.filters"}}</summary>
 <form id="content-filters" role="search" class="flex flex-wrap gap-2 mb-3" action="{{.BaseURL}}" method="get">
-  <label class="sr-only" for="content-search">{{t "content.list.search"}}</label>
+  {{if .Tree}}<input type="hidden" name="layout" value="tree">{{end}}<label class="sr-only" for="content-search">{{t "content.list.search"}}</label>
   <input id="content-search" name="search" type="search" value="{{.Search}}" placeholder="{{t "content.list.search"}}" dir="auto"
          hx-get="{{.BaseURL}}" hx-trigger="keyup changed delay:300ms, search" hx-include="#content-filters"
          hx-target="#content-list" hx-select="#content-list" hx-swap="outerHTML" hx-push-url="true"
@@ -17,13 +19,19 @@
     <option value="">{{t "content.list.all_statuses"}}</option>
     {{range .Statuses}}<option value="{{.}}" {{if eq (printf "%s" .) $.Status}}selected{{end}}>{{t (printf "content.status.%s" .)}}</option>{{end}}
   </select>
+  <label class="sr-only" for="content-locale">{{t "content.ux.language"}}</label><select id="content-locale" name="locale" class="h-9 rounded border border-line bg-panel px-3"><option value="">{{t "content.ux.all_languages"}}</option><option value="ar" {{if eq .Locale "ar"}}selected{{end}}>العربية</option><option value="en" {{if eq .Locale "en"}}selected{{end}}>English</option></select>
+  {{if .Authors}}<label class="sr-only" for="content-author">{{t "content.editor.author"}}</label><select id="content-author" name="author" class="h-9 rounded border border-line bg-panel px-3"><option value="">{{t "content.ux.all_authors"}}</option>{{range .Authors}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>{{end}}</select>{{end}}
+  <label class="sr-only" for="content-view">{{t "content.ux.view"}}</label><select id="content-view" name="view" class="h-9 rounded border border-line bg-panel px-3"><option value="">{{t "content.ux.all_items"}}</option><option value="mine" {{if eq .View "mine"}}selected{{end}}>{{t "content.ux.my_drafts"}}</option><option value="review" {{if eq .View "review"}}selected{{end}}>{{t "content.ux.for_review"}}</option></select>
+  <button type="submit" class="h-9 px-3 rounded border border-line">{{t "content.list.filter"}}</button>
   <noscript><button type="submit" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.list.filter"}}</button></noscript>
-</form>
+</form></details>
 <div id="content-list">
-  <form method="post" action="{{.BaseURL}}/bulk" x-data data-confirm="{{t "content.list.bulk_confirm"}}">
+{{if .Type.Hierarchical}}<nav class="flex gap-3 mb-3" aria-label="{{t "content.ux.view"}}"><a class="border border-line px-3 py-2 rounded" href="{{.TableURL}}" {{if not .Tree}}aria-current="page"{{end}}>{{t "content.ux.table"}}</a><a class="border border-line px-3 py-2 rounded" href="{{.TreeURL}}" {{if .Tree}}aria-current="page"{{end}}>{{t "content.ux.tree"}}</a></nav>{{end}}
+
+  <form method="post" action="{{.BaseURL}}/bulk" data-content-selection x-data data-confirm="{{t "content.list.bulk_confirm"}}">
     <input type="hidden" name="_csrf" value="{{csrf}}">
     {{if and .CanDelete .Rows}}
-    <div class="flex items-center gap-2 mb-2">
+    <div data-selection-bar class="content-selection-bar flex flex-wrap items-center gap-2 mb-2"><output data-selection-count aria-live="polite"></output>
       <label class="sr-only" for="bulk-action">{{t "content.list.bulk"}}</label>
       <select id="bulk-action" name="action" class="h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
         <option value="trash">{{t "content.list.bulk_trash"}}</option>
@@ -32,12 +40,15 @@
       <button type="submit" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.list.apply"}}</button>
     </div>
     {{end}}
-    <div class="rounded border border-line bg-panel overflow-x-auto">
+    {{if .Tree}}{{if .TreeTruncated}}<p class="border border-amber rounded p-3 mb-3" role="status">{{t "content.ux.tree_limit"}} <a class="underline" href="{{.TableURL}}">{{t "content.ux.table"}}</a></p>{{end}}
+    {{if .CanDelete}}<label class="flex items-center gap-2 min-h-11"><input type="checkbox" data-select-all>{{t "content.list.select_all"}}</label>{{end}}
+    <ul class="content-tree border border-line rounded bg-panel p-3">{{range .TreeRoots}}{{template "content/tree_node" .}}{{else}}<li>{{t "content.list.empty"}}</li>{{end}}</ul>
+    {{else}}<div class="rounded border border-line bg-panel overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-panel-2">
           <tr class="text-start">
             {{if .CanDelete}}<th scope="col" class="w-10 px-3 py-2"><input type="checkbox" aria-label="{{t "content.list.select_all"}}" class="h-4 w-4 accent-[var(--green)]"
-                @change="$root.querySelectorAll('input[name=ids]').forEach(c => c.checked = $event.target.checked)"></th>{{end}}
+                data-select-all></th>{{end}}
             <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.list.title"}}</th>
             <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.list.status"}}</th>
             <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted">{{t "content.list.updated"}}</th>
@@ -48,8 +59,8 @@
           <tr class="border-t border-line hover:bg-bg">
             {{if $.CanDelete}}<td class="px-3 py-2"><input type="checkbox" name="ids" value="{{.ID}}" aria-label="{{t "content.list.select"}} {{.Title}}" class="h-4 w-4 accent-[var(--green)]"></td>{{end}}
             <td class="px-3 py-2"><a href="{{.EditURL}}" class="font-medium text-blue hover:text-blue-hover" dir="auto">{{if .Title}}{{.Title}}{{else}}{{t "content.list.untitled"}}{{end}}</a>
-              <div class="font-mono text-xs text-muted" dir="auto">{{.Slug}}</div></td>
-            <td class="px-3 py-2">{{template "content/status_chip" .Status}}</td>
+              <div class="font-mono text-xs text-muted" dir="auto">{{.Slug}}</div>{{if .ParentTitle}}<small class="text-muted">↳ {{.ParentTitle}}</small>{{end}}</td>
+            <td class="px-3 py-2">{{template "content/status_chip" .Status}}<small class="block text-muted mt-1">{{.Locale}}{{if .AuthorName}} · {{.AuthorName}}{{end}}</small></td>
             <td class="px-3 py-2 text-end font-mono text-xs text-muted">{{date .UpdatedAt}}</td>
           </tr>
           {{else}}
@@ -57,7 +68,7 @@
           {{end}}
         </tbody>
       </table>
-    </div>
+    </div>{{end}}
   </form>
   {{if gt .Links.Pages 1}}
   <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Links.Page .Links.Pages}}">
@@ -74,3 +85,6 @@
 {{define "content/status_chip"}}
 <span class="inline-flex items-center rounded-chip border px-2 py-0.5 text-xs {{if eq . "published"}}border-green bg-green-soft text-green{{else if eq . "scheduled"}}border-blue bg-blue-soft text-blue{{else if eq . "pending"}}border-amber bg-amber-soft text-amber-text{{else if eq . "trash"}}border-red bg-red-soft text-red{{else}}border-line bg-panel-2 text-muted{{end}}">{{t (printf "content.status.%s" .)}}</span>
 {{end}}
+
+{{define "content/tree_node"}}<li data-tree-row="{{.Row.ID}}" class="py-2 border-b border-line last:border-b-0">{{if .Children}}<details open><summary class="cursor-pointer">{{template "content/tree_title" .}}</summary><ul class="content-tree-children">{{range .Children}}{{template "content/tree_node" .}}{{end}}</ul></details>{{else}}{{template "content/tree_title" .}}{{end}}</li>{{end}}
+{{define "content/tree_title"}}<span class="inline-flex flex-wrap items-center gap-2 max-w-full">{{if .CanSelect}}<input type="checkbox" name="ids" value="{{.Row.ID}}" aria-label="{{t "content.list.select"}} {{.Row.Title}}">{{end}}<a class="text-blue font-medium break-words min-w-0" href="{{.Row.EditURL}}">{{or .Row.Title (t "content.list.untitled")}}</a>{{template "content/status_chip" .Row.Status}}<small class="text-muted">{{.Row.Locale}}{{if .Row.AuthorName}} · {{.Row.AuthorName}}{{end}}</small></span>{{if .Path}}<small class="block text-muted break-words">{{.Path}}</small>{{end}}{{if .ParentMissing}}<small class="block text-muted">{{t "content.ux.parent_outside"}}</small>{{end}}{{end}}

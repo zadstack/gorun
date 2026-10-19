@@ -27,11 +27,12 @@ func (h *handlers) metricoolRoutes() {
 
 type metricoolPage struct {
 	Version, UserID, BlogID, TestStatus, TestedAt, Nonce, Message, ProviderID string
-	SecretSet, Ready                                                          bool
+	SecretSet, Ready, CanManageSetup                                          bool
 	Input                                                                     metricoolInput
 }
 
 func (h *handlers) metricoolRender(w http.ResponseWriter, r *http.Request, status int, template string, data metricoolPage) {
+	data.CanManageSetup = auth.Can(r.Context(), PermSettings)
 	w.Header().Set("Cache-Control", "no-store")
 	h.tpl.RenderWith(w, r, status, "admin", template, data)
 }

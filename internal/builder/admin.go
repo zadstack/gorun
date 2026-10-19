@@ -84,10 +84,16 @@ func (h *adminHandlers) editor(w http.ResponseWriter, r *http.Request) {
 		CanPublish      bool
 		HasExistingBody bool
 		Revisions       []LayoutRevision
-	}{chi.URLParam(r, "id"), editorState{draft, defaults, labels}, Catalog(locale), auth.Can(r.Context(), "content.publish"), item.Body != "" && (!draft.HasPublished || draft.ContentChanged), revisions})
+		CanPickMedia    bool
+	}{chi.URLParam(r, "id"), editorState{draft, defaults, labels}, Catalog(locale), auth.Can(r.Context(), "content.publish"), item.Body != "" && (!draft.HasPublished || draft.ContentChanged), revisions, auth.Can(r.Context(), "media.upload") && builderMediaAvailable(h.d)})
 }
 
-var editorKeys = []string{"title", "text", "image", "image_alt", "link", "link_label", "price", "variant", "hidden", "drag", "up", "down", "duplicate", "remove", "add_item", "remove_item", "saving", "saved", "error", "conflict", "published", "confirm_publish", "confirm_remove", "empty", "item", "section", "preview_error", "hero_scene", "scene_off", "scene_orbit", "scene_ribbons", "scene_blocks", "scene_help", "layout_default", "layout_split", "layout_centered", "unsaved", "confirm_reset", "discarded", "source", "manual", "published_posts", "feed_help", "import_error", "importing", "history", "history_empty", "history_preview", "history_restore", "history_kind_save", "history_kind_publish", "history_kind_restore", "history_kind_reset", "history_sections"}
+func builderMediaAvailable(d *kernel.Deps) bool {
+	_, ok := kernel.Get[any](d, kernel.ServiceMedia)
+	return ok
+}
+
+var editorKeys = []string{"advanced", "choose_image", "title", "text", "image", "image_alt", "link", "link_label", "price", "variant", "hidden", "drag", "up", "down", "duplicate", "remove", "add_item", "remove_item", "saving", "saved", "error", "conflict", "published", "confirm_publish", "confirm_remove", "empty", "item", "section", "preview_error", "hero_scene", "scene_off", "scene_orbit", "scene_ribbons", "scene_blocks", "scene_help", "layout_default", "layout_split", "layout_centered", "unsaved", "confirm_reset", "discarded", "source", "manual", "published_posts", "feed_help", "import_error", "importing", "history", "history_empty", "history_preview", "history_restore", "history_kind_save", "history_kind_publish", "history_kind_restore", "history_kind_reset", "history_sections"}
 
 type saveRequest struct {
 	Document      Document `json:"document"`

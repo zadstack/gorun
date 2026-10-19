@@ -3,7 +3,7 @@
 <h1 class="text-[22px] font-bold">{{t "seo.title"}}</h1>
 <p class="text-muted mb-4">{{t "seo.intro"}}</p>
 <a href="/admin/settings/seo/audit" class="inline-flex mb-4 min-h-11 items-center px-3 rounded border border-line bg-panel">{{t "seoaudit.title"}}</a>
-<form method="post" action="/admin/settings/seo" class="max-w-3xl space-y-4" novalidate>
+<script defer src="{{asset "seo-preview.js"}}"></script><form data-seo-preview-form data-site-title="{{setting "site.title"}}" method="post" action="/admin/settings/seo" class="max-w-3xl space-y-4" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <section class="rounded border border-line bg-panel p-4 space-y-4">
     <div>
@@ -41,7 +41,8 @@
       {{template "partials/field_errors" (index .Fields "default_og_image")}}
     </div>
   </section>
-  <section class="rounded border border-line bg-panel p-4 space-y-3">
+<section class="rounded border border-line p-4"><h2 class="font-bold">{{if eq locale "ar"}}معاينة بحث تجريبية{{else}}Sample search preview{{end}}</h2><p class="text-sm text-muted">{{if eq locale "ar"}}هذه معاينة للقالب؛ قد تعرض محركات البحث نصًا مختلفًا.{{else}}This previews the template; search engines may show different text.{{end}}</p><p data-seo-sample-title class="text-blue text-lg mt-3"></p><p data-seo-sample-description class="text-muted"></p><p data-seo-block-warning hidden class="text-red mt-3" role="status">{{if eq locale "ar"}}القواعد المخصصة تتضمن منع جميع المسارات. راجعها قبل الإطلاق.{{else}}Custom rules include blocking every path. Review before launch.{{end}}</p></section>
+  <details class="rounded border border-line bg-panel p-4 space-y-3" {{if index .Fields "robots_txt"}}open{{end}}><summary class="font-bold cursor-pointer">{{if eq locale "ar"}}متقدم: قواعد محركات البحث{{else}}Advanced: crawler rules{{end}}</summary>
     <div>
       <label for="robots_txt" class="block font-medium mb-1">{{t "seo.field.robots_txt"}}</label>
       <textarea id="robots_txt" name="robots_txt" rows="6" dir="ltr" spellcheck="false" aria-describedby="rb-help rb-error"
@@ -54,7 +55,7 @@
       <p class="font-mono text-[11px] uppercase tracking-wide text-muted mb-1">{{t "seo.robots.default"}}</p>
       <pre class="rounded bg-panel-dark text-[#dcefe7] p-3 font-mono text-xs overflow-x-auto" dir="ltr">{{.RobotsDefault}}</pre>
     </div>
-  </section>
+  </details>
   <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "seo.save"}}</button>
 </form>
 {{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}

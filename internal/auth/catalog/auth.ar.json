@@ -99,5 +99,7 @@
   "security.reason.overloaded": "التحقق من كلمة المرور مشغول مؤقتًا",
   "security.reason.other": "رُفض تسجيل الدخول",
   "security.reason.staff_only": "الحساب غير مخوّل بالدخول للوحة الإدارة",
-  "error.grace_invalid": "مهلة الإبقاء يجب أن تكون بين 0 و7 أيام."
+  "error.grace_invalid": "مهلة الإبقاء يجب أن تكون بين 0 و7 أيام.",
+  "onboarding.secure_section": "تأمين حسابك",
+  "onboarding.site_section": "بيانات الموقع"
 }

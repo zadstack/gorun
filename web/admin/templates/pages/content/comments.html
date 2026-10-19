@@ -43,6 +43,6 @@
 </nav>
 {{end}}{{end}}
 {{else}}
-<div class="rounded border border-line bg-panel p-6 text-muted">{{t "content.comments.empty"}}</div>
+<div class="rounded border border-line bg-panel p-6 text-muted">{{t "content.comments.empty"}}<p class="mt-2 text-sm">{{if eq locale "ar"}}تظهر هنا تعليقات الزوار على المحتوى الذي يسمح بالتعليقات. اختر حالة من الأعلى لعرض ما ينتظر المراجعة أو التعليقات المعتمدة.{{else}}Visitor comments on content with comments enabled appear here. Choose a status above to review pending or approved comments.{{end}}</p></div>
 {{end}}
 {{end}}
