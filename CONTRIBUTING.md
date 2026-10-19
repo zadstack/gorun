@@ -11,7 +11,8 @@
   مبني مسبقًا ومحفوظ في المستودع؛ إن غيّرت أصناف Tailwind فيه أو في Go فشغّل `make css` (أداة Tailwind المستقلة بنسخة
   مثبتة ومتحقق من بصمتها) واحفظ الناتج، ويتحقق CI من أنه محدّث.
 - **أوامر make:** `make build` (ملف ثابت في `bin/gorun`)، `make test` (`go test ./...`)، `make run`،
-  `make lint` (`go vet` ثم staticcheck إن وُجد).
+  `make lint` (`go vet` ثم staticcheck إن وُجد)، `make loadtest` (حمل محلي؛ انظر
+  [docs/LOADTEST.md](docs/LOADTEST.md)).
 - **الاختبارات:** شغّل `go test -race ./...` قبل كل طلب دمج (هذا ما يشغّله CI). الاختبارات تستخدم SQLite حقيقية
   في مجلد مؤقت، لا قواعد وهمية. اكتب الاختبار أولًا عند إصلاح خطأ أو إضافة سلوك.
 - **ترتيب الوحدات:** لا تستورد وحدةٌ إلا وحدات تسبقها في `kernel.BootOrder`، ويفرض ذلك
@@ -59,6 +60,7 @@ docs theme or in Go markup, run `make css` (pinned standalone CLI, checksum veri
 | `make lint` | `go vet ./...`, then `staticcheck ./...` when installed |
 | `make css` / `make css-check` | rebuild / verify `themes/default/assets/tailwind.css` (`tools/tailwind/build.sh`) |
 | `make e2e` | builds a temporary instance and runs the Playwright browser suite |
+| `make loadtest` | local HTTP load harness (latency / errors / RSS / CPU); see [docs/LOADTEST.md](docs/LOADTEST.md) |
 
 ## Tests
 

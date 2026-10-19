@@ -168,6 +168,10 @@ func (h *handlers) renderAI(w http.ResponseWriter, r *http.Request, status int, 
 }
 
 func (h *handlers) settingsAI(w http.ResponseWriter, r *http.Request) {
+	if !WorkspaceShowsAdvanced(r.Context(), h.d.Settings) {
+		http.Redirect(w, r, "/admin/workspace", http.StatusSeeOther)
+		return
+	}
 	snap, err := aiSnapshot(r.Context(), h.d.DB)
 	if err != nil {
 		h.serverError(w, r, err)
@@ -177,6 +181,10 @@ func (h *handlers) settingsAI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) settingsAISave(w http.ResponseWriter, r *http.Request) {
+	if !WorkspaceShowsAdvanced(r.Context(), h.d.Settings) {
+		http.Redirect(w, r, "/admin/workspace", http.StatusSeeOther)
+		return
+	}
 	var in aiInput
 	if err := httpx.Bind(r, &in); err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)

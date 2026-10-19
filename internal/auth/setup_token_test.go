@@ -76,7 +76,7 @@ func TestSetupRequiresTokenInProd(t *testing.T) {
 		t.Fatalf("setup_denied audit rows = %d", denied)
 	}
 	resp, _ := s.do("POST", "/admin/setup", setupValues(csrf, setupTok))
-	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/admin" || s.userCount() != 1 {
+	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/admin/workspace" || s.userCount() != 1 {
 		t.Fatalf("right token: %d %q users=%d", resp.StatusCode, resp.Header.Get("Location"), s.userCount())
 	}
 }

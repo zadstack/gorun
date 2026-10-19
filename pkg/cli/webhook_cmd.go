@@ -15,11 +15,20 @@ import (
 
 const webhookUsage = "usage: gorun webhook list | events | create --name N --url URL --events a,b|* | update <id> [--name N] [--url URL] [--events a,b] [--active true|false] | delete <id> | test <id> | secret <id> | deliveries <id> [--limit N] | redeliver <delivery-id> [--data dir]"
 
+func webhookHelpArgs(args []string) bool {
+	for _, a := range args {
+		if a == "-h" || a == "--help" || a == "help" {
+			return true
+		}
+	}
+	return false
+}
+
 // webhookCmd manages outgoing webhooks like the admin and API do. Secrets
 // are printed once (create, secret). Deliveries queued here (redeliver) are
 // sent by the running server's job workers; test sends synchronously.
 func webhookCmd(args []string, out io.Writer) error {
-	if len(args) == 0 {
+	if len(args) == 0 || webhookHelpArgs(args) {
 		return errors.New(webhookUsage)
 	}
 	sub, args := args[0], args[1:]
@@ -40,6 +49,9 @@ func webhookCmd(args []string, out io.Writer) error {
 		}
 		set[f] = len(rest) != len(args)
 		flags[f], args = v, rest
+	}
+	if webhookHelpArgs(args) {
+		return errors.New(webhookUsage)
 	}
 	if sub == "events" {
 		return printJSON(out, webhooks.Events())

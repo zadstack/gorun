@@ -2,6 +2,9 @@
 
 دليل المشغّل للإنتاج: HTTPS والوكيل وHSTS، النسخ والاستعادة (بعد مسار الاستعادة المحصور)، والترقية من وسوم الإصدار. الفهرس: [docs/README.md](README.md). الأعطال: [TROUBLESHOOTING.md](TROUBLESHOOTING.md). التثبيت الأول: [GORUN-INSTALLATION.md](GORUN-INSTALLATION.md).
 
+لقياس زمن الاستجابة والذاكرة والمعالج تحت قرّاء متزامنين على SQLite محلية، استخدم
+`make loadtest` ودليل [LOADTEST.md](LOADTEST.md) (ليس جزءًا من CI).
+
 ## الإصدارات المنشورة
 
 عند دفع وسم `v*` يبني سير العمل `.github/workflows/release.yml` صورة `ghcr.io/zadstack/gorun` لمعماريتي linux/amd64 وlinux/arm64 (وسوم `X.Y.Z` و`X.Y` و`latest`، وتحمل `VERSION` من الوسم ووسوم OCI للمصدر والترخيص)، ويتحقق من أن `gorun version` داخلها يطابق الإصدار، ويبني الأرشيفات التنفيذية الأربعة مع `SHA256SUMS` بالأداة أدناه، ثم ينشئ إصدار GitHub بملاحظات قسم الإصدار في `CHANGELOG.md`. طلبات الدمج التي تغيّر Dockerfile أو سير العمل تبني كل ذلك دون نشر. ثبّت الإنتاج على وسم رقمي (`0.1.0` أو `0.1`) لا على `latest` وحدها.

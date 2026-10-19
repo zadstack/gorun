@@ -16,7 +16,12 @@ func (h *handlers) widgetSetupStatus(ctx context.Context, r *http.Request) (temp
 		return "", nil
 	}
 	var items []dashboardSetupItem
-	for _, entry := range []struct{ title, key, href string }{{"email", "mail.host", "/admin/settings/mail"}, {"ai", "ai.provider", "/admin/settings/ai"}} {
+	advanced := WorkspaceShowsAdvanced(ctx, h.d.Settings)
+	entries := []struct{ title, key, href string }{{"email", "mail.host", "/admin/settings/mail"}}
+	if advanced {
+		entries = append(entries, struct{ title, key, href string }{"ai", "ai.provider", "/admin/settings/ai"})
+	}
+	for _, entry := range entries {
 		status := "missing"
 		var v string
 		err := h.d.Settings.Get(ctx, entry.key, &v)
@@ -41,23 +46,25 @@ func (h *handlers) widgetSetupStatus(ctx context.Context, r *http.Request) (temp
 		}
 		items = append(items, dashboardSetupItem{"dashboardlayout." + entry.title, "dashboardlayout." + status, entry.href})
 	}
-	connections, err := h.listConnections(ctx)
-	if err != nil {
-		return "", err
+	if advanced {
+		connections, err := h.listConnections(ctx)
+		if err != nil {
+			return "", err
+		}
+		status := "missing"
+		if len(connections) > 0 {
+			status = "configured"
+		}
+		items = append(items, dashboardSetupItem{"dashboardlayout.connections", "dashboardlayout." + status, "/admin/settings/connections"})
 	}
-	status := "missing"
-	if len(connections) > 0 {
-		status = "configured"
-	}
-	items = append(items, dashboardSetupItem{"dashboardlayout.connections", "dashboardlayout." + status, "/admin/settings/connections"})
 	metricool, err := h.metricoolConfig(ctx)
 	if err != nil {
 		return "", err
 	}
-	status = "missing"
+	social := "missing"
 	if metricool.Secret != "" && metricool.UserID != "" && metricool.BlogID != "" {
-		status = "configured"
+		social = "configured"
 	}
-	items = append(items, dashboardSetupItem{"dashboardlayout.social", "dashboardlayout." + status, "/admin/settings/metricool"})
+	items = append(items, dashboardSetupItem{"dashboardlayout.social", "dashboardlayout." + social, "/admin/settings/metricool"})
 	return h.fragment(r, "pages/system/widgets/setup_status.html", items)
 }
