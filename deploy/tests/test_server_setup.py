@@ -8,7 +8,7 @@ import socket
 import tarfile
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 spec = importlib.util.spec_from_file_location("server_setup", Path(__file__).resolve().parents[1] / "server-setup.py")
 setup = importlib.util.module_from_spec(spec)
@@ -37,13 +37,106 @@ class ServerSetupTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp) / "new site"
             output = io.StringIO()
-            with patch.object(setup, "check_dns", return_value=["8.8.8.8"]), patch.object(setup, "run", side_effect=AssertionError("Docker called")), patch.object(setup.secrets, "token_bytes", side_effect=AssertionError("secret generated")), contextlib.redirect_stdout(output):
+            with patch.object(setup, "check_dns", return_value=["8.8.8.8"]), patch.object(setup, "resolve_latest_version", return_value="0.5.0"), patch.object(setup, "run", side_effect=AssertionError("Docker called")), patch.object(setup.secrets, "token_bytes", side_effect=AssertionError("secret generated")), contextlib.redirect_stdout(output):
                 self.assertEqual(setup.main(["--domain", "site.com", "--directory", str(directory), "--server-ip", "8.8.8.8", "--dry-run"]), 0)
             self.assertFalse(directory.exists())
             self.assertEqual(json.loads(output.getvalue())["data"], str(directory.resolve() / "data"))
 
+    def api_response(self, payload, status=200, url=setup.LATEST_RELEASE_API):
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.status, response.url = status, url
+        response.read.return_value = payload if isinstance(payload, bytes) else json.dumps(payload).encode()
+        return response
+
+    def test_latest_stable_is_numeric_bounded_https_and_unauthenticated(self):
+        response = self.api_response({"tag_name": "v0.5.0", "draft": False, "prerelease": False})
+        opener = MagicMock()
+        opener.open.return_value = response
+        with patch.object(setup.urllib.request, "build_opener", return_value=opener):
+            self.assertEqual(setup.resolve_latest_version(), "0.5.0")
+        request = opener.open.call_args.args[0]
+        self.assertEqual(request.full_url, setup.LATEST_RELEASE_API)
+        self.assertIsNone(request.get_header("Authorization"))
+        self.assertEqual(opener.open.call_args.kwargs["timeout"], 15)
+        response.read.assert_called_once_with(setup.LATEST_RELEASE_LIMIT + 1)
+
+    def test_latest_rejects_prereleases_drafts_old_tags_invalid_or_excessive_json(self):
+        stable = {"tag_name": "v0.5.0", "draft": False, "prerelease": False}
+        payloads = [dict(stable, prerelease=True), dict(stable, draft=True),
+                    {"tag_name": "v0.5.0"}, [], b"not JSON", b" " * (setup.LATEST_RELEASE_LIMIT + 1)]
+        for tag in ("v0.5.0-rc.1", "v0.5.0+custom", "0.5.0", "v0.3.9", "v00.5.0", "vlatest"):
+            payloads.append(dict(stable, tag_name=tag))
+        for payload in payloads:
+            opener = MagicMock()
+            opener.open.return_value = self.api_response(payload)
+            with self.subTest(payload=str(payload)[:80]), patch.object(setup.urllib.request, "build_opener", return_value=opener):
+                with self.assertRaisesRegex(RuntimeError, "no older release was selected"):
+                    setup.resolve_latest_version()
+
+    def test_latest_api_errors_and_redirects_fail_clearly(self):
+        opener = MagicMock()
+        opener.open.side_effect = setup.urllib.error.URLError("synthetic unavailable")
+        with patch.object(setup.urllib.request, "build_opener", return_value=opener):
+            with self.assertRaisesRegex(RuntimeError, "pass --version X.Y.Z"):
+                setup.resolve_latest_version()
+        opener.open.side_effect = setup.http.client.IncompleteRead(b"partial")
+        with patch.object(setup.urllib.request, "build_opener", return_value=opener):
+            with self.assertRaisesRegex(RuntimeError, "no older release was selected"):
+                setup.resolve_latest_version()
+        for url in ("http://api.github.com/redirect", "https://other.example/redirect"):
+            with self.assertRaises(setup.urllib.error.HTTPError):
+                setup.NoReleaseRedirect().redirect_request(
+                    setup.urllib.request.Request(setup.LATEST_RELEASE_API), None, 302, "redirect", {}, url)
+        for response in (self.api_response({}, status=403), self.api_response({}, url="https://other.example/")):
+            opener = MagicMock()
+            opener.open.return_value = response
+            with patch.object(setup.urllib.request, "build_opener", return_value=opener):
+                with self.assertRaisesRegex(RuntimeError, "Could not resolve"):
+                    setup.resolve_latest_version()
+
+    def test_default_new_install_resolves_once_and_explicit_version_never_resolves(self):
+        for explicit in (False, True):
+            with tempfile.TemporaryDirectory() as temp:
+                directory = Path(temp) / "new site"
+                output = io.StringIO()
+                with patch.object(setup, "check_dns", return_value=["8.8.8.8"]), patch.object(setup, "resolve_latest_version", return_value="0.5.0") as latest, patch.object(setup, "run", side_effect=AssertionError("Docker called")), contextlib.redirect_stdout(output):
+                    args = ["--domain", "site.com", "--directory", str(directory), "--server-ip", "8.8.8.8", "--dry-run"]
+                    self.assertEqual(setup.main(args + (["--version", "0.4.0"] if explicit else [])), 0)
+                if explicit:
+                    latest.assert_not_called()
+                else:
+                    latest.assert_called_once_with()
+                self.assertEqual(json.loads(output.getvalue())["release"], "0.4.0" if explicit else "0.5.0")
+                self.assertFalse(directory.exists())
+
+    def test_resume_keeps_manifest_version_when_latest_moves_without_network(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp) / "existing site"
+            with patch.object(setup, "run", return_value=""), patch.object(setup, "network_address", return_value="172.31.0.2"), patch.object(setup.os, "chown"), patch.object(setup, "create_network"), patch.object(setup, "build_runtime", return_value=("sha256:" + "b" * 64, {"release": "0.4.0"})), patch.object(setup, "resolve_image", side_effect=lambda image: image.rsplit(":", 1)[0] + "@sha256:" + "a" * 64):
+                setup.create_deployment(directory, "site.com", "0.4.0", "test-project")
+            output = io.StringIO()
+            with patch.object(setup, "check_dns", return_value=["8.8.8.8"]), patch.object(setup, "resolve_latest_version", return_value="0.5.0") as latest, patch.object(setup.urllib.request, "build_opener", side_effect=AssertionError("latest network call on resume")), patch.object(setup, "run", side_effect=AssertionError("Docker called")), contextlib.redirect_stdout(output):
+                args = ["--domain", "site.com", "--directory", str(directory), "--server-ip", "8.8.8.8", "--dry-run", "--resume"]
+                self.assertEqual(setup.main(args), 0)
+                with self.assertRaisesRegex(ValueError, "another domain/version"):
+                    setup.main(args + ["--version", "0.5.0"])
+            latest.assert_not_called()
+            self.assertEqual(json.loads(output.getvalue())["release"], "0.4.0")
+            self.assertEqual(setup.load_state(directory, "site.com")["version"], "0.4.0")
+
+    def test_latest_failure_never_changes_installation_or_falls_back(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp) / "new site"
+            opener = MagicMock()
+            opener.open.side_effect = setup.urllib.error.URLError("synthetic rate limit")
+            with patch.object(setup, "check_dns", return_value=["8.8.8.8"]), patch.object(setup.urllib.request, "build_opener", return_value=opener), patch.object(setup, "run", side_effect=AssertionError("Docker called")):
+                with self.assertRaisesRegex(RuntimeError, "no older release was selected"):
+                    setup.main(["--domain", "site.com", "--directory", str(directory), "--server-ip", "8.8.8.8", "--dry-run"])
+            self.assertFalse(directory.exists())
+
     def test_no_host_app_port_and_exact_proxy_trust(self):
-        config = setup.compose_config("site.com", setup.DEFAULT_VERSION, "site-network", "172.31.0.2")
+        config = setup.compose_config("site.com", "0.4.0", "site-network", "172.31.0.2")
         app = config["services"]["gorun"]
         self.assertNotIn("ports", app)
         self.assertEqual(app["environment"]["GORUN_ENV"], "prod")
@@ -56,12 +149,12 @@ class ServerSetupTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp) / "new site with spaces"
             with patch.object(setup, "run", return_value=""), patch.object(setup, "network_address", return_value="172.31.0.2"), patch.object(setup.os, "chown"), patch.object(setup, "create_network"), patch.object(setup, "build_runtime", return_value=("sha256:" + "b" * 64, {"release": "0.4.0"})), patch.object(setup, "resolve_image", side_effect=lambda image: image.rsplit(":", 1)[0] + "@sha256:" + "a" * 64):
-                state = setup.create_deployment(directory, "site.com", setup.DEFAULT_VERSION, "test-project")
+                state = setup.create_deployment(directory, "site.com", "0.4.0", "test-project")
             secrets = (directory / "secrets.env").read_bytes()
             key = secrets.decode().splitlines()[0].split("=", 1)[1]
             self.assertEqual(len(setup.base64.b64decode(key, validate=True)), 32)
             (directory / "data" / "existing.db").write_bytes(b"existing account")
-            self.assertEqual(setup.load_state(directory, "site.com", setup.DEFAULT_VERSION), state)
+            self.assertEqual(setup.load_state(directory, "site.com", "0.4.0"), state)
             compose = json.loads((directory / "compose.json").read_text())
             self.assertEqual(compose["services"]["gorun"]["image"], "sha256:" + "b" * 64)
             self.assertIn("@sha256:", compose["services"]["proxy"]["image"])
@@ -70,15 +163,15 @@ class ServerSetupTests(unittest.TestCase):
             self.assertEqual((directory / "secrets.env").stat().st_mode & 0o777, 0o600)
             self.assertEqual(directory.stat().st_mode & 0o777, 0o700)
             with self.assertRaises(ValueError):
-                setup.load_state(directory, "other.com", setup.DEFAULT_VERSION)
+                setup.load_state(directory, "other.com", "0.4.0")
             (directory / "Caddyfile").write_text("changed")
             with self.assertRaisesRegex(ValueError, "changed"):
-                setup.load_state(directory, "site.com", setup.DEFAULT_VERSION)
+                setup.load_state(directory, "site.com", "0.4.0")
 
     def test_existing_directory_never_overwritten_even_if_empty(self):
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaisesRegex(ValueError, "existing"):
-                setup.create_deployment(Path(temp), "site.com", setup.DEFAULT_VERSION, "test-project")
+                setup.create_deployment(Path(temp), "site.com", "0.4.0", "test-project")
             file = Path(temp) / "existing"
             file.write_text("keep")
             with self.assertRaises(FileExistsError):

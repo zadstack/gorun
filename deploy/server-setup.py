@@ -18,12 +18,55 @@ import subprocess
 import tarfile
 import tempfile
 import urllib.request
+import urllib.error
 import sys
 import time
 
-DEFAULT_VERSION = "0.4.0"
+MINIMUM_VERSION = (0, 4, 0)
+LATEST_RELEASE_API = "https://api.github.com/repos/zadstack/gorun/releases/latest"
+LATEST_RELEASE_LIMIT = 256 * 1024
 RUNTIME_IMAGE = "gcr.io/distroless/static:nonroot"
 CADDY_IMAGE = "caddy:2.11.7-alpine"
+
+
+def release_version(value):
+    if not isinstance(value, str) or not re.fullmatch(r"(?:0|[1-9][0-9]{0,8})\.(?:0|[1-9][0-9]{0,8})\.(?:0|[1-9][0-9]{0,8})", value):
+        raise ValueError("Use a stable numeric GoRun release X.Y.Z, without v/prerelease/custom labels")
+    if tuple(map(int, value.split("."))) < MINIMUM_VERSION:
+        raise ValueError("Server setup requires GoRun 0.4.0 or newer")
+    return value
+
+
+class NoReleaseRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, response, code, message, headers, new_url):
+        raise urllib.error.HTTPError(request.full_url, code, "Release API redirects are not accepted", headers, response)
+
+
+def resolve_latest_version():
+    """Resolve the official public stable release once; never silently fall back."""
+    request = urllib.request.Request(LATEST_RELEASE_API, headers={
+        "Accept": "application/vnd.github+json", "User-Agent": "GoRun-server-setup",
+        "X-GitHub-Api-Version": "2022-11-28",
+    })
+    try:
+        # The fixed HTTPS endpoint needs no token. Refuse redirects before following
+        # them, including HTTPS-to-HTTP or a different host; bound JSON and I/O.
+        opener = urllib.request.build_opener(NoReleaseRedirect())
+        with opener.open(request, timeout=15) as response:
+            if response.status != 200 or response.url != LATEST_RELEASE_API:
+                raise ValueError("Unexpected release API response")
+            raw = response.read(LATEST_RELEASE_LIMIT + 1)
+            if len(raw) > LATEST_RELEASE_LIMIT:
+                raise ValueError("Release API response exceeds size limit")
+        release = json.loads(raw)
+        if not isinstance(release, dict) or release.get("draft") is not False or release.get("prerelease") is not False:
+            raise ValueError("Latest release is not a public stable release")
+        tag = release.get("tag_name")
+        if not isinstance(tag, str) or not tag.startswith("v"):
+            raise ValueError("Latest release tag is not numeric")
+        return release_version(tag[1:])
+    except (OSError, ValueError, UnicodeError, http.client.HTTPException) as error:
+        raise RuntimeError("Could not resolve the latest public stable GoRun release. Check GitHub availability/rate limits or pass --version X.Y.Z; no older release was selected") from error
 
 
 def run(args, capture=True):
@@ -116,14 +159,15 @@ def project_name(directory):
     return "gorun-" + hashlib.sha256(str(directory).encode()).hexdigest()[:12]
 
 
-def load_state(directory, domain, version):
+def load_state(directory, domain, version=None):
     manifest = directory / "deployment.json"
     if manifest.is_symlink():
         raise ValueError("Deployment manifest must not be a symlink")
     state = json.loads(manifest.read_text())
     if state.get("schema") != 1 or set(state.get("files", {})) != {"compose.json", "Caddyfile", "secrets.env"}:
         raise ValueError("Unrecognized deployment manifest")
-    if state["domain"] != domain or state["version"] != version:
+    stored_version = release_version(state.get("version"))
+    if state["domain"] != domain or (version is not None and stored_version != release_version(version)):
         raise ValueError("Existing deployment uses another domain/version; use the documented upgrade procedure")
     for name, expected in state["files"].items():
         file = directory / name
@@ -336,7 +380,7 @@ def main(argv=None):
     parser.add_argument("--domain")
     parser.add_argument("--directory", type=Path)
     parser.add_argument("--server-ip", action="append", help="Repeat for every public A/AAAA address")
-    parser.add_argument("--version", default=DEFAULT_VERSION, help="Official numeric release; fetched from public GitHub assets")
+    parser.add_argument("--version", help="Pin a stable numeric release (minimum 0.4.0); new installs default to latest, resume keeps the manifest version")
     parser.add_argument("--dry-run", action="store_true", help="Validate inputs/DNS and print a secret-free plan; no Docker or filesystem changes")
     parser.add_argument("--resume", action="store_true", help="Retry a deployment created by this script, preserving configuration and data")
     parser.add_argument("--https-timeout", type=int, default=180)
@@ -347,20 +391,23 @@ def main(argv=None):
         raise ValueError("Use an absolute, non-symlink installation directory other than /")
     directory = raw_directory.resolve()
     expected = public_ips(args.server_ip or input("Server public IPs (space separated; include IPv6 if AAAA exists): ").split())
-    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", args.version):
-        raise ValueError("Pin an official numeric GoRun release version; latest/custom versions are not accepted")
+    if args.version is not None:
+        args.version = release_version(args.version)
     if not 1 <= args.https_timeout <= 1800:
         raise ValueError("HTTPS timeout must be between 1 and 1800 seconds")
     addresses = check_dns(domain, expected)
     name = project_name(directory)
     if args.resume:
         state = load_state(directory, domain, args.version)
-    elif directory.exists():
-        raise ValueError("Directory already exists; use a new directory or --resume for this script's deployment")
+        version = state["version"]
+    else:
+        if directory.exists():
+            raise ValueError("Directory already exists; use a new directory or --resume for this script's deployment")
+        version = args.version if args.version is not None else resolve_latest_version()
     if args.dry_run:
         print(json.dumps({"mode": "dry-run; nothing changed", "domain": domain,
                           "resolved_addresses": addresses, "installation": str(directory),
-                          "data": str(directory / "data"), "release": args.version,
+                          "data": str(directory / "data"), "release": version,
                           "proxy": CADDY_IMAGE, "ports": [80, 443],
                           "requirements": "Linux root, Docker Engine + Compose v2, externally reachable TCP 80/443"}, indent=2))
         return 0
@@ -379,7 +426,7 @@ def main(argv=None):
     run(["docker", "compose", "version"])
     if not args.resume:
         check_ports()
-        state = create_deployment(directory, domain, args.version, name)
+        state = create_deployment(directory, domain, version, name)
     elif directory.stat().st_uid != 0 or directory.stat().st_mode & 0o077:
         raise ValueError("Deployment directory must be root-owned and private (0700)")
     elif any((directory / file).stat().st_uid != 0 or (directory / file).stat().st_mode & 0o077
