@@ -23,7 +23,7 @@
     {{end}}
     <div class="dt-featured-copy">
       <p class="dt-kicker"><span class="dt-kicker-label">{{t "featured"}}</span>{{range terms . "category"}}<a class="gr-chip" href="{{url .}}">{{.Name}}</a>{{end}}</p>
-      <h3><a href="{{url .}}">{{.Title}}</a></h3>
+      <h2 class="dt-featured-title"><a href="{{url .}}">{{.Title}}</a></h2>
       {{with excerpt . 36}}<p class="dt-excerpt">{{.}}</p>{{end}}
       <p class="dt-meta">{{with .PublishedAt}}<time datetime="{{.}}"><bdi>{{date .}}</bdi></time><span aria-hidden="true">·</span>{{end}}<span>{{t "reading_time" (readingTime .)}}</span></p>
     </div>
