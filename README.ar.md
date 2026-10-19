@@ -182,7 +182,7 @@ If you lack terminal access or a prerequisite, explain exactly what is needed.
 
 ### البدء السريع
 
-**صورة Docker:** تُنشر الإصدارات صورةً متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.4.0` و`0.4` و`latest`:
+**صورة Docker:** قد يتطلب سحب حزمة GHCR صلاحيات؛ لا نفترض توفرها دون تسجيل الدخول. يستخدم [إعداد السيرفر](docs/SERVER-SETUP.md) الأرشيفات العامة المتحقق منها دون الاعتماد على GHCR. تُبنى للإصدارات صورة متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بالوسوم `0.4.0` و`0.4` و`latest`:
 
 ```sh
 docker run -d --name gorun -p 8080:8080 -v gorun-data:/data \
@@ -255,7 +255,7 @@ make build && make test && make lint
 
 ### حالة المشروع
 
-GoRun في الإصدار [v0.4.0](https://github.com/zadstack/gorun/releases/tag/v0.4.0) وما زال قيد التطوير النشط؛ استخدم آخر [إصدار](https://github.com/zadstack/gorun/releases) أو ابنِه من الفرع `main`. الحدود الحالية:
+GoRun ما زال قيد التطوير النشط؛ استخدم [أحدث إصدار مستقر](https://github.com/zadstack/gorun/releases/latest) أو ابنِه من الفرع `main` الذي قد يتضمن ميزات تنتظر الإصدار. الحدود الحالية:
 
 - عملية خادم واحدة لكل مجلد بيانات SQLite (يفرضها القفل `<data>/gorun.lock`)، ولا يوجد تعدد مواقع بقاعدة بيانات مشتركة.
 - اللوحات خاصة بصاحبها مع صلاحيات صريحة للوكلاء، وليست مساحة عمل مشتركة لعدة مستخدمين.

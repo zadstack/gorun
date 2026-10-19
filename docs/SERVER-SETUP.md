@@ -68,8 +68,13 @@ No existing folder, database, account or configuration is adopted or overwritten
 - `deployment.json`: metadata and configuration hashes used to detect accidental
   changes on resume. This is an integrity guard, not a signature against root.
 
-The default GoRun release is `0.4.0`; `--version X.Y.Z` accepts official numeric
-release versions. The script downloads the platform's public GitHub release archive
+For a new installation, the script resolves the latest public stable release
+through the official GitHub HTTPS API without a token. It validates a numeric
+`vX.Y.Z` tag (minimum `0.4.0`), rejects drafts/prereleases, bounds the response and
+timeout, and refuses redirects. API errors stop clearly without silently choosing
+an older release. `--version X.Y.Z` explicitly pins a numeric stable release and
+skips the lookup. The resolved numeric version is recorded in `deployment.json`.
+The script downloads the platform's public GitHub release archive
 and `SHA256SUMS`, verifies the archive **before extracting or running anything**,
 then builds a local runtime image from the binary and bundled themes. This does
 not compile Go or depend on anonymous access to the GoRun GHCR package. Both Linux
@@ -79,7 +84,10 @@ The runtime base is the official `gcr.io/distroless/static:nonroot` image, resol
 to a `RepoDigest` before building. Caddy `2.11.7-alpine` is also resolved to its
 immutable `RepoDigest`. Compose pins GoRun's resulting local image ID and Caddy's
 digest; release archive hash/base digest/image identities are recorded in the
-manifest. Resume uses `--pull never`, does not download a new release or rebuild,
+manifest. Without `--version`, resume reads and keeps the manifest release without
+calling the latest-release API, even when a newer release has been published. An
+explicit mismatching version is refused. Resume uses `--pull never`, does not
+download a new release or rebuild,
 and cannot silently upgrade mutable tags. If local Docker images were pruned,
 restore the reviewed image/backup rather than expecting resume to fetch a moving
 tag. The requested numeric version remains separate metadata; upgrades use the

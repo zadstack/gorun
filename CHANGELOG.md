@@ -5,10 +5,57 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-19
+
+### Installation and server operations
+
+- Add guided Linux server setup using verified public release archives, a local
+  non-root runtime image, persistent data and Caddy HTTPS. Validate domain/DNS,
+  ports, proxy trust, certificates and application health before reporting success.
+- Resolve the latest public stable release for new server installations and record
+  its numeric version and immutable image identities. An explicit `--version`
+  pins a release; `--resume` keeps the original manifest release without resolving
+  latest, downloading, pulling or rebuilding. API errors never silently select an
+  older release. Add a manually dispatchable isolated Linux acceptance workflow.
 - Add an optional admin update page for a server-configured Coolify resource,
   with recent authentication, a verified backup, audited deployment requests
-  and duplicate-request cooldown. Existing sites require a manual deployment
-  before this page becomes available.
+  and duplicate-request cooldown. Existing sites need a manual deployment before
+  this page is available; no running customer site is upgraded automatically.
+- Preserve sidebar scroll position across navigation/reloads with a safe fallback
+  when browser storage is unavailable.
+
+### Canvases and agent workflows
+
+- Add workflow, grid and list views, collision-aware card arrangement, clearer
+  compact card tools and separate connection ports. View-only changes preserve
+  the saved graph; refresh the README with a three-step synthetic workflow story.
+- Add one compact dashboard activity board combining the current owner's agent
+  results with permission-scoped webhook delivery metadata. Exclude webhook URLs,
+  credentials, payloads and raw errors; refresh does not run work again.
+- Convert a reviewed text result into a new draft using current source, owner and
+  permission checks. Publishing remains a separate action. Save private structural
+  workflow templates without copying prompts, notes, outputs, credentials or runs.
+- Show configured agent identity/model/mode alongside permission context. An
+  external agent still requires its client to connect and execute; configuration
+  is distinct from verified readiness.
+- Add opt-in signed commands for individual agent/provider cards. Owner review,
+  recent authentication and CSRF protect configuration; encrypted signing secrets
+  appear once. The receiver accepts only the configured command, verifies HMAC and
+  freshness, deduplicates deliveries and enqueues atomically within bounded rates.
+  Grant/key/role/provider or relevant graph changes require fresh consent; disabled
+  or stale rules cannot append results after an in-flight call. Accepted events
+  are audited without prompts, payloads or secrets. External clients remain in
+  `waiting_agent`; no automatic publishing or arbitrary shell/tools are added.
+
+### Evidence and boundaries
+
+- Publish reproducible GoRun/WordPress/MariaDB article-serving measurements with
+  raw evidence, a validated summary and an executed notebook. Astro static output
+  is a separate delivery reference. The measured GoRun source remains the recorded
+  0.4.0-era checkout, not a benchmark of the new canvas UI.
+- Keep Cloudflare Edge labelled in development: permission contracts are not a
+  runnable Edge CMS or a deployable template. Combined Skills/MCP resource bundles
+  remain a future design and are not presented as automatic agent provisioning.
 
 ## [0.4.0] - 2026-10-19
 
@@ -323,7 +370,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/zadstack/gorun/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/zadstack/gorun/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zadstack/gorun/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/zadstack/gorun/compare/v0.1.0...v0.2.0

@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shutil
 import sqlite3
 import subprocess
 import tempfile
@@ -21,6 +22,10 @@ spec.loader.exec_module(setup)
 def main():
     if os.geteuid() != 0:
         raise RuntimeError("Disposable integration test requires Linux root")
+    # The fixture must consume published binaries without a Go compiler available.
+    os.environ["PATH"] = os.pathsep.join(part for part in os.get_exec_path() if not (Path(part) / "go").is_file())
+    if shutil.which("go") or not shutil.which("docker"):
+        raise RuntimeError("Fixture requires Docker and a PATH without Go")
     with tempfile.TemporaryDirectory(prefix="gorun-production-fixture-") as temp:
         directory = Path(temp) / "site with spaces"
         domain = "gorun-fixture.example.com"
@@ -39,7 +44,10 @@ def main():
             return result.stdout.strip()
         setup.run = diagnostic_run
         try:
-            state = setup.create_deployment(directory, domain, setup.DEFAULT_VERSION, name)
+            version = setup.resolve_latest_version()
+            state = setup.create_deployment(directory, domain, version, name)
+            if state["version"] != version or state["release"]["release"] != version:
+                raise RuntimeError("Manifest did not retain the resolved numeric release")
             # Only the test uses Caddy's private CA. Production always uses automatic public TLS.
             (directory / "Caddyfile").write_text("{\n    skip_install_trust\n}\n" + domain + " {\n    tls internal\n    reverse_proxy gorun:8080\n}\n")
             state["files"]["Caddyfile"] = setup.hashlib.sha256((directory / "Caddyfile").read_bytes()).hexdigest()
@@ -69,8 +77,11 @@ def main():
                 # The real resume flow runs against existing containers/data. DNS alone is a fixture;
                 # TLS is a real certificate/hostname check trusting only this test's private CA.
                 output = io.StringIO()
-                with patch.object(setup, "check_dns", return_value=["127.0.0.1"]), patch.object(setup, "build_runtime", side_effect=AssertionError("Resume rebuilt image")), patch.object(setup, "resolve_image", side_effect=AssertionError("Resume repulled tag")), contextlib.redirect_stdout(output):
+                with patch.object(setup, "check_dns", return_value=["127.0.0.1"]), patch.object(setup, "resolve_latest_version", return_value="999.0.0") as latest_moved, patch.object(setup, "build_runtime", side_effect=AssertionError("Resume rebuilt image")), patch.object(setup, "resolve_image", side_effect=AssertionError("Resume repulled tag")), contextlib.redirect_stdout(output):
                     setup.main(["--domain", domain, "--directory", str(directory), "--server-ip", "8.8.8.8", "--resume", "--https-timeout", "60"])
+                latest_moved.assert_not_called()
+                if setup.load_state(directory, domain)["version"] != version:
+                    raise RuntimeError("Resume changed the pinned release after latest moved")
                 if "HTTPS and health checks passed" not in output.getvalue():
                     raise RuntimeError("Resume acceptance did not complete")
                 if password in output.getvalue() or "GORUN_SECRET_KEY=" in output.getvalue():
@@ -83,7 +94,7 @@ def main():
                     count = database.execute("SELECT COUNT(*) FROM users").fetchone()[0]
                 if after != before or count != 1:
                     raise RuntimeError("Resume changed or recreated existing account")
-            print("PASS: real released image, Compose validation/start, Caddy private-CA HTTPS and HSTS, public app routes, restart/resume, stable secrets and one unchanged admin.")
+            print("PASS: current public stable release, no Go compiler, pinned resume despite latest moving, Compose validation/start, Caddy private-CA HTTPS and HSTS, public app routes, restart/resume, stable secrets and one unchanged admin.")
             print("BOUNDARY: test DNS and private CA are fixtures; public DNS, firewall and ACME issuance require actual-host acceptance.")
         except Exception:
             # Synthetic fixture only: redact every generated credential before diagnostic logs.

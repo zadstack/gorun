@@ -135,7 +135,7 @@ Schedule daily or weekly local backups, track verified success and storage, and 
 
 ## Project status
 
-GoRun is under active development. The current release is [0.4.0](https://github.com/zadstack/gorun/releases/tag/v0.4.0); the main branch may contain features awaiting release.
+GoRun is under active development. Use the [latest stable release](https://github.com/zadstack/gorun/releases/latest); the main branch may contain features awaiting release.
 
 Run one server process per SQLite data directory. Canvases are private to their owner with explicit agent access. Full-site generation from a single prompt and an automatic core updater are not available. Backups restore into a new directory; switching live traffic remains an operator action. Provider-backed generation and payments require valid credentials and deployment-specific checks.
 

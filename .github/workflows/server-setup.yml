@@ -1,5 +1,6 @@
 name: production-server-setup
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - deploy/server-setup.py
