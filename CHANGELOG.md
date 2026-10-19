@@ -5,6 +5,18 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Local startup
+
+- Add `gorun start` with SQLite migrations, bundled default-theme provisioning,
+  atomic first-admin creation and a 256-bit password printed once. Print local
+  and private IPv4 LAN preview URLs and open the local admin in a browser.
+- Keep administration, accounts, API and writes on localhost; validate Host and
+  peer addresses, ignore forwarded identity and discard LAN credentials.
+  `--local-only` disables LAN; `--no-browser` supports headless use.
+- Add a durable `admin` login alias for newly bootstrapped first administrators,
+  preserving email login and shared throttling. Existing users are untouched.
+
+
 ## [0.3.0] - 2026-10-19
 
 Third tagged release: theme quality brief (#33–#37) and compact admin/default density
