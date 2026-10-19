@@ -3,6 +3,7 @@ package saas
 import (
 	"html/template"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -121,11 +122,17 @@ func (h *handlers) managementForm(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Cache-Control", "private, no-store")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = formTemplate.Execute(w, struct {
+	data := struct {
 		CSRF, AppKey, SubKey string
 		Owners               []ownerOption
 		Apps                 []App
-	}{auth.CSRFToken(r.Context()), db.NewID(), db.NewID(), owners, o.Apps})
+		SelectedApp          string
+	}{auth.CSRFToken(r.Context()), db.NewID(), db.NewID(), owners, o.Apps, r.URL.Query().Get("app")}
+	if h.s.adminTpl != nil {
+		h.s.adminTpl.Render(w, r, "pages/saas/new.html", data)
+		return
+	}
+	_ = formTemplate.Execute(w, data)
 }
 func (h *handlers) appForm(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
@@ -133,9 +140,13 @@ func (h *handlers) appForm(w http.ResponseWriter, r *http.Request) {
 		fail(w, r, ErrInvalid)
 		return
 	}
-	_, e := h.s.CreateApp(r.Context(), AppInput{OwnerID: r.Form.Get("owner_id"), Name: r.Form.Get("name"), Slug: r.Form.Get("slug"), BaseURL: r.Form.Get("base_url"), Status: "active", Mode: "subscription", IdempotencyKey: r.Form.Get("request_key")})
+	saved, e := h.s.CreateApp(r.Context(), AppInput{OwnerID: r.Form.Get("owner_id"), Name: r.Form.Get("name"), Slug: r.Form.Get("slug"), BaseURL: r.Form.Get("base_url"), Status: "active", Mode: "subscription", IdempotencyKey: r.Form.Get("request_key")})
 	if e != nil {
 		fail(w, r, e)
+		return
+	}
+	if r.Form.Get("next") == "subscription" {
+		http.Redirect(w, r, "/admin/saas/new?app="+url.QueryEscape(saved.ID)+"#subscription", http.StatusSeeOther)
 		return
 	}
 	http.Redirect(w, r, "/admin/saas", 303)

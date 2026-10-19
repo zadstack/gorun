@@ -272,7 +272,7 @@ func bootWorkspace(t *testing.T) (*service, context.Context, *kernel.App) {
 
 func TestActualModuleBootCatalogAPIAndHealth(t *testing.T) {
 	s, ctx, app := bootWorkspace(t)
-	if app.Deps.I18n.T("ar", "workagents.title") != "الإيجنتس والفلوهات" {
+	if app.Deps.I18n.T("ar", "workagents.title") != "الوكلاء ومسارات العمل" {
 		t.Fatal("catalog namespace not loaded")
 	}
 	a, e := s.saveAgent(ctx, Agent{Name: "Needs adapter", UnsupportedTools: []string{"unknown_tool"}})
@@ -280,9 +280,15 @@ func TestActualModuleBootCatalogAPIAndHealth(t *testing.T) {
 		t.Fatal(e)
 	}
 	response := httptest.NewRecorder()
-	app.Handler.ServeHTTP(response, httptest.NewRequest("GET", "/agents", nil).WithContext(ctx))
+	app.Handler.ServeHTTP(response, httptest.NewRequest("GET", "/admin/workagents", nil).WithContext(ctx))
 	if response.Code != 200 || !strings.Contains(response.Body.String(), a.Name) {
 		t.Fatal("booted owner workspace not rendered", response.Code)
+	}
+	if !strings.Contains(response.Header().Get("Content-Security-Policy"), "unsafe-eval") {
+		t.Fatal("admin route must use existing admin CSP")
+	}
+	if !strings.Contains(response.Body.String(), "admin-workspace") || !strings.Contains(response.Body.String(), "module-views") || strings.Contains(response.Body.String(), "href=\"/static/workagents.css\"") {
+		t.Fatal("manager workspace lost shared admin shell or tabs")
 	}
 	response = httptest.NewRecorder()
 	app.Handler.ServeHTTP(response, httptest.NewRequest("GET", "/api/v1/workagents/agents", nil).WithContext(ctx))
@@ -428,5 +434,66 @@ func TestBootedCustomerAPIUsesMigratedPermissionsAndOwnerIsolation(t *testing.T)
 	response = call("GET", "/api/v1/workagents/agents", "")
 	if response.Code != 200 || !strings.Contains(response.Body.String(), `"data":[]`) {
 		t.Fatal("empty customer list not200empty", response.Code, response.Body.String())
+	}
+}
+
+func TestManagerWorkspaceAliasAndCustomerBoundary(t *testing.T) {
+	_, ctx, app := bootWorkspace(t)
+	for _, path := range []string{"/agents", "/workspace"} {
+		w := httptest.NewRecorder()
+		app.Handler.ServeHTTP(w, httptest.NewRequest("GET", path, nil).WithContext(ctx))
+		if w.Code != http.StatusSeeOther || w.Header().Get("Location") != "/admin/workagents" {
+			t.Fatal("manager alias must enter admin shell", w.Code, w.Header())
+		}
+		if strings.Contains(w.Header().Get("Content-Security-Policy"), "unsafe-eval") {
+			t.Fatal("public CSP weakened")
+		}
+	}
+	customer := auth.WithUser(context.Background(), &auth.User{ID: "customer", Role: auth.RoleCustomer, Status: auth.StatusActive})
+	w := httptest.NewRecorder()
+	app.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/admin/workagents", nil).WithContext(customer))
+	if w.Code != http.StatusForbidden {
+		t.Fatal("customer gained manager shell", w.Code)
+	}
+	w = httptest.NewRecorder()
+	app.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/agents", nil).WithContext(customer))
+	if w.Code != 200 || strings.Contains(w.Body.String(), "admin-workspace") {
+		t.Fatal("customer workspace must stay account-scoped", w.Code)
+	}
+}
+
+func TestCustomerManagerRetainsPublicWorkspace(t *testing.T) {
+	_, adminCtx, app := bootWorkspace(t)
+	roles, _ := kernel.Get[auth.RoleService](app.Deps, kernel.ServiceRoles)
+	permissions := []string{"workagents.manage"}
+	if _, err := roles.Update(adminCtx, auth.RoleCustomer, auth.RolePatch{Permissions: &permissions}); err != nil {
+		t.Fatal(err)
+	}
+	users, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
+	user, err := users.Create(context.Background(), "customer-manager@example.com", "Customer manager", "correct horse battery", auth.RoleCustomer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := auth.WithUser(context.Background(), user)
+	if !manager(ctx) {
+		t.Fatal("explicit customer management grant not active")
+	}
+	for _, path := range []string{"/agents", "/workspace"} {
+		w := httptest.NewRecorder()
+		app.Handler.ServeHTTP(w, httptest.NewRequest("GET", path, nil).WithContext(ctx))
+		if w.Code != http.StatusOK || w.Header().Get("Location") != "" || strings.Contains(w.Body.String(), "admin-workspace") {
+			t.Fatal("customer manager lost original public workspace", path, w.Code)
+		}
+		if !strings.Contains(w.Body.String(), "/agents/profile") {
+			t.Fatal("customer management controls removed")
+		}
+		if strings.Contains(w.Header().Get("Content-Security-Policy"), "unsafe-eval") {
+			t.Fatal("customer public CSP weakened")
+		}
+	}
+	w := httptest.NewRecorder()
+	app.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/admin/workagents", nil).WithContext(ctx))
+	if w.Code != http.StatusForbidden {
+		t.Fatal("customer management grant bypassed admin gate", w.Code)
 	}
 }

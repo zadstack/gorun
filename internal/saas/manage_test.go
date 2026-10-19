@@ -135,6 +135,9 @@ func TestNativeAPIExistingScopesAndAdminFormCSRF(t *testing.T) {
 	if w.Code != 200 || !strings.Contains(w.Body.String(), csrf) {
 		t.Fatalf("admin form: %d %s", w.Code, w.Body.String())
 	}
+	if !strings.Contains(w.Body.String(), "admin-workspace") || strings.Contains(w.Body.String(), "href=\"/saas/assets.css\"") {
+		t.Fatal("management form must use shared shell")
+	}
 	form := url.Values{"owner_id": {owner.User.ID}, "name": {"Form app"}, "slug": {"form-app"}, "request_key": {"csrf-form-app-request"}}
 	post := func() *httptest.ResponseRecorder {
 		r := httptest.NewRequest("POST", "/admin/saas/apps", strings.NewReader(form.Encode()))

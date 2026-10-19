@@ -24,8 +24,10 @@ func navigationBucket(it NavItem) (string, string) {
 		return "home", "home"
 	case "canvases", "workagents.workspace":
 		return "canvas", "canvas"
-	case "menus", "redirects", "settings.seo":
-		return "site", "site"
+	case "menus", "appearance.overview":
+		return "site", "site-pages"
+	case "redirects", "settings.seo", "builder.readiness":
+		return "site", "site-search"
 	case "users", "roles":
 		return "settings", "team"
 	}
@@ -33,7 +35,7 @@ func navigationBucket(it NavItem) (string, string) {
 	case "content", "structure":
 		return "content", it.Group
 	case "appearance":
-		return "site", "site"
+		return "site", "site-design"
 	case "agents":
 		return "canvas", "canvas"
 	case "inbox":
@@ -66,13 +68,22 @@ func navigationLocation(items []NavItem, p string) (string, string) {
 	switch {
 	case p == "/admin/navigation":
 		return "settings", "settings"
-	case strings.HasPrefix(p, "/admin/builder/"):
+	case p == "/admin/website" || strings.HasPrefix(p, "/admin/builder/"):
 		// Content editors can open the builder without settings.manage.
 		// Any authorized Website entry can anchor its contextual navigation.
+		var first string
 		for _, it := range items {
 			if section, group := navigationBucket(it); section == "site" {
-				return section, group
+				if first == "" {
+					first = group
+				}
+				if strings.HasPrefix(p, "/admin/builder/") && group == "site-design" {
+					return section, group
+				}
 			}
+		}
+		if first != "" {
+			return "site", first
 		}
 	case p == "/admin/settings/mail" || p == "/admin/settings/ai":
 		alias = "settings"
@@ -144,6 +155,14 @@ func navigationSections(groups []NavGroup, authorized []NavItem, p string, prefe
 	var out []NavigationSection
 	for _, sec := range defs {
 		if len(sec.Groups) > 0 {
+			if sec.Key == "site" {
+				sec.Href = "/admin/website"
+			}
+			if sec.Key == "commerce" && len(sec.Groups) == 1 && len(sec.Groups[0].Items) == 1 && sec.Groups[0].Items[0].ID == "saas" {
+				sec.LabelKey = "saas.nav"
+				sec.Icon = "boxes"
+				sec.Groups[0].LabelKey = "saas.nav"
+			}
 			out = append(out, sec)
 		}
 	}

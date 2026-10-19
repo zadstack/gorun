@@ -18,9 +18,9 @@ func TestNavigationSectionsKeepDestinationsAndRouteOwnership(t *testing.T) {
 		{ID: "plugin", Href: "/admin/plugin", Group: "field_kit"}, {ID: "ungrouped", Href: "/admin/extra"},
 	}
 	for _, tc := range []struct{ path, section, group string }{
-		{"/admin", "home", "home"}, {"/admin/content/post/new", "content", "content"},
-		{"/admin/taxonomies/tags", "content", "structure"}, {"/admin/menus/new", "site", "site"},
-		{"/admin/settings/seo/audit", "site", "site"}, {"/admin/redirects", "site", "site"}, {"/admin/builder/42", "site", "site"},
+		{"/admin", "home", "home"}, {"/admin/website", "site", "site-pages"}, {"/admin/content/post/new", "content", "content"},
+		{"/admin/taxonomies/tags", "content", "structure"}, {"/admin/menus/new", "site", "site-pages"},
+		{"/admin/settings/seo/audit", "site", "site-search"}, {"/admin/redirects", "site", "site-search"}, {"/admin/builder/42", "site", "site-design"},
 		{"/agents", "canvas", "canvas"}, {"/admin/canvases/42", "canvas", "canvas"}, {"/admin/agents/keys/new", "canvas", "canvas"},
 		{"/admin/reports/1", "inbox", "inbox"}, {"/admin/users/1", "settings", "team"}, {"/admin/roles", "settings", "team"},
 		{"/admin/settings/mail", "settings", "settings"}, {"/admin/settings/ai", "settings", "settings"},
@@ -104,10 +104,33 @@ func TestNavigationSectionsPreservePersonalRanksAndItems(t *testing.T) {
 func TestNavigationBuilderUsesAuthorizedWebsiteSubset(t *testing.T) {
 	items := []NavItem{{ID: "appearance.themes", Href: "/admin/appearance/themes", Group: "appearance"}}
 	sections := navigationSections(groupNav(items), items, "/admin/builder/content-id", nil)
-	if len(sections) != 1 || !sections[0].Active || sections[0].Key != "site" || sections[0].Href != items[0].Href {
+	if len(sections) != 1 || !sections[0].Active || sections[0].Key != "site" || sections[0].Href != "/admin/website" {
 		t.Fatal("builder lost authorized Website context", sections)
 	}
 	if section, _ := navigationLocation(nil, "/admin/builder/content-id"); section != "" {
 		t.Fatal("inferred unauthorized Website")
+	}
+}
+
+func TestWebsiteOverviewDoesNotCreateUnauthorizedSection(t *testing.T) {
+	items := []NavItem{{ID: "dashboard", Href: "/admin"}}
+	sections := navigationSections(groupNav(items), items, "/admin/website", nil)
+	for _, s := range sections {
+		if s.Key == "site" || s.Active {
+			t.Fatal("website inferred without authorized destination", sections)
+		}
+	}
+}
+
+func TestSubscriptionsOnlySectionUsesActualPurpose(t *testing.T) {
+	items := []NavItem{{ID: "saas", Href: "/admin/saas", Group: "commerce"}}
+	sections := navigationSections(groupNav(items), items, "/admin/saas", nil)
+	if len(sections) != 1 || sections[0].LabelKey != "saas.nav" {
+		t.Fatal(sections)
+	}
+	items = append(items, NavItem{ID: "commerce.products", Href: "/admin/products", Group: "commerce"})
+	sections = navigationSections(groupNav(items), items, "/admin/products", nil)
+	if sections[0].LabelKey != "core.nav.section.commerce" {
+		t.Fatal("store management hidden by subscription label", sections)
 	}
 }
