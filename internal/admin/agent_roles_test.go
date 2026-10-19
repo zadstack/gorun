@@ -10,7 +10,7 @@ func TestAgentRoleExamplesStayWithinBundleBoundsWithoutBindings(t *testing.T) {
 		}
 		ids := map[string]bool{}
 		for _, role := range roles {
-			if role.ID == "" || ids[role.ID] || role.Name == "" || role.Goal == "" || role.Example == "" || len(role.Skills) != 5 {
+			if role.ID == "" || ids[role.ID] || role.Name == "" || role.Goal == "" || role.Example == "" || role.Setup == "" || len(role.Skills) != 5 {
 				t.Fatal(role.ID)
 			}
 			ids[role.ID] = true

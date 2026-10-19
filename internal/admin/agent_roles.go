@@ -12,8 +12,8 @@ import (
 // Built-in examples contain only public instructions. No connection IDs, grants,
 // tool policies, credentials or customer resources can be embedded in a role.
 type agentRole struct {
-	ID, Name, Goal, Example string
-	Skills                  []agentSkill
+	ID, Name, Goal, Example, Setup string
+	Skills                         []agentSkill
 }
 type agentRoleKey struct{ ID, Name string }
 type agentRoleConnection struct{ Name, Kind, Status, TestedAt string }
@@ -88,7 +88,16 @@ func agentRoles(locale string) []agentRole {
 			skill("Measurement plan", "خطة القياس", "Suggest metrics, review dates and questions the team can evaluate after a human publishes. Separate planned targets from actual results and never fabricate analytics.", "اقترح مقاييس ومواعيد مراجعة وأسئلة يقيّمها الفريق بعد النشر البشري. افصل الأهداف المخططة عن النتائج الفعلية ولا تختلق تحليلات."),
 		},
 	}
+	setup := map[string][2]string{
+		"researcher":        {"Text model or external client + approved sources. Optionally select a suitable source MCP profile; each managed read tool still needs separate approval.", "نموذج نصي أو عميل خارجي مع مصادر معتمدة. يمكن اختيار اتصال MCP مناسب للمصادر؛ تظل كل أداة قراءة مُدارة بحاجة إلى موافقة منفصلة."},
+		"bilingual-editor":  {"Text model or external client + supplied research and an approved glossary. Supplied text needs no extra source connection.", "نموذج نصي أو عميل خارجي مع البحث المقدم وقاموس معتمد. النص المقدم لا يحتاج اتصال مصادر إضافيًا."},
+		"seo-reviewer":      {"Text model or external client + supplied pages. Optional suitable read-only source tools require explicit selection and individual approval; a saved MCP profile alone is insufficient.", "نموذج نصي أو عميل خارجي مع الصفحات المقدمة. تحتاج أدوات المصادر المناسبة للقراءة فقط اختيارًا صريحًا وموافقة لكل استدعاء؛ اتصال MCP محفوظ وحده لا يكفي."},
+		"support-knowledge": {"Text model or external client + approved knowledge. Optionally select the appropriate knowledge MCP profile and separately approve its exact tools; no customer-account actions are granted.", "نموذج نصي أو عميل خارجي مع معرفة معتمدة. يمكن اختيار اتصال MCP المناسب للمعرفة والموافقة منفصلًا على أدواته المحددة؛ لا تُمنح إجراءات على حسابات العملاء."},
+		"operations-reader": {"Text model or external client + sanitized supplied logs. Optional explicitly approved read-only source tools only; this role provides no SSH connection or server control.", "نموذج نصي أو عميل خارجي مع سجلات مقدمة ومنقحة. أدوات مصادر للقراءة فقط بموافقة صريحة عند الحاجة؛ الدور لا يوفر اتصال SSH أو تحكمًا بالخادم."},
+		"campaign-planner":  {"Text model or external client + supplied approved drafts. Hand reviewed plans to a human using Metricool when separately configured; no automatic scheduling or posting.", "نموذج نصي أو عميل خارجي مع مسودات مقدمة ومعتمدة. سلّم الخطط المراجعة لشخص يستخدم Metricool عند إعداده منفصلًا؛ لا جدولة أو نشر تلقائي."},
+	}
 	for i := range roles {
+		roles[i].Setup = pick(setup[roles[i].ID][0], setup[roles[i].ID][1])
 		roles[i].Skills = append(roles[i].Skills, extra[roles[i].ID]...)
 	}
 	return roles
