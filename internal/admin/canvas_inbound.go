@@ -180,6 +180,10 @@ func (h *handlers) canvasInboundHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		p, err := h.canvasPrepare(ctx, b, node)
+		if err == nil && managedToolsEnabled(p) {
+			h.canvasOpsError(w, 422, "tools_manual_only")
+			return
+		}
 		if err != nil {
 			h.canvasOpsError(w, 409, "consent_changed")
 			return
@@ -207,6 +211,10 @@ func (h *handlers) canvasInboundHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		var reviewed canvasPrepared
 		p, err := h.canvasPrepare(ctx, b, node)
+		if err == nil && managedToolsEnabled(p) {
+			h.canvasOpsError(w, 422, "tools_manual_only")
+			return
+		}
 		if err != nil || json.Unmarshal([]byte(raw), &reviewed) != nil || reviewed.InboundID != meta.ID || reviewed.InboundRevision != meta.Revision || reviewed.ReviewHash != p.ReviewHash || reviewed.Version != p.Version {
 			h.canvasOpsError(w, 409, "consent_changed")
 			return

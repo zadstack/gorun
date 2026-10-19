@@ -18,20 +18,21 @@ import (
 )
 
 type canvasRun struct {
-	ID            string `json:"id"`
-	NodeID        string `json:"node_id"`
-	Status        string `json:"status"`
-	CreatedAt     string `json:"created_at"`
-	FinishedAt    string `json:"finished_at"`
-	ResultCardID  string `json:"result_card_id"`
-	ActorName     string `json:"actor_name"`
-	ProviderTitle string `json:"provider_title"`
-	Error         string `json:"error"`
-	AcceptedRunID string `json:"accepted_run_id"`
+	ID                 string `json:"id"`
+	NodeID             string `json:"node_id"`
+	Status             string `json:"status"`
+	CreatedAt          string `json:"created_at"`
+	FinishedAt         string `json:"finished_at"`
+	ResultCardID       string `json:"result_card_id"`
+	ActorName          string `json:"actor_name"`
+	ProviderTitle      string `json:"provider_title"`
+	Error              string `json:"error"`
+	AcceptedRunID      string `json:"accepted_run_id"`
+	ToolCallsAttempted int    `json:"tool_calls_attempted,omitempty"`
 }
 
 func (h *handlers) canvasRuns(ctx context.Context, board string) ([]canvasRun, error) {
-	rows, e := h.d.DB.QueryContext(ctx, `SELECT id,node_id,status,created_at,finished_at,result_card_id,document,accepted_run_id FROM admin_canvas_runs WHERE board_id=? ORDER BY created_at DESC,id DESC LIMIT 20`, board)
+	rows, e := h.d.DB.QueryContext(ctx, `SELECT r.id,r.node_id,r.status,r.created_at,r.finished_at,r.result_card_id,r.document,r.accepted_run_id,COALESCE((SELECT json_extract(s.document,'$.calls') FROM admin_canvas_tool_states s WHERE s.run_id=r.id),0) FROM admin_canvas_runs r WHERE board_id=? ORDER BY created_at DESC,id DESC LIMIT 20`, board)
 	if e != nil {
 		return nil, e
 	}
@@ -40,7 +41,7 @@ func (h *handlers) canvasRuns(ctx context.Context, board string) ([]canvasRun, e
 	for rows.Next() {
 		var r canvasRun
 		var raw string
-		if e = rows.Scan(&r.ID, &r.NodeID, &r.Status, &r.CreatedAt, &r.FinishedAt, &r.ResultCardID, &raw, &r.AcceptedRunID); e != nil {
+		if e = rows.Scan(&r.ID, &r.NodeID, &r.Status, &r.CreatedAt, &r.FinishedAt, &r.ResultCardID, &raw, &r.AcceptedRunID, &r.ToolCallsAttempted); e != nil {
 			return nil, e
 		}
 		var p canvasPrepared
@@ -66,6 +67,9 @@ func (h *handlers) canvasEnqueue(ctx context.Context, p canvasPrepared, request 
 }
 
 func (h *handlers) canvasEnqueueTx(ctx context.Context, tx *sql.Tx, p canvasPrepared, request string) (canvasRun, error) {
+	if managedToolsEnabled(p) && (p.ScheduleID != "" || p.InboundID != "") {
+		return canvasRun{}, errManagedTools
+	}
 	run := canvasRun{ID: db.NewID(), NodeID: p.NodeID, Status: "queued", CreatedAt: db.Now()}
 	if p.KeyID != "" && !p.managedAgent() {
 		run.Status = "waiting_agent"
@@ -106,7 +110,11 @@ func (h *handlers) canvasEnqueueTx(ctx context.Context, tx *sql.Tx, p canvasPrep
 		return run, e
 	}
 	if p.KeyID == "" || p.managedAgent() {
-		_, e = h.d.Jobs.EnqueueTx(ctx, tx, "canvas.generate", map[string]string{"id": run.ID}, jobs.Idempotency("canvas:"+run.ID))
+		kind := "canvas.generate"
+		if managedToolsEnabled(p) {
+			kind = "canvas.tools"
+		}
+		_, e = h.d.Jobs.EnqueueTx(ctx, tx, kind, map[string]string{"id": run.ID}, jobs.Idempotency("canvas:"+run.ID))
 		if e != nil {
 			return run, e
 		}

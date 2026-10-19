@@ -87,6 +87,10 @@ func (h *handlers) canvasScheduleHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p, e := h.canvasPrepare(r.Context(), b, target)
+	if e == nil && managedToolsEnabled(p) {
+		h.canvasOpsError(w, 422, "tools_manual_only")
+		return
+	}
 	if e != nil || p.Version != old.Version || p.ReviewHash != old.ReviewHash {
 		h.canvasOpsError(w, 409, "consent_changed")
 		return

@@ -90,4 +90,6 @@ func (h *handlers) routes() {
 	keys.Get("/agents/keys/{id}/bundle", h.agentBundleHTTP)
 	keys.With(auth.RequireRecentAuth).Post("/agents/keys/{id}/bundle", h.agentBundleHTTP)
 	keys.Get("/agents/keys/{id}/bundle/export", h.agentBundleExport)
+	keys.Get("/agents/keys/{id}/tools", h.managedToolsEditor)
+	keys.With(auth.RequireRecentAuth).Post("/agents/keys/{id}/tools", h.managedToolsEditor)
 }

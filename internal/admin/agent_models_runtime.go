@@ -18,6 +18,12 @@ func (p canvasPrepared) managedAgent() bool {
 // Both dispatch and append use a fresh transactional authority snapshot.
 func agentModelAuthorityTx(ctx context.Context, tx *sql.Tx, p canvasPrepared) (connectionRecord, error) {
 	var conn connectionRecord
+	if managedToolsEnabled(p) {
+		var epoch int64
+		if p.ToolAuthorityEpoch < 1 || tx.QueryRowContext(ctx, `SELECT epoch FROM admin_canvas_tool_authority WHERE board_id=? AND owner_id=?`, p.BoardID, p.OwnerID).Scan(&epoch) != nil || epoch != p.ToolAuthorityEpoch {
+			return conn, errCanvasConsent
+		}
+	}
 	if p.KeyID != "" {
 		bundle, err := currentAgentBundle(ctx, tx, p.OwnerID, p.KeyID)
 		if err != nil || bundle.Version != p.AgentBundleVersion {

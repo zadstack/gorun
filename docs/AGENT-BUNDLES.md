@@ -38,8 +38,8 @@ It does not enable tools or provision an external runtime. Configure endpoints,
 credentials and tool permissions separately in that client; keep it connected and
 polling GoRun. Do not put credentials into skill/reference text intended for export.
 
-Managed execution currently applies the skills as text and **does not call attached
-MCP tools**. Existing Studio operations execute an exact reviewed tool binding;
-they do not supply a general model-driven tool loop. Such a loop needs per-tool
-authority, action review and execution limits before it can safely reuse these
-references. No MCP tool or code execution is added by the bundle editor.
+Attaching MCP references alone does not execute tools. The bundle editor does not run code, provision credentials or grant unattended tool authority. Existing Studio operations keep their exact reviewed bindings.
+
+## Supervised managed tool calls
+
+Named OpenAI-compatible managed text agents can opt into a separate default-disabled tool policy with explicit approval of every exact call. This is manual supervised execution; external clients keep their own runtime configuration. See [Managed MCP tools with approval](MANAGED-MCP-TOOLS.md) for setup, supported schemas and bounds.

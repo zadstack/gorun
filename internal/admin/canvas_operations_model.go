@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -45,6 +46,8 @@ func validateCanvasEdges(cards []canvasCard, edges []canvasEdge) error {
 }
 
 type canvasPrepared struct {
+	ManagedTools       *agentToolPolicy  `json:"managed_tools,omitempty"`
+	ToolAuthorityEpoch int64             `json:"tool_authority_epoch,omitempty"`
 	AgentBundleVersion string            `json:"agent_bundle_version,omitempty"`
 	InboundID          string            `json:"inbound_id,omitempty"`
 	InboundRevision    int64             `json:"inbound_revision,omitempty"`
@@ -199,6 +202,19 @@ func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID str
 			return p, e
 		}
 		p.AgentModel = &model
+		if bundle.Tools != nil {
+			if model.Mode != "managed" || model.Version != bundle.Tools.ModelVersion || kind != "text" {
+				return p, errManagedTools
+			}
+			conn, err := h.loadConnection(ctx, model.ConnectionID)
+			if err != nil || conn.Version != model.ConnectionVersion || conn.Provider != AIProviderOpenAI {
+				return p, errManagedTools
+			}
+			p.ManagedTools = bundle.Tools
+			if err := h.d.DB.QueryRowContext(ctx, `SELECT epoch FROM admin_canvas_tool_authority WHERE board_id=? AND owner_id=?`, p.BoardID, p.OwnerID).Scan(&p.ToolAuthorityEpoch); err != nil {
+				return p, errManagedTools
+			}
+		}
 		if model.Mode == "managed" && kind != "text" {
 			return p, errCanvasInvalid
 		}
@@ -212,6 +228,13 @@ func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID str
 			p.Provider["mode"] = model.Mode
 			if model.Mode == "managed" {
 				p.Provider["endpoint"] = conn.Endpoint
+				if managedToolsEnabled(p) {
+					if u, err := url.Parse(conn.Endpoint); err == nil {
+						p.Provider["endpoint"] = u.Hostname()
+					} else {
+						return p, errManagedTools
+					}
+				}
 				if _, e := h.agentModelRuntime(ctx, p); e != nil {
 					return p, e
 				}
@@ -267,6 +290,10 @@ func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID str
 	}
 	if p.AgentModel != nil {
 		hashInput["agent_model"] = p.AgentModel
+	}
+	if managedToolsEnabled(p) {
+		hashInput["managed_tools"] = p.ManagedTools
+		hashInput["tool_authority_epoch"] = p.ToolAuthorityEpoch
 	}
 	p.GraphHash = studioReviewHash(hashInput)
 	p.ReviewHash = studioReviewHash(map[string]any{"graph": p.GraphHash, "source": p.Context, "versions": p.SourceTokens})

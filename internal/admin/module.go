@@ -86,6 +86,9 @@ func (*Module) Register(d *kernel.Deps) error {
 	if !ok {
 		return errors.New("admin: roles service missing")
 	}
+	if err := installManagedSourceTriggers(d.DB); err != nil {
+		return err
+	}
 	declarePermissions(d)
 	m := mailer.New(d.Settings, d.Log).WithKey(d.Config.SecretKey).WithEnv(d.Config.Env)
 	d.Services.Set(mailer.ServiceName, m)
@@ -101,6 +104,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.studioRoutes()
 	h.canvasMCPTools()
 	d.Jobs.Register("canvas.generate", h.canvasGenerateJob, 1)
+	d.Jobs.Register("canvas.tools", h.managedToolsJob, 1)
 	d.Jobs.Cron("canvas.schedule", time.Minute, h.canvasTick)
 	d.Jobs.Register("studio.generate", h.studioGenerateJob, 1)
 	d.Jobs.Cron("studio.recover", time.Minute, h.studioRecover)

@@ -18,7 +18,7 @@
   "configured": "Configured; not tested",
   "no_mcp": "No MCP connection profiles are available.",
   "connections": "Manage and test connections",
-  "external": "External clients must stay connected and polling. Configure MCP credentials and tool permissions in that client. Managed text execution applies skills but does not call attached MCP tools.",
+  "external": "External clients must stay connected and polling. Configure MCP credentials and permissions in that client. Managed text execution applies skills; tools require a separate reviewed policy and approval for each exact call.",
   "review": "I reviewed these instructions and references. Saving retires existing recurring and incoming-event consent and requires a fresh canvas review.",
   "save": "Save bundle",
   "export": "Download credential-free manifest",
