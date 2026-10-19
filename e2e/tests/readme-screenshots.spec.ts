@@ -113,12 +113,15 @@ test('capture current README product screens with synthetic campaign data', asyn
   await boardPost('/operations/grants',{agent_id:agentID,read:true,append:true,run:true,node_ids:[sourceID,promptID]});
   await page.reload();
   await expect(page.locator('.canvas-card')).toHaveCount(4);
+  await page.locator('[data-action=arrange]').click();
+  await expect(page.locator('.canvas-state [data-status]')).toHaveText('All changes saved');
   await shot('canvas-brief-en.png');
   await page.locator(`[data-card-id="${actorID}"] .canvas-operation-button`).click();
   await expect(page.locator('dialog.canvas-review')).toBeVisible();
   await shot('canvas-review-en.png');
   await page.locator('dialog.canvas-review header button').click();
-  const preview=await boardPost('/operations/preview',{version:2,node_id:actorID});
+  const beforeReview=await (await request.get(boardPath+'/document')).json();
+  const preview=await boardPost('/operations/preview',{version:beforeReview.version,node_id:actorID});
   const queued=await boardPost('/operations/runs',{request_id:randomUUID(),review_token:preview.review_token});
   const input:any={board_id:boardPath.split('/').pop(),run_id:queued.run.id};
   const contextResult=await mcp(request,agent,'tools/call',{name:'canvases.context',arguments:input});
@@ -134,9 +137,29 @@ test('capture current README product screens with synthetic campaign data', asyn
   await boardPost('/document',{title:document.title,version:document.version,cards:document.cards,edges:document.edges});
   await page.reload();
   await expect(page.locator('.canvas-card')).toHaveCount(5);
-  await expect(page.locator('.canvas-state [data-status]')).toContainText('saved');
+  await expect(page.locator('.canvas-state [data-status]')).toHaveText('All changes saved');
+  await page.locator('[data-action=arrange]').click();
+  await expect(page.locator('.canvas-state [data-status]')).toHaveText('All changes saved');
   await expect(page.locator('.canvas-edges path')).toHaveCount(2);
+  const inputPorts=await page.locator(`.canvas-edges circle[data-port=to][data-card-id="${actorID}"]`).evaluateAll(nodes=>nodes.map(node=>node.getAttribute('cy')));
+  expect(new Set(inputPorts).size).toBe(2);
+  const rectangles=await page.locator('.canvas-card').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height};}));
+  for(let i=0;i<rectangles.length;i++)for(let j=i+1;j<rectangles.length;j++){
+    const a=rectangles[i],b=rectangles[j];
+    expect(a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y).toBe(false);
+  }
   await shot('canvas-en.png');
+  const beforeViews=await (await request.get(boardPath+'/document')).json();
+  for(const view of ['grid','list']){
+    await page.locator(`[data-canvas-view="${view}"]`).click();
+    await expect(page.locator(`[data-canvas-view="${view}"]`)).toHaveAttribute('aria-pressed','true');
+    await expect(page.locator('.canvas-edges path')).toHaveCount(0);
+    await shot(`canvas-${view}-en.png`);
+  }
+  await page.locator('[data-canvas-view="flow"]').click();
+  const afterViews=await (await request.get(boardPath+'/document')).json();
+  expect(afterViews.version).toBe(beforeViews.version);
+  expect(afterViews.cards).toEqual(beforeViews.cards);
   // Save a second locale and a mobile view to inspect the actual card controls.
   await setLocale(page,'ar');
   await shot('canvas-ar.png');

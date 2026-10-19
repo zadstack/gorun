@@ -90,7 +90,7 @@ Canvases bring selected content, instructions and agent results into one workspa
 
 ![Campaign brief and selected product content connected to a named assistant](assets/branding/screenshots/canvas-brief-en.png)
 
-**2. Review before running.** Inspect the destination, instructions and selected context. Confirm explicitly before starting the work.
+**2. Review before running.** Inspect the destination, instructions and selected context. Confirm explicitly before starting the work. The agent can use only the selected context and tools allowed by its permissions.
 
 ![Review the exact context and destination before running the assistant](assets/branding/screenshots/canvas-review-en.png)
 
@@ -98,7 +98,11 @@ Canvases bring selected content, instructions and agent results into one workspa
 
 ![Bilingual campaign draft and editorial checklist in the updated canvas](assets/branding/screenshots/canvas-en.png)
 
+Switch between **Workflow**, **Grid** and **List** views. Arrange cards using their rendered heights; each connection has its own side port and a routed path. View changes preserve the saved content and connections. [Grid view](assets/branding/screenshots/canvas-grid-en.png) · [List view](assets/branding/screenshots/canvas-list-en.png).
+
 *Screenshots use a fictional business and synthetic content. The example assistant response is supplied by a test client through the real MCP workflow; it is not a model-quality benchmark. [Arabic view](assets/branding/screenshots/canvas-ar.png) · [Mobile view](assets/branding/screenshots/canvas-mobile.png).*
+
+**Available now:** external agent execution or managed text generation with a linked model. A visual agent bundle that manages Skills and multiple MCP-server connections is planned; it is not a shipped runtime capability.
 
 [MCP and permissions](docs/MCP.md) · [Canvases](docs/CANVASES.md) · [REST API](docs/API.md)
 

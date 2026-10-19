@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{{asset "canvas-operations.css"}}">
 <link rel="stylesheet" href="{{asset "canvas-cards.css"}}">
 <script defer src="{{asset "canvas-graph.js"}}"></script>
+<script defer src="{{asset "canvas-layout.js"}}"></script>
 <script defer src="{{asset "canvas-presets.js"}}"></script>
 <script defer src="{{asset "canvas-operations.js"}}"></script>
 <script defer src="{{asset "canvas.js"}}"></script>
@@ -73,8 +74,15 @@
  <div data-canvas-preset></div>
  <div class="canvas-toolbar">
   <div class="canvas-add"><label for="canvas-kind">{{t "admin.canvas.add"}}</label><select id="canvas-kind"><option value="note">{{t "admin.canvas.note"}}</option><option value="checklist">{{t "admin.canvas.checklist"}}</option><option value="link">{{t "admin.canvas.link"}}</option><option value="content">{{t "admin.canvas.content"}}</option>{{if .Widgets}}<option value="widget">{{t "admin.canvas.widget"}}</option>{{end}}<option value="source">{{t "canvasops.ops_source"}}</option><option value="prompt">{{t "canvasops.prompt"}}</option><option value="provider">{{t "canvasops.provider"}}</option><option value="agent">{{t "canvasops.agent"}}</option><option value="schedule">{{t "canvasops.schedule"}}</option></select><button type="button" data-action="add" disabled>＋ <span>{{t "admin.canvas.add"}}</span></button></div>
+  <div class="canvas-views" role="group" aria-label="{{t "canvaslayout.views"}}">
+    <button type="button" data-canvas-view="flow" aria-pressed="true">{{t "canvaslayout.flow"}}</button>
+    <button type="button" data-canvas-view="grid" aria-pressed="false">{{t "canvaslayout.grid"}}</button>
+    <button type="button" data-canvas-view="list" aria-pressed="false">{{t "canvaslayout.list"}}</button>
+    <button type="button" data-action="arrange">{{t "canvaslayout.arrange"}}</button>
+  </div>
   <div class="canvas-state"><span data-count></span><span data-status role="status" aria-live="polite">{{t "admin.canvas.loading"}}</span><button type="button" data-action="retry" hidden>{{t "admin.canvas.retry"}}</button><button type="button" data-action="reload" hidden>{{t "admin.canvas.reload"}}</button></div>
  </div>
+ <p class="canvas-route-warning" data-route-warning role="status" hidden>{{t "canvaslayout.route_warning"}}</p>
  <p class="canvas-help">{{t "admin.canvas.move_hint"}}</p>
  <div class="canvas-viewport" tabindex="0" aria-label="{{t "admin.canvas.title"}}"><div class="canvas-surface"><div class="canvas-empty" hidden><h2>{{t "admin.canvas.empty"}}</h2><p>{{t "admin.canvas.empty_help"}}</p></div><div data-canvas-cards></div></div></div>
  <div data-canvas-operations></div>

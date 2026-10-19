@@ -82,7 +82,7 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 ![محتوى المنتج وتعليمات الحملة متصلان بوكيل محدد](assets/branding/screenshots/canvas-brief-en.png)
 
-**٢. راجع قبل التشغيل.** افحص الجهة المستقبلة والتعليمات والسياق المحدد، ثم أكد بدء العمل بنفسك.
+**٢. راجع قبل التشغيل.** افحص الجهة المستقبلة والتعليمات والسياق المحدد، ثم أكد بدء العمل بنفسك. لا يستخدم الوكيل إلا السياق المحدد والأدوات المسموح بها ضمن صلاحياته.
 
 ![مراجعة السياق والجهة المستقبلة قبل تشغيل الوكيل](assets/branding/screenshots/canvas-review-en.png)
 
@@ -90,7 +90,11 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 ![مسودة حملة ثنائية اللغة وقائمة مراجعة تحريرية في اللوحة الجديدة](assets/branding/screenshots/canvas-ar.png)
 
+يمكن التبديل بين **سير العمل** و**الشبكة** و**القائمة**. يراعي ترتيب الكروت ارتفاعها الفعلي، ولكل وصلة نقطة جانبية ومسار مستقل. تغيير العرض يحافظ على المحتوى والروابط المحفوظة. [عرض الشبكة](assets/branding/screenshots/canvas-grid-en.png) · [عرض القائمة](assets/branding/screenshots/canvas-list-en.png).
+
 *الصور لشركة خيالية ومحتوى تجريبي. استجابة الوكيل أرسلها عميل اختبار عبر مسار MCP الفعلي، وليست قياسًا لجودة نموذج ذكاء اصطناعي. [العرض بالإنجليزية](assets/branding/screenshots/canvas-en.png) · [عرض الموبايل](assets/branding/screenshots/canvas-mobile.png).*
+
+**المتاح الآن:** تشغيل وكيل خارجي أو توليد نص مُدار بنموذج مرتبط. إدارة منطقة مرئية تجمع Skills واتصالات بخوادم MCP متعددة مخطط لها، ولم تُنفذ كقدرة تشغيلية بعد.
 
 [مساحة اللوحات](docs/CANVASES.md) · [عمليات اللوحات](docs/CANVAS-OPERATIONS-CONTRACT.md) · [استوديو المحتوى](docs/CONTENT_STUDIO.md)
 

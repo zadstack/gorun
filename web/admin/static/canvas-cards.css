@@ -52,3 +52,23 @@
 .canvas-workspace .canvas-help { margin-block: .5rem; }
 .canvas-workspace .canvas-heading { margin-bottom: .75rem; }
 .canvas-workspace .canvas-heading > .canvas-primary { border-radius: 5px; }
+.canvas-views { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem; }
+.canvas-workspace .canvas-views button { min-height: 36px; padding: .35rem .625rem; font-size: .75rem; }
+.canvas-workspace .canvas-views [aria-pressed=true] { background: #e5f0ea; border-color: #57816c; color: #185e45; font-weight: 650; }
+.canvas-workspace [data-action=arrange] { margin-inline-start: .375rem; }
+.canvas-workspace .canvas-route-warning { margin-block: .5rem; padding: .5rem .75rem; border: 1px solid var(--amber); background: var(--amber-soft); font-size: .75rem; }
+.canvas-workspace .canvas-edges { z-index: 2; }
+.canvas-workspace .canvas-edges path { stroke: #6386a3; stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; }
+.canvas-workspace .canvas-edges circle { fill: #fff; stroke: #52728a; stroke-width: 1.5; }
+.canvas-workspace[data-view=grid] .canvas-surface,
+.canvas-workspace[data-view=list] .canvas-surface { min-width: 0!important; min-height: 0!important; padding: .75rem; }
+.canvas-workspace[data-view=grid] [data-canvas-cards] { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(280px,100%),1fr)); gap: .75rem; align-items: start; }
+.canvas-workspace[data-view=list] [data-canvas-cards] { display: grid; grid-template-columns: minmax(0,1fr); gap: .75rem; }
+.canvas-workspace:is([data-view=grid],[data-view=list]) .canvas-card { position: relative; width: auto; left: auto!important; top: auto!important; margin: 0; }
+.canvas-workspace:is([data-view=grid],[data-view=list]) .canvas-handle,
+.canvas-workspace:is([data-view=grid],[data-view=list]) .canvas-move-controls { display: none; }
+.canvas-workspace[data-view=list] .canvas-card-body { max-height: none; }
+@media (max-width:767px), (pointer:coarse) {
+  .canvas-workspace .canvas-views button { min-height: 44px; }
+}
+.canvas-workspace:not([data-view=flow]) .canvas-help { display: none; }
