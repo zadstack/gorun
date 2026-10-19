@@ -1,0 +1,10 @@
+{{/* Usage: {{template "partials/settings_tabs" "general"}} with Active = general|mail|ai */}}
+{{define "partials/settings_tabs"}}
+<nav class="flex gap-1 mb-4 border-b border-line" aria-label="{{t "admin.settings.title"}}">
+  <a href="/admin/settings/general" {{if eq . "general"}}aria-current="page" class="px-3 py-2 -mb-px border border-line border-b-panel bg-panel rounded-t font-medium"{{else}}class="px-3 py-2 text-muted hover:text-ink"{{end}}>{{t "admin.settings.tab_general"}}</a>
+  <a href="/admin/settings/mail" {{if eq . "mail"}}aria-current="page" class="px-3 py-2 -mb-px border border-line border-b-panel bg-panel rounded-t font-medium"{{else}}class="px-3 py-2 text-muted hover:text-ink"{{end}}>{{t "admin.settings.tab_mail"}}</a>
+  {{if ne (setting "site.workspace") "simple"}}
+  <a href="/admin/settings/ai" {{if eq . "ai"}}aria-current="page" class="px-3 py-2 -mb-px border border-line border-b-panel bg-panel rounded-t font-medium"{{else}}class="px-3 py-2 text-muted hover:text-ink"{{end}}>{{t "admin.settings.tab_ai"}}</a>
+  {{end}}
+</nav>
+{{end}}

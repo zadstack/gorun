@@ -61,6 +61,9 @@ func (h *handlers) canvasPreview(r *http.Request, b *canvasBoard) canvasPreview 
 	return out
 }
 func (h *handlers) widgetCanvasGallery(ctx context.Context, r *http.Request) (template.HTML, error) {
+	if !WorkspaceShowsAdvanced(ctx, h.d.Settings) {
+		return "", nil
+	}
 	boards, err := h.canvasBoards(ctx)
 	if err != nil {
 		return "", err

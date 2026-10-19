@@ -62,6 +62,8 @@ func (h *handlers) dashboardRendered(r *http.Request, strict bool) ([]dashboardR
 	// Match the existing visual defaults before applying personal order.
 	rank := func(id string) int {
 		switch id {
+		case "workspace_choice":
+			return -1
 		case "quick_actions":
 			return 0
 		case "workspace_guide":

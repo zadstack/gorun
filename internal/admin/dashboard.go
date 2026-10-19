@@ -46,6 +46,7 @@ func (h *handlers) dashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) registerWidgets() {
+	h.d.Admin.AddWidget("workspace_choice", h.widgetWorkspaceChoice)
 	h.d.Admin.AddWidget("workspace_guide", h.widgetWorkspaceGuide)
 	h.d.Admin.AddWidget("setup_status", h.widgetSetupStatus)
 	h.d.Admin.AddWidget("quick_actions", h.widgetQuickActions)
@@ -88,7 +89,7 @@ func (h *handlers) widgetQuickActions(ctx context.Context, r *http.Request) (tem
 	if can(r, PermUsers) {
 		actions = append(actions, quickAction{LabelKey: "admin.dashboard.new_user", Href: "/admin/users/new", Icon: "user-plus"})
 	}
-	if can(r, PermAPIKeys) {
+	if can(r, PermAPIKeys) && WorkspaceShowsAdvanced(ctx, h.d.Settings) {
 		actions = append(actions, quickAction{LabelKey: "admin.dashboard.new_key", Href: "/admin/agents/keys", Icon: "key-round"})
 	}
 	if len(actions) == 0 {
