@@ -1,0 +1,10 @@
+{
+  "counts": "Tracked item progress",
+  "counts_boundary": "Counts come from the saved migration queue, not every item on the source site. Planned/preview rows have not been imported. Done rows do not prove final validation passed.",
+  "tracked": "Tracked: %d",
+  "done": "Done: %d",
+  "planned": "Planned: %d",
+  "pending": "Pending: %d",
+  "skipped": "Skipped: %d",
+  "no_items": "No queued items have been recorded yet. Scan and preview before importing."
+}
