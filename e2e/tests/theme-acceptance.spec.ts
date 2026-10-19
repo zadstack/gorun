@@ -52,6 +52,7 @@ async function samplePages(page: Page): Promise<{ kind: string; path: string; st
 type Audit = {
   contrastFails: number;
   tapFails: number;
+  tapFailSamples: string[];
   horizontalOverflow: boolean;
   textUnder12: number;
   arabicNegativeTracking: number;
@@ -114,6 +115,7 @@ async function auditPage(page: Page): Promise<Audit> {
       !el.classList.contains('gp-s-btn');
 
     let tapFails = 0;
+    const tapFailSamples: string[] = [];
     for (const el of Array.from(
       document.querySelectorAll(
         'header a, header button, header summary, footer a, footer button, nav a, nav button, main button, main summary, main a.gr-btn, main .gp-button, main input:not([type="hidden"]), main select',
@@ -126,7 +128,15 @@ async function auditPage(page: Page): Promise<Audit> {
         // Links may be wide+short text rows in nav; require min dimension 44 on chrome controls.
         if (el.tagName === 'A' && r.height >= 44 - 0.5) continue;
         if (r.width >= 44 - 0.5 && r.height >= 44 - 0.5) continue;
-        if (r.height < 44 - 0.5) tapFails++;
+        if (r.height < 44 - 0.5) {
+          tapFails++;
+          if (tapFailSamples.length < 6) {
+            const label = (el.textContent || '').trim().slice(0, 40) || el.tagName;
+            tapFailSamples.push(
+              `${el.tagName.toLowerCase()}.${(el as HTMLElement).className} h=${Math.round(r.height)} "${label}"`,
+            );
+          }
+        }
       }
     }
 
@@ -219,6 +229,7 @@ async function auditPage(page: Page): Promise<Audit> {
     return {
       contrastFails,
       tapFails,
+      tapFailSamples,
       horizontalOverflow,
       textUnder12,
       arabicNegativeTracking,
@@ -277,7 +288,10 @@ test.describe.serial('theme acceptance (§6)', () => {
           expect(result.arabicNegativeTracking, `${slug} ${kind}: Arabic negative tracking`).toBe(0);
           expect(result.monoOnArabic, `${slug} ${kind}: mono on Arabic`).toBe(0);
           expect(result.tailwindRuntime, `${slug} ${kind}: Tailwind runtime`).toBe(false);
-          expect(result.tapFails, `${slug} ${kind}: tap < 44px`).toBe(0);
+          expect(
+            result.tapFails,
+            `${slug} ${kind}: tap < 44px (${result.tapFailSamples.join('; ')})`,
+          ).toBe(0);
           // Body/text contrast: allow a small number of decorative/icon-only misses; fail hard if many.
           expect(result.contrastFails, `${slug} ${kind}: contrast fails`).toBe(0);
 

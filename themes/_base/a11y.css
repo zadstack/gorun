@@ -55,7 +55,8 @@
   outline-offset: 3px;
 }
 
-/* Tap targets ≥ 44×44 (interactive chrome only; prose inline links excluded). */
+/* Tap targets ≥ 44×44 (interactive chrome only; prose inline links excluded).
+   inline-flex so min-height applies (min-height is ignored on pure inline). */
 :where(header, footer, nav, .gr-hero, .gr-closing, .gr-list-row, .gr-section-head)
   :is(a, button, summary),
 :where(button, summary),
@@ -66,6 +67,10 @@
 ),
 :where(.gr-btn, .gp-button, .gp-s-btn) {
   min-height: var(--tap-min);
+}
+:where(header, footer, nav) :is(a, button, summary) {
+  display: inline-flex;
+  align-items: center;
 }
 :where(header, footer, nav)
   :is(a[hreflang], a.gr-btn, button, summary, .sb-language, .studio-locale, .dt-lang, .docs-lang) {
