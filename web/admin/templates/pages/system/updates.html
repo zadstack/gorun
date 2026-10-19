@@ -1,0 +1,22 @@
+{{define "title"}}{{t "admin.updates.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-4">{{t "admin.updates.title"}}</h1>
+<section class="rounded border border-line bg-panel p-4 space-y-4" data-system-updates>
+  <p>{{t "admin.updates.current"}}: <span dir="ltr" class="font-mono">{{.Version}}</span></p>
+  <p class="text-muted">{{t "admin.updates.help"}}</p>
+  <p><a href="https://github.com/zadstack/gorun/releases" target="_blank" rel="noopener noreferrer" class="text-green underline">{{t "admin.health.releases_link"}}</a></p>
+  {{if .Attempt}}<p>{{t "admin.updates.last"}}: <time dir="ltr">{{.Attempt}}</time></p>{{end}}
+  {{if .Configured}}
+  <form method="post" action="/admin/system/updates" class="space-y-4">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <label class="flex gap-2 items-start"><input type="checkbox" name="confirm" value="yes" required><span>{{t "admin.updates.confirm"}}</span></label>
+    <button type="submit" class="h-9 px-3 rounded bg-green text-white font-medium">{{t "admin.updates.deploy"}}</button>
+  </form>
+  {{else}}
+  <p role="status">{{t "admin.updates.setup"}}</p>
+  <button type="button" disabled class="h-9 px-3 rounded border border-line opacity-50">{{t "admin.updates.deploy"}}</button>
+  {{end}}
+  <p class="text-sm text-muted">{{t "admin.updates.verify"}}</p>
+  <a href="/admin/system/health" class="text-green underline">{{t "admin.health.title"}}</a>
+</section>
+{{end}}
