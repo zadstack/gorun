@@ -35,3 +35,30 @@ are checked against current permissions on every server request.
 الحفظ تلقائي، و«احفظ وأغلق» يرجعك للداشبورد من غير حذف الكانفاس. افتحه من
 القائمة لتكمل مكان ما توقفت. كل كانفاس خاص بحساب صاحبه؛ المشاركة بين الفريق
 ليست جزءًا من هذه النسخة.
+
+## Views, layout and connection ports
+
+The editor offers Workflow, Grid and List views. Changing view stores only a
+browser-tab preference and does not submit a document update. Grid and List
+keep editing available and hide movement controls and graph lines. Workflow
+keeps the saved connections visible and gives each link a separate port on the
+appropriate card side, with orthogonal routing around card boundaries.
+
+Arrange cards explicitly saves a layout based on measured card heights: inputs,
+execution nodes, then returned notes and review checklists. Existing overlaps
+are separated locally for display; loading or resizing alone does not submit a
+save. A subsequent content edit can save those repaired coordinates as part of
+that edit. Dragging and keyboard moves do not allow cards to overlap. Mobile
+keeps the stacked layout and 44-pixel movement controls. These actions do not
+change card content, graph edges, grants or agent authority.
+
+If the bounded router cannot find a clear path, the editor shows a spacing
+warning rather than drawing through a card. Arrange cards to provide more room.
+
+## Agent capability scope
+
+GoRun currently supports external named agents and managed text generation with
+a linked model. It does not yet host a general agent bundle that loads Agent
+Skills and maintains multiple external MCP-server clients. A future visual agent
+area must label configuration separately from verified readiness and must not
+infer runtime availability from an API key or a drawn connection.

@@ -106,14 +106,21 @@
       if (provenance) body.append(el('small', `${t('attributed')} ${provenance.actor_name} · ${new Date(provenance.created_at).toLocaleString()}`, 'canvas-provenance'));
     }
     function drawEdges() {
-      const document = api.document(); if (!document) return;
-      svg.replaceChildren(); svg.setAttribute('width', surface.scrollWidth); svg.setAttribute('height', surface.scrollHeight);
-      const find = id => [...cardsEl.children].find(node => node.dataset.cardId === id);
-      for (const edge of document.edges || []) {
-        const from = find(edge.from), to = find(edge.to); if (!from || !to) continue;
-        const x1 = from.offsetLeft + from.offsetWidth / 2, y1 = from.offsetTop + from.offsetHeight, x2 = to.offsetLeft + to.offsetWidth / 2, y2 = to.offsetTop;
-        const path = documentNode('path'); path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${y1 + 48}, ${x2} ${y2 - 48}, ${x2} ${y2}`); svg.append(path);
-        const dot = documentNode('circle'); dot.setAttribute('cx', x2); dot.setAttribute('cy', y2); dot.setAttribute('r', '4'); svg.append(dot);
+      const state = api.document(); if (!state) return;
+      svg.replaceChildren();
+      const warning=root.querySelector('[data-route-warning]'); if(warning)warning.hidden=true;
+      if(root.dataset.view!=='flow'||matchMedia('(max-width:767px)').matches)return;
+      svg.setAttribute('width',surface.scrollWidth);svg.setAttribute('height',surface.scrollHeight);
+      const boxes=[...cardsEl.children].map(node=>({id:node.dataset.cardId,x:node.offsetLeft,y:node.offsetTop,width:node.offsetWidth,height:node.offsetHeight}));
+      for(const pair of CanvasLayout.ports(boxes,state.edges||[])) {
+        const points=CanvasLayout.route(pair,boxes);
+        if(!points){if(warning)warning.hidden=false;continue;}
+        const path=documentNode('path');
+        path.setAttribute('d',points.map((point,index)=>`${index?'L':'M'} ${point.x} ${point.y}`).join(' '));
+        path.dataset.from=pair.edge.from;path.dataset.to=pair.edge.to;svg.append(path);
+        for(const [end,point] of [['from',pair.from],['to',pair.to]]) {
+          const dot=documentNode('circle');dot.setAttribute('cx',point.x);dot.setAttribute('cy',point.y);dot.setAttribute('r','3.5');dot.dataset.port=end;dot.dataset.cardId=pair.edge[end];svg.append(dot);
+        }
       }
     }
     const documentNode = tag => document.createElementNS('http://www.w3.org/2000/svg', tag);

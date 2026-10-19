@@ -15,6 +15,29 @@
   const widgetCache = new Map();
   const widgetLoading = new Set();
   let operations = null;
+  let view = 'flow';
+  try { const stored=sessionStorage.getItem('gorun.canvas.view'); if (['flow','grid','list'].includes(stored)) view=stored; } catch (_) {}
+  root.dataset.view=view;
+  const heights = () => Object.fromEntries([...cardsEl.children].map(el=>[el.dataset.cardId,el.offsetHeight]));
+  function normalizePositions() {
+    if (!documentState || mobile.matches || view !== 'flow') return;
+    const positions=CanvasLayout.resolve(documentState.cards,heights());
+    for (const card of documentState.cards) { Object.assign(card,positions[card.id]); const el=cardsEl.querySelector(`[data-card-id="${card.id}"]`); if(el)place(el,card); }
+    updateBounds();
+  }
+  const resizeCards = new ResizeObserver(() => normalizePositions());
+  function canPlace(card,x,y) {
+    const size=heights(), box={x,y,width:CanvasLayout.WIDTH,height:size[card.id]||240};
+    return documentState.cards.every(other=>other.id===card.id||!CanvasLayout.overlap(box,{x:other.x,y:other.y,width:CanvasLayout.WIDTH,height:size[other.id]||240},24));
+  }
+  function selectView(next) {
+    view=next;root.dataset.view=view;
+    try {sessionStorage.setItem('gorun.canvas.view',view);}catch(_){}
+    root.querySelectorAll('[data-canvas-view]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.canvasView===view)));
+    root.querySelector('[data-action=arrange]').disabled=view!=='flow';
+    if(documentState)render();
+  }
+  const cardOrder = (a,b) => a.x-b.x || a.y-b.y;
   const kindTitle = kind => t(kind === 'source' ? 'ops_source' : kind);
   let documentState = null, serial = 0, savedSerial = 0, timer = null, pending = null, blocked = false, editID = null, newKind = null;
   const element = (tag, text, className) => { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (className) el.className = className; return el; };
@@ -97,6 +120,7 @@
     });
   }
   function updateBounds() {
+    if (view !== 'flow') { surface.style.minWidth='0';surface.style.minHeight='0';operations?.drawEdges();return; }
     const cards = documentState.cards;
     surface.style.minWidth = `${Math.max(1050, ...cards.map(card => card.x + 348))}px`;
     surface.style.minHeight = `${Math.max(850, ...cards.map(card => card.y + 500))}px`;
@@ -104,8 +128,9 @@
   }
   function place(el, card) { el.style.left = `${card.x}px`; el.style.top = `${card.y}px`; }
   function move(card, dx, dy, el) {
+    if(view!=='flow')return;
     if (mobile.matches && dy) {
-      const ordered = [...documentState.cards].sort((a, b) => a.y - b.y || a.x - b.x);
+      const ordered = [...documentState.cards].sort(cardOrder);
       const index = ordered.findIndex(c => c.id === card.id);
       const adjacent = ordered[index + (dy < 0 ? -1 : 1)];
       if (!adjacent) return;
@@ -115,12 +140,14 @@
       const adjacentElement = cardsEl.querySelector(`[data-card-id="${adjacent.id}"]`);
       if (adjacentElement) place(adjacentElement, adjacent);
     } else {
-      card.x = Math.max(0, Math.min(10000, card.x + dx)); card.y = Math.max(0, Math.min(10000, card.y + dy));
+      const x=Math.max(0,Math.min(10000,card.x+dx)), y=Math.max(0,Math.min(10000,card.y+dy));
+      if(!canPlace(card,x,y))return;
+      card.x=x;card.y=y;
     }
     place(el, card); updateBounds(); changed();
     if (mobile.matches) {
       const focused = document.activeElement;
-      const sorted = [...documentState.cards].sort((a, b) => a.y - b.y || a.x - b.x);
+      const sorted = [...documentState.cards].sort(cardOrder);
       sorted.forEach(c => { const item = cardsEl.querySelector(`[data-card-id="${c.id}"]`); if (item) cardsEl.append(item); });
       focused?.focus({preventScroll: true});
     }
@@ -131,13 +158,15 @@
       if (deltas[event.key]) { event.preventDefault(); move(card, ...deltas[event.key], el); }
     });
     handle.addEventListener('pointerdown', event => {
-      if (mobile.matches || event.button !== 0) return;
+      if (mobile.matches || view !== 'flow' || event.button !== 0) return;
       const start = {x: event.clientX, y: event.clientY, cx: card.x, cy: card.y};
       let moved = false;
       handle.setPointerCapture(event.pointerId); el.classList.add('is-dragging');
       const onMove = e => {
-        card.x = Math.max(0, Math.min(10000, Math.round((start.cx + e.clientX - start.x) / 24) * 24));
-        card.y = Math.max(0, Math.min(10000, Math.round((start.cy + e.clientY - start.y) / 24) * 24));
+        const x=Math.max(0,Math.min(10000,Math.round((start.cx+e.clientX-start.x)/24)*24));
+        const y=Math.max(0,Math.min(10000,Math.round((start.cy+e.clientY-start.y)/24)*24));
+        if(!canPlace(card,x,y))return;
+        card.x=x;card.y=y;
         moved = card.x !== start.cx || card.y !== start.cy; place(el, card); updateBounds();
       };
       const finish = () => { handle.removeEventListener('pointermove', onMove); handle.removeEventListener('pointerup', finish); handle.removeEventListener('pointercancel', finish); el.classList.remove('is-dragging'); if (moved) changed(); };
@@ -176,7 +205,7 @@
     finally { widgetLoading.delete(id); repaint(); }
   }
   function cardView(card) {
-    const el = element('article', undefined, 'canvas-card'); el.dataset.cardId = card.id; el.dataset.kind = card.kind; place(el, card);
+    const el = element('article', undefined, 'canvas-card'); el.id='card-'+card.id; el.dataset.cardId = card.id; el.dataset.kind = card.kind; place(el, card);
     const heading = element('header', undefined, 'canvas-card-heading');
     const handle = button('⠿', () => {}, 'canvas-handle'); handle.setAttribute('aria-label', `${t('move')}: ${card.title}`); handle.title = t('move_hint');
     drag(handle, el, card);
@@ -192,18 +221,21 @@
     if (card.kind === 'widget') { body.dataset.widgetId = card.widget_id; widgetBody(body, card.widget_id); }
     operations?.cardBody(body, card);
     const footer = element('footer', undefined, 'canvas-card-footer');
-    const actions = element('div'); if (card.kind !== 'result') actions.append(button(t('edit'), () => editCard(card.id)));
+    const actions = element('div', undefined, 'canvas-card-actions'); if (card.kind !== 'result') actions.append(button(t('edit'), () => editCard(card.id)));
     const remove = button(t('remove'), () => { if (!confirm(t('remove_confirm'))) return; documentState.cards = documentState.cards.filter(c => c.id !== card.id); documentState.edges = CanvasGraph.withoutNode(documentState.edges, card.id); changed(); render(); root.querySelector('[data-action=add]').focus(); }); remove.dataset.remove = ''; actions.append(remove);
     const moves = element('div', undefined, 'canvas-move-controls');
     [['left', '←', -24, 0], ['up', '↑', 0, -24], ['down', '↓', 0, 24], ['right', '→', 24, 0]].forEach(([key, symbol, dx, dy]) => { const control = button(symbol, () => move(card, dx, dy, el)); control.dataset.direction = key; control.title = t(key); control.setAttribute('aria-label', `${t(key)}: ${card.title}`); moves.append(control); });
     footer.append(actions, moves); el.append(heading, body, footer); return el;
   }
   function render() {
-    const cards = mobile.matches ? [...documentState.cards].sort((a, b) => a.y - b.y || a.x - b.x) : documentState.cards;
+    resizeCards.disconnect();
+    const cards = mobile.matches || view !== 'flow' ? [...documentState.cards].sort(cardOrder) : documentState.cards;
     cardsEl.replaceChildren(...cards.map(cardView));
     root.querySelector('.canvas-empty').hidden = cards.length !== 0;
     root.querySelector('[data-count]').textContent = `${cards.length} ${t('count')}`;
     updateBounds(); refreshReferences(); operations?.render();
+    normalizePositions();
+    for(const el of cardsEl.children)resizeCards.observe(el);
   }
   function placeNewCard(card) {
     const existing = documentState.cards.filter(c => c.id !== card.id).map(c => ({...c, height: Math.max(200, cardsEl.querySelector(`[data-card-id="${c.id}"]`)?.offsetHeight || 520)}));
@@ -294,5 +326,13 @@
   window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
   mobile.addEventListener('change', () => { if (documentState) render(); });
   operations = window.CanvasOperations?.create({root, t, element, button, request, csrf, form, surface, cardsEl, document: () => documentState, applyPreset: data => { if (!documentState || documentState.version !== 1 || documentState.cards.length || documentState.edges.length) return false; documentState.cards = data.cards; documentState.edges = data.edges; changed(); render(); return true; }, changed, render, save, reload: async () => { if (dirty() && !confirm(t('reload_confirm'))) return false; clearTimeout(timer); await load(); return true; }});
+  root.querySelectorAll('[data-canvas-view]').forEach(button=>button.addEventListener('click',()=>selectView(button.dataset.canvasView)));
+  root.querySelector('[data-action=arrange]').addEventListener('click',()=>{
+    if(!documentState||view!=='flow')return;
+    const positions=CanvasLayout.arrange(documentState.cards,documentState.edges,heights(),documentState.provenance||{});
+    documentState.cards.forEach(card=>Object.assign(card,positions[card.id]));
+    changed();render();
+  });
+  selectView(view);
   load();
 })();

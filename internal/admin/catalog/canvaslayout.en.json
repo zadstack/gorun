@@ -1,0 +1,8 @@
+{
+  "views": "Canvas view",
+  "flow": "Workflow",
+  "grid": "Grid",
+  "list": "List",
+  "arrange": "Arrange cards",
+  "route_warning": "Some connections need more space. Arrange cards to reveal their paths."
+}
