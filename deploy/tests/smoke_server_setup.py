@@ -57,7 +57,7 @@ def main():
                 setup.probe_https(domain, "127.0.0.1", "/admin/setup")
                 original_secret = (directory / "secrets.env").read_bytes()
                 password = secrets.token_urlsafe(32)
-                result = subprocess.run(command + ["run", "--rm", "-T", "--entrypoint", "/app/gorun", "gorun", "user", "create", "--email", "fixture@example.test", "--admin", "--password-stdin"],
+                result = subprocess.run(command + ["exec", "-T", "gorun", "/app/gorun", "user", "create", "--email", "fixture@example.test", "--admin", "--password-stdin"],
                                         input=password + "\n", text=True, capture_output=True)
                 if result.returncode:
                     raise RuntimeError("Fixture admin creation failed (output withheld)")
