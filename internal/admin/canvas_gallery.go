@@ -79,5 +79,12 @@ func (h *handlers) widgetCanvasGallery(ctx context.Context, r *http.Request) (te
 		}
 		previews = append(previews, h.canvasPreview(r, full))
 	}
-	return h.fragment(r, "pages/system/widgets/canvas_gallery.html", struct{ Boards []canvasPreview }{previews})
+	activity, err := h.canvasActivity(ctx)
+	if err != nil {
+		return "", err
+	}
+	return h.fragment(r, "pages/system/widgets/canvas_gallery.html", struct {
+		Boards   []canvasPreview
+		Activity canvasActivityPage
+	}{previews, activity})
 }

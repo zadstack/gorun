@@ -1,0 +1,16 @@
+{{define "partials/canvas-activity"}}
+<div id="canvas-activity" class="canvas-activity" aria-labelledby="canvas-activity-title">
+  <header><div><h3 id="canvas-activity-title">{{t "canvasactivity.title"}}</h3><p>{{t "canvasactivity.hint"}}</p></div>
+    <button type="button" hx-get="/admin/x/canvas-activity" hx-target="#canvas-activity" hx-swap="outerHTML" class="canvas-activity-refresh">{{icon "refresh-cw"}}<span>{{t "canvasactivity.refresh"}}</span></button>
+  </header>
+  {{if .Events}}<div class="canvas-activity-grid">{{range .Events}}
+    <a href="{{.Href}}" class="canvas-activity-card" data-activity-kind="{{.Kind}}" data-activity-status="{{.Status}}">
+      <div class="canvas-activity-card-heading"><span class="canvas-activity-kind">{{if eq .Kind "note"}}{{icon "sticky-note"}}{{else}}{{icon "webhook"}}{{end}}{{t (print "canvasactivity.kind." .Kind)}}</span><span class="canvas-activity-status">{{t (print "canvasactivity.status." .Status)}}</span></div>
+      <strong>{{.Title}}</strong>
+      {{if .Body}}<p>{{.Body}}</p>{{end}}
+      <footer>{{if .Source}}<span>{{.Source}}</span>{{end}}<time datetime="{{.Time}}">{{date .Time}}</time></footer>
+    </a>
+  {{end}}</div>{{else}}<p class="canvas-activity-empty">{{t "canvasactivity.empty"}}</p>{{end}}
+  {{if not .WebhooksAvailable}}<p class="canvas-activity-availability">{{t "canvasactivity.webhooks_unavailable"}}</p>{{end}}
+</div>
+{{end}}

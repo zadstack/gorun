@@ -2,10 +2,11 @@
 <link rel="stylesheet" href="{{asset "canvas-gallery.css"}}">
 <section data-widget="canvas_gallery" class="canvas-gallery" aria-labelledby="canvas-gallery-title">
  <header><div><h2 id="canvas-gallery-title">{{t "canvaswidgets.boards"}}</h2><p>{{t "canvaswidgets.boards_hint"}}</p></div><a href="/admin/canvases">{{t "canvaswidgets.open_boards"}} {{icon "arrow-up-right"}}</a></header>
+ {{template "partials/canvas-activity" .Activity}}
  {{if .Boards}}<div class="canvas-gallery-grid">{{range .Boards}}<a class="canvas-gallery-board" href="/admin/canvases/{{.ID}}">
   <div class="canvas-gallery-preview" aria-hidden="true">{{range .Cards}}<div class="canvas-gallery-mini" style="left:{{.Left}}%;top:{{.Top}}%"><small>{{t .KindKey}}</small><strong>{{.Title}}</strong>{{if .Body}}<span>{{.Body}}</span>{{end}}</div>{{else}}<span class="canvas-gallery-blank">＋</span>{{end}}</div>
   <div class="canvas-gallery-caption"><h3>{{.Title}}</h3><span>{{.Count}} {{t "admin.canvas.count"}}</span><time datetime="{{.UpdatedAt}}">{{date .UpdatedAt}}</time></div>
  </a>{{end}}</div>{{else}}<p class="dashboard-empty">{{t "canvaswidgets.empty"}}</p>{{end}}
- <p class="canvas-gallery-note">{{t "canvaswidgets.private"}}</p>
+ <p class="canvas-gallery-note">{{t "canvasactivity.privacy"}}</p>
 </section>
 {{end}}
