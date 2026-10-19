@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{{asset "navigation-sections.css"}}">
 <script defer src="{{asset "dashboard-pins.js"}}"></script>
 <script defer src="{{asset "sidebar-scroll.js"}}"></script>
-<div hidden data-dashboard-pin-config data-csrf="{{csrf}}" data-saving="{{t "dashboardpins.saving"}}" data-error="{{t "dashboardpins.error"}}" data-stale="{{t "dashboardpins.stale"}}" data-saved="{{t "dashboardpins.saved"}}" data-reload="{{t "dashboardpins.reload"}}"></div>
+<div hidden data-dashboard-pin-config data-csrf="{{csrf}}" data-saving="{{t "dashboardpins.saving"}}" data-error="{{t "dashboardpins.error"}}" data-stale="{{t "dashboardpins.stale"}}" data-saved="{{t "dashboardpins.saved"}}" data-reload="{{t "dashboardpins.reload"}}" data-refreshed="{{t "quickaccess.refreshed"}}" data-add="{{t "dashboardpins.add"}}" data-remove="{{t "quickaccess.remove"}}"></div>
 <aside x-ref="sidebar" id="admin-sidebar" class="admin-sidebar w-60 shrink-0 border-e border-line bg-panel hidden md:flex md:flex-col"
        :class="sidebarOpen && '!flex flex-col fixed inset-y-0 start-0 z-40'"
        aria-label="{{t "core.nav.dashboard"}}">
@@ -22,6 +22,7 @@
       </li>
     {{end}}
     </ul>
+    <div data-sidebar-quick-access>{{template "partials/quick-access" .}}</div>
   </nav>
   <div class="admin-sidebar-footer"><a href="/admin/navigation" class="admin-nav-link {{if active "/admin/navigation"}}is-active{{end}}" {{if active "/admin/navigation"}}aria-current="page"{{end}}>{{icon "sliders-horizontal"}}<span>{{t "auth.navigation.title"}}</span></a></div>
 </aside>

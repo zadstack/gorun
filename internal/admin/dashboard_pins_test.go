@@ -16,6 +16,18 @@ func pinPost(t *testing.T, s *site, path string, form url.Values, want int) {
 		t.Fatalf("pin %s: %d want%d", path, r.StatusCode, want)
 	}
 }
+func primaryPinNavigation(t *testing.T, page string) string {
+	t.Helper()
+	start := strings.Index(page, "data-navigation-sections")
+	if start < 0 {
+		t.Fatal("missing section navigation")
+	}
+	end := strings.Index(page[start:], "</ul>")
+	if end < 0 {
+		t.Fatal("unclosed section navigation")
+	}
+	return page[start : start+end]
+}
 func TestDashboardPinsAtomicVisibilityOrderAndOwner(t *testing.T) {
 	s := boot(t)
 	u := s.login("pins@example.com", "admin", "en")
@@ -39,8 +51,9 @@ func TestDashboardPinsAtomicVisibilityOrderAndOwner(t *testing.T) {
 		t.Fatal("prefs overwritten")
 	}
 	_, page := s.do("GET", "/admin/navigation", nil)
-	if strings.Contains(page, `href="/admin/users"`) {
-		t.Fatal("pin still in sidebar")
+	mustContain(t, page, `data-quick-id="users"`)
+	if strings.Contains(primaryPinNavigation(t, page), `href="/admin/users"`) {
+		t.Fatal("pin remains in original section menu")
 	}
 	if r, _ := s.do("GET", "/admin/users", nil); r.StatusCode != 200 {
 		t.Fatal("pin changedauthorization")
@@ -99,9 +112,8 @@ func TestDashboardPinsOverlaySurvivesPreferencesAndRevocation(t *testing.T) {
 	for _, f := range []url.Values{{"intent": {"save"}, "available": {"users", "dashboard"}, "visible": {"users", "dashboard"}}, {"intent": {"reset"}}} {
 		pinPost(t, s, "/admin/navigation", f, 303)
 		_, page := s.do("GET", "/admin/navigation", nil)
-		start := strings.Index(page, "data-admin-navigation")
-		end := strings.Index(page[start:], "</nav>")
-		if strings.Contains(page[start:start+end], `href="/admin/users"`) {
+		mustContain(t, page, `data-quick-id="users"`)
+		if strings.Contains(primaryPinNavigation(t, page), `href="/admin/users"`) {
 			t.Fatal("navigation preference displaced pin")
 		}
 	}
