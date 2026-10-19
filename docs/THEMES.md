@@ -37,7 +37,7 @@ Ship-with themes share one contract in `pkg/themekit` (`CatalogOptions` / `Valid
 - `supports` includes `rtl` and `identity`
 - Own `lang/en.json` and `lang/ar.json` (not only inherited keys)
 - Required templates resolve via inheritance (`index`, `page`, `single`, `archive`, `taxonomy`, `search`, `404`, `500`, `page-builder`, `page-contact`, `form-result`, plus `front-page` or `home`)
-- `screenshot.png`; head (own or inherited) loads `sections.css`, `builderStyle`, and `identity`
+- `screenshot.png`; head (own or inherited) loads `sections.css`, `builderIdentity`, and `identity`
 - Primary stylesheet declares tokens under `:where(html[data-theme="<slug>"])`
 - No third-party script CDN hosts in theme HTML/CSS/JS
 
