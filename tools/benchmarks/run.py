@@ -175,7 +175,7 @@ const {title,body}=Astro.props;
 <!doctype html><html lang="en"><head><title>{title}</title></head><body><article><h1>{title}</h1><Fragment set:html={body}/></article></body></html>
 ''')
     build_start=time.monotonic()
-    docker('run','--rm','--cpuset-cpus',server_cpus,'--memory','2g','-v',str(astro)+':/app','-w','/app',images['node'],'sh','-ec','npm install --ignore-scripts && npm run build')
+    docker('run','--rm','--user',f'{os.getuid()}:{os.getgid()}','-e','HOME=/tmp','--cpuset-cpus',server_cpus,'--memory','2g','-v',str(astro)+':/app','-w','/app',images['node'],'sh','-ec','npm install --ignore-scripts && npm run build')
     metadata['astro_dependency_install_and_build_seconds']=time.monotonic()-build_start
     (fixture/'nginx.conf').write_text('server { listen 80; root /usr/share/nginx/html; location / { try_files $uri.html $uri/index.html =404; } }')
     static=start('astro',images['nginx'],['-v',str(astro/'dist')+':/usr/share/nginx/html:ro','-v',str(fixture/'nginx.conf')+':/etc/nginx/conf.d/default.conf:ro','-p','127.0.0.1:18082:80'])
