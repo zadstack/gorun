@@ -75,6 +75,20 @@ def main():
                     raise RuntimeError("Resume changed or recreated existing account")
             print("PASS: real released image, Compose validation/start, Caddy private-CA HTTPS and HSTS, public app routes, restart/resume, stable secrets and one unchanged admin.")
             print("BOUNDARY: test DNS and private CA are fixtures; public DNS, firewall and ACME issuance require actual-host acceptance.")
+        except Exception:
+            # Synthetic fixture only: redact every generated credential before diagnostic logs.
+            hidden = []
+            if (directory / "secrets.env").exists():
+                hidden = [line.split("=", 1)[1] for line in (directory / "secrets.env").read_text().splitlines() if "=" in line]
+            if "password" in locals():
+                hidden.append(password)
+            for suffix in (["ps", "--all"], ["logs", "--no-color", "--tail", "30"]):
+                result = subprocess.run(command + suffix, capture_output=True, text=True)
+                diagnostic = result.stdout + result.stderr
+                for value in hidden:
+                    diagnostic = diagnostic.replace(value, "[REDACTED]")
+                print(diagnostic)
+            raise
         finally:
             if (directory / "compose.json").exists():
                 subprocess.run(command + ["down"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
