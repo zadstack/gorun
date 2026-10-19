@@ -41,7 +41,7 @@ html[data-theme="default"] .dt-mobile-menu a { display: flex; align-items: cente
 html[data-theme="default"] .dt-mobile-menu a[aria-current="page"] { background: var(--panel-2); font-weight: 600; }
 
 /* Home. Tailwind's preflight resets heading weight, so set it here. */
-html[data-theme="default"] :is(.gr-hero h1, .dt-featured h3, .gr-card h3, .dt-section-title, .gr-section-head h2, .gr-closing-copy h2) { font-weight: 700; }
+html[data-theme="default"] :is(.gr-hero h1, .dt-featured h2, .dt-featured h3, .gr-card h2, .gr-card h3, .dt-section-title, .gr-section-head h1, .gr-section-head h2, .gr-closing-copy h2) { font-weight: 700; }
 html[data-theme="default"][data-kind="home"] .dt-main { padding-block: 0 clamp(1.75rem, 4.5vw, 3.25rem); }
 /* Hero personality on shared .gr-hero anatomy. */
 html[data-theme="default"] .gr-hero {
@@ -80,7 +80,7 @@ html[data-theme="default"] .dt-featured-copy {
   display: flex; flex-direction: column; justify-content: center; gap: .625rem; padding: 0;
 }
 html[data-theme="default"] .dt-featured:not(:has(.dt-featured-media)) .dt-featured-copy { max-width: 52rem; }
-html[data-theme="default"] .dt-featured h3 { margin: 0; font-size: clamp(1.45rem, 2.6vw, 1.95rem); line-height: 1.35; text-wrap: balance; }
+html[data-theme="default"] .dt-featured :is(h2, h3) { margin: 0; font-size: clamp(1.45rem, 2.6vw, 1.95rem); line-height: 1.35; text-wrap: balance; }
 html[data-theme="default"] .dt-footer-nav-label {
   margin: 0 0 .5rem; font-size: .75rem; font-weight: 700; color: var(--muted);
   font-family: var(--font-ui, var(--font)); letter-spacing: 0;
