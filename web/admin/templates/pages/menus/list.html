@@ -19,7 +19,7 @@
         <tr class="border-t border-line hover:bg-bg">
           <td class="px-3 py-2"><a href="/admin/menus/{{.ID}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a></td>
           <td class="px-3 py-2 font-mono text-xs">{{.Slug}}</td>
-          <td class="px-3 py-2">{{if .Location}}<span class="inline-flex items-center rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-xs">{{.Location}}</span>{{else}}<span class="text-muted">{{t "menus.none"}}</span>{{end}}</td>
+          <td class="px-3 py-2">{{if .Location}}<span class="inline-flex items-center rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-xs">{{if eq .Location "primary"}}{{t "menus.location.primary"}}{{else if eq .Location "footer"}}{{t "menus.location.footer"}}{{else}}{{.Location}}{{end}}</span>{{else}}<span class="text-muted">{{t "menus.none"}}</span>{{end}}</td>
           <td class="px-3 py-2 text-end font-mono">{{.Count}}</td>
         </tr>
         {{end}}
@@ -49,7 +49,7 @@
       <label for="location" class="block font-medium mb-1">{{t "menus.field.location"}}</label>
       <select id="location" name="location" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
         <option value="">{{t "menus.field.location_none"}}</option>
-        {{$sel := .Form.Location}}{{range .Locations}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{.}}</option>{{end}}
+        {{$sel := .Form.Location}}{{range .Locations}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{if eq . "primary"}}{{t "menus.location.primary"}}{{else if eq . "footer"}}{{t "menus.location.footer"}}{{else}}{{.}}{{end}}</option>{{end}}
       </select>
       {{template "partials/field_errors" (index .Fields "location")}}
     </div>

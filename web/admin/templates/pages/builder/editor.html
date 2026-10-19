@@ -1,16 +1,16 @@
 {{define "title"}}{{t "builder.heading"}}{{end}}
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "builder-admin.css"}}">
-<div id="page-builder" data-id="{{.ID}}" data-state="{{json .State}}" class="space-y-4">
+<div id="page-builder" data-id="{{.ID}}" data-can-pick-media="{{.CanPickMedia}}" data-state="{{json .State}}" class="space-y-4">
  <input type="hidden" name="_csrf" value="{{csrf}}">
  <input id="builder-import" type="file" accept="application/json,.json" hidden>
- <div class="flex flex-wrap items-center justify-between gap-3"><div><a href="/admin/content/page/{{.ID}}" class="text-blue">{{t "builder.back"}}</a><h1 class="text-[22px] font-bold">{{t "builder.heading"}}</h1></div><div class="flex flex-wrap gap-2"><button type="button" data-action="export" class="border border-line px-3 py-2">{{t "builder.export"}}</button><button type="button" data-action="import" class="border border-line px-3 py-2">{{t "builder.import"}}</button><button type="button" data-action="undo" class="border border-line px-3 py-2">{{t "builder.undo"}}</button><button type="button" data-action="redo" class="border border-line px-3 py-2">{{t "builder.redo"}}</button><button type="button" data-action="reset" class="border border-line px-3 py-2">{{t "builder.discard"}}</button><button type="button" data-action="save" class="border border-line px-3 py-2">{{t "builder.save"}}</button>{{if .CanPublish}}<button type="button" data-action="publish" class="bg-green text-white px-3 py-2">{{t "builder.publish"}}</button>{{end}}</div></div>
+ <div class="flex flex-wrap items-center justify-between gap-3"><div><a href="/admin/content/page/{{.ID}}" class="text-blue">{{t "builder.back"}}</a><h1 class="text-[22px] font-bold">{{t "builder.heading"}}</h1></div><div class="flex flex-wrap gap-2"><details class="border border-line p-2"><summary class="cursor-pointer">{{if eq locale "ar"}}متقدم: نقل التخطيط{{else}}Advanced: transfer layout{{end}}</summary><button type="button" data-action="export" class="border border-line px-3 py-2">{{t "builder.export"}}</button><button type="button" data-action="import" class="border border-line px-3 py-2">{{t "builder.import"}}</button></details><button type="button" data-action="undo" class="border border-line px-3 py-2">{{t "builder.undo"}}</button><button type="button" data-action="redo" class="border border-line px-3 py-2">{{t "builder.redo"}}</button><button type="button" data-action="reset" class="border border-line px-3 py-2">{{t "builder.discard"}}</button><button type="button" data-action="save" class="border border-line px-3 py-2">{{t "builder.save"}}</button>{{if .CanPublish}}<button type="button" data-action="publish" class="bg-green text-white px-3 py-2">{{t "builder.publish"}}</button>{{end}}</div></div>
  <p class="border border-line p-3 text-muted">{{t "builder.warning"}}</p>
  {{if .HasExistingBody}}<label class="flex gap-2 items-center text-red"><input id="builder-convert" type="checkbox">{{t "builder.acknowledge"}}</label>{{end}}
  <p id="builder-status" role="status" aria-live="polite"></p>
  <div class="flex flex-wrap gap-2 items-center"><label for="builder-kind">{{t "builder.add"}}</label><select id="builder-kind" class="bg-panel border border-line p-2">{{range .Catalog}}<option value="{{.Kind}}">{{.Label}}</option>{{end}}</select><button type="button" data-action="add" class="border border-line px-3 py-2">{{t "builder.add"}}</button><button type="button" data-action="desktop" aria-pressed="true" class="border border-line px-3 py-2">{{t "builder.desktop"}}</button><button type="button" data-action="mobile" aria-pressed="false" class="border border-line px-3 py-2">{{t "builder.mobile"}}</button></div>
  <div class="grid gap-4 xl:grid-cols-2"><div id="builder-sections" class="space-y-3 min-w-0"></div><div class="border border-line bg-panel p-2 min-w-0"><h2 class="font-bold mb-2">{{t "builder.preview"}}</h2><p id="builder-preview-status" role="status" aria-live="polite"></p><iframe id="builder-preview" title="{{t "builder.preview"}}" sandbox="" class="w-full bg-white border border-line" style="height:650px;margin-inline:auto;display:block"></iframe></div></div>
- <section class="border border-line bg-panel p-4 space-y-3" aria-labelledby="builder-history-heading">
+ <details class="border border-line bg-panel p-4 space-y-3"><summary class="font-bold cursor-pointer">{{t "builder.history"}}</summary><section aria-labelledby="builder-history-heading">
   <div>
    <h2 id="builder-history-heading" class="font-bold">{{t "builder.history"}}</h2>
    <p class="text-muted text-sm">{{t "builder.history_help"}}</p>
@@ -33,8 +33,9 @@
   {{else}}
   <p class="text-muted text-sm">{{t "builder.history_empty"}}</p>
   {{end}}
- </section>
+ </section></details>
 </div>
 <script defer src="{{asset "vendor/sortablejs-1.15.3.js"}}"></script>
 <script defer src="{{asset "builder.js"}}"></script>
+{{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}
 {{end}}

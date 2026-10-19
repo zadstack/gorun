@@ -86,7 +86,9 @@
     node.addEventListener("click", callback);
     return node;
   }
-  function field(target, key, parent, sectionID, entryIndex) {
+  const imageTargets = new Map(), advancedSections = new Set();
+ window.addEventListener("media:selected",event=>{const input=imageTargets.get(event.detail?.target);if(!input?.isConnected||typeof event.detail.url!=="string")return;input.value=event.detail.url;input.dispatchEvent(new Event("input",{bubbles:true}));});
+ function field(target, key, parent, sectionID, entryIndex) {
     const wrap = el("label", "block text-sm space-y-1", text(key));
     const input = el(
       key === "text" ? "textarea" : "input",
@@ -106,10 +108,12 @@
       changed();
     });
     wrap.append(input);
-    parent.append(wrap);
+ if(key==="image"&&root.dataset.canPickMedia==="true") {const id=`builder-image-${sectionID}-${entryIndex??"section"}`;imageTargets.set(id,input);const choose=button("choose_image",()=>window.dispatchEvent(new CustomEvent("media:open",{detail:{target:id}})));wrap.append(choose);}
+ parent.append(wrap);
   }
   function render() {
-    list.replaceChildren();
+    imageTargets.clear();
+ list.replaceChildren();
     if (!doc.sections.length) {
       list.append(el("p", "text-muted p-4", text("empty")));
     }
@@ -167,7 +171,8 @@
       );
       heading.append(actions);
       article.append(heading);
-      const variantLabel = el("label", "block text-sm", text("variant")),
+      const advanced=el("details","border border-line p-3 space-y-2");advanced.append(el("summary","cursor-pointer font-medium",text("advanced")));advanced.open=advancedSections.has(section.id);advanced.addEventListener("toggle",()=>{if(!advanced.isConnected)return;if(advanced.open)advancedSections.add(section.id);else advancedSections.delete(section.id);});
+ const variantLabel = el("label", "block text-sm", text("variant")),
         variant = el("select", "bg-panel border border-line p-2");
       ["default", "split", "centered"].forEach((value) => {
         const option = el("option", "", text("layout_" + value));
@@ -180,7 +185,7 @@
         () => mutate(() => section.variant = variant.value),
       );
       variantLabel.append(variant);
-      article.append(variantLabel);
+      advanced.append(variantLabel);
       if (section.kind === "hero") {
         const label = el("label", "block text-sm", text("hero_scene"));
         const select = el("select", "bg-panel border border-line p-2");
@@ -193,8 +198,8 @@
         select.value = section.hero_scene || "";
         select.addEventListener("change", () => mutate(() => section.hero_scene = select.value));
         label.append(select);
-        article.append(label);
-        article.append(el("p", "text-xs", text("scene_help")));
+        advanced.append(label);
+        advanced.append(el("p", "text-xs", text("scene_help")));
       }
       if (section.kind === "text" || section.kind === "projects") {
         const sourceLabel = el("label", "block text-sm", text("source"));
@@ -222,7 +227,8 @@
       ["title", "text", "image", "image_alt", "link", "link_label"].forEach(
         (key) => field(section, key, article, section.id),
       );
-      const hideLabel = el("label", "flex items-center gap-2", text("hidden")),
+      article.append(advanced);
+ const hideLabel = el("label", "flex items-center gap-2", text("hidden")),
         hide = el("input");
       hide.type = "checkbox";
       hide.checked = !!section.hidden;

@@ -14,6 +14,7 @@ import (
 	"github.com/zadstack/gorun/internal/audit"
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/httpx"
 )
 
 const PermManage = "saas.manage"
@@ -77,9 +78,10 @@ type Consumption struct {
 	Replayed bool  `json:"replayed"`
 }
 type Service struct {
-	Audit *audit.Writer
-	DB    *sql.DB
-	Now   func() time.Time
+	adminTpl *httpx.Templates
+	Audit    *audit.Writer
+	DB       *sql.DB
+	Now      func() time.Time
 }
 
 func NewService(d *sql.DB) *Service { return &Service{DB: d, Now: time.Now} }

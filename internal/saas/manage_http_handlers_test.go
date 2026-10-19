@@ -231,6 +231,14 @@ func TestAdminFormHandlersValidateAndRedirect(t *testing.T) {
 	if e := s.DB.QueryRow(`SELECT id,version FROM saas_apps WHERE slug='form-app'`).Scan(&appID, &version); e != nil {
 		t.Fatal(e)
 	}
+	appForm.Set("next", "subscription")
+	if w := form(t, staff, "/form/apps", appForm); w.Code != 303 || w.Header().Get("Location") != "/admin/saas/new?app="+appID+"#subscription" {
+		t.Fatal("guided create must select the actual saved application", w.Code, w.Header())
+	}
+	appForm.Set("next", "https://untrusted.invalid")
+	if w := form(t, staff, "/form/apps", appForm); w.Code != 303 || w.Header().Get("Location") != "/admin/saas" {
+		t.Fatal("form next must not be an open redirect", w.Code, w.Header())
+	}
 	update := url.Values{"owner_id": {"bob"}, "name": {"Form App 2"}, "slug": {"form-app"}, "status": {"disabled"}, "mode": {"subscription"}, "expected_version": {"stale"}}
 	if w := form(t, staff, "/form/apps/"+appID, update); w.Code != 409 {
 		t.Fatalf("stale app update form: %d", w.Code)

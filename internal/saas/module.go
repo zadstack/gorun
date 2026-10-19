@@ -12,6 +12,7 @@ import (
 	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 )
 
@@ -39,6 +40,8 @@ func (m *Module) Register(d *kernel.Deps) error {
 	m.Service.Audit = d.Audit
 	d.Hooks.Filter(admin.HealthCheckFilter, 55, m.Service.healthChecks)
 	d.Services.Set("saas", m.Service)
+	adminTpl, _ := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates)
+	m.Service.adminTpl = adminTpl
 	h := &handlers{s: m.Service}
 	d.Router.Public.Get("/saas", h.page(false))
 	d.Router.Public.Get("/saas/assets.css", func(w http.ResponseWriter, r *http.Request) {
@@ -145,10 +148,15 @@ func (h *handlers) page(management bool) http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = pageTemplate.Execute(w, struct {
+		data := struct {
 			Manage bool
 			Data   Overview
 			CSRF   string
-		}{management, o, auth.CSRFToken(r.Context())})
+		}{management, o, auth.CSRFToken(r.Context())}
+		if management && h.s.adminTpl != nil {
+			h.s.adminTpl.Render(w, r, "pages/saas/index.html", data)
+			return
+		}
+		_ = pageTemplate.Execute(w, data)
 	}
 }

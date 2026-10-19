@@ -18,7 +18,7 @@
   "field.locale_help": "يحمل الموضع قائمة لكل لغة؛ صفحات اللغة التي ليس لها قائمة تستخدم قائمة كل اللغات.",
   "field.location": "الموضع",
   "field.location_none": "غير معيّنة",
-  "location.primary": "الرئيسية",
+  "location.primary": "تنقل الهيدر",
   "location.footer": "التذييل",
   "edit.title": "تعديل القائمة",
   "edit.back": "كل القوائم",

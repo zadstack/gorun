@@ -9,6 +9,7 @@
   <a href="/admin/migrations/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "wpmigrate.new"}}</span></a>
 </div>
 
+<p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.migration_steps"}}</p>
 <section class="rounded border border-line bg-panel mb-4" aria-labelledby="mig-list-h">
   <h2 id="mig-list-h" class="px-4 py-3 border-b border-line text-base font-bold">{{t "wpmigrate.list.migrations"}}</h2>
   {{if .Migrations}}
@@ -29,7 +30,7 @@
           <div class="font-medium">{{.SourceName}}</div>
           <div class="font-mono text-xs text-muted break-all" dir="ltr">{{if eq .SourceKind "wxr"}}WXR{{else}}{{.SourceURL}}{{end}}</div>
         </td>
-        <td class="px-3 py-2"><span class="inline-flex rounded-chip border {{if and (or (eq .Status "validated") (eq .Status "completed")) (gt .Failed 0)}}border-amber bg-amber-soft text-amber-text{{else if or (eq .Status "validated") (eq .Status "completed")}}border-green bg-green-soft text-green{{else if eq .Status "failed"}}border-red bg-red-soft text-red{{else if or (eq .Status "running") (eq .Status "paused")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}} px-1.5 py-0.5 text-xs">{{if and (or (eq .Status "validated") (eq .Status "completed")) (gt .Failed 0)}}{{t "wpmigrate.status.done_with_failures" .Failed}}{{else}}{{t (print "wpmigrate.status." .Status)}}{{end}}</span></td>
+        <td class="px-3 py-2"><span class="inline-flex rounded-chip border {{if and (or (eq .Status "validated") (eq .Status "completed")) (gt .Failed 0)}}border-amber bg-amber-soft text-amber-text{{else if or (eq .Status "validated") (eq .Status "completed")}}border-green bg-green-soft text-green{{else if eq .Status "failed"}}border-red bg-red-soft text-red{{else if or (eq .Status "running") (eq .Status "paused")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}} px-1.5 py-0.5 text-xs">{{if and (or (eq .Status "validated") (eq .Status "completed")) (gt .Failed 0)}}{{t "wpmigrate.status.done_with_failures" .Failed}}{{else}}{{t (print "wpmigrate.status." .Status)}}{{end}}</span><p class="text-xs text-muted mt-1">{{t "operator.migration_failed" .Failed}}</p>{{if .DryRun}}<small>{{t "operator.migration_preview"}}</small>{{end}}</td>
         <td class="px-3 py-2"><time class="font-mono text-xs text-muted" datetime="{{.CreatedAt}}">{{date .CreatedAt}}</time></td>
         <td class="px-3 py-2 text-end">
           {{$step := "scan"}}{{if or (eq .Status "mapped") (eq .Status "previewed")}}{{$step = "preview"}}{{else if or (eq .Status "running") (eq .Status "paused") (eq .Status "failed")}}{{$step = "import"}}{{else if or (eq .Status "completed") (eq .Status "validated")}}{{$step = "validate"}}{{end}}

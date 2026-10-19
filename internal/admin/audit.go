@@ -23,14 +23,14 @@ var auditActorKinds = []string{"user", "api_key", "system", "extension"}
 // (audit.ListQuery only matches exact actions). Since/Until are dates
 // (YYYY-MM-DD, inclusive) or RFC3339 instants.
 type auditFilter struct {
-	ActorKind, ActorID, Action, TargetKind, TargetID, Since, Until string
-	Page, PerPage                                                  int
+	ActorKind, ActorID, ActorName, Action, TargetKind, TargetID, Since, Until string
+	Page, PerPage                                                             int
 }
 
 func auditFilterFrom(q url.Values) auditFilter {
 	page, perPage := pageParams(q)
 	get := func(k string) string { return strings.TrimSpace(q.Get(k)) }
-	return auditFilter{ActorKind: get("actor_kind"), ActorID: get("actor_id"), Action: get("action"), TargetKind: get("target_kind"),
+	return auditFilter{ActorKind: get("actor_kind"), ActorID: get("actor_id"), ActorName: get("actor_name"), Action: get("action"), TargetKind: get("target_kind"),
 		TargetID: get("target_id"), Since: get("since"), Until: get("until"), Page: page, PerPage: perPage}
 }
 
@@ -63,6 +63,9 @@ func listAudit(ctx context.Context, d *sql.DB, f auditFilter) ([]audit.Entry, in
 	}
 	if f.ActorID != "" {
 		add("actor_id = ?", f.ActorID)
+	}
+	if f.ActorName != "" {
+		add(`actor_name LIKE ? ESCAPE '\'`, "%"+likeEscape(f.ActorName)+"%")
 	}
 	if f.Action != "" {
 		add(`action LIKE ? ESCAPE '\'`, likeEscape(f.Action)+"%")
@@ -109,6 +112,7 @@ func listAudit(ctx context.Context, d *sql.DB, f auditFilter) ([]audit.Entry, in
 // auditView adds the pretty-printed meta.
 type auditView struct {
 	audit.Entry
+	LabelKey   string
 	MetaPretty string
 	HasMeta    bool
 }
@@ -117,7 +121,7 @@ func viewAudit(list []audit.Entry) []auditView {
 	out := make([]auditView, len(list))
 	for i, e := range list {
 		m := strings.TrimSpace(string(e.Meta))
-		out[i] = auditView{Entry: e, MetaPretty: prettyJSON(e.Meta, metaPreviewMax), HasMeta: m != "" && m != "{}" && m != "null"}
+		out[i] = auditView{Entry: e, LabelKey: operatorAuditLabel(e.Action), MetaPretty: prettyJSON(e.Meta, metaPreviewMax), HasMeta: m != "" && m != "{}" && m != "null"}
 	}
 	return out
 }
@@ -142,4 +146,13 @@ func (h *handlers) auditList(w http.ResponseWriter, r *http.Request) {
 	}
 	h.tpl.Render(w, r, "pages/agents/audit.html", auditPage{Entries: viewAudit(list), Filter: f, ActorKinds: auditActorKinds,
 		Pager: newPager("/admin/agents/audit", q, f.Page, f.PerPage, total), BadDates: !okSince || !okUntil})
+}
+
+func operatorAuditLabel(action string) string {
+	switch action {
+	case "canvas.save", "content.create", "content.update", "content.publish", "user.update", "system.backup":
+		return "operator.audit." + action
+	default:
+		return ""
+	}
 }

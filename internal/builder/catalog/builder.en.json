@@ -78,5 +78,7 @@
   "history_restored": "Draft restored from layout history. Public content is unchanged.",
   "history_conflict": "The draft changed. Reload the builder, then try restore again.",
   "history_missing": "That layout revision is no longer available.",
-  "back_history": "Back to page builder"
+  "back_history": "Back to page builder",
+  "advanced": "Design & scene (optional)",
+  "choose_image": "Choose from media library"
 }

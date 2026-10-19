@@ -98,7 +98,7 @@ func TestPageAccessNativeAdminCASAndNoSecretReflection(t *testing.T) {
 	}
 	_, b = e.get(path)
 	mustNotContain(t, b, "admin fixture password", "$argon2")
-	mustContain(t, b, "Private visitor note")
+	mustContain(t, b, "Private visitor note", `data-page-policy="password"`)
 	form.Set("message", "Unsaved stale message")
 	form.Set("password", "")
 	r, b = e.do("POST", "/admin/settings/page-access", form)

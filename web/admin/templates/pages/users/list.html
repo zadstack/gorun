@@ -1,12 +1,14 @@
 {{/* Data: usersListPage */}}
 {{define "title"}}{{t "admin.users.title"}}{{end}}
 {{define "content"}}
+<script defer src="{{asset "operator-times.js"}}"></script>
 <link rel="stylesheet" href="{{asset "admin-contained.css"}}">
 <div class="admin-contained admin-user-directory">
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <h1 class="text-[22px] font-bold">{{t "admin.users.title"}}</h1>
   <a href="/admin/users/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "user-plus"}}<span>{{t "admin.users.new"}}</span></a>
 </div>
+<p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.users_boundary"}}</p>
 <form method="get" action="/admin/users" role="search" class="flex flex-wrap gap-2 mb-4"
       hx-get="/admin/users" hx-trigger="input changed delay:300ms from:#users-q, change from:#users-role" hx-target="#users-results" hx-select="#users-results" hx-swap="outerHTML" hx-push-url="true">
   <label class="sr-only" for="users-q">{{t "admin.users.search"}}</label>
@@ -45,7 +47,7 @@
             {{if eq .Status "active"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-[11px] font-mono">{{t "admin.users.status_active"}}</span>
             {{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px] font-mono">{{t "admin.users.status_disabled"}}</span>{{end}}
           </td>
-          <td class="px-3 py-2 font-mono text-xs text-muted hidden md:table-cell">{{date .LastLoginAt}}</td>
+          <td class="px-3 py-2 font-mono text-xs text-muted hidden md:table-cell"><time data-operator-time datetime="{{.LastLoginAt}}" title="{{date .LastLoginAt}}">{{date .LastLoginAt}}</time></td>
           <td class="px-3 py-2 text-end"><a href="/admin/users/{{.ID}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "core.action.edit"}}</a></td>
         </tr>
         {{end}}

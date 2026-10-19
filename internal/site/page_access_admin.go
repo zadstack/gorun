@@ -22,6 +22,7 @@ type pageAccessAdmin struct {
 type pageAccessView struct {
 	Template                                      string
 	Templates                                     []string
+	AccessModes                                   map[string]string
 	AR, Selected, PasswordSet, PlatformRestricted bool
 	Items                                         []content.Item
 	ID, Title, Mode, Message, Error, Search       string
@@ -87,6 +88,15 @@ func (a *pageAccessAdmin) render(w http.ResponseWriter, r *http.Request, status 
 			f.Items = f.Items[:100]
 			break
 		}
+	}
+	f.AccessModes = make(map[string]string, len(f.Items))
+	for _, item := range f.Items {
+		policy, err := policies.PageAccess(r.Context(), item.ID)
+		if err != nil {
+			http.Error(w, "Unable to read page access", 500)
+			return
+		}
+		f.AccessModes[item.ID] = policy.Mode
 	}
 	slices.Sort(f.Templates)
 	if f.ID != "" {

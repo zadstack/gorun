@@ -24,11 +24,13 @@ test('three site starters prepare private drafts, activate usable sites and appl
    const publicFrontBefore=(database.prepare("SELECT value_json FROM settings WHERE key='site.front_page'").get() as any)?.value_json;
    await page.goto('/admin/site-builder');
    await page.locator(`input[name="starter"][value="${kind}"]`).check();
+   await page.locator("[data-wizard-controls]").last().getByRole("button",{name:/التالي|Next/}).click();
    await expect(page.locator('input[name="accent"]')).toHaveValue(design.accent);
    await expect(page.locator('select[name="font"]')).toHaveValue(design.font);
    await page.locator('input[name="title"]').fill(siteTitle);
    await page.locator('textarea[name="tagline"]').fill(siteTagline);
    await page.locator('select[name="locale"]').selectOption(kind==='portfolio'?'en':'ar');
+   await page.locator("[data-wizard-controls]").last().getByRole("button",{name:/التالي|Next/}).click();
    await page.locator('#main form button[type="submit"]').click();
    await expect(page).toHaveURL(/site-builder\?run=/);
    const runURL=page.url();

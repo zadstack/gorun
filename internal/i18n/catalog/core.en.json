@@ -54,5 +54,8 @@
   "nav.section.team": "Team & roles",
   "nav.section.other": "Other tools",
   "nav.section.pages": "Pages in this section",
-  "nav.section.categories": "Section categories"
+  "nav.section.categories": "Section categories",
+  "nav.group.site-pages": "Pages and navigation",
+  "nav.group.site-design": "Design",
+  "nav.group.site-search": "Search and readiness"
 }

@@ -7,25 +7,27 @@
 </div>
 {{if .Saved}}<p role="status" class="mb-4 border border-green bg-green-soft text-green px-4 py-3">{{t "admin.workspace.saved"}}</p>{{end}}
 {{with index .Fields "mode"}}<p role="alert" class="mb-4 border border-red bg-red-soft text-red px-4 py-3">{{t .}}</p>{{end}}
-<form method="post" action="/admin/workspace" class="max-w-3xl space-y-4">
+<p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.workspace_boundary"}}</p>
+<form method="post" action="/admin/workspace" class="max-w-3xl space-y-4" x-data="{ mode: $el.dataset.mode }" data-mode="{{.Mode}}">
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <fieldset class="space-y-3">
     <legend class="sr-only">{{t "admin.workspace.title"}}</legend>
     <label class="flex gap-3 items-start rounded border border-line bg-panel p-4 cursor-pointer has-[:checked]:border-green has-[:checked]:ring-[3px] has-[:checked]:ring-green-soft">
-      <input type="radio" name="mode" value="simple" class="mt-1" {{if eq .Mode "simple"}}checked{{end}} {{if .First}}required{{end}}>
+      <input type="radio" name="mode" x-model="mode" value="simple" class="mt-1" {{if eq .Mode "simple"}}checked{{end}} {{if .First}}required{{end}}>
       <span>
         <strong class="block">{{t "admin.workspace.simple_title"}}</strong>
         <span class="text-muted text-sm">{{t "admin.workspace.simple_help"}}</span>
       </span>
     </label>
     <label class="flex gap-3 items-start rounded border border-line bg-panel p-4 cursor-pointer has-[:checked]:border-green has-[:checked]:ring-[3px] has-[:checked]:ring-green-soft">
-      <input type="radio" name="mode" value="full" class="mt-1" {{if eq .Mode "full"}}checked{{end}}>
+      <input type="radio" name="mode" x-model="mode" value="full" class="mt-1" {{if eq .Mode "full"}}checked{{end}}>
       <span>
         <strong class="block">{{t "admin.workspace.full_title"}}</strong>
         <span class="text-muted text-sm">{{t "admin.workspace.full_help"}}</span>
       </span>
     </label>
   </fieldset>
+  <section class="border border-line bg-panel p-3"><h2 class="font-bold">{{t "operator.workspace_preview"}}</h2><p x-show="mode === 'simple'" class="text-sm mt-2">{{t "operator.workspace_simple"}}</p><p x-show="mode === 'full'" class="text-sm mt-2">{{t "operator.workspace_full"}}</p></section>
   <div class="flex flex-wrap gap-3 items-center">
     <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{if .First}}{{t "admin.workspace.continue"}}{{else}}{{t "core.action.save"}}{{end}}</button>
     {{if not .First}}<a href="/admin" class="text-muted hover:text-ink text-sm">{{t "admin.workspace.back"}}</a>{{end}}

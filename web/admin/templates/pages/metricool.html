@@ -4,7 +4,7 @@
 <header><h1 class="text-2xl font-bold">{{t "admin.metricool.title"}}</h1><p class="mt-2 text-muted">{{t "admin.metricool.compose_intro"}}</p></header>
 {{with .Message}}<section role="status" class="border border-line p-4"><p>{{t .}}</p>{{with $.ProviderID}}<p class="mt-2 font-mono" dir="ltr">Metricool #{{.}}</p>{{end}}<a href="https://app.metricool.com" target="_blank" rel="noopener noreferrer" class="inline-block mt-3 underline text-blue">{{t "admin.metricool.open"}}</a></section><a href="/admin/metricool" class="inline-block underline">{{t "admin.metricool.new"}}</a>
 {{else}}
-{{if not .Ready}}<p role="status" class="border border-line p-4">{{t "admin.metricool.not_ready"}}</p>{{else}}
+{{if not .Ready}}<p role="status" class="border border-line p-4">{{t "admin.metricool.not_ready"}}{{if .CanManageSetup}}<a class="block text-blue underline mt-3 min-h-11" href="/admin/settings/metricool">{{if eq locale "ar"}}الخطوة الأولى: ربط حساب Metricool{{else}}Step 1: connect your Metricool account{{end}}</a>{{end}}</p>{{else}}
 <p class="text-sm text-muted">{{t "admin.metricool.blog_id"}}: <span dir="ltr" class="font-mono">{{.BlogID}}</span></p>
 <form method="post" action="/admin/metricool/drafts" class="space-y-4">
 <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="version" value="{{.Version}}"><input type="hidden" name="nonce" value="{{.Nonce}}">

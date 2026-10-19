@@ -2,6 +2,7 @@
 {{define "content"}}
 <div class="max-w-3xl space-y-5">
 <header><h1 class="text-2xl font-bold">{{t "admin.metricool.settings"}}</h1><p class="mt-2 text-muted">{{t "admin.metricool.intro"}}</p><a href="https://help.metricool.com/basic-guide-for-api-integration-r97af" target="_blank" rel="noopener noreferrer" class="underline text-blue">{{t "admin.metricool.docs"}}</a></header>
+<p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.metricool_help"}}</p>
 <form method="post" action="/admin/settings/metricool" class="space-y-4 border border-line p-4">
 <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="version" value="{{.Version}}">
 <div class="grid gap-4 sm:grid-cols-2"><label>{{t "admin.metricool.user_id"}}<input name="user_id" inputmode="numeric" pattern="[1-9][0-9]{0,9}" maxlength="10" value="{{.UserID}}" required dir="ltr" class="block w-full border border-line bg-panel p-2 mt-1"></label><label>{{t "admin.metricool.blog_id"}}<input name="blog_id" inputmode="numeric" pattern="[1-9][0-9]{0,9}" maxlength="10" value="{{.BlogID}}" required dir="ltr" class="block w-full border border-line bg-panel p-2 mt-1"></label></div>

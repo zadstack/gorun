@@ -28,7 +28,7 @@ func starterChoices(ar bool) []starterChoice {
 		{"magazine", "Editorial magazine", "مجلة تحريرية", "A complete editorial publication: home, about, topics and contact, with article and archive layouts.", "مجلة متكاملة: الرئيسية، عن المجلة، الموضوعات والتواصل، مع تصميم للمقالات والأرشيف."},
 	} {
 		design := starterDesign(choice.id)
-		out = append(out, starterChoice{ID: choice.id, Name: word(choice.nameEN, choice.nameAR), Description: word(choice.descEN, choice.descAR), Theme: design.Theme, Preview: "/admin/appearance/themes/" + design.Theme + "/screenshot.png", Identity: design.Identity})
+		out = append(out, starterChoice{ID: choice.id, Name: word(choice.nameEN, choice.nameAR), Description: word(choice.descEN, choice.descAR), Theme: design.Theme, Preview: "/static/admin/starter-previews/" + choice.id + ".png", Identity: design.Identity})
 	}
 	return out
 }
