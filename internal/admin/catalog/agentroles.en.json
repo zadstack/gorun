@@ -28,5 +28,10 @@
   "draft": "Unsaved role configuration",
   "replace": "Saving will REPLACE this agent’s saved skills and MCP references with the fields below, and disable its managed tool policy. No connection is preselected. Current model assignment is unchanged. Existing run/review invalidation guards still apply. Leave this page to cancel without changes.",
   "model": "Review model / external-client setup",
-  "select_agent": "Choose an agent…"
+  "select_agent": "Choose an agent…",
+  "combination": "Suggested setup combination",
+  "short_intro": "Choose a role, inspect its skills and prepare a draft with your existing agent.",
+  "skill_count": "skills",
+  "available_help": "Available saved configuration for explicit selection; this is not live agent readiness.",
+  "execution_details": "Execution details"
 }
