@@ -8,13 +8,29 @@
   const csrf = root.querySelector('[name=_csrf]').value;
   const cardsEl = root.querySelector('[data-canvas-cards]');
   const surface = root.querySelector('.canvas-surface');
-  const dialog = root.querySelector('dialog');
+  const dialog = root.querySelector('dialog[aria-labelledby=canvas-dialog-title]');
   const form = root.querySelector('#canvas-card-form');
   const titleInput = root.querySelector('#canvas-title');
   const mobile = matchMedia('(max-width:767px)');
   const widgetCache = new Map();
   const widgetLoading = new Set();
-  let operations = null;
+  let operations = null, lifecycle = null;
+  let revealHash = true, revealScheduled = false;
+  function revealCardHash() {
+    if (!revealHash || revealScheduled || !/^#card-[a-f0-9]{8}-[a-f0-9-]{27}$/.test(location.hash)) return;
+    revealScheduled = true;
+    requestAnimationFrame(() => {
+      revealScheduled = false;
+      if (!revealHash || !/^#card-[a-f0-9]{8}-[a-f0-9-]{27}$/.test(location.hash)) return;
+      // Options may have repainted the cards since scheduling this frame.
+      const card = cardsEl.querySelector(`[id="${location.hash.slice(1)}"]`);
+      if (!card) return;
+      revealHash = false;
+      card.scrollIntoView({block:'center', inline:'center'});
+      card.querySelector('button,a')?.focus({preventScroll:true});
+    });
+  }
+  window.addEventListener('hashchange', () => { revealHash = true; revealCardHash(); });
   let view = 'flow';
   try { const stored=sessionStorage.getItem('gorun.canvas.view'); if (['flow','grid','list'].includes(stored)) view=stored; } catch (_) {}
   root.dataset.view=view;
@@ -222,6 +238,7 @@
     operations?.cardBody(body, card);
     const footer = element('footer', undefined, 'canvas-card-footer');
     const actions = element('div', undefined, 'canvas-card-actions'); if (card.kind !== 'result') actions.append(button(t('edit'), () => editCard(card.id)));
+    lifecycle?.cardActions(actions,card);
     const remove = button(t('remove'), () => { if (!confirm(t('remove_confirm'))) return; documentState.cards = documentState.cards.filter(c => c.id !== card.id); documentState.edges = CanvasGraph.withoutNode(documentState.edges, card.id); changed(); render(); root.querySelector('[data-action=add]').focus(); }); remove.dataset.remove = ''; actions.append(remove);
     const moves = element('div', undefined, 'canvas-move-controls');
     [['left', '←', -24, 0], ['up', '↑', 0, -24], ['down', '↓', 0, 24], ['right', '→', 24, 0]].forEach(([key, symbol, dx, dy]) => { const control = button(symbol, () => move(card, dx, dy, el)); control.dataset.direction = key; control.title = t(key); control.setAttribute('aria-label', `${t(key)}: ${card.title}`); moves.append(control); });
@@ -236,6 +253,7 @@
     updateBounds(); refreshReferences(); operations?.render();
     normalizePositions();
     for(const el of cardsEl.children)resizeCards.observe(el);
+    revealCardHash();
   }
   function placeNewCard(card) {
     const existing = documentState.cards.filter(c => c.id !== card.id).map(c => ({...c, height: Math.max(200, cardsEl.querySelector(`[data-card-id="${c.id}"]`)?.offsetHeight || 520)}));
@@ -333,6 +351,7 @@
     documentState.cards.forEach(card=>Object.assign(card,positions[card.id]));
     changed();render();
   });
+  lifecycle = window.CanvasLifecycle?.create({root,t,element,button,request,csrf,save,document:()=>documentState});
   selectView(view);
   load();
 })();
