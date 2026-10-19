@@ -5,6 +5,21 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-19
+
+This release improves daily administration and adds inspectable agent role templates.
+
+- A work-first dashboard, explicit customization, clearer content publishing actions, page hierarchy, media list/details and guided website setup.
+- Shared staff navigation for agent management and app subscriptions, with customer-facing routes and permissions preserved.
+- A detailed MCP/AI/S3 connection directory with searchable columns, saved credential presence and historical test results. Browsing the directory never probes a provider.
+- Six bilingual agent teaching roles, each combining five bounded skills. Team members can inspect the examples; authorized owners can prepare an unsaved bundle for an existing agent and explicitly review/save it.
+- Clearer provider forms, role grants and before-save permission comparison, account audience filters, diagnostics and backup outcomes.
+- Per-kind migration queue summaries distinguish completed items, preview plans, pending, failed and skipped items. Preview counts are not reported as imported content; completion remains separate from final validation.
+
+Existing data and accounts are preserved. Agent templates do not grant permissions, install external clients, select a model, enable MCP tools, publish content or automate infrastructure. Connections still require explicit setup and testing. GoCloud operators update their running application manually.
+
+GHCR access depends on package permissions. Public installer and binary archives do not require registry login.
+
 ## [0.8.0] - 2026-10-19
 
 ### Reviewed MCP tool execution
