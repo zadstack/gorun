@@ -216,6 +216,7 @@ test.describe.serial('catalog themes', () => {
   test('site identity: dark scheme and accent reach the public pages', async ({ page }) => {
     await activate(page, 'business');
     await page.goto('/admin/appearance/theme-settings');
+    await page.locator('[data-theme-tab=design]').click();
     await page.selectOption('select[name="settings[identity_scheme]"]', 'dark');
     await page.fill('input[name="settings[identity_accent]"]', '#f59e0b');
     await page.selectOption('select[name="settings[identity_heading_font]"]', 'zad');
@@ -238,6 +239,7 @@ test.describe.serial('catalog themes', () => {
 
     // A bad color is rejected with a field error and nothing is stored.
     await page.goto('/admin/appearance/theme-settings');
+    await page.locator('[data-theme-tab=design]').click();
     await page.fill('input[name="settings[identity_accent]"]', 'red; } body { display:none');
     await submitAndLand(page, page.locator('form button[type="submit"]').last(), '/admin/appearance/theme-settings', null);
     await expect(page.locator('input[name="settings[identity_accent]"]')).toHaveValue('red; } body { display:none');
@@ -246,6 +248,7 @@ test.describe.serial('catalog themes', () => {
 
     // Reset so later projects see the theme's own design.
     await page.goto('/admin/appearance/theme-settings');
+    await page.locator('[data-theme-tab=design]').click();
     await page.selectOption('select[name="settings[identity_scheme]"]', '');
     await page.fill('input[name="settings[identity_accent]"]', '');
     await page.selectOption('select[name="settings[identity_heading_font]"]', '');
