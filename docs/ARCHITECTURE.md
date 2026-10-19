@@ -157,6 +157,28 @@ with `kernel.Get[T](d, name)`.
 5. **Hooks and jobs.** `hooks.Do` and `hooks.Apply` run in the request. `hooks.Emit` persists a `hooks.event`
    job that a worker delivers to every action subscriber (including the extension HTTP bridge), with retries.
 
+### Generated administrator first-login setup
+
+`auth.BootstrapAdmin` atomically creates the empty site's administrator with the
+persistent login alias and `users.onboarding_required = 1`. Regular `Create` and
+browser setup do not set this flag. Migration `0011_onboarding.sql` recognizes
+only the previous release's unconfigured bootstrap alias/email combination.
+
+Session/key user reads include the internal flag, which is not exported in user
+JSON. The admin gate redirects pending accounts to `/admin/onboarding` (HTMX uses
+`HX-Redirect`); API/MCP authentication and permission/scope grants are denied.
+Reauthentication, locale changes and logout remain reachable. Completing the form
+requires session CSRF and recent authentication. One immediate transaction
+compares the prior password hash and current session, updates account/site
+identity, clears the flag, revokes old sessions/keys/magic links and records
+`user.onboarding_complete`. A fresh browser session starts after commit.
+
+The CLI `doctor` does not call Boot, OpenDB or migration inspectors that may
+initialize legacy metadata: it loads existing configuration without generating a
+secret, opens SQLite with `mode=ro` and `query_only`, and reads recorded schema
+checksums and optional-module activation directly. It validates the theme through
+`pkg/themekit` and probes only local listen addresses. See [local start](local-start.md).
+
 ## Data
 
 Everything lives under the data directory (`GORUN_DATA`, default `./data`):

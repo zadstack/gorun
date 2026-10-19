@@ -97,6 +97,10 @@ func apiKeyMiddleware(deps *kernel.Deps, allowAgent bool) func(http.Handler) htt
 			p := principalFrom(r.Context())
 			switch {
 			case p != nil && p.user != nil:
+				if p.user.onboardingRequired {
+					httpx.Error(w, http.StatusForbidden, "onboarding_required", "complete first-login setup in the admin", nil)
+					return
+				}
 				if !safeMethod(r.Method) && !validCSRF(w, r, p.csrf) {
 					httpx.Error(w, http.StatusForbidden, "csrf_invalid", "missing or invalid X-CSRF-Token", nil)
 					return
@@ -124,6 +128,10 @@ func apiKeyMiddleware(deps *kernel.Deps, allowAgent bool) func(http.Handler) htt
 			}
 			if k.Kind == KeyKindAgent && !allowAgent {
 				httpx.Error(w, http.StatusForbidden, "agent_key_not_allowed", "agent keys work only on the MCP endpoint", nil)
+				return
+			}
+			if u.onboardingRequired {
+				httpx.Error(w, http.StatusForbidden, "onboarding_required", "complete first-login setup in the admin", nil)
 				return
 			}
 			if allowed, retry := limiter.allow(k.ID, k.RatePerMin); !allowed {
@@ -182,6 +190,15 @@ func adminGate(next http.Handler) http.Handler {
 		}
 		if u.Role == RoleCustomer {
 			deny(w, r, http.StatusForbidden, "forbidden", "the admin area requires a staff account")
+			return
+		}
+		if u.onboardingRequired && r.URL.Path != onboardingPath && r.URL.Path != reauthPath && r.URL.Path != "/admin/locale" {
+			if r.Header.Get("HX-Request") == "true" {
+				w.Header().Set("HX-Redirect", onboardingPath)
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			http.Redirect(w, r, onboardingPath, http.StatusSeeOther)
 			return
 		}
 		next.ServeHTTP(w, r)

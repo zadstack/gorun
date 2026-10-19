@@ -59,6 +59,7 @@ default.
 | 400 | `bad_request` | Other malformed input |
 | 401 | `unauthorized` | No or invalid API key / session |
 | 403 | `forbidden` | Missing scope or permission |
+| 403 | `onboarding_required` | The auto-generated administrator must complete first-login setup at the local `/admin/onboarding` page before authenticated API access |
 | 403 | `csrf_invalid` | Session request without a valid `X-CSRF-Token` |
 | 403 | `agent_key_not_allowed` | An agent-kind key was used on `/api` (agent keys work only on `/mcp`) |
 | 404 | `not_found` | Unknown path or resource |

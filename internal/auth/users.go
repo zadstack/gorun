@@ -34,6 +34,7 @@ var (
 	ErrLocked             = errors.New("auth: too many failed attempts, try again later")
 	ErrInvalidToken       = errors.New("auth: invalid or expired token")
 	ErrSetupDone          = errors.New("auth: setup already completed")
+	ErrOnboardingRequired = errors.New("auth: first-login setup required")
 )
 
 // ValidationError lists invalid fields; values are i18n keys.
@@ -43,6 +44,7 @@ func (e *ValidationError) Error() string { return fmt.Sprintf("auth: invalid inp
 
 // User is an account. Customers have role "customer".
 type User struct {
+	onboardingRequired                    bool // internal: never part of API or exported user JSON
 	ID, Email, Name, Role, Locale, Status string
 	LastLoginAt, CreatedAt, UpdatedAt     string
 }
@@ -96,11 +98,11 @@ func (s *service) record(ctx context.Context, action, id string, meta any) {
 	}
 }
 
-const userColumns = `id, email, name, role, locale, status, last_login_at, created_at, updated_at`
+const userColumns = `id, email, name, role, locale, status, last_login_at, created_at, updated_at, onboarding_required`
 
 func scanUser(row interface{ Scan(...any) error }) (*User, error) {
 	var u User
-	err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.Locale, &u.Status, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.Locale, &u.Status, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, &u.onboardingRequired)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -142,15 +144,15 @@ func (s *service) validate(ctx context.Context, email, password, role string) er
 }
 
 func (s *service) Create(ctx context.Context, email, name, password, role string) (*User, error) {
-	return s.create(ctx, email, name, password, role, false)
+	return s.create(ctx, email, name, password, role, false, false)
 }
 
 // createFirstAdmin creates an admin only while no user exists (atomic).
 func (s *service) createFirstAdmin(ctx context.Context, email, name, password string) (*User, error) {
-	return s.create(ctx, email, name, password, RoleAdmin, true)
+	return s.create(ctx, email, name, password, RoleAdmin, true, false)
 }
 
-func (s *service) create(ctx context.Context, email, name, password, role string, onlyIfEmpty bool) (*User, error) {
+func (s *service) create(ctx context.Context, email, name, password, role string, onlyIfEmpty, onboarding bool) (*User, error) {
 	email, name = normalizeEmail(email), strings.TrimSpace(name)
 	if err := s.validate(ctx, email, password, role); err != nil {
 		return nil, err
@@ -166,10 +168,14 @@ func (s *service) create(ctx context.Context, email, name, password, role string
 	q := `INSERT INTO users (id, email, name, password_hash, role, status, created_at, updated_at)
 		SELECT ?, ?, ?, ?, ?, 'active', ?, ?`
 	if onlyIfEmpty {
-		q = `INSERT INTO users (id, email, name, password_hash, role, status, created_at, updated_at, login_name)
-		SELECT ?, ?, ?, ?, ?, 'active', ?, ?, 'admin' WHERE NOT EXISTS (SELECT 1 FROM users)`
+		q = `INSERT INTO users (id, email, name, password_hash, role, status, created_at, updated_at, login_name, onboarding_required)
+		SELECT ?, ?, ?, ?, ?, 'active', ?, ?, 'admin', ? WHERE NOT EXISTS (SELECT 1 FROM users)`
 	}
-	res, err := s.db.ExecContext(ctx, q, id, email, name, hash, role, now, now)
+	args := []any{id, email, name, hash, role, now, now}
+	if onlyIfEmpty {
+		args = append(args, onboarding)
+	}
+	res, err := s.db.ExecContext(ctx, q, args...)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed: users.email") {
 			return nil, ErrEmailTaken
@@ -409,7 +415,7 @@ func (s *service) CheckPassword(ctx context.Context, email, password string) (*U
 
 func scanUserWithHash(row *sql.Row, hash *string) (*User, error) {
 	var u User
-	err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.Locale, &u.Status, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, hash)
+	err := row.Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.Locale, &u.Status, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, &u.onboardingRequired, hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -425,7 +431,8 @@ func (s *service) touchLogin(ctx context.Context, id string) {
 }
 
 // BootstrapAdmin creates the first admin atomically, assigning the durable admin
-// login alias. ErrSetupDone means an account already exists; it never resets it.
+// login alias and mandatory first-login setup. ErrSetupDone means an account
+// already exists; it never resets it.
 func BootstrapAdmin(ctx context.Context, d *sql.DB, a *audit.Writer, password string) (*User, error) {
-	return newService(d, a).createFirstAdmin(ctx, "admin@localhost.invalid", "Administrator", password)
+	return newService(d, a).create(ctx, "admin@localhost.invalid", "Administrator", password, RoleAdmin, true, true)
 }

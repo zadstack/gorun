@@ -323,7 +323,8 @@ var (
 // later on a key's behalf (e.g. an MCP call executed once a human approves
 // it). The key must exist (ErrNotFound), not be revoked (ErrKeyRevoked) or
 // expired (ErrKeyExpired), and its owner must be active
-// (ErrKeyOwnerInactive).
+// (ErrKeyOwnerInactive) and must have completed first-login setup
+// (ErrOnboardingRequired).
 func WithAPIKeyActor(ctx context.Context, d *kernel.Deps, keyID string) (context.Context, error) {
 	k, err := scanKey(d.DB.QueryRowContext(ctx, `SELECT `+keyColumns+` FROM api_keys WHERE id = ?`, keyID))
 	if err != nil {
@@ -343,6 +344,9 @@ func WithAPIKeyActor(ctx context.Context, d *kernel.Deps, keyID string) (context
 	}
 	if err != nil {
 		return nil, err
+	}
+	if u.onboardingRequired {
+		return nil, ErrOnboardingRequired
 	}
 	return withPrincipal(ctx, &principal{kind: "api_key", user: u, key: k, scopes: k.Scopes}), nil
 }
