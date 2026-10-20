@@ -23,7 +23,7 @@ From the repository root:
 
 ```sh
 make loadtest
-# equivalent defaults:
+# equivalent defaults (serve uses GORUN_ENV=prod → cached themes):
 go run ./tools/loadtest -concurrency 25 -duration 15s -posts 40
 ```
 
@@ -31,6 +31,12 @@ With a light write mix (PATCH one seeded post) and JSON output:
 
 ```sh
 go run ./tools/loadtest -concurrency 40 -duration 20s -write-mix 0.05 -json
+```
+
+Compare against the theme hot-reload path (not shipping behaviour):
+
+```sh
+go run ./tools/loadtest -serve-env dev -concurrency 25 -duration 15s -posts 40 -json
 ```
 
 Against an already-running instance (seed + writes need an API token):
@@ -50,8 +56,13 @@ go run ./tools/loadtest -keep-data -duration 10s
 ## What it does
 
 1. Builds `bin/gorun` if needed (`CGO_ENABLED=0`).
-2. Creates a temp data dir, admin user, and high-rate API key.
-3. Starts `gorun serve` on a free localhost port (real SQLite).
+2. Creates a temp data dir, admin user, and high-rate API key (CLI under `GORUN_ENV=dev`).
+3. Starts `gorun serve` on a free localhost port (real SQLite). By default
+   **`-serve-env prod`**: theme templates stay cached like a shipping build.
+   Prod rejects loopback `GORUN_BASE_URL`, so the harness sets a non-loopback
+   base (`http://loadtest.gorun.invalid`) while still listening on `127.0.0.1`
+   and reuses the generated `secret.key` as `GORUN_SECRET_KEY`. Use
+   `-serve-env dev` only when measuring the per-request template recompile path.
 4. Seeds N published posts via `POST /api/v1/content`.
 5. Runs N concurrent clients for the given duration against:
    - `/`, `/healthz`, `/readyz`, `/sitemap.xml`, `/robots.txt`
@@ -74,6 +85,7 @@ locally or on a dedicated runner when comparing builds.
 | `-bin` | `bin/gorun` | Binary path (built if missing) |
 | `-themes` | `themes` | Themes directory |
 | `-data` | temp | Data directory |
+| `-serve-env` | `prod` | `GORUN_ENV` for spawned serve (`prod` caches themes; `dev` recompiles) |
 | `-keep-data` | false | Keep temp data after exit |
 | `-base-url` | — | Skip spawn; hit existing server |
 | `-token` | — | Bearer API key (seed/writes) |

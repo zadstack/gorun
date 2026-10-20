@@ -18,6 +18,10 @@ import (
 const (
 	loadAdminEmail = "loadtest@gorun.local"
 	loadAdminPass  = "loadtest-correct-horse-battery"
+	// prodBaseURLHost is a non-loopback hostname so GORUN_ENV=prod accepts
+	// BaseURL while the harness still listens on 127.0.0.1. Absolute link
+	// strings in HTML use this host; HTTP traffic stays on the listen addr.
+	prodBaseURLHost = "http://loadtest.gorun.invalid"
 )
 
 // LocalInstance is a short-lived gorun serve process for the harness.
@@ -27,13 +31,24 @@ type LocalInstance struct {
 	BaseURL string
 	Token   string
 	Themes  string
+	Env     string // GORUN_ENV used for serve (prod by default)
 	cmd     *exec.Cmd
 	logFile *os.File
 }
 
 // StartLocal builds (optional) and boots gorun serve on a free port with a
 // fresh data dir, admin user, and API key. Caller must Close.
-func StartLocal(ctx context.Context, bin, themes, dataDir string) (*LocalInstance, error) {
+//
+// Setup CLI steps use GORUN_ENV=dev (auto secret). The serve process defaults
+// to GORUN_ENV=prod so theme templates stay cached — matching shipping
+// behaviour. Pass serveEnv "dev" to measure the hot-reload path instead.
+func StartLocal(ctx context.Context, bin, themes, dataDir, serveEnv string) (*LocalInstance, error) {
+	if serveEnv == "" {
+		serveEnv = "prod"
+	}
+	if serveEnv != "dev" && serveEnv != "prod" {
+		return nil, fmt.Errorf("serve env must be dev or prod, got %q", serveEnv)
+	}
 	if themes == "" {
 		themes = "themes"
 	}
@@ -90,15 +105,28 @@ func StartLocal(ctx context.Context, bin, themes, dataDir string) (*LocalInstanc
 		return nil, err
 	}
 
+	serveBaseURL := base
+	secret := ""
+	if serveEnv == "prod" {
+		serveBaseURL = prodBaseURLHost
+		secret, err = readSecretKey(absData)
+		if err != nil {
+			logFile.Close()
+			return nil, fmt.Errorf("prod secret: %w", err)
+		}
+	}
 	cmd := exec.CommandContext(ctx, absBin, "serve")
-	cmd.Env = localEnv(absData, absThemes, base, fmt.Sprintf("127.0.0.1:%d", port))
+	cmd.Env = localEnv(absData, absThemes, serveBaseURL, fmt.Sprintf("127.0.0.1:%d", port), serveEnv, secret)
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 	if err := cmd.Start(); err != nil {
 		logFile.Close()
 		return nil, fmt.Errorf("serve start: %w", err)
 	}
-	inst := &LocalInstance{Bin: absBin, DataDir: absData, BaseURL: base, Token: token, Themes: absThemes, cmd: cmd, logFile: logFile}
+	inst := &LocalInstance{
+		Bin: absBin, DataDir: absData, BaseURL: base, Token: token,
+		Themes: absThemes, Env: serveEnv, cmd: cmd, logFile: logFile,
+	}
 	if err := waitHealthy(ctx, base+"/healthz", cmd, 30*time.Second); err != nil {
 		_ = inst.Close()
 		return nil, fmt.Errorf("server unhealthy: %w (see %s)", err, logPath)
@@ -149,7 +177,7 @@ func buildBinary(ctx context.Context, out string) error {
 
 func runCLI(ctx context.Context, bin, data, themes string, args ...string) error {
 	cmd := exec.CommandContext(ctx, bin, args...)
-	cmd.Env = localEnv(data, themes, "http://127.0.0.1:9", "127.0.0.1:9")
+	cmd.Env = localEnv(data, themes, "http://127.0.0.1:9", "127.0.0.1:9", "dev", "")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%w: %s", err, truncate(string(out), 400))
@@ -160,7 +188,7 @@ func runCLI(ctx context.Context, bin, data, themes string, args ...string) error
 func createAPIKey(ctx context.Context, bin, data, themes string) (string, error) {
 	cmd := exec.CommandContext(ctx, bin, "key", "create",
 		"--name", "loadtest", "--user", loadAdminEmail, "--scopes", "*", "--rate", "10000")
-	cmd.Env = localEnv(data, themes, "http://127.0.0.1:9", "127.0.0.1:9")
+	cmd.Env = localEnv(data, themes, "http://127.0.0.1:9", "127.0.0.1:9", "dev", "")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("key create: %w: %s", err, truncate(string(out), 400))
@@ -179,16 +207,33 @@ func createAPIKey(ctx context.Context, bin, data, themes string) (string, error)
 	return parsed.Token, nil
 }
 
-func localEnv(data, themes, baseURL, addr string) []string {
+// readSecretKey returns the base64 secret written by a prior CLI step in
+// dataDir (dev persists <data>/secret.key). Required when serving as prod.
+func readSecretKey(dataDir string) (string, error) {
+	b, err := os.ReadFile(filepath.Join(dataDir, "secret.key"))
+	if err != nil {
+		return "", err
+	}
+	s := strings.TrimSpace(string(b))
+	if s == "" {
+		return "", fmt.Errorf("empty secret.key in %s", dataDir)
+	}
+	return s, nil
+}
+
+func localEnv(data, themes, baseURL, addr, env, secret string) []string {
 	base := []string{
 		"PATH=" + os.Getenv("PATH"),
 		"HOME=" + os.Getenv("HOME"),
 		"TMPDIR=" + os.Getenv("TMPDIR"),
-		"GORUN_ENV=dev",
+		"GORUN_ENV=" + env,
 		"GORUN_DATA=" + data,
 		"GORUN_THEMES=" + themes,
 		"GORUN_BASE_URL=" + baseURL,
 		"GORUN_ADDR=" + addr,
+	}
+	if secret != "" {
+		base = append(base, "GORUN_SECRET_KEY="+secret)
 	}
 	// Strip inherited GORUN_*/STRIPE_* like e2e does.
 	for _, e := range os.Environ() {

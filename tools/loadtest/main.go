@@ -36,6 +36,7 @@ func run(args []string) int {
 	dataDir := fs.String("data", "", "data directory (temp when empty; kept when set)")
 	baseURL := fs.String("base-url", "", "use existing server instead of spawning local")
 	token := fs.String("token", "", "API bearer token (required with -base-url for seed/writes)")
+	serveEnv := fs.String("serve-env", "prod", "GORUN_ENV for the spawned serve process (prod|dev); prod caches themes")
 	keepData := fs.Bool("keep-data", false, "keep temp data dir after local run")
 	jsonOut := fs.Bool("json", false, "print report as JSON")
 	timeout := fs.Duration("timeout", 10*time.Second, "per-request timeout")
@@ -66,7 +67,7 @@ func run(args []string) int {
 			return 2
 		}
 	} else {
-		inst, err := StartLocal(ctx, *bin, *themes, *dataDir)
+		inst, err := StartLocal(ctx, *bin, *themes, *dataDir, *serveEnv)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "loadtest: start local: %v\n", err)
 			return 1
@@ -84,7 +85,8 @@ func run(args []string) int {
 			}
 		}
 		defer cleanup()
-		fmt.Fprintf(os.Stderr, "loadtest: local server %s (pid %d, data %s)\n", base, samplePID, inst.DataDir)
+		fmt.Fprintf(os.Stderr, "loadtest: local server %s (pid %d, serve-env=%s, data %s)\n",
+			base, samplePID, inst.Env, inst.DataDir)
 	}
 
 	seed, err := seedPublishedPosts(base, apiToken, *posts)

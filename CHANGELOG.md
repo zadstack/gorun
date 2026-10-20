@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Local `make loadtest` / `tools/loadtest` now boots the spawned serve process
+  with `GORUN_ENV=prod` by default (cached themes), matching shipping behaviour.
+  Use `-serve-env dev` for the previous hot-reload measurement path.
+
 ## [0.10.0] - 2026-10-20
 
 ### Reviewed canvas workflow suggestions
