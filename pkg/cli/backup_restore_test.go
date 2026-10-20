@@ -38,7 +38,7 @@ func TestBackupRestoreNewDirectoryAndRefusesExisting(t *testing.T) {
 	if err := backupRestore([]string{"--input", res.Manifest, "--dest", dest}, &out); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), `"readiness": "review_required"`) || !strings.Contains(out.String(), "restored: "+dest) {
+	if !strings.Contains(out.String(), `"readiness": "local_ok"`) || !strings.Contains(out.String(), "restored: "+dest) {
 		t.Fatal(out.String())
 	}
 	if data, err := os.ReadFile(filepath.Join(dest, "media", "a.txt")); err != nil || string(data) != "media" {

@@ -83,8 +83,12 @@ func TestCoreRemoteBackupHTTPFailedUploadRetainsInspectableLocalPair(t *testing.
 		t.Fatal("failed receipt lacks local manifest checksum binding")
 	}
 	report, err := backup.Inspect(manifestPath)
-	if err != nil || report.Readiness != "review_required" {
-		t.Fatal("local pair preflight incorrectly trusts failed remote upload", err, report)
+	if err != nil || report.Readiness != "local_ok" {
+		t.Fatal("local pair preflight should stay local_ok when only remote is unverified", err, report)
+	}
+	joined := strings.Join(report.CutoverChecklist, " ")
+	if !strings.Contains(joined, "remote_pair_not_confirmed") || !strings.Contains(joined, "remote_readback_not_verified") {
+		t.Fatal("failed remote upload omitted from cutover checklist", report.CutoverChecklist)
 	}
 	response, page := s.do("GET", "/admin/system/backups", nil)
 	if response.StatusCode != 200 || !strings.Contains(page, `data-local-state="paired_not_inspected"`) || !strings.Contains(page, `data-remote-state="failed"`) || !strings.Contains(page, dest.Name) || strings.Contains(page, "synthetic-backup-secret") || strings.Contains(page, dest.Secret) {

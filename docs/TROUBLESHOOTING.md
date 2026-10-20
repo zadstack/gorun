@@ -42,7 +42,8 @@ Operator acceptance recipe (CIDR, cookie Secure, HSTS, outside health):
 
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
-| Inspect succeeds with `review_required` | Warnings in the pair (not a hard fail) | Read the bilingual codes on the inspect page; fix or accept before restore. |
+| Inspect succeeds with `local_ok` | Local checksums/integrity passed | Cutover checklist (secrets, themes, stopped writes, remote) is expected — not a local failure. |
+| Inspect shows `review_required` | Site-specific warnings (e.g. external media) | Read the bilingual warning codes; fix or accept before live cutover. Restore-to-new-dir remains allowed. |
 | Leftover `.<stamp>.partial` under `restores/` | Interrupted admin restore | Delete the partial directory, then retry. It blocks the next restore until removed. |
 | Restored site cannot decrypt settings | Secrets were outside the archive | Copy operator-held `secret.key` / set original `GORUN_SECRET_KEY` and `gorun.toml` into the restore dir. Default backups omit them unless `gorun backup --include-secrets`. |
 | Tried to point `--data` at `<data>/restores/<stamp>/` while live | Restore dir is inside the live volume | Move it **out** of the live data directory, stop the old process, then `serve --data` the moved copy. |

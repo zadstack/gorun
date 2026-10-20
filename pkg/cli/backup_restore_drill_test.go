@@ -95,7 +95,7 @@ func TestBackupIsolatedFullAppRestoreDrill(t *testing.T) {
 	// Secrets are not archived by default: the preflight says so, and the
 	// operator restores the separately kept secret.key and gorun.toml.
 	if !rep.IntegrityOK || rep.ForeignKeyViolations != 0 || rep.RecoveryKeyArchived || rep.Remote.ReadBackVerified ||
-		!slices.Contains(rep.Warnings, "independent_original_secret_required") {
+		rep.Readiness != "local_ok" || !slices.Contains(rep.CutoverChecklist, "independent_original_secret_required") {
 		t.Fatalf("incorrect preflight: %+v", rep)
 	}
 	for _, name := range []string{"secret.key", "gorun.toml"} {
