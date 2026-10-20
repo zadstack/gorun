@@ -45,6 +45,9 @@ type settingsCache struct {
 	mu         sync.RWMutex
 	generation uint64 // bumped on every invalidate so stale fills cannot repopulate
 	entries    map[string]cacheEntry
+	// held keys were written inside an open transaction: bypass cache until a
+	// committed (non-tx) Set/Delete publishes them, so rollbacks cannot leak.
+	held map[string]struct{}
 }
 
 // New returns a store on d logging to slog.Default(). The settings
@@ -53,7 +56,7 @@ func New(d *sql.DB) *Store {
 	return &Store{
 		db:    d,
 		log:   slog.Default(),
-		cache: &settingsCache{entries: map[string]cacheEntry{}},
+		cache: &settingsCache{entries: map[string]cacheEntry{}, held: map[string]struct{}{}},
 	}
 }
 
@@ -81,14 +84,18 @@ func (s *Store) Get(ctx context.Context, key string, out any) error {
 
 func (s *Store) raw(ctx context.Context, key string) (string, error) {
 	var gen uint64
+	held := false
 	if s.cache != nil {
 		s.cache.mu.RLock()
-		if e, hit := s.cache.entries[key]; hit {
-			s.cache.mu.RUnlock()
-			if !e.ok {
-				return "", ErrNotFound
+		_, held = s.cache.held[key]
+		if !held {
+			if e, hit := s.cache.entries[key]; hit {
+				s.cache.mu.RUnlock()
+				if !e.ok {
+					return "", ErrNotFound
+				}
+				return e.raw, nil
 			}
-			return e.raw, nil
 		}
 		gen = s.cache.generation
 		s.cache.mu.RUnlock()
@@ -97,13 +104,17 @@ func (s *Store) raw(ctx context.Context, key string) (string, error) {
 	var raw string
 	err := s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
 	if errors.Is(err, sql.ErrNoRows) {
-		s.remember(key, "", false, gen)
+		if !held {
+			s.remember(key, "", false, gen)
+		}
 		return "", ErrNotFound
 	}
 	if err != nil {
 		return "", fmt.Errorf("settings: get %s: %w", key, err)
 	}
-	s.remember(key, raw, true, gen)
+	if !held {
+		s.remember(key, raw, true, gen)
+	}
 	return raw, nil
 }
 
@@ -115,7 +126,9 @@ func (s *Store) remember(key, raw string, ok bool, gen uint64) {
 	}
 	s.cache.mu.Lock()
 	if s.cache.generation == gen {
-		s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
+		if _, held := s.cache.held[key]; !held {
+			s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
+		}
 	}
 	s.cache.mu.Unlock()
 }
@@ -172,21 +185,37 @@ func (s *Store) set(ctx context.Context, ex execer, key string, v any) error {
 	if err != nil {
 		return fmt.Errorf("settings: set %s: %w", key, err)
 	}
-	// Write-through: bump generation and store the new raw value so a concurrent
-	// Get that still holds a pre-write generation cannot repopulate the old
-	// row (forget-only left that race open, especially around SetTx).
+	if _, isTx := ex.(*sql.Tx); isTx {
+		// Do not publish uncommitted values (rollback must not leak). Hold the
+		// key so a concurrent Get cannot re-cache the pre-tx committed row.
+		s.hold(key)
+		return nil
+	}
 	s.publish(key, string(raw), true)
 	return nil
 }
 
-// publish records a known value (or known miss) and invalidates in-flight fills.
+// publish records a known committed value (or known miss) and clears any hold.
 func (s *Store) publish(key, raw string, ok bool) {
 	if s.cache == nil {
 		return
 	}
 	s.cache.mu.Lock()
 	s.cache.generation++
+	delete(s.cache.held, key)
 	s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
+	s.cache.mu.Unlock()
+}
+
+// hold drops a cached entry and blocks refills until a committed publish.
+func (s *Store) hold(key string) {
+	if s.cache == nil {
+		return
+	}
+	s.cache.mu.Lock()
+	s.cache.generation++
+	delete(s.cache.entries, key)
+	s.cache.held[key] = struct{}{}
 	s.cache.mu.Unlock()
 }
 
@@ -245,6 +274,35 @@ func (s *Store) deletePrefix(ctx context.Context, ex execer, prefix string) erro
 	if _, err := ex.ExecContext(ctx, `DELETE FROM settings WHERE substr(key, 1, length(?)) = ?`, prefix, prefix); err != nil {
 		return fmt.Errorf("settings: delete prefix %q: %w", prefix, err)
 	}
+	if _, isTx := ex.(*sql.Tx); isTx {
+		s.holdPrefix(prefix)
+		return nil
+	}
 	s.forgetPrefix(prefix)
+	// Drop holds under the prefix after a committed delete.
+	if s.cache != nil {
+		s.cache.mu.Lock()
+		for k := range s.cache.held {
+			if strings.HasPrefix(k, prefix) {
+				delete(s.cache.held, k)
+			}
+		}
+		s.cache.mu.Unlock()
+	}
 	return nil
+}
+
+func (s *Store) holdPrefix(prefix string) {
+	if s.cache == nil {
+		return
+	}
+	s.cache.mu.Lock()
+	s.cache.generation++
+	for k := range s.cache.entries {
+		if strings.HasPrefix(k, prefix) {
+			delete(s.cache.entries, k)
+			s.cache.held[k] = struct{}{}
+		}
+	}
+	s.cache.mu.Unlock()
 }

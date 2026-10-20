@@ -169,7 +169,7 @@ func TestGetDoesNotRepopulateAfterConcurrentSet(t *testing.T) {
 	}
 }
 
-func TestSetTxWriteThroughVisibleAfterCommit(t *testing.T) {
+func TestSetTxHoldDoesNotLeakOnRollback(t *testing.T) {
 	s, ctx := newStore(t), context.Background()
 	_ = s.Set(ctx, "site.title", "A")
 	var v string
@@ -181,11 +181,34 @@ func TestSetTxWriteThroughVisibleAfterCommit(t *testing.T) {
 	if err := s.SetTx(ctx, tx, "site.title", "B"); err != nil {
 		t.Fatal(err)
 	}
-	// Write-through makes B visible to Get before commit (avoids re-caching A
-	// from the pool connection that cannot see the open transaction).
-	if err := s.Get(ctx, "site.title", &v); err != nil || v != "B" {
+	if err := s.SetTx(ctx, tx, "site.partial", "x"); err != nil {
+		t.Fatal(err)
+	}
+	_ = tx.Rollback()
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "A" {
+		t.Fatalf("rollback must keep committed title: %q %v", v, err)
+	}
+	if err := s.Get(ctx, "site.partial", &v); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("rollback must drop partial SetTx: %v %q", err, v)
+	}
+}
+
+func TestSetTxHoldPreventsStaleRefillThenSeesCommit(t *testing.T) {
+	s, ctx := newStore(t), context.Background()
+	_ = s.Set(ctx, "site.title", "A")
+	var v string
+	_ = s.Get(ctx, "site.title", &v)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetTx(ctx, tx, "site.title", "B"); err != nil {
+		t.Fatal(err)
+	}
+	// While held, Get hits SQLite (still A) and must not cache that row.
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "A" {
 		_ = tx.Rollback()
-		t.Fatalf("SetTx must publish: %q %v", v, err)
+		t.Fatalf("open tx: pool still sees A: %q %v", v, err)
 	}
 	if err := tx.Commit(); err != nil {
 		t.Fatal(err)
