@@ -92,7 +92,7 @@ Manage posts, pages, custom content types, fields, media and navigation in one p
 
 ## Build a site you can make your own
 
-### Identity themes (shipped)
+### Identity themes
 
 Ship-with themes are **identity systems** — type, color, spacing and chrome — not magazine/business/portfolio layout packs. Activate one under **Appearance → Themes**; directory slugs stay stable (`default`, `business`, `portfolio`, `magazine`, `docs`).
 
