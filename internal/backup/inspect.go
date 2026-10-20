@@ -35,19 +35,25 @@ type Inspection struct {
 	Readiness            string                `json:"readiness"`
 	Errors               []string              `json:"errors"`
 	Warnings             []string              `json:"warnings"`
+	CutoverChecklist     []string              `json:"cutover_checklist"`
 	ExternalRequirements []ExternalRequirement `json:"external_requirements"`
 	Remote               UploadReceipt         `json:"remote"`
 }
 
 // Inspect never creates a DB, secret or receipt, and makes no network requests.
+// Readiness tiers:
+//   - blocked: local pair cannot be restored (errors)
+//   - review_required: local pair usable, but site-specific warnings need attention before cutover
+//   - local_ok: local checksums/integrity passed; cutover_checklist still lists secrets/themes/writes/remote
 func Inspect(manifestPath string) (*Inspection, error) {
 	m, err := ReadManifest(manifestPath)
 	if err != nil {
 		return nil, err
 	}
 	dir := filepath.Dir(manifestPath)
-	r := &Inspection{Stamp: m.Stamp, CheckedAt: time.Now().UTC().Format(time.RFC3339), Consistency: m.Consistency, Readiness: "review_required",
-		Errors: []string{}, Warnings: append([]string{}, backupLimitations...), ExternalRequirements: []ExternalRequirement{}, Remote: receiptAt(dir, m.Stamp)}
+	r := &Inspection{Stamp: m.Stamp, CheckedAt: time.Now().UTC().Format(time.RFC3339), Consistency: m.Consistency, Readiness: "local_ok",
+		Errors: []string{}, Warnings: []string{}, CutoverChecklist: append([]string{}, backupLimitations...),
+		ExternalRequirements: []ExternalRequirement{}, Remote: receiptAt(dir, m.Stamp)}
 	r.LocalComplete = true
 	for _, f := range []FileDigest{m.Database, m.Archive} {
 		p := filepath.Join(dir, f.Name)
@@ -87,14 +93,19 @@ func Inspect(manifestPath string) (*Inspection, error) {
 		}
 	}
 	if !r.RecoveryKeyArchived {
-		r.Warnings = append(r.Warnings, "independent_original_secret_required")
+		r.CutoverChecklist = append(r.CutoverChecklist, "independent_original_secret_required")
 	}
 	if r.Remote.State != "uploaded" {
-		r.Warnings = append(r.Warnings, "remote_pair_not_confirmed")
+		r.CutoverChecklist = append(r.CutoverChecklist, "remote_pair_not_confirmed")
 	}
-	r.Warnings = append(r.Warnings, "remote_readback_not_verified")
-	if len(r.Errors) > 0 {
+	r.CutoverChecklist = append(r.CutoverChecklist, "remote_readback_not_verified")
+	switch {
+	case len(r.Errors) > 0:
 		r.Readiness = "blocked"
+	case len(r.Warnings) > 0:
+		r.Readiness = "review_required"
+	default:
+		r.Readiness = "local_ok"
 	}
 	return r, nil
 }

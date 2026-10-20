@@ -215,7 +215,7 @@ func TestBackupLeavesSecretsOutByDefault(t *testing.T) {
 		t.Fatalf("manifest lists recovery files: %v %v", m, err)
 	}
 	report, err := Inspect(res.Manifest)
-	if err != nil || report.RecoveryKeyArchived || !slices.Contains(report.Warnings, "independent_original_secret_required") {
+	if err != nil || report.RecoveryKeyArchived || !slices.Contains(report.CutoverChecklist, "independent_original_secret_required") {
 		t.Fatalf("inspection must ask for the independently kept secret: %+v %v", report, err)
 	}
 }

@@ -31,7 +31,7 @@ func TestAdminBackupInspectAndRestore(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("inspect: %d", resp.StatusCode)
 	}
-	mustContain(t, page, `data-inspect-readiness="review_required"`, `data-restore-submit`, `data-restore-dest`, filepath.Join("restores", stamp))
+	mustContain(t, page, `data-inspect-readiness="local_ok"`, `data-inspect-cutover`, `data-restore-submit`, `data-restore-dest`, filepath.Join("restores", stamp))
 
 	inspectPath := "/admin/system/backups/" + stamp + "/inspect"
 	restorePath := "/admin/system/backups/" + stamp + "/restore"
@@ -166,7 +166,7 @@ func TestAdminBackupRestoreRefusesLeftoverPartial(t *testing.T) {
 // Every inspection code (errors, warnings, limitations) has an EN and AR
 // message, so the inspect page never shows a bare code.
 func TestBackupInspectionCodesTranslated(t *testing.T) {
-	code := regexp.MustCompile(`(?:Errors|Warnings), "([a-z_]+)"`)
+	code := regexp.MustCompile(`(?:Errors|Warnings|CutoverChecklist), "([a-z_]+)"`)
 	limits := regexp.MustCompile(`backupLimitations = \[\]string\{([^}]*)\}`)
 	quoted := regexp.MustCompile(`"([a-z_]+)"`)
 	seen := map[string]bool{}

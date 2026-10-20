@@ -19,8 +19,16 @@
   </ul>
   {{end}}
   {{if .Report.Warnings}}
+  <h3 class="font-semibold text-sm pt-2">{{t "admin.backups.warnings_title"}}</h3>
   <ul class="text-sm text-muted list-disc ps-5" data-inspect-warnings>
     {{range .Report.Warnings}}<li data-code="{{.}}">{{t (print "admin.backups.code." .)}} <span class="font-mono text-xs" dir="ltr">({{.}})</span></li>{{end}}
+  </ul>
+  {{end}}
+  {{if .Report.CutoverChecklist}}
+  <h3 class="font-semibold text-sm pt-2">{{t "admin.backups.cutover_title"}}</h3>
+  <p class="text-muted text-sm">{{t "admin.backups.cutover_help"}}</p>
+  <ul class="text-sm text-muted list-disc ps-5" data-inspect-cutover>
+    {{range .Report.CutoverChecklist}}<li data-code="{{.}}">{{t (print "admin.backups.code." .)}} <span class="font-mono text-xs" dir="ltr">({{.}})</span></li>{{end}}
   </ul>
   {{end}}
 </section>

@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Backup inspect readiness clarity
+
+- Distinguishes `local_ok` (local checksums and database integrity passed) from `review_required` (site-specific cutover warnings such as external media) and `blocked` (restore refused).
+- Moves expected recovery requirements (secrets, themes, stopped writes, remote copy) into a `cutover_checklist` so a healthy local backup is not framed as a failed preflight.
+- Updates English and Arabic admin inspect copy and operator docs accordingly.
+
 ### Site identity on first-run setup
 
 - Collect site name, optional tagline and language during `/admin/setup`, and require a site name on the workspace first-run path when it is still empty (for example after CLI admin creation). Public pages no longer stay on the generic GoRun title until Settings.

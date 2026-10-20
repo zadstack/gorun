@@ -31,7 +31,7 @@ func TestBackupInspectReadOnlyAndBlockedExit(t *testing.T) {
 	if err := backupInspect([]string{"--input", res.Manifest}, &out); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), `"readiness": "review_required"`) || !strings.Contains(out.String(), "independent_original_secret_required") {
+	if !strings.Contains(out.String(), `"readiness": "local_ok"`) || !strings.Contains(out.String(), "independent_original_secret_required") || !strings.Contains(out.String(), `"cutover_checklist"`) {
 		t.Fatal(out.String())
 	}
 	if _, err := os.Stat(filepath.Join(dir, "secret.key")); !os.IsNotExist(err) {

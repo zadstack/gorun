@@ -52,8 +52,14 @@ func TestInspectDetectsMissingPairAndCorruption(t *testing.T) {
 				t.Fatal(err)
 			}
 			if mode == "complete" {
-				if !rep.LocalComplete || !rep.IntegrityOK || rep.ForeignKeyViolations != 0 || rep.Readiness != "review_required" || rep.Remote.State != "unverified" {
+				if !rep.LocalComplete || !rep.IntegrityOK || rep.ForeignKeyViolations != 0 || rep.Readiness != "local_ok" || rep.Remote.State != "unverified" {
 					t.Fatalf("wrong readiness: %+v", rep)
+				}
+				if len(rep.Warnings) != 0 {
+					t.Fatalf("healthy local pair should not carry site-specific warnings: %+v", rep.Warnings)
+				}
+				if len(rep.CutoverChecklist) == 0 {
+					t.Fatal("cutover checklist missing on healthy local pair")
 				}
 			} else if rep.Readiness != "blocked" || len(rep.Errors) == 0 {
 				t.Fatalf("invalid backup accepted: %+v", rep)
@@ -90,6 +96,42 @@ func TestInspectForeignKeysAndMissingExternalDestinations(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(dir, "secret.key")); !os.IsNotExist(err) {
 		t.Fatal("inspection generated recovery secret")
+	}
+}
+
+func TestInspectExternalMediaKeepsLocalPairReviewRequired(t *testing.T) {
+	dir, path := backupSource(t)
+	d, err := db.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.Exec(`CREATE TABLE media(id TEXT, storage_key TEXT); INSERT INTO media VALUES ('m','remote/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sites/fixture/a.png')`); err != nil {
+		t.Fatal(err)
+	}
+	d.Close()
+	res, err := Create(dir, path, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep, err := Inspect(res.Manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !rep.IntegrityOK || rep.Readiness != "review_required" || len(rep.Errors) != 0 {
+		t.Fatalf("external media should stay review_required, not blocked: %+v", rep)
+	}
+	found := false
+	for _, w := range rep.Warnings {
+		if w == "external_media_required" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("external_media_required missing from warnings: %+v", rep.Warnings)
+	}
+	if len(rep.CutoverChecklist) == 0 {
+		t.Fatal("cutover checklist should still list expected recovery requirements")
 	}
 }
 

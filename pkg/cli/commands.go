@@ -138,7 +138,7 @@ func backup(args []string, out io.Writer) error {
 		return fmt.Errorf("backup: local verification failed (%s); previous copies preserved", strings.Join(report.Errors, ", "))
 	}
 	fmt.Fprintf(out, "database: %s\nfiles:    %s (%d files)\n", res.DB, res.Files, res.Count)
-	fmt.Fprintln(out, "integrity: local checks passed; original secrets and external recovery requirements still need review")
+	fmt.Fprintf(out, "integrity: local checks passed (readiness=%s); cutover still needs secrets, themes, stopped writes, and any remote copy\n", report.Readiness)
 	if includeSecrets {
 		fmt.Fprintln(out, "secrets:  secret.key and gorun.toml are in the archive in plain text; keep it offline and encrypted")
 	} else {

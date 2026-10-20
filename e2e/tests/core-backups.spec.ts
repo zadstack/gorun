@@ -29,7 +29,8 @@ test('native backup presence and upload receipts remain distinct from verified r
 
   await page.locator('[data-inspect-link]').first().click();
   await expect(page).toHaveURL(/\/admin\/system\/backups\/\d{8}T\d{6}Z\/inspect$/);
-  await expect(page.locator('[data-inspect-readiness="review_required"]')).toBeVisible();
+  await expect(page.locator('[data-inspect-readiness="local_ok"]')).toBeVisible();
+  await expect(page.locator('[data-inspect-cutover]')).toBeVisible();
   await page.locator('[data-restore-submit]').click();
   const modal = page.locator('[role="dialog"][aria-labelledby="gp-confirm-title"]');
   await expect(modal).toBeVisible();
