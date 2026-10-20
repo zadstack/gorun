@@ -99,7 +99,8 @@ HSTS and successful health/readiness/home/admin sign-in responses at every suppl
 reporting success. See [Caddy's automatic HTTPS requirements](https://caddyserver.com/docs/automatic-https).
 
 Open the reported `/admin/setup` URL and enter the setup token directly from the
-root-private `secrets.env` file. Choose your admin email/password in the browser.
+root-private `secrets.env` file. Choose your admin email/password, site name and
+language in the browser.
 An assistant must not copy the token or password into a conversation or logs.
 Once a user exists, the application closes first-admin setup; resume never creates
 or replaces an account. This production path deliberately leaves password choice

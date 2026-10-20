@@ -28,6 +28,7 @@ func (h *handlers) secure(r *http.Request) bool { return secureCookies(r, h.deps
 // authPage is the data for pages/auth/*.html.
 type authPage struct {
 	Next, Name, Email, Error, Token string
+	Title, Tagline, Locale          string
 	Fields                          map[string]string
 	// NeedToken asks for GORUN_SETUP_TOKEN on the setup form (prod);
 	// SetupBlocked replaces the form with instructions (prod, no token).

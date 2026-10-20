@@ -132,17 +132,20 @@ func TestSetupCreatesFirstAdminAndLogsIn(t *testing.T) {
 	}
 	token := csrfFrom(t, page)
 
-	resp, page = s.do("POST", "/admin/setup", url.Values{"_csrf": {token}, "name": {"Ahmed"}, "email": {"bad"}, "password": {"short"}})
+	resp, page = s.do("POST", "/admin/setup", url.Values{"_csrf": {token}, "name": {"Ahmed"}, "email": {"bad"}, "password": {"short"}, "title": {"Studio"}, "locale": {"ar"}})
 	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(page, "field-error") {
 		t.Fatalf("invalid setup should re-render with errors: %d", resp.StatusCode)
 	}
-	resp, _ = s.do("POST", "/admin/setup", url.Values{"name": {"Ahmed"}, "email": {"admin@example.com"}, "password": {"correct horse battery"}})
+	resp, _ = s.do("POST", "/admin/setup", url.Values{"name": {"Ahmed"}, "email": {"admin@example.com"}, "password": {"correct horse battery"}, "title": {"Studio"}, "locale": {"ar"}})
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("setup without csrf must be rejected: %d", resp.StatusCode)
 	}
-	resp, _ = s.do("POST", "/admin/setup", url.Values{"_csrf": {token}, "name": {"Ahmed"}, "email": {"admin@example.com"}, "password": {"correct horse battery"}})
+	resp, _ = s.do("POST", "/admin/setup", url.Values{"_csrf": {token}, "name": {"Ahmed"}, "email": {"admin@example.com"}, "password": {"correct horse battery"}, "title": {"Studio"}, "tagline": {"مرحبا"}, "locale": {"ar"}})
 	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/admin/workspace" {
 		t.Fatalf("setup submit: %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	if got := s.app.Deps.Settings.GetString(context.Background(), "site.title", ""); got != "Studio" {
+		t.Fatalf("setup left site.title=%q", got)
 	}
 	resp, page = s.do("GET", "/admin", nil)
 	if resp.StatusCode != 200 || !strings.Contains(page, "Ahmed") || !strings.Contains(page, "/static/admin/admin.css") {

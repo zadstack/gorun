@@ -87,7 +87,7 @@ GORUN_BASE_URL=http://127.0.0.1:8080 \
 ./bin/gorun serve
 ```
 
-افتح `http://127.0.0.1:8080/admin/setup` وأنشئ أول مدير. في dev لا يحتاج النموذج رمز إعداد إلا إذا ضُبط رمز صراحة. بعد وجود أي مستخدم يُغلق مسار الإعداد الأول، ويكون تسجيل الدخول من `/admin/login` ، والإدارة من `/admin`.
+افتح `http://127.0.0.1:8080/admin/setup` وأنشئ أول مدير مع اسم الموقع واللغة. في dev لا يحتاج النموذج رمز إعداد إلا إذا ضُبط رمز صراحة. بعد وجود أي مستخدم يُغلق مسار الإعداد الأول، ويكون تسجيل الدخول من `/admin/login` ، والإدارة من `/admin`.
 
 في طرفية أخرى:
 
@@ -256,7 +256,7 @@ tar xzf gorun-0.4.0-linux-amd64.tar.gz && cd gorun-0.4.0-linux-amd64
 GORUN_ENV=dev GORUN_DATA=./data GORUN_BASE_URL=http://127.0.0.1:8080 ./gorun serve
 ```
 
-Open `/admin/setup`. Production needs `GORUN_ENV=prod`, a persistent data dir, HTTPS, `GORUN_BASE_URL`, a stable `GORUN_SECRET_KEY` (32 bytes Base64), and usually `GORUN_SETUP_TOKEN` (≥16 chars) for web bootstrap. Run from the extract directory so `themes/` resolves, or set `GORUN_THEMES`.
+Open `/admin/setup` and create the first administrator with a site name and language. Production needs `GORUN_ENV=prod`, a persistent data dir, HTTPS, `GORUN_BASE_URL`, a stable `GORUN_SECRET_KEY` (32 bytes Base64), and usually `GORUN_SETUP_TOKEN` (≥16 chars) for web bootstrap. Run from the extract directory so `themes/` resolves, or set `GORUN_THEMES`.
 
 ### Docker / GHCR
 

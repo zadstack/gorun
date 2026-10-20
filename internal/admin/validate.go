@@ -17,19 +17,28 @@ func (e *SettingError) Error() string { return fmt.Sprintf("setting %s: %s", e.K
 
 // ValidateGeneralSetting validates and normalises one Settings → General
 // value exactly as the admin screen does, for the keys that need no other
-// service: site.title, site.tagline (trimmed, max 500 runes), site.locale
-// (a supported locale), site.timezone (an IANA name; "" and "Local" are
-// rejected) and site.base_url (absolute http(s) origin, no trailing slash).
-// It returns the value to store, or a *SettingError. Other keys (site.theme
-// and site.front_page need the theme and content services, site.logo the
-// media service) are rejected with code "admin.settings.error_key".
-// contact.email must be empty or a plain address; site.posts_per_page an
-// integer 1–100 (returned in canonical decimal form; store it as a number,
-// see PostsPerPage).
+// service: site.title (required, trimmed, max 500 runes), site.tagline
+// (trimmed, max 500 runes), site.locale (a supported locale), site.timezone
+// (an IANA name; "" and "Local" are rejected) and site.base_url (absolute
+// http(s) origin, no trailing slash). It returns the value to store, or a
+// *SettingError. Other keys (site.theme and site.front_page need the theme
+// and content services, site.logo the media service) are rejected with code
+// "admin.settings.error_key". contact.email must be empty or a plain
+// address; site.posts_per_page an integer 1–100 (returned in canonical
+// decimal form; store it as a number, see PostsPerPage).
 func ValidateGeneralSetting(key, value string) (string, error) {
 	fail := func(code string) (string, error) { return "", &SettingError{Key: key, Code: code} }
 	switch key {
-	case "site.title", "site.tagline":
+	case "site.title":
+		v := strings.TrimSpace(value)
+		if v == "" {
+			return fail("admin.settings.error_title_required")
+		}
+		if utf8.RuneCountInString(v) > maxSettingLen {
+			return fail("admin.settings.error_too_long")
+		}
+		return v, nil
+	case "site.tagline":
 		v := strings.TrimSpace(value)
 		if utf8.RuneCountInString(v) > maxSettingLen {
 			return fail("admin.settings.error_too_long")

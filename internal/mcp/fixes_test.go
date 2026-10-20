@@ -298,7 +298,7 @@ func TestResourceForbiddenWithoutScope(t *testing.T) {
 func TestSettingsValidationParity(t *testing.T) {
 	long := strings.Repeat("ض", 501)
 	cases := []struct{ key, value string }{
-		{"site.title", "  ZAD  "}, {"site.title", long}, {"site.tagline", ""},
+		{"site.title", "  ZAD  "}, {"site.title", ""}, {"site.title", "   "}, {"site.title", long}, {"site.tagline", ""},
 		{"site.locale", "ar"}, {"site.locale", "en"}, {"site.locale", "xx"},
 		{"site.timezone", "Africa/Cairo"}, {"site.timezone", " UTC "}, {"site.timezone", "Local"}, {"site.timezone", ""}, {"site.timezone", "Mars/Olympus"},
 		{"seo.title_template", ""}, {"seo.title_template", "{title} · ZAD"}, {"seo.title_template", "no placeholder"},
