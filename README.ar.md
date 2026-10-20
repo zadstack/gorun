@@ -36,9 +36,15 @@
 
 تجمع القائمة الرئيسية الأدوات في ما يصل إلى ستة أقسام، وتظهر تبويبات الصفحات فوق الشاشة التي تستخدمها بحسب صلاحياتك. يضيف المتجر قسمًا سابعًا اختياريًا عند توفر أدوات تجارة مسموح بها. تحتفظ التصنيفات الملونة بأسمائها وحدود التحديد الواضحة. تبقى إعدادات الظهور والترتيب والتثبيت خاصة بحسابك؛ وتظل الأدوات المثبّتة متاحة ضمن «الوصول السريع» في القائمة الرئيسية، وتنعكس الواجهة للعربية.
 
-![أقسام GoRun 0.9 المنظمة وتبويبات المحتوى وشريط الوكلاء المقابل بالعربية](assets/branding/screenshots/admin-navigation-ar.png)
+![أقسام GoRun 0.10 المنظمة وتبويبات المحتوى وشريط الوكلاء المقابل بالعربية](assets/branding/screenshots/admin-navigation-ar.png)
 
 الصور من موقع تجريبي معزول بمحتوى خيالي. [قائمة الأقسام على الموبايل بالعربية](assets/branding/screenshots/admin-navigation-ar-mobile.png) · [دليل مساحة العمل](docs/ADMIN_WORKSPACE.md).
+
+تميّز شاشة الإضافات بين **من مجلد الخادم** و**ملف ZIP مرفوع** و**الطريقة القديمة غير المسجلة**. طريقة التثبيت لا تثبت مؤلف الحزمة أو سلامتها. [دليل طرق التثبيت](docs/EXTENSION-INSTALLATION-METHODS.md).
+
+![الإضافات في GoRun 0.10 مصنفة حسب طريقة التثبيت المسجلة مع إبقاء السجلات القديمة مجهولة الطريقة](assets/branding/screenshots/extensions-methods-en.png)
+
+[طرق تثبيت الإضافات بالعربية على الموبايل](assets/branding/screenshots/extensions-methods-ar-mobile.png).
 
 ### تصميم الموقع في مساحة واحدة
 
@@ -72,7 +78,7 @@ If a tool requests approval, report its request ID and wait for the decision.
 <table>
   <tr>
     <td width="50%"><img src="assets/branding/screenshots/agent-keys-en.png" alt="صفحة مفاتيح API في GoRun بالإنجليزية: مفاتيح وكلاء ومفتاح REST، لكل منها نطاقات محددة مثل content.view وcanvas.run" /></td>
-    <td width="50%"><img src="assets/branding/screenshots/approvals-ar.png" alt="قائمة موافقات الوكلاء في GoRun بالعربية: طلبا نشر من وكيل التحرير بانتظار القرار، وقرار موافقة سابق" /></td>
+    <td width="50%"><img src="assets/branding/screenshots/approvals-ar.png" alt="موافقة نشر تجريبية بالعربية تنتظر مراجعة المحرر" /></td>
   </tr>
   <tr>
     <td><strong>مفاتيح الوكلاء</strong><br />نطاقات محددة لكل مفتاح، وREST منفصل عن MCP.</td>
@@ -101,6 +107,14 @@ If a tool requests approval, report its request ID and wait for the decision.
 - **صلاحيات صريحة للوكلاء.** أنت تحدد العناصر التي يستطيع كل وكيل قراءتها أو الإضافة إليها أو التشغيل عليها في كل لوحة.
 
 تعرض بطاقة الوكيل أو المزود معرّفها وهوية الوكيل أو المزود المختار، مع رابط استقبال لحدث موقّع يطابق الأمر المحفوظ والتعليمات التي راجعتها. تبدأ قواعد الأحداث الواردة غير مفعلة، وتحتاج إلى مراجعة وتفعيل صريحين. ويظل الوكيل الخارجي بحاجة إلى عميل MCP يعمل لديه. [إعداد أحداث اللوحة](docs/CANVASES.md#incoming-events-on-agent-and-provider-cards).
+
+#### اقتراحات تبدأ بالمراجعة
+
+عند إعداد مزوّد ذكاء اصطناعي، راجع الوجهة والسياق الفعليين قبل تأكيد طلب اقتراحات للكانفس بصورة مستقلة. الاقتراح بداية غير مرتبطة بمنفّذ أو صلاحيات؛ تختارها أنت لاحقًا. [دليل الاقتراحات](docs/CANVAS-AI-SUGGESTIONS.md).
+
+![ثلاثة اقتراحات للكانفس في GoRun 0.10 بعد مراجعة وتأكيد صريحين](assets/branding/screenshots/canvas-ai-suggestions-en.png)
+
+[الاقتراحات بالعربية على الموبايل](assets/branding/screenshots/canvas-ai-suggestions-ar-mobile.png). هذه أمثلة توثيقية من مزوّد HTTP محلي مبرمج للاختبار، وليست ناتج نموذج فعلي أو دليلًا على توفر مزوّد خارجي.
 
 #### مهامك المحفوظة في متناولك
 
