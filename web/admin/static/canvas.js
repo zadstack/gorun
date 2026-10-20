@@ -273,7 +273,7 @@
     if (card.kind === 'note' && card.body) noteBody(body, card);
     else if (card.body) {
       const text = element('p', card.body); text.dir = 'auto'; body.append(text);
-      if (card.body.length > 360) { body.tabIndex = 0; body.setAttribute('role', 'region'); body.setAttribute('aria-label', card.title); }
+      if (card.body.length > 360 || card.body.split('\n').length > 6) { body.tabIndex = 0; body.setAttribute('role', 'region'); body.setAttribute('aria-label', card.title); }
     }
     if (card.kind === 'checklist') (card.items || []).forEach((item, index) => {
       const label = element('label', undefined, 'canvas-check'); const checkbox = element('input'); checkbox.type = 'checkbox'; checkbox.checked = item.checked;

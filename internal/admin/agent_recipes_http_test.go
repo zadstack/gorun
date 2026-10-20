@@ -256,3 +256,71 @@ func TestAgentRecipeAcceptsBoundedLongArabicForm(t *testing.T) {
 		t.Fatal("body limit not enforced", r.StatusCode)
 	}
 }
+
+func TestAgentRecipeSaveErrorsAreActionableAndPrivate(t *testing.T) {
+	for _, locale := range []string{"en", "ar"} {
+		for _, scenario := range []string{"limit", "conflict", "database"} {
+			t.Run(locale+"/"+scenario, func(t *testing.T) {
+				s := boot(t)
+				owner := s.login("recipe-errors@example.test", "admin", locale)
+				keys, _ := kernel.Get[auth.KeyService](s.app.Deps, kernel.ServiceAPIKeys)
+				_, key, e := keys.CreateKind(context.Background(), auth.KeyKindAgent, "Recipe error fixture", owner.ID, []string{"*"}, 60, "")
+				if e != nil {
+					t.Fatal(e)
+				}
+				_, body := s.do("GET", "/admin/agents/recipes?agent="+key.ID, nil)
+				form := recipeForm(t, body, key.ID)
+				form.Set("action", "save")
+				form.Set("reviewed", "1")
+				status, english, arabic := 0, "", ""
+				switch scenario {
+				case "limit":
+					for i := 0; i < 100; i++ {
+						if _, e = s.app.Deps.DB.Exec(`INSERT INTO admin_canvases(id,owner_id,title,document_json,edges_json,created_at,updated_at) VALUES(?,?,'Existing','[]','[]',?,?)`, db.NewID(), owner.ID, db.Now(), db.Now()); e != nil {
+							t.Fatal(e)
+						}
+					}
+					status = 422
+					english = "100-canvas limit"
+					arabic = "حد 100 لوحة"
+				case "conflict":
+					if r, b := s.post("/admin/agents/recipes", form); r.StatusCode != 303 {
+						t.Fatal(r.StatusCode, b)
+					}
+					form.Set("instructions", "Keep my conflicting draft edits")
+					status = 409
+					english = "draft already exists with different content"
+					arabic = "المسودة بمحتوى مختلف"
+				case "database":
+					if _, e = s.app.Deps.DB.Exec(`CREATE TRIGGER recipe_test_failure BEFORE INSERT ON admin_canvases BEGIN SELECT RAISE(ABORT,'PRIVATE_DATABASE_SENTINEL'); END;`); e != nil {
+						t.Fatal(e)
+					}
+					status = 500
+					english = "server error"
+					arabic = "خطأ في الخادم"
+				}
+				r, b := s.post("/admin/agents/recipes", form)
+				if r.StatusCode != status {
+					t.Fatal(r.StatusCode, b)
+				}
+				message := english
+				if locale == "ar" {
+					message = arabic
+				}
+				mustContain(t, b, message, form.Get("instructions"))
+				mustNotContain(t, b, "PRIVATE_DATABASE_SENTINEL", "agent configuration changed", "تغير إعداد الوكيل")
+				var count int
+				if e = s.app.Deps.DB.QueryRow(`SELECT count(*) FROM admin_canvases WHERE id=?`, form.Get("draft_id")).Scan(&count); e != nil {
+					t.Fatal(e)
+				}
+				expected := 0
+				if scenario == "conflict" {
+					expected = 1
+				}
+				if count != expected {
+					t.Fatal("failed save modified canvas", count)
+				}
+			})
+		}
+	}
+}
