@@ -16,6 +16,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/audit"
 	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/i18n"
 )
 
 type ctxKey int
@@ -120,10 +121,16 @@ func Logger(log *slog.Logger) func(http.Handler) http.Handler {
 var secretPathPrefixes = []string{"/auth/magic/"}
 
 // RedactPath replaces everything after a secret prefix with "…".
+// Locale-prefixed public paths (/en/auth/magic/…, /ar/auth/magic/…) are
+// treated the same as the unprefixed credential URL.
 func RedactPath(p string) string {
+	loc, rest := i18n.SplitLocalePath(p)
 	for _, prefix := range secretPathPrefixes {
-		if strings.HasPrefix(p, prefix) {
-			return prefix + "…"
+		if strings.HasPrefix(rest, prefix) {
+			if loc == "" {
+				return prefix + "…"
+			}
+			return "/" + loc + prefix + "…"
 		}
 	}
 	return p

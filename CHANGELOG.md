@@ -5,6 +5,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Security
+
+- Refresh `SECURITY.md` supported versions for the 0.10 line (0.10.x / 0.9.x / 0.8.x).
+- Harden `gorun start` LAN preview: treat locale-prefixed privileged paths the same as
+  unprefixed ones, and keep private intake (`/reports`), public forms (`/forms`) and
+  customer `/start` on loopback only (alongside admin, API, MCP, accounts and checkout).
+- Redact locale-prefixed magic-login paths (`/en/auth/magic/…`, `/ar/auth/magic/…`) in
+  request logs the same way as `/auth/magic/…`.
+
 ### Changed
 
 - Local `make loadtest` / `tools/loadtest` now boots the spawned serve process

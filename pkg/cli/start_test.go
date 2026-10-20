@@ -100,7 +100,13 @@ func TestStartGuard(t *testing.T) {
 		{"encoded admin", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/%61dmin", 403, false},
 		{"dot segments", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/foo/../admin", 403, false},
 		{"account", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/account", 403, false},
+		{"locale account", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/en/account", 403, false},
 		{"magic login", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/auth/magic/token", 403, false},
+		{"locale magic", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/ar/auth/magic/token", 403, false},
+		{"private intake", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/reports/incident", 403, false},
+		{"locale intake", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/en/reports/incident", 403, false},
+		{"customer start", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/start/login", 403, false},
+		{"forms", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/forms/contact", 403, false},
 		{"write", "192.168.1.20:1234", "192.168.1.10:8080", "POST", "/contact", 403, false},
 		{"local via LAN host", "127.0.0.1:1234", "192.168.1.10:8080", "GET", "/admin", 403, false},
 	} {
