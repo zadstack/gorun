@@ -128,15 +128,17 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 **١. عدّل الوصفة حسب احتياجك.** افتح **قوالب أدوار الوكلاء ← بناء وصفة باحث المستجدات**. اختر وكيلك المحفوظ، وعدّل التعليمات وأضف الموضوع ومقتطفات المصادر وتواريخها. راجع إعداد النموذج وأدوات MCP الموجودة؛ المعاينة والحفظ لا يشغّلان الوكيل ولا يمنحانه وصولًا. [دليل الوصفة](docs/AGENT-RECIPES.md).
 
-![وصفة باحث المستجدات بتعليمات قابلة للتعديل ومصادر تجريبية لأطلس ستوديو](assets/branding/screenshots/researcher-setup-ar-mobile.png)
+![وصفة باحث المستجدات بتعليمات قابلة للتعديل ومصادر تجريبية لأطلس ستوديو](assets/branding/screenshots/researcher-setup-ar.png)
 
 **٢. راجع الطلب الفعلي.** احفظ الكانفس الخاص، وامنح الوكيل الوصول إلى السياق المطلوب، ثم افحص التعليمات والسياق الفعليين في شاشة مراجعة التشغيل. أكد التشغيل بصورة مستقلة. تحتفظ استدعاءات أدوات MCP المُدارة بموافقة كل استدعاء؛ والوكيل الخارجي يحتاج عميله المتصل.
 
-![مراجعة التعليمات والمصدر الفعليين قبل تأكيد تشغيل باحث المستجدات](assets/branding/screenshots/researcher-review-ar-mobile.png)
+![مراجعة التعليمات والمصدر الفعليين قبل تأكيد تشغيل باحث المستجدات](assets/branding/screenshots/researcher-review-ar.png)
 
 **٣. اقرأ النتيجة الخاصة.** يصل الموجز كملاحظة تبين مصدرها بجوار التعليمات والمصادر الأصلية. تساعد أنواع الكروت الواضحة ونقاط الاتصال المنفصلة وقارئ الملاحظات الكاملة على مراجعة العمل. يظل النشر قرارًا مستقلًا.
 
-![نتيجة باحث المستجدات كملاحظة خاصة بجوار كروت المصدر والمهمة](assets/branding/screenshots/researcher-result-ar-mobile.png)
+![نتيجة باحث المستجدات كملاحظة خاصة بجوار كروت المصدر والمهمة](assets/branding/screenshots/researcher-result-ar.png)
+
+[القصة على الموبايل: الإعداد](assets/branding/screenshots/researcher-setup-ar-mobile.png) · [المراجعة](assets/branding/screenshots/researcher-review-ar-mobile.png) · [النتيجة](assets/branding/screenshots/researcher-result-ar-mobile.png).
 
 بدّل بين **سير العمل** و**الشبكة** و**القائمة** دون تغيير المحتوى أو الروابط المحفوظة. [القصة بالإنجليزية: الإعداد](assets/branding/screenshots/researcher-setup-en.png) · [المراجعة](assets/branding/screenshots/researcher-review-en.png) · [النتيجة](assets/branding/screenshots/researcher-result-en.png).
 
