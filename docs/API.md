@@ -150,7 +150,7 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **161 operations** in 23 tags.
+Generated from the current locally booted OpenAPI document: **163 operations** in 24 tags.
 
 ### builder
 
@@ -162,6 +162,13 @@ Generated from the current locally booted OpenAPI document: **161 operations** i
 | POST | `/api/v1/builder/{id}/publish` | Publish a saved layout using its current opaque draft token | `content.edit`, `content.publish` |
 | POST | `/api/v1/builder/{id}/revisions/{revision}/restore` | Restore a layout revision into the private draft | `content.edit` |
 | PUT | `/api/v1/builder/{id}/draft` | Save a validated page layout as a separate private draft | `content.edit` |
+
+### canvases
+
+| Method | Path | Summary | Scopes |
+|---|---|---|---|
+| GET | `/api/v1/canvases/{id}` | Get a readable canvas board document (grant-filtered for agent keys; REST refuses agent keys) | `canvas.read`, `content.view` |
+| GET | `/api/v1/canvases` | List readable canvas boards (owner boards or grant-scoped) | `canvas.read`, `content.view` |
 
 ### comments
 

@@ -80,7 +80,7 @@ GET `/admin/canvases/{id}/operations/grants` returns `{grants:[{agent_id,title,r
 The UI picks explicitly exposed note/content/source/prompt node IDs. Both current named-key scope and board grant are mandatory. MCP operations use the existing authenticated operation registry with no changes to the content publishing/approval system:
 
 - `canvases.context`: board ID; returns only granted nodes' bounded text and current board version, not every board or every content row.
-- `canvases.run`: requires run grant; an external key request creates status requested for explicit human review, never dispatches automatically.
+- `canvases.request_run`: requires run grant; an external key request creates status requested for explicit human review, never dispatches automatically.
 - `canvases.pending`: only delegated waiting_agent runs targeted to the current named key and matching its current board grant. A manual reviewed run targeting an agent waits until this client claims it. Context and result append are tied to that delegated run; unrelated keys cannot fetch or complete it.
 - `canvases.append_result`: board/run/version-bound, idempotent new result note only. Requires append grant, run ownership and the tied context/version; cannot edit/delete existing cards. Server authenticates provenance rather than trusting supplied author fields.
 

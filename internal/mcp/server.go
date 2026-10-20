@@ -16,6 +16,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/kernel"
 )
@@ -175,7 +176,7 @@ func (s *server) toolResult(tool string, data any, err error) *sdk.CallToolResul
 		StructuredContent: json.RawMessage(b), IsError: !env.OK}
 }
 
-// addResources registers gorun://types and gorun://site.
+// addResources registers gorun://types, gorun://site, and grant-scoped canvases.
 func (s *server) addResources(srv *sdk.Server, with func(context.Context) (context.Context, error)) {
 	add := func(uri, name, desc string, read func(context.Context) (any, error)) {
 		srv.AddResource(&sdk.Resource{URI: uri, Name: name, Description: desc, MIMEType: "application/json"},
@@ -202,6 +203,48 @@ func (s *server) addResources(srv *sdk.Server, with func(context.Context) (conte
 		return s.contentTypes(ctx)
 	})
 	add("gorun://site", "site", "Site structure: identity, types, taxonomies, menus, theme, templates", s.siteStructure)
+	if reader, ok := kernel.Get[admin.CanvasReader](s.d, admin.ServiceCanvasRead); ok {
+		srv.AddResourceTemplate(&sdk.ResourceTemplate{
+			URITemplate: "gorun://canvases/{id}",
+			Name:        "canvas",
+			Description: "Grant-scoped canvas board document (same payload as get_canvas)",
+			MIMEType:    "application/json",
+		}, func(ctx context.Context, req *sdk.ReadResourceRequest) (*sdk.ReadResourceResult, error) {
+			ctx, err := with(ctx)
+			if err != nil {
+				return nil, &jsonrpc.Error{Code: rpcUnauthorized, Message: err.Error()}
+			}
+			if !auth.Can(ctx, "canvas.read") || !auth.Can(ctx, "content.view") {
+				return nil, &jsonrpc.Error{Code: rpcForbidden, Message: "forbidden: canvas.read and content.view scopes required"}
+			}
+			uri := req.Params.URI
+			id, ok := strings.CutPrefix(uri, "gorun://canvases/")
+			if !ok || id == "" || strings.Contains(id, "/") {
+				return nil, &jsonrpc.Error{Code: rpcForbidden, Message: "invalid canvas resource URI"}
+			}
+			doc, err := reader.Get(ctx, id)
+			if err != nil {
+				var coded interface {
+					ErrorCode() string
+					Error() string
+				}
+				if errors.As(err, &coded) {
+					switch coded.ErrorCode() {
+					case "forbidden":
+						return nil, &jsonrpc.Error{Code: rpcForbidden, Message: coded.Error()}
+					case "not_found":
+						return nil, sdk.ResourceNotFoundError(uri)
+					}
+				}
+				return nil, err
+			}
+			b, err := json.MarshalIndent(doc, "", "  ")
+			if err != nil {
+				return nil, err
+			}
+			return &sdk.ReadResourceResult{Contents: []*sdk.ResourceContents{{URI: uri, MIMEType: "application/json", Text: string(b)}}}, nil
+		})
+	}
 }
 
 // httpHandler serves /mcp: streamable HTTP in stateless JSON mode, one MCP

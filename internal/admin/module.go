@@ -106,6 +106,8 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.routes()
 	h.studioRoutes()
 	h.canvasMCPTools()
+	h.canvasReadMCPTools()
+	d.Services.Set(ServiceCanvasRead, CanvasReader(h))
 	d.Jobs.Register("canvas.generate", h.canvasGenerateJob, 1)
 	d.Jobs.Register("canvas.tools", h.managedToolsJob, 1)
 	d.Jobs.Cron("canvas.schedule", time.Minute, h.canvasTick)
@@ -114,6 +116,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.apiOperations()
 	h.roleAPIOperations()
 	h.keyAPIOperations()
+	h.canvasReadAPIOperations()
 	d.Jobs.Cron("jobs.prune", time.Hour, h.pruneJobs)
 	d.Jobs.Cron("backup.schedule", time.Hour, h.backupScheduleTick)
 	return nil
