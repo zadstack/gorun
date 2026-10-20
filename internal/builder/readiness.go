@@ -88,6 +88,17 @@ func buildReadiness(ctx context.Context, d *kernel.Deps) readinessReport {
 		home = nil
 	}
 	b.add(0, "front", "Public front page", "صفحة رئيسية عامة", status, evidence, "/admin/settings/general")
+	siteTitle, titleErr := b.setting("site.title")
+	status = "pass"
+	evidence = strings.TrimSpace(siteTitle)
+	if titleErr != nil {
+		status = "unknown"
+		evidence = b.word("Site title settings unavailable.", "تعذر قراءة إعداد اسم الموقع.")
+	} else if evidence == "" {
+		status = "fail"
+		evidence = b.word("Site title is empty; public pages fall back to GoRun.", "اسم الموقع فارغ؛ الصفحات العامة تعود إلى GoRun.")
+	}
+	b.add(0, "site_title", "Site title", "اسم الموقع", status, evidence, "/admin/settings/general")
 	var identity brand.Identity
 	err = d.Settings.Get(ctx, "builder.identity", &identity)
 	status = "pass"

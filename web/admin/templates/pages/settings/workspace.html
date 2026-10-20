@@ -10,6 +10,25 @@
 <p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.workspace_boundary"}}</p>
 <form method="post" action="/admin/workspace" class="max-w-3xl space-y-4" x-data="{ mode: $el.dataset.mode }" data-mode="{{.Mode}}">
   <input type="hidden" name="_csrf" value="{{csrf}}">
+  {{if .NeedIdentity}}
+  <fieldset class="border border-line rounded p-4 space-y-4 bg-panel">
+    <legend class="font-medium px-1">{{t "admin.workspace.identity_section"}}</legend>
+    <p class="text-sm text-muted">{{t "admin.workspace.identity_help"}}</p>
+    <div>
+      <label for="title" class="block font-medium mb-1">{{t "admin.workspace.site_title"}}</label>
+      <input id="title" name="title" type="text" autocomplete="organization" required value="{{.Title}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+             aria-describedby="title-error" {{with index .Fields "title"}}aria-invalid="true"{{end}}>
+      <div id="title-error">{{template "partials/field_errors" (index .Fields "title")}}</div>
+    </div>
+    <div>
+      <label for="tagline" class="block font-medium mb-1">{{t "admin.workspace.tagline"}}</label>
+      <input id="tagline" name="tagline" type="text" value="{{.Tagline}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+             aria-describedby="tagline-help tagline-error" {{with index .Fields "tagline"}}aria-invalid="true"{{end}}>
+      <p id="tagline-help" class="mt-1 text-xs text-muted">{{t "admin.workspace.tagline_help"}}</p>
+      <div id="tagline-error">{{template "partials/field_errors" (index .Fields "tagline")}}</div>
+    </div>
+  </fieldset>
+  {{end}}
   <fieldset class="space-y-3">
     <legend class="sr-only">{{t "admin.workspace.title"}}</legend>
     <label class="flex gap-3 items-start rounded border border-line bg-panel p-4 cursor-pointer has-[:checked]:border-green has-[:checked]:ring-[3px] has-[:checked]:ring-green-soft">

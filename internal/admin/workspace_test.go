@@ -42,12 +42,17 @@ func TestFilterNavForWorkspace(t *testing.T) {
 func TestWorkspaceChooserAndSimpleHidesAdvancedNav(t *testing.T) {
 	s := boot(t)
 	s.login("workspace-owner@example.com", "admin", "en")
+	ctx := context.Background()
+	if err := s.app.Deps.Settings.Set(ctx, "site.title", "Workspace Studio"); err != nil {
+		t.Fatal(err)
+	}
 
 	resp, page := s.do("GET", "/admin/workspace", nil)
 	if resp.StatusCode != http.StatusOK || !strings.Contains(page, `name="mode"`) || !strings.Contains(page, `value="simple"`) {
 		t.Fatalf("chooser: %d\n%s", resp.StatusCode, page)
 	}
 	mustContain(t, page, "Simple CMS", `value="full"`, `value="simple"`)
+	mustNotContain(t, page, `name="title"`)
 
 	resp, _ = s.post("/admin/workspace", url.Values{"mode": {"simple"}})
 	if resp.StatusCode != http.StatusSeeOther || !strings.Contains(resp.Header.Get("Location"), "/admin/workspace") {
@@ -94,8 +99,48 @@ func TestWorkspaceChoiceWidgetWhenUnset(t *testing.T) {
 func TestWorkspaceInvalidMode(t *testing.T) {
 	s := boot(t)
 	s.login("bad-mode@example.com", "admin", "en")
+	if err := s.app.Deps.Settings.Set(context.Background(), "site.title", "Named site"); err != nil {
+		t.Fatal(err)
+	}
 	resp, page := s.post("/admin/workspace", url.Values{"mode": {"nope"}})
 	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(page, "Choose Simple CMS or Agents") {
 		t.Fatalf("invalid mode: %d\n%s", resp.StatusCode, page)
+	}
+}
+
+func TestWorkspaceFirstRunRequiresSiteTitle(t *testing.T) {
+	s := boot(t)
+	s.login("untitled-owner@example.com", "admin", "en")
+	ctx := context.Background()
+	if got := s.app.Deps.Settings.GetString(ctx, "site.title", ""); got != "" {
+		t.Fatalf("expected empty title after login helper, got %q", got)
+	}
+	resp, page := s.do("GET", "/admin/workspace", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("workspace: %d", resp.StatusCode)
+	}
+	mustContain(t, page, `name="title"`, "Site identity", "Site name")
+
+	resp, page = s.post("/admin/workspace", url.Values{"mode": {"simple"}, "title": {"  "}})
+	if resp.StatusCode != http.StatusUnprocessableEntity || admin.WorkspaceMode(ctx, s.app.Deps.Settings) != "" {
+		t.Fatalf("empty title accepted: %d mode=%q", resp.StatusCode, admin.WorkspaceMode(ctx, s.app.Deps.Settings))
+	}
+	mustContain(t, page, "site name")
+	if got := s.app.Deps.Settings.GetString(ctx, "site.title", ""); got != "" {
+		t.Fatalf("rejected save wrote title=%q", got)
+	}
+
+	resp, _ = s.post("/admin/workspace", url.Values{"mode": {"simple"}, "title": {"  Harbor CMS  "}, "tagline": {"Local news"}})
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("save with title: %d", resp.StatusCode)
+	}
+	if got := s.app.Deps.Settings.GetString(ctx, "site.title", ""); got != "Harbor CMS" {
+		t.Fatalf("title=%q", got)
+	}
+	if got := s.app.Deps.Settings.GetString(ctx, "site.tagline", ""); got != "Local news" {
+		t.Fatalf("tagline=%q", got)
+	}
+	if got := admin.WorkspaceMode(ctx, s.app.Deps.Settings); got != admin.WorkspaceSimple {
+		t.Fatalf("mode=%q", got)
 	}
 }

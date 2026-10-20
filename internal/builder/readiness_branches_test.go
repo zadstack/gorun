@@ -32,6 +32,24 @@ func freshReadiness(ctx context.Context, d *kernel.Deps) *readinessBuilder {
 	return &readinessBuilder{ctx: ctx, d: d, report: readinessReport{Groups: make([]readinessGroup, 3)}}
 }
 
+func TestReadinessFailsEmptySiteTitle(t *testing.T) {
+	h, _, ctx := starterTest(t)
+	if err := h.d.Settings.Set(ctx, "site.title", ""); err != nil {
+		t.Fatal(err)
+	}
+	c := readinessByID(t, buildReadiness(ctx, h.d), "site_title")
+	if c.Status != "fail" || c.Fix != "/admin/settings/general" {
+		t.Fatalf("empty title: %+v", c)
+	}
+	if err := h.d.Settings.Set(ctx, "site.title", "Harbor CMS"); err != nil {
+		t.Fatal(err)
+	}
+	c = readinessByID(t, buildReadiness(ctx, h.d), "site_title")
+	if c.Status != "pass" || c.Evidence != "Harbor CMS" {
+		t.Fatalf("named site: %+v", c)
+	}
+}
+
 func TestReadinessReportsUnreadableAndInvalidSettings(t *testing.T) {
 	h, _, ctx := starterTest(t)
 	for key, value := range map[string]any{"contact.email": 5, "mail.host": 5, "site.base_url": 5, "site.logo": 5, "builder.identity": "not-an-identity", "site.front_page": "missing-front"} {
@@ -40,7 +58,7 @@ func TestReadinessReportsUnreadableAndInvalidSettings(t *testing.T) {
 		}
 	}
 	report := buildReadiness(ctx, h.d)
-	for id, want := range map[string]string{"contact_email": "unknown", "smtp_config": "unknown", "base_url": "unknown", "logo": "unknown", "identity": "unknown", "front": "fail"} {
+	for id, want := range map[string]string{"contact_email": "unknown", "smtp_config": "unknown", "base_url": "unknown", "logo": "unknown", "identity": "unknown", "front": "fail", "site_title": "fail"} {
 		if c := readinessByID(t, report, id); c.Status != want {
 			t.Errorf("%s=%s want %s (%s)", id, c.Status, want, c.Evidence)
 		}

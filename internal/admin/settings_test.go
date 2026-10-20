@@ -13,6 +13,25 @@ func generalForm(baseURL string) url.Values {
 		"base_url": {baseURL}, "theme": {"default"}, "front_page": {""}}
 }
 
+func TestSettingsRejectEmptySiteTitle(t *testing.T) {
+	s := boot(t)
+	s.login("admin@example.com", "admin", "en")
+	ctx := context.Background()
+	if err := s.app.Deps.Settings.Set(ctx, "site.title", "Keep me"); err != nil {
+		t.Fatal(err)
+	}
+	form := generalForm("https://example.com")
+	form.Set("title", "   ")
+	resp, page := s.post("/admin/settings/general", form)
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("empty title: %d", resp.StatusCode)
+	}
+	mustContain(t, page, "field-error", "site name")
+	if got := s.app.Deps.Settings.GetString(ctx, "site.title", ""); got != "Keep me" {
+		t.Fatalf("title cleared to %q", got)
+	}
+}
+
 func TestSettingsSaveValidatesBaseURL(t *testing.T) {
 	s := boot(t)
 	s.login("admin@example.com", "admin", "en")

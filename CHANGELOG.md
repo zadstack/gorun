@@ -5,6 +5,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Site identity on first-run setup
+
+- Collect site name, optional tagline and language during `/admin/setup`, and require a site name on the workspace first-run path when it is still empty (for example after CLI admin creation). Public pages no longer stay on the generic GoRun title until Settings.
+- Reject clearing `site.title` to empty in General settings / MCP `update_settings`. Site readiness fails when the title is missing. `gorun start` first-login onboarding is unchanged.
+
 ### Added
 
 - Admin `/admin/navigation` supports drag-and-drop reordering of sidebar groups

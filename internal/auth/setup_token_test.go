@@ -15,7 +15,8 @@ import (
 const setupTok = "prod-setup-token-0123456789"
 
 func setupValues(csrf, token string) url.Values {
-	v := url.Values{"_csrf": {csrf}, "name": {"Ahmed"}, "email": {"admin@example.com"}, "password": {"correct horse battery"}}
+	v := url.Values{"_csrf": {csrf}, "name": {"Ahmed"}, "email": {"admin@example.com"}, "password": {"correct horse battery"},
+		"title": {"Soak Studio"}, "tagline": {"Fresh site"}, "locale": {"en"}}
 	if token != "" {
 		v.Set("setup_token", token)
 	}

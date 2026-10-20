@@ -5,8 +5,10 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/settings"
 )
@@ -15,9 +17,10 @@ import (
 // plain CMS versus Agents + Commerce. Empty means unset (full nav until
 // chosen; first-run surfaces a chooser).
 const (
-	SettingWorkspace = "site.workspace"
-	WorkspaceSimple  = "simple"
-	WorkspaceFull    = "full"
+	SettingWorkspace       = "site.workspace"
+	WorkspaceSimple        = "simple"
+	WorkspaceFull          = "full"
+	maxWorkspaceTitleRunes = 200
 )
 
 // Groups and nav IDs hidden when site.workspace is "simple".
@@ -75,43 +78,83 @@ func (h *handlers) registerWorkspaceFilter() {
 }
 
 type workspacePage struct {
-	Mode   string
-	Fields map[string]string
-	Saved  bool
-	First  bool
+	Mode           string
+	Title, Tagline string
+	NeedIdentity   bool
+	Fields         map[string]string
+	Saved          bool
+	First          bool
+}
+
+func (h *handlers) workspacePageData(ctx context.Context, mode string) workspacePage {
+	title := strings.TrimSpace(h.d.Settings.GetString(ctx, "site.title", ""))
+	return workspacePage{
+		Mode:         mode,
+		Title:        title,
+		Tagline:      h.d.Settings.GetString(ctx, "site.tagline", ""),
+		NeedIdentity: title == "",
+		First:        mode == "",
+	}
 }
 
 func (h *handlers) workspaceGet(w http.ResponseWriter, r *http.Request) {
 	mode := WorkspaceMode(r.Context(), h.d.Settings)
-	h.tpl.RenderWith(w, r, http.StatusOK, "admin", "pages/settings/workspace.html", workspacePage{
-		Mode:  mode,
-		First: mode == "",
-		Saved: r.URL.Query().Get("saved") == "1",
-	})
+	page := h.workspacePageData(r.Context(), mode)
+	page.Saved = r.URL.Query().Get("saved") == "1"
+	h.tpl.RenderWith(w, r, http.StatusOK, "admin", "pages/settings/workspace.html", page)
 }
 
 func (h *handlers) workspaceSave(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		Mode string `form:"mode"`
+		Mode    string `form:"mode"`
+		Title   string `form:"title"`
+		Tagline string `form:"tagline"`
 	}
 	if err := httpx.Bind(r, &in); err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+	ctx := r.Context()
+	page := h.workspacePageData(ctx, WorkspaceMode(ctx, h.d.Settings))
+	page.Fields = map[string]string{}
 	mode := strings.TrimSpace(in.Mode)
 	if mode != WorkspaceSimple && mode != WorkspaceFull {
-		h.tpl.RenderWith(w, r, http.StatusUnprocessableEntity, "admin", "pages/settings/workspace.html", workspacePage{
-			Mode:   WorkspaceMode(r.Context(), h.d.Settings),
-			First:  WorkspaceMode(r.Context(), h.d.Settings) == "",
-			Fields: map[string]string{"mode": "admin.workspace.error_mode"},
-		})
+		page.Fields["mode"] = "admin.workspace.error_mode"
+	}
+	title := strings.TrimSpace(in.Title)
+	tagline := strings.TrimSpace(in.Tagline)
+	if page.NeedIdentity {
+		page.Title, page.Tagline = title, tagline
+		if title == "" || utf8.RuneCountInString(title) > maxWorkspaceTitleRunes {
+			page.Fields["title"] = "admin.workspace.error_title"
+		}
+		if utf8.RuneCountInString(tagline) > maxWorkspaceTitleRunes {
+			page.Fields["tagline"] = "admin.workspace.error_tagline"
+		}
+	}
+	if len(page.Fields) > 0 {
+		h.tpl.RenderWith(w, r, http.StatusUnprocessableEntity, "admin", "pages/settings/workspace.html", page)
 		return
 	}
-	if err := h.d.Settings.Set(r.Context(), SettingWorkspace, mode); err != nil {
+	if page.NeedIdentity {
+		if err := h.d.Settings.Set(ctx, "site.title", title); err != nil {
+			h.serverError(w, r, err)
+			return
+		}
+		if err := h.d.Settings.Set(ctx, "site.tagline", tagline); err != nil {
+			h.serverError(w, r, err)
+			return
+		}
+		if strings.TrimSpace(h.d.Settings.GetString(ctx, "site.locale", "")) == "" {
+			_ = h.d.Settings.Set(ctx, "site.locale", i18n.Locale(ctx))
+		}
+		h.d.Audit.Record(ctx, "settings.identity", "settings", "site.title", map[string]string{"source": "workspace"})
+	}
+	if err := h.d.Settings.Set(ctx, SettingWorkspace, mode); err != nil {
 		h.serverError(w, r, err)
 		return
 	}
-	h.d.Audit.Record(r.Context(), "settings.workspace", "settings", SettingWorkspace, map[string]string{"mode": mode})
+	h.d.Audit.Record(ctx, "settings.workspace", "settings", SettingWorkspace, map[string]string{"mode": mode})
 	httpx.SetFlash(w, "success", "admin.workspace.saved")
 	http.Redirect(w, r, "/admin/workspace?saved=1", http.StatusSeeOther)
 }

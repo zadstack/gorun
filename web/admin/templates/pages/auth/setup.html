@@ -41,6 +41,30 @@
       <p id="password-help" class="mt-1 text-xs text-muted">{{t "auth.field.password_help"}}</p>
       <div id="password-error">{{template "partials/field_errors" (index .Fields "password")}}</div>
     </div>
+    <fieldset class="border border-line rounded p-3 space-y-4">
+      <legend>{{t "auth.setup.site_section"}}</legend>
+      <div>
+        <label for="title" class="block font-medium mb-1">{{t "auth.setup.site_title"}}</label>
+        <input id="title" name="title" type="text" autocomplete="organization" required value="{{.Title}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+               aria-describedby="title-error" {{with index .Fields "title"}}aria-invalid="true"{{end}}>
+        <div id="title-error">{{template "partials/field_errors" (index .Fields "title")}}</div>
+      </div>
+      <div>
+        <label for="tagline" class="block font-medium mb-1">{{t "auth.setup.tagline"}}</label>
+        <input id="tagline" name="tagline" type="text" value="{{.Tagline}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+               aria-describedby="tagline-help tagline-error" {{with index .Fields "tagline"}}aria-invalid="true"{{end}}>
+        <p id="tagline-help" class="mt-1 text-xs text-muted">{{t "auth.setup.tagline_help"}}</p>
+        <div id="tagline-error">{{template "partials/field_errors" (index .Fields "tagline")}}</div>
+      </div>
+      <div>
+        <label for="locale" class="block font-medium mb-1">{{t "auth.setup.locale"}}</label>
+        <select id="locale" name="locale" required class="w-full h-9 rounded border border-line bg-panel px-3" aria-describedby="locale-error" {{with index .Fields "locale"}}aria-invalid="true"{{end}}>
+          <option value="ar" {{if eq .Locale "ar"}}selected{{end}}>العربية</option>
+          <option value="en" {{if eq .Locale "en"}}selected{{end}}>English</option>
+        </select>
+        <div id="locale-error">{{template "partials/field_errors" (index .Fields "locale")}}</div>
+      </div>
+    </fieldset>
     <button type="submit" class="w-full h-9 bg-green text-white hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.setup.submit"}}</button>
   </form>
   {{end}}

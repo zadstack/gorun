@@ -152,6 +152,34 @@ func (s *service) createFirstAdmin(ctx context.Context, email, name, password st
 	return s.create(ctx, email, name, password, RoleAdmin, true, false)
 }
 
+// createFirstAdminTx inserts the first administrator inside tx (no audit).
+// Callers must store site identity with Settings.SetTx in the same
+// transaction and record the create audit after the insert.
+func (s *service) createFirstAdminTx(ctx context.Context, tx *sql.Tx, email, name, password, locale string) (*User, error) {
+	email, name = normalizeEmail(email), strings.TrimSpace(name)
+	if err := s.validate(ctx, email, password, RoleAdmin); err != nil {
+		return nil, err
+	}
+	hash, err := HashPassword(password)
+	if err != nil {
+		return nil, err
+	}
+	id, now := db.NewID(), db.FormatTime(s.now())
+	res, err := tx.ExecContext(ctx, `INSERT INTO users (id, email, name, password_hash, role, locale, status, created_at, updated_at, login_name, onboarding_required)
+		SELECT ?, ?, ?, ?, ?, ?, 'active', ?, ?, 'admin', 0 WHERE NOT EXISTS (SELECT 1 FROM users)`,
+		id, email, name, hash, RoleAdmin, locale, now, now)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed: users.email") {
+			return nil, ErrEmailTaken
+		}
+		return nil, fmt.Errorf("auth: create user: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return nil, ErrSetupDone
+	}
+	return scanUser(tx.QueryRowContext(ctx, `SELECT `+userColumns+` FROM users WHERE id = ?`, id))
+}
+
 func (s *service) create(ctx context.Context, email, name, password, role string, onlyIfEmpty, onboarding bool) (*User, error) {
 	email, name = normalizeEmail(email), strings.TrimSpace(name)
 	if err := s.validate(ctx, email, password, role); err != nil {
