@@ -114,7 +114,9 @@ which provides detailed theme-only checks.
 The LAN URL is an unauthenticated, read-only **public preview**, served over
 unencrypted HTTP. Use it only on a trusted network. Private-network clients can
 request public GET/HEAD pages; other methods, admin/setup/login, accounts, magic
-login links, REST API, MCP, cart/checkout, webhooks and metrics are blocked. Incoming LAN
+login links, REST API, MCP, cart/checkout, webhooks, metrics, private intake
+(`/reports`), public forms (`/forms`) and customer `/start` are blocked, including
+the same paths under a locale prefix (`/en/…`, `/ar/…`). Incoming LAN
 cookies and Authorization headers are discarded. Only requests from a loopback
 peer **and** the localhost/127.0.0.1 host may access privileged routes. Host and
 port validation rejects DNS rebinding and forged localhost hosts from LAN peers;

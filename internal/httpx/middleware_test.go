@@ -138,10 +138,13 @@ func TestClientIPTrustsForwardedOnlyFromConfiguredPeers(t *testing.T) {
 
 func TestRedactPath(t *testing.T) {
 	cases := map[string]string{
-		"/auth/magic/abcDEF123": "/auth/magic/…",
-		"/auth/magic/":          "/auth/magic/…",
-		"/admin/content/01ABC":  "/admin/content/01ABC",
-		"/auth/magicians/abc":   "/auth/magicians/abc",
+		"/auth/magic/abcDEF123":    "/auth/magic/…",
+		"/auth/magic/":             "/auth/magic/…",
+		"/en/auth/magic/abcDEF123": "/en/auth/magic/…",
+		"/ar/auth/magic/tok":       "/ar/auth/magic/…",
+		"/admin/content/01ABC":     "/admin/content/01ABC",
+		"/auth/magicians/abc":      "/auth/magicians/abc",
+		"/en/post/hello":           "/en/post/hello",
 	}
 	for in, want := range cases {
 		if got := RedactPath(in); got != want {
@@ -153,6 +156,11 @@ func TestRedactPath(t *testing.T) {
 	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/auth/magic/supersecret", nil))
 	if strings.Contains(logs.String(), "supersecret") {
 		t.Fatalf("token leaked into log: %s", logs.String())
+	}
+	logs.Reset()
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/en/auth/magic/supersecret", nil))
+	if strings.Contains(logs.String(), "supersecret") {
+		t.Fatalf("locale-prefixed token leaked into log: %s", logs.String())
 	}
 }
 

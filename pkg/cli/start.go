@@ -21,10 +21,33 @@ import (
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/config"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/theme"
 	"github.com/zadstack/gorun/themes"
 )
+
+// startPrivilegedPrefixes are paths that must stay on loopback during
+// `gorun start` LAN preview (administration, accounts, APIs, private intake).
+var startPrivilegedPrefixes = []string{
+	"/admin", "/api", "/mcp", "/account", "/auth", "/webhooks", "/metrics",
+	"/cart", "/checkout", "/reports", "/forms", "/start",
+}
+
+// startPathPrivileged reports whether clean (already path.Clean'd) is a
+// privileged URL, including locale-prefixed public routes such as
+// /en/account or /ar/reports/incident.
+func startPathPrivileged(clean string) bool {
+	_, rest := i18n.SplitLocalePath(clean)
+	for _, p := range []string{clean, rest} {
+		for _, prefix := range startPrivilegedPrefixes {
+			if p == prefix || strings.HasPrefix(p, prefix+"/") {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 func start(args []string, out io.Writer) error {
 	localOnly, args := boolFlag(args, "local-only")
@@ -99,7 +122,7 @@ func start(args []string, out io.Writer) error {
 		if len(ips) == 0 {
 			fmt.Fprintln(out, "LAN: no private IPv4 interface found")
 		}
-		fmt.Fprintln(out, "LAN uses unencrypted HTTP; use a trusted network or --local-only. Admin, API, accounts and writes are restricted to localhost.")
+		fmt.Fprintln(out, "LAN uses unencrypted HTTP; use a trusted network or --local-only. Admin, API, accounts, intake, forms, start and writes are restricted to localhost.")
 	}
 	if password != "" {
 		if _, err := fmt.Fprintf(out, "Username: admin\nEmail: admin@localhost.invalid\nPassword (shown once; save it now): %s\nFirst sign-in: replace this password and choose your email, site name and language.\n", password); err != nil {
@@ -195,11 +218,9 @@ func startGuard(next http.Handler, port string, ips []string) http.Handler {
 		}
 		if !local || !localHost {
 			clean := strings.ToLower(path.Clean("/" + strings.ReplaceAll(r.URL.Path, "\\", "/")))
-			for _, prefix := range []string{"/admin", "/api", "/mcp", "/account", "/auth", "/webhooks", "/metrics", "/cart", "/checkout"} {
-				if clean == prefix || strings.HasPrefix(clean, prefix+"/") {
-					http.Error(w, "Use localhost for administration and accounts", http.StatusForbidden)
-					return
-				}
+			if startPathPrivileged(clean) {
+				http.Error(w, "Use localhost for administration and accounts", http.StatusForbidden)
+				return
 			}
 			if r.Method != http.MethodGet && r.Method != http.MethodHead {
 				http.Error(w, "LAN preview is read-only", http.StatusForbidden)
