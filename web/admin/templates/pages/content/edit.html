@@ -100,15 +100,15 @@
       <h2 class="text-base font-bold mb-3">{{t "content.publish.title"}}</h2><p data-save-state role="status" data-clean="{{t "content.ux.saved_state"}}" data-dirty="{{t "content.ux.unsaved_state"}}">{{t "content.ux.saved_state"}}</p><p class="text-muted text-sm">{{if eq .Item.Status "published"}}{{t "content.ux.live_help"}}{{else}}{{t "content.ux.save_help"}}{{end}}</p>
       {{if .IsNew}}
       <div>
-        <label for="content-locale" class="block font-medium mb-1">{{t "content.editor.locale"}}</label>
-        <select id="content-locale" name="locale" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft" {{if index .Errors "locale"}}aria-invalid="true"{{end}}>
+        <label for="editor-locale" class="block font-medium mb-1">{{t "content.editor.locale"}}</label>
+        <select id="editor-locale" name="locale" data-content-locale class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft" {{if index .Errors "locale"}}aria-invalid="true"{{end}}>
           {{$loc := .Item.Locale}}{{range .Locales}}<option value="{{.}}" {{if eq . $loc}}selected{{end}}>{{t (printf "admin.locale.%s" .)}}</option>{{end}}
         </select>
         <p class="mt-1 text-xs text-muted">{{t "content.editor.locale_help"}}</p>
         {{template "partials/field_errors" (index .Errors "locale")}}
       </div>
       {{else}}
-      <p class="text-sm"><span class="text-muted">{{t "content.editor.locale"}}:</span> <span class="font-medium">{{t (printf "admin.locale.%s" .Item.Locale)}}</span></p>
+      <p class="text-sm" data-content-locale-display><span class="text-muted">{{t "content.editor.locale"}}:</span> <span class="font-medium">{{t (printf "admin.locale.%s" .Item.Locale)}}</span></p>
       {{end}}
       <div>
         <label for="status" class="block font-medium mb-1">{{t "content.list.status"}}</label>

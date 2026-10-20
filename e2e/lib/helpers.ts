@@ -43,6 +43,14 @@ export async function setLocale(page: Page, locale: 'ar' | 'en'): Promise<void> 
   await expect(page.locator('html')).toHaveAttribute('lang', locale);
 }
 
+// setContentLocale picks the content language on a new-item editor. New content
+// defaults to the admin UI locale; call this when the public site locale must
+// differ (or when a later translation step expects a specific source locale).
+export async function setContentLocale(page: Page, locale: 'ar' | 'en'): Promise<void> {
+  await page.locator('#editor-locale').selectOption(locale);
+  await expect(page.locator('#editor-locale')).toHaveValue(locale);
+}
+
 // submitAndLand clicks a form's submit button and returns once its POST has
 // answered with status (the admin's post/redirect/get 303; null accepts any) and the page it
 // redirects to has loaded. A reload, goto or database read straight after a

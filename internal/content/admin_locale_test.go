@@ -47,7 +47,7 @@ func TestAdminNewContentLocaleFollowsAdminNotSite(t *testing.T) {
 			if resp.StatusCode != http.StatusOK {
 				t.Fatalf("new editor: %d", resp.StatusCode)
 			}
-			if !strings.Contains(page, `id="content-locale"`) || !strings.Contains(page, `name="locale"`) {
+			if !strings.Contains(page, `id="editor-locale"`) || !strings.Contains(page, `data-content-locale`) || !strings.Contains(page, `name="locale"`) {
 				t.Fatalf("new editor must show content language picker:\n%s", page)
 			}
 			wantSelected := `value="` + tc.adminLoc + `" selected`
