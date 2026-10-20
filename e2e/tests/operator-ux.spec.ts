@@ -48,6 +48,9 @@ test('backup outcomes and inbox settings remain separate at mobile width', async
 
 test('navigation preview follows visibility without mutating permissions and search keeps preview intact', async ({ page }) => {
  await page.goto('/admin/navigation');
+ const panel=page.locator('.navigation-preview-panel');
+ await panel.locator('summary').click();
+ await expect(panel).toHaveAttribute('open', '');
  const preview=page.locator('[data-navigation-preview]');
  await expect(preview.locator('li').first()).toBeVisible();
  const checkbox=page.locator('[data-navigation-editor] input[name=visible]:checked:not(:disabled)').first();
