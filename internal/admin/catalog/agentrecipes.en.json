@@ -38,5 +38,8 @@
   "execution_details": "Execution details",
   "configuration_details": "Inspect saved connections and tools",
   "inspect_content": "Inspect the recipe content",
-  "unavailable": "This agent’s saved bundle, model or connection needs review. Open its configuration, then reload this page. Nothing was saved."
+  "unavailable": "This agent’s saved bundle, model or connection needs review. Open its configuration, then reload this page. Nothing was saved.",
+  "limit": "You have reached the 100-canvas limit. Remove an unneeded canvas from your saved canvases, then preview and save again. No recipe was saved.",
+  "conflict": "This draft already exists with different content. Reopen your saved canvas, or copy your edits and reload the recipe to start a separate draft. Nothing was replaced.",
+  "failed": "The recipe could not be saved because of a server error. Your edits remain below. Try previewing and saving again; contact the administrator if it continues."
 }

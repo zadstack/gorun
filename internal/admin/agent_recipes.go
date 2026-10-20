@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -14,6 +15,8 @@ import (
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/i18n"
 )
+
+var errAgentRecipeConflict = errors.New("agent recipe draft conflict")
 
 type agentRecipeProfile struct{ Name, Kind string }
 type agentRecipeTool struct{ Name, Connection string }
@@ -165,8 +168,24 @@ func (h *handlers) agentRecipeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else if r.PostForm.Get("action") == "save" && r.PostForm.Get("reviewed") == "1" {
 			id, e := h.saveAgentRecipe(r.Context(), p)
 			if e != nil {
-				code = 409
-				p.Error = "agentrecipes.stale"
+				switch {
+				case errors.Is(e, errCanvasLimit):
+					code = 422
+					p.Error = "agentrecipes.limit"
+				case errors.Is(e, errAgentRecipeConflict):
+					code = 409
+					p.Error = "agentrecipes.conflict"
+				case errors.Is(e, errCanvasInvalid):
+					code = 422
+					p.Error = "agentrecipes.invalid"
+				case errors.Is(e, errAgentModelConflict), errors.Is(e, errAgentBundle), errors.Is(e, errManagedTools):
+					code = 409
+					p.Error = "agentrecipes.stale"
+				default:
+					code = 500
+					p.Error = "agentrecipes.failed"
+					h.d.Log.Error("admin: recipe save failed", "err", e)
+				}
 			} else {
 				http.Redirect(w, r, "/admin/canvases/"+id, 303)
 				return
@@ -215,11 +234,17 @@ func (h *handlers) saveAgentRecipe(ctx context.Context, p agentRecipePage) (stri
 	id, now := p.DraftID, db.Now()
 	e := db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
 		cfg, e := recipeConfiguration(ctx, tx, u.ID, p.KeyID)
-		if e != nil || cfg.Snapshot != p.Snapshot {
+		if e != nil {
+			return e
+		}
+		if cfg.Snapshot != p.Snapshot {
 			return errAgentModelConflict
 		}
 		var n int
-		if tx.QueryRowContext(ctx, `SELECT count(*) FROM users u WHERE u.id=? AND u.status='active' AND EXISTS(SELECT 1 FROM role_permissions WHERE role=u.role AND permission IN('*','content.edit')) AND NOT EXISTS(SELECT 1 FROM settings WHERE key='site.workspace' AND json_extract(value_json,'$')='simple')`, u.ID).Scan(&n) != nil || n != 1 {
+		if e = tx.QueryRowContext(ctx, `SELECT count(*) FROM users u WHERE u.id=? AND u.status='active' AND EXISTS(SELECT 1 FROM role_permissions WHERE role=u.role AND permission IN('*','content.edit')) AND NOT EXISTS(SELECT 1 FROM settings WHERE key='site.workspace' AND json_extract(value_json,'$')='simple')`, u.ID).Scan(&n); e != nil {
+			return e
+		}
+		if n != 1 {
 			return errAgentBundle
 		}
 		res, e := tx.ExecContext(ctx, `INSERT INTO admin_canvases(id,owner_id,title,document_json,edges_json,version,created_at,updated_at) SELECT ?,?,?,?,?,1,?,? WHERE (SELECT count(*) FROM admin_canvases WHERE owner_id=?)<100 ON CONFLICT(id) DO NOTHING`, id, u.ID, p.Title, canvasEncode(cards), canvasEncode(edges), now, now, u.ID)
@@ -232,10 +257,23 @@ func (h *handlers) saveAgentRecipe(ctx context.Context, p agentRecipePage) (stri
 		}
 		if nrows != 1 {
 			var oldTitle, oldCards, oldEdges string
-			if tx.QueryRowContext(ctx, `SELECT title,document_json,edges_json FROM admin_canvases WHERE id=? AND owner_id=?`, id, u.ID).Scan(&oldTitle, &oldCards, &oldEdges) == nil && oldTitle == p.Title && oldCards == canvasEncode(cards) && oldEdges == canvasEncode(edges) {
-				return nil
+			e = tx.QueryRowContext(ctx, `SELECT title,document_json,edges_json FROM admin_canvases WHERE id=? AND owner_id=?`, id, u.ID).Scan(&oldTitle, &oldCards, &oldEdges)
+			if e == nil {
+				if oldTitle == p.Title && oldCards == canvasEncode(cards) && oldEdges == canvasEncode(edges) {
+					return nil
+				}
+				return errAgentRecipeConflict
 			}
-			return errCanvasLimit
+			if !errors.Is(e, sql.ErrNoRows) {
+				return e
+			}
+			if e = tx.QueryRowContext(ctx, `SELECT count(*) FROM admin_canvases WHERE owner_id=?`, u.ID).Scan(&n); e != nil {
+				return e
+			}
+			if n >= 100 {
+				return errCanvasLimit
+			}
+			return errAgentRecipeConflict
 		}
 		h.d.Audit.RecordTx(ctx, tx, "agent.recipe.created", "canvas", id, map[string]string{"recipe": "updates-researcher", "agent_id": p.KeyID})
 		return nil
