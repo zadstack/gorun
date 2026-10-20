@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-18",
+  "date": "2026-10-20",
   "files": [
     {
       "path": "github-banner.svg",
@@ -42,6 +42,13 @@
       "bytes": 1748,
       "sha256": "13bda65a1f699d1f644823cce99cc4c2b721d4c813ec36cf1cc56727c43c1195",
       "viewBox": "0 0 1000 370"
+    },
+    {
+      "path": "readme-hero.svg",
+      "bytes": 6608,
+      "sha256": "c7830fde0766d003f8805eab66ff086f896729f413ff5a2bb73d10e2afb10765",
+      "viewBox": "0 0 1200 360",
+      "animated": true
     },
     {
       "path": "screenshots/agent-keys-en.png",

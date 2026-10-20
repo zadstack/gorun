@@ -1,8 +1,12 @@
 # GoRun
 
-**A self-hosted CMS for your team and AI agents.**
+[![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![Latest release](https://img.shields.io/github/v/release/zadstack/gorun?label=release&color=167252)](https://github.com/zadstack/gorun/releases/latest) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 
-[العربية](README.ar.md) · [Website guides](https://gorun.gocloud.run/gorun-guides) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Use an assistant](#start-with-your-ai-assistant) · [Contribute](CONTRIBUTING.md)
+![GoRun: content through scoped agents to human review, with Classic Modern Minimal Serif Docs identity themes](assets/branding/readme-hero.svg)
+
+GoRun is a **self-hosted, agent-native CMS**: one Go binary and SQLite for your site, editors and integrations. Connect AI agents through MCP (and REST for other clients) with scoped keys, human approvals for sensitive changes and an audit trail. Arabic and English ship together, including native RTL.
+
+[العربية](README.ar.md) · [Website guides](https://gorun.gocloud.run/gorun-guides) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Security](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
 ## Run it now
 
@@ -55,8 +59,6 @@ The instructions are tool-neutral. A chat-only assistant can explain the steps b
 
 GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 storage. Both [public reading](docs/EDGE.md) and optional [owner administration](docs/EDGE-ADMIN.md)—private drafts, review/publication, revisions and offline recovery—have passed actual Cloudflare HTTPS acceptance with isolated synthetic data. Administration stays disabled by default; temporary test access was revoked. [Validation record](docs/validation/edge-cloudflare-2026-10-19.json). Manager pairing and a supported deployment template remain on the [roadmap](https://github.com/zadstack/gorun/issues/46); no Deploy button is available. Edge is separate from the Full release binary and has no measured benchmark result.
 
-[![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
-
 ![GoRun content editor and publishing controls](assets/branding/screenshots/editor-en.png)
 
 ## Why GoRun?
@@ -64,7 +66,7 @@ GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 
 - **Your content and infrastructure.** A Go executable and SQLite, hosted by you. No Node.js or PHP at runtime.
 - **Arabic and English from the start.** A bilingual dashboard with native RTL support and responsive site themes.
 - **A complete editorial workflow.** Structured content, drafts, reviews, scheduled publishing, revision history and explicit staff permissions.
-- **Agents with boundaries.** MCP tools, scoped agent keys, human approvals for sensitive changes and an audit trail. Separate REST keys serve other integrations.
+- **Agents with boundaries.** MCP tools, scoped agent keys, human approvals for sensitive changes and an audit trail. Separate REST keys serve other integrations. Grant-scoped canvas boards are readable over MCP (`list_canvases`, `get_canvas`) and REST (`GET /api/v1/canvases`) when permitted — never as public pages.
 
 ## A workspace that stays organized
 
@@ -90,7 +92,32 @@ Manage posts, pages, custom content types, fields, media and navigation in one p
 
 ## Build a site you can make your own
 
-Start with a bundled theme, create pages with section-based layouts, and preview before publishing. Child themes and filesystem templates let developers customize the result. Activating a theme does not create starter pages; use the site builder for starter content. The default reading theme presents a featured article, recent posts and guide links drawn from actual published content. [Default-theme demo](assets/branding/screenshots/theme-home-en.png) · [Arabic article on mobile](assets/branding/screenshots/theme-post-ar-mobile.png).
+### Identity themes (shipped)
+
+Ship-with themes are **identity systems** — type, color, spacing and chrome — not magazine/business/portfolio layout packs. Activate one under **Appearance → Themes**; directory slugs stay stable (`default`, `business`, `portfolio`, `magazine`, `docs`).
+
+| Display | Slug | Role |
+| --- | --- | --- |
+| Classic | `default` | Calm reading identity |
+| Modern | `business` | Sharp chrome |
+| Minimal | `portfolio` | Quiet chrome |
+| Serif | `magazine` | Type-led identity |
+| Docs | `docs` | Light docs chrome |
+
+Activating a theme does not create starter pages; use the site builder for starter content. Child themes and filesystem templates let developers customize further. [Default-theme demo](assets/branding/screenshots/theme-home-en.png) · [Arabic article on mobile](assets/branding/screenshots/theme-post-ar-mobile.png).
+
+### Pattern plugins (layouts)
+
+Opinionated page layouts sit in a separate **pattern** layer above theme identity and below site overrides (`draft → override → pattern → theme`). Activate under **Appearance → Patterns**; clear to restore the theme’s own templates. Any identity theme can pair with any pattern.
+
+| Display | Slug | Layout |
+| --- | --- | --- |
+| Editorial | `editorial` | Magazine masthead, lead story, reading grid |
+| Company | `company` | Business hero, offerings, updates |
+| Showcase | `showcase` | Portfolio intro, project mosaic |
+| Guidebook | `guidebook` | Docs search hero, section cards |
+
+Patterns are declarative filesystem packages (`patterns/`), not HTTP extensions. [Pattern plugins](docs/PATTERN-PLUGINS.md).
 
 **Website → Design → Site design** brings **Build site** and **Visual identity** into one workspace. Prepare pages as drafts, review activation separately, and preview colors and typography locally before explicitly saving identity. Existing site content and theme settings remain yours. [Site design guide](docs/SITE-DESIGN-WORKSPACE.md).
 
@@ -106,7 +133,7 @@ Start with a bundled theme, create pages with section-based layouts, and preview
 
 Connect an MCP client with an **AI agent** key. Its scopes are bounded by its owner's permissions; publishing, deleting and changing sensitive settings require human approval by default. REST integration keys are separate from agent keys.
 
-Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish content automatically. Configure your provider or agent connection before running it.
+Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish content automatically. Agents with `canvas.read` and an explicit board grant can list and read those boards over MCP; REST keys use the matching canvas endpoints. Configure your provider or agent connection before running it.
 
 With a configured AI provider, review the exact destination and site context before separately confirming a request for canvas suggestions. Suggestions create an unbound starting point; choose its executor and permissions yourself. [AI suggestion workflow](docs/CANVAS-AI-SUGGESTIONS.md).
 

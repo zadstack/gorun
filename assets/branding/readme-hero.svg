@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">GoRun: agent-native CMS</title>
+  <desc id="desc">An animated route from your content through a scoped agent to human review before publishing. Five identity themes sit along the path.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f7f9fc"/>
+      <stop offset="55%" stop-color="#eef2f7"/>
+      <stop offset="100%" stop-color="#e8eef6"/>
+    </linearGradient>
+    <linearGradient id="routeGlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1748ed" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#1748ed" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#1748ed" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="frame">
+      <rect width="1200" height="360" rx="16"/>
+    </clipPath>
+    <style><![CDATA[
+      .label { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Arial, sans-serif; }
+      .muted { fill: #545e69; }
+      .ink { fill: #080e14; }
+      .chip { fill: #f9fafb; stroke: #dce2e8; stroke-width: 1; }
+      @media (prefers-reduced-motion: reduce) {
+        .motion { animation: none !important; }
+        .dash { stroke-dashoffset: 0 !important; }
+        .pulse { opacity: 1 !important; }
+        .runner { display: none !important; }
+      }
+    ]]></style>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="360" fill="url(#sky)"/>
+
+    <g stroke="#dce2e8" stroke-width="1" opacity=".55">
+      <path d="M80 0v360M200 0v360M320 0v360M980 0v360M1100 0v360"/>
+      <path d="M0 72h1200M0 288h1200"/>
+    </g>
+    <path d="M720 -40c-180 140 220 160 80 400" fill="none" stroke="#e4eaf3" stroke-width="70"/>
+
+    <path id="route" d="M150 190 C 280 70, 420 310, 560 190 S 840 70, 980 190"
+          fill="none" stroke="#bdc9db" stroke-width="3" stroke-linecap="round"/>
+    <path class="motion dash" d="M150 190 C 280 70, 420 310, 560 190 S 840 70, 980 190"
+          fill="none" stroke="url(#routeGlow)" stroke-width="6" stroke-linecap="round"
+          stroke-dasharray="28 220">
+      <animate attributeName="stroke-dashoffset" from="248" to="0" dur="3.2s" repeatCount="indefinite"/>
+    </path>
+
+    <circle class="motion runner" r="7" fill="#1748ed">
+      <animateMotion dur="3.2s" repeatCount="indefinite" rotate="auto"
+        path="M150 190 C 280 70, 420 310, 560 190 S 840 70, 980 190"/>
+      <animate attributeName="opacity" values="1;.55;1" dur="3.2s" repeatCount="indefinite"/>
+    </circle>
+
+    <g transform="translate(78 118)">
+      <rect class="chip" width="148" height="144" rx="14"/>
+      <g fill="none" stroke="#1748ed" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+         transform="translate(34 34) scale(.85)">
+        <path d="M61 24H32a16 16 0 0 0-16 16v24a16 16 0 0 0 16 16h28a16 16 0 0 0 16-16V48H47"/>
+        <path d="M35 16h29a16 16 0 0 1 16 16v5"/>
+      </g>
+      <circle cx="74" cy="75" r="5" fill="#080e14"/>
+      <text class="label ink" x="74" y="128" text-anchor="middle" font-size="15" font-weight="700">Content</text>
+    </g>
+
+    <g transform="translate(486 128)">
+      <rect class="chip" width="228" height="124" rx="14"/>
+      <text class="label muted" x="24" y="36" font-size="12" letter-spacing=".04em">SCOPED / MCP / REST</text>
+      <text class="label ink" x="24" y="68" font-size="22" font-weight="700">Agent workspace</text>
+      <text class="label muted" x="24" y="96" font-size="13">Grant-bounded tools and canvases</text>
+      <circle class="motion pulse" cx="198" cy="36" r="6" fill="#1748ed">
+        <animate attributeName="r" values="5;7;5" dur="2.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values=".9;.45;.9" dur="2.4s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <g transform="translate(920 138)">
+      <rect class="chip" width="196" height="104" rx="14"/>
+      <text class="label muted" x="22" y="34" font-size="12" letter-spacing=".04em">BEFORE PUBLISH</text>
+      <text class="label ink" x="22" y="66" font-size="22" font-weight="700">Your review</text>
+      <g transform="translate(150 62)">
+        <circle r="18" fill="#1748ed"/>
+        <path d="M-7 0 l5 5 12-12" fill="none" stroke="#f9fafb" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+    </g>
+
+    <g transform="translate(150 292)">
+      <text class="label muted" x="0" y="18" font-size="13">Identity themes</text>
+      <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Arial, sans-serif" font-size="13" font-weight="600">
+        <g transform="translate(118 0)">
+          <rect class="chip" width="78" height="28" rx="8"/>
+          <text class="ink" x="39" y="19" text-anchor="middle">Classic</text>
+          <animate attributeName="opacity" values=".55;1;.55" dur="5s" begin="0s" repeatCount="indefinite"/>
+        </g>
+        <g transform="translate(206 0)">
+          <rect class="chip" width="78" height="28" rx="8"/>
+          <text class="ink" x="39" y="19" text-anchor="middle">Modern</text>
+          <animate attributeName="opacity" values=".55;1;.55" dur="5s" begin="1s" repeatCount="indefinite"/>
+        </g>
+        <g transform="translate(294 0)">
+          <rect class="chip" width="78" height="28" rx="8"/>
+          <text class="ink" x="39" y="19" text-anchor="middle">Minimal</text>
+          <animate attributeName="opacity" values=".55;1;.55" dur="5s" begin="2s" repeatCount="indefinite"/>
+        </g>
+        <g transform="translate(382 0)">
+          <rect class="chip" width="64" height="28" rx="8"/>
+          <text class="ink" x="32" y="19" text-anchor="middle">Serif</text>
+          <animate attributeName="opacity" values=".55;1;.55" dur="5s" begin="3s" repeatCount="indefinite"/>
+        </g>
+        <g transform="translate(456 0)">
+          <rect class="chip" width="64" height="28" rx="8"/>
+          <text class="ink" x="32" y="19" text-anchor="middle">Docs</text>
+          <animate attributeName="opacity" values=".55;1;.55" dur="5s" begin="4s" repeatCount="indefinite"/>
+        </g>
+      </g>
+      <text class="label muted" x="540" y="18" font-size="12">identity  |  patterns for layouts</text>
+    </g>
+
+    <text class="label ink" x="78" y="48" font-size="28" font-weight="700" letter-spacing="-.02em">Your content. Your team. Your agents.</text>
+    <text class="label muted" x="78" y="76" font-size="15">Self-hosted Go + SQLite / review before publish</text>
+  </g>
+</svg>
