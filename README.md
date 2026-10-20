@@ -124,23 +124,23 @@ The opposite-side agents rail opens your own canvas cards. Inspect **Integration
 
 [Arabic mobile drawer](assets/branding/screenshots/agents-drawer-ar-mobile.png). Skills and multiple MCP-server resources are not assembled or verified by this drawer.
 
-### A campaign, from brief to review
+### An updates brief, from setup to review
 
-**1. Choose the context.** Bring an approved product story and a bilingual campaign brief onto the canvas. Connect only those cards to your named assistant.
+**1. Make the recipe yours.** Open **Agent role templates → Build an Updates Researcher recipe**. Choose your saved agent, edit the instructions and supply the topic, source excerpts and dates. Inspect its existing model and MCP tool configuration; previewing or saving creates no execution or access grants. [Recipe setup](docs/AGENT-RECIPES.md).
 
-![Campaign brief and selected product content connected to a named assistant](assets/branding/screenshots/canvas-brief-en.png)
+![Updates Researcher recipe with editable instructions and supplied evidence for Atlas Studio](assets/branding/screenshots/researcher-setup-en.png)
 
-**2. Review before running.** Inspect the destination, instructions and selected context. Confirm explicitly before starting the work. The agent can use only the selected context and tools allowed by its permissions.
+**2. Review the actual request.** Save the private canvas, grant the agent the context it needs, then inspect the exact instructions and context in the run review. Confirm the run separately. Managed MCP tool calls retain their individual approvals; an external agent needs its running client.
 
-![Review the exact context and destination before running the assistant](assets/branding/screenshots/canvas-review-en.png)
+![Native run review showing the exact Updates Researcher instructions and supplied source before confirmation](assets/branding/screenshots/researcher-review-en.png)
 
-**3. Keep the publishing decision.** The returned draft appears as a separate private note with its source. Review it alongside your checklist; running a canvas does not publish the content.
+**3. Read the private result.** The returned brief becomes an attributed note alongside the original instructions and sources. Compact card types, separate connection points and a full-note reader make the work easier to inspect. Publishing remains a separate decision.
 
-![Bilingual campaign draft and editorial checklist in the updated canvas](assets/branding/screenshots/canvas-en.png)
+![Updates Researcher result shown as an attributed private note beside its source and task cards](assets/branding/screenshots/researcher-result-en.png)
 
-Switch between **Workflow**, **Grid** and **List** views. Arrange cards using their rendered heights; each connection has its own side port and a routed path. View changes preserve the saved content and connections. [Grid view](assets/branding/screenshots/canvas-grid-en.png) · [List view](assets/branding/screenshots/canvas-list-en.png).
+Switch between **Workflow**, **Grid** and **List** views without changing the saved content or connections. [Arabic mobile story: setup](assets/branding/screenshots/researcher-setup-ar-mobile.png) · [Review](assets/branding/screenshots/researcher-review-ar-mobile.png) · [Result](assets/branding/screenshots/researcher-result-ar-mobile.png).
 
-*Screenshots use a fictional business and synthetic content. The example assistant response is supplied by a test client through the real MCP workflow; it is not a model-quality benchmark. [Arabic view](assets/branding/screenshots/canvas-ar.png) · [Mobile view](assets/branding/screenshots/canvas-mobile.png).*
+*These screenshots show the current source build with fictional Atlas Studio data; the recipe and updated cards are not included in the v0.10.0 download. A test client sends the reviewed request to a scripted local HTTP provider, then returns its response through the real MCP workflow. This demonstrates setup, consent and private delivery; it does not demonstrate live news retrieval or model quality. This recipe is manually run, with no daily polling.*
 
 **Agent bundles:** add bounded inline skill instructions and reference text to reviewed external-agent or managed-text requests, and attach version-pinned MCP connection profiles with saved discovery status. [Manage skills and MCP references](docs/AGENT-BUNDLES.md). External clients configure their own endpoints, credentials and tools. Named OpenAI-compatible managed text agents can use [explicitly selected MCP tools](docs/MANAGED-MCP-TOOLS.md), with owner review of every exact call and a private final note. This mode starts disabled and supports manual runs only.
 
