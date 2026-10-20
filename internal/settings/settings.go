@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"strings"
+	"sync"
 
 	"github.com/zadstack/gorun/internal/db"
 )
@@ -24,18 +26,41 @@ func Migrations() fs.FS { return migrations }
 // ErrNotFound is returned by Get when the key does not exist.
 var ErrNotFound = errors.New("settings: not found")
 
-// Store reads and writes settings.
+// cacheEntry holds a raw JSON value, or marks a known-missing key.
+type cacheEntry struct {
+	raw string
+	ok  bool // false = known missing (negative cache)
+}
+
+// Store reads and writes settings. Get/GetString results are memoized in
+// process memory and invalidated on Set/Delete/DeletePrefix so hot public
+// renders do not round-trip SQLite for every {{setting}} / siteInfo / SEO key.
 type Store struct {
-	db  *sql.DB
-	log *slog.Logger
+	db    *sql.DB
+	log   *slog.Logger
+	cache *settingsCache
+}
+
+type settingsCache struct {
+	mu      sync.RWMutex
+	entries map[string]cacheEntry
 }
 
 // New returns a store on d logging to slog.Default(). The settings
 // migrations must already be applied.
-func New(d *sql.DB) *Store { return &Store{db: d, log: slog.Default()} }
+func New(d *sql.DB) *Store {
+	return &Store{
+		db:    d,
+		log:   slog.Default(),
+		cache: &settingsCache{entries: map[string]cacheEntry{}},
+	}
+}
 
-// WithLogger returns a copy of the store that logs to l.
-func (s *Store) WithLogger(l *slog.Logger) *Store { return &Store{db: s.db, log: l} }
+// WithLogger returns a copy of the store that logs to l, sharing the same
+// process cache as s.
+func (s *Store) WithLogger(l *slog.Logger) *Store {
+	return &Store{db: s.db, log: l, cache: s.cache}
+}
 
 type execer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -43,18 +68,71 @@ type execer interface {
 
 // Get unmarshals the JSON value of key into out, or returns ErrNotFound.
 func (s *Store) Get(ctx context.Context, key string, out any) error {
-	var raw string
-	err := s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrNotFound
-	}
+	raw, err := s.raw(ctx, key)
 	if err != nil {
-		return fmt.Errorf("settings: get %s: %w", key, err)
+		return err
 	}
 	if err := json.Unmarshal([]byte(raw), out); err != nil {
 		return fmt.Errorf("settings: decode %s: %w", key, err)
 	}
 	return nil
+}
+
+func (s *Store) raw(ctx context.Context, key string) (string, error) {
+	if s.cache != nil {
+		s.cache.mu.RLock()
+		if e, hit := s.cache.entries[key]; hit {
+			s.cache.mu.RUnlock()
+			if !e.ok {
+				return "", ErrNotFound
+			}
+			return e.raw, nil
+		}
+		s.cache.mu.RUnlock()
+	}
+
+	var raw string
+	err := s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
+	if errors.Is(err, sql.ErrNoRows) {
+		s.remember(key, "", false)
+		return "", ErrNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("settings: get %s: %w", key, err)
+	}
+	s.remember(key, raw, true)
+	return raw, nil
+}
+
+func (s *Store) remember(key, raw string, ok bool) {
+	if s.cache == nil {
+		return
+	}
+	s.cache.mu.Lock()
+	s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
+	s.cache.mu.Unlock()
+}
+
+func (s *Store) forget(key string) {
+	if s.cache == nil {
+		return
+	}
+	s.cache.mu.Lock()
+	delete(s.cache.entries, key)
+	s.cache.mu.Unlock()
+}
+
+func (s *Store) forgetPrefix(prefix string) {
+	if s.cache == nil {
+		return
+	}
+	s.cache.mu.Lock()
+	for k := range s.cache.entries {
+		if strings.HasPrefix(k, prefix) {
+			delete(s.cache.entries, k)
+		}
+	}
+	s.cache.mu.Unlock()
 }
 
 // GetString returns the string value of key, or def when it is missing.
@@ -95,6 +173,9 @@ func (s *Store) set(ctx context.Context, ex execer, key string, v any) error {
 	if err != nil {
 		return fmt.Errorf("settings: set %s: %w", key, err)
 	}
+	// Drop the entry so the next Get observes the writer (or a rolled-back
+	// SetTx still hits SQLite for the committed value).
+	s.forget(key)
 	return nil
 }
 
@@ -113,6 +194,7 @@ func (s *Store) All(ctx context.Context, prefix string) (map[string]json.RawMess
 			return nil, fmt.Errorf("settings: scan: %w", err)
 		}
 		out[k] = json.RawMessage(v)
+		s.remember(k, v, true)
 	}
 	return out, rows.Err()
 }
@@ -123,6 +205,7 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	if _, err := s.db.ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, key); err != nil {
 		return fmt.Errorf("settings: delete %s: %w", key, err)
 	}
+	s.forget(key)
 	return nil
 }
 
@@ -145,5 +228,6 @@ func (s *Store) deletePrefix(ctx context.Context, ex execer, prefix string) erro
 	if _, err := ex.ExecContext(ctx, `DELETE FROM settings WHERE substr(key, 1, length(?)) = ?`, prefix, prefix); err != nil {
 		return fmt.Errorf("settings: delete prefix %q: %w", prefix, err)
 	}
+	s.forgetPrefix(prefix)
 	return nil
 }

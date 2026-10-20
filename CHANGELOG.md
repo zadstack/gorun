@@ -5,6 +5,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+<<<<<<< HEAD
 ### Added
 
 - Admin `/admin/navigation` supports drag-and-drop reordering of sidebar groups
@@ -30,6 +31,13 @@ All notable changes to GoRun are recorded here. The format follows
 - Local `make loadtest` / `tools/loadtest` now boots the spawned serve process
   with `GORUN_ENV=prod` by default (cached themes), matching shipping behaviour.
   Use `-serve-env dev` for the previous hot-reload measurement path.
+=======
+### Performance
+
+- Cache settings reads in process memory (invalidate on write) and memoize
+  `setting` / `menu` template lookups per render to cut SQLite round-trips on
+  public pages.
+>>>>>>> 35461d4 (perf(settings): cache Get and memoize theme setting/menu)
 
 ## [0.10.0] - 2026-10-20
 

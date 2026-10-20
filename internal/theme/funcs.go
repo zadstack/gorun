@@ -37,6 +37,8 @@ type reqState struct {
 
 	// per-render caches of settings read by funcs
 	front, tz       *string
+	settings        map[string]string // memo for setting() within one render
+	menus           map[string]*menus.Menu
 	previewIdentity *brand.Identity
 	previewMenu     *menus.Menu
 	previewSettings map[string]string
@@ -174,14 +176,31 @@ func (f *funcs) setting(key string) string {
 			return value
 		}
 	}
+	if f.st.settings != nil {
+		if v, ok := f.st.settings[key]; ok {
+			return v
+		}
+	}
 	var v any
 	if err := f.s.d.Settings.Get(f.st.ctx, key, &v); err != nil || v == nil {
+		f.memoSetting(key, "")
 		return ""
 	}
+	var out string
 	if s, ok := v.(string); ok {
-		return s
+		out = s
+	} else {
+		out = fmt.Sprint(v)
 	}
-	return fmt.Sprint(v)
+	f.memoSetting(key, out)
+	return out
+}
+
+func (f *funcs) memoSetting(key, v string) {
+	if f.st.settings == nil {
+		f.st.settings = map[string]string{}
+	}
+	f.st.settings[key] = v
 }
 
 // include executes a part or component of the current set into HTML.
@@ -276,18 +295,32 @@ func (f *funcs) menu(loc string) *menus.Menu {
 	if f.st.previewMenu != nil && (loc == "primary" || loc == "footer") {
 		return f.st.previewMenu
 	}
+	if f.st.menus != nil {
+		if m, ok := f.st.menus[loc]; ok {
+			return m
+		}
+	}
 	svc, ok := kernel.Get[menus.Service](f.s.d, kernel.ServiceMenus)
 	if !ok {
 		return nil
 	}
 	m, err := svc.ByLocationLocale(f.st.ctx, loc, f.st.tc.Locale)
 	if err != nil || m == nil {
+		f.memoMenu(loc, nil)
 		return nil
 	}
 	for i := range m.Items {
 		f.resolveMenuItem(&m.Items[i])
 	}
+	f.memoMenu(loc, m)
 	return m
+}
+
+func (f *funcs) memoMenu(loc string, m *menus.Menu) {
+	if f.st.menus == nil {
+		f.st.menus = map[string]*menus.Menu{}
+	}
+	f.st.menus[loc] = m
 }
 
 // resolveMenuItem runs the menus.resolve_url filter (so other modules'

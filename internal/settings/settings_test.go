@@ -105,6 +105,68 @@ func TestGetStringLogsDBErrorsButNotMissingKeys(t *testing.T) {
 	}
 }
 
+func TestGetUsesProcessCacheAndInvalidatesOnWrite(t *testing.T) {
+	s, ctx := newStore(t), context.Background()
+	if err := s.Set(ctx, "site.title", "GoRun"); err != nil {
+		t.Fatal(err)
+	}
+	var v string
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "GoRun" {
+		t.Fatalf("first get: %q %v", v, err)
+	}
+	// Corrupt the row under the store so a cache miss would fail or return wrong data.
+	if _, err := s.db.ExecContext(ctx, `UPDATE settings SET value_json = '"stale"' WHERE key = 'site.title'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "GoRun" {
+		t.Fatalf("cached get must not hit SQLite: %q %v", v, err)
+	}
+	if err := s.Set(ctx, "site.title", "Next"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "Next" {
+		t.Fatalf("after Set: %q %v", v, err)
+	}
+	if err := s.Delete(ctx, "site.title"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Get(ctx, "site.title", &v); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("after Delete: %v", err)
+	}
+	// Negative cache: insert under the store and ensure Get still sees not-found
+	// until Set refreshes — wait, after Delete we forget, so next Get queries DB.
+	// Fresh miss then remembers not-found:
+	if err := s.Get(ctx, "site.missing", &v); !errors.Is(err, ErrNotFound) {
+		t.Fatal(err)
+	}
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO settings (key, value_json, updated_at) VALUES ('site.missing', '"x"', ?)`, "2026-01-01T00:00:00Z"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Get(ctx, "site.missing", &v); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("negative cache should hide bypass insert until invalidate: %v %q", err, v)
+	}
+	if err := s.Set(ctx, "site.missing", "y"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Get(ctx, "site.missing", &v); err != nil || v != "y" {
+		t.Fatalf("Set must clear negative cache: %q %v", v, err)
+	}
+}
+
+func TestWithLoggerSharesCache(t *testing.T) {
+	s, ctx := newStore(t), context.Background()
+	_ = s.Set(ctx, "site.title", "A")
+	var v string
+	_ = s.Get(ctx, "site.title", &v)
+	other := s.WithLogger(slog.Default())
+	if _, err := s.db.ExecContext(ctx, `UPDATE settings SET value_json = '"B"' WHERE key = 'site.title'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := other.Get(ctx, "site.title", &v); err != nil || v != "A" {
+		t.Fatalf("WithLogger must share cache: %q %v", v, err)
+	}
+}
+
 func TestDeleteAndDeletePrefix(t *testing.T) {
 	s := newStore(t)
 	ctx := context.Background()
