@@ -6,6 +6,32 @@
 <link rel="stylesheet" href="{{asset "canvas-operations.css"}}">
 <section class="canvas-list">
  <header class="admin-page-heading"><p class="admin-eyebrow">{{t "admin.canvas.private"}}</p><h1>{{t "admin.canvas.title"}}</h1><p class="text-muted">{{t "admin.canvas.description"}}</p></header>
+ <section class="canvas-ai-suggestions" data-canvas-ai-suggestions hidden>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <div hidden>
+   <span data-ai-label="title">{{t "admin.canvas.ai_title"}}</span>
+   <span data-ai-label="help">{{t "admin.canvas.ai_help"}}</span>
+   <span data-ai-label="target">{{t "admin.canvas.ai_target"}}</span>
+   <span data-ai-label="agent">{{t "admin.canvas.ai_agent"}}</span>
+   <span data-ai-label="provider">{{t "admin.canvas.ai_provider"}}</span>
+   <span data-ai-label="refresh">{{t "admin.canvas.ai_refresh"}}</span>
+   <span data-ai-label="consent">{{t "admin.canvas.ai_consent"}}</span>
+   <span data-ai-label="loading">{{t "admin.canvas.ai_loading"}}</span>
+   <span data-ai-label="error">{{t "admin.canvas.ai_error"}}</span>
+   <span data-ai-label="not_configured">{{t "admin.canvas.ai_not_configured"}}</span>
+   <span data-ai-label="configure">{{t "admin.canvas.ai_configure"}}</span>
+   <span data-ai-label="apply">{{t "admin.canvas.ai_apply"}}</span>
+   <span data-ai-label="cards">{{t "admin.canvas.ai_cards"}}</span>
+  </div>
+  <div class="canvas-ai-head"><div><h2>{{t "admin.canvas.ai_title"}}</h2><p>{{t "admin.canvas.ai_help"}}</p></div>
+   <label>{{t "admin.canvas.ai_target"}}<select data-ai-target><option value="agent">{{t "admin.canvas.ai_agent"}}</option><option value="provider">{{t "admin.canvas.ai_provider"}}</option></select></label>
+   <button type="button" data-ai-refresh class="canvas-primary">{{t "admin.canvas.ai_refresh"}}</button></div>
+  <section data-ai-review hidden tabindex="-1"><h3>{{t "admin.canvas.ai_review"}}</h3><p>{{t "admin.canvas.ai_review_help"}}</p><pre data-ai-preview></pre><label data-ai-consent-wrap class="canvas-ai-consent"><input type="checkbox" data-ai-consent> {{t "admin.canvas.ai_consent"}}</label><button type="button" data-ai-confirm class="canvas-primary" disabled>{{t "admin.canvas.ai_confirm"}}</button></section>
+  <p role="status" data-ai-status class="canvas-ai-status"></p>
+  <div data-ai-grid class="canvas-ai-grid"></div>
+ </section>
+
+ <script defer src="{{asset "canvas-ai-suggestions.js"}}"></script>
  {{if .Error}}<p role="alert" class="canvas-list-error">{{.Error}}</p>{{end}}
  <label class="audit-board-search">{{t "auditworkspace.find_canvas"}}<input type="search" data-board-search></label><p data-board-search-empty hidden>{{t "auditworkspace.no_matching_canvas"}}</p>
  {{if .Boards}}<ul class="canvas-board-list">{{range .Boards}}<li><a href="/admin/canvases/{{.ID}}"><span class="canvas-list-mark" aria-hidden="true">▦</span><span><strong>{{.Title}}</strong><small>{{t "admin.canvas.updated"}} · {{.UpdatedAt}}</small><small>{{t "auditworkspace.last_run"}} · {{if eq .LastRunStatus "waiting_tool"}}{{t "managedtools.waiting_tool"}}{{else if .LastRunStatus}}{{t (printf "canvasops.%s" .LastRunStatus)}}{{else}}{{t "auditworkspace.no_run"}}{{end}}</small></span><span aria-hidden="true">↗</span></a></li>{{end}}</ul>{{else}}<p class="canvas-list-empty">{{t "admin.canvas.empty_list"}}</p>{{end}}

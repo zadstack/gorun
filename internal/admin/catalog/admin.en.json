@@ -607,5 +607,22 @@
   "updates.accepted": "Coolify accepted the deployment request. Check its progress in Coolify.",
   "updates.unconfirmed": "Deployment acceptance could not be confirmed. Check Coolify before trying again; a deployment may already have started.",
   "updates.cooldown": "A deployment was requested recently. Check Coolify before submitting another request. Requests are spaced ten minutes apart.",
-  "updates.backup_failed": "The backup could not be verified. No deployment request was sent."
+  "updates.backup_failed": "The backup could not be verified. No deployment request was sent.",
+  "canvas.ai_title": "Suggested workflows",
+  "canvas.ai_help": "Uses the current writing AI settings to propose unbound private boards. Configure and review an executor before running.",
+  "canvas.ai_target": "Proposed executor",
+  "canvas.ai_agent": "Named agent (MCP)",
+  "canvas.ai_provider": "Text provider in GoRun",
+  "canvas.ai_refresh": "Preview suggestions request",
+  "canvas.ai_consent": "I approve sending this displayed request to this destination.",
+  "canvas.ai_loading": "Preparing the request…",
+  "canvas.ai_error": "The request could not be completed. Review a fresh preview before generating again.",
+  "canvas.ai_not_configured": "The site writing AI is not configured. A settings administrator can configure it.",
+  "canvas.ai_configure": "Open AI settings",
+  "canvas.ai_apply": "Create private board",
+  "canvas.ai_cards": "cards",
+  "canvas.ai_preview_summary": "Request three private workflow layouts for your canvases. Nothing is published or executed automatically.",
+  "canvas.ai_review": "Review what will be sent",
+  "canvas.ai_review_help": "Review the exact instructions and site context below. Destination shows the recipient host; credential-bearing endpoint paths are not displayed. Changed settings require a new preview.",
+  "canvas.ai_confirm": "Confirm and generate"
 }
