@@ -120,7 +120,8 @@ previously assumed the service-level `Input` was the partial REST contract.
 ## Content create and PATCH semantics
 
 Creation requires `type`; title and other writable fields default when omitted (custom content types
-can still require their own fields). `PATCH /content/{id}` merges over the current writable state.
+can still require their own fields). Omitted `locale` uses the request/admin content locale when the
+request carries one (admin session), otherwise `site.locale`. `PATCH /content/{id}` merges over the current writable state.
 Unknown keys are ignored by the current content decoder. This endpoint has **no CAS/expected-version
 contract**; a load-modify-write can overwrite an intervening edit. Builder endpoints provide CAS separately.
 

@@ -4,7 +4,7 @@
 // still naming أحمد) in the English UI (/en/search), and both in the admin content search
 // in both admin locales. Results show the stored title, not the folded text.
 import { test, expect } from '@playwright/test';
-import { expectNoServerError, setLocale } from '../lib/helpers.ts';
+import { expectNoServerError, setContentLocale, setLocale } from '../lib/helpers.ts';
 
 const TITLE = 'قصة أحمد ومُحَمَّد في المدرسة';
 const TITLE_EN = 'The story of أحمد and مُحَمَّد at المدرسة';
@@ -13,6 +13,9 @@ const titles: Record<string, string> = { '': TITLE, '/en': TITLE_EN };
 test.describe.serial('Arabic search normalisation', () => {
   test('publish a post with hamza, harakat and taa marbuta', async ({ page }) => {
     await page.goto('/admin/content/post/new');
+    // Force Arabic content even if a prior spec left the admin chrome on English —
+    // otherwise the draft is already `en` and the create-EN translation control is absent.
+    await setContentLocale(page, 'ar');
     await page.fill('#title', TITLE);
     await page.locator('button[name="intent"][value="publish"]').click();
     await expect(page).toHaveURL(/\/admin\/content\/post\/[0-9A-Z]{26}$/);

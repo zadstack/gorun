@@ -14,6 +14,11 @@ All notable changes to GoRun are recorded here. The format follows
 - Redact locale-prefixed magic-login paths (`/en/auth/magic/…`, `/ar/auth/magic/…`) in
   request logs the same way as `/auth/magic/…`.
 
+### Content locale follows the editor, not only the site default
+
+- New content defaults to the request/admin UI locale when one is present, instead of always inheriting `site.locale`. An English admin drafting on an Arabic-default site stores `en` unless they choose otherwise.
+- The create editor shows an explicit **Content language** picker (defaults to the admin chrome language). REST/MCP create without `locale` follows the same request-locale-then-site-locale rule.
+
 ### Changed
 
 - Local `make loadtest` / `tools/loadtest` now boots the spawned serve process

@@ -167,7 +167,15 @@ func checkOwner(ctx context.Context, it *Item) error {
 	return nil
 }
 
+// defaultLocale picks the locale for a new item when Input.Locale is empty.
+// Prefer the request/admin content locale (editor chrome) when one is on the
+// context; otherwise fall back to site.locale. This keeps bilingual hosters
+// from storing EN-authored drafts as ar merely because the public site default
+// is Arabic.
 func (s *service) defaultLocale(ctx context.Context) string {
+	if loc, ok := i18n.RequestLocale(ctx); ok && slices.Contains(i18n.Supported, loc) {
+		return loc
+	}
 	if s.settings == nil {
 		return i18n.DefaultLocale
 	}
@@ -408,6 +416,10 @@ func (s *service) prepare(ctx context.Context, existing *Item, in Input, extraPr
 		} else {
 			it.Locale = s.defaultLocale(ctx)
 		}
+	}
+	if !slices.Contains(i18n.Supported, it.Locale) {
+		errs["locale"] = "content.validation.locale"
+		return nil, nil, invalid(errs)
 	}
 	s.applyAuthor(ctx, existing, it)
 
