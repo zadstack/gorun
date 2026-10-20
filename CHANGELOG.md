@@ -5,6 +5,21 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-20
+
+### Reviewed canvas workflow suggestions
+
+- Add optional workflow suggestions to the canvas list using the existing writing AI configuration. Show the recipient provider, model and host, plus the exact instructions and site-context prompt, before a separate approval and confirmation. Previewing never contacts the provider.
+- Bind each expiring, owner-scoped, single-use review to the actual configuration snapshot and revision. Editing and restoring settings cannot revive old approval. A changed context or writing configuration requires a fresh review. Recheck the active user’s current writing permission before generation and accepting output; discard output if that permission is lost, or context or configuration changes.
+- Use bounded, race-safe caches and idempotent Apply to create private boards. Suggested boards start without a bound executor, enabled schedule, grants or automatic execution. Existing canvas search, presets and private templates remain available.
+
+### Honest extension installation methods
+
+- Group the extension inventory by its recorded installation method: server directory, uploaded ZIP, or legacy method not recorded. Show the same method on extension details in English and Arabic, including mobile layouts.
+- Preserve existing records, subscriptions and delivery history during the additive schema upgrade. Existing installations remain unknown rather than being labeled bundled or trusted. New installations record the method actually used, including a retained ZIP package later installed from a directory.
+
+This release includes the independently reviewed repairs in #78 and #82. Installing it does not configure a provider, grant tools, run an agent or publish content automatically. Existing installations and accounts remain preserved.
+
 ## [0.9.0] - 2026-10-19
 
 This release improves daily administration and adds inspectable agent role templates.
@@ -518,7 +533,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/zadstack/gorun/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/zadstack/gorun/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/zadstack/gorun/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/zadstack/gorun/compare/v0.6.0...v0.7.0
