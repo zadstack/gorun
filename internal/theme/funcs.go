@@ -277,10 +277,17 @@ func (f *funcs) localizedTerm(p string) string {
 	return i18n.LocalizePath(f.st.tc.Locale, f.st.tc.Site.Locale, p)
 }
 
-// asset returns /themes/<slug>/assets/<p>?v=<mtime> for the first theme in
-// the chain that has the file.
+// asset returns /patterns/<slug>/assets/<p>?v=<mtime> when the active
+// pattern owns the file, else /themes/<slug>/assets/<p>?v=<mtime> for the
+// first theme in the chain that has it.
 func (f *funcs) asset(p string) string {
 	clean := strings.TrimPrefix(path.Clean("/"+p), "/")
+	if f.st.set.patternDir != "" && f.st.set.patternSlug != "" {
+		st, err := os.Stat(filepath.Join(f.st.set.patternDir, "assets", filepath.FromSlash(clean)))
+		if err == nil && !st.IsDir() {
+			return "/patterns/" + f.st.set.patternSlug + "/assets/" + clean + "?v=" + strconv.FormatInt(st.ModTime().Unix(), 10)
+		}
+	}
 	for _, info := range f.st.set.chain {
 		st, err := os.Stat(filepath.Join(info.Dir, "assets", filepath.FromSlash(clean)))
 		if err == nil && !st.IsDir() {

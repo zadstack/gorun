@@ -1,0 +1,21 @@
+{
+  "nav": "Patterns",
+  "title": "Site patterns",
+  "intro": "Patterns are opinionated page layouts (magazine, company, portfolio, docs). They layer above your theme identity and can be changed independently.",
+  "themes_link": "Theme identity (colors & type)",
+  "active": "Active",
+  "activate": "Use this pattern",
+  "activated": "Pattern activated",
+  "invalid": "This pattern cannot be activated. Check its pattern.json and home template.",
+  "clear": "Use theme layout only",
+  "cleared": "Pattern cleared; the theme’s own templates are used again",
+  "clear_failed": "Could not clear the active pattern",
+  "clear_help": "Removes the layout pattern so only the active theme renders the site.",
+  "none": "No pattern packages are installed.",
+  "bundled": "First-party",
+  "custom": "Installed",
+  "slug": "Slug",
+  "version": "Version",
+  "screenshot_alt": "Screenshot of %s pattern",
+  "note": "Patterns do not change theme colors or fonts. Adjust identity under Themes / Theme settings."
+}

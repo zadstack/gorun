@@ -80,7 +80,7 @@ type SiteInfo struct {
 }
 
 // TemplateFile is a template visible to the theme; Source is "theme",
-// "parent" or "override".
+// "parent", "override", "draft", or "pattern".
 type TemplateFile struct {
 	Name   string `json:"name"`
 	Path   string `json:"path"`

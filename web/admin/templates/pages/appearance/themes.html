@@ -7,7 +7,10 @@
     <h1 class="text-[22px] font-bold">{{t "theme.themes.title"}}</h1>
     <p class="text-muted">{{t "theme.themes.intro"}}</p>
   </div>
-  <a href="/admin/appearance/templates" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "file-code"}}<span>{{t "theme.nav.templates"}}</span></a>
+  <div class="flex flex-wrap gap-2">
+    <a href="/admin/appearance/patterns" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "layout"}}<span>{{t "theme.themes.patterns_link"}}</span></a>
+    <a href="/admin/appearance/templates" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "file-code"}}<span>{{t "theme.nav.templates"}}</span></a>
+  </div>
 </div>
 {{if .Themes}}
 <div class="theme-library grid gap-4 md:grid-cols-2 xl:grid-cols-3">

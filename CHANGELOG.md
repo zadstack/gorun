@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Pattern plugins (site layouts)
+
+- Adds a declarative **pattern** layer (`patterns/`, `internal/pattern`, `pkg/patternkit`) so opinionated page layouts sit above theme identity and below site overrides (`draft → override → pattern → theme`).
+- Ships four first-party starters: `editorial`, `company`, `showcase`, `guidebook` — selectable under **Appearance → Patterns** independently of Themes (English and Arabic admin copy).
+- Setting `site.pattern` records the active layout; clearing it restores the theme’s own templates. Pattern assets are served at `/patterns/<slug>/assets/`.
+
 ### Theme catalog as identity systems
 
 - Treat ship-with themes as **identity systems** (type, color, spacing, chrome), not

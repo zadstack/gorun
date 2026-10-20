@@ -15,6 +15,7 @@ import (
 	"github.com/zadstack/gorun/internal/media"
 	"github.com/zadstack/gorun/internal/membership"
 	"github.com/zadstack/gorun/internal/menus"
+	"github.com/zadstack/gorun/internal/pattern"
 	"github.com/zadstack/gorun/internal/redirects"
 	"github.com/zadstack/gorun/internal/saas"
 	"github.com/zadstack/gorun/internal/seo"
@@ -40,6 +41,7 @@ func CoreModules() []kernel.Module {
 		redirects.New(),
 		seo.New(),
 		theme.New(),
+		pattern.New(),
 		builder.New(),
 		site.New(),
 		api.New(),

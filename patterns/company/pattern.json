@@ -1,0 +1,13 @@
+{
+  "kind": "pattern",
+  "slug": "company",
+  "version": "1.0.0",
+  "name": {
+    "en": "Company",
+    "ar": "شركة"
+  },
+  "description": {
+    "en": "Business landing: hero band, offerings strip, and recent updates.",
+    "ar": "رئيسية أعمال: شريط بطولي وعروض وآخر المستجدات."
+  }
+}

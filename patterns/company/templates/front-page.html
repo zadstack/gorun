@@ -1,0 +1,40 @@
+{{part "header" .}}
+<link rel="stylesheet" href="{{asset "layout.css"}}">
+<section class="pat-co" aria-labelledby="pat-co-title">
+  <div class="pat-co-hero">
+    <div class="pat-co-copy">
+      <p class="pat-co-eyebrow">{{t "pat.company.eyebrow"}}</p>
+      <h1 id="pat-co-title">{{.Site.Title}}</h1>
+      {{with .Site.Tagline}}<p>{{.}}</p>{{end}}
+      <p class="pat-co-actions">
+        <a class="pat-co-cta" href="{{url "/contact"}}">{{t "pat.company.cta"}}</a>
+      </p>
+    </div>
+  </div>
+  {{with products}}
+  <section class="pat-co-offerings" aria-labelledby="pat-co-offer-title">
+    <h2 id="pat-co-offer-title">{{t "pat.company.eyebrow"}}</h2>
+    <div class="pat-co-offer-grid">
+      {{$n := 0}}{{range .}}{{range .Products}}{{if lt $n 6}}{{$n = add $n 1}}
+      <article>
+        <h3><a href="{{url (print "/product/" .Slug)}}">{{.Name}}</a></h3>
+        {{with .ShortDescription}}<p>{{excerpt . 20}}</p>{{end}}
+      </article>
+      {{end}}{{end}}{{end}}
+    </div>
+  </section>
+  {{end}}
+  {{if .Items}}
+  <section class="pat-co-updates" aria-labelledby="pat-co-updates-title">
+    <h2 id="pat-co-updates-title">{{t "pat.company.updates"}}</h2>
+    <ul>
+      {{range .Items}}
+      <li><a href="{{url .}}">{{.Title}}</a>{{with .PublishedAt}} <time datetime="{{.}}"><bdi>{{date .}}</bdi></time>{{end}}</li>
+      {{end}}
+    </ul>
+  </section>
+  {{else}}
+  <p class="pat-co-empty">{{t "pat.company.empty"}}</p>
+  {{end}}
+</section>
+{{part "footer" .}}

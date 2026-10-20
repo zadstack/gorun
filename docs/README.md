@@ -24,6 +24,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | --- | --- |
 | [SITE_BUILDER.md](SITE_BUILDER.md) | Starter sites (business / portfolio / magazine), draft → activate, readiness |
 | [THEMES.md](THEMES.md) | Theme catalog, activate a theme, overrides, locales on the public site |
+| [PATTERN-PLUGINS.md](PATTERN-PLUGINS.md) | Site layout patterns (independent of theme identity): package shape, admin picker, starters |
 | [DEFAULT-THEMES.md](DEFAULT-THEMES.md) | What the five ship-with themes are for |
 | [ADMIN_WORKSPACE.md](ADMIN_WORKSPACE.md) | Bilingual admin (AR/EN, RTL), dashboard pins, sidebar |
 

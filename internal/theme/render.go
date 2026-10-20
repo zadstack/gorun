@@ -35,13 +35,15 @@ const (
 // pages that use it and still counts as existing for Resolve. Masters are
 // never executed; each render clones one.
 type compiled struct {
-	slug  string
-	chain []Info
-	files map[string]source
-	pages map[string]*template.Template // hierarchy templates
-	base  *template.Template            // parts + components
-	errs  map[string]error              // parse errors by name
-	lang  map[string]map[string]string
+	slug        string
+	chain       []Info
+	files       map[string]source
+	pages       map[string]*template.Template // hierarchy templates
+	base        *template.Template            // parts + components
+	errs        map[string]error              // parse errors by name
+	lang        map[string]map[string]string
+	patternSlug string
+	patternDir  string
 }
 
 func (c *compiled) exists(name string) bool { _, ok := c.files[name]; return ok }
@@ -51,8 +53,14 @@ func (s *service) compile(ctx context.Context, slug string, preview bool) (*comp
 	if err != nil {
 		return nil, err
 	}
-	c := &compiled{slug: slug, chain: chain, files: collect(s.layers(slug, chain, preview)),
+	c := &compiled{slug: slug, chain: chain, files: collect(s.layers(ctx, slug, chain, preview)),
 		pages: map[string]*template.Template{}, errs: map[string]error{}, lang: loadLang(chain)}
+	if s.patterns != nil {
+		if dir, pslug, ok := s.patterns.Active(ctx); ok {
+			c.patternSlug, c.patternDir = pslug, dir
+			mergeLangDir(c.lang, dir) // pattern copy wins over theme strings
+		}
+	}
 	stubs := s.funcMap(&reqState{ctx: ctx, tc: &Context{}, set: c})
 	c.base = template.New("gorun").Funcs(stubs)
 	for name, f := range c.files {

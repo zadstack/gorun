@@ -38,9 +38,10 @@ type service struct {
 	log   *slog.Logger
 	links *Linker
 
-	cloneMu sync.Mutex // html/template Clone of shared masters
-	mu      sync.Mutex
-	cache   map[string]*compiled
+	cloneMu  sync.Mutex // html/template Clone of shared masters
+	mu       sync.Mutex
+	cache    map[string]*compiled
+	patterns PatternLayer // optional layout layer (see pattern_layer.go)
 }
 
 func newService(d *kernel.Deps, root string, log *slog.Logger) *service {
@@ -135,10 +136,10 @@ func themeLayers(chain []Info) []layer {
 }
 
 // layers lists the directories searched for slug's templates, highest
-// priority first: drafts (preview only), published overrides, the theme,
-// its parents.
+// priority first: drafts (preview only), published overrides, active
+// pattern package, the theme, its parents.
 // slug has already passed loadChain (slugRe), so overridesDir cannot fail.
-func (s *service) layers(slug string, chain []Info, preview bool) []layer {
+func (s *service) layers(ctx context.Context, slug string, chain []Info, preview bool) []layer {
 	od, err := overridesDir(s.d.Config, slug)
 	if err != nil {
 		return themeLayers(chain)
@@ -148,6 +149,11 @@ func (s *service) layers(slug string, chain []Info, preview bool) []layer {
 		ls = append(ls, layer{dir: filepath.Join(od, draftsSubdir), origin: "draft"})
 	}
 	ls = append(ls, layer{dir: od, origin: "override"})
+	if s.patterns != nil {
+		if dir, _, ok := s.patterns.Active(ctx); ok && dir != "" {
+			ls = append(ls, layer{dir: dir, origin: "pattern"})
+		}
+	}
 	return append(ls, themeLayers(chain)...)
 }
 
@@ -158,7 +164,7 @@ func (s *service) Templates(ctx context.Context) ([]TemplateFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	files := collect(s.layers(slug, chain, false))
+	files := collect(s.layers(ctx, slug, chain, false))
 	out := make([]TemplateFile, 0, len(files))
 	for _, f := range files {
 		out = append(out, TemplateFile{Name: f.name, Path: s.displayPath(f.path), Source: f.origin})
@@ -195,7 +201,7 @@ func (s *service) ReadTemplate(ctx context.Context, name string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	f, ok := collect(s.layers(slug, chain, false))[name]
+	f, ok := collect(s.layers(ctx, slug, chain, false))[name]
 	if !ok {
 		return "", fmt.Errorf("%w: template %q", ErrNotFound, name)
 	}
@@ -213,20 +219,27 @@ func (s *service) invalidate() {
 }
 
 // set returns the parsed template set for slug: cached in prod, rebuilt in
-// dev and for previews.
+// dev and for previews. The cache key includes the active pattern so
+// switching layout packages does not reuse a stale compile.
 func (s *service) set(ctx context.Context, slug string, preview bool) (*compiled, error) {
 	if s.dev || preview {
 		return s.compile(ctx, slug, preview)
 	}
+	key := slug
+	if s.patterns != nil {
+		if _, p, ok := s.patterns.Active(ctx); ok && p != "" {
+			key = slug + ":" + p
+		}
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if c, ok := s.cache[slug]; ok {
+	if c, ok := s.cache[key]; ok {
 		return c, nil
 	}
 	c, err := s.compile(ctx, slug, false)
 	if err != nil {
 		return nil, err
 	}
-	s.cache[slug] = c
+	s.cache[key] = c
 	return c, nil
 }

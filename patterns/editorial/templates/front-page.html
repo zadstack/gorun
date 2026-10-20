@@ -1,0 +1,33 @@
+{{part "header" .}}
+<link rel="stylesheet" href="{{asset "layout.css"}}">
+<section class="pat-ed" aria-labelledby="pat-ed-title">
+  <header class="pat-ed-masthead">
+    <p class="pat-ed-eyebrow">{{t "pat.editorial.eyebrow"}}</p>
+    <h1 id="pat-ed-title">{{.Site.Title}}</h1>
+    {{with .Site.Tagline}}<p class="pat-ed-deck">{{.}}</p>{{end}}
+  </header>
+  {{if .Items}}
+  {{with index .Items 0}}
+  <article class="pat-ed-lead">
+    <p class="pat-ed-label">{{t "pat.editorial.lead"}}</p>
+    <h2><a href="{{url .}}">{{.Title}}</a></h2>
+    {{with excerpt . 40}}<p>{{.}}</p>{{end}}
+    <a class="pat-ed-more" href="{{url .}}">{{t "read_more"}}</a>
+  </article>
+  {{end}}
+  <section class="pat-ed-grid" aria-labelledby="pat-ed-latest">
+    <h2 id="pat-ed-latest">{{t "pat.editorial.latest"}}</h2>
+    <div class="pat-ed-cards">
+      {{range $i, $item := .Items}}{{if gt $i 0}}
+      <article>
+        <h3><a href="{{url .}}">{{.Title}}</a></h3>
+        {{with excerpt . 24}}<p>{{.}}</p>{{end}}
+      </article>
+      {{end}}{{end}}
+    </div>
+  </section>
+  {{else}}
+  <p class="pat-ed-empty">{{t "pat.editorial.empty"}}</p>
+  {{end}}
+</section>
+{{part "footer" .}}
