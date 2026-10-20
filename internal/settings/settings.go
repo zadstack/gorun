@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
-	"strings"
 	"sync"
 
 	"github.com/zadstack/gorun/internal/db"
@@ -33,8 +32,9 @@ type cacheEntry struct {
 }
 
 // Store reads and writes settings. Get/GetString results are memoized in
-// process memory and invalidated on Set/Delete/DeletePrefix so hot public
-// renders do not round-trip SQLite for every {{setting}} / siteInfo / SEO key.
+// process memory. The cache is dropped whenever SQLite's data_version changes
+// (any writer on this file, including e2e helpers that UPDATE settings via
+// another connection) and on every Store write path.
 type Store struct {
 	db    *sql.DB
 	log   *slog.Logger
@@ -42,12 +42,9 @@ type Store struct {
 }
 
 type settingsCache struct {
-	mu         sync.RWMutex
-	generation uint64 // bumped on every invalidate so stale fills cannot repopulate
-	entries    map[string]cacheEntry
-	// held keys were written inside an open transaction: bypass cache until a
-	// committed (non-tx) Set/Delete publishes them, so rollbacks cannot leak.
-	held map[string]struct{}
+	mu        sync.Mutex
+	dbVersion int64 // 0 means "unknown / must re-sync"
+	entries   map[string]cacheEntry
 }
 
 // New returns a store on d logging to slog.Default(). The settings
@@ -56,7 +53,7 @@ func New(d *sql.DB) *Store {
 	return &Store{
 		db:    d,
 		log:   slog.Default(),
-		cache: &settingsCache{entries: map[string]cacheEntry{}, held: map[string]struct{}{}},
+		cache: &settingsCache{entries: map[string]cacheEntry{}},
 	}
 }
 
@@ -82,68 +79,88 @@ func (s *Store) Get(ctx context.Context, key string, out any) error {
 	return nil
 }
 
+func (s *Store) dataVersion() (int64, error) {
+	var ver int64
+	if err := s.db.QueryRow(`PRAGMA data_version`).Scan(&ver); err != nil {
+		return 0, err
+	}
+	return ver, nil
+}
+
+// syncLocked drops the memo when another connection (or our own write path
+// via Invalidate) advanced SQLite's data_version. Caller must hold c.mu.
+func (c *settingsCache) syncLocked(ver int64) {
+	if ver == c.dbVersion {
+		return
+	}
+	clear(c.entries)
+	c.dbVersion = ver
+}
+
 func (s *Store) raw(ctx context.Context, key string) (string, error) {
-	var gen uint64
-	held := false
-	if s.cache != nil {
-		s.cache.mu.RLock()
-		_, held = s.cache.held[key]
-		if !held {
-			if e, hit := s.cache.entries[key]; hit {
-				s.cache.mu.RUnlock()
-				if !e.ok {
-					return "", ErrNotFound
-				}
-				return e.raw, nil
-			}
+	ver, err := s.dataVersion()
+	if err != nil {
+		return "", fmt.Errorf("settings: data_version: %w", err)
+	}
+	if s.cache == nil {
+		var raw string
+		err := s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrNotFound
 		}
-		gen = s.cache.generation
-		s.cache.mu.RUnlock()
+		if err != nil {
+			return "", fmt.Errorf("settings: get %s: %w", key, err)
+		}
+		return raw, nil
 	}
 
-	var raw string
-	err := s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
-	if errors.Is(err, sql.ErrNoRows) {
-		if !held {
-			s.remember(key, "", false, gen)
+	s.cache.mu.Lock()
+	s.cache.syncLocked(ver)
+	if e, hit := s.cache.entries[key]; hit {
+		s.cache.mu.Unlock()
+		if !e.ok {
+			return "", ErrNotFound
 		}
+		return e.raw, nil
+	}
+	fillVer := s.cache.dbVersion
+	s.cache.mu.Unlock()
+
+	var raw string
+	err = s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
+	if errors.Is(err, sql.ErrNoRows) {
+		s.remember(key, "", false, fillVer)
 		return "", ErrNotFound
 	}
 	if err != nil {
 		return "", fmt.Errorf("settings: get %s: %w", key, err)
 	}
-	if !held {
-		s.remember(key, raw, true, gen)
-	}
+	s.remember(key, raw, true, fillVer)
 	return raw, nil
 }
 
-// remember stores a fill only when no write invalidated the cache since gen
-// was observed (avoids a concurrent Set being overwritten by a stale Get).
-func (s *Store) remember(key, raw string, ok bool, gen uint64) {
+// remember stores a fill only when data_version is still fillVer (a Store
+// write or foreign SQL write clears/advances the cache in between).
+func (s *Store) remember(key, raw string, ok bool, fillVer int64) {
 	if s.cache == nil {
 		return
 	}
 	s.cache.mu.Lock()
-	if s.cache.generation == gen {
-		if _, held := s.cache.held[key]; !held {
-			s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
-		}
+	if s.cache.dbVersion == fillVer {
+		s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
 	}
 	s.cache.mu.Unlock()
 }
 
-func (s *Store) forgetPrefix(prefix string) {
+// Invalidate drops the process memo. Safe after out-of-band SQL writes when
+// callers mutate the DB outside Store; write paths call this too.
+func (s *Store) Invalidate() {
 	if s.cache == nil {
 		return
 	}
 	s.cache.mu.Lock()
-	s.cache.generation++
-	for k := range s.cache.entries {
-		if strings.HasPrefix(k, prefix) {
-			delete(s.cache.entries, k)
-		}
-	}
+	clear(s.cache.entries)
+	s.cache.dbVersion = 0
 	s.cache.mu.Unlock()
 }
 
@@ -185,38 +202,8 @@ func (s *Store) set(ctx context.Context, ex execer, key string, v any) error {
 	if err != nil {
 		return fmt.Errorf("settings: set %s: %w", key, err)
 	}
-	if _, isTx := ex.(*sql.Tx); isTx {
-		// Do not publish uncommitted values (rollback must not leak). Hold the
-		// key so a concurrent Get cannot re-cache the pre-tx committed row.
-		s.hold(key)
-		return nil
-	}
-	s.publish(key, string(raw), true)
+	s.Invalidate()
 	return nil
-}
-
-// publish records a known committed value (or known miss) and clears any hold.
-func (s *Store) publish(key, raw string, ok bool) {
-	if s.cache == nil {
-		return
-	}
-	s.cache.mu.Lock()
-	s.cache.generation++
-	delete(s.cache.held, key)
-	s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
-	s.cache.mu.Unlock()
-}
-
-// hold drops a cached entry and blocks refills until a committed publish.
-func (s *Store) hold(key string) {
-	if s.cache == nil {
-		return
-	}
-	s.cache.mu.Lock()
-	s.cache.generation++
-	delete(s.cache.entries, key)
-	s.cache.held[key] = struct{}{}
-	s.cache.mu.Unlock()
 }
 
 // All returns every setting whose key starts with prefix ("" for all).
@@ -227,12 +214,6 @@ func (s *Store) All(ctx context.Context, prefix string) (map[string]json.RawMess
 		return nil, fmt.Errorf("settings: list %q: %w", prefix, err)
 	}
 	defer rows.Close()
-	var gen uint64
-	if s.cache != nil {
-		s.cache.mu.RLock()
-		gen = s.cache.generation
-		s.cache.mu.RUnlock()
-	}
 	out := map[string]json.RawMessage{}
 	for rows.Next() {
 		var k, v string
@@ -240,9 +221,11 @@ func (s *Store) All(ctx context.Context, prefix string) (map[string]json.RawMess
 			return nil, fmt.Errorf("settings: scan: %w", err)
 		}
 		out[k] = json.RawMessage(v)
-		s.remember(k, v, true, gen)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // Delete removes key; a missing key is not an error. Like Set, never call
@@ -251,7 +234,7 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	if _, err := s.db.ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, key); err != nil {
 		return fmt.Errorf("settings: delete %s: %w", key, err)
 	}
-	s.publish(key, "", false)
+	s.Invalidate()
 	return nil
 }
 
@@ -274,35 +257,6 @@ func (s *Store) deletePrefix(ctx context.Context, ex execer, prefix string) erro
 	if _, err := ex.ExecContext(ctx, `DELETE FROM settings WHERE substr(key, 1, length(?)) = ?`, prefix, prefix); err != nil {
 		return fmt.Errorf("settings: delete prefix %q: %w", prefix, err)
 	}
-	if _, isTx := ex.(*sql.Tx); isTx {
-		s.holdPrefix(prefix)
-		return nil
-	}
-	s.forgetPrefix(prefix)
-	// Drop holds under the prefix after a committed delete.
-	if s.cache != nil {
-		s.cache.mu.Lock()
-		for k := range s.cache.held {
-			if strings.HasPrefix(k, prefix) {
-				delete(s.cache.held, k)
-			}
-		}
-		s.cache.mu.Unlock()
-	}
+	s.Invalidate()
 	return nil
-}
-
-func (s *Store) holdPrefix(prefix string) {
-	if s.cache == nil {
-		return
-	}
-	s.cache.mu.Lock()
-	s.cache.generation++
-	for k := range s.cache.entries {
-		if strings.HasPrefix(k, prefix) {
-			delete(s.cache.entries, k)
-			s.cache.held[k] = struct{}{}
-		}
-	}
-	s.cache.mu.Unlock()
 }

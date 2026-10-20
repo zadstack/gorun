@@ -12,9 +12,10 @@ import (
 	"github.com/zadstack/gorun/internal/db"
 )
 
-func newStore(t *testing.T) *Store {
+func newStore(t *testing.T) (*Store, string) {
 	t.Helper()
-	d, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
+	path := filepath.Join(t.TempDir(), "t.db")
+	d, err := db.Open(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,7 +23,7 @@ func newStore(t *testing.T) *Store {
 	if err := db.Migrate(context.Background(), d, "settings", Migrations()); err != nil {
 		t.Fatal(err)
 	}
-	return New(d)
+	return New(d), path
 }
 
 type siteInfo struct {
@@ -31,7 +32,8 @@ type siteInfo struct {
 }
 
 func TestSetGetRoundtripStruct(t *testing.T) {
-	s, ctx := newStore(t), context.Background()
+	s, _ := newStore(t)
+	ctx := context.Background()
 	in := siteInfo{Title: "زاد ستاك", Locale: "ar"}
 	if err := s.Set(ctx, "site.info", in); err != nil {
 		t.Fatal(err)
@@ -50,7 +52,8 @@ func TestSetGetRoundtripStruct(t *testing.T) {
 }
 
 func TestGetNotFound(t *testing.T) {
-	s, ctx := newStore(t), context.Background()
+	s, _ := newStore(t)
+	ctx := context.Background()
 	var v string
 	if err := s.Get(ctx, "nope", &v); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("want ErrNotFound got %v", err)
@@ -65,7 +68,8 @@ func TestGetNotFound(t *testing.T) {
 }
 
 func TestAllByPrefix(t *testing.T) {
-	s, ctx := newStore(t), context.Background()
+	s, _ := newStore(t)
+	ctx := context.Background()
 	s.Set(ctx, "site.title", "T")
 	s.Set(ctx, "site.locale", "ar")
 	s.Set(ctx, "siteother", 1)
@@ -105,21 +109,15 @@ func TestGetStringLogsDBErrorsButNotMissingKeys(t *testing.T) {
 	}
 }
 
-func TestGetUsesProcessCacheAndInvalidatesOnWrite(t *testing.T) {
-	s, ctx := newStore(t), context.Background()
+func TestSetThenGetSeesNewValue(t *testing.T) {
+	s, _ := newStore(t)
+	ctx := context.Background()
 	if err := s.Set(ctx, "site.title", "GoRun"); err != nil {
 		t.Fatal(err)
 	}
 	var v string
 	if err := s.Get(ctx, "site.title", &v); err != nil || v != "GoRun" {
 		t.Fatalf("first get: %q %v", v, err)
-	}
-	// Corrupt the row under the store so a cache miss would fail or return wrong data.
-	if _, err := s.db.ExecContext(ctx, `UPDATE settings SET value_json = '"stale"' WHERE key = 'site.title'`); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.Get(ctx, "site.title", &v); err != nil || v != "GoRun" {
-		t.Fatalf("cached get must not hit SQLite: %q %v", v, err)
 	}
 	if err := s.Set(ctx, "site.title", "Next"); err != nil {
 		t.Fatal(err)
@@ -133,44 +131,35 @@ func TestGetUsesProcessCacheAndInvalidatesOnWrite(t *testing.T) {
 	if err := s.Get(ctx, "site.title", &v); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("after Delete: %v", err)
 	}
-	// Negative cache: insert under the store and ensure Get still sees not-found
-	// until Set refreshes — wait, after Delete we forget, so next Get queries DB.
-	// Fresh miss then remembers not-found:
-	if err := s.Get(ctx, "site.missing", &v); !errors.Is(err, ErrNotFound) {
-		t.Fatal(err)
-	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO settings (key, value_json, updated_at) VALUES ('site.missing', '"x"', ?)`, "2026-01-01T00:00:00Z"); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.Get(ctx, "site.missing", &v); !errors.Is(err, ErrNotFound) {
-		t.Fatalf("negative cache should hide bypass insert until invalidate: %v %q", err, v)
-	}
-	if err := s.Set(ctx, "site.missing", "y"); err != nil {
-		t.Fatal(err)
-	}
-	if err := s.Get(ctx, "site.missing", &v); err != nil || v != "y" {
-		t.Fatalf("Set must clear negative cache: %q %v", v, err)
-	}
 }
 
-func TestGetDoesNotRepopulateAfterConcurrentSet(t *testing.T) {
-	s, ctx := newStore(t), context.Background()
+func TestForeignSQLWriteInvalidatesViaDataVersion(t *testing.T) {
+	s, path := newStore(t)
+	ctx := context.Background()
 	if err := s.Set(ctx, "site.title", "A"); err != nil {
 		t.Fatal(err)
 	}
-	gen := s.cache.generation
-	if err := s.Set(ctx, "site.title", "B"); err != nil {
+	var v string
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "A" {
+		t.Fatalf("warm: %q %v", v, err)
+	}
+	// Simulate e2e / test helpers that UPDATE settings on another connection.
+	other, err := db.Open(path)
+	if err != nil {
 		t.Fatal(err)
 	}
-	s.remember("site.title", `"A"`, true, gen) // stale fill from before Set
-	var v string
+	defer other.Close()
+	if _, err := other.ExecContext(ctx, `UPDATE settings SET value_json = '"B"' WHERE key = 'site.title'`); err != nil {
+		t.Fatal(err)
+	}
 	if err := s.Get(ctx, "site.title", &v); err != nil || v != "B" {
-		t.Fatalf("stale remember must not win: %q %v", v, err)
+		t.Fatalf("PRAGMA data_version must drop memo after foreign SQL: %q %v", v, err)
 	}
 }
 
-func TestSetTxHoldDoesNotLeakOnRollback(t *testing.T) {
-	s, ctx := newStore(t), context.Background()
+func TestSetTxRollbackDoesNotLeakAndCommitIsVisible(t *testing.T) {
+	s, _ := newStore(t)
+	ctx := context.Background()
 	_ = s.Set(ctx, "site.title", "A")
 	var v string
 	_ = s.Get(ctx, "site.title", &v)
@@ -191,49 +180,73 @@ func TestSetTxHoldDoesNotLeakOnRollback(t *testing.T) {
 	if err := s.Get(ctx, "site.partial", &v); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("rollback must drop partial SetTx: %v %q", err, v)
 	}
-}
 
-func TestSetTxHoldPreventsStaleRefillThenSeesCommit(t *testing.T) {
-	s, ctx := newStore(t), context.Background()
-	_ = s.Set(ctx, "site.title", "A")
-	var v string
-	_ = s.Get(ctx, "site.title", &v)
-	tx, err := s.db.BeginTx(ctx, nil)
+	tx, err = s.db.BeginTx(ctx, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := s.SetTx(ctx, tx, "site.title", "B"); err != nil {
+	if err := s.SetTx(ctx, tx, "site.title", "C"); err != nil {
 		t.Fatal(err)
-	}
-	// While held, Get hits SQLite (still A) and must not cache that row.
-	if err := s.Get(ctx, "site.title", &v); err != nil || v != "A" {
-		_ = tx.Rollback()
-		t.Fatalf("open tx: pool still sees A: %q %v", v, err)
 	}
 	if err := tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.Get(ctx, "site.title", &v); err != nil || v != "B" {
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "C" {
 		t.Fatalf("after commit: %q %v", v, err)
 	}
 }
 
+func TestConcurrentSetGetSeesLatest(t *testing.T) {
+	s, _ := newStore(t)
+	ctx := context.Background()
+	if err := s.Set(ctx, "site.title", "0"); err != nil {
+		t.Fatal(err)
+	}
+	errCh := make(chan error, 8)
+	for i := 0; i < 4; i++ {
+		go func(n int) {
+			for j := 0; j < 40; j++ {
+				if err := s.Set(ctx, "site.title", string(rune('A'+n))); err != nil {
+					errCh <- err
+					return
+				}
+				var v string
+				if err := s.Get(ctx, "site.title", &v); err != nil || v == "" {
+					errCh <- err
+					return
+				}
+			}
+			errCh <- nil
+		}(i)
+	}
+	for i := 0; i < 4; i++ {
+		if err := <-errCh; err != nil {
+			t.Fatal(err)
+		}
+	}
+	var v string
+	if err := s.Get(ctx, "site.title", &v); err != nil || len(v) != 1 {
+		t.Fatalf("final: %q %v", v, err)
+	}
+}
+
 func TestWithLoggerSharesCache(t *testing.T) {
-	s, ctx := newStore(t), context.Background()
+	s, _ := newStore(t)
+	ctx := context.Background()
 	_ = s.Set(ctx, "site.title", "A")
 	var v string
 	_ = s.Get(ctx, "site.title", &v)
 	other := s.WithLogger(slog.Default())
-	if _, err := s.db.ExecContext(ctx, `UPDATE settings SET value_json = '"B"' WHERE key = 'site.title'`); err != nil {
+	if err := s.Set(ctx, "site.title", "B"); err != nil {
 		t.Fatal(err)
 	}
-	if err := other.Get(ctx, "site.title", &v); err != nil || v != "A" {
-		t.Fatalf("WithLogger must share cache: %q %v", v, err)
+	if err := other.Get(ctx, "site.title", &v); err != nil || v != "B" {
+		t.Fatalf("WithLogger must share invalidated cache: %q %v", v, err)
 	}
 }
 
 func TestDeleteAndDeletePrefix(t *testing.T) {
-	s := newStore(t)
+	s, _ := newStore(t)
 	ctx := context.Background()
 	for _, k := range []string{"ext.a.settings.x", "ext.a.state", "ext.ab.settings.x", "site.title"} {
 		if err := s.Set(ctx, k, "v"); err != nil {
