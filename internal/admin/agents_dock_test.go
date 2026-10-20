@@ -57,7 +57,7 @@ func TestAgentsDockOwnedProjectionEffectivePromptAndNoDispatch(t *testing.T) {
 	_, body = s.do("GET", "/admin/x/agents-dock", nil)
 	mustNotContain(t, body, "Private saved instructions", "dock-model", node["id"].(string))
 	s.signIn(u.Email)
-	if _, err := s.app.Deps.DB.Exec(`INSERT INTO settings(key,value_json,updated_at) VALUES('site.workspace','"simple"','now') ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json`); err != nil {
+	if err := s.app.Deps.Settings.Set(context.Background(), "site.workspace", "simple"); err != nil {
 		t.Fatal(err)
 	}
 	_, body = s.do("GET", "/admin/x/agents-dock", nil)

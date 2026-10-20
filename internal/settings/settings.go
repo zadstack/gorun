@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"sync"
 
 	"github.com/zadstack/gorun/internal/db"
 )
@@ -24,18 +25,43 @@ func Migrations() fs.FS { return migrations }
 // ErrNotFound is returned by Get when the key does not exist.
 var ErrNotFound = errors.New("settings: not found")
 
-// Store reads and writes settings.
+// cacheEntry holds a raw JSON value, or marks a known-missing key.
+type cacheEntry struct {
+	raw string
+	ok  bool // false = known missing (negative cache)
+}
+
+// Store reads and writes settings. Get/GetString results are memoized in
+// process memory. The cache is dropped whenever SQLite's data_version changes
+// (any writer on this file, including e2e helpers that UPDATE settings via
+// another connection) and on every Store write path.
 type Store struct {
-	db  *sql.DB
-	log *slog.Logger
+	db    *sql.DB
+	log   *slog.Logger
+	cache *settingsCache
+}
+
+type settingsCache struct {
+	mu        sync.Mutex
+	dbVersion int64 // 0 means "unknown / must re-sync"
+	entries   map[string]cacheEntry
 }
 
 // New returns a store on d logging to slog.Default(). The settings
 // migrations must already be applied.
-func New(d *sql.DB) *Store { return &Store{db: d, log: slog.Default()} }
+func New(d *sql.DB) *Store {
+	return &Store{
+		db:    d,
+		log:   slog.Default(),
+		cache: &settingsCache{entries: map[string]cacheEntry{}},
+	}
+}
 
-// WithLogger returns a copy of the store that logs to l.
-func (s *Store) WithLogger(l *slog.Logger) *Store { return &Store{db: s.db, log: l} }
+// WithLogger returns a copy of the store that logs to l, sharing the same
+// process cache as s.
+func (s *Store) WithLogger(l *slog.Logger) *Store {
+	return &Store{db: s.db, log: l, cache: s.cache}
+}
 
 type execer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -43,18 +69,99 @@ type execer interface {
 
 // Get unmarshals the JSON value of key into out, or returns ErrNotFound.
 func (s *Store) Get(ctx context.Context, key string, out any) error {
-	var raw string
-	err := s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrNotFound
-	}
+	raw, err := s.raw(ctx, key)
 	if err != nil {
-		return fmt.Errorf("settings: get %s: %w", key, err)
+		return err
 	}
 	if err := json.Unmarshal([]byte(raw), out); err != nil {
 		return fmt.Errorf("settings: decode %s: %w", key, err)
 	}
 	return nil
+}
+
+func (s *Store) dataVersion() (int64, error) {
+	var ver int64
+	if err := s.db.QueryRow(`PRAGMA data_version`).Scan(&ver); err != nil {
+		return 0, err
+	}
+	return ver, nil
+}
+
+// syncLocked drops the memo when another connection (or our own write path
+// via Invalidate) advanced SQLite's data_version. Caller must hold c.mu.
+func (c *settingsCache) syncLocked(ver int64) {
+	if ver == c.dbVersion {
+		return
+	}
+	clear(c.entries)
+	c.dbVersion = ver
+}
+
+func (s *Store) raw(ctx context.Context, key string) (string, error) {
+	ver, err := s.dataVersion()
+	if err != nil {
+		return "", fmt.Errorf("settings: data_version: %w", err)
+	}
+	if s.cache == nil {
+		var raw string
+		err := s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrNotFound
+		}
+		if err != nil {
+			return "", fmt.Errorf("settings: get %s: %w", key, err)
+		}
+		return raw, nil
+	}
+
+	s.cache.mu.Lock()
+	s.cache.syncLocked(ver)
+	if e, hit := s.cache.entries[key]; hit {
+		s.cache.mu.Unlock()
+		if !e.ok {
+			return "", ErrNotFound
+		}
+		return e.raw, nil
+	}
+	fillVer := s.cache.dbVersion
+	s.cache.mu.Unlock()
+
+	var raw string
+	err = s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
+	if errors.Is(err, sql.ErrNoRows) {
+		s.remember(key, "", false, fillVer)
+		return "", ErrNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("settings: get %s: %w", key, err)
+	}
+	s.remember(key, raw, true, fillVer)
+	return raw, nil
+}
+
+// remember stores a fill only when data_version is still fillVer (a Store
+// write or foreign SQL write clears/advances the cache in between).
+func (s *Store) remember(key, raw string, ok bool, fillVer int64) {
+	if s.cache == nil {
+		return
+	}
+	s.cache.mu.Lock()
+	if s.cache.dbVersion == fillVer {
+		s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
+	}
+	s.cache.mu.Unlock()
+}
+
+// Invalidate drops the process memo. Safe after out-of-band SQL writes when
+// callers mutate the DB outside Store; write paths call this too.
+func (s *Store) Invalidate() {
+	if s.cache == nil {
+		return
+	}
+	s.cache.mu.Lock()
+	clear(s.cache.entries)
+	s.cache.dbVersion = 0
+	s.cache.mu.Unlock()
 }
 
 // GetString returns the string value of key, or def when it is missing.
@@ -95,6 +202,7 @@ func (s *Store) set(ctx context.Context, ex execer, key string, v any) error {
 	if err != nil {
 		return fmt.Errorf("settings: set %s: %w", key, err)
 	}
+	s.Invalidate()
 	return nil
 }
 
@@ -114,7 +222,10 @@ func (s *Store) All(ctx context.Context, prefix string) (map[string]json.RawMess
 		}
 		out[k] = json.RawMessage(v)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // Delete removes key; a missing key is not an error. Like Set, never call
@@ -123,6 +234,7 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	if _, err := s.db.ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, key); err != nil {
 		return fmt.Errorf("settings: delete %s: %w", key, err)
 	}
+	s.Invalidate()
 	return nil
 }
 
@@ -145,5 +257,6 @@ func (s *Store) deletePrefix(ctx context.Context, ex execer, prefix string) erro
 	if _, err := ex.ExecContext(ctx, `DELETE FROM settings WHERE substr(key, 1, length(?)) = ?`, prefix, prefix); err != nil {
 		return fmt.Errorf("settings: delete prefix %q: %w", prefix, err)
 	}
+	s.Invalidate()
 	return nil
 }

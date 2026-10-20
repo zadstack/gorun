@@ -36,6 +36,12 @@ All notable changes to GoRun are recorded here. The format follows
 - New content defaults to the request/admin UI locale when one is present, instead of always inheriting `site.locale`. An English admin drafting on an Arabic-default site stores `en` unless they choose otherwise.
 - The create editor shows an explicit **Content language** picker (defaults to the admin chrome language). REST/MCP create without `locale` follows the same request-locale-then-site-locale rule.
 
+### Performance
+
+- Cache settings reads in process memory (invalidate on Store writes and when
+  SQLite `data_version` advances, so out-of-band SQL updates are visible) and
+  memoize `setting` / `menu` template lookups per render.
+
 ### Changed
 
 - Local `make loadtest` / `tools/loadtest` now boots the spawned serve process
