@@ -65,6 +65,9 @@ type handlers struct {
 	inboundRateMu     sync.Mutex
 	inboundRateWindow time.Time
 	inboundRateCount  int
+
+	canvasAIOnce        sync.Once
+	canvasAISuggestions *canvasAICache
 }
 
 // Register declares permissions, publishes the mailer, adds nav items,

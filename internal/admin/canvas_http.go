@@ -15,6 +15,7 @@ import (
 )
 
 func (h *handlers) canvasRoutes() {
+	h.canvasAIRoutes()
 	h.canvasOperationRoutes()
 	h.canvasLifecycleRoutes()
 	r := h.d.Router.Admin

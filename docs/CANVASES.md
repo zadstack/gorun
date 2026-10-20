@@ -143,3 +143,7 @@ named agent requires its MCP client to remain running and poll for work.
 
 Structural workflow templates do not copy receivers, signing secrets, enabled
 rules or consent. Configure and review a new receiver for each reused workflow.
+
+## Reviewed workflow suggestions
+
+The canvas list can propose private workflow structures using the configured writing AI. A visible request preview and a separate confirmation precede the provider call; applying a suggestion creates an unbound private board with schedules disabled. See [Reviewed AI canvas suggestions](CANVAS-AI-SUGGESTIONS.md) for the exact context, consent expiry and configuration-change safeguards.
