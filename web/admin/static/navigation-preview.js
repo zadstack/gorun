@@ -41,11 +41,11 @@
       const ordered = Array.from(sections).sort((a, b) => a[1].rank - b[1].rank || defaults.indexOf(a[0]) - defaults.indexOf(b[0]));
       for (const [key, category] of ordered) {
         const section = document.createElement('section'); section.dataset.previewSection = key;
-        const heading = document.createElement('h3'); heading.className = 'font-medium'; heading.textContent = category.label; section.append(heading);
+        const heading = document.createElement('h3'); heading.textContent = category.label; section.append(heading);
         for (const [tabKey, tab] of category.tabs) {
           const group = document.createElement('div'); group.dataset.previewTab = tabKey;
-          const title = document.createElement('h4'); title.className = 'text-xs text-muted mt-2'; title.textContent = tab.label;
-          const list = document.createElement('ul'); list.className = 'text-sm space-y-1';
+          const title = document.createElement('h4'); title.textContent = tab.label;
+          const list = document.createElement('ul');
           for (const value of tab.items) { const item = document.createElement('li'); item.textContent = value.label; item.dataset.previewId = value.id; list.append(item); }
           group.append(title, list); section.append(group);
         }
