@@ -1,10 +1,24 @@
 .navigation-row { display: flex; align-items: center; gap: .5rem; }
 .navigation-row .admin-navigation-option { flex: 1; min-width: 0; }
-.navigation-move { display: flex; flex-shrink: 0; gap: .25rem; }
-.navigation-move button { min-width: 40px; min-height: 40px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+.navigation-move { display: flex; flex-shrink: 0; gap: .25rem; align-items: center; }
+.navigation-move button { min-width: 40px; min-height: 40px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
 .navigation-move button:disabled { opacity: .35; cursor: default; }
 .navigation-move button:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.navigation-move [data-navigation-drag] { cursor: grab; color: var(--muted); }
+.navigation-move [data-navigation-drag]:active { cursor: grabbing; }
+.navigation-move [data-navigation-drag] svg { width: 16px; height: 16px; }
+.navigation-row.is-dragging,
+.admin-navigation-group.is-dragging { opacity: .55; }
+.navigation-row.is-reorder-target,
+.admin-navigation-group.is-reorder-target { outline: 2px solid var(--blue); outline-offset: 2px; }
 .navigation-group-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; margin-block-end: .75rem; }
 .navigation-group-toolbar .admin-navigation-group-actions { margin: 0; }
 .navigation-order-hint { max-width: 65ch; }
-@media (max-width: 480px) { .navigation-move button { min-width: 44px; min-height: 44px; } .navigation-row { align-items: start; } }
+@media (max-width: 480px) {
+  .navigation-move button { min-width: 44px; min-height: 44px; }
+  .navigation-row { align-items: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navigation-row.is-dragging,
+  .admin-navigation-group.is-dragging { opacity: 1; outline: 2px dashed var(--muted); }
+}
