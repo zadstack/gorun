@@ -147,3 +147,27 @@ rules or consent. Configure and review a new receiver for each reused workflow.
 ## Reviewed workflow suggestions
 
 The canvas list can propose private workflow structures using the configured writing AI. A visible request preview and a separate confirmation precede the provider call; applying a suggestion creates an unbound private board with schedules disabled. See [Reviewed AI canvas suggestions](CANVAS-AI-SUGGESTIONS.md) for the exact context, consent expiry and configuration-change safeguards.
+
+### Reading notes
+
+Notes use literal text with preserved line breaks. Long notes have a bounded preview
+and a **Read full note** dialog with the complete text. Opening or closing the
+reader does not edit or save the canvas, move cards, or execute an agent. The full
+original text remains available in the existing editor.
+
+An attributed-note label and accent follow recorded server provenance. They show
+where the note came from, not approval, verified accuracy, or current agent
+availability. Personal notes keep a separate visual treatment. No HTML or Markdown
+from note bodies is executed or interpreted, and URLs in note text stay plain text.
+
+Card type labels and restrained accents distinguish instructions, content and source
+references, executors, checklists, links, indicators, schedules and private results.
+Type color is not an availability, approval or trust status. Existing action labels
+and checks are unchanged. Footers wrap so editing, removal, movement and available
+result actions remain reachable on compact cards.
+
+Connection dots mark the actual endpoints of each drawn edge, with separate ports
+for multiple links. They are visual markers, not new clickable connection controls.
+Use the existing Connections controls to add or remove an edge. Workflow layout
+uses measured card heights; Grid and List provide reading alternatives on narrow
+screens. Explicit Arrange cards saves positions without changing content or grants.

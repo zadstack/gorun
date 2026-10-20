@@ -202,7 +202,7 @@
       (data.rows || []).slice(0, 5).forEach(row => { const li = element('li'); li.append(row.href ? link(row.title, row.href, true) : element('span', row.title)); if (row.detail) li.append(element('small', row.detail)); rows.append(li); });
       body.append(rows);
       if (data.href) body.append(link(t('source'), data.href, true));
-      if (data.updated_at) body.append(element('p', `${t('updated')} · ${new Date(data.updated_at).toLocaleTimeString()}`, 'canvas-widget-time'));
+      if (data.updated_at) body.append(element('p', `${t('updated')} · ${new Date(data.updated_at).toLocaleTimeString(document.documentElement.lang || undefined)}`, 'canvas-widget-time'));
     }
     const refresh = button(t('refresh'), () => fetchWidget(id, true), 'canvas-widget-refresh');
     refresh.disabled = widgetLoading.has(id); body.append(refresh);
@@ -220,14 +220,61 @@
     } catch (_) { widgetCache.set(id, {error: true}); }
     finally { widgetLoading.delete(id); repaint(); }
   }
+  // Read-only note reader: keep long output out of the graph geometry. All
+  // note/actor values remain literal text; this is not a Markdown renderer.
+  function readNote(card, trigger) {
+    const reader = element('dialog', undefined, 'canvas-note-reader');
+    reader.setAttribute('aria-labelledby', 'canvas-note-reader-title');
+    const header = element('header');
+    const title = element('h2', card.title); title.id = 'canvas-note-reader-title';
+    const close = button(t('note_close'), () => reader.close(), 'canvas-note-close');
+    header.append(title, close);
+    const text = element('div', card.body, 'canvas-note-full'); text.dir = 'auto';
+    text.tabIndex = 0; text.setAttribute('role', 'region'); text.setAttribute('aria-label', t('note_text'));
+    reader.append(header);
+    const provenance = documentState.provenance?.[card.id];
+    if (provenance) {
+      const source = element('p', undefined, 'canvas-provenance');
+      const actor = element('bdi', provenance.actor_name);
+      const date = new Date(provenance.created_at);
+      const time = element('time', Number.isFinite(date.getTime()) ? date.toLocaleString(document.documentElement.lang || undefined) : String(provenance.created_at || ''));
+      time.dateTime = provenance.created_at; time.dir = 'auto';
+      source.append(document.createTextNode(t('attributed') + ' '), actor, document.createTextNode(' · '), time); reader.append(source);
+    }
+    reader.append(text);
+    reader.addEventListener('close', () => {
+      reader.remove();
+      if (trigger.isConnected) trigger.focus({preventScroll:true});
+      else (cardsEl.querySelector(`[data-card-id="${card.id}"] .canvas-note-read`) || cardsEl.querySelector(`[data-card-id="${card.id}"] button`) || root.querySelector('[data-action=add]'))?.focus({preventScroll:true});
+    }, {once:true});
+    root.append(reader); reader.showModal(); close.focus();
+  }
+  function noteBody(body, card) {
+    const chars = Array.from(card.body || '');
+    const long = chars.length > 360 || (card.body || '').split('\n').length > 6;
+    const text = element('p', long ? chars.slice(0,360).join('').split('\n').slice(0,6).join('\n') + '…' : card.body, 'canvas-note-text');
+    text.dir = 'auto';
+    if (long) text.classList.add('canvas-note-excerpt');
+    body.append(text);
+    if (long) {
+      body.append(element('small', t('note_preview'), 'canvas-note-preview-label'));
+      const read = button(t('read_note'), () => readNote(card, read), 'canvas-note-read');
+      read.setAttribute('aria-haspopup', 'dialog'); body.append(read);
+    }
+  }
   function cardView(card) {
     const el = element('article', undefined, 'canvas-card'); el.id='card-'+card.id; el.dataset.cardId = card.id; el.dataset.kind = card.kind; place(el, card);
+    if (card.kind === 'note') el.dataset.noteSource = documentState.provenance?.[card.id] ? 'attributed' : 'personal';
     const heading = element('header', undefined, 'canvas-card-heading');
     const handle = button('⠿', () => {}, 'canvas-handle'); handle.setAttribute('aria-label', `${t('move')}: ${card.title}`); handle.title = t('move_hint');
     drag(handle, el, card);
-    const title = element('div'); title.append(element('small', kindTitle(card.kind)), element('h2', card.title)); heading.append(handle, title);
+    const title = element('div'); title.append(element('small', card.kind === 'note' && documentState.provenance?.[card.id] ? t('note_result') : kindTitle(card.kind)), element('h2', card.title)); heading.append(handle, title);
     const body = element('div', undefined, 'canvas-card-body');
-    if (card.body) body.append(element('p', card.body));
+    if (card.kind === 'note' && card.body) noteBody(body, card);
+    else if (card.body) {
+      const text = element('p', card.body); text.dir = 'auto'; body.append(text);
+      if (card.body.length > 360) { body.tabIndex = 0; body.setAttribute('role', 'region'); body.setAttribute('aria-label', card.title); }
+    }
     if (card.kind === 'checklist') (card.items || []).forEach((item, index) => {
       const label = element('label', undefined, 'canvas-check'); const checkbox = element('input'); checkbox.type = 'checkbox'; checkbox.checked = item.checked;
       checkbox.addEventListener('change', () => { card.items[index].checked = checkbox.checked; changed(); }); label.append(checkbox, element('span', item.text)); body.append(label);

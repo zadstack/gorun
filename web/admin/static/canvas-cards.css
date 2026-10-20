@@ -74,3 +74,61 @@
 .canvas-workspace:not([data-view=flow]) .canvas-help { display: none; }
 
 .canvas-templates{margin-block:1rem;padding:1rem;border:1px solid var(--border,#ddd);border-radius:8px}.canvas-template-row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-block:.6rem}.canvas-template-row strong{flex:1;min-width:8rem}[data-draft-dialog]{max-width:34rem}[data-draft-dialog] form{display:grid;gap:1rem;padding:1rem}
+
+/* Notes are text, not executable markup. Source color follows server provenance. */
+.canvas-workspace .canvas-card[data-kind=note] { border-color: #d6cbae; border-block-start: 3px solid #ac842f; background: #fffdf5; }
+.canvas-workspace .canvas-card[data-kind=note] .canvas-card-heading { background: #faf3dc; }
+.canvas-workspace .canvas-card[data-kind=note] .canvas-card-heading small { color: #725717; }
+.canvas-workspace .canvas-card[data-kind=note][data-note-source=attributed] { border-color: #c8c4df; border-block-start-color: #7760a6; background: #fdfbff; }
+.canvas-workspace .canvas-card[data-note-source=attributed] .canvas-card-heading { background: #f0ebf8; }
+.canvas-workspace .canvas-card[data-note-source=attributed] .canvas-card-heading small { color: #614787; }
+.canvas-workspace .canvas-card[data-kind=note] .canvas-card-body { max-height: none; overflow: visible; }
+.canvas-workspace .canvas-note-text { font-size: .875rem; line-height: 1.8; text-align: start; unicode-bidi: plaintext; }
+.canvas-workspace .canvas-note-preview-label { display: block; color: #5c5865; font-size: .6875rem; margin-block: .5rem .25rem; }
+.canvas-workspace .canvas-note-read { display: block; min-height: 40px; margin-block: .25rem .5rem; color: #4b3475; background: #fff; border: 1px solid #b4a8cc; font-weight: 600; }
+.canvas-workspace .canvas-provenance { display: block; margin-block-start: .65rem; padding-block-start: .5rem; border-block-start: 1px solid #dcd5e9; color: #565064; overflow-wrap: anywhere; }
+.canvas-note-reader { width: min(46rem,calc(100% - 2rem)); max-height: calc(100dvh - 2rem); padding: 0; border: 1px solid #c8c4d2; border-radius: 8px; color: #232733; background: #fffdf9; }
+.canvas-note-reader::backdrop { background: #11182780; }
+.canvas-note-reader > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1rem; border-block-end: 1px solid #e5dfd3; }
+.canvas-note-reader h2 { margin: 0; font-size: 1.1rem; line-height: 1.5; overflow-wrap: anywhere; }
+.canvas-note-reader .canvas-note-close { flex: none; min-height: 44px; }
+.canvas-note-reader > .canvas-provenance { margin: 0; padding: .75rem 1rem; font-size: .75rem; }
+.canvas-note-full { max-height: 65dvh; overflow: auto; padding: 1rem 1.25rem; white-space: pre-wrap; overflow-wrap: anywhere; unicode-bidi: plaintext; text-align: start; line-height: 1.9; font-size: .9375rem; }
+.canvas-note-reader :focus-visible, .canvas-workspace .canvas-note-read:focus-visible { outline: 3px solid #655090; outline-offset: 3px; }
+@media(max-width:767px), (pointer:coarse) { .canvas-workspace .canvas-note-read { min-height: 44px; } .canvas-note-reader { width: calc(100% - 1rem); max-height: calc(100dvh - 1rem); } .canvas-note-full { padding: .875rem; } }
+.canvas-workspace .canvas-note-excerpt { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+/* Keep all existing note actions reachable, including attributed draft creation. */
+.canvas-workspace .canvas-card[data-kind=note] .canvas-card-footer { flex-wrap: wrap; }
+.canvas-workspace .canvas-card[data-kind=note] .canvas-card-actions { flex-wrap: wrap; min-width: 0; }
+.canvas-workspace .canvas-card[data-kind=note] .canvas-card-actions button { white-space: normal; overflow-wrap: anywhere; }
+.canvas-workspace .canvas-provenance time { unicode-bidi: isolate; }
+
+/* A type system for the whole board: labels carry meaning; hue helps scanning. */
+.canvas-workspace .canvas-card { --card-accent: #596579; --card-soft: #f0f3f6; --card-label: #39475c; }
+.canvas-workspace .canvas-card[data-kind=note] { --card-accent: #ac842f; --card-soft: #faf3dc; --card-label: #725717; }
+.canvas-workspace .canvas-card[data-note-source=attributed] { --card-accent: #7760a6; --card-soft: #f0ebf8; --card-label: #614787; }
+.canvas-workspace .canvas-card[data-kind=prompt] { --card-accent: #82639e; --card-soft: #f3edf8; --card-label: #65417e; }
+.canvas-workspace .canvas-card[data-kind=source], .canvas-workspace .canvas-card[data-kind=content] { --card-accent: #447b96; --card-soft: #eaf3f8; --card-label: #275a75; }
+.canvas-workspace .canvas-card[data-kind=agent] { --card-accent: #6268a6; --card-soft: #eef0fc; --card-label: #464d88; }
+.canvas-workspace .canvas-card[data-kind=provider] { --card-accent: #397a80; --card-soft: #eaf5f5; --card-label: #275f65; }
+.canvas-workspace .canvas-card[data-kind=checklist] { --card-accent: #4e7b69; --card-soft: #edf5ef; --card-label: #345f4d; }
+.canvas-workspace .canvas-card[data-kind=link] { --card-accent: #967145; --card-soft: #faf1e7; --card-label: #775227; }
+.canvas-workspace .canvas-card[data-kind=widget] { --card-accent: #357d88; --card-soft: #e9f4f6; --card-label: #24616b; }
+.canvas-workspace .canvas-card[data-kind=schedule] { --card-accent: #a16477; --card-soft: #faedf1; --card-label: #804457; }
+.canvas-workspace .canvas-card[data-kind=result] { --card-accent: #7760a6; --card-soft: #f0ebf8; --card-label: #614787; }
+.canvas-workspace .canvas-card:not([data-kind=note]) { border-block-start-color: var(--card-accent); }
+.canvas-workspace .canvas-card .canvas-card-heading { background: var(--card-soft); }
+.canvas-workspace .canvas-card .canvas-card-heading small { display: inline-flex; width: fit-content; max-width: 100%; padding: .1rem .35rem; margin-block-end: .15rem; border: 1px solid var(--card-accent); border-radius: 3px; color: var(--card-label); background: #fff; font-size: .625rem; line-height: 1.4; letter-spacing: .015em; overflow-wrap: anywhere; }
+.canvas-workspace:dir(rtl) .canvas-card .canvas-card-heading small { letter-spacing: 0; }
+.canvas-workspace .canvas-card .canvas-card-body > small { display: block; }
+.canvas-workspace .canvas-card .canvas-card-footer { flex-wrap: wrap; gap: .25rem; }
+.canvas-workspace .canvas-card .canvas-card-actions { flex-wrap: wrap; min-width: 0; }
+.canvas-workspace .canvas-card .canvas-card-actions button { white-space: normal; overflow-wrap: anywhere; }
+.canvas-workspace .canvas-card .canvas-operation-button { border-color: var(--card-accent); background: var(--card-soft); color: var(--card-label); }
+.canvas-workspace .canvas-card button:not([data-remove]):hover { background: var(--card-soft); color: var(--card-label); border-color: var(--card-accent); }
+.canvas-workspace .canvas-card button:focus-visible { outline: 3px solid var(--card-accent); outline-offset: 2px; }
+/* Actual routed endpoints only. They remain decorative, never fake controls. */
+.canvas-workspace .canvas-edges circle { stroke: #476781; stroke-width: 1.75; fill: #fff; }
+.canvas-workspace .canvas-edges circle[data-port=to] { fill: #d9e8f3; }
+.canvas-workspace .canvas-card-body > p[dir=auto] { unicode-bidi: plaintext; text-align: start; }
+.canvas-workspace .canvas-card-body[tabindex]:focus-visible { outline: 3px solid var(--card-accent); outline-offset: -3px; }

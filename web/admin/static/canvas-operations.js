@@ -110,7 +110,14 @@
         } else body.append(el('p', t('media_error')));
       }
       const provenance = document.provenance?.[card.id];
-      if (provenance) body.append(el('small', `${t('attributed')} ${provenance.actor_name} · ${new Date(provenance.created_at).toLocaleString()}`, 'canvas-provenance'));
+      if (provenance) {
+        const source = el('small', undefined, 'canvas-provenance');
+        const actor = el('bdi', provenance.actor_name);
+        const date = new Date(provenance.created_at);
+        const time = el('time', Number.isFinite(date.getTime()) ? date.toLocaleString(root.ownerDocument.documentElement.lang || undefined) : String(provenance.created_at || ''));
+        time.dateTime = provenance.created_at; time.dir = 'auto';
+        source.append(root.ownerDocument.createTextNode(t('attributed') + ' '), actor, root.ownerDocument.createTextNode(' · '), time); body.append(source);
+      }
     }
     function drawEdges() {
       const state = api.document(); if (!state) return;
@@ -126,7 +133,7 @@
         path.setAttribute('d',points.map((point,index)=>`${index?'L':'M'} ${point.x} ${point.y}`).join(' '));
         path.dataset.from=pair.edge.from;path.dataset.to=pair.edge.to;svg.append(path);
         for(const [end,point] of [['from',pair.from],['to',pair.to]]) {
-          const dot=documentNode('circle');dot.setAttribute('cx',point.x);dot.setAttribute('cy',point.y);dot.setAttribute('r','3.5');dot.dataset.port=end;dot.dataset.cardId=pair.edge[end];svg.append(dot);
+          const dot=documentNode('circle');dot.setAttribute('cx',point.x);dot.setAttribute('cy',point.y);dot.setAttribute('r','4.25');dot.dataset.port=end;dot.dataset.cardId=pair.edge[end];svg.append(dot);
         }
       }
     }
