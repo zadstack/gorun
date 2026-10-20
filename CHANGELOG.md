@@ -5,15 +5,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
-### Documentation
-
-- Refresh the root README: concise product framing, quick start, identity themes
-  versus pattern plugins, grant-scoped canvas reads, and a lightweight animated
-  SVG hero (`assets/branding/readme-hero.svg`).
+## [0.11.0] - 2026-10-20
 
 ### Pattern plugins (site layouts)
 
-- Adds a declarative **pattern** layer (`patterns/`, `internal/pattern`, `pkg/patternkit`) so opinionated page layouts sit above theme identity and below site overrides (`draft → override → pattern → theme`).
+- Adds a declarative **pattern** layer (`patterns/`, `internal/pattern`, `pkg/patternkit`) so opinionated page layouts sit above theme identity and below site overrides (`draft → override → pattern → theme`) (#105).
 - Ships four first-party starters: `editorial`, `company`, `showcase`, `guidebook` — selectable under **Appearance → Patterns** independently of Themes (English and Arabic admin copy).
 - Setting `site.pattern` records the active layout; clearing it restores the theme’s own templates. Pattern assets are served at `/patterns/<slug>/assets/`.
 
@@ -22,59 +18,76 @@ All notable changes to GoRun are recorded here. The format follows
 - Treat ship-with themes as **identity systems** (type, color, spacing, chrome), not
   site-pattern packs. Display names: Classic, Modern, Minimal, Serif, Docs (Arabic:
   كلاسيكي، حديث، بسيط، سيرف، توثيق). Slugs stay `default`, `business`, `portfolio`,
-  `magazine`, `docs` — no install migration. Full magazine/business/portfolio *patterns*
-  belong in plugins.
+  `magazine`, `docs` — no install migration. Full magazine/business/portfolio *layouts*
+  move to pattern plugins (#104).
 - Refresh identity tokens across the three looks (editorial, clean-technical, warm-local)
   and regenerate admin `screenshot.png` previews. Update starter / launch copy and docs.
 
 ### Canvas MCP/REST read parity
 
-- Add grant-scoped `list_canvases` and `get_canvas` MCP tools plus resource `gorun://canvases/{id}`.
+- Add grant-scoped `list_canvases` and `get_canvas` MCP tools plus resource `gorun://canvases/{id}` (#91).
 - Mirror the same reads on `GET /api/v1/canvases` and `GET /api/v1/canvases/{id}` for REST keys (agent keys remain refused on `/api`).
 - Agent keys see only boards with an explicit read grant and only grant-allowed cards/edges. No public anonymous canvas routes.
 
+### Agents: Updates Researcher recipes
+
+- Editable connection recipes for the Updates Researcher story (#100), plus save-failure /
+  keyboard-overflow fixes (#103). README shows the working story (#102).
+
+### Canvas card and note presentation
+
+- Refine all canvas card types and provide a read-only full-note reader (#99).
+
 ### Backup inspect readiness clarity
 
-- Distinguishes `local_ok` (local checksums and database integrity passed) from `review_required` (site-specific cutover warnings such as external media) and `blocked` (restore refused).
+- Distinguishes `local_ok` (local checksums and database integrity passed) from `review_required` (site-specific cutover warnings such as external media) and `blocked` (restore refused) (#94).
 - Moves expected recovery requirements (secrets, themes, stopped writes, remote copy) into a `cutover_checklist` so a healthy local backup is not framed as a failed preflight.
 - Updates English and Arabic admin inspect copy and operator docs accordingly.
 
 ### Site identity on first-run setup
 
-- Collect site name, optional tagline and language during `/admin/setup`, and require a site name on the workspace first-run path when it is still empty (for example after CLI admin creation). Public pages no longer stay on the generic GoRun title until Settings.
+- Collect site name, optional tagline and language during `/admin/setup`, and require a site name on the workspace first-run path when it is still empty (for example after CLI admin creation). Public pages no longer stay on the generic GoRun title until Settings (#96).
 - Reject clearing `site.title` to empty in General settings / MCP `update_settings`. Site readiness fails when the title is missing. `gorun start` first-login onboarding is unchanged.
 
-### Added
+### Admin navigation drag-and-drop
 
 - Admin `/admin/navigation` supports drag-and-drop reordering of sidebar groups
   and items (with existing arrow / Alt+arrow keyboard fallbacks), persisting
-  through the current `item_order` / `group_order` preferences.
-
-### Security
-
-- Refresh `SECURITY.md` supported versions for the 0.10 line (0.10.x / 0.9.x / 0.8.x).
-- Harden `gorun start` LAN preview: treat locale-prefixed privileged paths the same as
-  unprefixed ones, and keep private intake (`/reports`), public forms (`/forms`) and
-  customer `/start` on loopback only (alongside admin, API, MCP, accounts and checkout).
-- Redact locale-prefixed magic-login paths (`/en/auth/magic/…`, `/ar/auth/magic/…`) in
-  request logs the same way as `/auth/magic/…`.
+  through the current `item_order` / `group_order` preferences (#98).
 
 ### Content locale follows the editor, not only the site default
 
-- New content defaults to the request/admin UI locale when one is present, instead of always inheriting `site.locale`. An English admin drafting on an Arabic-default site stores `en` unless they choose otherwise.
+- New content defaults to the request/admin UI locale when one is present, instead of always inheriting `site.locale`. An English admin drafting on an Arabic-default site stores `en` unless they choose otherwise (#90).
 - The create editor shows an explicit **Content language** picker (defaults to the admin chrome language). REST/MCP create without `locale` follows the same request-locale-then-site-locale rule.
 
 ### Performance
 
 - Cache settings reads in process memory (invalidate on Store writes and when
   SQLite `data_version` advances, so out-of-band SQL updates are visible) and
-  memoize `setting` / `menu` template lookups per render.
-
-### Changed
-
+  memoize `setting` / `menu` template lookups per render (#95).
 - Local `make loadtest` / `tools/loadtest` now boots the spawned serve process
   with `GORUN_ENV=prod` by default (cached themes), matching shipping behaviour.
-  Use `-serve-env dev` for the previous hot-reload measurement path.
+  Use `-serve-env dev` for the previous hot-reload measurement path (#92).
+
+### Security
+
+- Refresh `SECURITY.md` supported versions for the 0.11 line (0.11.x / 0.10.x / 0.9.x).
+- Harden `gorun start` LAN preview: treat locale-prefixed privileged paths the same as
+  unprefixed ones, and keep private intake (`/reports`), public forms (`/forms`) and
+  customer `/start` on loopback only (alongside admin, API, MCP, accounts and checkout) (#89).
+- Redact locale-prefixed magic-login paths (`/en/auth/magic/…`, `/ar/auth/magic/…`) in
+  request logs the same way as `/auth/magic/…`.
+
+### Documentation
+
+- Refresh the root README: concise product framing, quick start, identity themes
+  versus pattern plugins, grant-scoped canvas reads, and a lightweight animated
+  SVG hero (`assets/branding/readme-hero.svg`) (#106).
+- Bilingual product screenshot refresh for the README campaign story (#93).
+
+Existing installations: theme slugs and settings preserved. Selecting a pattern is opt-in
+(`site.pattern`). Display names and screenshots change only; layouts move to Appearance →
+Patterns. Publishing this release does not upgrade a running GoCloud/site process.
 
 ## [0.10.0] - 2026-10-20
 
@@ -604,7 +617,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/zadstack/gorun/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/zadstack/gorun/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/zadstack/gorun/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/zadstack/gorun/compare/v0.7.0...v0.8.0
