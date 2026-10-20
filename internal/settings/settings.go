@@ -42,8 +42,9 @@ type Store struct {
 }
 
 type settingsCache struct {
-	mu      sync.RWMutex
-	entries map[string]cacheEntry
+	mu         sync.RWMutex
+	generation uint64 // bumped on every invalidate so stale fills cannot repopulate
+	entries    map[string]cacheEntry
 }
 
 // New returns a store on d logging to slog.Default(). The settings
@@ -79,6 +80,7 @@ func (s *Store) Get(ctx context.Context, key string, out any) error {
 }
 
 func (s *Store) raw(ctx context.Context, key string) (string, error) {
+	var gen uint64
 	if s.cache != nil {
 		s.cache.mu.RLock()
 		if e, hit := s.cache.entries[key]; hit {
@@ -88,37 +90,33 @@ func (s *Store) raw(ctx context.Context, key string) (string, error) {
 			}
 			return e.raw, nil
 		}
+		gen = s.cache.generation
 		s.cache.mu.RUnlock()
 	}
 
 	var raw string
 	err := s.db.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, key).Scan(&raw)
 	if errors.Is(err, sql.ErrNoRows) {
-		s.remember(key, "", false)
+		s.remember(key, "", false, gen)
 		return "", ErrNotFound
 	}
 	if err != nil {
 		return "", fmt.Errorf("settings: get %s: %w", key, err)
 	}
-	s.remember(key, raw, true)
+	s.remember(key, raw, true, gen)
 	return raw, nil
 }
 
-func (s *Store) remember(key, raw string, ok bool) {
+// remember stores a fill only when no write invalidated the cache since gen
+// was observed (avoids a concurrent Set being overwritten by a stale Get).
+func (s *Store) remember(key, raw string, ok bool, gen uint64) {
 	if s.cache == nil {
 		return
 	}
 	s.cache.mu.Lock()
-	s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
-	s.cache.mu.Unlock()
-}
-
-func (s *Store) forget(key string) {
-	if s.cache == nil {
-		return
+	if s.cache.generation == gen {
+		s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
 	}
-	s.cache.mu.Lock()
-	delete(s.cache.entries, key)
 	s.cache.mu.Unlock()
 }
 
@@ -127,6 +125,7 @@ func (s *Store) forgetPrefix(prefix string) {
 		return
 	}
 	s.cache.mu.Lock()
+	s.cache.generation++
 	for k := range s.cache.entries {
 		if strings.HasPrefix(k, prefix) {
 			delete(s.cache.entries, k)
@@ -173,10 +172,22 @@ func (s *Store) set(ctx context.Context, ex execer, key string, v any) error {
 	if err != nil {
 		return fmt.Errorf("settings: set %s: %w", key, err)
 	}
-	// Drop the entry so the next Get observes the writer (or a rolled-back
-	// SetTx still hits SQLite for the committed value).
-	s.forget(key)
+	// Write-through: bump generation and store the new raw value so a concurrent
+	// Get that still holds a pre-write generation cannot repopulate the old
+	// row (forget-only left that race open, especially around SetTx).
+	s.publish(key, string(raw), true)
 	return nil
+}
+
+// publish records a known value (or known miss) and invalidates in-flight fills.
+func (s *Store) publish(key, raw string, ok bool) {
+	if s.cache == nil {
+		return
+	}
+	s.cache.mu.Lock()
+	s.cache.generation++
+	s.cache.entries[key] = cacheEntry{raw: raw, ok: ok}
+	s.cache.mu.Unlock()
 }
 
 // All returns every setting whose key starts with prefix ("" for all).
@@ -187,6 +198,12 @@ func (s *Store) All(ctx context.Context, prefix string) (map[string]json.RawMess
 		return nil, fmt.Errorf("settings: list %q: %w", prefix, err)
 	}
 	defer rows.Close()
+	var gen uint64
+	if s.cache != nil {
+		s.cache.mu.RLock()
+		gen = s.cache.generation
+		s.cache.mu.RUnlock()
+	}
 	out := map[string]json.RawMessage{}
 	for rows.Next() {
 		var k, v string
@@ -194,7 +211,7 @@ func (s *Store) All(ctx context.Context, prefix string) (map[string]json.RawMess
 			return nil, fmt.Errorf("settings: scan: %w", err)
 		}
 		out[k] = json.RawMessage(v)
-		s.remember(k, v, true)
+		s.remember(k, v, true, gen)
 	}
 	return out, rows.Err()
 }
@@ -205,7 +222,7 @@ func (s *Store) Delete(ctx context.Context, key string) error {
 	if _, err := s.db.ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, key); err != nil {
 		return fmt.Errorf("settings: delete %s: %w", key, err)
 	}
-	s.forget(key)
+	s.publish(key, "", false)
 	return nil
 }
 

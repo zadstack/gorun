@@ -153,6 +153,48 @@ func TestGetUsesProcessCacheAndInvalidatesOnWrite(t *testing.T) {
 	}
 }
 
+func TestGetDoesNotRepopulateAfterConcurrentSet(t *testing.T) {
+	s, ctx := newStore(t), context.Background()
+	if err := s.Set(ctx, "site.title", "A"); err != nil {
+		t.Fatal(err)
+	}
+	gen := s.cache.generation
+	if err := s.Set(ctx, "site.title", "B"); err != nil {
+		t.Fatal(err)
+	}
+	s.remember("site.title", `"A"`, true, gen) // stale fill from before Set
+	var v string
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "B" {
+		t.Fatalf("stale remember must not win: %q %v", v, err)
+	}
+}
+
+func TestSetTxWriteThroughVisibleAfterCommit(t *testing.T) {
+	s, ctx := newStore(t), context.Background()
+	_ = s.Set(ctx, "site.title", "A")
+	var v string
+	_ = s.Get(ctx, "site.title", &v)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SetTx(ctx, tx, "site.title", "B"); err != nil {
+		t.Fatal(err)
+	}
+	// Write-through makes B visible to Get before commit (avoids re-caching A
+	// from the pool connection that cannot see the open transaction).
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "B" {
+		_ = tx.Rollback()
+		t.Fatalf("SetTx must publish: %q %v", v, err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Get(ctx, "site.title", &v); err != nil || v != "B" {
+		t.Fatalf("after commit: %q %v", v, err)
+	}
+}
+
 func TestWithLoggerSharesCache(t *testing.T) {
 	s, ctx := newStore(t), context.Background()
 	_ = s.Set(ctx, "site.title", "A")
