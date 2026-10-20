@@ -4,7 +4,7 @@
 
 ![GoRun: content through scoped agents to human review, with Classic Modern Minimal Serif Docs identity themes](assets/branding/readme-hero.svg)
 
-GoRun is a **self-hosted, agent-native CMS**: one Go binary and SQLite for your site, editors and integrations. Connect AI agents through MCP (and REST for other clients) with scoped keys, human approvals for sensitive changes and an audit trail. Arabic and English ship together, including native RTL.
+GoRun is a self-hosted CMS for your team and AI agents: one Go binary, SQLite, and a bilingual admin (English and Arabic, with RTL). Editors publish content; agents connect over MCP (REST for other clients) with scoped keys, human approval for sensitive changes, and an audit trail.
 
 [العربية](README.ar.md) · [Website guides](https://gorun.gocloud.run/gorun-guides) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Security](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
@@ -66,7 +66,7 @@ GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 
 - **Your content and infrastructure.** A Go executable and SQLite, hosted by you. No Node.js or PHP at runtime.
 - **Arabic and English from the start.** A bilingual dashboard with native RTL support and responsive site themes.
 - **A complete editorial workflow.** Structured content, drafts, reviews, scheduled publishing, revision history and explicit staff permissions.
-- **Agents with boundaries.** MCP tools, scoped agent keys, human approvals for sensitive changes and an audit trail. Separate REST keys serve other integrations. Grant-scoped canvas boards are readable over MCP (`list_canvases`, `get_canvas`) and REST (`GET /api/v1/canvases`) when permitted — never as public pages.
+- **Agents with boundaries.** MCP tools, scoped agent keys, human approvals for sensitive changes and an audit trail. Separate REST keys serve other integrations. Canvas boards stay private; agents and REST keys read only what they are granted.
 
 ## A workspace that stays organized
 
@@ -92,32 +92,26 @@ Manage posts, pages, custom content types, fields, media and navigation in one p
 
 ## Build a site you can make your own
 
-### Identity themes
+### Themes vs patterns
 
-Ship-with themes are **identity systems** — type, color, spacing and chrome — not magazine/business/portfolio layout packs. Activate one under **Appearance → Themes**; directory slugs stay stable (`default`, `business`, `portfolio`, `magazine`, `docs`).
+**Themes** set visual identity (type, color, spacing, chrome). **Patterns** set page layouts. They are independent: pick a theme under **Appearance → Themes**, a layout under **Appearance → Patterns**. Template resolution is `draft → override → pattern → theme`. Clearing a pattern restores the theme’s own templates.
 
-| Display | Slug | Role |
+| Theme | Slug | Role |
 | --- | --- | --- |
-| Classic | `default` | Calm reading identity |
+| Classic | `default` | Calm reading |
 | Modern | `business` | Sharp chrome |
 | Minimal | `portfolio` | Quiet chrome |
-| Serif | `magazine` | Type-led identity |
-| Docs | `docs` | Light docs chrome |
+| Serif | `magazine` | Type-led |
+| Docs | `docs` | Reference chrome |
 
-Activating a theme does not create starter pages; use the site builder for starter content. Child themes and filesystem templates let developers customize further. [Default-theme demo](assets/branding/screenshots/theme-home-en.png) · [Arabic article on mobile](assets/branding/screenshots/theme-post-ar-mobile.png).
-
-### Pattern plugins (layouts)
-
-Opinionated page layouts sit in a separate **pattern** layer above theme identity and below site overrides (`draft → override → pattern → theme`). Activate under **Appearance → Patterns**; clear to restore the theme’s own templates. Any identity theme can pair with any pattern.
-
-| Display | Slug | Layout |
+| Pattern | Slug | Layout |
 | --- | --- | --- |
-| Editorial | `editorial` | Magazine masthead, lead story, reading grid |
+| Editorial | `editorial` | Magazine masthead, lead, story grid |
 | Company | `company` | Business hero, offerings, updates |
 | Showcase | `showcase` | Portfolio intro, project mosaic |
 | Guidebook | `guidebook` | Docs search hero, section cards |
 
-Patterns are declarative filesystem packages (`patterns/`), not HTTP extensions. [Pattern plugins](docs/PATTERN-PLUGINS.md).
+Activating a theme does not create starter pages; use the site builder for that. Patterns live under `patterns/` (not HTTP extensions). [Themes](docs/THEMES.md) · [Pattern plugins](docs/PATTERN-PLUGINS.md) · [Default-theme demo](assets/branding/screenshots/theme-home-en.png) · [Arabic article on mobile](assets/branding/screenshots/theme-post-ar-mobile.png).
 
 **Website → Design → Site design** brings **Build site** and **Visual identity** into one workspace. Prepare pages as drafts, review activation separately, and preview colors and typography locally before explicitly saving identity. Existing site content and theme settings remain yours. [Site design guide](docs/SITE-DESIGN-WORKSPACE.md).
 
@@ -133,7 +127,7 @@ Patterns are declarative filesystem packages (`patterns/`), not HTTP extensions.
 
 Connect an MCP client with an **AI agent** key. Its scopes are bounded by its owner's permissions; publishing, deleting and changing sensitive settings require human approval by default. REST integration keys are separate from agent keys.
 
-Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish content automatically. Agents with `canvas.read` and an explicit board grant can list and read those boards over MCP; REST keys use the matching canvas endpoints. Configure your provider or agent connection before running it.
+Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish automatically. Agents need `canvas.read` plus an explicit board grant to list or read boards over MCP; REST keys use the matching canvas endpoints. Configure your provider or agent connection before running it.
 
 With a configured AI provider, review the exact destination and site context before separately confirming a request for canvas suggestions. Suggestions create an unbound starting point; choose its executor and permissions yourself. [AI suggestion workflow](docs/CANVAS-AI-SUGGESTIONS.md).
 
