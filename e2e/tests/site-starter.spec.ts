@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-import {db,env,setLocale,expectNoServerError} from '../lib/helpers.ts';
+import {db,env,setContentLocale,setLocale,expectNoServerError} from '../lib/helpers.ts';
 
 test('three site starters prepare private drafts, activate usable sites and apply editable identity',async({page,browser},testInfo)=>{
  test.setTimeout(180_000);
@@ -64,7 +64,11 @@ test('three site starters prepare private drafts, activate usable sites and appl
    expect(activated.every(row => row.status === 'published')).toBe(true);
    const postTitle=`Design notes: ${kind}`;
    const postSlug=`starter-${kind}-design-notes`;
-   await page.goto('/admin/content/post/new');await page.fill('#title',postTitle);await page.fill('#slug',postSlug);
+   const contentLocale=kind==='portfolio'?'en':'ar';
+   await page.goto('/admin/content/post/new');
+   // Match the starter's public site.locale so unprefixed /post/… and search resolve.
+   await setContentLocale(page,contentLocale);
+   await page.fill('#title',postTitle);await page.fill('#slug',postSlug);
    await page.locator('[data-field-key="body"] .ql-editor').fill('A clear brief connects the audience, content and visual direction. This editable article is a sample for the publication layout.');
    await page.locator('button[name="intent"][value="publish"]').click();
    const archiveRow=database.prepare("SELECT archive_slug FROM content_types WHERE slug='post'").get() as any;

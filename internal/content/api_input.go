@@ -36,7 +36,7 @@ type CreateInput struct {
 	Template        *string               `json:"template,omitempty" doc:"Optional rendering template; defaults to empty."`
 	FeaturedMediaID *string               `json:"featured_media_id,omitempty" doc:"Optional featured media ID; defaults to empty."`
 	SEO             *map[string]any       `json:"seo,omitempty" doc:"Optional SEO object; defaults to empty."`
-	Locale          *string               `json:"locale,omitempty" doc:"Defaults to the configured site locale."`
+	Locale          *string               `json:"locale,omitempty" doc:"Defaults to the request/admin content locale when present, otherwise the configured site locale."`
 	PublishAt       *string               `json:"publish_at,omitempty" format:"-" doc:"Optional supported datetime; required for scheduled status."`
 	Terms           *map[string]*[]string `json:"terms,omitempty" doc:"Optional taxonomy-to-slug arrays; defaults to empty."`
 }

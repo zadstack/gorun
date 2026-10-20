@@ -6,10 +6,11 @@ The admin is bilingual (**Arabic** and **English**) with full RTL when Arabic is
 
 - **UI language:** the top bar has a locale switch (`POST /admin/locale`) that toggles Arabic ⇄ English for the signed-in session. Arabic layouts are RTL.
 - **Account default:** **Users → edit user → Locale** sets that person's preferred admin locale.
-- **Site locale (public):** **Settings → General → Locale** (`site.locale`) chooses the default public language; other supported locales are served under `/<locale>/…`. Content can still be authored per locale in the editor.
+- **Site locale (public):** **Settings → General → Locale** (`site.locale`) chooses the default public language; other supported locales are served under `/<locale>/…`.
+- **Content language:** new posts and pages default to the signed-in admin UI language (not `site.locale`). The editor shows an explicit **Content language** picker on create; use **Translations** on an existing item to add another locale.
 - Admin strings ship in both catalogs; if a key is missing in one language the other is used as fallback.
 
-Switching the admin UI language does not change the public `site.locale` or rewrite published URLs by itself.
+Switching the admin UI language does not change the public `site.locale` or rewrite published URLs by itself. It does change the default content language for new items until you pick otherwise in the editor.
 
 ## Dashboard
 

@@ -138,6 +138,12 @@ func TestLocaleContext(t *testing.T) {
 	if Locale(WithLocale(context.Background(), "en")) != "en" {
 		t.Fatal("roundtrip")
 	}
+	if _, ok := RequestLocale(context.Background()); ok {
+		t.Fatal("RequestLocale must be unset on a bare context")
+	}
+	if got, ok := RequestLocale(WithLocale(context.Background(), "en")); !ok || got != "en" {
+		t.Fatalf("RequestLocale roundtrip: %q %v", got, ok)
+	}
 }
 
 func TestLoadRejectsKeysRepeatingModulePrefix(t *testing.T) {

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { setLocale } from "../lib/helpers.ts";
+import { setContentLocale, setLocale } from "../lib/helpers.ts";
 
 test(
   "page builder keeps drafts private, supports history and previews, publishes explicitly, rejects stale edits",
@@ -8,6 +8,9 @@ test(
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto("/admin/content/page/new");
+    // Public unprefixed URLs serve site.locale (ar). Pin content language so a
+    // leftover English admin chrome does not publish an /en-only page.
+    await setContentLocale(page, "ar");
     await page.fill("#title", "E2E visual builder");
     await page.fill("#slug", "e2e-visual-builder");
     await page.locator('button[name="intent"][value="save"]').click();

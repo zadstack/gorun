@@ -184,8 +184,18 @@ func WithLocale(ctx context.Context, locale string) context.Context {
 
 // Locale returns the locale stored by WithLocale, or DefaultLocale.
 func Locale(ctx context.Context) string {
-	if l, ok := ctx.Value(localeKey{}).(string); ok && l != "" {
+	if l, ok := RequestLocale(ctx); ok {
 		return l
 	}
 	return DefaultLocale
+}
+
+// RequestLocale returns the locale attached by WithLocale, if any.
+// Unlike Locale it does not fall back to DefaultLocale, so callers can
+// distinguish an explicit request locale from an unset context.
+func RequestLocale(ctx context.Context) (string, bool) {
+	if l, ok := ctx.Value(localeKey{}).(string); ok && l != "" {
+		return l, true
+	}
+	return "", false
 }
