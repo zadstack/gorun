@@ -5,6 +5,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Content locale follows the editor, not only the site default
+
+- New content defaults to the request/admin UI locale when one is present, instead of always inheriting `site.locale`. An English admin drafting on an Arabic-default site stores `en` unless they choose otherwise.
+- The create editor shows an explicit **Content language** picker (defaults to the admin chrome language). REST/MCP create without `locale` follows the same request-locale-then-site-locale rule.
+
 ## [0.10.0] - 2026-10-20
 
 ### Reviewed canvas workflow suggestions
