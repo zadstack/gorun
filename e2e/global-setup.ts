@@ -68,6 +68,7 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     ...(stripeKey.startsWith('sk_test_') ? { STRIPE_SECRET_KEY: stripeKey } : {}),
     GORUN_DATA: data,
     GORUN_THEMES: resolve(repo, 'themes'),
+    GORUN_PATTERNS: resolve(repo, 'patterns'),
     // Extra theme roots (GORUN_THEMES_EXTRA) only when a downstream suite asks.
     ...(process.env.E2E_THEMES_EXTRA ? { GORUN_THEMES_EXTRA: process.env.E2E_THEMES_EXTRA } : {}),
     GORUN_ENV: 'dev',
