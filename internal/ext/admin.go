@@ -50,8 +50,31 @@ func registerAdmin(d *kernel.Deps, s *service) error {
 	return nil
 }
 
+type installationGroup struct {
+	Source, Title, Help string
+	Items               []Extension
+}
+
+func installationGroups(items []Extension) []installationGroup {
+	groups := []installationGroup{
+		{Source: InstallSourceDirectory, Title: "ext.group.directory", Help: "ext.group.directory_help"},
+		{Source: InstallSourceUpload, Title: "ext.group.upload", Help: "ext.group.upload_help"},
+		{Source: InstallSourceLegacyUnknown, Title: "ext.group.legacy_unknown", Help: "ext.group.legacy_unknown_help"},
+	}
+	for _, x := range items {
+		index := 2
+		if x.InstallSource == InstallSourceDirectory {
+			index = 0
+		} else if x.InstallSource == InstallSourceUpload {
+			index = 1
+		}
+		groups[index].Items = append(groups[index].Items, x)
+	}
+	return groups
+}
+
 type listData struct {
-	Items     []Extension
+	Groups    []installationGroup
 	Available []Manifest
 	Fields    map[string]string // install errors (field path → i18n key)
 	Detail    string            // untranslated technical detail, shown escaped
@@ -73,7 +96,7 @@ func (h *adminHandlers) renderListDetail(w http.ResponseWriter, r *http.Request,
 		h.log.Warn("ext: scan available packages", "err", err)
 	}
 	h.tpl.RenderWith(w, r, status, "admin", "pages/extensions/list.html",
-		listData{Items: items, Available: avail, Fields: fields, Detail: detail, MaxMB: MaxZipSize >> 20})
+		listData{Groups: installationGroups(items), Available: avail, Fields: fields, Detail: detail, MaxMB: MaxZipSize >> 20})
 }
 
 func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {

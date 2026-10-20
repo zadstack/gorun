@@ -1,0 +1,5 @@
+/* Installation-method tables stay inside their own scroll regions on narrow screens. */
+.admin-extension-directory table{min-width:42rem}
+.admin-extension-directory th{white-space:nowrap}
+.admin-extension-directory td:first-child{min-width:13rem}
+.admin-extension-directory td:nth-child(3)>span{white-space:nowrap}

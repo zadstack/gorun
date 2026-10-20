@@ -3,6 +3,7 @@
 {{define "ext_status"}}{{if eq . "active"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "ext.status.active"}}</span>{{else if eq . "error"}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-xs">{{t "ext.status.error"}}</span>{{else if eq . "disabled"}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-xs">{{t "ext.status.disabled"}}</span>{{else}}<span class="inline-flex rounded-chip border border-blue bg-blue-soft text-blue px-1.5 py-0.5 text-xs">{{t "ext.status.installed"}}</span>{{end}}{{end}}
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<link rel="stylesheet" href="{{asset "extensions-directory.css"}}">
 <div class="admin-contained admin-extension-directory">
 <h1 class="text-[22px] font-bold">{{t "ext.title"}}</h1>
 <p class="text-muted mb-4">{{t "ext.intro"}}</p>
@@ -43,7 +44,11 @@
   {{end}}
 </section>
 
-<div class="rounded border border-line bg-panel overflow-x-auto" tabindex="0" role="region" aria-label="{{t "ext.title"}}">
+{{range .Groups}}
+<section class="mb-4" data-install-source="{{.Source}}" aria-labelledby="ext-group-{{.Source}}">
+<h2 id="ext-group-{{.Source}}" class="text-base font-bold mb-1">{{t .Title}}</h2>
+<p class="text-sm text-muted mb-2">{{t .Help}}</p>
+<div class="rounded border border-line bg-panel overflow-x-auto" tabindex="0" role="region" aria-label="{{t .Title}}">
   {{if .Items}}
   <table class="w-full">
     <thead class="bg-panel-2">
@@ -58,9 +63,10 @@
     </thead>
     <tbody>
       {{range .Items}}
-      <tr class="border-t border-line hover:bg-bg" data-ext="{{.Slug}}" data-status="{{.Status}}">
+      <tr class="border-t border-line hover:bg-bg" data-ext="{{.Slug}}" data-status="{{.Status}}" data-source="{{.InstallSource}}">
         <td class="px-3 py-2">
           <a href="/admin/extensions/{{.Slug}}" class="font-medium text-blue hover:text-blue-hover underline-offset-2 hover:underline">{{.DisplayName locale}}</a>
+          <p class="text-xs text-muted" data-extension-source>{{t .InstallSourceKey}}</p>
           <p class="font-mono text-[11px] text-muted" dir="ltr">{{.Slug}}{{with .Manifest.Author}} · {{.}}{{end}}</p>
         </td>
         <td class="px-3 py-2 font-mono text-xs" dir="ltr">{{.Version}}</td>
@@ -73,8 +79,10 @@
     </tbody>
   </table>
   {{else}}
-  <p class="p-6 text-center text-muted">{{t "ext.empty"}}</p>
+  <p class="p-6 text-center text-muted">{{t "ext.group.empty"}}</p>
   {{end}}
 </div>
+</section>
+{{end}}
 </div>
 {{end}}
