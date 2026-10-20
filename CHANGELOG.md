@@ -5,6 +5,16 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Theme catalog as identity systems
+
+- Treat ship-with themes as **identity systems** (type, color, spacing, chrome), not
+  site-pattern packs. Display names: Classic, Modern, Minimal, Serif, Docs (Arabic:
+  كلاسيكي، حديث، بسيط، سيرف، توثيق). Slugs stay `default`, `business`, `portfolio`,
+  `magazine`, `docs` — no install migration. Full magazine/business/portfolio *patterns*
+  belong in plugins.
+- Refresh identity tokens across the three looks (editorial, clean-technical, warm-local)
+  and regenerate admin `screenshot.png` previews. Update starter / launch copy and docs.
+
 ### Canvas MCP/REST read parity
 
 - Add grant-scoped `list_canvases` and `get_canvas` MCP tools plus resource `gorun://canvases/{id}`.

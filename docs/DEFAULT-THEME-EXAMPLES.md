@@ -1,6 +1,6 @@
 # Default theme and editable examples
 
-The default Reading & blog theme uses the saved site name, description, logo,
+The default Classic theme uses the saved site name, description, logo,
 menus and button settings. Its home page features a real published article,
 shows the remaining articles once, and links to up to three published pages in
 the current locale. Empty sites show an honest empty state. It does not create

@@ -3,7 +3,7 @@ import {db,env,setContentLocale,setLocale,expectNoServerError} from '../lib/help
 
 test('three site starters prepare private drafts, activate usable sites and apply editable identity',async({page,browser},testInfo)=>{
  test.setTimeout(180_000);
- const designs={company:{theme:'business',pages:5,background:'rgb(248, 251, 249)',accent:'#1e6650',font:'zad'},portfolio:{theme:'portfolio',pages:5,background:'rgb(251, 249, 253)',accent:'#6b3fa0',font:'zad'},magazine:{theme:'magazine',pages:4,background:'rgb(244, 240, 232)',accent:'#89402e',font:'serif'}};
+ const designs={company:{theme:'business',pages:5,background:'rgb(250, 251, 252)',accent:'#0f766e',font:'zad'},portfolio:{theme:'portfolio',pages:5,background:'rgb(241, 239, 233)',accent:'#3f5d4a',font:'zad'},magazine:{theme:'magazine',pages:4,background:'rgb(244, 245, 247)',accent:'#1e3a5f',font:'serif'}};
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
  const keys=['site.title','site.tagline','site.locale','site.front_page','site.theme','site.logo','builder.identity'];
  const database=db();
@@ -18,7 +18,7 @@ test('three site starters prepare private drafts, activate usable sites and appl
   await expect(page.getByRole('heading',{level:1})).toContainText('تصميم الموقع');
   for(const kind of ['company','portfolio','magazine'] as const){
    const design=designs[kind];
-   const siteTitle={company:'شركة وخدمات',portfolio:'Project portfolio',magazine:'مجلة تحريرية'}[kind];
+   const siteTitle={company:'حديث',portfolio:'Minimal',magazine:'سيرف'}[kind];
    const siteTagline={company:'نبني مواقع واضحة وتجارب رقمية تخدم أهداف مشروعك.',portfolio:'Independent design, thoughtful identities and digital experiences.',magazine:'مجلة مستقلة للأفكار والثقافة والتصميم.'}[kind];
    const publicThemeBefore=(database.prepare("SELECT value_json FROM settings WHERE key='site.theme'").get() as any)?.value_json;
    const publicFrontBefore=(database.prepare("SELECT value_json FROM settings WHERE key='site.front_page'").get() as any)?.value_json;

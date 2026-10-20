@@ -5,8 +5,8 @@
 > `lang/<locale>.json`. يختار المحرك أول قالب موجود وفق تسلسل يشبه ووردبريس (`page-{slug}` ثم `page` ثم
 > `single` ثم `index`…). القالب الفعّال هو الإعداد `site.theme`، ويُفعَّل من **المظهر ← القوالب**. يمكن
 > تخصيص أي قالب من اللوحة أو عبر REST أو MCP كمسودة تُعاين ثم تُنشر، وتُحفظ التعديلات في
-> `<DataDir>/overrides/<theme>/`. الكتالوج العام خمسة قوالب: `default` (مدونة)، و`business` (شركة وخدمات)،
-> و`magazine` (مجلة ومحتوى)، و`portfolio` (أعمال شخصية)، و`docs` (توثيق). الأسماء القديمة (`minimal`
+> `<DataDir>/overrides/<theme>/`. الكتالوج العام خمسة **هويات**: `default` (كلاسيكي / Classic)، و`business` (حديث / Modern)،
+> و`magazine` (سيرف / Serif)، و`portfolio` (بسيط / Minimal)، و`docs` (توثيق / Docs). الأسماء القديمة (`minimal`
 > و`studio-business` و`studio-editorial` و`studio-portfolio`) تعمل تلقائيًا كأسماء بديلة، والموقع الذي يستخدم
 > أحدها ينتقل مرة واحدة مع إعداداته وتخصيصاته. القوالب المستقلة المبنية لموقع واحد تبقى
 > خارج الكتالوج في مجلد منفصل وتُحمَّل على خوادمها فقط عبر `GORUN_THEMES_EXTRA`.
@@ -15,31 +15,37 @@ A GoRun theme is a directory of Go `html/template` files under `themes/<slug>/`,
 
 ## The theme catalog
 
-Five general themes ship in `themes/` and appear in **Appearance → Themes** (or `theme = "<slug>"` in `gorun.toml`). All are children of `default`, so shop, account, checkout and form templates come from it unless a theme overrides them.
+Ship-with themes are **identity systems** (type, color, spacing, chrome). They are site picker
+choices for how a site looks and feels — not GoRun product branding, and not opinionated
+magazine/business/portfolio *site patterns* (those belong in plugins). Five identities ship
+in `themes/` under **Appearance → Themes** (or `theme = "<slug>"` in `gorun.toml`). All children
+of `default` inherit shop, account, checkout and form templates unless overridden.
 
 **Switching themes in the admin:** open **Appearance → Themes**, activate a catalog slug (`site.theme`). That changes public rendering immediately for new requests. It does **not** create starter pages — use **Appearance → Build your site** for that ([SITE_BUILDER.md](SITE_BUILDER.md)). Initial install can also set `theme` in `gorun.toml` / `GORUN_THEME` before the first boot; afterwards prefer the admin so the change is audited.
 
-| Slug (unchanged) | Display name | For and visual treatment |
-|---|---|---|
-| `default` | Reading & blog | general sites and personal writing; warm paper, ink-blue links, calm reading cards |
-| `business` | Company & services | companies and services; forest accents, structured geometry, clear service sections |
-| `portfolio` | Project portfolio | independent professionals; plum accents, oversized type, image-led project layouts |
-| `magazine` | Editorial magazine | editorial teams; warm ivory, rust accents, Latin serif and a ruled masthead |
-| `docs` | Knowledge base | documentation; indigo accents, native type, search and ordered page navigation |
+| Slug (stable ID) | Display (EN / AR) | Role | Look (tokens) |
+|---|---|---|---|
+| `default` | Classic / كلاسيكي | calm reading identity | editorial — cool paper, serif headings, ink-blue |
+| `business` | Modern / حديث | sharp chrome identity | clean-technical — strong sans, high contrast |
+| `portfolio` | Minimal / بسيط | quiet chrome identity | warm-local — stone/sage earth tones |
+| `magazine` | Serif / سيرف | type-led identity | editorial — serif type, navy accent, cool paper |
+| `docs` | Docs / توثيق | light docs chrome | steel accent, reference-friendly spacing |
 
-These are descriptive theme categories, not standalone companies. Gallery previews
-use synthetic category titles (مدونة وقراءة، شركة وخدمات، معرض الأعمال، مجلة تحريرية،
-قاعدة المعرفة). Activating a theme preserves your saved site title, logo, menus
-and identity settings; those values take precedence over theme defaults. Starter
-presets are separate, explicit site-creation choices and use matching palettes.
-A local `gorun start` provisions the bundled `default` theme; public release
-archives include all five theme directories. No production identity migration is
-needed when these display names or preview images change. Shared base tokens and
-theme defaults use zero-specificity selectors; saved builder identity and explicit
-per-theme identity settings take precedence. Bundled fonts work without a remote
-font service (a font you explicitly select in identity settings may still use one).
+**ID stability:** directory slugs (`default`, `business`, `magazine`, `portfolio`, `docs`)
+are the install contract (`site.theme`, settings keys `theme.<slug>.*`, overrides paths).
+Only display names, tokens and screenshots change; no migration for existing sites.
 
-`business`, `magazine` and `portfolio` are complete designs: they style navigation, footer, internal pages, article cards, search, empty results, contact and errors, load no public JavaScript or external fonts, and ship original local SVG artwork to replace before publication.
+Gallery previews use synthetic titles (كلاسيكي، حديث، بسيط، سيرف، توثيق). Activating a theme
+preserves saved site title, logo, menus and identity settings. Starter presets apply a matching
+identity palette when preparing draft pages. A local `gorun start` provisions bundled `default`;
+release archives include all five directories. Shared base tokens use zero-specificity selectors;
+saved builder identity and per-theme identity settings take precedence.
+
+**Screenshot refresh:** `THEME_SCREENSHOTS=1` on `e2e/tests/theme-identities.spec.ts` rewrites
+each `themes/<slug>/screenshot.png` from the Arabic 1280px home view.
+
+Catalog themes style navigation, footer, cards, search, empty and error states with local SVG
+artwork and no required public JavaScript or external fonts.
 
 ### Catalog contract (`pkg/themekit`)
 
