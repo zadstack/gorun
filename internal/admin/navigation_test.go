@@ -16,7 +16,7 @@ func TestNavigationPreferencesPersistAndDoNotChangeAccess(t *testing.T) {
 	if response.StatusCode != 200 {
 		t.Fatalf("preferences GET: %d", response.StatusCode)
 	}
-	mustContain(t, page, "Customize sidebar", `value="dashboard"`, `value="users"`)
+	mustContain(t, page, "Customize sidebar", `value="dashboard"`, `value="users"`, `data-navigation-drag`, `aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"`)
 	response, _ = s.post("/admin/navigation", url.Values{"intent": {"save"}, "available": {"dashboard", "users"}, "visible": {"dashboard"}})
 	if response.StatusCode != http.StatusSeeOther {
 		t.Fatalf("save: %d", response.StatusCode)

@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Admin `/admin/navigation` supports drag-and-drop reordering of sidebar groups
+  and items (with existing arrow / Alt+arrow keyboard fallbacks), persisting
+  through the current `item_order` / `group_order` preferences.
+
 ### Security
 
 - Refresh `SECURITY.md` supported versions for the 0.10 line (0.10.x / 0.9.x / 0.8.x).

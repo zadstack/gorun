@@ -9,29 +9,46 @@
  <input type="hidden" name="_csrf" value="{{csrf}}">
  <div class="admin-preferences-toolbar"><p class="text-muted">{{t "auth.navigation.checked"}}</p><div class="flex flex-wrap gap-2"><button type="submit" name="intent" value="reset" class="admin-secondary-button">{{t "auth.navigation.reset"}}</button><button type="submit" name="intent" value="save" class="admin-primary-button">{{t "auth.navigation.save"}}</button></div></div>
  <input type="hidden" name="order_present" value="1">
- <p class="navigation-order-hint text-muted mb-4">{{t "auth.navigation.order_help"}}</p>
- <p role="status" aria-live="polite" data-order-status></p>
+ <p class="navigation-order-hint text-muted mb-3">{{t "auth.navigation.order_help"}}</p>
+ <p role="status" aria-live="polite" data-order-status class="navigation-order-status"></p>
  <template data-navigation-projection>{{range allNavigationSections}}<section data-preview-section="{{.Key}}" data-label="{{navigationLabel .LabelKey}}">{{range .Groups}}<div data-preview-tab="{{.Key}}" data-label="{{navigationLabel .LabelKey}}">{{range .Items}}<span data-preview-item="{{.ID}}"></span>{{end}}</div>{{end}}</section>{{end}}</template>
- <section class="border border-line bg-panel p-3 mb-4"><h2 class="font-bold">{{t "operator.nav_preview"}}</h2><p class="text-sm text-muted mt-1">{{t "operator.nav_preview_help"}}</p><div data-navigation-preview class="grid gap-3 sm:grid-cols-2 mt-3"></div></section>
- <label class="block mb-3">{{t "operator.nav_search"}}<input type="search" data-navigation-search class="block h-10 w-full border border-line bg-panel px-3 mt-1"></label>
- <div class="admin-navigation-groups" data-navigation-groups>
- {{range allNav}}
-  <fieldset class="admin-navigation-group" data-navigation-row data-label="{{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}" x-data="{ setVisible(value) { $root.querySelectorAll('input[type=checkbox]:not(:disabled)').forEach(input => { input.checked = value }) } }">
-   <legend>{{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}</legend>
-   <input type="hidden" name="group_order" value="{{.Key}}">
-   <div class="navigation-group-toolbar"><div class="navigation-move"><button type="button" data-move="up" aria-label="{{t "auth.navigation.move_up"}}: {{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}">↑</button><button type="button" data-move="down" aria-label="{{t "auth.navigation.move_down"}}: {{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}">↓</button></div><div class="admin-navigation-group-actions"><button type="button" @click="setVisible(true)">{{t "auth.navigation.show_all"}}</button><span aria-hidden="true">·</span><button type="button" @click="setVisible(false)">{{t "auth.navigation.hide_all"}}</button></div></div>
-   <div data-navigation-items>
-   {{range .Items}}
-   <div class="navigation-row" data-navigation-row data-label="{{t .LabelKey}}">
-   <input type="hidden" name="item_order" value="{{.ID}}">
-   <input type="hidden" name="available" value="{{.ID}}">
-   <label class="admin-navigation-option"><input type="checkbox" name="visible" value="{{.ID}}" {{if index $.Pinned .ID}}disabled{{else if not (index $.Hidden .ID)}}checked{{end}}><span class="admin-navigation-option-icon" aria-hidden="true">{{icon .Icon}}</span><span>{{t .LabelKey}}{{if index $.Pinned .ID}}<small class="block text-muted">{{t "auth.navigation.pinned"}}</small>{{end}}</span></label>
-   <div class="navigation-move"><button type="button" data-move="up" aria-label="{{t "auth.navigation.move_up"}}: {{t .LabelKey}}">↑</button><button type="button" data-move="down" aria-label="{{t "auth.navigation.move_down"}}: {{t .LabelKey}}">↓</button></div>
-   </div>
-   {{end}}
-   </div>
-  </fieldset>
- {{end}}
+ <div class="navigation-editor-stack">
+  <label class="navigation-search">{{t "operator.nav_search"}}<input type="search" data-navigation-search class="navigation-search-input"></label>
+  <details class="navigation-preview-panel">
+   <summary class="navigation-preview-heading"><span id="navigation-preview-heading">{{t "operator.nav_preview"}}</span><small>{{t "operator.nav_preview_help"}}</small></summary>
+   <div data-navigation-preview class="navigation-preview-body"></div>
+  </details>
+  <div class="admin-navigation-groups" data-navigation-groups>
+  {{range allNav}}
+   <fieldset class="admin-navigation-group" data-navigation-row data-label="{{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}" x-data="{ setVisible(value) { $root.querySelectorAll('input[type=checkbox]:not(:disabled)').forEach(input => { input.checked = value }) } }">
+    <legend class="navigation-group-legend">{{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}</legend>
+    <div class="navigation-group-toolbar">
+     <button type="button" class="navigation-drag" data-navigation-drag draggable="true" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-label="{{t "auth.navigation.drag"}}: {{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}">{{icon "grip-vertical"}}</button>
+     <span class="navigation-group-title" aria-hidden="true">{{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}</span>
+     <div class="navigation-move" data-navigation-tools>
+      <button type="button" data-move="up" aria-label="{{t "auth.navigation.move_up"}}: {{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}">↑</button>
+      <button type="button" data-move="down" aria-label="{{t "auth.navigation.move_down"}}: {{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}">↓</button>
+     </div>
+     <div class="admin-navigation-group-actions"><button type="button" @click="setVisible(true)">{{t "auth.navigation.show_all"}}</button><span aria-hidden="true">·</span><button type="button" @click="setVisible(false)">{{t "auth.navigation.hide_all"}}</button></div>
+    </div>
+    <input type="hidden" name="group_order" value="{{.Key}}">
+    <div data-navigation-items>
+    {{range .Items}}
+    <div class="navigation-row" data-navigation-row data-label="{{t .LabelKey}}">
+     <button type="button" class="navigation-drag" data-navigation-drag draggable="true" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" aria-label="{{t "auth.navigation.drag"}}: {{t .LabelKey}}">{{icon "grip-vertical"}}</button>
+     <input type="hidden" name="item_order" value="{{.ID}}">
+     <input type="hidden" name="available" value="{{.ID}}">
+     <label class="admin-navigation-option"><input type="checkbox" name="visible" value="{{.ID}}" {{if index $.Pinned .ID}}disabled{{else if not (index $.Hidden .ID)}}checked{{end}}><span class="admin-navigation-option-icon" aria-hidden="true">{{icon .Icon}}</span><span>{{t .LabelKey}}{{if index $.Pinned .ID}}<small class="block text-muted">{{t "auth.navigation.pinned"}}</small>{{end}}</span></label>
+     <div class="navigation-move" data-navigation-tools>
+      <button type="button" data-move="up" aria-label="{{t "auth.navigation.move_up"}}: {{t .LabelKey}}">↑</button>
+      <button type="button" data-move="down" aria-label="{{t "auth.navigation.move_down"}}: {{t .LabelKey}}">↓</button>
+     </div>
+    </div>
+    {{end}}
+    </div>
+   </fieldset>
+  {{end}}
+  </div>
  </div>
  <p class="text-muted mt-4">{{t "auth.navigation.new_items"}}</p><p class="text-muted mt-2">{{t "auth.navigation.pins_help"}}</p>
 </form>
