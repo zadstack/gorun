@@ -14,10 +14,10 @@
  <template data-navigation-projection>{{range allNavigationSections}}<section data-preview-section="{{.Key}}" data-label="{{navigationLabel .LabelKey}}">{{range .Groups}}<div data-preview-tab="{{.Key}}" data-label="{{navigationLabel .LabelKey}}">{{range .Items}}<span data-preview-item="{{.ID}}"></span>{{end}}</div>{{end}}</section>{{end}}</template>
  <div class="navigation-editor-stack">
   <label class="navigation-search">{{t "operator.nav_search"}}<input type="search" data-navigation-search class="navigation-search-input"></label>
-  <section class="navigation-preview-panel" aria-labelledby="navigation-preview-heading">
-   <div class="navigation-preview-heading"><h2 id="navigation-preview-heading">{{t "operator.nav_preview"}}</h2><p>{{t "operator.nav_preview_help"}}</p></div>
+  <details class="navigation-preview-panel">
+   <summary class="navigation-preview-heading"><span id="navigation-preview-heading">{{t "operator.nav_preview"}}</span><small>{{t "operator.nav_preview_help"}}</small></summary>
    <div data-navigation-preview class="navigation-preview-body"></div>
-  </section>
+  </details>
   <div class="admin-navigation-groups" data-navigation-groups>
   {{range allNav}}
    <fieldset class="admin-navigation-group" data-navigation-row data-label="{{if .Label}}{{.Label}}{{else}}{{t "auth.navigation.workspace"}}{{end}}" x-data="{ setVisible(value) { $root.querySelectorAll('input[type=checkbox]:not(:disabled)').forEach(input => { input.checked = value }) } }">

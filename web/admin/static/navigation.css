@@ -1,7 +1,7 @@
 /* Customize sidebar: one stacked composition, compact density, quiet reorder chrome. */
 
 .admin-navigation-form {
-  max-width: 42rem;
+  max-width: 48rem;
 }
 
 .navigation-order-hint {
@@ -48,32 +48,46 @@
   border-color: var(--green);
 }
 
-/* Preview uses the same stack density as the editor — not a second dashboard. */
+/* Preview folds under search so the reorder list stays the main composition. */
 .navigation-preview-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
-  padding: .75rem .85rem;
+  padding: 0;
 }
 
-.navigation-preview-heading h2 {
+.navigation-preview-heading {
+  list-style: none;
+  cursor: pointer;
+  display: grid;
+  gap: .2rem;
+  padding: .65rem .85rem;
   font-size: .8125rem;
   font-weight: 650;
-  margin: 0;
 }
 
-.navigation-preview-heading p {
-  margin: .25rem 0 0;
+.navigation-preview-heading::-webkit-details-marker {
+  display: none;
+}
+
+.navigation-preview-heading small {
   font-size: .75rem;
+  font-weight: 400;
   color: var(--muted);
   line-height: 1.5;
   max-width: 65ch;
 }
 
+.navigation-preview-heading:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+
 .navigation-preview-body {
   display: grid;
   gap: .65rem;
-  margin-block-start: .65rem;
+  padding: 0 .85rem .75rem;
+  border-block-start: 1px solid var(--line);
 }
 
 .navigation-preview-body section {
