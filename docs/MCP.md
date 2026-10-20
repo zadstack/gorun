@@ -37,7 +37,8 @@ permissions and validation as the admin and the REST API.
 
 - **Streamable HTTP:** `POST https://<your-site>/mcp` (stateless, JSON responses).
 - **stdio:** `gorun mcp --key gp_…`, or set `GORUN_MCP_KEY` (one session per process).
-- **Resources:** `gorun://types` (content types and field schemas), `gorun://site` (site structure).
+- **Resources:** `gorun://types` (content types and field schemas), `gorun://site` (site structure),
+  `gorun://canvases/{id}` (grant-scoped canvas board; same payload as `get_canvas`).
 - **Prompts:** none in v1.
 
 ## Authentication
@@ -87,6 +88,9 @@ public `Host` header.
 | `commerce.manage` | `list_products` (when commerce is installed) |
 | `mcp.approve_self` | Sensitive tools run immediately, with no human approval. It must be listed explicitly in the key's scopes: `*` does **not** imply it. |
 | `mcp.approve` | Decide approvals over REST. It must be listed explicitly in the key's scopes (`*` does not count). A key can never decide calls it requested itself, nor calls requested by another key of the same owner (see below). |
+| `canvas.read` | `list_canvases`, `get_canvas`, `gorun://canvases/{id}`, and selected-board ops (`canvases.pending`, `canvases.context`). Agent keys also need an explicit board grant. |
+| `canvas.append` | `canvases.append_result` (append a private result note; never publishes) |
+| `canvas.run` | `canvases.request_run` (creates a `requested` run for human review; does not execute) |
 
 **Create MCP keys with only the scopes the agent needs, and never `*`.**
 
@@ -138,7 +142,17 @@ input struct and use snake_case property names.
 | `run_migration_preview` | migrations.run | | Dry-run report of a WordPress migration (only if wpmigrate is installed) |
 | `get_migration_status` | migrations.run | | Migration progress (only if wpmigrate is installed) |
 | `list_products` | commerce.manage | | Store products (only if commerce is installed) |
+| `list_canvases` | canvas.read, content.view | | Boards the key may read: owner boards for REST keys, or grant-listed boards for agent keys. Returns `{id,title,updated_at,version}` only (`page` / `per_page` ≤ 100) |
+| `get_canvas` | canvas.read, content.view | | Board by `id`: `{id,title,version,updated_at,cards[],edges[]}`. Agent keys receive only grant-allowed cards and edges between them. No inbound secrets or provider credentials |
+| `canvases.pending` | canvas.read, content.view | | Waiting runs for this agent key on a granted board (`board_id`) |
+| `canvases.context` | canvas.read, content.view | | Bounded prompt/context for one delegated run (`board_id`, `run_id`) |
+| `canvases.append_result` | canvas.append, content.view | | Append a private result note for a waiting run (idempotent; never publishes) |
+| `canvases.request_run` | canvas.run, content.view | | Request a run (`requested`) for human review (`board_id`, `node_id`, `request_id`) |
 | `check_approval` | any key | | Status of a sensitive call (see below) |
+
+Canvas boards are **not** public site pages. There is no anonymous HTML route for board bodies.
+Simple CMS workspace mode may hide the canvases admin nav; these tools stay available when scopes and
+grants allow. Operational contract: [CANVAS-OPERATIONS-CONTRACT.md](CANVAS-OPERATIONS-CONTRACT.md).
 
 Modules and extensions can add their own tools (`Deps.MCP.AddTool`). These tools follow the same rules
 for scopes, approval, audit and rate limits.

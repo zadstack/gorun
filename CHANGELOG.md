@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Canvas MCP/REST read parity
+
+- Add grant-scoped `list_canvases` and `get_canvas` MCP tools plus resource `gorun://canvases/{id}`.
+- Mirror the same reads on `GET /api/v1/canvases` and `GET /api/v1/canvases/{id}` for REST keys (agent keys remain refused on `/api`).
+- Agent keys see only boards with an explicit read grant and only grant-allowed cards/edges. No public anonymous canvas routes.
+
 ### Backup inspect readiness clarity
 
 - Distinguishes `local_ok` (local checksums and database integrity passed) from `review_required` (site-specific cutover warnings such as external media) and `blocked` (restore refused).
