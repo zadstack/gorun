@@ -1,38 +1,38 @@
-/* Knowledge base: an indigo reading theme on top of default/style.css. Layout:
+/* Docs identity: steel chrome tokens on top of default/style.css. Layout:
    section sidebar, article, "on this page" list; stacked on phones.
    Tokens live under :where() so identity / builder can restyle them. */
 :where(html[data-theme="docs"]) {
   --bg: #ffffff;
   --panel: #ffffff;
-  --panel-2: #f4f7fa;
-  --panel-3: #e8eef4;
-  --head: #18212b;
-  --ink: #18212b;
-  --ink-2: #2a3542;
-  --muted: #55606d;
-  --muted-tinted: #44505c;
-  --line: #d8dee5;
-  --line-2: #e6ebf0;
-  --line-strong: #a9b5c2;
-  --accent: #374fa0;
-  --accent-hover: #293b7c;
-  --accent-ink: #374fa0;
-  --accent-soft: #e9edfb;
-  --accent-tint: #f3f5fd;
-  --accent-line: #9caadd;
+  --panel-2: #f3f6f8;
+  --panel-3: #e5ebf0;
+  --head: #14202b;
+  --ink: #14202b;
+  --ink-2: #243442;
+  --muted: #52606c;
+  --muted-tinted: #41505c;
+  --line: #d3dbe2;
+  --line-2: #e4e9ee;
+  --line-strong: #9aabb8;
+  --accent: #155e75;
+  --accent-hover: #124e61;
+  --accent-ink: #155e75;
+  --accent-soft: #d5eef5;
+  --accent-tint: #eef7fa;
+  --accent-line: #7ebfd0;
   --on-accent: #ffffff;
   --green: var(--accent);
   --green-hover: var(--accent-hover);
   --green-soft: var(--accent-soft);
-  --blue: #374fa0;
-  --blue-hover: #293b7c;
-  --blue-soft: #e9edfb;
-  --radius: 8px;
-  --radius-card: 12px;
+  --blue: #155e75;
+  --blue-hover: #124e61;
+  --blue-soft: #d5eef5;
+  --radius: 6px;
+  --radius-card: 8px;
   --font: system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
   --font-ui: var(--font);
   --font-heading: var(--font);
-  --site-width: 1360px;
+  --site-width: 1280px;
   --gp-width: var(--site-width);
   --docs-accent: var(--accent);
   --docs-soft: var(--accent-soft);

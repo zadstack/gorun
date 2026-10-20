@@ -23,9 +23,9 @@ func starterChoices(ar bool) []starterChoice {
 	}
 	out := []starterChoice{}
 	for _, choice := range []struct{ id, nameEN, nameAR, descEN, descAR string }{
-		{"company", "Company & services", "شركة وخدمات", "A light company site: home, about, services, work and contact.", "موقع شركة فاتح متكامل: الرئيسية، من نحن، الخدمات، الأعمال والتواصل."},
-		{"portfolio", "Project portfolio", "معرض الأعمال", "An image-led portfolio: home, work, about, services and contact.", "بورتفوليو يبرز صور المشاريع: الرئيسية، الأعمال، النبذة، الخدمات والتواصل."},
-		{"magazine", "Editorial magazine", "مجلة تحريرية", "A complete editorial publication: home, about, topics and contact, with article and archive layouts.", "مجلة متكاملة: الرئيسية، عن المجلة، الموضوعات والتواصل، مع تصميم للمقالات والأرشيف."},
+		{"company", "Modern", "حديث", "Start with the Modern identity: clear pages for home, about, services, work and contact.", "ابدأ بهوية «حديث»: صفحات واضحة للرئيسية ومن نحن والخدمات والأعمال والتواصل."},
+		{"portfolio", "Minimal", "بسيط", "Start with the Minimal identity: home, work, about, services and contact with quiet chrome.", "ابدأ بهوية «بسيط»: الرئيسية والأعمال والنبذة والخدمات والتواصل بواجهة هادئة."},
+		{"magazine", "Serif", "سيرف", "Start with the Serif identity: home, about, topics and contact with type-led reading.", "ابدأ بهوية «سيرف»: الرئيسية وعن الموقع والموضوعات والتواصل بقراءة تعتمد على الخط."},
 	} {
 		design := starterDesign(choice.id)
 		out = append(out, starterChoice{ID: choice.id, Name: word(choice.nameEN, choice.nameAR), Description: word(choice.descEN, choice.descAR), Theme: design.Theme, Preview: "/static/admin/starter-previews/" + choice.id + ".png", Identity: design.Identity})

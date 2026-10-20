@@ -1,6 +1,6 @@
 {
-  "name": "Knowledge base",
-  "version": "1.6.0",
+  "name": "Docs",
+  "version": "1.8.0",
   "parent": "default",
   "locations": [
     "primary",

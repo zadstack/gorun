@@ -1,4 +1,4 @@
-:where(html[data-theme="magazine"]){--bg:#f4f0e8;--panel:#f4f0e8;--panel-2:#e8e1d5;--panel-3:#ddd4c6;--head:#211e19;--ink:#211e19;--ink-2:#3a342c;--muted:#625c51;--muted-tinted:#4e483f;--line:#c7bead;--line-2:#d5cdbe;--line-strong:#817764;--accent:#89402e;--accent-hover:#743325;--accent-ink:#89402e;--accent-soft:#f0e4df;--accent-tint:#f7efe9;--accent-line:#c48a78;--on-accent:#fff;--green:var(--accent);--green-hover:var(--accent-hover);--blue:var(--accent);--font:Georgia,"Times New Roman",serif;--font-ui:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;--font-heading:var(--font);--radius:0px;--radius-card:0;--body-size:17px;--site-width:1280px;--gp-width:var(--site-width);--gp-accent:var(--accent)}
+:where(html[data-theme="magazine"]){--bg:#f4f5f7;--panel:#fafbfc;--panel-2:#e8eaee;--panel-3:#d7dae1;--head:#151a22;--ink:#151a22;--ink-2:#2a3140;--muted:#5a6372;--muted-tinted:#484f5c;--line:#c5cad3;--line-2:#dde0e6;--line-strong:#7e8796;--accent:#1e3a5f;--accent-hover:#162c48;--accent-ink:#1e3a5f;--accent-soft:#dbe4f0;--accent-tint:#eef2f7;--accent-line:#7f9ab8;--on-accent:#fff;--green:var(--accent);--green-hover:var(--accent-hover);--blue:var(--accent);--font:Georgia,"Times New Roman",serif;--font-ui:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;--font-heading:var(--font);--radius:0px;--radius-card:0;--body-size:17px;--site-width:1080px;--gp-width:var(--site-width);--gp-accent:var(--accent)}
 :where(html[data-theme="magazine"][dir="rtl"]){--font:Zad,"Zad Font",Tahoma,sans-serif;--font-ui:Zad,"Zad Font",Tahoma,sans-serif;--font-heading:var(--font)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;line-height:1.65;font-family:var(--font);background:var(--bg);color:var(--ink);font-size:17px;display:flex;flex-direction:column;min-height:100vh}img{display:block;max-width:100%;height:auto}button,input,textarea{font:inherit}a{color:inherit;text-decoration:none}a:hover{text-decoration:underline;text-underline-offset:.22em}a,button,summary,input,textarea{border-radius:0}a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--green);outline-offset:4px}p,h1,h2,h3{margin:0}ul{padding:0;list-style:none}::selection{background:var(--green);color:var(--on-accent,#fff)}
 .hidden{display:none}
@@ -12,12 +12,12 @@
 .ed-wordmark:hover{text-decoration:none}
 .ed-logo{max-height:70px;width:auto;max-width:160px}
 .ed-masthead>p{font-family:var(--font-ui);font-size:13px;letter-spacing:.025em;margin-top:12px}
-.ed-nav-shell{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;border-top:3px double var(--ink);padding-block:15px;font-family:var(--font-ui);font-size:13px}
+.ed-nav-shell{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;border-top:1px solid var(--ink);padding-block:14px;font-family:var(--font-ui);font-size:13px}
 .ed-desktop-nav ul,.ed-nav-tools{display:flex;align-items:center;flex-wrap:wrap;gap:1.6rem;margin:0}
 .ed-nav-tools{gap:1rem}
 .ed-mobile-nav{display:none}
 .ed-main{flex:1;padding-block:45px 75px;overflow-wrap:anywhere}
-.ed-hero-plane{width:100%;border-bottom:1px solid var(--ink);background:linear-gradient(180deg,color-mix(in srgb,var(--green) 8%,var(--panel)) 0%,var(--bg) 72%);margin-bottom:32px}
+.ed-hero-plane{width:100%;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel) 0%,var(--bg) 100%);margin-bottom:32px}
 .ed-edition{display:grid;grid-template-columns:1fr 1fr;column-gap:4rem;padding-block:clamp(2.5rem,6vw,4.5rem);align-items:end}
 .ed-eyebrow{font-family:var(--font-ui);font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:14px}
 .ed-edition>.ed-eyebrow{grid-column:1/-1}
@@ -80,7 +80,7 @@
 .ed-error h1{font-size:42px;line-height:1.25}
 .ed-error p{margin-block:20px}
 .ed-button{display:inline-block}
-.ed-footer{border-top:3px double var(--ink)}
+.ed-footer{border-top:1px solid var(--ink)}
 .ed-footer-inner{display:grid;grid-template-columns:2fr 1fr auto;gap:45px;padding-block:45px}
 .ed-footer-name{font-size:36px;font-weight:700;line-height:1.2}
 .ed-footer-inner p{margin-top:14px;font-size:15px}

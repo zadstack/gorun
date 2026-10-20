@@ -55,38 +55,42 @@ html[data-theme="default"] .reading-card > a:last-child { min-height: 44px; disp
  html:is([data-theme="default"],[data-theme="docs"]) .reading-article .prose-gp { font-size: 1rem; }
 }
 
-/* Default personality (overrides shared base tokens). */
+/* Classic identity: editorial tokens (airy cool paper, serif headings, ink-blue). */
 :where(html[data-theme="default"]) {
-  --bg: #fbfaf7;
+  --bg: #f5f7fa;
   --panel: #ffffff;
-  --panel-2: #f0f2f3;
-  --panel-3: #e2e8ec;
-  --head: #26313b;
-  --ink: #26313b;
-  --ink-2: #344452;
-  --muted: #5b6670;
-  --muted-tinted: #4b5965;
-  --line: #dce2e7;
-  --line-2: #e7ebee;
-  --line-strong: #a4b2be;
-  --accent: #345e7c;
-  --accent-hover: #284a62;
-  --accent-ink: #345e7c;
-  --accent-soft: #e0ebf2;
-  --accent-tint: #f0f5f8;
-  --accent-line: #9fb9cc;
+  --panel-2: #e9eef4;
+  --panel-3: #d8e0ea;
+  --head: #1a2330;
+  --ink: #1a2330;
+  --ink-2: #2d3a4a;
+  --muted: #5a6878;
+  --muted-tinted: #485667;
+  --line: #ced7e2;
+  --line-2: #e0e6ed;
+  --line-strong: #8f9faf;
+  --accent: #2f5a78;
+  --accent-hover: #244960;
+  --accent-ink: #2f5a78;
+  --accent-soft: #dce8f1;
+  --accent-tint: #eef3f8;
+  --accent-line: #8fadc4;
   --on-accent: #ffffff;
   --green: var(--accent);
   --green-hover: var(--accent-hover);
   --green-soft: var(--accent-soft);
-  --radius: 7px;
-  --radius-card: 12px;
-  --site-width: 1160px;
+  --radius: 4px;
+  --radius-card: 8px;
+  --site-width: 1120px;
   --gp-width: var(--site-width);
-  --body-size: 15px;
+  --body-size: 16px;
+  --section-pad-y: 96px;
   --font: "Zad", "Zad Font", Tahoma, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-ui: var(--font);
-  --font-heading: var(--font);
+  --font-heading: Georgia, "Times New Roman", "Zad", "Zad Font", serif;
+}
+:where(html[data-theme="default"][dir="rtl"]) {
+  --font-heading: "Zad", "Zad Font", Tahoma, Georgia, serif;
 }
 html[data-theme="default"] .gp-site-width { max-width: var(--site-width); padding-inline: clamp(.875rem, 2.5vw, 1.5rem); }
 html[data-theme="default"] .default-site-header > div { min-height: 64px; gap: .5rem 1.15rem; }

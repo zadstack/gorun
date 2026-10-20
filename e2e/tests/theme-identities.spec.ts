@@ -6,11 +6,11 @@ import { resolve } from 'node:path';
 import { csrf, db, setLocale, MARKER_500 } from '../lib/helpers.ts';
 
 const themes = [
-  {slug:'default',en:'Reading & blog',ar:'مدونة وقراءة',accent:'#345e7c',enNote:'Notes, guides and ideas, with room to read.',arNote:'مقالات وأفكار وأدلة، في مساحة مريحة للقراءة.'},
-  {slug:'business',en:'Company & services',ar:'شركة وخدمات',accent:'#1e6650',enNote:'Clear services, selected work and a direct way to get in touch.',arNote:'خدمات واضحة وأعمال مختارة وطريقة مباشرة للتواصل.'},
-  {slug:'portfolio',en:'Project portfolio',ar:'معرض الأعمال',accent:'#6b3fa0',enNote:'Selected projects, process and the work behind them.',arNote:'مشاريع مختارة، وخطوات العمل والأفكار التي تقف وراءها.'},
-  {slug:'magazine',en:'Editorial magazine',ar:'مجلة تحريرية',accent:'#89402e',enNote:'Stories, perspectives and thoughtful long-form reading.',arNote:'قصص ووجهات نظر ومقالات تستحق وقت القراءة.'},
-  {slug:'docs',en:'Knowledge base',ar:'قاعدة المعرفة',accent:'#374fa0',enNote:'Guides, references and answers, organized for finding.',arNote:'أدلة ومراجع وإجابات، مرتبة لتصل إليها بسهولة.'},
+  {slug:'default',en:'Classic',ar:'كلاسيكي',accent:'#2f5a78',enNote:'A calm reading identity with room for your voice.',arNote:'هوية قراءة هادئة تترك مساحة لصوت موقعك.'},
+  {slug:'business',en:'Modern',ar:'حديث',accent:'#0f766e',enNote:'Sharp, high-contrast chrome for clear pages.',arNote:'واجهة حادة وتباين واضح لصفحات مفهومة.'},
+  {slug:'portfolio',en:'Minimal',ar:'بسيط',accent:'#3f5d4a',enNote:'Quiet earth tones that stay out of the way.',arNote:'ألوان ترابية هادئة لا تنافس محتواك.'},
+  {slug:'magazine',en:'Serif',ar:'سيرف',accent:'#1e3a5f',enNote:'Type-led identity for long-form reading.',arNote:'هوية تعتمد على الخط لقراءة مطوّلة.'},
+  {slug:'docs',en:'Docs',ar:'توثيق',accent:'#155e75',enNote:'Light steel chrome for guides and reference.',arNote:'واجهة فولاذية خفيفة للأدلة والمراجع.'},
 ];
 
 function setting(key:string,value:unknown) {

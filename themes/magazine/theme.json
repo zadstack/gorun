@@ -1,6 +1,6 @@
 {
-  "name": "Editorial magazine",
-  "version": "1.6.0",
+  "name": "Serif",
+  "version": "1.8.0",
   "parent": "default",
   "locations": [
     "primary",
