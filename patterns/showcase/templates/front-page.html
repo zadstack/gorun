@@ -1,0 +1,29 @@
+{{part "header" .}}
+<link rel="stylesheet" href="{{asset "layout.css"}}">
+<section class="pat-sh" aria-labelledby="pat-sh-title">
+  <header class="pat-sh-hero">
+    <p class="pat-sh-kicker">{{t "pat.showcase.kicker"}}</p>
+    <h1 id="pat-sh-title">{{.Site.Title}}</h1>
+    {{with .Site.Tagline}}<p>{{.}}</p>{{else}}<p>{{t "pat.showcase.note"}}</p>{{end}}
+  </header>
+  {{if .Items}}
+  <section class="pat-sh-mosaic" aria-labelledby="pat-sh-grid">
+    <h2 id="pat-sh-grid" class="sr-only">{{t "pat.showcase.grid"}}</h2>
+    <div class="pat-sh-cards">
+      {{range .Items}}
+      {{$item := .}}
+      <article>
+        {{with media .FeaturedMediaID}}
+        <a class="pat-sh-media" href="{{url $item}}" tabindex="-1" aria-hidden="true">{{img . "large" "pat-sh-cover"}}</a>
+        {{end}}
+        <h3><a href="{{url $item}}">{{$item.Title}}</a></h3>
+        {{with excerpt $item 18}}<p>{{.}}</p>{{end}}
+      </article>
+      {{end}}
+    </div>
+  </section>
+  {{else}}
+  <p class="pat-sh-empty">{{t "pat.showcase.empty"}}</p>
+  {{end}}
+</section>
+{{part "footer" .}}

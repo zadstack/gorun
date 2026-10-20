@@ -15,6 +15,7 @@ const (
 	ServiceRedirects = "redirects" // redirects.Service
 	ServiceSEO       = "seo"       // seo.Service
 	ServiceTheme     = "theme"     // theme.Service
+	ServicePattern   = "pattern"   // pattern.Service (layout packages)
 	ServiceCommerce  = "commerce"  // commerce service (wave 2)
 	ServiceWebhooks  = "webhooks"  // webhooks.Service
 

@@ -1,0 +1,13 @@
+{
+  "kind": "pattern",
+  "slug": "editorial",
+  "version": "1.0.0",
+  "name": {
+    "en": "Editorial",
+    "ar": "تحريري"
+  },
+  "description": {
+    "en": "Magazine-style home: edition masthead, lead story, and a reading grid.",
+    "ar": "رئيسية بأسلوب مجلة: عنوان العدد وقصة بارزة وشبكة قراءة."
+  }
+}

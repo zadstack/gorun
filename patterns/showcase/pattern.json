@@ -1,0 +1,13 @@
+{
+  "kind": "pattern",
+  "slug": "showcase",
+  "version": "1.0.0",
+  "name": {
+    "en": "Showcase",
+    "ar": "معرض"
+  },
+  "description": {
+    "en": "Portfolio layout: bold intro and a project-style card mosaic.",
+    "ar": "تخطيط معرض أعمال: مقدمة بارزة وفسيفساء بطاقات للمشاريع."
+  }
+}

@@ -13,6 +13,8 @@
 
 A GoRun theme is a directory of Go `html/template` files under `themes/<slug>/`, rendered by the theme engine (`internal/theme`). The active theme is the `site.theme` setting (default: `Config.Theme`, then `default`).
 
+**Themes vs patterns:** catalog themes increasingly focus on **visual identity** (type, color, spacing, chrome). Opinionated **site layouts** (magazine / company / portfolio / docs-style homes) live in **pattern plugins** — Appearance → Patterns, setting `site.pattern` — layered above the theme. See [PATTERN-PLUGINS.md](PATTERN-PLUGINS.md).
+
 ## The theme catalog
 
 Ship-with themes are **identity systems** (type, color, spacing, chrome). They are site picker

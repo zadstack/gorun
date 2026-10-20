@@ -1,0 +1,43 @@
+{{part "header" .}}
+<link rel="stylesheet" href="{{asset "layout.css"}}">
+{{$pages := query (dict "type" "page" "order" "menu_order" "per_page" 100)}}
+<section class="pat-gb" aria-labelledby="pat-gb-title">
+  <header class="pat-gb-hero">
+    <h1 id="pat-gb-title">{{t "pat.guide.title"}}</h1>
+    {{with .Site.Tagline}}<p>{{.}}</p>{{end}}
+    <form action="{{url "/search"}}" method="get" role="search" class="pat-gb-search">
+      <label for="pat-gb-q" class="sr-only">{{t "pat.guide.search"}}</label>
+      <input id="pat-gb-q" name="q" type="search" placeholder="{{t "pat.guide.search"}}">
+      <button type="submit">{{t "search"}}</button>
+    </form>
+  </header>
+  {{with $pages.Items}}
+  <section class="pat-gb-sections" aria-labelledby="pat-gb-sections-title">
+    <h2 id="pat-gb-sections-title">{{t "pat.guide.sections"}}</h2>
+    <div class="pat-gb-cards">
+      {{range $pages.Items}}{{if not .ParentID}}
+      {{$top := .}}{{$n := 0}}{{range $pages.Items}}{{if eq .ParentID $top.ID}}{{$n = add $n 1}}{{end}}{{end}}
+      <a class="pat-gb-card" href="{{url .}}">
+        <strong>{{.Title}}</strong>
+        {{with excerpt . 16}}<span>{{.}}</span>{{end}}
+        {{if $n}}<span class="pat-gb-count">{{$n}}</span>{{end}}
+      </a>
+      {{end}}{{end}}
+    </div>
+  </section>
+  {{$recent := query (dict "type" "page" "order" "-updated_at" "per_page" 5)}}
+  {{with $recent.Items}}
+  <section class="pat-gb-recent" aria-labelledby="pat-gb-recent-title">
+    <h2 id="pat-gb-recent-title">{{t "pat.guide.recent"}}</h2>
+    <ul>
+      {{range .}}
+      <li><a href="{{url .}}"><span>{{.Title}}</span>{{with .UpdatedAt}}<time datetime="{{.}}"><bdi>{{date .}}</bdi></time>{{end}}</a></li>
+      {{end}}
+    </ul>
+  </section>
+  {{end}}
+  {{else}}
+  <p class="pat-gb-empty">{{t "pat.guide.empty"}}</p>
+  {{end}}
+</section>
+{{part "footer" .}}

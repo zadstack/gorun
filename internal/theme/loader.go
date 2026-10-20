@@ -207,24 +207,32 @@ func collect(layers []layer) map[string]source {
 func loadLang(chain []Info) map[string]map[string]string {
 	out := map[string]map[string]string{}
 	for i := len(chain) - 1; i >= 0; i-- {
-		files, _ := filepath.Glob(filepath.Join(chain[i].Dir, "lang", "*.json"))
-		for _, f := range files {
-			raw, err := os.ReadFile(f)
-			if err != nil {
-				continue
-			}
-			var msgs map[string]string
-			if json.Unmarshal(raw, &msgs) != nil {
-				continue
-			}
-			loc := strings.TrimSuffix(filepath.Base(f), ".json")
-			if out[loc] == nil {
-				out[loc] = map[string]string{}
-			}
-			for k, v := range msgs {
-				out[loc][k] = v
-			}
-		}
+		mergeLangDir(out, chain[i].Dir)
 	}
 	return out
+}
+
+// mergeLangDir overlays <dir>/lang/<locale>.json onto out (later keys win).
+func mergeLangDir(out map[string]map[string]string, dir string) {
+	if dir == "" {
+		return
+	}
+	files, _ := filepath.Glob(filepath.Join(dir, "lang", "*.json"))
+	for _, f := range files {
+		raw, err := os.ReadFile(f)
+		if err != nil {
+			continue
+		}
+		var msgs map[string]string
+		if json.Unmarshal(raw, &msgs) != nil {
+			continue
+		}
+		loc := strings.TrimSuffix(filepath.Base(f), ".json")
+		if out[loc] == nil {
+			out[loc] = map[string]string{}
+		}
+		for k, v := range msgs {
+			out[loc][k] = v
+		}
+	}
 }

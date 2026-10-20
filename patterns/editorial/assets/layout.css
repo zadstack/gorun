@@ -1,0 +1,74 @@
+/* Editorial pattern — structure only; colors from theme identity tokens. */
+.pat-ed {
+  --pat-accent: var(--gp-accent, var(--accent, currentColor));
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  padding-block: clamp(1.5rem, 4vw, 3rem);
+}
+.pat-ed-masthead {
+  border-block-end: 3px double color-mix(in srgb, currentColor 28%, transparent);
+  padding-block-end: 1.25rem;
+}
+.pat-ed-eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pat-accent);
+}
+html[dir="rtl"] .pat-ed-eyebrow { letter-spacing: 0; text-transform: none; }
+.pat-ed-masthead h1 {
+  margin: 0;
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  max-width: 16ch;
+}
+html[dir="rtl"] .pat-ed-masthead h1 { letter-spacing: 0; line-height: 1.35; }
+.pat-ed-deck {
+  margin: 0.75rem 0 0;
+  font-size: 1.15rem;
+  max-width: 42ch;
+  opacity: 0.78;
+}
+.pat-ed-lead {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem 0;
+  border-inline-start: 4px solid var(--pat-accent);
+  padding-inline-start: 1.25rem;
+}
+.pat-ed-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--pat-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+html[dir="rtl"] .pat-ed-label { letter-spacing: 0; text-transform: none; }
+.pat-ed-lead h2 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.25rem); line-height: 1.25; }
+.pat-ed-lead h2 a, .pat-ed-cards a { color: inherit; text-decoration: none; }
+.pat-ed-lead h2 a:hover, .pat-ed-cards a:hover { color: var(--pat-accent); }
+.pat-ed-more { font-weight: 600; color: var(--pat-accent); }
+.pat-ed-grid h2 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+html[dir="rtl"] .pat-ed-grid h2 { letter-spacing: 0; text-transform: none; }
+.pat-ed-cards {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+.pat-ed-cards article {
+  display: grid;
+  gap: 0.5rem;
+  padding-block: 0.5rem;
+  border-block-start: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+.pat-ed-cards h3 { margin: 0; font-size: 1.1rem; line-height: 1.35; }
+.pat-ed-cards p, .pat-ed-lead p { margin: 0; opacity: 0.78; line-height: 1.65; }
+.pat-ed-empty { opacity: 0.7; font-style: italic; }

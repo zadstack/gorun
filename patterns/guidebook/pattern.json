@@ -1,0 +1,13 @@
+{
+  "kind": "pattern",
+  "slug": "guidebook",
+  "version": "1.0.0",
+  "name": {
+    "en": "Guidebook",
+    "ar": "دليل"
+  },
+  "description": {
+    "en": "Docs-style landing: search hero, section cards, and recent pages.",
+    "ar": "رئيسية بأسلوب وثائق: بحث وبطاقات أقسام وأحدث الصفحات."
+  }
+}
