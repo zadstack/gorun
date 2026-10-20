@@ -234,6 +234,7 @@ type editorView struct {
 	CanPickMedia          bool              // media module present and media.upload held
 	Translations          []translationView // one per supported locale; empty for new or trashed items
 	CanUnlink             bool              // the item is linked and content.edit is held
+	Locales               []string          // supported content locales for the new-item picker
 	Supports              map[string]bool
 	Parent                *pickView
 	Templates             []choice
@@ -256,7 +257,9 @@ func (h *adminHandlers) newItem(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	it := &Item{Type: t.Slug, Status: "draft", Fields: map[string]any{}, SEO: map[string]any{}, Terms: map[string][]string{}}
+	// Prefill content locale from the admin/editor chrome locale (not site.locale)
+	// so an English admin drafting on an Arabic-default site stores en unless they pick otherwise.
+	it := &Item{Type: t.Slug, Status: "draft", Locale: i18n.Locale(r.Context()), Fields: map[string]any{}, SEO: map[string]any{}, Terms: map[string][]string{}}
 	if u := auth.UserFromContext(r.Context()); u != nil {
 		it.AuthorID = u.ID
 	}
@@ -293,7 +296,7 @@ func (h *adminHandlers) renderEditor(w http.ResponseWriter, r *http.Request, sta
 	base := "/admin/content/" + t.Slug
 	v := editorView{Type: t, TypeName: localized(t.Singular, locale, localized(t.Name, locale, t.Slug)), Item: it, IsNew: isNew, ListURL: base,
 		Errors: errs, CanPublish: canPublish(ctx), CanDelete: auth.Can(ctx, "content.delete"), FormError: formErr,
-		Supports: map[string]bool{}, PublishAtLocal: localDatetime(it.PublishAt), BodyDir: "auto"}
+		Locales: i18n.Supported, Supports: map[string]bool{}, PublishAtLocal: localDatetime(it.PublishAt), BodyDir: "auto"}
 	if v.Errors == nil {
 		v.Errors = FieldErrors{}
 	}
@@ -482,6 +485,7 @@ func applyForm(form url.Values, t *Type, in *Input) {
 	set(&in.Slug, "slug")
 	set(&in.Excerpt, "excerpt")
 	set(&in.Body, "body")
+	set(&in.Locale, "locale")
 	if vals, ok := form["parent_id"]; ok {
 		in.ParentID = lastNonEmpty(vals) // picker: a "" marker, then the chip
 	}

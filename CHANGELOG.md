@@ -5,6 +5,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+<<<<<<< HEAD
 ### Security
 
 - Refresh `SECURITY.md` supported versions for the 0.10 line (0.10.x / 0.9.x / 0.8.x).
@@ -13,6 +14,12 @@ All notable changes to GoRun are recorded here. The format follows
   customer `/start` on loopback only (alongside admin, API, MCP, accounts and checkout).
 - Redact locale-prefixed magic-login paths (`/en/auth/magic/…`, `/ar/auth/magic/…`) in
   request logs the same way as `/auth/magic/…`.
+=======
+### Content locale follows the editor, not only the site default
+
+- New content defaults to the request/admin UI locale when one is present, instead of always inheriting `site.locale`. An English admin drafting on an Arabic-default site stores `en` unless they choose otherwise.
+- The create editor shows an explicit **Content language** picker (defaults to the admin chrome language). REST/MCP create without `locale` follows the same request-locale-then-site-locale rule.
+>>>>>>> c765f2c (fix(content): default new content locale to admin chrome)
 
 ### Changed
 
