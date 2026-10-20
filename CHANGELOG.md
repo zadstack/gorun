@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Documentation
+
+- Refresh the root README: concise product framing, quick start, identity themes
+  versus pattern plugins, grant-scoped canvas reads, and a lightweight animated
+  SVG hero (`assets/branding/readme-hero.svg`).
+
 ### Pattern plugins (site layouts)
 
 - Adds a declarative **pattern** layer (`patterns/`, `internal/pattern`, `pkg/patternkit`) so opinionated page layouts sit above theme identity and below site overrides (`draft → override → pattern → theme`).
