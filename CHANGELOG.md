@@ -10,7 +10,7 @@ All notable changes to GoRun are recorded here. The format follows
 ### Reviewed canvas workflow suggestions
 
 - Add optional workflow suggestions to the canvas list using the existing writing AI configuration. Show the recipient provider, model and host, plus the exact instructions and site-context prompt, before a separate approval and confirmation. Previewing never contacts the provider.
-- Bind each expiring, owner-scoped, single-use review to the actual configuration snapshot and revision. Editing and restoring settings cannot revive old approval; a changed context, destination or current permission requires a fresh review. Discard output if authority or configuration changes during the request.
+- Bind each expiring, owner-scoped, single-use review to the actual configuration snapshot and revision. Editing and restoring settings cannot revive old approval. A changed context or writing configuration requires a fresh review. Recheck the active user’s current writing permission before generation and accepting output; discard output if that permission is lost, or context or configuration changes.
 - Use bounded, race-safe caches and idempotent Apply to create private boards. Suggested boards start without a bound executor, enabled schedule, grants or automatic execution. Existing canvas search, presets and private templates remain available.
 
 ### Honest extension installation methods
