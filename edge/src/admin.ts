@@ -127,10 +127,27 @@ async function editor(c: Context,id: string,lang: string) {
   return page(lang,tr(lang,'Edit content','تحرير المحتوى'),`<p class="muted">${tr(lang,'Saving a draft keeps the current public article unchanged. Plain text only. Review is required before publication.','حفظ المسودة لا يغيّر النسخة العامة. النص عادي فقط، وتلزم المراجعة قبل النشر.')}</p>${state}${stale?`<p class="warning">${tr(lang,'The public version changed. Discard this draft before starting from the current version.','تغيّرت النسخة العامة. تجاهل المسودة قبل البدء من النسخة الحالية.')}</p>`:''}<div class="editor"><form class="panel" method="post" action="/admin/save?lang=${lang}">${fields}<label>${tr(lang,'Title','العنوان')}<input name="title" value="${e(b.title)}" maxlength="200" required></label><label>${tr(lang,'Slug','المسار')}<input name="slug" value="${e(b.slug)}" maxlength="120" required></label><label>${tr(lang,'Type','النوع')}<select name="type"><option value="post"${b.type==='post'?' selected':''}>Post / مقال</option><option value="page"${b.type==='page'?' selected':''}>Page / صفحة</option></select></label><label>${tr(lang,'Language','اللغة')}<select name="locale"><option value="en"${b.locale==='en'?' selected':''}>English</option><option value="ar"${b.locale==='ar'?' selected':''}>العربية</option></select></label><label>${tr(lang,'Summary','الملخص')}<input name="excerpt" value="${e(b.excerpt)}" maxlength="600"></label><label>${tr(lang,'Body','المحتوى')}<textarea name="body_text" maxlength="100000">${e(b.body_text)}</textarea></label><button${stale?' disabled':''}>${tr(lang,'Save draft','حفظ المسودة')}</button></form><aside class="panel">${aside}</aside></div>`,c,'edit',`/admin/edit?id=${encodeURIComponent(id)}`);
 }
 interface ContentRow { id: string; title: string|null; status: string; type: string|null; locale: string|null; has_draft: number }
+const contentPageSize=100,contentScanPages=40;
 async function contentList(c: Context,lang: string,url: URL) {
   const filters=listFilters(url);if(!filters) return fail(lang,'Invalid content filters',400);
-  const rows=await c.env.DB.prepare(`SELECT id,title,status,type,locale,has_draft FROM (SELECT id,title,status,type,locale,EXISTS(SELECT 1 FROM edge_drafts d WHERE d.site_id=c.site_id AND d.id=c.id) has_draft FROM edge_content c WHERE site_id=?1 UNION ALL SELECT id,json_extract(body_json,'$.title'),'draft',json_extract(body_json,'$.type'),json_extract(body_json,'$.locale'),1 FROM edge_drafts d WHERE site_id=?1 AND NOT EXISTS(SELECT 1 FROM edge_content c WHERE c.site_id=d.site_id AND c.id=d.id)) WHERE (?2='' OR (?2='draft' AND (status='draft' OR has_draft=1)) OR (?2<>'draft' AND status=?2)) AND (?3='' OR locale=?3) AND (?4='' OR instr(lower(COALESCE(title,'')||' '||COALESCE(type,'')),lower(?4))>0) ORDER BY title LIMIT 100`).bind(c.env.SITE_ID,filters.status,filters.locale,filters.q).all<ContentRow>();
-  const visible=rows.results;
+  const query=c.env.DB.prepare(`SELECT id,title,status,type,locale,has_draft FROM (SELECT id,title,status,type,locale,EXISTS(SELECT 1 FROM edge_drafts d WHERE d.site_id=c.site_id AND d.id=c.id) has_draft FROM edge_content c WHERE site_id=?1 UNION ALL SELECT id,json_extract(body_json,'$.title'),'draft',json_extract(body_json,'$.type'),json_extract(body_json,'$.locale'),1 FROM edge_drafts d WHERE site_id=?1 AND NOT EXISTS(SELECT 1 FROM edge_content c WHERE c.site_id=d.site_id AND c.id=d.id)) WHERE (?2='' OR (?2='draft' AND (status='draft' OR has_draft=1)) OR (?2<>'draft' AND status=?2)) AND (?3='' OR locale=?3) AND (?4=0 OR COALESCE(title,'')>?5 OR (COALESCE(title,'')=?5 AND id>?6)) ORDER BY COALESCE(title,''),id LIMIT ?7`);
+  // SQLite lower() folds ASCII only. Scan bounded pages with the original
+  // Unicode-aware, literal substring match, and stop after 100 matches.
+  const folded=filters.q.toLocaleLowerCase(),visible:ContentRow[]=[];
+  let after:ContentRow|undefined,complete=false;
+  for(let i=0;i<contentScanPages;i++) {
+    const rows=await query.bind(c.env.SITE_ID,filters.status,filters.locale,after?1:0,after?.title??'',after?.id??'',contentPageSize+1).all<ContentRow>();
+    const candidates=rows.results.slice(0,contentPageSize);
+    for(const row of candidates) {
+      if(`${row.title??''} ${row.type??''}`.toLocaleLowerCase().includes(folded))visible.push(row);
+      if(visible.length===contentPageSize)break;
+    }
+    if(visible.length===contentPageSize||rows.results.length<=contentPageSize){complete=true;break;}
+    after=candidates[candidates.length-1];
+  }
+  // Leave D1 query-budget headroom for authentication. Never present a partial
+  // scan as a complete empty list or silently omit the remaining matches.
+  if(!complete)return fail(lang,tr(lang,'Search scan limit reached. Narrow the status or language filter.','بلغ البحث حد الفحص. ضيّق التصفية حسب الحالة أو اللغة.'),503);
   const published=visible.filter(v=>v.status==='published').length,drafts=visible.filter(v=>v.status==='draft'||v.has_draft).length;
   const tabs=['',tr(lang,'All','الكل'),'published',tr(lang,'Published','منشور'),'draft',tr(lang,'Drafts','مسودات'),'private',tr(lang,'Private','خاص')];
   let nav='';for(let i=0;i<tabs.length;i+=2){const active=filters.status===tabs[i];nav+=`<a class="${active?'is-active':''}" href="${e(withLang(contentQuery(tabs[i],filters.locale,filters.q),lang))}"${active?' aria-current="page"':''}>${tabs[i+1]}</a>`;}
@@ -139,12 +156,13 @@ async function contentList(c: Context,lang: string,url: URL) {
   const table=`<div class="panel table-wrap"><table><thead><tr><th>${tr(lang,'Title','العنوان')}</th><th>${tr(lang,'Type','النوع')}</th><th>${tr(lang,'Language','اللغة')}</th><th>${tr(lang,'State','الحالة')}</th></tr></thead><tbody>${visible.map(v=>`<tr><td><a href="/admin/edit?id=${encodeURIComponent(v.id)}&amp;lang=${lang}">${e(v.title)||tr(lang,'Untitled','بدون عنوان')}</a></td><td>${e(v.type)}</td><td>${e(v.locale)}</td><td>${badge(lang,v.status)}${v.has_draft&&v.status!=='draft'?' '+badge(lang,'draft'):''}</td></tr>`).join('')||`<tr><td colspan="4">${tr(lang,'No content matches these filters.','لا يوجد محتوى يطابق هذه التصفية.')}</td></tr>`}</tbody></table></div>`;
   return page(lang,tr(lang,'Content','المحتوى'),`<nav class="tabs" aria-label="${tr(lang,'Status','الحالة')}">${nav}</nav>${form}<div class="stats"><article class="stat"><b>${visible.length}</b><span class="muted">${tr(lang,'Items','عناصر')}</span></article><article class="stat"><b>${published}</b><span class="muted">${tr(lang,'Published','منشور')}</span></article><article class="stat"><b>${drafts}</b><span class="muted">${tr(lang,'Drafts','مسودات')}</span></article></div>${cap}${table}`,c,'content',contentQuery(filters.status,filters.locale,filters.q),`<a class="admin-primary-button" href="/admin/edit?lang=${lang}">${tr(lang,'New content','محتوى جديد')}</a>`);
 }
-interface ManagerRow { id: string; label: string; key_hint: string; primary_manager: number; created_at: string }
+interface ManagerRow { id: string; label: string; key_hint: string; primary_manager: number; created_at: string; key_matches: number }
 function managerLabel(raw: string|null) {const label=(raw??'').trim()||'GoRun';return label.length<=80&&!/[\u0000-\u001f<>]/.test(label)?label:null;}
 async function managersView(c: Context,r: Request,lang: string) {
   const raw=readCookie(r,cookieName(c,'manager'));
-  const shown=/^[A-Za-z0-9_-]{43}$/.test(raw)?raw:'';
-  const rows=await c.env.DB.prepare('SELECT id,label,key_hint,primary_manager,created_at FROM edge_managers WHERE site_id=? ORDER BY primary_manager DESC,created_at').bind(c.env.SITE_ID).all<ManagerRow>();
+  const candidateHash=/^[A-Za-z0-9_-]{43}$/.test(raw)?await managerHash(c.env.SITE_ID,raw):'';
+  const rows=await c.env.DB.prepare('SELECT id,label,key_hint,primary_manager,created_at,CASE WHEN primary_manager=1 AND key_hash=?2 THEN 1 ELSE 0 END key_matches FROM edge_managers WHERE site_id=?1 ORDER BY primary_manager DESC,created_at').bind(c.env.SITE_ID,candidateHash).all<ManagerRow>();
+  const shown=rows.results.some(v=>v.key_matches===1)?raw:'';
   const hasPrimary=rows.results.some(v=>v.primary_manager===1);
   const once=shown?`<section class="warning"><p>${tr(lang,'Copy this primary key into GoRun → Settings → Edge. It is shown once and is not stored on this page after you leave.','انسخ هذا المفتاح الأساسي إلى GoRun ← الإعدادات ← Edge. يظهر مرة واحدة ولا يبقى في هذه الصفحة بعد المغادرة.')}</p><p class="key-once" data-manager-key="${e(shown)}">${e(shown)}</p></section>`:'';
   const create=hasPrimary?'':`<form class="panel" method="post" action="/admin/managers/create?lang=${lang}">${hidden(c)}<label>${tr(lang,'Label','الاسم')}<input name="label" maxlength="80" value="GoRun" required></label><button>${tr(lang,'Create GoRun key','إنشاء مفتاح GoRun')}</button></form>`;
@@ -187,7 +205,9 @@ async function managerWrite(c: Context,path: string,f: URLSearchParams,lang: str
     audit(c,'manager.revoked',id,'changes()=1'),
   ]);
   if(!results[0].meta.changes) return fail(lang,'Primary manager changed; reload',409);
-  return redirect('/admin/managers?lang='+lang);
+  const out=redirect('/admin/managers?lang='+lang);
+  out.headers.append('set-cookie',cookie(c,'manager','',0));
+  return out;
 }
 export async function admin(r: Request,env: AdminEnv): Promise<Response> {
   const lang=language(r);let c: Context|null;try{c=await context(r,env);}catch{return reply('Unavailable',503);}if(!c)return reply('Not found',404);
@@ -214,7 +234,7 @@ export async function admin(r: Request,env: AdminEnv): Promise<Response> {
     if(path==='/admin') return contentList(c,lang,new URL(r.url));
     return reply('Not found',404);
   }
-  if(path==='/admin/logout') {await logout(c);const out=redirect('/admin/login?lang='+lang);out.headers.append('set-cookie',cookie(c,'session','',0));return out;}
+  if(path==='/admin/logout') {await logout(c);const out=redirect('/admin/login?lang='+lang);out.headers.append('set-cookie',cookie(c,'session','',0));out.headers.append('set-cookie',cookie(c,'manager','',0));return out;}
   if(path.startsWith('/admin/managers/')) return managerWrite(c,path,f!,lang);
   const id=f!.get('id')??'',dv=version(f!.get('draft_version')),sv=version(f!.get('source_version'));
   if(!idPattern.test(id)||dv===null||sv===null)return fail(lang,'Invalid content version',400);

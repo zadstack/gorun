@@ -38,12 +38,35 @@ func TestEdgeSettingsEncryptKeyAndKeepBlank(t *testing.T) {
 	_, page = s.do("GET", "/admin/settings/edge", nil)
 	mustContain(t, page, "https://edge.example", "••••GHIJ", "Edge manager")
 	mustNotContain(t, page, edgeManagerKey, enc)
+	checked := map[string]string{"edge.manager_id": "manager-1", "edge.manager_label": "Checked manager", "edge.manager_site": "demo", "edge.checked_at": "2026-10-21T12:00:00Z"}
+	for key, value := range checked {
+		if err := s.app.Deps.Settings.Set(ctx, key, value); err != nil {
+			t.Fatal(err)
+		}
+	}
 	form.Set("key", "")
 	if resp, page = s.post("/admin/settings/edge", form); resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("blank key: %d\n%s", resp.StatusCode, page)
 	}
 	if got := s.app.Deps.Settings.GetString(ctx, "edge.manager_key", ""); got != enc {
 		t.Fatalf("blank key replaced the stored key")
+	}
+	for key, want := range checked {
+		if got := s.app.Deps.Settings.GetString(ctx, key, ""); got != want {
+			t.Fatalf("unchanged connection discarded %s", key)
+		}
+	}
+	form.Set("origin", "https://new.example")
+	if resp, page = s.post("/admin/settings/edge", form); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("change origin: %d\n%s", resp.StatusCode, page)
+	}
+	if got := s.app.Deps.Settings.GetString(ctx, "edge.manager_key", ""); got != enc {
+		t.Fatal("origin-only change replaced the key")
+	}
+	for key := range checked {
+		if got := s.app.Deps.Settings.GetString(ctx, key, ""); got != "" {
+			t.Fatalf("changed connection retained old %s", key)
+		}
 	}
 	var meta string
 	if err := s.app.Deps.DB.QueryRow(`SELECT meta_json FROM audit_log WHERE action = 'settings.edge' ORDER BY id DESC LIMIT 1`).Scan(&meta); err != nil {
