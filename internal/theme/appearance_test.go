@@ -198,3 +198,66 @@ func TestAppearanceSafeBrandAliasesExcludeSemanticVariants(t *testing.T) {
 	assertAppearanceValue(t, report.Colors["accent"], "#123456", "theme:default:css-token:--zs-accent")
 	assertAppearanceValue(t, report.Colors["text"], "#111", "theme:default:css-token:--zs-ink")
 }
+
+func TestAppearanceRejectsInvalidThemeIdentifiersWithoutDisclosure(t *testing.T) {
+	for _, invalid := range []string{"/srv/private/client-themes/acme", "../private-client-theme", "private client theme"} {
+		t.Run(invalid, func(t *testing.T) {
+			root := t.TempDir()
+			writeTheme(t, root, "default", "", map[string]string{"templates/index.html": "x"})
+			e := newEnv(t, root)
+			e.setting(SettingTheme, invalid)
+			report := e.svc.Appearance(context.Background())
+			encoded, err := json.Marshal(report)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(string(encoded), invalid) {
+				t.Fatalf("invalid identifier leaked in public appearance: %s", encoded)
+			}
+			for _, value := range []AppearanceValue{report.Theme.Slug, report.Theme.Name, report.Theme.Version, report.Colors["accent"], report.Fonts["body"]} {
+				if value.Available || value.Value != nil || value.Reason != "invalid_theme_identifier" {
+					t.Fatalf("invalid theme must be explicitly unavailable: %+v", value)
+				}
+			}
+			if stored := e.app.Deps.Settings.GetString(context.Background(), SettingTheme, ""); stored != invalid {
+				t.Fatalf("discovery changed theme setting: %q", stored)
+			}
+		})
+	}
+}
+
+func TestAppearanceMissingValidThemeIdentifierRemainsPublic(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", map[string]string{"templates/index.html": "x"})
+	e := newEnv(t, root)
+	e.setting(SettingTheme, "missing-theme")
+	report := e.svc.Appearance(context.Background())
+	assertAppearanceValue(t, report.Theme.Slug, "missing-theme", "settings:site.theme")
+	if report.Theme.Name.Available || report.Theme.Version.Available || report.Colors["accent"].Available {
+		t.Fatalf("missing valid theme must not acquire metadata: %+v", report.Theme)
+	}
+}
+
+func TestAppearanceEmptyStoredThemeSelectionKeepsSettingsProvenance(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		value any
+	}{{"empty", ""}, {"null", nil}} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeTheme(t, root, "default", "", map[string]string{"templates/index.html": "x"})
+			e := newEnv(t, root)
+			e.setting(SettingTheme, tc.value)
+			report := e.svc.Appearance(context.Background())
+			for _, value := range []AppearanceValue{report.Theme.Slug, report.Theme.Name, report.Theme.Version} {
+				if value.Source != "settings:site.theme" || value.Available || value.Reason != "invalid_theme_identifier" {
+					t.Fatalf("empty stored selection must retain settings provenance: %+v", value)
+				}
+			}
+			var stored any
+			if err := e.app.Deps.Settings.Get(context.Background(), SettingTheme, &stored); err != nil || stored != tc.value {
+				t.Fatalf("discovery changed empty selection: %#v, %v", stored, err)
+			}
+		})
+	}
+}

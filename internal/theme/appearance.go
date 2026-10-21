@@ -77,13 +77,6 @@ func appearanceMissing(source, reason string) AppearanceValue {
 // :where roots used by shipped themes, without claiming to evaluate CSS.
 func (s *service) Appearance(ctx context.Context) AppearanceReport {
 	info := s.Active(ctx)
-	key := info.Slug + "\x00" + info.Name + "\x00" + info.Version
-	s.appearanceMu.Lock()
-	if s.appearance == nil || s.appearance.key != key {
-		s.appearance = &appearanceSnapshot{key: key, report: s.readAppearance(info)}
-	}
-	report := cloneAppearance(s.appearance.report)
-	s.appearanceMu.Unlock()
 	source := "default:site.theme"
 	if s.d.Config.Theme != "" {
 		source = "config:theme"
@@ -92,14 +85,25 @@ func (s *service) Appearance(ctx context.Context) AppearanceReport {
 		var configured string
 		err := s.d.Settings.Get(ctx, SettingTheme, &configured)
 		if err != nil && !errors.Is(err, settings.ErrNotFound) {
-			report.Theme.Slug = appearanceMissing("settings:site.theme", "settings_read_failed")
-			obscureAppearance(&report, "settings:site.theme", "settings_read_failed")
-			return report
+			return unavailableAppearance("settings:site.theme", "settings_read_failed")
 		}
-		if err == nil && configured != "" {
+		if err == nil {
 			source = "settings:site.theme"
 		}
 	}
+	// The loader rejects invalid identifiers, but Active preserves the raw
+	// selection for protected diagnostics. Never expose it as a public slug or
+	// interpolate it into provenance: legacy settings may contain private paths.
+	if !slugRe.MatchString(info.Slug) {
+		return unavailableAppearance(source, "invalid_theme_identifier")
+	}
+	key := info.Slug + "\x00" + info.Name + "\x00" + info.Version
+	s.appearanceMu.Lock()
+	if s.appearance == nil || s.appearance.key != key {
+		s.appearance = &appearanceSnapshot{key: key, report: s.readAppearance(info)}
+	}
+	report := cloneAppearance(s.appearance.report)
+	s.appearanceMu.Unlock()
 	report.Theme.Slug = appearanceKnown(info.Slug, source)
 	if info.Dir == "" || s.d.Settings == nil {
 		return report
@@ -185,10 +189,8 @@ func cloneAppearance(in AppearanceReport) AppearanceReport {
 	return out
 }
 
-func (s *service) readAppearance(info Info) AppearanceReport {
-	source := "theme:" + info.Slug + ":manifest"
+func newAppearanceReport() AppearanceReport {
 	report := AppearanceReport{
-		Theme:  AppearanceTheme{Name: appearanceKnown(info.Name, source), Version: appearanceKnown(info.Version, source)},
 		Colors: map[string]AppearanceValue{}, Fonts: map[string]AppearanceValue{}, ObservedAt: time.Now().UTC(),
 		Limitations: []string{
 			"declared_tokens_not_browser_computed_styles",
@@ -202,6 +204,21 @@ func (s *service) readAppearance(info Info) AppearanceReport {
 	for _, role := range []string{"body", "heading"} {
 		report.Fonts[role] = appearanceMissing("theme:css", "no_supported_declaration")
 	}
+	return report
+}
+
+func unavailableAppearance(source, reason string) AppearanceReport {
+	report := newAppearanceReport()
+	value := appearanceMissing(source, reason)
+	report.Theme = AppearanceTheme{Slug: value, Name: value, Version: value}
+	obscureAppearance(&report, source, reason)
+	return report
+}
+
+func (s *service) readAppearance(info Info) AppearanceReport {
+	report := newAppearanceReport()
+	source := "theme:" + info.Slug + ":manifest"
+	report.Theme = AppearanceTheme{Name: appearanceKnown(info.Name, source), Version: appearanceKnown(info.Version, source)}
 	chain, err := loadChain(s.roots(), info.Slug)
 	if err != nil {
 		report.Limitations = append(report.Limitations, "theme_or_parent_unavailable")

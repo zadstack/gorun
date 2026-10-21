@@ -124,6 +124,8 @@ identity can make effective values ambiguous, which is reported as unavailable. 
 conditional rules, external CSS and arbitrary stylesheet order are not evaluated. File scans are bounded
 and cached for one theme per service; theme activation, cache invalidation or restart refreshes them.
 Settings are read on each request. No external service is required or called by this endpoint.
+Invalid theme identifiers are withheld with `invalid_theme_identifier`; the stored selection is
+preserved and never copied into public values or provenance.
 
 ```sh
 curl https://example.com/api/v1/site/info
