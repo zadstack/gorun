@@ -1,6 +1,6 @@
 import {admin} from './admin.js';
-import type {AdminEnv} from './admin-auth.js';
-/** Read-only GoRun Edge milestone. No Full runtime, manager auth or write API. */
+import {managerHash,type AdminEnv} from './admin-auth.js';
+/** Public read, optional owner admin, and a primary-manager identity check. The check does not write content. */
 interface Env extends AdminEnv {}
 interface Site { id: string; title: string; default_locale: string }
 interface Summary { id: string; type: string; slug: string; locale: string; title: string; excerpt: string; published_at: string }
@@ -45,6 +45,16 @@ function publicMediaKey(key: string, site: string) {
   const prefix=`sites/${site}/public/`;if (!key.startsWith(prefix)) return false;
   const tail=key.slice(prefix.length);
   return tail.length>0&&tail.length<=200&&tail.split('/').every(s=>/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(s)&&s!=='.'&&s!=='..');
+}
+async function managerWhoami(request: Request, env: Env): Promise<Response> {
+  if (request.method!=='GET') return response(null,405,{allow:'GET','content-type':'application/json; charset=utf-8'});
+  const url=new URL(request.url);
+  if (url.search||!env.DB||!siteID.test(env.SITE_ID??'')) return json(url.search?'bad_request':'unavailable',url.search?400:503);
+  const match=/^Bearer ([A-Za-z0-9_-]{43})$/.exec(request.headers.get('authorization')??'');
+  if (!match) return json('unauthorized',401);
+  const row=await env.DB.prepare('SELECT id,label FROM edge_managers WHERE site_id=?1 AND key_hash=?2 AND primary_manager=1').bind(env.SITE_ID,await managerHash(env.SITE_ID,match[1])).first<{id:string;label:string}>();
+  if (!row||row.label.length>80) return json('unauthorized',401);
+  return json({site_id:env.SITE_ID,manager_id:row.id,label:row.label,primary:true});
 }
 async function serve(request: Request, env: Env): Promise<Response> {
   const url=new URL(request.url);
@@ -100,7 +110,7 @@ async function serve(request: Request, env: Env): Promise<Response> {
 export default {
   async fetch(request: Request,env: Env): Promise<Response> {
     let result: Response;
-    try {const p=new URL(request.url).pathname;result=(p==='/admin'||p.startsWith('/admin/'))?await admin(request,env):await serve(request,env);} catch {result=json('unavailable',503);}
+    try {const p=new URL(request.url).pathname;result=p==='/api/v1/manager'?await managerWhoami(request,env):(p==='/admin'||p.startsWith('/admin/'))?await admin(request,env):await serve(request,env);} catch {result=json('unavailable',503);}
     return request.method==='HEAD'?new Response(null,{status:result.status,headers:result.headers}):result;
   },
 } satisfies ExportedHandler<Env>;

@@ -6,5 +6,6 @@
   {{if ne (setting "site.workspace") "simple"}}
   <a href="/admin/settings/ai" {{if eq . "ai"}}aria-current="page" class="px-3 py-2 -mb-px border border-line border-b-panel bg-panel rounded-t font-medium"{{else}}class="px-3 py-2 text-muted hover:text-ink"{{end}}>{{t "admin.settings.tab_ai"}}</a>
   {{end}}
+  <a href="/admin/settings/edge" {{if eq . "edge"}}aria-current="page" class="px-3 py-2 -mb-px border border-line border-b-panel bg-panel rounded-t font-medium"{{else}}class="px-3 py-2 text-muted hover:text-ink"{{end}}>{{t "admin.settings.edge.tab"}}</a>
 </nav>
 {{end}}

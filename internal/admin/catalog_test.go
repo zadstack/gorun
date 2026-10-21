@@ -54,7 +54,7 @@ func TestCatalogCoversAllKeys(t *testing.T) {
 	}
 	used := map[string]bool{}
 	owned := []string{"admin/templates/pages/dashboard.html", "admin/templates/pages/users", "admin/templates/pages/settings/general.html",
-		"admin/templates/pages/settings/mail.html", "admin/templates/pages/settings/ai.html", "admin/templates/pages/settings/workspace.html",
+		"admin/templates/pages/settings/mail.html", "admin/templates/pages/settings/ai.html", "admin/templates/pages/settings/workspace.html", "admin/templates/pages/settings/edge.html",
 		"admin/templates/pages/system", "admin/templates/pages/agents", "admin/templates/partials/dashboard_widget.html",
 		"admin/templates/partials/settings_tabs.html"}
 	for _, root := range owned {

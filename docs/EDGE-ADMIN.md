@@ -37,6 +37,12 @@ Unpublish immediately removes the item from public routes. Discard removes only 
 
 Bodies are plain text, escaped on both public and administration pages. Media administration lists metadata only; it cannot upload or download private objects. Existing public R2 access still requires the fixed site's public namespace, published media metadata, permitted MIME type and size limit.
 
+## Primary manager key
+
+Managers, in the owner admin, has one button that creates the primary key for GoRun Full. The page shows the key once. The database stores only `SHA-256("gorun-edge-manager:v1:<site>:<key>")` and the last four characters. Rotate replaces that hash. Revoke deletes the row. A later visit does not show the key again, and content export does not include it.
+
+`GET /api/v1/manager` with `Authorization: Bearer <key>` returns the site id, manager id, label, and `primary: true`. Any other key, including the owner key, is rejected. GoRun Full saves the origin in settings and the key with `db.Encrypt` (AAD `edge.manager_key`), then the Check connection button calls only that endpoint. The saved page and the audit record do not contain the key. This handshake does not create drafts, publish, or open MCP.
+
 ## Security boundary and limits
 
 Administration requires all of `EDGE_ADMIN_ENABLED=true`, an active owner, an exact `EDGE_ADMIN_ORIGIN` and a random `EDGE_ADMIN_SECRET` (43–86 base64url characters). Never publish the signing secret. The default is off. An arbitrary Host or forwarded header cannot change the permitted origin. Remote cookies use Secure, HttpOnly, SameSite=Strict and the `__Host-` prefix. Loopback-only local testing uses non-Secure `edge_` cookies through explicit `EDGE_ADMIN_LOCAL=true`.
