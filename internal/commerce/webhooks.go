@@ -271,11 +271,9 @@ func (s *service) onInvoice(ctx context.Context, tx *sql.Tx, eventID, typ string
 	if !found {
 		return nil, nil
 	}
-	status := row.Status
+	status := "past_due"
 	if typ == evInvoicePaid {
 		status = "active"
-	} else {
-		status = "past_due"
 	}
 	sub := stripeSubscription{ID: row.StripeSubscriptionID, Customer: inv.Customer, Status: status, Currency: inv.Currency,
 		Metadata: map[string]string{"account_id": row.AccountID, "plan": row.Plan, "site_id": row.SiteID, "order_id": row.OrderID}}
