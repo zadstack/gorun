@@ -17,24 +17,28 @@ const (
 
 // snapshot is the product as sold, frozen on the order.
 type snapshot struct {
-	Intake       map[string]string `json:"intake,omitempty"`
-	IntakeSchema []IntakeField     `json:"intake_schema,omitempty"`
-	Kind         string            `json:"kind"`
-	DigitalFile  string            `json:"digital_file,omitempty"`
-	DownloadDays int               `json:"download_days"`
-	ID           string            `json:"id"`
-	Slug         string            `json:"slug"`
-	Name         string            `json:"name"`
-	PlanCode     string            `json:"plan_code"`
-	ServerID     string            `json:"server_id"`
-	AccessMonths int               `json:"access_months"`
-	PriceMinor   int64             `json:"price_minor"`
-	Currency     string            `json:"currency"`
+	Intake        map[string]string `json:"intake,omitempty"`
+	IntakeSchema  []IntakeField     `json:"intake_schema,omitempty"`
+	Kind          string            `json:"kind"`
+	DigitalFile   string            `json:"digital_file,omitempty"`
+	DownloadDays  int               `json:"download_days"`
+	ID            string            `json:"id"`
+	Slug          string            `json:"slug"`
+	Name          string            `json:"name"`
+	PlanCode      string            `json:"plan_code"`
+	ServerID      string            `json:"server_id"`
+	AccessMonths  int               `json:"access_months"`
+	PriceMinor    int64             `json:"price_minor"`
+	Currency      string            `json:"currency"`
+	BillingMode   string            `json:"billing_mode,omitempty"`
+	Interval      string            `json:"interval,omitempty"`
+	StripePriceID string            `json:"stripe_price_id,omitempty"`
+	TrialDays     int               `json:"trial_days,omitempty"`
 }
 
 func snapshotOf(p *Product) snapshot {
 	return snapshot{Kind: p.Kind, DigitalFile: p.DigitalFile, DownloadDays: p.DownloadDays, ID: p.ID, Slug: p.Slug, Name: p.Name, PlanCode: p.PlanCode, ServerID: p.ServerID,
-		AccessMonths: p.AccessMonths, PriceMinor: p.PriceMinor, Currency: p.Currency}
+		AccessMonths: p.AccessMonths, PriceMinor: p.PriceMinor, Currency: p.Currency, BillingMode: p.BillingMode, Interval: p.Interval, StripePriceID: p.StripePriceID, TrialDays: p.TrialDays}
 }
 
 type queryer interface {

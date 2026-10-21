@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/stripe/stripe-go/v82/webhook"
 
@@ -25,6 +26,12 @@ const (
 	evCheckoutAsyncFailed  = "checkout.session.async_payment_failed"
 	evCheckoutExpired      = "checkout.session.expired"
 	evChargeRefunded       = "charge.refunded"
+	evSubCreated           = "customer.subscription.created"
+	evSubUpdated           = "customer.subscription.updated"
+	evSubDeleted           = "customer.subscription.deleted"
+	evSubTrialWillEnd      = "customer.subscription.trial_will_end"
+	evInvoicePaid          = "invoice.paid"
+	evInvoicePaymentFailed = "invoice.payment_failed"
 )
 
 type sessionObject struct {
@@ -71,7 +78,14 @@ type paidEvent struct {
 //
 // Other event types are recorded and ignored.
 func (s *service) HandleStripeEvent(ctx context.Context, payload []byte, sigHeader string) error {
+	return s.handleStripeEvent(ctx, payload, sigHeader, "")
+}
+
+func (s *service) handleStripeEvent(ctx context.Context, payload []byte, sigHeader, mode string) error {
 	secret := s.webhookSecret(ctx)
+	if mode == "test" || mode == "live" {
+		secret = s.webhookSecretFor(ctx, mode)
+	}
 	if secret == "" {
 		return ErrStripeNotConfigured
 	}
@@ -86,6 +100,7 @@ func (s *service) HandleStripeEvent(ctx context.Context, payload []byte, sigHead
 		return fmt.Errorf("%w: event without id or data", ErrInvalidSignature)
 	}
 	var paid *paidEvent
+	var hooks []hookEmit
 	err = db.InTx(ctx, s.db, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(ctx, `INSERT INTO stripe_events (id, type, received_at, payload_json) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
 			ev.ID, string(ev.Type), s.nowString(), string(payload))
@@ -104,6 +119,12 @@ func (s *service) HandleStripeEvent(ctx context.Context, payload []byte, sigHead
 			err = s.closeSession(ctx, tx, ev.ID, ev.Data.Raw, OrderFailed, "commerce.order.payment_failed")
 		case evChargeRefunded:
 			err = s.markRefunded(ctx, tx, ev.ID, ev.Data.Raw)
+		case evSubCreated, evSubUpdated, evSubDeleted:
+			hooks, err = s.onSubscription(ctx, tx, ev.ID, string(ev.Type), ev.Data.Raw)
+		case evSubTrialWillEnd:
+			err = s.onTrialWillEnd(ctx, tx, ev.Data.Raw)
+		case evInvoicePaid, evInvoicePaymentFailed:
+			hooks, err = s.onInvoice(ctx, tx, ev.ID, string(ev.Type), ev.Data.Raw)
 		}
 		if err != nil {
 			return err
@@ -117,7 +138,161 @@ func (s *service) HandleStripeEvent(ctx context.Context, payload []byte, sigHead
 	if paid != nil {
 		s.d.Hooks.Emit(ctx, HookOrderPaid, paid)
 	}
+	for _, h := range hooks {
+		s.d.Hooks.Emit(ctx, h.name, h.payload)
+	}
 	return nil
+}
+
+type stripeSubscription struct {
+	ID                string            `json:"id"`
+	Status            string            `json:"status"`
+	CancelAtPeriodEnd bool              `json:"cancel_at_period_end"`
+	CurrentPeriodEnd  int64             `json:"current_period_end"`
+	TrialEnd          int64             `json:"trial_end"`
+	Currency          string            `json:"currency"`
+	Metadata          map[string]string `json:"metadata"`
+	CustomerRaw       json.RawMessage   `json:"customer"`
+	Items             struct {
+		Data []struct {
+			CurrentPeriodEnd int64 `json:"current_period_end"`
+			Price            struct {
+				ID       string `json:"id"`
+				Currency string `json:"currency"`
+			} `json:"price"`
+		} `json:"data"`
+	} `json:"items"`
+	Customer string `json:"-"`
+}
+
+func (s stripeSubscription) periodEnd() int64 {
+	if s.CurrentPeriodEnd > 0 {
+		return s.CurrentPeriodEnd
+	}
+	if len(s.Items.Data) > 0 {
+		return s.Items.Data[0].CurrentPeriodEnd
+	}
+	return 0
+}
+
+func (s stripeSubscription) priceID() string {
+	if len(s.Items.Data) > 0 {
+		return s.Items.Data[0].Price.ID
+	}
+	return ""
+}
+
+type stripeInvoice struct {
+	ID               string          `json:"id"`
+	Status           string          `json:"status"`
+	HostedInvoiceURL string          `json:"hosted_invoice_url"`
+	InvoicePDF       string          `json:"invoice_pdf"`
+	Currency         string          `json:"currency"`
+	AmountPaid       int64           `json:"amount_paid"`
+	AmountDue        int64           `json:"amount_due"`
+	CustomerRaw      json.RawMessage `json:"customer"`
+	SubscriptionRaw  json.RawMessage `json:"subscription"`
+	Customer         string          `json:"-"`
+	Subscription     string          `json:"-"`
+}
+
+func flexID(raw json.RawMessage) string {
+	if len(raw) == 0 || string(raw) == "null" {
+		return ""
+	}
+	var id string
+	if json.Unmarshal(raw, &id) == nil {
+		return id
+	}
+	var obj struct {
+		ID string `json:"id"`
+	}
+	_ = json.Unmarshal(raw, &obj)
+	return obj.ID
+}
+
+func (s *service) onSubscription(ctx context.Context, tx *sql.Tx, eventID, typ string, raw json.RawMessage) ([]hookEmit, error) {
+	var sub stripeSubscription
+	if err := json.Unmarshal(raw, &sub); err != nil {
+		return nil, fmt.Errorf("commerce: decode subscription: %w", err)
+	}
+	sub.Customer = flexID(sub.CustomerRaw)
+	if sub.Currency == "" && len(sub.Items.Data) > 0 {
+		sub.Currency = sub.Items.Data[0].Price.Currency
+	}
+	if typ == evSubDeleted {
+		sub.Status = "canceled"
+	}
+	reason := "subscription"
+	if typ == evSubTrialWillEnd {
+		reason = "trial_will_end"
+	}
+	return s.applySubscription(ctx, tx, eventID, sub, reason)
+}
+
+func (s *service) onTrialWillEnd(ctx context.Context, tx *sql.Tx, raw json.RawMessage) error {
+	var sub stripeSubscription
+	if err := json.Unmarshal(raw, &sub); err != nil {
+		return fmt.Errorf("commerce: decode trial: %w", err)
+	}
+	sub.Customer = flexID(sub.CustomerRaw)
+	row, found, err := s.loadSubscription(ctx, tx, sub.ID)
+	if err != nil || !found {
+		return err
+	}
+	return s.enqueueBillingMail(ctx, tx, row, "trial_ending")
+}
+
+func (s *service) onInvoice(ctx context.Context, tx *sql.Tx, eventID, typ string, raw json.RawMessage) ([]hookEmit, error) {
+	var inv stripeInvoice
+	if err := json.Unmarshal(raw, &inv); err != nil {
+		return nil, fmt.Errorf("commerce: decode invoice: %w", err)
+	}
+	inv.Customer = flexID(inv.CustomerRaw)
+	inv.Subscription = flexID(inv.SubscriptionRaw)
+	row, found, err := s.loadSubscription(ctx, tx, inv.Subscription)
+	if err != nil {
+		return nil, err
+	}
+	customerID := ""
+	if found {
+		customerID = row.CustomerID
+	}
+	if customerID == "" && inv.Customer != "" {
+		_ = tx.QueryRowContext(ctx, `SELECT id FROM customers WHERE stripe_customer_id = ?`, inv.Customer).Scan(&customerID)
+	}
+	subID := ""
+	if found {
+		subID = row.ID
+	}
+	if err := s.saveInvoice(ctx, tx, customerID, subID, inv); err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, nil
+	}
+	status := "past_due"
+	if typ == evInvoicePaid {
+		status = "active"
+	}
+	sub := stripeSubscription{ID: row.StripeSubscriptionID, Customer: inv.Customer, Status: status, Currency: inv.Currency,
+		Metadata: map[string]string{"account_id": row.AccountID, "plan": row.Plan, "site_id": row.SiteID, "order_id": row.OrderID}}
+	if row.CurrentPeriodEnd != "" {
+		if t, err := db.ParseTime(row.CurrentPeriodEnd); err == nil {
+			sub.CurrentPeriodEnd = t.Unix()
+		}
+	}
+	sub.Items.Data = []struct {
+		CurrentPeriodEnd int64 `json:"current_period_end"`
+		Price            struct {
+			ID       string `json:"id"`
+			Currency string `json:"currency"`
+		} `json:"price"`
+	}{{Price: struct {
+		ID       string `json:"id"`
+		Currency string `json:"currency"`
+	}{ID: row.PriceID}}}
+	return s.applySubscription(ctx, tx, eventID, sub, typ)
 }
 
 // sessionOrder resolves the order a checkout session refers to:
@@ -144,9 +319,15 @@ func sessionMismatch(obj sessionObject, o *Order, refOK bool) string {
 		return "metadata.order_id differs from client_reference_id"
 	case o.StripeSessionID != "" && obj.ID != o.StripeSessionID:
 		return "session id differs from the order's session"
-	case obj.Mode != "payment":
+	case obj.Mode == "subscription" && billingModeOf(o) != "subscription":
 		return "mode is not payment"
-	case obj.AmountTotal == nil || *obj.AmountTotal != o.TotalMinor:
+	case obj.Mode == "payment" && billingModeOf(o) == "subscription":
+		return "mode is not subscription"
+	case obj.Mode != "payment" && obj.Mode != "subscription":
+		return "mode is not payment"
+	case obj.Mode == "payment" && (obj.AmountTotal == nil || *obj.AmountTotal != o.TotalMinor):
+		return "amount_total differs from the order total"
+	case obj.Mode == "subscription" && obj.AmountTotal != nil && *obj.AmountTotal != 0 && *obj.AmountTotal != o.TotalMinor:
 		return "amount_total differs from the order total"
 	case !strings.EqualFold(obj.Currency, o.Currency):
 		return "currency differs from the order currency"
@@ -161,7 +342,11 @@ func (s *service) markPaid(ctx context.Context, tx *sql.Tx, eventID string, raw 
 	if err := json.Unmarshal(raw, &obj); err != nil {
 		return nil, fmt.Errorf("commerce: decode checkout session: %w", err)
 	}
-	if obj.PaymentStatus != "paid" {
+	if obj.Mode == "subscription" {
+		if obj.PaymentStatus != "paid" && obj.PaymentStatus != "no_payment_required" {
+			return nil, nil
+		}
+	} else if obj.PaymentStatus != "paid" {
 		return nil, nil // e.g. delayed payment methods: wait for async_payment_succeeded
 	}
 	orderID, refOK := sessionOrder(obj)
@@ -193,8 +378,12 @@ func (s *service) markPaid(ctx context.Context, tx *sql.Tx, eventID string, raw 
 	if o.Status != OrderPending {
 		// A matching paid completion for a closed order: money was taken
 		// that nothing will provision. Flag it for an admin.
+		var amount any
+		if obj.AmountTotal != nil {
+			amount = *obj.AmountTotal
+		}
 		s.audit.RecordTx(ctx, tx, "commerce.order.paid_closed", "order", o.ID, map[string]any{"event": eventID, "session": obj.ID,
-			"status": o.Status, "payment_intent": obj.PaymentIntent, "amount_total": *obj.AmountTotal, "currency": obj.Currency})
+			"status": o.Status, "payment_intent": obj.PaymentIntent, "amount_total": amount, "currency": obj.Currency})
 		s.log.Warn("commerce: paid completion for a non-pending order", "order", o.ID, "status", o.Status, "session", obj.ID)
 		return nil, nil
 	}
@@ -219,10 +408,8 @@ func (s *service) markPaid(ctx context.Context, tx *sql.Tx, eventID string, raw 
 	if n, _ := res.RowsAffected(); n != 1 {
 		return nil, nil
 	}
-	if obj.Customer != "" {
-		if _, err := tx.ExecContext(ctx, `UPDATE customers SET stripe_customer_id = ? WHERE id = ?`, obj.Customer, o.CustomerID); err != nil {
-			return nil, fmt.Errorf("commerce: store stripe customer: %w", err)
-		}
+	if err := s.rememberStripeCustomer(ctx, tx, o.CustomerID, obj.Customer); err != nil {
+		return nil, err
 	}
 	if o.snapshot().Kind == "" || o.snapshot().Kind == ProductProvisioning {
 		key := JobProvision + ":" + o.ID
@@ -346,14 +533,39 @@ func (s *service) enqueueSuspendTx(ctx context.Context, tx *sql.Tx, entID, reaso
 	return err
 }
 
-// handleStripeWebhook is POST /webhooks/stripe.
+func testSubscriptionEvent(secret string, now time.Time) ([]byte, string) {
+	ev := map[string]any{"id": "evt_test_" + now.UTC().Format("20060102150405"), "object": "event", "api_version": "2025-03-31.basil",
+		"type": evSubUpdated, "created": now.Unix(), "livemode": false,
+		"data": map[string]any{"object": map[string]any{"id": "sub_test_event", "object": "subscription", "status": "active",
+			"customer": "cus_test_event", "metadata": map[string]string{}}}}
+	body, _ := json.Marshal(ev)
+	sp := webhook.GenerateTestSignedPayload(&webhook.UnsignedPayload{Payload: body, Secret: secret, Timestamp: now})
+	return body, sp.Header
+}
+
+func billingModeOf(o *Order) string {
+	if o.snapshot().BillingMode == "subscription" {
+		return "subscription"
+	}
+	return "payment"
+}
+
+// handleStripeWebhook is POST /webhooks/stripe (the active test/live secret).
 func (h *publicHandlers) handleStripeWebhook(w http.ResponseWriter, r *http.Request) {
+	h.finishStripeWebhook(w, r, "")
+}
+
+func (h *publicHandlers) handleStripeWebhookMode(mode string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) { h.finishStripeWebhook(w, r, mode) }
+}
+
+func (h *publicHandlers) finishStripeWebhook(w http.ResponseWriter, r *http.Request, mode string) {
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxWebhookBody))
 	if err != nil {
 		http.Error(w, "payload too large", http.StatusRequestEntityTooLarge)
 		return
 	}
-	err = h.svc.HandleStripeEvent(r.Context(), body, r.Header.Get("Stripe-Signature"))
+	err = h.svc.handleStripeEvent(r.Context(), body, r.Header.Get("Stripe-Signature"), mode)
 	switch {
 	case err == nil:
 		w.WriteHeader(http.StatusOK)

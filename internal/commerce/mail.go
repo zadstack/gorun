@@ -72,6 +72,20 @@ func accessEmail(b *i18n.Bundle, locale string, m accessMail) (subject, html, te
 	return subject, html, text
 }
 
+// billingEmail is a payment reminder, trial warning or suspension notice.
+func billingEmail(b *i18n.Bundle, locale, kind, plan, link string) (subject, html, text string) {
+	prefix := "commerce.mail." + kind
+	subject = tr(b, locale, prefix+".subject", plan)
+	html, text = renderMail(b, locale, mailParts{
+		Title:  tr(b, locale, prefix+".title"),
+		Lines:  []string{tr(b, locale, prefix+".body", plan)},
+		Button: tr(b, locale, prefix+".button"),
+		Footer: tr(b, locale, "commerce.mail.footer"),
+		Link:   link,
+	})
+	return subject, html, text
+}
+
 // loginEmail answers a /account sign-in request.
 func loginEmail(b *i18n.Bundle, locale, link string) (subject, html, text string) {
 	subject = tr(b, locale, "commerce.mail.login.subject")

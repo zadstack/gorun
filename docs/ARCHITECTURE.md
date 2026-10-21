@@ -278,6 +278,9 @@ Hooks fired by the core (from `Do`/`Apply`/`Emit` call sites under `internal/`):
 | `system.health.checks` | `Apply` | admin | the System Health check list (commerce, wpmigrate, mcp and ext add checks) |
 | `commerce.order.paid` | `Emit` | commerce | the order |
 | `commerce.entitlement.activated` | `Emit` | commerce | the entitlement |
+| `subscription.activated` | `Emit` | commerce | subscription is `active` or `trialing`; saas turns matching entitlements on |
+| `subscription.past_due` | `Emit` | commerce | payment failed and access is in the grace window |
+| `subscription.canceled` | `Emit` | commerce | subscription canceled, unpaid, or suspended after grace |
 | `migration.item.imported` | `Emit` | wpmigrate | the imported item summary |
 
 `admin.nav` and `api.response`, named in the design spec, are not fired in v0.1. System Health lists the

@@ -21,6 +21,24 @@
     </form>
   {{else}}
     {{with .Extra.customer}}<p class="mt-1 text-muted" dir="ltr">{{.Email}}</p>{{end}}
+    {{if .Extra.billing_portal}}
+    <form method="post" action="/account/billing-portal" class="mt-4">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="h-10 rounded border border-line bg-panel px-4 font-medium hover:border-line-strong">{{t "commerce.account.billing_portal"}}</button>
+    </form>
+    {{end}}
+    {{if .Extra.invoices}}
+    <h2 class="mt-6 text-base font-bold">{{t "commerce.account.invoices"}}</h2>
+    <ul class="mt-2 space-y-2">
+      {{range .Extra.invoices}}
+      <li class="rounded border border-line bg-panel px-4 py-3 text-sm" dir="ltr">
+        <span>{{.Status}}</span> · {{money .AmountMinor .Currency}}
+        {{if .HostedInvoiceURL}} · <a href="{{.HostedInvoiceURL}}" class="text-blue hover:text-blue-hover">{{t "commerce.account.invoice_view"}}</a>{{end}}
+        {{if .PDFURL}} · <a href="{{.PDFURL}}" class="text-blue hover:text-blue-hover">{{t "commerce.account.invoice_pdf"}}</a>{{end}}
+      </li>
+      {{end}}
+    </ul>
+    {{end}}
     <ul class="mt-6 space-y-3">
       {{range .Extra.entitlements}}
       <li class="rounded border border-line bg-panel p-5" data-status="{{.Status}}">

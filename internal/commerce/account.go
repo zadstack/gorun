@@ -32,18 +32,60 @@ func (h *publicHandlers) account(w http.ResponseWriter, r *http.Request) {
 		ents = []Entitlement{}
 	}
 	orders := []Order{}
+	invoices := []Invoice{}
+	portal := false
 	if cid, err := h.svc.customerIDForUser(r.Context(), u.ID); err == nil {
 		orders, _, _ = h.svc.Orders(r.Context(), ListQuery{CustomerID: cid, PerPage: 100})
+		invoices, _ = h.svc.customerInvoices(r.Context(), cid)
+		if stripeID, err := h.svc.stripeCustomerID(r.Context(), cid); err == nil && stripeID != "" {
+			portal = true
+		}
 	}
 	items := map[string][]OrderItem{}
 	for _, o := range orders {
 		items[o.ID], _ = h.svc.orderItems(r.Context(), &o)
 	}
 	h.render(w, r, kindAccount, "", http.StatusOK, map[string]any{
-		"orders": orders, "order_items": items,
+		"orders": orders, "order_items": items, "invoices": invoices, "billing_portal": portal,
 		"entitlements": ents, "customer": u, "account_error": accountError(r),
 		"title": h.svc.d.I18n.T(i18n.Locale(r.Context()), "commerce.account.title"),
 	})
+}
+
+// billingPortal is POST /account/billing-portal. Stripe hosts upgrade,
+// cancel and payment-method changes; proration is the portal default.
+func (h *publicHandlers) billingPortal(w http.ResponseWriter, r *http.Request) {
+	u := auth.UserFromContext(r.Context())
+	if u == nil {
+		http.Redirect(w, r, "/account", http.StatusSeeOther)
+		return
+	}
+	if !h.limiter.allow("portal:"+u.ID, checkoutLimit, limitWindow) {
+		http.Redirect(w, r, "/account?error=rate", http.StatusSeeOther)
+		return
+	}
+	cid, err := h.svc.customerIDForUser(r.Context(), u.ID)
+	if err != nil {
+		http.Redirect(w, r, "/account?error=open", http.StatusSeeOther)
+		return
+	}
+	stripeID, err := h.svc.stripeCustomerID(r.Context(), cid)
+	if err != nil || stripeID == "" {
+		http.Redirect(w, r, "/account?error=open", http.StatusSeeOther)
+		return
+	}
+	key := h.svc.stripeSecretKey(r.Context())
+	if key == "" {
+		http.Redirect(w, r, "/account?error=open", http.StatusSeeOther)
+		return
+	}
+	url, err := h.svc.portal.Create(r.Context(), key, stripeID, h.svc.baseURL(r.Context())+"/account")
+	if err != nil || url == "" {
+		h.svc.log.Error("commerce: billing portal", "err", err)
+		http.Redirect(w, r, "/account?error=open", http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 // accountError maps ?error= to a catalog key (only known values).

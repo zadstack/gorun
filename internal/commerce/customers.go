@@ -43,6 +43,30 @@ func (s *service) ensureCustomer(ctx context.Context, email string) (customerID 
 	return customerID, u, nil
 }
 
+// stripeCustomerID returns the stored Stripe customer, or "" when unset.
+func (s *service) stripeCustomerID(ctx context.Context, customerID string) (string, error) {
+	var id string
+	err := s.db.QueryRowContext(ctx, `SELECT stripe_customer_id FROM customers WHERE id = ?`, customerID).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("commerce: stripe customer: %w", err)
+	}
+	return id, nil
+}
+
+func (s *service) rememberStripeCustomer(ctx context.Context, tx *sql.Tx, customerID, stripeID string) error {
+	if stripeID == "" || customerID == "" {
+		return nil
+	}
+	_, err := tx.ExecContext(ctx, `UPDATE customers SET stripe_customer_id = ? WHERE id = ? AND (stripe_customer_id = '' OR stripe_customer_id = ?)`, stripeID, customerID, stripeID)
+	if err != nil {
+		return fmt.Errorf("commerce: store stripe customer: %w", err)
+	}
+	return nil
+}
+
 // customerIDForUser returns the customers.id of userID, or ErrNotFound.
 func (s *service) customerIDForUser(ctx context.Context, userID string) (string, error) {
 	var id string

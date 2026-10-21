@@ -245,7 +245,7 @@ func (e *env) drain(kind string) []error {
 	e.t.Helper()
 	ctx := context.Background()
 	handler := map[string]func(context.Context, json.RawMessage) error{JobProvision: e.svc.provision, JobSuspend: e.svc.suspendJob,
-		JobMagicMail: e.svc.magicMail}[kind]
+		JobMagicMail: e.svc.magicMail, JobResume: e.svc.resumeJob, JobBillingMail: e.svc.billingMail}[kind]
 	rows, err := e.app.Deps.DB.Query(`SELECT id, payload_json FROM jobs WHERE kind = ? AND status = 'queued' ORDER BY created_at, id`, kind)
 	if err != nil {
 		e.t.Fatal(err)

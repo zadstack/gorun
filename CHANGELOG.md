@@ -11,6 +11,14 @@ All notable changes to GoRun are recorded here. The format follows
 - Seed three **inactive example products** on first boot (`example-provisioning`, `example-service`, `example-digital`) so operators can learn each product kind before going live.
 - Add **Orchestrator** agent role template (7th example) and an inactive **Example: Orchestrator** workagent profile per admin on first boot.
 
+### Stripe subscriptions
+
+- Sell a plan as a Stripe subscription or a one-time payment from the same store. Checkout reuses
+  the Stripe customer, records subscription and invoice rows, and lets billing status turn access
+  on, into a grace period, or off. Customers open the billing portal from `/account`. Admins refund
+  a PaymentIntent from the order screen. Test and live webhook URLs are separate, and plugins can
+  subscribe to `subscription.activated`, `subscription.past_due` and `subscription.canceled`.
+
 ## [0.11.0] - 2026-10-20
 
 ### Pattern plugins (site layouts)

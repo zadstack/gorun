@@ -202,7 +202,7 @@ func (s *Service) Consume(ctx context.Context, entitlement string, req ConsumeRe
 		if !errors.Is(e, sql.ErrNoRows) {
 			return e
 		}
-		if status != "active" {
+		if status != "active" && status != "trialing" && status != "grace" {
 			return ErrInactive
 		}
 		if expiry != "" {

@@ -20,29 +20,40 @@ type IntakeField struct {
 	MaxLength int    `json:"max_length"`
 }
 
+// CurrencyPrice is one plan price in a single ISO currency.
+type CurrencyPrice struct {
+	PriceID     string `json:"price_id"`
+	AmountMinor int64  `json:"amount_minor"`
+}
+
 type Product struct {
-	Intake           []IntakeField  `json:"intake,omitempty"`
-	Kind             string         `json:"kind"`
-	DigitalFile      string         `json:"digital_file,omitempty"`
-	DownloadDays     int            `json:"download_days"`
-	ID               string         `json:"id"`
-	Slug             string         `json:"slug"`
-	Name             string         `json:"name"`
-	Description      string         `json:"description"`
-	ShortDescription string         `json:"short_description"`
-	PriceMinor       int64          `json:"price_minor"`
-	Currency         string         `json:"currency"`
-	Active           bool           `json:"active"`
-	GroupSlug        string         `json:"group_slug"`
-	GroupName        string         `json:"group_name"`
-	PlanCode         string         `json:"plan_code"`
-	ServerID         string         `json:"server_id"`
-	AccessMonths     int            `json:"access_months"`
-	Features         []string       `json:"features"`
-	ImageMediaID     string         `json:"image_media_id"`
-	Sort             int            `json:"sort"`
-	SEO              map[string]any `json:"seo"`
-	WPProductID      string         `json:"wp_product_id"`
+	Intake           []IntakeField            `json:"intake,omitempty"`
+	Kind             string                   `json:"kind"`
+	DigitalFile      string                   `json:"digital_file,omitempty"`
+	DownloadDays     int                      `json:"download_days"`
+	BillingMode      string                   `json:"billing_mode,omitempty"`
+	StripePriceID    string                   `json:"stripe_price_id,omitempty"`
+	Interval         string                   `json:"interval,omitempty"`
+	TrialDays        int                      `json:"trial_days,omitempty"`
+	Prices           map[string]CurrencyPrice `json:"prices,omitempty"`
+	ID               string                   `json:"id"`
+	Slug             string                   `json:"slug"`
+	Name             string                   `json:"name"`
+	Description      string                   `json:"description"`
+	ShortDescription string                   `json:"short_description"`
+	PriceMinor       int64                    `json:"price_minor"`
+	Currency         string                   `json:"currency"`
+	Active           bool                     `json:"active"`
+	GroupSlug        string                   `json:"group_slug"`
+	GroupName        string                   `json:"group_name"`
+	PlanCode         string                   `json:"plan_code"`
+	ServerID         string                   `json:"server_id"`
+	AccessMonths     int                      `json:"access_months"`
+	Features         []string                 `json:"features"`
+	ImageMediaID     string                   `json:"image_media_id"`
+	Sort             int                      `json:"sort"`
+	SEO              map[string]any           `json:"seo"`
+	WPProductID      string                   `json:"wp_product_id"`
 }
 
 // WPProduct is a WooCommerce catalog product as read by the migrator (its
@@ -195,6 +206,9 @@ type Service interface {
 	Resume(ctx context.Context, entitlementID string) error
 	Reconcile(ctx context.Context, entitlementID string) error
 	LoginLink(ctx context.Context, entitlementID string) (string, error)
+	// RequirePlan allows the call when accountID has an on or in-grace
+	// subscription for plan (empty plan: any such subscription).
+	RequirePlan(ctx context.Context, accountID, plan string) error
 
 	Servers(ctx context.Context) ([]Server, error)
 	SaveServer(ctx context.Context, s Server) error

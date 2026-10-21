@@ -12,6 +12,7 @@ import (
 	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/commerce"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 )
@@ -38,6 +39,15 @@ func (m *Module) Register(d *kernel.Deps) error {
 	}
 	m.Service = NewService(d.DB)
 	m.Service.Audit = d.Audit
+	for _, name := range []string{commerce.HookSubActivated, commerce.HookSubPastDue, commerce.HookSubCanceled} {
+		d.Hooks.Action(name, 40, func(ctx context.Context, payload any) error {
+			ev, ok := subscriptionPayload(payload)
+			if !ok {
+				return nil
+			}
+			return applySubscription(ctx, d.DB, ev)
+		})
+	}
 	d.Hooks.Filter(admin.HealthCheckFilter, 55, m.Service.healthChecks)
 	d.Services.Set("saas", m.Service)
 	adminTpl, _ := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates)

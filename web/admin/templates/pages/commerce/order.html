@@ -29,6 +29,12 @@
   </form>
 </section>
 {{end}}
+{{if .CanRefund}}
+<form method="post" action="/admin/commerce/orders/{{.Order.ID}}/refund" class="mt-4" data-confirm="{{t "commerce.confirm.refund"}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong">{{t "commerce.action.refund"}}</button>
+</form>
+{{end}}
 {{if .CanRetry}}
 <form method="post" action="/admin/commerce/orders/{{.Order.ID}}/retry" class="mt-4" data-confirm="{{t "commerce.confirm.retry"}}">
   <input type="hidden" name="_csrf" value="{{csrf}}">

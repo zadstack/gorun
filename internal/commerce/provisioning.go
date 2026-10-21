@@ -396,6 +396,40 @@ func (s *service) suspendJob(ctx context.Context, raw json.RawMessage) error {
 	return nil
 }
 
+// resumeJob calls resume on the billing server after a subscription becomes
+// payable again. Local status is already active.
+func (s *service) resumeJob(ctx context.Context, raw json.RawMessage) error {
+	var p suspendPayload
+	if err := json.Unmarshal(raw, &p); err != nil || p.EntitlementID == "" {
+		return nil
+	}
+	e, err := s.Entitlement(ctx, p.EntitlementID)
+	if errors.Is(err, ErrNotFound) || e == nil || e.ExternalID == "" {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	key := p.Key
+	if key == "" {
+		key = "billing:" + e.ID
+	}
+	final := lastAttempt(ctx)
+	res, err := s.callOp(ctx, e.ID, "resume", key, "POST", accountPath(e.ExternalID, "resume"), map[string]string{}, false, final)
+	if err == nil {
+		err = expectStatus(res.Data, "active")
+	}
+	if err != nil {
+		if !permanent(err) && !final {
+			return err
+		}
+		s.audit.Record(ctx, "commerce.entitlement.resume_failed", "entitlement", e.ID, map[string]any{"error": truncate(err.Error(), maxErrorLen)})
+		return nil
+	}
+	s.audit.Record(ctx, "commerce.entitlement.resume", "entitlement", e.ID, map[string]any{"reason": p.Reason})
+	return nil
+}
+
 // sharedAccountActive reports whether the customer holds another active,
 // unexpired entitlement on e's server: the billing account is shared per
 // customer, so it must not be suspended remotely.
