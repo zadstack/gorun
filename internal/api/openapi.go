@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/kernel"
 )
 
@@ -180,6 +181,9 @@ func operation(g *schemaGen, op kernel.APIOperation, method, path string, usedID
 		"operationId": operationID(method, path, usedIDs),
 		"parameters":  parameters(op, path),
 		"responses":   responsesFor(g, op, method),
+	}
+	if len(op.Scopes) == 0 && slices.Contains(auth.AnonymousAPIPaths, "/api"+path) {
+		out["security"] = []any{}
 	}
 	if op.Summary != "" {
 		out["summary"] = op.Summary

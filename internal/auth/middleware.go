@@ -20,7 +20,7 @@ const localeCookie = "gp_locale"
 
 // AnonymousAPIPaths are API paths served without a key or session (the api
 // module may append during Register, before serving starts).
-var AnonymousAPIPaths = []string{"/api/v1/openapi.json", "/api/docs"}
+var AnonymousAPIPaths = []string{"/api/v1/openapi.json", "/api/docs", "/api/v1/site/info"}
 
 // adminPublicPaths are reachable under /admin without a login.
 var adminPublicPaths = []string{"/admin/login", "/admin/setup", "/admin/logout"}

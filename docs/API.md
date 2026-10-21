@@ -12,7 +12,7 @@ This is the default GoRun registry. A build that adds its own modules (see [ARCH
 
 Base URL: `<site>/api/v1`. The OpenAPI 3.1 document is generated at runtime from the operations that
 modules register, and served at `GET /api/v1/openapi.json`. The interactive reference (Scalar) is at
-`GET /api/docs`. Both are public; every other path needs a key or a session.
+`GET /api/docs`. These and `GET /api/v1/site/info` are public; other paths need a key or a session.
 
 ## Authentication
 
@@ -92,11 +92,120 @@ Module operations add their own codes (found by grepping `api.WriteError` / `htt
 
 ## Version and capability discovery
 
-Use `GET /api/v1/openapi.json` for discovery; no additional endpoint is needed. `info.version` describes
+Use `GET /api/v1/openapi.json` for operation discovery. `info.version` describes
 the API family. `x-gorun.core_version` carries the binary build version (including release suffixes);
 `x-gorun.api_contract_version` versions these discovery/transport contracts. `dev` explicitly means an
 unversioned build. Fleet clients should inspect mounted paths and `x-gorun.capabilities`, then `x-scopes`
 and `/me` for the acting principal's permissions. Capability presence does not grant permission.
+
+### Public site information and protected runtime
+
+`GET /api/v1/site/info` is a read-only, anonymous projection of the running site. The existing
+`GET /api/v1/site` structure endpoint keeps its `content.view` scope and response unchanged.
+The new response uses `value`, `source`, `available` and, when unavailable, `reason` rather than
+guessing missing values. It contains:
+
+- `version`: the build string captured when this API instance starts (`process.build`). `dev` is
+  explicitly an unversioned build. Update requests and feature acceptance do not change this value.
+- `identity`: current title, tagline and canonical base URL. Sources identify specific settings,
+  resolved runtime configuration, or the renderer's translated default title. The URL follows
+  `site.base_url` → `config.BaseURL`, with whitespace/trailing slashes normalized.
+- `logos.primary`: the public media URL referenced by `site.logo`; absent media/modules are explicit.
+  Core has no separate light/dark logo settings, so it does not invent them or inspect arbitrary template content.
+- `languages`: default `site.locale` (existing fallback `ar`), direction, and locales accepted by the
+  running `i18n.Supported` registry. Supported locales do not promise every page has a translation.
+- `appearance`: active theme identity, known color/font declarations and validated identity settings,
+  with each source, last static-file observation time and limitations. An older downstream theme service
+  without the optional `theme.AppearanceProvider` returns `null` plus `appearance_reason`.
+
+Theme declarations are not browser-computed styles. The report resolves supported local root tokens
+through the parent/child chain and respects the theme's explicit identity opt-in. Custom CSS and builder
+identity can make effective values ambiguous, which is reported as unavailable. Page overrides,
+conditional rules, external CSS and arbitrary stylesheet order are not evaluated. File scans are bounded
+and cached for one theme per service; theme activation, cache invalidation or restart refreshes them.
+Settings are read on each request. No external service is required or called by this endpoint.
+Invalid theme identifiers are withheld with `invalid_theme_identifier`; the stored selection is
+preserved and never copied into public values or provenance.
+
+```sh
+curl https://example.com/api/v1/site/info
+curl -H "Authorization: Bearer $GORUN_API_KEY" https://example.com/api/v1/site/runtime
+```
+
+Example value fragments (the actual values come from the running site):
+
+```json
+{"version":{"value":"v0.13.0","source":"process.build","available":true},
+ "identity":{"title":{"value":"My site","source":"settings:site.title","available":true}},
+ "logos":{"primary":{"value":null,"source":"settings:site.logo","available":false,"reason":"not_configured"}}}
+```
+
+`GET /api/v1/site/runtime` requires **`settings.manage`** and returns the running build, API contract
+version, Go runtime, OS/architecture and `api_started_at` (API registration time, not an OS process
+creation timestamp). It never serializes runtime configuration, credentials or filesystem paths.
+Both endpoints use the standard envelope; malformed/unreadable required settings fail with
+`500 internal_error` instead of silently manufacturing defaults. Runtime access returns
+`401 unauthorized` or `403 forbidden` as appropriate. Responses use `Cache-Control: no-store`;
+internal theme snapshot caching is independent of HTTP caching.
+Public URLs containing credentials, a query string, a fragment or an unsupported scheme are
+reported as unavailable (`unsafe_public_url`), including legacy/configured base URLs and signed logo URLs.
+Their saved settings/media records are left intact.
+
+This is an additive API upgrade: no data migration or configuration rewrite is needed. Existing
+themes, settings, content, and downstream implementations of `theme.Service` remain compatible.
+The staged updater and durable background refresh work are tracked in
+[CORE-UPGRADE-ROADMAP.md](CORE-UPGRADE-ROADMAP.md).
+
+### Capability state and saved evidence
+
+`GET /api/v1/site/capabilities` requires **`system.health`**. It reads the actual boot inventory and
+saved managed AI/MCP/S3 connection profiles. It does not contact providers, enqueue work or change
+configuration. `observed_at` is the report read time; `last_check.checked_at` is the saved probe time.
+
+| Field | Meaning |
+| --- | --- |
+| `available` | The module was supplied to this boot, or Core recognizes the profile type. Configured add-ons missing from the binary are explicitly unavailable. |
+| `enabled` | Actual boot selection for modules. `null` for a reusable connection profile: saving a profile does not activate its consumers. |
+| `configured` | Local profile validation and readable required credentials. `null` when a module does not publish its requirements; never infer success from this value. |
+| `tested` | Successful operation evidence for the current configuration. Currently `false`: existing connection probes only discover models/tools or check a bucket. |
+| `last_check` | `null` when never checked; otherwise the saved connectivity result/time, applicability status, reason and remediation. No fabricated zero counts are emitted. |
+
+Legacy checks without a configuration revision keep their historical result but report
+`configuration_match: null`; they do not certify the current configuration. New explicit probes also
+save an additive `test_version` field. A different current revision makes the evidence `stale` while
+retaining its recorded result; configuration edits clear old probe metadata. Invalid/missing timestamps
+remain unknown. Existing compare-and-swap writes reject delayed probe results after configuration edits
+or removal. The `test_version` JSON field needs no SQL migration and old records remain readable.
+
+```sh
+curl -H "Authorization: Bearer $GORUN_API_KEY" https://example.com/api/v1/site/capabilities
+```
+
+Example connection evidence fragment:
+
+```json
+{"available":true,"enabled":null,"configured":true,"tested":false,
+ "reason":"operation_not_verified",
+ "last_check":{"kind":"connectivity","status":"passed","result":"passed",
+               "checked_at":"2026-10-21T10:00:00Z","configuration_match":null,
+               "reason":"connectivity_only","remediation":"Verify the specific operation separately; discovery does not prove execution permissions."}}
+```
+
+Module activation reuses `kernel.OptionalModule`, before catalogs, migrations, routes and job handlers
+are registered. Disabled modules retain their tables/settings and re-enable through their existing
+activation configuration and a restart. Core modules that do not implement that gate stay enabled;
+`GORUN_ADDONS` alone is not a universal switch for arbitrary modules. The report captures boot state,
+so editing desired configuration does not pretend that the running process has restarted.
+
+Coverage is explicit: this is module inventory and managed connection evidence, not a complete report
+of every business workflow, legacy mail/storage configuration, or caller's operation permissions.
+Existing queued jobs from disabled add-ons may still be claimed by the generic queue and fail as
+unregistered; parking those jobs, durable background refreshes and operation-specific evidence are
+follow-up work in [CORE-UPGRADE-ROADMAP.md](CORE-UPGRADE-ROADMAP.md). Connection endpoints, names,
+credentials and raw upstream errors are excluded. Unreadable saved records return the standard
+`500 internal_error`; access failures are `401 unauthorized` / `403 forbidden`.
+
+### Transport limits
 
 `x-gorun.limits` exposes the pagination/helper limits and installed builder/media module limits.
 `x-max-body-bytes` is per-operation metadata. Media exposes its default (25 MiB per file), the setting
@@ -150,7 +259,7 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **163 operations** in 24 tags.
+Generated from the current locally booted OpenAPI document: **166 operations** in 24 tags.
 
 ### builder
 
@@ -346,6 +455,9 @@ Generated from the current locally booted OpenAPI document: **163 operations** i
 |---|---|---|---|
 | GET | `/api/v1/health` | Readiness: database reachable | any key or session |
 | GET | `/api/v1/me` | Current principal and effective scopes | any key or session |
+| GET | `/api/v1/site/capabilities` | Saved capability evidence and actual module activation (no external checks) | `system.health` |
+| GET | `/api/v1/site/info` | Public site identity, running build, languages and theme appearance with provenance | public |
+| GET | `/api/v1/site/runtime` | Protected running process information; no credentials or deployment paths | `settings.manage` |
 | GET | `/api/v1/site` | Site structure: content types, taxonomies, menus, theme, templates | `content.view` |
 
 ### system
