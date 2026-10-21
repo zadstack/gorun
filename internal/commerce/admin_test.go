@@ -43,6 +43,7 @@ func TestAdminProductsCRUD(t *testing.T) {
 		t.Fatalf("active without mapping: %d", resp.StatusCode)
 	}
 
+	savesBefore := auditCount(e, "commerce.product.save")
 	form := url.Values{"name": {"Pro Monthly"}, "slug": {"pro-monthly"}, "price": {"49.50"}, "currency": {"aed"}, "active": {"1"},
 		"plan_code": {"pro"}, "server_id": {srv.ID}, "access_months": {"3"}, "group_name": {"MCP Servers"}, "sort": {"2"},
 		"features": {"Unlimited tools", "", "Priority support"}, "short_description": {"Short"},
@@ -86,7 +87,7 @@ func TestAdminProductsCRUD(t *testing.T) {
 	if resp, _ = e.adminPost("/admin/commerce/products", form); resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("duplicate slug: %d", resp.StatusCode)
 	}
-	if n := auditCount(e, "commerce.product.save"); n != 2 {
+	if n := auditCount(e, "commerce.product.save") - savesBefore; n != 2 {
 		t.Fatalf("product.save audits = %d", n)
 	}
 	// Delete.

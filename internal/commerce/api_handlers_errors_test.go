@@ -29,7 +29,7 @@ func TestAPIProductAndServerNotFoundAndValidation(t *testing.T) {
 	if st != 404 {
 		t.Fatalf("replace unknown product: %d %v", st, body)
 	}
-	if n := e.count(`SELECT count(*) FROM products`); n != 0 {
+	if n := e.countNonExampleProducts(); n != 0 {
 		t.Fatalf("unknown replace created a product: %d", n)
 	}
 	if st, body = c.Post("/v1/commerce/products", "{not json"); st != 400 {

@@ -95,6 +95,11 @@ func exampleDescription(enLead, enNext, arLead, arNext string) string {
 }
 
 func isExampleProductSlug(slug string) bool {
+	return IsExampleProductSlug(slug)
+}
+
+// IsExampleProductSlug reports inactive learning templates seeded on first boot.
+func IsExampleProductSlug(slug string) bool {
 	for _, s := range exampleProductSlugs {
 		if slug == s {
 			return true
