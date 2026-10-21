@@ -87,6 +87,7 @@ type productRow struct {
 	Product
 	Price, ServerName string
 	DigitalReady      bool
+	Example           bool
 }
 
 func (h *adminHandlers) products(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +99,7 @@ func (h *adminHandlers) products(w http.ResponseWriter, r *http.Request) {
 	names := h.serverNames(r)
 	rows := make([]productRow, len(list))
 	for i, p := range list {
-		rows[i] = productRow{Product: p, Price: FormatPrice(p.PriceMinor, p.Currency) + " " + p.Currency, ServerName: names[p.ServerID], DigitalReady: p.Kind == ProductDigital && h.svc.digitalFileExists(p.DigitalFile)}
+		rows[i] = productRow{Product: p, Price: FormatPrice(p.PriceMinor, p.Currency) + " " + p.Currency, ServerName: names[p.ServerID], DigitalReady: p.Kind == ProductDigital && h.svc.digitalFileExists(p.DigitalFile), Example: isExampleProductSlug(p.Slug)}
 	}
 	h.tpl.Render(w, r, "pages/commerce/products.html", map[string]any{"Products": rows})
 }

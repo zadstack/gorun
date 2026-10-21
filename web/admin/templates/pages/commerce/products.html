@@ -19,7 +19,7 @@
     <tbody>
       {{range .Products}}
       <tr class="border-t border-line hover:bg-bg">
-        <td class="px-3 py-2"><a href="/admin/commerce/products/{{.ID}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a><div class="font-mono text-xs text-muted" dir="ltr">/product/{{.Slug}}</div></td>
+        <td class="px-3 py-2"><a href="/admin/commerce/products/{{.ID}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a>{{if .Example}} <span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] text-muted">{{t "commerce.products.example_badge"}}</span>{{end}}<div class="font-mono text-xs text-muted" dir="ltr">/product/{{.Slug}}</div></td>
         <td class="px-3 py-2">{{.GroupName}}</td>
         <td class="px-3 py-2">
           {{if eq .Kind "service"}}{{t "commerce.products.kind_service"}}
