@@ -11,12 +11,28 @@
     "test": "npm run build && node --test test/*.test.mjs",
     "dev": "wrangler dev --local",
     "db:migrate": "wrangler d1 migrations apply DB --local",
+    "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
     "seed:local": "wrangler d1 execute DB --local --file fixtures/demo.sql",
+    "seed:preview": "wrangler d1 execute DB --remote --file fixtures/demo.sql",
+    "deploy": "npm run db:migrations:apply && npm run seed:preview && wrangler deploy",
     "package:check": "wrangler deploy --dry-run --outdir dist-upload",
     "smoke:local": "node test/local-smoke.mjs",
     "owner": "node tools/owner.mjs",
     "browser:local": "node test/owner-browser-smoke.mjs",
     "browser:remote": "node test/admin-browser.mjs"
+  },
+  "cloudflare": {
+    "bindings": {
+      "SITE_ID": {
+        "description": "Leave this as `demo` so the preview fixture and `/readyz` match. Manage the deployed site from `/admin` on its HTTPS origin."
+      },
+      "DB": {
+        "description": "New D1 database for this Edge preview. Do not select a GoRun Full database."
+      },
+      "MEDIA": {
+        "description": "New private R2 bucket for this Edge preview. Leave direct public access disabled."
+      }
+    }
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261019.1",

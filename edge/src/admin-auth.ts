@@ -7,6 +7,7 @@ export function random() {const a=crypto.getRandomValues(new Uint8Array(32));ret
 export async function hash(value: string) {const a=new Uint8Array(await crypto.subtle.digest('SHA-256',encoder.encode(value)));return [...a].map(x=>x.toString(16).padStart(2,'0')).join('');}
 export function equal(a: string,b: string) {if(a.length!==b.length)return false;let diff=0;for(let i=0;i<a.length;i++)diff|=a.charCodeAt(i)^b.charCodeAt(i);return diff===0;}
 export const ownerHash=(site: string,key: string)=>hash(`gorun-edge-owner:v1:${site}:${key}`);
+export const managerHash=(site: string,key: string)=>hash(`gorun-edge-manager:v1:${site}:${key}`);
 export const sessionHash=(key: string)=>hash(`gorun-edge-session:v1:${key}`);
 export function escape(s: unknown) {return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));}
 export function reply(body: BodyInit|null,status=200,headers: Record<string,string>={}) {return new Response(body,{status,headers:{'content-type':'text/html; charset=utf-8','cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'same-origin','cross-origin-resource-policy':'same-origin','content-security-policy':"default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",...headers}});}

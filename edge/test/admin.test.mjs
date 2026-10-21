@@ -21,6 +21,8 @@ before(async()=>{
  mf=runtime(env);db=await mf.getD1Database('DB');
  const one=await readFile(new URL('../migrations/0001_readonly.sql',import.meta.url),'utf8');for(const s of one.split(';').map(s=>s.trim()).filter(Boolean))await db.prepare(s).run();
  await db.exec((await readFile(new URL('../migrations/0002_owner_admin.sql',import.meta.url),'utf8')).split('\n').filter(s=>s.trim()&&!s.trim().startsWith('--')).join('\n'));
+ const managers=(await readFile(new URL('../migrations/0003_managers.sql',import.meta.url),'utf8')).split('\n').filter(s=>s.trim()&&!s.trim().startsWith('--')).join('\n');
+ for(const statement of managers.split(';').map(s=>s.trim()).filter(Boolean)) await db.prepare(statement).run();
  await db.prepare("INSERT INTO edge_sites VALUES ('demo','Demo','en'),('other','Other','en')").run();
  await db.prepare('INSERT INTO edge_owners(site_id,key_hash) VALUES(?1,?2)').bind('demo',await ownerHash('demo',key)).run();
 });
@@ -70,7 +72,7 @@ test('owner/session expiry is checked by D1 at write, content export excludes au
 test('cross-site restore/IDs are isolated; unpublish revokes public content and audit is scoped',async()=>{
  const {jar,csrf}=await login();assert.equal((await post('/admin/restore',{csrf,id:'reviewed',draft_version:'2',source_version:'1',revision:'other-site-revision'},jar)).status,404);
  assert.equal((await post('/admin/unpublish',{csrf,id:'reviewed',draft_version:'2',source_version:'1',confirm:'yes'},jar)).status,303);assert.equal((await request('/post/reviewed')).status,404);
- const html=await(await request('/admin?lang=ar',{headers:{cookie:cookies(jar)}})).text();assert.match(html,/dir="rtl"/);assert.ok(!html.includes('OTHER SECRET'));
+ const html=await(await request('/admin?lang=ar',{headers:{cookie:cookies(jar)}})).text();assert.match(html,/dir="rtl"/);assert.match(html,/admin-workspace/);assert.match(html,/admin-sidebar/);assert.match(html,/محتوى جديد/);assert.equal(html.includes('<script'),false);assert.ok(!html.includes('OTHER SECRET'));
 });
 
 test('login challenge is consumed and expired signed challenges fail',async()=>{
@@ -88,6 +90,39 @@ test('discard serializes once: expiry before write is no-op, expiry after marker
  const fresh=await login(),freshContext=await context(new Request('https://edge.example/admin',{headers:{cookie:cookies(fresh.jar)}}),{...env,...bindings});
  await db.exec("CREATE TRIGGER test_expiry AFTER UPDATE OF op_token ON edge_drafts WHEN NEW.id='clock-cross' BEGIN UPDATE edge_sessions SET expires_at=0 WHERE site_id=NEW.site_id; END;");
  const auditBefore=(await db.prepare('SELECT count(*) n FROM edge_audit').first()).n;assert.equal(await discard(freshContext,'clock-cross',1),true);assert.equal(await db.prepare("SELECT id FROM edge_drafts WHERE id='clock-cross'").first(),null);assert.equal((await db.prepare('SELECT count(*) n FROM edge_audit').first()).n,auditBefore+1);await db.exec('DROP TRIGGER test_expiry;');
+});
+test('content filters and the editor show status without changing publication',async()=>{
+ const {jar,csrf}=await login();
+ assert.equal((await post('/admin/save',{...input('filter-ar',{locale:'ar',title:'مسودة عربية'}),csrf},jar)).status,303);
+ const html=await(await request('/admin?status=draft&locale=ar&q='+encodeURIComponent('مسودة'),{headers:{cookie:cookies(jar)}})).text();
+ assert.match(html,/مسودة عربية/);assert.match(html,/aria-current="page"/);assert.equal(html.includes('reviewed'),false);
+ assert.equal((await request('/admin?status=nope',{headers:{cookie:cookies(jar)}})).status,400);
+ const editor=await(await request('/admin/edit?id=reviewed&lang=en',{headers:{cookie:cookies(jar)}})).text();
+ assert.match(editor,/class="badge private"/);assert.equal(editor.includes('href="/post/reviewed"'),false);
+});
+test('primary manager key is shown once and whoami accepts only that key',async()=>{
+ const {jar,csrf}=await login();
+ const created=await post('/admin/managers/create',{csrf,label:'GoRun Full'},jar);assert.equal(created.status,200);
+ const html=await created.text();const shown=html.match(/data-manager-key="([^"]+)"/);assert.ok(shown);const managerKey=shown[1];
+ assert.match(managerKey,/^[A-Za-z0-9_-]{43}$/);assert.equal((html.match(new RegExp(managerKey,'g'))??[]).length,2);
+ const again=await(await request('/admin/managers',{headers:{cookie:cookies(jar)}})).text();
+ assert.equal(again.includes(managerKey),false);assert.match(again,/GoRun Full/);assert.match(again,new RegExp(managerKey.slice(-4)));
+ const ok=await request('/api/v1/manager',{headers:{authorization:'Bearer '+managerKey}});assert.equal(ok.status,200);
+ const body=await ok.json();assert.equal(body.ok,true);assert.equal(body.data.primary,true);assert.equal(body.data.site_id,'demo');assert.equal(body.data.label,'GoRun Full');
+ assert.equal(JSON.stringify(body).includes(managerKey),false);
+ assert.equal((await request('/api/v1/manager')).status,401);
+ assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+key}})).status,401);
+ const exported=await(await request('/admin/export',{headers:{cookie:cookies(jar)}})).text();
+ assert.equal(exported.includes(managerKey),false);assert.equal(exported.includes('key_hash'),false);
+ const rotated=await post('/admin/managers/rotate',{csrf,id:body.data.manager_id},jar);assert.equal(rotated.status,200);
+ const next=(await rotated.text()).match(/data-manager-key="([^"]+)"/)[1];assert.notEqual(next,managerKey);
+ assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+managerKey}})).status,401);
+ assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+next}})).status,200);
+ assert.equal((await post('/admin/managers/create',{csrf,label:'Second'},jar)).status,409);
+ assert.equal((await post('/admin/managers/revoke',{csrf,id:body.data.manager_id,confirm:'yes'},jar)).status,303);
+ assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+next}})).status,401);
+ const cleared=await(await request('/admin/managers',{headers:{cookie:cookies(jar)}})).text();
+ assert.equal(cleared.includes(next),false);assert.match(cleared,/Create GoRun key|إنشاء مفتاح GoRun/);
 });
 test('publication rejects recovery between review and atomic execution without side effects',async()=>{
  const {jar}=await login(),bindings=await mf.getBindings(),c=await context(new Request('https://edge.example/admin',{headers:{cookie:cookies(jar)}}),{...env,...bindings});

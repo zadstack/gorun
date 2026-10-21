@@ -5,8 +5,8 @@
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
   "vars": { "SITE_ID": "demo" },
-  // Local-only placeholders. Create dedicated resources and a separate config
-  // before attempting a remote deployment; do not bind a Full site's database.
+  // Default names and a placeholder D1 id. Deploy to Cloudflare provisions new
+  // resources and replaces the id. Do not point this file at a GoRun Full database.
   "d1_databases": [{ "binding": "DB", "database_name": "gorun-edge-poc-local", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }],
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "gorun-edge-poc-local" }],
   "observability": { "enabled": false }

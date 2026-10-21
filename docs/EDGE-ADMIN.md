@@ -1,6 +1,6 @@
 # Optional Edge owner administration
 
-This is a separate, small administration interface for the standalone Edge Worker. It is not the Full GoRun dashboard: no agents, uploads, arbitrary HTML, provider execution or automatic Skills/MCP provisioning. Public reading remains available with administration disabled. Both public reading and the separate owner workflow have passed real Cloudflare HTTPS checks with synthetic data: [source, scope and cleanup record](validation/edge-cloudflare-2026-10-19.json). Test owner access and sessions were revoked, its signing secret removed and the public preview returned to administration disabled. Repeat acceptance for your own account before relying on a deployment.
+This is a miniature of the GoRun content workspace for the standalone Edge Worker: the same sidebar, content list, editor, review, and audit surfaces, without the Full modules. It is not the Full dashboard: no agents, uploads, arbitrary HTML, provider execution or automatic Skills/MCP provisioning. Public reading remains available with administration disabled. Both public reading and the separate owner workflow have passed real Cloudflare HTTPS checks with synthetic data: [source, scope and cleanup record](validation/edge-cloudflare-2026-10-19.json). Test owner access and sessions were revoked, its signing secret removed and the public preview returned to administration disabled. Repeat acceptance for your own account before relying on a deployment.
 
 ## Local installation
 
@@ -36,6 +36,12 @@ The compact English/Arabic editor keeps drafts separate from the public article.
 Unpublish immediately removes the item from public routes. Discard removes only the selected draft. Saved revisions can be restored as a new draft, with the same concurrency checks and subsequent review requirement. Audit and revision records are appended in the same D1 transaction as their successful operation. Authentication expiry or a failed version check cannot leave a success audit/revision behind.
 
 Bodies are plain text, escaped on both public and administration pages. Media administration lists metadata only; it cannot upload or download private objects. Existing public R2 access still requires the fixed site's public namespace, published media metadata, permitted MIME type and size limit.
+
+## Primary manager key
+
+Managers, in the owner admin, has one button that creates the primary key for GoRun Full. The page shows the key once. The database stores only `SHA-256("gorun-edge-manager:v1:<site>:<key>")` and the last four characters. Rotate replaces that hash. Revoke deletes the row. A later visit does not show the key again, and content export does not include it.
+
+`GET /api/v1/manager` with `Authorization: Bearer <key>` returns the site id, manager id, label, and `primary: true`. Any other key, including the owner key, is rejected. GoRun Full saves the origin in settings and the key with `db.Encrypt` (AAD `edge.manager_key`), then the Check connection button calls only that endpoint. The saved page and the audit record do not contain the key. This handshake does not create drafts, publish, or open MCP.
 
 ## Security boundary and limits
 

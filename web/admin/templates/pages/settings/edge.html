@@ -1,0 +1,28 @@
+{{define "title"}}{{t "admin.settings.edge.title"}}{{end}}
+{{define "content"}}
+<h1 class="text-[22px] font-bold mb-3">{{t "admin.settings.title"}}</h1>
+{{template "partials/settings_tabs" "edge"}}
+<p class="mb-4 max-w-3xl text-sm text-muted">{{t "admin.settings.edge.intro"}}</p>
+{{if .CheckedAt}}<p role="status" class="mb-4 max-w-3xl rounded border border-green bg-green-soft px-3 py-2">{{t "admin.settings.edge.checked"}} <span dir="ltr">{{.Label}} · {{.SiteID}} · {{.ManagerID}}</span></p>{{else if .KeySet}}<p class="mb-4 max-w-3xl text-sm text-muted">{{t "admin.settings.edge.unchecked"}}</p>{{end}}
+<form method="post" action="/admin/settings/edge" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <div>
+    <label for="edge-origin" class="block font-medium mb-1">{{t "admin.settings.edge.origin"}}</label>
+    <input id="edge-origin" name="origin" type="url" value="{{.Origin}}" maxlength="200" autocomplete="off" class="h-11 w-full rounded border border-line bg-panel px-3" dir="ltr">
+    {{template "partials/field_errors" (index .Fields "origin")}}
+    <p class="mt-1 text-xs text-muted">{{t "admin.settings.edge.origin.help"}}</p>
+  </div>
+  <div>
+    <label for="edge-key" class="block font-medium mb-1">{{t "admin.settings.edge.key"}}</label>
+    <input id="edge-key" name="key" type="password" value="" maxlength="43" autocomplete="off" class="h-11 w-full rounded border border-line bg-panel px-3" dir="ltr">
+    {{template "partials/field_errors" (index .Fields "key")}}
+    <p class="mt-1 text-xs text-muted">{{t "admin.settings.edge.key.help"}}{{if .Hint}} {{t "admin.settings.edge.key.set"}} <span dir="ltr">••••{{.Hint}}</span>{{end}}</p>
+  </div>
+  <button class="admin-primary-button">{{t "admin.settings.edge.save"}}</button>
+</form>
+<form method="post" action="/admin/settings/edge/check" class="mt-4">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  {{template "partials/field_errors" (index .Fields "check")}}
+  <button class="admin-secondary-button">{{t "admin.settings.edge.check"}}</button>
+</form>
+{{end}}
