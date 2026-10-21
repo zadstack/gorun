@@ -13,6 +13,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/api/apitest"
+	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/kernel"
 )
@@ -24,7 +25,7 @@ func TestAPIDocsMatchCurrentOpenAPI(t *testing.T) {
 	}
 }
 
-func TestEveryRESTOperationRejectsAnonymousAgentAndMissingScope(t *testing.T) {
+func TestEveryRESTOperationEnforcesAuthenticationAndScopes(t *testing.T) {
 	app := bootAPIContractRegistry(t)
 	full := apitest.NewClient(t, app)
 	anonymous := full.Anonymous()
@@ -62,6 +63,9 @@ func TestEveryRESTOperationRejectsAnonymousAgentAndMissingScope(t *testing.T) {
 			}{
 				{"anonymous", anonymous, 401, "unauthorized"}, {"agent", agent, 403, "agent_key_not_allowed"},
 			} {
+				if tc.name == "anonymous" && slices.Contains(auth.AnonymousAPIPaths, "/api"+path) && len(op.Scopes) == 0 {
+					tc.status, tc.code = 200, ""
+				}
 				w := tc.client.Do(op.Method, path, `{}`, nil)
 				var env map[string]any
 				if err := json.Unmarshal(w.Body.Bytes(), &env); err != nil {
@@ -102,6 +106,19 @@ func TestEveryRESTOperationRejectsAnonymousAgentAndMissingScope(t *testing.T) {
 		}
 	}
 	t.Logf("Negative permissions tested for all %d registered operations; proper-scope semantic success remains covered by domain fixtures.", len(app.Deps.API.Operations()))
+}
+
+func TestOperationTableReportsPublicAccess(t *testing.T) {
+	tables, err := apiOperationTables([]byte(`{"paths":{"/v1/site/info":{"get":{"summary":"Public identity","tags":["site"],"security":[]}},"/v1/me":{"get":{"summary":"Principal","tags":["site"]}}}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(tables, "| GET | `/api/v1/site/info` | Public identity | public |") {
+		t.Fatalf("public endpoint is misdocumented: %s", tables)
+	}
+	if !strings.Contains(tables, "| GET | `/api/v1/me` | Principal | any key or session |") {
+		t.Fatalf("default authentication lost: %s", tables)
+	}
 }
 
 func TestOpenAPIOperationIDsAndRoutesMatchFullRegistry(t *testing.T) {

@@ -11,6 +11,24 @@ All notable changes to GoRun are recorded here. The format follows
 - Creating or rotating the primary manager key redirects and shows the key once. Reloading that page does not issue another key.
 - Saving or checking Edge settings writes the origin, encrypted key, and check result together. A failure leaves the previous values in place.
 
+## [0.14.0] - 2026-10-21
+
+### Shared core discovery
+
+- Add public `/api/v1/site/info` with the running build, existing site identity/logo, supported locales,
+  and active theme appearance declarations with provenance and explicit unavailable values. Keep
+  the existing authenticated `/site` contract and downstream theme services compatible.
+- Separate protected `/api/v1/site/runtime` details behind `settings.manage`; document both in the
+  generated OpenAPI contract. Discovery does not alter site content, settings, themes or media.
+- Add `/api/v1/site/capabilities` behind `system.health`, separating module availability/activation,
+  local connection configuration, and saved connectivity evidence from operation verification.
+  Preserve legacy probe records and bind new checks to the configuration revision without a SQL migration.
+- Document follow-up acceptance criteria for staged updates and durable background checks, including
+  runtime rollback without overwriting newer data with a pre-upgrade database.
+
+Existing installations keep data, settings and themes. Publishing this release does not upgrade a
+running site process. Background observation and staged runtime updates remain follow-up work.
+
 ## [0.13.0] - 2026-10-21
 
 ### Edge on Cloudflare
@@ -651,7 +669,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/zadstack/gorun/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/zadstack/gorun/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/zadstack/gorun/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/zadstack/gorun/compare/v0.10.0...v0.11.0

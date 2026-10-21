@@ -1,10 +1,17 @@
 # GoRun: upgrade and rollback runbook
 
 Operator checklist for moving a live site from one **release tag** to another.
-There is **no** in-app core updater: you swap the binary or container image, keep
-the same data directory and secret key, let migrations run, smoke-test, and if
-needed roll back with the **previous artifact + a pre-upgrade backup pair + the
-original key**.
+There is **no complete in-app core update lifecycle**: operators replace the
+binary or container image, keep the same data directory and secret key, let
+migrations run, and smoke-test. The optional admin deployment action creates a
+verified backup and requests a configured Coolify deployment; acceptance means
+the deployment was queued, not that the new release is running or healthy.
+
+If activation fails, prefer a **compatible previous artifact on the current
+data**. Restoring a pre-upgrade backup is a separate disaster-recovery decision
+that can lose newer writes. Never automatically replace current data with an old
+snapshot. Preserve the current database, media, settings, themes and secret key
+before any recovery cutover; see [§6](#6-rollback).
 
 Short summaries also live in [GORUN-INSTALLATION.md](GORUN-INSTALLATION.md),
 [PRODUCTION.md](PRODUCTION.md), and [deploy/coolify.md](../deploy/coolify.md).
@@ -21,7 +28,8 @@ Schema rules: [ARCHITECTURE.md](ARCHITECTURE.md#migrations-must-be-additive).
 | --- | --- |
 | **One process per data dir** | Exclusive lock on `<data>/gorun.lock`. Stop then start; never overlap two containers on one volume. |
 | **Migrations are forward-only** | New `serve` / `gorun migrate` applies additive SQL. Rolling back the binary alone does **not** undo schema. |
-| **Rollback = prior artifact + restored data + original key** | Keep the previous archive/image tag, a backup pair from **before** the upgrade, and `GORUN_SECRET_KEY` / `secret.key` outside the default archive. |
+| **Runtime rollback preserves current data** | Use the prior artifact only after checking schema, feature and security compatibility. Keep the original key and current database, media, settings and themes. |
+| **An old snapshot is not automatic rollback** | A pre-upgrade backup omits subsequent writes. Restore only into a separate directory; cutover requires an explicit recovery decision and reconciliation of newer data. |
 | **Pin version tags in production** | Use `ghcr.io/zadstack/gorun:X.Y.Z` (or `X.Y`), not `latest` alone. |
 | **Secrets stay outside default backups** | `gorun backup` omits `secret.key` / `gorun.toml` unless `--include-secrets`. Coolify env is the secret store for Docker. |
 
@@ -55,6 +63,9 @@ docker exec <container> /app/gorun backup
    - Coolify / compose env (`GORUN_BASE_URL`, `GORUN_TRUSTED_PROXIES`, Stripe, S3, …)
 5. Prefer a **dress rehearsal** on a restored copy (see §5) before the live cutover.
 6. Keep the **previous** release archive or image tag reachable until smoke passes.
+7. Review downgrade compatibility, including security behavior and theme support.
+   A migration being additive is necessary, but does not prove that every prior
+   binary is safe with the current data and enabled features.
 
 ---
 
@@ -153,6 +164,16 @@ are behind Traefik/Coolify (same idea as the HTTPS acceptance checklist).
 
 If any hard check fails, go to [§6 Rollback](#6-rollback).
 
+`gorun version` identifies the artifact executed by that command. Confirm the
+serving process through authenticated `/api/v1/system/health` → `version` (or the
+System health page), especially after replacing a binary on disk. A current
+runtime version, successful migrations and acceptance of optional features are
+separate observations.
+The additive `/api/v1/site/info` endpoint also reports the running build with
+its source; `/api/v1/site/runtime` provides protected process details. See
+[API.md](API.md#public-site-information-and-protected-runtime). Discovery requires
+no configuration changes or data migration and preserves existing theme services.
+
 ---
 
 ## 5. Dress rehearsal (recommended)
@@ -177,30 +198,59 @@ before `serve --data` on it. Details: [PRODUCTION.md](PRODUCTION.md).
 
 ## 6. Rollback
 
-Use this when the new tag fails smoke, will not boot, or you must undo quickly.
-Migrations already applied stay in any DB the new binary touched — that is why
-you restore a **pre-upgrade** pair (or the untouched pre-upgrade data dir copy).
+Use this when the new tag fails smoke, will not boot, or must be withdrawn.
+First stop or quiesce the failing process and preserve its current data, including
+writes made since the pre-upgrade backup. Keep that current copy and the
+pre-upgrade backup separately. Do not delete or overwrite either during diagnosis.
 
-### A. Binary host
+### A. Runtime rollback — preserve current data
+
+Migrations already applied stay in the database. The repository's additive
+migration policy supports running a compatible earlier binary against this
+current database; it does not guarantee compatibility with every old release.
+Check the release notes, schema inspection, feature changes, security behavior
+and installed themes. Rehearse with the previous artifact against a **copy of
+current data**, on a private endpoint with integrations and background side
+effects disabled, before allowing it to serve live traffic.
+
+If compatible, stop the new process and start the previous binary/image with the
+**same current data directory and original secret key**, then run the smoke list.
+Use stop-then-start for Docker/Coolify as well. Do not run down migrations or
+restore an old database as part of this operation. If compatibility cannot be
+established, keep the site in maintenance and repair forward or use the explicit
+recovery procedure below.
+
+An old binary may report `database has migrations unknown to this binary` /
+System Health schema “ahead”. Inspect the unknown migrations; do not suppress
+the warning as proof that the downgrade is safe. Security-sensitive migrations
+that older binaries ignore are called out in release notes; see
+[LOGIN-SECURITY.md](LOGIN-SECURITY.md) for an example.
+
+### B. Disaster recovery — restore into a separate directory
+
+Use a pre-upgrade snapshot only after explicitly deciding how to reconcile any
+newer content, media, users, orders and settings, or accepting their loss. Verify
+that current data has been preserved before switching traffic. A backup alone
+does not capture writes made after its timestamp. These commands prepare a
+separate recovery tree; they do not authorize automatic cutover.
+
+Binary host:
 
 ```sh
 sudo systemctl stop gorun
 
-# Option 1 — you kept the old data dir untouched and only swapped the binary:
-#   start the PREVIOUS extract with the same GORUN_DATA and secret key.
-
-# Option 2 — the new binary already migrated the live DB (typical):
+# Preserve the CURRENT data tree first; never restore into /var/lib/gorun.
 gorun backup-restore --input /var/lib/gorun/backups/<pre-upgrade-stamp>.manifest.json \
   --dest /var/lib/gorun-rolled-back
 # copy secret.key / gorun.toml (or set GORUN_SECRET_KEY)
-# point the service at /var/lib/gorun-rolled-back
-# run the PREVIOUS release binary from its extract dir
-sudo systemctl start gorun
+# Inspect, rehearse, reconcile newer writes, and approve recovery cutover.
+# Only then point the service at /var/lib/gorun-rolled-back and start
+# the PREVIOUS release binary from its extract dir.
 ```
 
-### B. Docker / GHCR / Coolify
+Docker / GHCR / Coolify:
 
-1. Stop the new container.
+1. Stop the new container and preserve the current volume.
 2. Restore the pre-upgrade pair into a **new** directory or replacement volume
    (never merge into a half-migrated live dir). Example:
 
@@ -210,16 +260,10 @@ docker run --rm -v gorun-data:/data -v /var/lib/gorun-rolled-back:/restore \
   backup-restore --input /data/backups/<pre-upgrade-stamp>.manifest.json --dest /restore
 ```
 
-3. Start `ghcr.io/zadstack/gorun:<PREV>` (or Coolify image pin) with the
-   restored data and the **same** `GORUN_SECRET_KEY`.
+3. Inspect and rehearse the restored tree, reconcile newer writes, and approve
+   recovery cutover before starting `ghcr.io/zadstack/gorun:<PREV>` (or Coolify
+   image pin) with the restored data and the **same** `GORUN_SECRET_KEY`.
 4. Re-run the smoke list.
-
-A temporary WARN `database has migrations unknown to this binary` /
-System Health schema “ahead” can appear if an old binary briefly opens a DB
-the new one already migrated — expected only when migrations are additive and
-you intend that state. Prefer a restored pre-upgrade pair for a clean rollback.
-Security-sensitive migrations that older binaries ignore are called out in
-release notes (see [LOGIN-SECURITY.md](LOGIN-SECURITY.md) for an example).
 
 ---
 
@@ -241,9 +285,12 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ## العربية — ملخص سريع
 
-لا يوجد محدّث تلقائي للنواة. الترقية = نسخة احتياطية ← إيقاف العملية (قفل
-`gorun.lock`) ← ثنائي أو صورة الوسم الجديد على **نفس** مجلد البيانات والمفتاح ←
-migrations عند `serve` ← فحص الصحة ودخول الأدمن. الرجوع = ثنائي/صورة سابقة +
-مجلد مُستعاد من زوج النسخة قبل الترقية + المفتاح الأصلي — وليس إرجاع الملف
-التنفيذي وحده. التفاصيل أعلاه؛ Coolify في
+لا توجد دورة تحديث تلقائية مكتملة للنواة. إجراء النشر الاختياري في الأدمن ينشئ
+نسخة احتياطية موثّقة ويرسل طلب نشر إلى Coolify؛ قبول الطلب لا يعني نجاح التحديث.
+الترقية = نسخة احتياطية ← إيقاف العملية (قفل `gorun.lock`) ← ثنائي أو صورة الوسم
+الجديد على **نفس** مجلد البيانات والمفتاح ← migrations عند `serve` ← فحص الصحة
+ودخول الأدمن. التراجع عن التشغيل يستخدم إصدارًا سابقًا متوافقًا مع **البيانات
+الحالية** بعد فحص التوافق. استعادة نسخة قديمة إجراء تعافٍ منفصل قد يفقد البيانات
+الأحدث؛ احتفظ بالبيانات الحالية، واستعد إلى مجلد منفصل، ولا تنفّذ التحويل قبل
+تسوية الكتابات الجديدة أو قبول فقدانها صراحةً. التفاصيل أعلاه؛ Coolify في
 [deploy/coolify.md](../deploy/coolify.md).

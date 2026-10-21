@@ -128,6 +128,20 @@ with `kernel.Get[T](d, name)`.
 | `wpmigrate.product_importer` | `wpmigrate.ProductImporterService` | `wpmigrate.ProductImporter` (+ `ProductMediaReplacer`) | wpmigrate (commerce adapter, when commerce is booted) |
 | `ext` | `ext.ServiceName` | `ext.Service` | ext |
 
+`kernel.Modules(d)` returns a copied snapshot of modules supplied to this boot and
+the selection made by the existing `OptionalModule` gate. It includes configured
+add-ons absent from the supplied build, and never re-runs activation on an HTTP
+request. The snapshot is stored privately as `kernel.module_inventory`; callers
+should use the accessor. Disabled modules still skip registration and migrations.
+
+The theme service optionally implements `theme.AppearanceProvider` for public
+appearance declarations and provenance. This does not expand `theme.Service`, so
+downstream implementations remain compatible. The new `/api/v1/site/info` API
+uses only its public projection; `/site/runtime` requires `settings.manage` and
+the admin module's `/site/capabilities` requires `system.health`. See [API.md](API.md)
+for evidence semantics and [CORE-UPGRADE-ROADMAP.md](CORE-UPGRADE-ROADMAP.md) for the
+separate background-observation and update-lifecycle work.
+
 ## Request lifecycle
 
 `kernel.assemble` builds the root `chi` router after every module has registered:
