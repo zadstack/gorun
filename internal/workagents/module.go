@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 )
@@ -68,6 +69,9 @@ func (m *Module) Register(d *kernel.Deps) error {
 		w.Write(b)
 	})
 	h.api(d)
+	if err := seedExampleOrchestratorAgents(context.Background(), d, func() string { return db.FormatTime(time.Now()) }); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -111,6 +115,9 @@ func (h *handlers) page(w http.ResponseWriter, r *http.Request) {
 	}
 	user := auth.UserFromContext(r.Context())
 	adminWorkspace := manager(r.Context()) && user != nil && user.Role != auth.RoleCustomer
+	if adminWorkspace {
+		_ = seedExampleOrchestratorAgents(r.Context(), h.s.d, func() string { return db.FormatTime(time.Now()) })
+	}
 	if adminWorkspace && h.adminTpl != nil && r.URL.Path != "/admin/workagents" {
 		w.Header().Set("Cache-Control", "no-store")
 		http.Redirect(w, r, "/admin/workagents", http.StatusSeeOther)

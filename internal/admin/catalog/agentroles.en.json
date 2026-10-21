@@ -2,7 +2,7 @@
   "title": "Agent role templates",
   "intro": "Shared teaching examples: inspect each goal, its skills and handoff, then adapt an unsaved configuration. These are instructions, not installed autonomous agents.",
   "recipe": "A team handoff example",
-  "recipe_help": "Researcher → bilingual editor → SEO reviewer → campaign planner. Support and operations roles handle separate supplied evidence. A person copies or connects the reviewed output to the next task; choosing these templates does not create an automatic workflow.",
+  "recipe_help": "Orchestrator → researcher → bilingual editor → SEO reviewer → campaign planner. Support and operations roles handle separate supplied evidence. A person copies or connects the reviewed output to the next task; choosing these templates does not create an automatic workflow.",
   "boundaries": "Private drafts only. Skills do not grant access. Existing canvas context, owner permissions and explicit review still apply. No automatic publishing, scheduling, messaging, SSH or Metricool actions.",
   "setup_help": "Select your existing agent. The next page previews replacement skills without saving; you choose MCP references yourself and review before Save. The model remains unchanged and can be configured separately.",
   "choose_agent": "Your active agent key",

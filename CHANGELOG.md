@@ -9,6 +9,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 - Add **Commerce → Launch store** (`/admin/commerce/setup`): read-only checklist for Stripe keys, webhook URL, billing servers and sellable provisioning products, with links to settings and docs. Store settings registration copy uses i18n catalogs (EN/AR).
 - Seed three **inactive example products** on first boot (`example-provisioning`, `example-service`, `example-digital`) so operators can learn each product kind before going live.
+- Add **Orchestrator** agent role template (7th example) and an inactive **Example: Orchestrator** workagent profile per admin on first boot.
 
 ## [0.11.0] - 2026-10-20
 
