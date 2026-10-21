@@ -38,35 +38,6 @@ func (h *adminHandlers) settingsData(r *http.Request) settingsPage {
 	}
 }
 
-type setupItem struct {
-	Key, Href string
-	Done      bool
-}
-
-func (h *adminHandlers) setup(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	s := h.svc
-	pg := h.settingsData(r)
-	products, _ := s.Products(ctx, true)
-	priced := false
-	for _, p := range products {
-		if p.PriceMinor > 0 || p.StripePriceID != "" || len(p.Prices) > 0 {
-			priced = true
-			break
-		}
-	}
-	secret := pg.StripeSet || (pg.Mode == "live" && pg.StripeFromEnv) || (pg.Mode == "test" && pg.TestKeySet)
-	hook := pg.WebhookSet || (pg.Mode == "live" && pg.WebhookFromEnv) || (pg.Mode == "test" && pg.TestWebhookSet)
-	items := []setupItem{
-		{Key: "commerce.setup.mode", Href: "/admin/commerce/settings", Done: pg.Mode == "test" || pg.Mode == "live"},
-		{Key: "commerce.setup.secret", Href: "/admin/commerce/settings", Done: secret},
-		{Key: "commerce.setup.webhook", Href: "/admin/commerce/settings", Done: hook},
-		{Key: "commerce.setup.product", Href: "/admin/commerce/products", Done: priced},
-		{Key: "commerce.setup.currency", Href: "/admin/commerce/settings", Done: validCurrency(pg.Currency)},
-	}
-	h.tpl.Render(w, r, "pages/commerce/setup.html", map[string]any{"Items": items, "Settings": pg})
-}
-
 // settings is Commerce → Settings: currency, Stripe keys (set/clear; never
 // shown) and the webhook endpoint to configure in the Stripe Dashboard.
 func (h *adminHandlers) settings(w http.ResponseWriter, r *http.Request) {

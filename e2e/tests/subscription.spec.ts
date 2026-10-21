@@ -24,6 +24,14 @@ test.describe.serial('subscription billing', () => {
   let orderID = '';
 
   test('create a monthly plan and a pending order', async ({ page }) => {
+    await page.goto('/admin/commerce/servers/new');
+    await page.fill('#s-name', 'E2E fake billing');
+    await page.fill('#s-client', env('E2E_BILLING_CLIENT'));
+    await page.fill('#s-url', env('E2E_BILLING_URL'));
+    await page.fill('#s-secret', env('E2E_BILLING_SECRET'));
+    await page.locator('form[action="/admin/commerce/servers"] button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/admin\/commerce\/servers\/[0-9A-Z]{26}$/);
+
     await page.goto('/admin/commerce/products/new');
     await page.fill('#p-name', 'E2E subscription');
     await page.fill('#p-slug', SLUG);
@@ -32,16 +40,22 @@ test.describe.serial('subscription billing', () => {
     await page.selectOption('#p-billing', 'subscription');
     await page.selectOption('#p-interval', 'month');
     await page.fill('#p-trial', '7');
+    await page.selectOption('#p-server', { label: 'E2E fake billing' });
     await page.fill('#p-plan', 'pro');
     await page.fill('#p-months', '1');
-    const server = page.locator('#p-server option', { hasText: 'E2E fake billing' });
-    if (await server.count()) await page.selectOption('#p-server', { label: 'E2E fake billing' });
     await page.check('input[name="active"]');
     await page.locator('form[action="/admin/commerce/products"] button[type="submit"]').last().click();
+    await expect(page).toHaveURL(/\/admin\/commerce\/products(\/[0-9A-Z]{26})?$/);
+
     await page.goto('/admin/commerce/settings');
     await page.selectOption('#c-mode', 'live');
     await page.fill('#c-stripe', 'sk_test_e2e_subscription_dummy');
+    await page.fill('#c-webhook', env('E2E_WEBHOOK_SECRET'));
     await page.locator('form[action="/admin/commerce/settings"] button[type="submit"]').click();
+    await expect(page.locator('[role="status"]').first()).toBeVisible();
+
+    await page.goto(`/product/${SLUG}`);
+    await expect(page.locator(`form[action$="/checkout/${SLUG}"]`)).toBeVisible();
     const token = await csrfOf(page, `/product/${SLUG}`);
     const r = await page.request.post(`/checkout/${SLUG}`, {
       form: { _csrf: token, email: CUSTOMER, website: '' },
