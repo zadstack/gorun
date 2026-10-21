@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-20",
+  "date": "2026-10-21",
   "files": [
     {
       "path": "github-banner.svg",
@@ -39,16 +39,17 @@
     },
     {
       "path": "reviewed-workflow.svg",
-      "bytes": 1748,
-      "sha256": "13bda65a1f699d1f644823cce99cc4c2b721d4c813ec36cf1cc56727c43c1195",
-      "viewBox": "0 0 1000 370"
+      "bytes": 4709,
+      "sha256": "cf2a18bfdb3d2aff3e7deae03655e87c5bfdb7b78629c27f0ba0b16a1e1a394b",
+      "viewBox": "0 0 1000 270"
     },
     {
       "path": "readme-hero.svg",
-      "bytes": 6608,
-      "sha256": "c7830fde0766d003f8805eab66ff086f896729f413ff5a2bb73d10e2afb10765",
+      "bytes": 4746,
+      "sha256": "f739605c39dc8dcc3865f22a262dda8e2d65a468b9c1eaba263d1aefacd3e4dd",
       "viewBox": "0 0 1200 360",
-      "animated": true
+      "animated": true,
+      "motion": "CSS, one 3.6-second decorative pass; disabled for prefers-reduced-motion; complete static fallback"
     },
     {
       "path": "screenshots/agent-keys-en.png",

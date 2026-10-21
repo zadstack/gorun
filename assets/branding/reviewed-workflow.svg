@@ -1,1 +1,41 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 370" role="img" aria-labelledby="title desc"><title id="title">A reviewed content workflow</title><desc id="desc">Connect selected content and a prompt to an agent. The result is a new private note. A human reviews it separately before publishing content.</desc><rect width="1000" height="370" rx="12" fill="#f1f4f7"/><g fill="none" stroke="#bdc9db" stroke-width="2"><path d="M238 103h60v94h56M238 275h60v-78M622 197h52M848 197h56"/></g><g fill="#f9fafb" stroke="#dce2e8"><rect x="40" y="58" width="198" height="90" rx="8"/><rect x="40" y="230" width="198" height="90" rx="8"/><rect x="354" y="135" width="268" height="125" rx="8"/><rect x="674" y="147" width="174" height="102" rx="8"/></g><g font-family="Arial,sans-serif"><g fill="#545e69" font-size="13"><text x="62" y="87">YOU CHOOSE</text><text x="62" y="259">YOU WRITE</text><text x="376" y="165">SCOPED ACCESS · MCP / AI</text><text x="696" y="176">NEW PRIVATE NOTE</text></g><g fill="#080e14" font-size="23" font-weight="700"><text x="62" y="122">Content</text><text x="62" y="294">Prompt</text><text x="376" y="204">Connected agent</text><text x="696" y="212">Result</text></g><text x="376" y="236" fill="#545e69" font-size="14">Configured provider or external client</text><text x="867" y="267" fill="#080e14" font-size="17" font-weight="700">Your review</text><text x="754" y="333" fill="#545e69" font-size="13">Publishing remains a separate action.</text></g><circle cx="927" cy="197" r="28" fill="#1748ed"/><path d="m914 197 9 9 17-19" fill="none" stroke="#f9fafb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><g fill="#1748ed"><circle cx="298" cy="197" r="5"/><circle cx="649" cy="197" r="5"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 270" width="1000" height="270" role="img" aria-labelledby="title desc" lang="en">
+<title id="title">A workflow you can inspect</title><desc id="desc">You select context and instructions, grant access and run the connected agent. The result is a new private note for your review. Publishing remains a separate action.</desc>
+<style>text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; } svg[lang="ar"] text { font-family: Tahoma, Arial, sans-serif; } .ink { fill: #080e14; } .muted { fill: #545e69; } .mobile { display: none; } @media (max-width: 600px) { .desktop { display: none; } .mobile { display: inline; } }</style>
+<rect x=".5" y=".5" width="999" height="269" rx="14" fill="#f7f9fc" stroke="#dce2e8"/><g class="desktop">
+<text x="32" y="42" class="ink" font-size="22" font-weight="700" text-anchor="start" >A workflow you can inspect</text>
+<text x="149.0" y="84" class="muted" font-size="12" font-weight="400" text-anchor="middle" >01 · YOU SELECT</text>
+<rect x="32" y="102" width="234" height="106" rx="10" fill="#fff" stroke="#dce2e8"/>
+<text x="149.0" y="139" class="ink" font-size="19" font-weight="650" text-anchor="middle" >Context + instructions</text>
+<text x="149.0" y="170" class="muted" font-size="13" font-weight="400" text-anchor="middle" >Explicitly granted access</text>
+<path d="M272 153h24 M290 148l5 5-5 5" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="411.0" y="84" class="muted" font-size="12" font-weight="400" text-anchor="middle" >02 · YOU RUN</text>
+<rect x="302" y="102" width="218" height="106" rx="10" fill="#fff" stroke="#dce2e8"/>
+<text x="411.0" y="139" class="ink" font-size="19" font-weight="650" text-anchor="middle" >Connected agent</text>
+<text x="411.0" y="170" class="muted" font-size="13" font-weight="400" text-anchor="middle" >Configured provider</text>
+<text x="411.0" y="188" class="muted" font-size="13" font-weight="400" text-anchor="middle" >or external client</text>
+<path d="M526 153h24 M544 148l5 5-5 5" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="659.0" y="84" class="muted" font-size="12" font-weight="400" text-anchor="middle" >03 · YOU RECEIVE</text>
+<rect x="556" y="102" width="206" height="106" rx="10" fill="#fff" stroke="#dce2e8"/>
+<text x="659.0" y="139" class="ink" font-size="19" font-weight="650" text-anchor="middle" >Private result</text>
+<text x="659.0" y="170" class="muted" font-size="13" font-weight="400" text-anchor="middle" >Added as a new note</text>
+<path d="M768 153h24 M786 148l5 5-5 5" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="883.0" y="84" class="muted" font-size="12" font-weight="400" text-anchor="middle" >04 · YOU REVIEW</text>
+<rect x="798" y="102" width="170" height="106" rx="10" fill="#fff" stroke="#dce2e8"/>
+<text x="883.0" y="139" class="ink" font-size="19" font-weight="650" text-anchor="middle" >Your decision</text>
+<text x="883.0" y="170" class="muted" font-size="13" font-weight="400" text-anchor="middle" >Publication is separate</text>
+<text x="32" y="245" class="muted" font-size="14" font-weight="400" text-anchor="start" >Sources stay intact. Agent output does not publish itself.</text>
+</g><g class="mobile" display="none">
+<text x="32" y="60" class="ink" font-size="44" font-weight="700" text-anchor="start" >From context to your review</text>
+<circle cx="125" cy="112" r="10" fill="#1748ed"/>
+<text x="125" y="174" class="ink" font-size="36" font-weight="600" text-anchor="middle" >Context</text>
+<path d="M173 112h154 M320 105l7 7-7 7" fill="none" stroke="#aebed7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="375" cy="112" r="10" fill="#1748ed"/>
+<text x="375" y="174" class="ink" font-size="36" font-weight="600" text-anchor="middle" >Agent</text>
+<path d="M423 112h154 M570 105l7 7-7 7" fill="none" stroke="#aebed7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="625" cy="112" r="10" fill="#1748ed"/>
+<text x="625" y="174" class="ink" font-size="36" font-weight="600" text-anchor="middle" >Private note</text>
+<path d="M673 112h154 M820 105l7 7-7 7" fill="none" stroke="#aebed7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="875" cy="112" r="10" fill="#1748ed"/>
+<text x="875" y="174" class="ink" font-size="36" font-weight="600" text-anchor="middle" >Review</text>
+<text x="32" y="239" class="muted" font-size="33" font-weight="400" text-anchor="start" >The result stays private. Publishing is separate.</text>
+</g></svg>

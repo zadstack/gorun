@@ -1,16 +1,16 @@
 # GoRun
 
-[![ci](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE) ![Go 1.27](https://img.shields.io/badge/go-1.27-256b9b.svg)
+[![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![آخر إصدار](https://img.shields.io/github/v/release/zadstack/gorun?label=release&color=167252)](https://github.com/zadstack/gorun/releases/latest) [![الترخيص: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 
-![GoRun — your content, your team, your agents](assets/branding/github-banner.svg)
+![GoRun: محتواك وبنيتك التحتية، مع ملف Go واحد وSQLite يربطان المحتوى والقوالب والوكلاء](assets/branding/readme-hero.svg)
 
-**العربية** · [English](README.md) · [أدلة الموقع](https://gorun.gocloud.run/ar/gorun-guides-ar)
+**نظام إدارة محتوى تستضيفه بنفسك، لفريقك ووكلاء الذكاء الاصطناعي.** ملف Go واحد، وقاعدة SQLite، ولوحة إدارة بالعربية والإنجليزية تدعم RTL.
 
-**نظام إدارة محتوى يعمل فيه فريقك ووكلاء الذكاء الاصطناعي معًا، وتبقى القرارات الحساسة بيد البشر.**
+اكتب المحتوى وانشره، وخصص موقعك بالقوالب، واربط الوكلاء عبر MCP بصلاحيات محددة وموافقة بشرية على الإجراءات الحساسة وسجل تدقيق. تتوفر REST للتكاملات الأخرى، وتبقى الخدمات الخارجية اختيارية.
 
-يجمع GoRun في لوحة تحكم واحدة، عربية وإنجليزية مع دعم كامل لاتجاه RTL، بين سير عمل الفريق، ووكلاء يعملون عبر REST وMCP بصلاحيات محددة، ولوحات عمل (Canvases) تربط المحتوى بالتعليمات والنتائج. وهو نظام مفتوح المصدر تستضيفه بنفسك بترخيص [GNU AGPL v3](LICENSE).
+[**جرّبه الآن**](#quick-start) · [الفريق](#للفريق) · [الوكلاء](#للوكلاء) · [التوثيق](docs/README.md) · [الإصدارات](https://github.com/zadstack/gorun/releases) · [English](README.md)
 
-[الفريق](#للفريق) · [الوكلاء](#للوكلاء) · [اللوحات](#اللوحات-canvases) · [البدء السريع](#البدء-السريع) · [التوثيق](#التوثيق)
+[أدلة الموقع](https://gorun.gocloud.run/ar/gorun-guides-ar) · [الأمان](SECURITY.md) · [المساهمة](CONTRIBUTING.md) · [اللوحات](#اللوحات-canvases)
 
 لقطات الشاشة من نسخة محلية معزولة بمحتوى تجريبي خيالي (Atlas Studio)، لا من بيانات عملاء ولا من مزود متصل.
 
@@ -178,6 +178,8 @@ If a tool requests approval, report its request ID and wait for the decision.
 ### نسخ تلقائي واستعادة آمنة
 
 جدولة يومية أو أسبوعية، وحالة آخر نسخة سليمة والمساحة المستخدمة، وتنبيهات الفشل. يعرض `gorun backup-preview` نسخة مؤقتة للقراءة فقط على localhost قبل الاستعادة إلى مجلد جديد. استخدم `gorun doctor` لفحص موقع قائم دون تغييره. [التفاصيل](docs/BACKUPS.md).
+
+<a id="quick-start"></a>
 
 ### جرّبه الآن
 

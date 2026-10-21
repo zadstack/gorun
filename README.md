@@ -2,11 +2,15 @@
 
 [![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![Latest release](https://img.shields.io/github/v/release/zadstack/gorun?label=release&color=167252)](https://github.com/zadstack/gorun/releases/latest) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 
-![GoRun: content through scoped agents to human review, with Classic Modern Minimal Serif Docs identity themes](assets/branding/readme-hero.svg)
+![GoRun: your content and infrastructure, with one Go binary and SQLite connecting content, themes and agents](assets/branding/readme-hero.svg)
 
-GoRun is a self-hosted CMS for your team and AI agents: one Go binary, SQLite, and a bilingual admin (English and Arabic, with RTL). Editors publish content; agents connect over MCP (REST for other clients) with scoped keys, human approval for sensitive changes, and an audit trail.
+**A self-hosted CMS for your team and AI agents.** One Go binary, SQLite, and an English and Arabic admin with RTL.
 
-[العربية](README.ar.md) · [Website guides](https://gorun.gocloud.run/gorun-guides) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Security](SECURITY.md) · [Contribute](CONTRIBUTING.md)
+Write and publish content, shape your site with themes, and connect agents over MCP. Scoped keys, human approval for sensitive actions and an audit trail keep access explicit. REST serves other integrations; external providers are optional.
+
+[**Quick start**](#run-it-now) · [Why GoRun](#why-gorun) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [العربية](README.ar.md)
+
+[Website guides](https://gorun.gocloud.run/gorun-guides) · [Security](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
 ## Run it now
 
@@ -130,6 +134,8 @@ Activating a theme does not create starter pages; use the site builder for that.
 Connect an MCP client with an **AI agent** key. Its scopes are bounded by its owner's permissions; publishing, deleting and changing sensitive settings require human approval by default. REST integration keys are separate from agent keys.
 
 Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish automatically. Agents need `canvas.read` plus an explicit board grant to list or read boards over MCP; REST keys use the matching canvas endpoints. Configure your provider or agent connection before running it.
+
+![Selected content and instructions go to a connected agent; its result becomes a private note for your review, with publication kept separate](assets/branding/reviewed-workflow.svg)
 
 With a configured AI provider, review the exact destination and site context before separately confirming a request for canvas suggestions. Suggestions create an unbound starting point; choose its executor and permissions yourself. [AI suggestion workflow](docs/CANVAS-AI-SUGGESTIONS.md).
 
