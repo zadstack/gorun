@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![آخر إصدار](https://img.shields.io/github/v/release/zadstack/gorun?label=release&color=167252)](https://github.com/zadstack/gorun/releases/latest) [![الترخيص: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 
-![GoRun: محتواك وبنيتك التحتية، مع ملف Go واحد وSQLite يربطان المحتوى والقوالب والوكلاء](assets/branding/readme-hero-ar.svg)
+![GoRun: محتواك وبنيتك التحتية، مع ملف Go واحد وSQLite يربطان المحتوى والقوالب والوكلاء](assets/branding/readme-hero.svg)
 
 **نظام إدارة محتوى تستضيفه بنفسك، لفريقك ووكلاء الذكاء الاصطناعي.** ملف Go واحد، وقاعدة SQLite، ولوحة إدارة بالعربية والإنجليزية تدعم RTL.
 
@@ -98,7 +98,7 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 اللوحات (**الكانفس والوكلاء ← اللوحات**) مساحة عمل تشغيلية، وليست أداة لتصميم الصفحات.
 
-![يُرسَل محتوى مختار وتعليمات إلى وكيل متصل، وتصبح النتيجة ملاحظة خاصة جديدة لمراجعتك](assets/branding/reviewed-workflow-ar.svg)
+![يُرسَل محتوى مختار وتعليمات إلى وكيل متصل، وتصبح النتيجة ملاحظة خاصة جديدة لمراجعتك](assets/branding/reviewed-workflow.svg)
 
 - **اجمع عملك في مكان واحد.** ملاحظات وقوائم مهام وروابط ومراجع لمقالات وصفحات، وودجات للموافقات والمهام الخلفية وطلبات الخدمة.
 - **شغّل الوكلاء على سياق تختاره أنت.** اربط المصادر والتعليمات بمزوّد نصوص مُعَدّ أو بمفتاح وكيل مسمّى، وراجع السياق كما سيُرسَل، ثم شغّل.

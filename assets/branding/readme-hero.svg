@@ -21,7 +21,7 @@
 <text x="52" y="182" class="ink" font-size="42" font-weight="700" text-anchor="start" >Your content.</text>
 <text x="52" y="235" class="ink" font-size="42" font-weight="700" text-anchor="start" >Your infrastructure.</text>
 <text x="52" y="278" class="muted" font-size="19" font-weight="400" text-anchor="start" >One Go binary. SQLite. Your site.</text>
-<text x="52" y="324" class="muted" font-size="15" font-weight="400" text-anchor="start" >English + العربية  ·  MCP + REST</text>
+<text x="52" y="324" class="muted" font-size="15" font-weight="400" text-anchor="start" >English + Arabic  ·  MCP + REST</text>
 <g transform="translate(0 0)">
 <rect x="640" y="38" width="520" height="284" rx="14" fill="#fff" stroke="#dce2e8"/>
 <circle cx="663" cy="61" r="3" fill="#bdc9db"/><circle cx="675" cy="61" r="3" fill="#bdc9db"/><circle cx="687" cy="61" r="3" fill="#bdc9db"/>
@@ -43,6 +43,6 @@
 <g transform="translate(40 22) scale(1.22)"><g fill="none" stroke="#1748ed" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M61 24H32a16 16 0 0 0-16 16v24a16 16 0 0 0 16 16h28a16 16 0 0 0 16-16V48H47"/><path d="M35 16h29a16 16 0 0 1 16 16v5"/></g><circle cx="47" cy="48" r="6" fill="#080e14"/></g>
 <text x="184" y="119" class="ink" font-size="86" font-weight="700" text-anchor="start" >GoRun</text>
 <text x="52" y="228" class="ink" font-size="58" font-weight="700" text-anchor="start" >Your content. Your infrastructure.</text>
-<text x="52" y="314" class="muted" font-size="37" font-weight="400" text-anchor="start" >Go + SQLite  ·  English + العربية  ·  MCP / REST</text>
+<text x="52" y="314" class="muted" font-size="37" font-weight="400" text-anchor="start" >Go + SQLite  ·  English + Arabic  ·  MCP / REST</text>
 </g>
 </svg>
