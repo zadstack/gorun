@@ -135,6 +135,8 @@ Connect an MCP client with an **AI agent** key. Its scopes are bounded by its ow
 
 Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish automatically. Agents need `canvas.read` plus an explicit board grant to list or read boards over MCP; REST keys use the matching canvas endpoints. Configure your provider or agent connection before running it.
 
+![Selected content and instructions go to a connected agent; its result becomes a private note for your review, with publication kept separate](assets/branding/reviewed-workflow.svg)
+
 With a configured AI provider, review the exact destination and site context before separately confirming a request for canvas suggestions. Suggestions create an unbound starting point; choose its executor and permissions yourself. [AI suggestion workflow](docs/CANVAS-AI-SUGGESTIONS.md).
 
 ![GoRun 0.10 showing three canvas suggestions after explicit review and confirmation](assets/branding/screenshots/canvas-ai-suggestions-en.png)
