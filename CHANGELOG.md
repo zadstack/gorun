@@ -5,11 +5,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-21
+
 ### Edge on Cloudflare
 
 - Add a Deploy to Cloudflare button for the experimental Edge edition. Cloudflare clones `edge/`, provisions the D1 database and private R2 bucket from `wrangler.jsonc`, applies the Edge migrations, loads the synthetic preview, and deploys the Worker. The published address is the site, managed from `/admin` on that origin with the owner key. This does not install the Full binary.
 - Shape the Edge owner admin as a miniature of the GoRun workspace: sidebar, content counts, status badges, and a split editor. Agents, uploads, and the rest of the Full dashboard stay out.
 - Add content search, status, and language filters, status tabs, and the public link on a published editor. Add a Managers button that issues one primary key for GoRun. GoRun stores that key encrypted under Settings → Edge and checks `GET /api/v1/manager`. The check confirms identity only.
+
+Existing installations keep data and settings. Publishing this release does not upgrade a running GoCloud/site process, and it does not install the Edge Worker onto an existing Full site.
 
 ## [0.12.0] - 2026-10-21
 
@@ -641,7 +645,9 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/zadstack/gorun/compare/v0.12.0...v0.13.0
+[0.12.0]: https://github.com/zadstack/gorun/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/zadstack/gorun/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/zadstack/gorun/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/zadstack/gorun/compare/v0.8.0...v0.9.0
