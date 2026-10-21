@@ -56,6 +56,8 @@ func registerAdmin(d *kernel.Deps, s *service, tpl *httpx.Templates) {
 	m.Get("/commerce/setup", h.setup)
 	m.Get("/commerce/settings", h.settings)
 	m.Post("/commerce/settings", h.settingsSave)
+	m.Post("/commerce/settings/test-event", h.sendTestEvent)
+	m.Post("/commerce/orders/{id}/refund", h.orderRefund)
 
 	nav := func(id, icon, href, perm string, pos int) {
 		d.Admin.AddNav(kernel.NavItem{ID: "commerce." + id, LabelKey: "commerce.nav." + id, Icon: icon, Href: href, Permission: perm, Group: "commerce", Position: pos})
@@ -130,6 +132,14 @@ type productForm struct {
 	PlanCode         string   `form:"plan_code"`
 	ServerID         string   `form:"server_id"`
 	AccessMonths     int      `form:"access_months"`
+	BillingMode      string   `form:"billing_mode"`
+	BillingInterval  string   `form:"billing_interval"`
+	StripePriceID    string   `form:"stripe_price_id"`
+	TrialDays        int      `form:"trial_days"`
+	PriceUSD         string   `form:"price_usd"`
+	PriceAED         string   `form:"price_aed"`
+	PriceIDUSD       string   `form:"stripe_price_id_usd"`
+	PriceIDAED       string   `form:"stripe_price_id_aed"`
 	Features         []string `form:"features"`
 	ImageMediaID     string   `form:"image_media_id"`
 	Sort             int      `form:"sort"`
@@ -139,11 +149,24 @@ type productForm struct {
 	SEORobots        string   `form:"seo_robots"`
 }
 
+func moneyField(amount int64, currency string) string {
+	if amount == 0 {
+		return ""
+	}
+	return FormatPrice(amount, currency)
+}
+
 func formOf(p *Product) productForm {
 	m := seo.FromMap(p.SEO)
+	var usd, aed CurrencyPrice
+	if p.Prices != nil {
+		usd, aed = p.Prices["USD"], p.Prices["AED"]
+	}
 	return productForm{Kind: p.Kind, DigitalFile: p.DigitalFile, DownloadDays: p.DownloadDays, Name: p.Name, Slug: p.Slug, GroupName: p.GroupName, GroupSlug: p.GroupSlug, ShortDescription: p.ShortDescription,
 		Description: p.Description, Price: FormatPrice(p.PriceMinor, p.Currency), Currency: p.Currency, Active: p.Active, PlanCode: p.PlanCode,
-		ServerID: p.ServerID, AccessMonths: p.AccessMonths, Features: p.Features, ImageMediaID: p.ImageMediaID, Sort: p.Sort,
+		ServerID: p.ServerID, AccessMonths: p.AccessMonths, BillingMode: p.BillingMode, BillingInterval: p.Interval, StripePriceID: p.StripePriceID, TrialDays: p.TrialDays,
+		PriceUSD: moneyField(usd.AmountMinor, "USD"), PriceAED: moneyField(aed.AmountMinor, "AED"), PriceIDUSD: usd.PriceID, PriceIDAED: aed.PriceID,
+		Features: p.Features, ImageMediaID: p.ImageMediaID, Sort: p.Sort,
 		SEOTitle: m.Title, SEODescription: m.Description, SEOOGImage: m.OGImage, SEORobots: m.Robots}
 }
 
@@ -196,9 +219,29 @@ func (h *adminHandlers) productSave(w http.ResponseWriter, r *http.Request) {
 		f.Currency = h.svc.currency(r.Context())
 	}
 	price, perr := ParsePrice(f.Price, f.Currency)
+	prices := map[string]CurrencyPrice{}
+	priceFields := map[string]string{}
+	addPrice := func(code, raw, priceID, field string) {
+		raw, priceID = strings.TrimSpace(raw), strings.TrimSpace(priceID)
+		if raw == "" && priceID == "" {
+			return
+		}
+		var minor int64
+		if raw != "" {
+			var err error
+			if minor, err = ParsePrice(raw, code); err != nil {
+				priceFields[field] = "commerce.error.price_invalid"
+				return
+			}
+		}
+		prices[code] = CurrencyPrice{PriceID: priceID, AmountMinor: minor}
+	}
+	addPrice("USD", f.PriceUSD, f.PriceIDUSD, "price_usd")
+	addPrice("AED", f.PriceAED, f.PriceIDAED, "price_aed")
 	p := Product{Kind: f.Kind, DigitalFile: f.DigitalFile, DownloadDays: f.DownloadDays, ID: id, Name: f.Name, Slug: f.Slug, GroupName: f.GroupName, GroupSlug: f.GroupSlug, ShortDescription: f.ShortDescription,
 		Description: f.Description, PriceMinor: price, Currency: f.Currency, Active: f.Active, PlanCode: f.PlanCode, ServerID: f.ServerID,
-		AccessMonths: f.AccessMonths, Features: f.Features, ImageMediaID: strings.TrimSpace(f.ImageMediaID), Sort: f.Sort}
+		AccessMonths: f.AccessMonths, BillingMode: f.BillingMode, Interval: f.BillingInterval, StripePriceID: f.StripePriceID, TrialDays: f.TrialDays, Prices: prices,
+		Features: f.Features, ImageMediaID: strings.TrimSpace(f.ImageMediaID), Sort: f.Sort}
 	meta := seo.Meta{Title: strings.TrimSpace(f.SEOTitle), Description: strings.TrimSpace(f.SEODescription), OGImage: strings.TrimSpace(f.SEOOGImage), Robots: strings.TrimSpace(f.SEORobots)}
 	p.SEO = meta.ToMap()
 	wpID := ""
@@ -218,7 +261,10 @@ func (h *adminHandlers) productSave(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if perr != nil {
-		h.renderProduct(w, r, http.StatusUnprocessableEntity, productPage{ID: id, WPProductID: wpID, Form: f, Fields: map[string]string{"price": "commerce.error.price_invalid"}})
+		priceFields["price"] = "commerce.error.price_invalid"
+	}
+	if len(priceFields) > 0 {
+		h.renderProduct(w, r, http.StatusUnprocessableEntity, productPage{ID: id, WPProductID: wpID, Form: f, Fields: priceFields})
 		return
 	}
 	saved, err := h.svc.SaveProduct(r.Context(), p)

@@ -20,6 +20,7 @@ import (
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/i18n"
+	"github.com/zadstack/gorun/internal/media"
 )
 
 const (
@@ -57,17 +58,24 @@ func (s *service) StartCheckout(ctx context.Context, productID, email string) (s
 	}
 	// Configured intake must go through the validated cart request flow.
 	// The single-product payment endpoint has no intake payload.
-	if len(p.Intake) > 0 || !p.Active || (p.Kind == ProductDigital && !s.digitalFileExists(p.DigitalFile)) || (p.Kind == ProductProvisioning && (p.PlanCode == "" || p.ServerID == "")) || p.PriceMinor <= 0 {
+	amount, currency, priceID := p.priceFor(s.currency(ctx))
+	if len(p.Intake) > 0 || !p.Active || (p.Kind == ProductDigital && !s.digitalFileExists(p.DigitalFile)) || (p.Kind == ProductProvisioning && (p.PlanCode == "" || p.ServerID == "")) || (amount <= 0 && priceID == "") {
 		return "", "", &ValidationError{Fields: map[string]string{"product": "commerce.error.product_unavailable"}}
 	}
 	key := s.stripeSecretKey(ctx)
 	if key == "" {
 		return "", "", ErrStripeNotConfigured
 	}
-	customerID, _, err := s.ensureCustomer(ctx, email)
+	customerID, user, err := s.ensureCustomer(ctx, email)
 	if err != nil {
 		return "", "", err
 	}
+	stripeCustomer, err := s.stripeCustomerID(ctx, customerID)
+	if err != nil {
+		return "", "", err
+	}
+	snap := snapshotOf(p)
+	snap.PriceMinor, snap.Currency, snap.StripePriceID = amount, currency, priceID
 	orderID, now := db.NewID(), s.nowString()
 	var number string
 	err = db.InTx(ctx, s.db, func(tx *sql.Tx) error {
@@ -77,10 +85,10 @@ func (s *service) StartCheckout(ctx context.Context, productID, email string) (s
 		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO orders (id, number, customer_id, email, status, currency, total_minor, product_id,
 			product_snapshot_json, created_at, updated_at) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?)`,
-			orderID, number, customerID, email, p.Currency, p.PriceMinor, p.ID, jsonText(snapshotOf(p), "{}"), now, now); err != nil {
+			orderID, number, customerID, email, currency, amount, p.ID, jsonText(snap, "{}"), now, now); err != nil {
 			return fmt.Errorf("commerce: create order: %w", err)
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO order_items(id,order_id,product_id,quantity,unit_minor,snapshot_json) VALUES(?,?,?,1,?,?)`, db.NewID(), orderID, p.ID, p.PriceMinor, jsonText(snapshotOf(p), "{}")); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO order_items(id,order_id,product_id,quantity,unit_minor,snapshot_json) VALUES(?,?,?,1,?,?)`, db.NewID(), orderID, p.ID, amount, jsonText(snap, "{}")); err != nil {
 			return err
 		}
 		s.audit.RecordTx(ctx, tx, "commerce.order.create", "order", orderID, map[string]any{"number": number, "product": p.Slug, "email": email})
@@ -90,8 +98,23 @@ func (s *service) StartCheckout(ctx context.Context, productID, email string) (s
 		return "", "", err
 	}
 	base := s.baseURL(ctx)
+	siteID, siteErr := media.StorageSiteID(ctx, s.db)
+	if siteErr != nil {
+		s.log.Error("commerce: site id", "err", siteErr)
+		siteID = ""
+	}
+	plan := p.PlanCode
+	if plan == "" {
+		plan = p.Slug
+	}
+	mode := "payment"
+	if p.BillingMode == "subscription" {
+		mode = "subscription"
+	}
 	sess, err := s.checkout.Create(ctx, key, checkoutRequest{
-		OrderID: orderID, OrderNumber: number, Email: email, ProductName: p.Name, Currency: p.Currency, AmountMinor: p.PriceMinor,
+		OrderID: orderID, OrderNumber: number, Email: email, ProductName: p.Name, Currency: currency, AmountMinor: amount,
+		Mode: mode, CustomerID: stripeCustomer, PriceID: priceID, Interval: p.Interval, TrialDays: p.TrialDays,
+		AccountID: user.ID, Plan: plan, SiteID: siteID, AutomaticTax: s.automaticTax(ctx),
 		// {CHECKOUT_SESSION_ID} is a Stripe template variable: keep the braces literal.
 		SuccessURL: base + "/checkout/success?o=" + url.QueryEscape(orderID) + "&s={CHECKOUT_SESSION_ID}",
 		CancelURL:  base + "/product/" + url.PathEscape(p.Slug),

@@ -58,7 +58,10 @@ func (m *Module) Register(d *kernel.Deps) error {
 	d.Jobs.Register(JobProvision, s.provision, provisionMaxAttempts)
 	d.Jobs.Register(JobSuspend, s.suspendJob, provisionMaxAttempts)
 	d.Jobs.Register(JobMagicMail, s.magicMail, 3)
+	d.Jobs.Register(JobBillingMail, s.billingMail, 3)
+	d.Jobs.Register(JobResume, s.resumeJob, provisionMaxAttempts)
 	d.Jobs.Cron(CronExpire, expireEvery, s.expire)
+	d.Jobs.Cron(CronGrace, time.Hour, s.expireGrace)
 	d.Jobs.Cron("commerce.request_receipts", 10*time.Second, s.deliverRequestReceipts)
 
 	registerTheme(d, s)
@@ -89,7 +92,10 @@ func (m *Module) Register(d *kernel.Deps) error {
 	pages.Post("/account/password-login", h.accountPasswordLogin)
 	pages.Post("/account/register", h.accountRegister)
 	pages.Post("/account/open/{entitlement}", h.accountOpen)
+	pages.Post("/account/billing-portal", h.billingPortal)
 	d.Router.Webhooks.Post("/stripe", h.handleStripeWebhook)
+	d.Router.Webhooks.Post("/stripe/test", h.handleStripeWebhookMode("test"))
+	d.Router.Webhooks.Post("/stripe/live", h.handleStripeWebhookMode("live"))
 
 	tpl, ok := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates)
 	if !ok {

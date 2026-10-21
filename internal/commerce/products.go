@@ -22,11 +22,12 @@ const (
 	maxMonths        = 120
 	maxNameLen       = 200
 	maxFeatures      = 50
-	productColumns   = `id, slug, name, description, short_description, price_minor, currency, active, group_slug, group_name, plan_code, COALESCE(server_id, ''), access_months, features_json, image_media_id, sort, seo_json, COALESCE(wp_product_id, ''), kind, digital_file, download_days, intake_json`
+	productColumns   = `id, slug, name, description, short_description, price_minor, currency, active, group_slug, group_name, plan_code, COALESCE(server_id, ''), access_months, features_json, image_media_id, sort, seo_json, COALESCE(wp_product_id, ''), kind, digital_file, download_days, intake_json, billing_mode, stripe_price_id, billing_interval, trial_days, prices_json`
 	productListOrder = ` ORDER BY sort, group_slug, name, id`
 )
 
 var priceRe = regexp.MustCompile(`^\d+(\.\d+)?$`)
+var priceIDRe = regexp.MustCompile(`^price_[A-Za-z0-9_]+$`)
 
 var slugRe = regexp.MustCompile(`^[\p{Ll}\p{Lo}\p{N}]+(?:-[\p{Ll}\p{Lo}\p{N}]+)*$`)
 
@@ -52,9 +53,10 @@ func Slugify(s string) string {
 func scanProduct(row interface{ Scan(...any) error }) (*Product, error) {
 	var p Product
 	var active int
-	var features, seo, intake string
+	var features, seo, intake, prices string
 	if err := row.Scan(&p.ID, &p.Slug, &p.Name, &p.Description, &p.ShortDescription, &p.PriceMinor, &p.Currency, &active,
-		&p.GroupSlug, &p.GroupName, &p.PlanCode, &p.ServerID, &p.AccessMonths, &features, &p.ImageMediaID, &p.Sort, &seo, &p.WPProductID, &p.Kind, &p.DigitalFile, &p.DownloadDays, &intake); err != nil {
+		&p.GroupSlug, &p.GroupName, &p.PlanCode, &p.ServerID, &p.AccessMonths, &features, &p.ImageMediaID, &p.Sort, &seo, &p.WPProductID, &p.Kind, &p.DigitalFile, &p.DownloadDays, &intake,
+		&p.BillingMode, &p.StripePriceID, &p.Interval, &p.TrialDays, &prices); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -64,6 +66,13 @@ func scanProduct(row interface{ Scan(...any) error }) (*Product, error) {
 	_ = json.Unmarshal([]byte(features), &p.Features)
 	_ = json.Unmarshal([]byte(seo), &p.SEO)
 	_ = json.Unmarshal([]byte(intake), &p.Intake)
+	_ = json.Unmarshal([]byte(prices), &p.Prices)
+	if p.Prices == nil {
+		p.Prices = map[string]CurrencyPrice{}
+	}
+	if p.BillingMode == "" {
+		p.BillingMode = "payment"
+	}
 	if p.Features == nil {
 		p.Features = []string{}
 	}
@@ -138,6 +147,32 @@ func (s *service) normalizeProduct(ctx context.Context, p *Product) map[string]s
 	if p.Kind != ProductProvisioning && p.Kind != ProductService && p.Kind != ProductDigital {
 		fields["kind"] = "commerce.error.kind_invalid"
 	}
+	p.BillingMode = strings.TrimSpace(p.BillingMode)
+	p.Interval = strings.TrimSpace(p.Interval)
+	p.StripePriceID = strings.TrimSpace(p.StripePriceID)
+	if p.Interval == "month" || p.Interval == "year" {
+		p.BillingMode = "subscription"
+	}
+	if p.BillingMode == "" {
+		p.BillingMode = "payment"
+	}
+	if p.BillingMode != "payment" && p.BillingMode != "subscription" {
+		fields["billing_mode"] = "commerce.error.billing_mode"
+	}
+	if p.BillingMode == "subscription" && p.Interval != "month" && p.Interval != "year" {
+		fields["interval"] = "commerce.error.interval"
+	}
+	if p.BillingMode != "subscription" {
+		p.Interval = ""
+		p.TrialDays = 0
+	}
+	if p.TrialDays < 0 || p.TrialDays > 730 {
+		fields["trial_days"] = "commerce.error.trial_days"
+	}
+	if p.StripePriceID != "" && !priceIDRe.MatchString(p.StripePriceID) {
+		fields["stripe_price_id"] = "commerce.error.price_id"
+	}
+	p.Prices = normalizePrices(p.Prices, fields)
 	if p.DownloadDays == 0 {
 		p.DownloadDays = 7
 	}
@@ -226,6 +261,47 @@ func (s *service) normalizeProduct(ctx context.Context, p *Product) map[string]s
 	return fields
 }
 
+func normalizePrices(in map[string]CurrencyPrice, fields map[string]string) map[string]CurrencyPrice {
+	out := map[string]CurrencyPrice{}
+	for code, pr := range in {
+		cur := strings.ToUpper(strings.TrimSpace(code))
+		if !validCurrency(cur) {
+			fields["prices"] = "commerce.error.currency_invalid"
+			continue
+		}
+		pr.PriceID = strings.TrimSpace(pr.PriceID)
+		if pr.PriceID != "" && !priceIDRe.MatchString(pr.PriceID) {
+			fields["prices"] = "commerce.error.price_id"
+			continue
+		}
+		if pr.AmountMinor < 0 {
+			fields["prices"] = "commerce.error.price_invalid"
+			continue
+		}
+		if pr.AmountMinor == 0 && pr.PriceID == "" {
+			continue
+		}
+		out[cur] = pr
+	}
+	return out
+}
+
+// priceFor picks the amount, currency and Stripe price for a checkout.
+// A currency entry in Prices wins over the product default.
+func (p Product) priceFor(currency string) (amount int64, cur, priceID string) {
+	cur, amount, priceID = p.Currency, p.PriceMinor, p.StripePriceID
+	if pr, ok := p.Prices[strings.ToUpper(currency)]; ok && (pr.AmountMinor > 0 || pr.PriceID != "") {
+		if pr.AmountMinor > 0 {
+			amount = pr.AmountMinor
+			cur = strings.ToUpper(currency)
+		}
+		if pr.PriceID != "" {
+			priceID = pr.PriceID
+		}
+	}
+	return amount, cur, priceID
+}
+
 // SaveProduct creates (empty ID) or fully replaces a product.
 func (s *service) SaveProduct(ctx context.Context, p Product) (*Product, error) {
 	if fields := s.normalizeProduct(ctx, &p); len(fields) > 0 {
@@ -237,17 +313,20 @@ func (s *service) SaveProduct(ctx context.Context, p Product) (*Product, error) 
 		p.ID = db.NewID()
 	}
 	args := []any{p.Slug, p.Name, p.Description, p.ShortDescription, p.PriceMinor, p.Currency, boolInt(p.Active), p.GroupSlug, p.GroupName,
-		p.PlanCode, nullable(p.ServerID), p.AccessMonths, jsonText(p.Features, "[]"), p.ImageMediaID, p.Sort, jsonText(p.SEO, "{}"), nullable(p.WPProductID), p.Kind, p.DigitalFile, p.DownloadDays, jsonText(p.Intake, "[]")}
+		p.PlanCode, nullable(p.ServerID), p.AccessMonths, jsonText(p.Features, "[]"), p.ImageMediaID, p.Sort, jsonText(p.SEO, "{}"), nullable(p.WPProductID), p.Kind, p.DigitalFile, p.DownloadDays, jsonText(p.Intake, "[]"),
+		p.BillingMode, p.StripePriceID, p.Interval, p.TrialDays, jsonText(p.Prices, "{}")}
 	var err error
 	if create {
 		_, err = s.db.ExecContext(ctx, `INSERT INTO products (slug, name, description, short_description, price_minor, currency, active, group_slug, group_name,
-			plan_code, server_id, access_months, features_json, image_media_id, sort, seo_json, wp_product_id, kind, digital_file, download_days, intake_json, id, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, append(args, p.ID, now, now)...)
+			plan_code, server_id, access_months, features_json, image_media_id, sort, seo_json, wp_product_id, kind, digital_file, download_days, intake_json,
+			billing_mode, stripe_price_id, billing_interval, trial_days, prices_json, id, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, append(args, p.ID, now, now)...)
 	} else {
 		var res sql.Result
 		res, err = s.db.ExecContext(ctx, `UPDATE products SET slug = ?, name = ?, description = ?, short_description = ?, price_minor = ?, currency = ?,
 			active = ?, group_slug = ?, group_name = ?, plan_code = ?, server_id = ?, access_months = ?, features_json = ?, image_media_id = ?,
-			sort = ?, seo_json = ?, wp_product_id = ?, kind = ?, digital_file = ?, download_days = ?, intake_json = ?, updated_at = ? WHERE id = ?`, append(args, now, p.ID)...)
+			sort = ?, seo_json = ?, wp_product_id = ?, kind = ?, digital_file = ?, download_days = ?, intake_json = ?,
+			billing_mode = ?, stripe_price_id = ?, billing_interval = ?, trial_days = ?, prices_json = ?, updated_at = ? WHERE id = ?`, append(args, now, p.ID)...)
 		if err == nil {
 			if n, _ := res.RowsAffected(); n == 0 {
 				return nil, ErrNotFound

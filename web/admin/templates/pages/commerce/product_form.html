@@ -86,6 +86,48 @@
       </div>
       {{template "partials/field_errors" (index .Fields "price")}}{{template "partials/field_errors" (index .Fields "currency")}}
       <div>
+        <label for="p-billing" class="block font-medium mb-1">{{t "commerce.field.billing_mode"}}</label>
+        <select id="p-billing" name="billing_mode" class="h-9 w-full rounded border border-line bg-panel px-3">
+          <option value="payment" {{if ne .Form.BillingMode "subscription"}}selected{{end}}>{{t "commerce.billing.payment"}}</option>
+          <option value="subscription" {{if eq .Form.BillingMode "subscription"}}selected{{end}}>{{t "commerce.billing.subscription"}}</option>
+        </select>
+        {{template "partials/field_errors" (index .Fields "billing_mode")}}
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label for="p-interval" class="block font-medium mb-1">{{t "commerce.field.interval"}}</label>
+          <select id="p-interval" name="billing_interval" class="h-9 w-full rounded border border-line bg-panel px-3">
+            <option value="">{{t "commerce.billing.once"}}</option>
+            <option value="month" {{if eq .Form.BillingInterval "month"}}selected{{end}}>{{t "commerce.billing.month"}}</option>
+            <option value="year" {{if eq .Form.BillingInterval "year"}}selected{{end}}>{{t "commerce.billing.year"}}</option>
+          </select>
+          {{template "partials/field_errors" (index .Fields "interval")}}
+        </div>
+        <div>
+          <label for="p-trial" class="block font-medium mb-1">{{t "commerce.field.trial_days"}}</label>
+          <input id="p-trial" name="trial_days" type="number" min="0" max="730" value="{{.Form.TrialDays}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono">
+          {{template "partials/field_errors" (index .Fields "trial_days")}}
+        </div>
+      </div>
+      <div>
+        <label for="p-price-id" class="block font-medium mb-1">{{t "commerce.field.stripe_price_id"}}</label>
+        <input id="p-price-id" name="stripe_price_id" value="{{.Form.StripePriceID}}" dir="ltr" placeholder="price_…" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs">
+        {{template "partials/field_errors" (index .Fields "stripe_price_id")}}
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label for="p-usd" class="block font-medium mb-1">USD</label>
+          <input id="p-usd" name="price_usd" value="{{.Form.PriceUSD}}" inputmode="decimal" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono">
+          <input name="stripe_price_id_usd" value="{{.Form.PriceIDUSD}}" dir="ltr" placeholder="price_…" class="mt-1 h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs">
+        </div>
+        <div>
+          <label for="p-aed" class="block font-medium mb-1">AED</label>
+          <input id="p-aed" name="price_aed" value="{{.Form.PriceAED}}" inputmode="decimal" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono">
+          <input name="stripe_price_id_aed" value="{{.Form.PriceIDAED}}" dir="ltr" placeholder="price_…" class="mt-1 h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs">
+        </div>
+      </div>
+      {{template "partials/field_errors" (index .Fields "price_usd")}}{{template "partials/field_errors" (index .Fields "price_aed")}}{{template "partials/field_errors" (index .Fields "prices")}}
+      <div>
         <label for="p-server" class="block font-medium mb-1">{{t "commerce.field.server"}}</label>
         <select id="p-server" name="server_id" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft px-2">
           <option value="">{{t "commerce.field.server_none"}}</option>

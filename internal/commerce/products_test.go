@@ -276,7 +276,7 @@ func TestCatalogCoversAllKeys(t *testing.T) {
 		}
 	}
 	keyRe := regexp.MustCompile(`"commerce\.([a-z_]+(?:\.[a-z_]+)+)"`)
-	notCatalog := regexp.MustCompile(`^(product\.(save|delete)|product\.media_replaced|order\.(create|paid|paid_closed|refunded|provision_failed|retry|cancelled|payment_failed|mismatch)|entitlement\.(activated|failed|suspend|suspend_failed|suspended_remote|expire|resume|reconcile|login_link)|server\.(save|delete|test)|settings\.save|stripe_secret_key|stripe_webhook_secret|order\.paid|entitlement\.activated)$`)
+	notCatalog := regexp.MustCompile(`^(product\.(save|delete)|product\.media_replaced|order\.(create|paid|paid_closed|refunded|provision_failed|retry|cancelled|payment_failed|mismatch)|entitlement\.(activated|failed|suspend|suspend_failed|suspended_remote|expire|resume|resume_failed|reconcile|login_link)|subscription\.save|server\.(save|delete|test)|settings\.save|stripe_secret_key|stripe_webhook_secret|stripe_test_secret_key|stripe_test_webhook_secret|stripe_mode|grace_days|automatic_tax|order\.paid|entitlement\.activated)$`)
 	var files []string
 	for _, glob := range []string{"*.go", "../../web/admin/templates/pages/commerce/*.html"} {
 		m, _ := filepath.Glob(glob)

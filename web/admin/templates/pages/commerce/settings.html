@@ -11,6 +11,21 @@
   <input type="hidden" name="registration_present" value="true">
   <label class="block"><input type="checkbox" name="registration_enabled" value="true" {{if .RegistrationEnabled}}checked{{end}}> {{t "commerce.settings.registration_enable"}}</label>
   <p class="text-muted text-sm">{{t "commerce.settings.registration_help"}}</p>
+  <div>
+    <label for="c-mode" class="block font-medium mb-1">{{t "commerce.settings.mode"}}</label>
+    <select id="c-mode" name="stripe_mode" class="h-9 rounded border border-line bg-panel px-3">
+      <option value="live" {{if ne .Mode "test"}}selected{{end}}>{{t "commerce.settings.mode_live"}}</option>
+      <option value="test" {{if eq .Mode "test"}}selected{{end}}>{{t "commerce.settings.mode_test"}}</option>
+    </select>
+  </div>
+  <div class="grid gap-3 sm:grid-cols-2">
+    <div>
+      <label for="c-grace" class="block font-medium mb-1">{{t "commerce.settings.grace_days"}}</label>
+      <input id="c-grace" name="grace_days" type="number" min="0" max="90" value="{{.GraceDays}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono">
+      {{template "partials/field_errors" (index .Fields "grace_days")}}
+    </div>
+    <label class="flex items-end gap-2 pb-2"><input type="hidden" name="automatic_tax_present" value="1"><input type="checkbox" name="automatic_tax" value="1" {{if .AutomaticTax}}checked{{end}} class="accent-[var(--green)]"> {{t "commerce.settings.automatic_tax"}}</label>
+  </div>
   <div class="max-w-40">
     <label for="c-currency" class="block font-medium mb-1">{{t "commerce.field.currency"}}</label>
     <input id="c-currency" name="currency" value="{{.Currency}}" maxlength="3" dir="ltr" {{with index .Fields "currency"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono uppercase">
@@ -28,12 +43,32 @@
     <p id="c-webhook-help" class="mt-1 text-xs text-muted">{{if .WebhookSet}}{{t "commerce.settings.secret_set"}}{{else if .WebhookFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .WebhookSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_webhook_secret" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>
+  <div>
+    <label for="c-test-key" class="block font-medium mb-1">{{t "commerce.settings.test_key"}}</label>
+    <input id="c-test-key" name="stripe_test_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_test_…" class="h-9 w-full rounded border border-line bg-panel px-3">
+    <p class="mt-1 text-xs text-muted">{{if .TestKeySet}}{{t "commerce.settings.secret_set"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
+    {{if .TestKeySet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_test_secret_key" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
+  </div>
+  <div>
+    <label for="c-test-webhook" class="block font-medium mb-1">{{t "commerce.settings.test_webhook"}}</label>
+    <input id="c-test-webhook" name="stripe_test_webhook_secret" type="password" autocomplete="new-password" dir="ltr" placeholder="whsec_…" class="h-9 w-full rounded border border-line bg-panel px-3">
+    <p class="mt-1 text-xs text-muted">{{if .TestWebhookSet}}{{t "commerce.settings.secret_set"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
+    {{if .TestWebhookSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_test_webhook_secret" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
+  </div>
   <div class="rounded border border-line bg-panel-2 p-3">
     <p class="font-medium">{{t "commerce.settings.webhook_url"}}</p>
     <code class="mt-1 block font-mono text-xs break-all" dir="ltr">{{.WebhookURL}}</code>
-    <p class="mt-1 text-xs text-muted">{{t "commerce.settings.webhook_events"}} <code class="font-mono" dir="ltr">checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, checkout.session.expired, charge.refunded</code></p>
+    <p class="mt-2 font-medium">{{t "commerce.settings.test_webhook_url"}}</p>
+    <code class="mt-1 block font-mono text-xs break-all" dir="ltr">{{.TestWebhookURL}}</code>
+    <p class="mt-2 font-medium">{{t "commerce.settings.live_webhook_url"}}</p>
+    <code class="mt-1 block font-mono text-xs break-all" dir="ltr">{{.LiveWebhookURL}}</code>
+    <p class="mt-1 text-xs text-muted">{{t "commerce.settings.webhook_events"}} <code class="font-mono" dir="ltr">checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, checkout.session.expired, charge.refunded, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted, customer.subscription.trial_will_end, invoice.paid, invoice.payment_failed</code></p>
   </div>
   <div><button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+</form>
+<form method="post" action="/admin/commerce/settings/test-event" class="mt-4">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <button type="submit" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "commerce.settings.send_test_event"}}</button>
 </form>
 </div>
 {{end}}

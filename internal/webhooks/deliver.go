@@ -42,6 +42,9 @@ var events = []Event{
 	{"user.login", map[string]string{"en": "User signed in", "ar": "تسجيل دخول مستخدم"}},
 	{"commerce.order.paid", map[string]string{"en": "Order paid", "ar": "دفع طلب"}},
 	{"commerce.entitlement.activated", map[string]string{"en": "Entitlement activated", "ar": "تفعيل اشتراك"}},
+	{"subscription.activated", map[string]string{"en": "Subscription activated", "ar": "تفعيل اشتراك مدفوع"}},
+	{"subscription.past_due", map[string]string{"en": "Subscription past due", "ar": "تأخر دفع الاشتراك"}},
+	{"subscription.canceled", map[string]string{"en": "Subscription canceled", "ar": "إلغاء الاشتراك"}},
 	{"migration.item.imported", map[string]string{"en": "Migration item imported", "ar": "استيراد عنصر ترحيل"}},
 }
 

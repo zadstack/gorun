@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"maps"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +29,7 @@ var (
 	ErrNotActive           = errors.New("commerce: entitlement is not active")
 	ErrNoServer            = errors.New("commerce: entitlement has no reachable billing server")
 	ErrPeriodEnded         = errors.New("commerce: the entitlement period has ended")
+	ErrPlanRequired        = errors.New("commerce: subscription plan required")
 )
 
 // ValidationError carries per-field i18n keys (implements api.FieldErrorer).
@@ -41,9 +43,15 @@ func (e *ValidationError) FieldErrors() map[string]string { return maps.Clone(e.
 // Setting keys.
 const (
 	SettingCurrency      = "commerce.currency"
-	SettingStripeSecret  = "commerce.stripe_secret_key"     // db.Encrypt, AAD = key
-	SettingWebhookSecret = "commerce.stripe_webhook_secret" // db.Encrypt, AAD = key
+	SettingStripeSecret  = "commerce.stripe_secret_key"     // live key; db.Encrypt, AAD = key
+	SettingWebhookSecret = "commerce.stripe_webhook_secret" // live webhook; db.Encrypt, AAD = key
+	SettingStripeMode    = "commerce.stripe_mode"           // test | live
+	SettingStripeTestKey = "commerce.stripe_test_secret_key"
+	SettingWebhookTest   = "commerce.stripe_test_webhook_secret"
+	SettingGraceDays     = "commerce.grace_days"
+	SettingAutomaticTax  = "commerce.automatic_tax"
 	defaultCurrency      = "AED"
+	defaultGraceDays     = 7
 )
 
 // Permissions.
@@ -57,9 +65,15 @@ const (
 	JobProvision            = "commerce.provision"
 	JobSuspend              = "commerce.suspend"
 	JobMagicMail            = "commerce.magic_mail"
+	JobBillingMail          = "commerce.billing_mail"
+	JobResume               = "commerce.resume"
 	CronExpire              = "commerce.expire"
+	CronGrace               = "commerce.billing_grace"
 	HookOrderPaid           = "commerce.order.paid"
 	HookEntitlementActivate = "commerce.entitlement.activated"
+	HookSubActivated        = "subscription.activated"
+	HookSubPastDue          = "subscription.past_due"
+	HookSubCanceled         = "subscription.canceled"
 	provisionMaxAttempts    = 8
 )
 
@@ -73,6 +87,8 @@ type service struct {
 	log         *slog.Logger
 	audit       *audit.Writer
 	checkout    checkoutCreator
+	portal      portalCreator
+	refunds     refundCreator
 	sendMail    mailFunc
 	sendReceipt mailFunc
 	now         func() time.Time
@@ -83,6 +99,12 @@ func newService(d *kernel.Deps, checkout checkoutCreator, send mailFunc) *servic
 	s := &service{d: d, db: d.DB, log: d.Log, audit: d.Audit, checkout: checkout, sendMail: send, now: time.Now, health: newHealthCache()}
 	if s.checkout == nil {
 		s.checkout = stripeCheckout{}
+	}
+	if s.portal == nil {
+		s.portal = stripePortal{}
+	}
+	if s.refunds == nil {
+		s.refunds = stripeRefunds{}
 	}
 	if s.sendMail == nil {
 		s.sendMail = func(ctx context.Context, to, subject, html, text string) error {
@@ -139,12 +161,51 @@ func (s *service) secretSetting(ctx context.Context, key, fallback string) strin
 	return string(plain)
 }
 
+// stripeMode is "test" or "live". Unset means live so existing one-time
+// stores keep using the original secret.
+func (s *service) stripeMode(ctx context.Context) string {
+	if s.d.Settings.GetString(ctx, SettingStripeMode, "live") == "test" {
+		return "test"
+	}
+	return "live"
+}
+
 func (s *service) stripeSecretKey(ctx context.Context) string {
+	return s.stripeSecretFor(ctx, s.stripeMode(ctx))
+}
+
+func (s *service) stripeSecretFor(ctx context.Context, mode string) string {
+	if mode == "test" {
+		return s.secretSetting(ctx, SettingStripeTestKey, "")
+	}
 	return s.secretSetting(ctx, SettingStripeSecret, s.d.Config.Stripe.SecretKey)
 }
 
 func (s *service) webhookSecret(ctx context.Context) string {
+	return s.webhookSecretFor(ctx, s.stripeMode(ctx))
+}
+
+func (s *service) webhookSecretFor(ctx context.Context, mode string) string {
+	if mode == "test" {
+		return s.secretSetting(ctx, SettingWebhookTest, "")
+	}
 	return s.secretSetting(ctx, SettingWebhookSecret, s.d.Config.Stripe.WebhookSecret)
+}
+
+func (s *service) graceDays(ctx context.Context) int {
+	raw := strings.TrimSpace(s.d.Settings.GetString(ctx, SettingGraceDays, ""))
+	if raw == "" {
+		return defaultGraceDays
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 0 || n > 90 {
+		return defaultGraceDays
+	}
+	return n
+}
+
+func (s *service) automaticTax(ctx context.Context) bool {
+	return s.d.Settings.GetString(ctx, SettingAutomaticTax, "") == "1"
 }
 
 // setSecretSetting stores plain encrypted under key ("" clears it).

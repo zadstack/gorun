@@ -113,8 +113,26 @@ func (h *adminHandlers) order(w http.ResponseWriter, r *http.Request) {
 		rows.Close()
 	}
 	h.tpl.Render(w, r, "pages/commerce/order.html", map[string]any{"Order": rowOf(*o), "Entitlements": mine, "Ops": ops,
-		"Items":    func() []OrderItem { items, _ := h.svc.orderItems(ctx, o); return items }(),
-		"CanRetry": (o.snapshot().Kind == "" || o.snapshot().Kind == ProductProvisioning) && o.Status == OrderFailed && o.PaidAt != "" && auth.Can(ctx, PermManage)})
+		"Items":     func() []OrderItem { items, _ := h.svc.orderItems(ctx, o); return items }(),
+		"CanRetry":  (o.snapshot().Kind == "" || o.snapshot().Kind == ProductProvisioning) && o.Status == OrderFailed && o.PaidAt != "" && auth.Can(ctx, PermManage),
+		"CanRefund": o.StripePaymentIntent != "" && o.Status != OrderRefunded && o.Status != OrderPending && o.Status != OrderCancelled && auth.Can(ctx, PermManage)})
+}
+
+// orderRefund asks Stripe to refund the order's PaymentIntent, then suspends access.
+func (h *adminHandlers) orderRefund(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	err := h.svc.RefundOrder(r.Context(), id)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		h.fail(w, r, err)
+		return
+	case err != nil:
+		h.svc.log.Error("commerce: refund", "order", id, "err", err)
+		httpx.SetFlash(w, "error", "commerce.error.refund_failed")
+	default:
+		httpx.SetFlash(w, "success", "commerce.flash.refunded")
+	}
+	http.Redirect(w, r, "/admin/commerce/orders/"+id, http.StatusSeeOther)
 }
 
 // requestUpdate is a permission/CSRF-protected HTML service fulfillment action.

@@ -3,8 +3,9 @@
 > **ملخص بالعربية.** وحدة المتجر في GoRun تبيع الوصول إلى خوادم MCP، وليست نسخة من WooCommerce. يختار
 > العميل منتجًا في `/shop` ويدفع عبر Stripe Checkout (دفعة واحدة)، فيصل webhook موقّع إلى
 > `/webhooks/stripe` ويصبح الطلب مدفوعًا، ثم تنشئ مهمة خلفية الحساب على خادم الفوترة عبر بروتوكول
-> `mcp-billing/v1` الموقّع بـ HMAC، ويُفعَّل الاستحقاق ويصل العميل رابط دخول سحري إلى `/account`. لا توجد
-> اشتراكات بتجديد تلقائي: يمتد الوصول بالشراء مرة أخرى، وتنتهي الاستحقاقات تلقائيًا بعد مدتها. الإعداد: مفتاح
+> `mcp-billing/v1` الموقّع بـ HMAC، ويُفعَّل الاستحقاق ويصل العميل رابط دخول سحري إلى `/account`. الدفع
+> لمرة واحدة يبقى كما هو، وتدعم الخطط أيضًا اشتراك Stripe (`mode=subscription`) بحالة نشطة أو فترة سماح
+> أو تعليق. الإعداد: مفتاح
 > Stripe السري وسر الـ webhook من **المتجر ← إعدادات المتجر** أو من `STRIPE_SECRET_KEY` و`STRIPE_WEBHOOK_SECRET`،
 > ثم خادم فوترة من **المتجر ← خوادم الفوترة**، ثم المنتجات.
 
@@ -17,6 +18,52 @@ product ──POST /checkout/{slug}──▶ order (pending) ──Stripe Checko
 
 The code lives in `internal/commerce` and boots after `admin`. The other modules use it through the
 `commerce.Service` contract in `contract.go`, published as `kernel.ServiceCommerce`.
+
+One-time products stay on `billing_mode=payment` and `mode=payment`. A product with
+`billing_mode=subscription` checks out as a Stripe subscription and keeps the same order, customer
+and entitlement records.
+
+## Subscriptions
+
+1. **Plan.** A product stores `stripe_price_id`, `billing_interval` (`month` or `year`), `trial_days`
+   and `prices_json`. `prices_json` maps a currency to `{price_id, amount_minor}`. The admin form
+   edits USD and AED; checkout uses the store currency when that entry exists, otherwise the product
+   currency. `trial_days` is sent as `subscription_data.trial_period_days`.
+2. **Customer.** `customers.stripe_customer_id` is saved from the first paid Checkout session and
+   sent as `customer` on later sessions. A new buyer still uses `customer_email`.
+3. **Checkout.** Subscription sessions use `mode=subscription`, `client_reference_id = order.id` and
+   `subscription_data.metadata` (`account_id`, `plan`, `site_id`, `order_id`). One-time sessions are
+   unchanged. Optional `automatic_tax` is a store setting.
+4. **Webhooks.** `POST /webhooks/stripe` still verifies `Stripe-Signature` and records `stripe_events`
+   idempotently. It also accepts:
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `customer.subscription.trial_will_end`
+   - `invoice.paid`
+   - `invoice.payment_failed`
+
+   `POST /webhooks/stripe/test` and `POST /webhooks/stripe/live` verify with the matching secret.
+   The original path uses the active mode (live unless Admin → Store settings selects test).
+5. **Access.** `active` and `trialing` keep the commerce entitlement active and emit
+   `subscription.activated`. `past_due` keeps access for `commerce.grace_days` (default 7), emits
+   `subscription.past_due`, and emails the customer. When the grace window ends, access is suspended.
+   `canceled` and `unpaid` suspend immediately and emit `subscription.canceled`. A later `invoice.paid`
+   resumes access. SaaS listens to the same three events and sets entitlement status to `active`,
+   `grace` or `suspended`.
+6. **Portal and invoices.** Signed-in customers with a Stripe customer id can open
+   `POST /account/billing-portal` (upgrade, downgrade, cancel, payment method; proration is Stripe's
+   portal default). Invoices store `stripe_invoice_id`, `hosted_invoice_url` and `invoice_pdf` and
+   are listed on `/account`.
+7. **Refunds.** Admin → order → Refund calls the Stripe Refunds API for the PaymentIntent, then
+   marks the order refunded and suspends the entitlement. `charge.refunded` remains idempotent.
+8. **Plan gate.** `commerce.RequirePlan(ctx, deps, accountID, plan)` and
+   `Service.RequirePlan` allow an account with an active, trialing, or in-grace subscription.
+   An empty plan means any such subscription. Plugins should subscribe to the three events above
+   instead of calling Stripe.
+9. **Test mode.** Store settings keep separate test and live secrets. **Send test event** signs a
+   local `customer.subscription.updated` with the test webhook secret and processes it. Secrets are
+   not written to logs. The setup checklist is `/admin/commerce/setup`.
 
 ## Flow
 
@@ -181,12 +228,20 @@ are recorded. Login-link responses are never stored.
 ## Stripe setup
 
 1. In the Stripe Dashboard, in **test mode**, copy the secret key (`sk_test_…`).
-2. Add a webhook endpoint `https://<your site>/webhooks/stripe` with these events:
+2. Add a webhook endpoint. Use `https://<your site>/webhooks/stripe/test` with the test signing
+   secret and `https://<your site>/webhooks/stripe/live` with the live secret. `https://<your site>/webhooks/stripe`
+   follows the mode selected in store settings. Subscribe to:
    - `checkout.session.completed`
    - `checkout.session.async_payment_succeeded`
    - `checkout.session.async_payment_failed`
    - `checkout.session.expired`
    - `charge.refunded`
+   - `customer.subscription.created`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `customer.subscription.trial_will_end`
+   - `invoice.paid`
+   - `invoice.payment_failed`
 
    Copy the signing secret (`whsec_…`).
 3. Set both keys in one of two ways:

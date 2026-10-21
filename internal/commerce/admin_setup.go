@@ -13,7 +13,7 @@ type setupPage struct {
 	StripeFromDB, WebhookFromDB   bool
 	ServerCount, SellableProducts int
 	ReadyToSell                   bool
-	WebhookURL, ShopURL, Currency string
+	WebhookURL, TestWebhookURL, LiveWebhookURL, ShopURL, Currency string
 }
 
 func (h *adminHandlers) setupData(ctx context.Context) setupPage {

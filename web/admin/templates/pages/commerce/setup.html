@@ -29,7 +29,11 @@
         <p class="text-sm text-muted mt-1">{{t "commerce.setup.step_webhook_help"}}</p>
         <p class="font-medium text-sm mt-2">{{t "commerce.settings.webhook_url"}}</p>
         <code class="mt-1 block font-mono text-xs break-all rounded border border-line bg-panel-2 p-2" dir="ltr">{{.WebhookURL}}</code>
-        <p class="mt-1 text-xs text-muted">{{t "commerce.settings.webhook_events"}} <code class="font-mono" dir="ltr">checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, checkout.session.expired, charge.refunded</code></p>
+        {{if .TestWebhookURL}}<p class="font-medium text-sm mt-2">{{t "commerce.settings.test_webhook_url"}}</p>
+        <code class="mt-1 block font-mono text-xs break-all rounded border border-line bg-panel-2 p-2" dir="ltr">{{.TestWebhookURL}}</code>{{end}}
+        {{if .LiveWebhookURL}}<p class="font-medium text-sm mt-2">{{t "commerce.settings.live_webhook_url"}}</p>
+        <code class="mt-1 block font-mono text-xs break-all rounded border border-line bg-panel-2 p-2" dir="ltr">{{.LiveWebhookURL}}</code>{{end}}
+        <p class="mt-1 text-xs text-muted">{{t "commerce.settings.webhook_events"}} <code class="font-mono" dir="ltr">checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, checkout.session.expired, charge.refunded, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted, customer.subscription.trial_will_end, invoice.paid, invoice.payment_failed</code></p>
         {{if .WebhookReady}}<p class="text-xs mt-2 text-muted">{{if .WebhookFromDB}}{{t "commerce.setup.source_db"}}{{else if .WebhookFromEnv}}{{t "commerce.setup.source_env"}}{{else}}{{t "commerce.setup.source_configured"}}{{end}}</p>{{end}}
       </div>
       <a href="/admin/commerce/settings#webhook" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong shrink-0">{{t "commerce.setup.go_settings"}}</a>
