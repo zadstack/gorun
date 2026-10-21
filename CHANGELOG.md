@@ -5,6 +5,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Edge on Cloudflare
+
+- Add a Deploy to Cloudflare button for the experimental Edge edition. Cloudflare clones `edge/`, provisions the D1 database and private R2 bucket from `wrangler.jsonc`, applies the Edge migrations, loads the synthetic preview, and deploys the Worker. Owner administration stays off. This does not install the Full binary.
+
 ## [0.12.0] - 2026-10-21
 
 ### Commerce launch checklist

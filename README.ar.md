@@ -228,7 +228,9 @@ If you lack terminal access or a prerequisite, explain exactly what is needed.
 
 ### Cloudflare Edge — قيد التطوير
 
-GoRun Edge نسخة تجريبية مستقلة مبنية على Workers مع D1 وR2 منفصلين. اجتازت [القراءة العامة](docs/EDGE.md) و[إدارة المالك الاختيارية](docs/EDGE-ADMIN.md) اختبارات HTTPS فعلية على Cloudflare ببيانات تجريبية معزولة، بما فيها المسودات والمراجعة والنشر واستعادة الوصول. تظل الإدارة معطلة افتراضيًا، وأُلغي وصول الاختبار المؤقت. [سجل التحقق](docs/validation/edge-cloudflare-2026-10-19.json). ربط المديرين وقالب النشر المدعوم ضمن [خطة Edge](https://github.com/zadstack/gorun/issues/46)، ولا يوجد زر نشر أو نتيجة قياس أداء. Edge منفصل عن ملف إصدار GoRun Full.
+نسخة Edge التجريبية تُثبَّت على حساب Cloudflare الخاص بك تلقائيًا من الزر التالي. ينسخ Cloudflare مجلد `edge/`، وينشئ قاعدة D1 وحاوية R2 خاصة، ويطبّق ترحيلات Edge، ويحمّل المعاينة التجريبية، ثم ينشر الـ Worker بعد تأكيد صفحة الإعداد. اترك `SITE_ID` بالقيمة `demo`. تظل إدارة المالك معطلة، وهذا لا يثبّت ملف GoRun Full. اجتازت [القراءة العامة](docs/EDGE.md) و[إدارة المالك الاختيارية](docs/EDGE-ADMIN.md) اختبارات HTTPS فعلية ببيانات تجريبية معزولة، وأُلغي وصول الاختبار المؤقت. [سجل التحقق](docs/validation/edge-cloudflare-2026-10-19.json). ربط المديرين ما زال ضمن [خطة Edge](https://github.com/zadstack/gorun/issues/46). لا توجد نتيجة قياس أداء.
+
+[![تثبيت Edge على Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/zadstack/gorun/tree/main/edge)
 
 ### البدء السريع
 

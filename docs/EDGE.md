@@ -1,8 +1,16 @@
 # GoRun Edge: experimental Worker and optional owner administration
 
-The standalone Cloudflare Worker in [`edge/`](../edge) has its own D1 database and private R2 binding. The public runtime has passed 44 actual HTTPS acceptance checks on a dedicated Cloudflare deployment, including site/publication isolation and immediate content/media revocation. It remains an experimental implementation of [issue #46](https://github.com/zadstack/gorun/issues/46), separate from the Full binary, with no measured benchmark or Deploy to Cloudflare button.
+The standalone Cloudflare Worker in [`edge/`](../edge) has its own D1 database and private R2 binding. The public runtime has passed 44 actual HTTPS acceptance checks on a dedicated Cloudflare deployment, including site/publication isolation and immediate content/media revocation. It remains an experimental implementation of [issue #46](https://github.com/zadstack/gorun/issues/46), separate from the Full binary, with no measured benchmark. [Install on Cloudflare](#install-on-cloudflare) is the automatic path.
 
 The default public runtime has no write endpoint. Optional [owner administration](EDGE-ADMIN.md) adds explicitly enabled draft/review/publication, revisions, audit and offline recovery. Its separate actual Cloudflare HTTPS browser acceptance passed on 19 October 2026 at source `5b18d350324351bc2ac2aad7294231f6a51fde93`; test access was then revoked and administration disabled. The [validation record](validation/edge-cloudflare-2026-10-19.json) distinguishes this from local tests and performance measurements. The Go [`pkg/edge`](../pkg/edge) package describes future site-scoped manager capabilities; this Worker does not pair with Full, run MCP tools, invoke models or provision agent skills.
+
+## Install on Cloudflare
+
+The experimental Edge edition installs on your Cloudflare account from this button. Cloudflare clones the isolated [`edge/`](../edge) project, creates the D1 database and private R2 bucket named in `wrangler.jsonc`, replaces the placeholder D1 id, applies migrations through the `DB` binding, loads `fixtures/demo.sql`, and deploys the Worker. You sign in to Cloudflare and confirm or rename those resources on one setup page. `SITE_ID` stays `demo` so `/readyz` and the preview posts resolve. Owner administration stays off. This does not install the Full GoRun binary, pair a manager, or change an existing Full site.
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/zadstack/gorun/tree/main/edge)
+
+Cloudflare reads [`edge/package.json`](../edge/package.json) and runs `npm run deploy`: `wrangler d1 migrations apply DB --remote`, then the preview fixture, then `wrangler deploy`. Repeating the deploy does not overwrite fixture rows (`INSERT OR IGNORE`). The button follows [Deploy to Cloudflare buttons](https://developers.cloudflare.com/workers/platform/deploy-buttons/). `edge/` is self-contained, which is required because Cloudflare treats that subdirectory as the new repository root. The [operator steps](#remote-deployment-and-acceptance) below remain for someone who already has Wrangler credentials and wants to create the resources before the first deploy.
 
 ## Run locally
 
@@ -16,7 +24,7 @@ npm run seed:local
 npm run dev
 ```
 
-Open the localhost URL Wrangler prints (normally `http://localhost:8787`). `/ar/` shows the synthetic Arabic fixture. The migrations create a **separate Edge schema**; do not point this at an existing Full database or import a Full SQLite file. No Cloudflare account, Go compiler or production credential is required for these local commands. The checked-in D1 UUID is a local placeholder, not a remote resource.
+Open the localhost URL Wrangler prints (normally `http://localhost:8787`). `/ar/` shows the synthetic Arabic fixture. The migrations create a **separate Edge schema**; do not point this at an existing Full database or import a Full SQLite file. No Cloudflare account, Go compiler or production credential is required for these local commands. The checked-in D1 UUID is a local placeholder. Deploy to Cloudflare replaces it when it provisions the database; it is not an existing remote resource.
 
 Local CLI commands use Wrangler's persistent `.wrangler/state` inside `edge/`: rerunning migration skips applied migrations, and demo seeding uses `INSERT OR IGNORE` without overwriting existing fixture IDs. For a disposable clean environment, use a fresh checkout or copy of `edge/`, rather than removing a working site's state. Local data is not synchronized to Cloudflare. This path does not create a public deployment.
 
@@ -59,7 +67,7 @@ Dependencies and the upload tool are exact versions in `package-lock.json`. Mini
 
 ## Remote deployment and acceptance
 
-The [recorded isolated deployment](validation/edge-cloudflare-2026-10-19.json) passed public reading and owner-workflow HTTPS acceptance. These steps create a new deployment in the operator's own account and still require validation there; the record does not establish production readiness, a supported template or equivalent performance. Use an existing account with Workers, D1 and R2 enabled and credentials for the selected resources. Authenticate through the supported browser/keychain or token flow; keep credentials out of issues, README and commit history.
+[Install on Cloudflare](#install-on-cloudflare) is the automatic path. These steps are the operator-run alternative: they create a new deployment in the operator's own account. The [recorded isolated deployment](validation/edge-cloudflare-2026-10-19.json) passed public reading and owner-workflow HTTPS acceptance for one dedicated deployment; it does not establish production readiness or equivalent performance for every later install. Use an existing account with Workers, D1 and R2 enabled and credentials for the selected resources. Authenticate through the supported browser/keychain or token flow; keep credentials out of issues, README and commit history.
 
 1. Authenticate your installed Wrangler using Cloudflare's supported login/token flow; verify the intended account with `npx wrangler whoami`. Use dedicated POC resource names and review the account's quotas/billing.
 2. From `edge/`, create an independent D1 database and a **private** R2 bucket. Copy the returned database ID; these commands create resources and must be run intentionally in your account:
@@ -84,4 +92,4 @@ The [recorded isolated deployment](validation/edge-cloudflare-2026-10-19.json) p
 
 Official sources: [D1 prepared queries](https://developers.cloudflare.com/d1/worker-api/prepared-statements/), [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/), [R2 Worker bindings](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/), [Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/), [Workers testing](https://developers.cloudflare.com/workers/testing/).
 
-**بالعربية:** هذا Worker تجريبي مستقل مع D1 وR2، وقراءة عامة وإدارة اختيارية للمالك تشمل المسودات والمراجعة والنشر واستعادة الوصول. اجتاز التشغيل الفعلي على Cloudflare ببيانات تجريبية، ثم أُلغي وصول الاختبار وعادت الإدارة إلى الوضع المقفول. بياناته منفصلة عن SQLite الخاص بـFull؛ ولا يشغّل وكلاء Full أو قوالبه. لا توجد قياسات أداء أو زر نشر جاهز، ولا تمنح `/readyz` ضمان جاهزية إنتاجية أو تحققًا فعليًا من R2. ربط المديرين وقالب النشر المدعوم مراحل لاحقة.
+**بالعربية:** زر Deploy to Cloudflare يثبّت نسخة Edge التجريبية على حساب Cloudflare تلقائيًا: ينشئ D1 وحاوية R2 الخاصة، ويطبّق الترحيلات، ويحمّل المعاينة، ثم ينشر الـ Worker بعد تأكيد صفحة الإعداد. الإدارة تبقى معطلة. هذا لا يثبّت GoRun Full ولا يربط المديرين. اجتاز تشغيل معزول على Cloudflare ببيانات تجريبية، ثم أُلغي وصول الاختبار. لا توجد قياسات أداء، ولا تمنح `/readyz` ضمان جاهزية إنتاجية أو فحصًا فعليًا لـ R2.
