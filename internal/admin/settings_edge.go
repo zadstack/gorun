@@ -2,13 +2,16 @@ package admin
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
+	"maps"
 	"net"
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -30,6 +33,8 @@ const (
 var (
 	errEdgeOrigin   = errors.New("edge: origin rejected")
 	errEdgeCheck    = errors.New("edge: manager check failed")
+	errEdgeConflict = errors.New("edge: connection settings changed")
+	errEdgeSettings = errors.New("edge: invalid stored settings")
 	edgeKeyPattern  = regexp.MustCompile(`^[A-Za-z0-9_-]{43}$`)
 	edgeHostPattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$`)
 	edgeIDPattern   = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
@@ -39,6 +44,14 @@ type edgePage struct {
 	Origin, Hint, Label, ManagerID, SiteID, CheckedAt string
 	KeySet                                            bool
 	Fields                                            map[string]string
+}
+
+// edgeSnapshot keeps the page and credentials from the same settings read.
+// connection retains exact JSON and presence for comparison at commit time.
+type edgeSnapshot struct {
+	Page       edgePage
+	Cipher     string
+	connection map[string]string
 }
 
 type edgeInput struct {
@@ -139,11 +152,33 @@ func edgeWhoami(ctx context.Context, client *http.Client, origin, key string) (e
 	return edgeIdentity{SiteID: payload.Data.SiteID, ManagerID: payload.Data.ManagerID, Label: label}, nil
 }
 
-func (h *handlers) currentEdge(r *http.Request) edgePage {
-	ctx := r.Context()
-	get := func(k string) string { return h.d.Settings.GetString(ctx, k, "") }
-	key := get(settingEdgeKey)
-	return edgePage{Origin: get(settingEdgeOrigin), Hint: get(settingEdgeHint), Label: get(settingEdgeLabel), ManagerID: get(settingEdgeManager), SiteID: get(settingEdgeSite), CheckedAt: get(settingEdgeChecked), KeySet: key != ""}
+func (h *handlers) currentEdge(ctx context.Context) (edgeSnapshot, error) {
+	raw, err := h.d.Settings.All(ctx, "edge.")
+	if err != nil {
+		return edgeSnapshot{}, err
+	}
+	values := make(map[string]string, 7)
+	for _, key := range []string{settingEdgeOrigin, settingEdgeKey, settingEdgeHint, settingEdgeManager, settingEdgeLabel, settingEdgeSite, settingEdgeChecked} {
+		encoded, exists := raw[key]
+		if !exists {
+			continue
+		}
+		var value *string
+		if err := json.Unmarshal(encoded, &value); err != nil || value == nil {
+			return edgeSnapshot{}, errEdgeSettings
+		}
+		values[key] = *value
+	}
+	connection := make(map[string]string, 2)
+	for _, key := range []string{settingEdgeOrigin, settingEdgeKey} {
+		if value, exists := raw[key]; exists {
+			connection[key] = string(value)
+		}
+	}
+	return edgeSnapshot{
+		Page:   edgePage{Origin: values[settingEdgeOrigin], Hint: values[settingEdgeHint], Label: values[settingEdgeLabel], ManagerID: values[settingEdgeManager], SiteID: values[settingEdgeSite], CheckedAt: values[settingEdgeChecked], KeySet: values[settingEdgeKey] != ""},
+		Cipher: values[settingEdgeKey], connection: connection,
+	}, nil
 }
 
 func (h *handlers) renderEdge(w http.ResponseWriter, r *http.Request, status int, page edgePage, fields map[string]string) {
@@ -155,18 +190,22 @@ func (h *handlers) renderEdge(w http.ResponseWriter, r *http.Request, status int
 }
 
 func (h *handlers) settingsEdge(w http.ResponseWriter, r *http.Request) {
-	h.renderEdge(w, r, http.StatusOK, h.currentEdge(r), nil)
+	snapshot, err := h.currentEdge(r.Context())
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	h.renderEdge(w, r, http.StatusOK, snapshot.Page, nil)
 }
 
-func (h *handlers) edgeValues(r *http.Request, in edgeInput) (map[string]any, map[string]string, bool) {
-	ctx := r.Context()
+func (h *handlers) edgeValues(in edgeInput, snapshot edgeSnapshot) (map[string]any, map[string]string, bool) {
 	fields := map[string]string{}
 	origin, err := validateEdgeOrigin(in.Origin)
 	if err != nil {
 		fields["origin"] = "admin.settings.edge.error.origin"
 	}
 	key := strings.TrimSpace(in.Key)
-	stored := h.d.Settings.GetString(ctx, settingEdgeKey, "")
+	stored := snapshot.Cipher
 	replaced := false
 	vals := map[string]any{}
 	if origin != "" {
@@ -189,7 +228,7 @@ func (h *handlers) edgeValues(r *http.Request, in edgeInput) (map[string]any, ma
 		vals[settingEdgeHint] = key[len(key)-4:]
 		replaced = true
 	}
-	if replaced || (origin != "" && origin != h.d.Settings.GetString(ctx, settingEdgeOrigin, "")) {
+	if replaced || (origin != "" && origin != snapshot.Page.Origin) {
 		vals[settingEdgeChecked] = ""
 		vals[settingEdgeManager] = ""
 		vals[settingEdgeLabel] = ""
@@ -204,29 +243,90 @@ func (h *handlers) settingsEdgeSave(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	vals, fields, replaced := h.edgeValues(r, in)
-	page := h.currentEdge(r)
+	snapshot, err := h.currentEdge(r.Context())
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	vals, fields, replaced := h.edgeValues(in, snapshot)
+	page := snapshot.Page
 	page.Origin = strings.TrimSpace(in.Origin)
 	if len(fields) > 0 {
 		h.renderEdge(w, r, http.StatusUnprocessableEntity, page, fields)
 		return
 	}
-	for k, v := range vals {
-		if err := h.d.Settings.Set(r.Context(), k, v); err != nil {
-			h.serverError(w, r, err)
-			return
-		}
+	if err := h.saveEdgeKeys(r.Context(), snapshot, vals); err != nil {
+		h.edgeWriteError(w, r, err, "key")
+		return
 	}
 	h.d.Audit.Record(r.Context(), "settings.edge", "settings", "edge.origin", map[string]any{"origin": vals[settingEdgeOrigin], "key_replaced": replaced})
 	httpx.SetFlash(w, "success", "admin.settings.saved")
 	redirect(w, r, "/admin/settings/edge")
 }
 
+// saveEdgeKeys compares the connection used to prepare this operation before
+// writing. The transaction prevents another save between comparison and writes;
+// remote checks and encryption run before acquiring this writer transaction.
+func (h *handlers) saveEdgeKeys(ctx context.Context, snapshot edgeSnapshot, vals map[string]any) error {
+	keys := slices.Sorted(maps.Keys(vals))
+	return db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(ctx, `SELECT key,value_json FROM settings WHERE key IN (?,?)`, settingEdgeOrigin, settingEdgeKey)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		current := make(map[string]string, 2)
+		for rows.Next() {
+			var key, raw string
+			if err := rows.Scan(&key, &raw); err != nil {
+				return err
+			}
+			current[key] = raw
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		if !maps.Equal(snapshot.connection, current) {
+			return errEdgeConflict
+		}
+		for _, k := range keys {
+			if err := h.d.Settings.SetTx(ctx, tx, k, vals[k]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// edgeWriteError renders the current configuration on a conflict, never the
+// obsolete form or remote identity from the request that lost the comparison.
+func (h *handlers) edgeWriteError(w http.ResponseWriter, r *http.Request, err error, field string) {
+	if !errors.Is(err, errEdgeConflict) {
+		h.serverError(w, r, err)
+		return
+	}
+	snapshot, err := h.currentEdge(r.Context())
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	h.renderEdge(w, r, http.StatusConflict, snapshot.Page, map[string]string{field: "admin.settings.edge.error.conflict"})
+}
+
 func (h *handlers) settingsEdgeCheck(w http.ResponseWriter, r *http.Request) {
+	h.settingsEdgeCheckWithClient(w, r, edgeHTTPClient)
+}
+
+func (h *handlers) settingsEdgeCheckWithClient(w http.ResponseWriter, r *http.Request, client *http.Client) {
 	ctx := r.Context()
-	page := h.currentEdge(r)
+	snapshot, err := h.currentEdge(ctx)
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	page := snapshot.Page
 	origin, err := validateEdgeOrigin(page.Origin)
-	enc := h.d.Settings.GetString(ctx, settingEdgeKey, "")
+	enc := snapshot.Cipher
 	if err != nil || enc == "" {
 		fields := map[string]string{}
 		if err != nil {
@@ -243,17 +343,15 @@ func (h *handlers) settingsEdgeCheck(w http.ResponseWriter, r *http.Request) {
 		h.renderEdge(w, r, http.StatusUnprocessableEntity, page, map[string]string{"check": "admin.settings.edge.error.check"})
 		return
 	}
-	info, err := edgeWhoami(ctx, edgeHTTPClient, origin, string(plain))
+	info, err := edgeWhoami(ctx, client, origin, string(plain))
 	if err != nil {
 		h.renderEdge(w, r, http.StatusUnprocessableEntity, page, map[string]string{"check": "admin.settings.edge.error.check"})
 		return
 	}
 	checked := time.Now().UTC().Format(time.RFC3339)
-	for k, v := range map[string]any{settingEdgeManager: info.ManagerID, settingEdgeLabel: info.Label, settingEdgeSite: info.SiteID, settingEdgeChecked: checked} {
-		if err := h.d.Settings.Set(ctx, k, v); err != nil {
-			h.serverError(w, r, err)
-			return
-		}
+	if err := h.saveEdgeKeys(ctx, snapshot, map[string]any{settingEdgeManager: info.ManagerID, settingEdgeLabel: info.Label, settingEdgeSite: info.SiteID, settingEdgeChecked: checked}); err != nil {
+		h.edgeWriteError(w, r, err, "check")
+		return
 	}
 	h.d.Audit.Record(ctx, "settings.edge_check", "settings", info.SiteID, map[string]any{"manager_id": info.ManagerID, "origin": origin})
 	httpx.SetFlash(w, "success", "admin.settings.edge.checked")

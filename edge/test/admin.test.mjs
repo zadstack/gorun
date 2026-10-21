@@ -94,19 +94,76 @@ test('discard serializes once: expiry before write is no-op, expiry after marker
 test('content filters and the editor show status without changing publication',async()=>{
  const {jar,csrf}=await login();
  assert.equal((await post('/admin/save',{...input('filter-ar',{locale:'ar',title:'مسودة عربية'}),csrf},jar)).status,303);
+ for(let i=0;i<100;i++){const id='pad-'+String(i).padStart(3,'0');await db.prepare("INSERT INTO edge_content(site_id,id,type,slug,locale,title,status) VALUES('demo',?1,'post',?1,'en',?2,'private')").bind(id,'AAA '+id).run();}
  const html=await(await request('/admin?status=draft&locale=ar&q='+encodeURIComponent('مسودة'),{headers:{cookie:cookies(jar)}})).text();
- assert.match(html,/مسودة عربية/);assert.match(html,/aria-current="page"/);assert.equal(html.includes('reviewed'),false);
+ assert.match(html,/مسودة عربية/);assert.match(html,/aria-current="page"/);assert.equal(html.includes('reviewed'),false);assert.equal(html.includes('The list stops at 100 matches.'),false);
+ const all=await(await request('/admin',{headers:{cookie:cookies(jar)}})).text();assert.match(all,/The list stops at 100 matches\./);assert.equal(all.includes('مسودة عربية'),false);
+ const folded=await(await request('/admin?q='+encodeURIComponent('aaa pad-000'),{headers:{cookie:cookies(jar)}})).text();assert.match(folded,/AAA pad-000/);
+ const wild=await(await request('/admin?q='+encodeURIComponent('%_'),{headers:{cookie:cookies(jar)}})).text();assert.equal(wild.includes('AAA pad-000'),false);
  assert.equal((await request('/admin?status=nope',{headers:{cookie:cookies(jar)}})).status,400);
  const editor=await(await request('/admin/edit?id=reviewed&lang=en',{headers:{cookie:cookies(jar)}})).text();
  assert.match(editor,/class="badge private"/);assert.equal(editor.includes('href="/post/reviewed"'),false);
 });
+test('Unicode search scans past 100 rows, keeps literal punctuation and applies the match cap after filters',async()=>{
+ const {jar,csrf}=await login();
+ const insert=async(site,id,title,status='private',locale='en')=>db.prepare("INSERT INTO edge_content(site_id,id,type,slug,locale,title,status,published_at) VALUES(?1,?2,'post',?2,?3,?4,?5,'2026-10-01T00:00:00Z')").bind(site,id,locale,title,status).run();
+ for(let i=0;i<100;i++)await insert('demo','unicode-padding-'+i,'AAA Unicode padding '+i);
+ await db.prepare(`WITH RECURSIVE n(i) AS (VALUES(0) UNION ALL SELECT i+1 FROM n WHERE i<100) INSERT INTO edge_drafts(site_id,id,version,source_version,body_json,op_token,updated_at) SELECT 'demo','unicode-null-'||i,1,0,'{"type":"page","locale":"en"}','','2026-10-01T00:00:00Z' FROM n`).run();
+ for(let i=0;i<101;i++)await insert('demo','unicode-match-'+String(i).padStart(3,'0'),'ÉCOLE repeated');
+ await insert('other','unicode-other-site','ÉCOLE repeated');
+ await insert('demo','unicode-other-locale','ÉCOLE repeated','private','ar');
+ await insert('demo','unicode-other-status','ÉCOLE repeated','published');
+ await insert('demo','unicode-literal','ÉCOLE literal %_');
+ await insert('demo','unicode-not-literal','ÉCOLE literal %X');
+ for(const [id,title] of [['unicode-cyrillic','МОСКВА'],['unicode-greek','ΑΘΉΝΑ']]) {
+  assert.equal((await post('/admin/save',{...input(id,{title,locale:'ar'}),csrf},jar)).status,303);
+ }
+ const search=async(q,status='private',locale='en')=>{
+  const result=await request('/admin?'+new URLSearchParams({q,status,locale}),{headers:{cookie:cookies(jar)}});
+  assert.equal(result.status,200);return result.text();
+ };
+ const ids=html=>[...html.matchAll(/href="\/admin\/edit\?id=([^"&]+)/g)].map(m=>m[1]);
+ const matches=await search('école repeated');
+ assert.deepEqual(ids(matches),Array.from({length:100},(_,i)=>'unicode-match-'+String(i).padStart(3,'0')));
+ assert.match(matches,/The list stops at 100 matches\./);
+ assert.deepEqual(ids(await search('école repeated','','en')),ids(matches));
+ assert.deepEqual(ids(await search('école literal %_')),['unicode-literal']);
+ assert.deepEqual(ids(await search('%_')),['unicode-literal']);
+ assert.deepEqual(ids(await search('москва','draft','ar')),['unicode-cyrillic']);
+ assert.deepEqual(ids(await search('αθήνα','draft','ar')),['unicode-greek']);
+ assert.deepEqual(ids(await search('москва','private','ar')),[]);
+});
+test('an incomplete search reports its scan limit instead of a successful empty list',async()=>{
+ const {jar}=await login();
+ const {n:existing}=await db.prepare("SELECT count(*) n FROM edge_content WHERE site_id='demo' AND status='private' AND locale='ar'").first();
+ await db.prepare(`WITH RECURSIVE n(i) AS (VALUES(0) UNION ALL SELECT i+1 FROM n WHERE i<?1) INSERT INTO edge_content(site_id,id,type,slug,locale,title,status) SELECT 'demo','scan-budget-'||i,'post','scan-budget-'||i,'ar','Scan budget padding '||i,'private' FROM n`).bind(4000-existing).run();
+ try {
+  const response=await request('/admin?status=private&locale=ar&q=not-a-match',{headers:{cookie:cookies(jar)}});
+  assert.equal(response.status,503);
+  const html=await response.text();assert.match(html,/Search scan limit reached/);
+  assert.equal(html.includes('No content matches these filters.'),false);
+  assert.equal(html.includes('The list stops at 100 matches.'),false);
+  await db.prepare("DELETE FROM edge_content WHERE site_id='demo' AND id='scan-budget-0'").run();
+  const complete=await request('/admin?status=private&locale=ar&q=not-a-match',{headers:{cookie:cookies(jar)}});
+  assert.equal(complete.status,200);assert.match(await complete.text(),/No content matches these filters\./);
+ } finally {await db.prepare("DELETE FROM edge_content WHERE site_id='demo' AND id LIKE 'scan-budget-%'").run();}
+});
 test('primary manager key is shown once and whoami accepts only that key',async()=>{
  const {jar,csrf}=await login();
- const created=await post('/admin/managers/create',{csrf,label:'GoRun Full'},jar);assert.equal(created.status,200);
- const html=await created.text();const shown=html.match(/data-manager-key="([^"]+)"/);assert.ok(shown);const managerKey=shown[1];
- assert.match(managerKey,/^[A-Za-z0-9_-]{43}$/);assert.equal((html.match(new RegExp(managerKey,'g'))??[]).length,2);
+ const hashOf=async()=>(await db.prepare("SELECT key_hash FROM edge_managers WHERE site_id='demo' AND primary_manager=1").first())?.key_hash??'';
+ const created=await post('/admin/managers/create',{csrf,label:'GoRun Full'},jar);assert.equal(created.status,303);
+ assert.equal(created.headers.get('location'),'/admin/managers?lang=en');
+ const managerKey=jar['__Host-edge_manager'];assert.match(managerKey,/^[A-Za-z0-9_-]{43}$/);
+ assert.equal((await created.text()).includes(managerKey),false);assert.equal(created.headers.get('location').includes(managerKey),false);
+ assert.match(created.headers.get('set-cookie'),/Max-Age=120/);assert.match(created.headers.get('set-cookie'),/HttpOnly/);
+ assert.match(created.headers.get('set-cookie'),/; Secure/);assert.match(created.headers.get('set-cookie'),/SameSite=Strict/);assert.match(created.headers.get('set-cookie'),/Path=\//);
+ assert.equal(created.headers.get('cache-control'),'private, no-store');
+ const stored=await hashOf();
+ const page=await request('/admin/managers',{headers:{cookie:cookies(jar)}});const html=await page.text();absorb(jar,page);
+ assert.equal(page.headers.get('cache-control'),'private, no-store');assert.equal(html.includes(stored),false);
+ assert.equal((html.match(new RegExp(managerKey,'g'))??[]).length,2);assert.equal(jar['__Host-edge_manager'],undefined);
  const again=await(await request('/admin/managers',{headers:{cookie:cookies(jar)}})).text();
- assert.equal(again.includes(managerKey),false);assert.match(again,/GoRun Full/);assert.match(again,new RegExp(managerKey.slice(-4)));
+ assert.equal(again.includes(managerKey),false);assert.equal(await hashOf(),stored);assert.match(again,/GoRun Full/);assert.match(again,new RegExp(managerKey.slice(-4)));
  const ok=await request('/api/v1/manager',{headers:{authorization:'Bearer '+managerKey}});assert.equal(ok.status,200);
  const body=await ok.json();assert.equal(body.ok,true);assert.equal(body.data.primary,true);assert.equal(body.data.site_id,'demo');assert.equal(body.data.label,'GoRun Full');
  assert.equal(JSON.stringify(body).includes(managerKey),false);
@@ -114,15 +171,41 @@ test('primary manager key is shown once and whoami accepts only that key',async(
  assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+key}})).status,401);
  const exported=await(await request('/admin/export',{headers:{cookie:cookies(jar)}})).text();
  assert.equal(exported.includes(managerKey),false);assert.equal(exported.includes('key_hash'),false);
- const rotated=await post('/admin/managers/rotate',{csrf,id:body.data.manager_id},jar);assert.equal(rotated.status,200);
- const next=(await rotated.text()).match(/data-manager-key="([^"]+)"/)[1];assert.notEqual(next,managerKey);
+ const rotated=await post('/admin/managers/rotate',{csrf,id:body.data.manager_id},jar);assert.equal(rotated.status,303);
+ const next=jar['__Host-edge_manager'];assert.notEqual(next,managerKey);assert.equal((await rotated.text()).includes(next),false);
  assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+managerKey}})).status,401);
+ const rotatedPage=await request('/admin/managers',{headers:{cookie:cookies(jar)}});const rotatedHtml=await rotatedPage.text();absorb(jar,rotatedPage);
+ assert.equal((rotatedHtml.match(new RegExp(next,'g'))??[]).length,2);
+ const rotatedHash=await hashOf();
+ const rotatedAgain=await(await request('/admin/managers',{headers:{cookie:cookies(jar)}})).text();
+ assert.equal(rotatedAgain.includes(next),false);assert.equal(await hashOf(),rotatedHash);
  assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+next}})).status,200);
  assert.equal((await post('/admin/managers/create',{csrf,label:'Second'},jar)).status,409);
  assert.equal((await post('/admin/managers/revoke',{csrf,id:body.data.manager_id,confirm:'yes'},jar)).status,303);
  assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+next}})).status,401);
  const cleared=await(await request('/admin/managers',{headers:{cookie:cookies(jar)}})).text();
  assert.equal(cleared.includes(next),false);assert.match(cleared,/Create GoRun key|إنشاء مفتاح GoRun/);
+});
+test('pending manager keys are not shown after rotation or revocation and logout clears the handoff',async()=>{
+ const {jar,csrf}=await login();
+ assert.equal((await post('/admin/managers/create',{csrf,label:'Pending key'},jar)).status,303);
+ const firstKey=jar['__Host-edge_manager'];
+ const {id}=await db.prepare("SELECT id FROM edge_managers WHERE site_id='demo' AND primary_manager=1").first();
+ assert.equal((await post('/admin/managers/rotate',{csrf,id},jar)).status,303);
+ const nextKey=jar['__Host-edge_manager'];assert.notEqual(firstKey,nextKey);
+ const stale=await request('/admin/managers',{headers:{cookie:cookies({...jar,'__Host-edge_manager':firstKey})}});
+ const staleHTML=await stale.text();assert.equal(staleHTML.includes(firstKey),false);assert.equal(staleHTML.includes('data-manager-key='),false);
+ assert.match(stale.headers.get('set-cookie'),/Max-Age=0/);
+ assert.equal((await post('/admin/managers/revoke',{csrf,id,confirm:'yes'},jar)).status,303);
+ assert.equal(jar['__Host-edge_manager'],undefined);
+ const revoked=await request('/admin/managers',{headers:{cookie:cookies({...jar,'__Host-edge_manager':nextKey})}});
+ assert.equal((await revoked.text()).includes(nextKey),false);
+ assert.equal((await post('/admin/managers/create',{csrf,label:'Logout key'},jar)).status,303);
+ assert.ok(jar['__Host-edge_manager']);
+ assert.equal((await post('/admin/logout',{csrf},jar)).status,303);assert.equal(jar['__Host-edge_manager'],undefined);
+ const fresh=await login();
+ const current=await db.prepare("SELECT id FROM edge_managers WHERE site_id='demo' AND primary_manager=1").first();
+ assert.equal((await post('/admin/managers/revoke',{csrf:fresh.csrf,id:current.id,confirm:'yes'},fresh.jar)).status,303);
 });
 test('publication rejects recovery between review and atomic execution without side effects',async()=>{
  const {jar}=await login(),bindings=await mf.getBindings(),c=await context(new Request('https://edge.example/admin',{headers:{cookie:cookies(jar)}}),{...env,...bindings});

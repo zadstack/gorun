@@ -372,6 +372,7 @@
   "settings.edge.unchecked": "تم الحفظ ولم يُتحقق بعد.",
   "settings.edge.error.origin": "أدخل عنوان https عامًا من غير مسار أو مستخدم أو عنوان خاص.",
   "settings.edge.error.key": "أدخل مفتاح المدير الأساسي من لوحة Edge.",
+  "settings.edge.error.conflict": "تغيّرت إعدادات Edge أثناء تنفيذ الطلب. راجع الإعدادات الحالية وحاول مجددًا؛ لم يُحفظ أي تغيير من هذا الطلب.",
   "settings.edge.error.check": "لم يقبل موقع Edge هذا المفتاح.",
   "settings.edge.error.encrypt": "تعذّر تشفير المفتاح.",
   "settings.edge.site": "الموقع",

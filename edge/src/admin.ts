@@ -127,32 +127,54 @@ async function editor(c: Context,id: string,lang: string) {
   return page(lang,tr(lang,'Edit content','تحرير المحتوى'),`<p class="muted">${tr(lang,'Saving a draft keeps the current public article unchanged. Plain text only. Review is required before publication.','حفظ المسودة لا يغيّر النسخة العامة. النص عادي فقط، وتلزم المراجعة قبل النشر.')}</p>${state}${stale?`<p class="warning">${tr(lang,'The public version changed. Discard this draft before starting from the current version.','تغيّرت النسخة العامة. تجاهل المسودة قبل البدء من النسخة الحالية.')}</p>`:''}<div class="editor"><form class="panel" method="post" action="/admin/save?lang=${lang}">${fields}<label>${tr(lang,'Title','العنوان')}<input name="title" value="${e(b.title)}" maxlength="200" required></label><label>${tr(lang,'Slug','المسار')}<input name="slug" value="${e(b.slug)}" maxlength="120" required></label><label>${tr(lang,'Type','النوع')}<select name="type"><option value="post"${b.type==='post'?' selected':''}>Post / مقال</option><option value="page"${b.type==='page'?' selected':''}>Page / صفحة</option></select></label><label>${tr(lang,'Language','اللغة')}<select name="locale"><option value="en"${b.locale==='en'?' selected':''}>English</option><option value="ar"${b.locale==='ar'?' selected':''}>العربية</option></select></label><label>${tr(lang,'Summary','الملخص')}<input name="excerpt" value="${e(b.excerpt)}" maxlength="600"></label><label>${tr(lang,'Body','المحتوى')}<textarea name="body_text" maxlength="100000">${e(b.body_text)}</textarea></label><button${stale?' disabled':''}>${tr(lang,'Save draft','حفظ المسودة')}</button></form><aside class="panel">${aside}</aside></div>`,c,'edit',`/admin/edit?id=${encodeURIComponent(id)}`);
 }
 interface ContentRow { id: string; title: string|null; status: string; type: string|null; locale: string|null; has_draft: number }
+const contentPageSize=100,contentScanPages=40;
 async function contentList(c: Context,lang: string,url: URL) {
   const filters=listFilters(url);if(!filters) return fail(lang,'Invalid content filters',400);
-  const rows=await c.env.DB.prepare("SELECT id,title,status,type,locale,has_draft FROM (SELECT id,title,status,type,locale,EXISTS(SELECT 1 FROM edge_drafts d WHERE d.site_id=c.site_id AND d.id=c.id) has_draft FROM edge_content c WHERE site_id=?1 UNION ALL SELECT id,json_extract(body_json,'$.title'),'draft',json_extract(body_json,'$.type'),json_extract(body_json,'$.locale'),1 FROM edge_drafts d WHERE site_id=?1 AND NOT EXISTS(SELECT 1 FROM edge_content c WHERE c.site_id=d.site_id AND c.id=d.id)) ORDER BY title LIMIT 100").bind(c.env.SITE_ID).all<ContentRow>();
-  const visible=rows.results.filter(v=>{
-    if(filters.status==='draft'){if(v.status!=='draft'&&!v.has_draft) return false;}
-    else if(filters.status&&v.status!==filters.status) return false;
-    if(filters.locale&&v.locale!==filters.locale) return false;
-    if(filters.q&&!`${v.title??''} ${v.type??''}`.toLocaleLowerCase().includes(filters.q.toLocaleLowerCase())) return false;
-    return true;
-  });
+  const query=c.env.DB.prepare(`SELECT id,title,status,type,locale,has_draft FROM (SELECT id,title,status,type,locale,EXISTS(SELECT 1 FROM edge_drafts d WHERE d.site_id=c.site_id AND d.id=c.id) has_draft FROM edge_content c WHERE site_id=?1 UNION ALL SELECT id,json_extract(body_json,'$.title'),'draft',json_extract(body_json,'$.type'),json_extract(body_json,'$.locale'),1 FROM edge_drafts d WHERE site_id=?1 AND NOT EXISTS(SELECT 1 FROM edge_content c WHERE c.site_id=d.site_id AND c.id=d.id)) WHERE (?2='' OR (?2='draft' AND (status='draft' OR has_draft=1)) OR (?2<>'draft' AND status=?2)) AND (?3='' OR locale=?3) AND (?4=0 OR COALESCE(title,'')>?5 OR (COALESCE(title,'')=?5 AND id>?6)) ORDER BY COALESCE(title,''),id LIMIT ?7`);
+  // SQLite lower() folds ASCII only. Scan bounded pages with the original
+  // Unicode-aware, literal substring match, and stop after 100 matches.
+  const folded=filters.q.toLocaleLowerCase(),visible:ContentRow[]=[];
+  let after:ContentRow|undefined,complete=false;
+  for(let i=0;i<contentScanPages;i++) {
+    const rows=await query.bind(c.env.SITE_ID,filters.status,filters.locale,after?1:0,after?.title??'',after?.id??'',contentPageSize+1).all<ContentRow>();
+    const candidates=rows.results.slice(0,contentPageSize);
+    for(const row of candidates) {
+      if(`${row.title??''} ${row.type??''}`.toLocaleLowerCase().includes(folded))visible.push(row);
+      if(visible.length===contentPageSize)break;
+    }
+    if(visible.length===contentPageSize||rows.results.length<=contentPageSize){complete=true;break;}
+    after=candidates[candidates.length-1];
+  }
+  // Leave D1 query-budget headroom for authentication. Never present a partial
+  // scan as a complete empty list or silently omit the remaining matches.
+  if(!complete)return fail(lang,tr(lang,'Search scan limit reached. Narrow the status or language filter.','بلغ البحث حد الفحص. ضيّق التصفية حسب الحالة أو اللغة.'),503);
   const published=visible.filter(v=>v.status==='published').length,drafts=visible.filter(v=>v.status==='draft'||v.has_draft).length;
   const tabs=['',tr(lang,'All','الكل'),'published',tr(lang,'Published','منشور'),'draft',tr(lang,'Drafts','مسودات'),'private',tr(lang,'Private','خاص')];
   let nav='';for(let i=0;i<tabs.length;i+=2){const active=filters.status===tabs[i];nav+=`<a class="${active?'is-active':''}" href="${e(withLang(contentQuery(tabs[i],filters.locale,filters.q),lang))}"${active?' aria-current="page"':''}>${tabs[i+1]}</a>`;}
   const form=`<form class="filters" method="get" action="/admin" role="search"><input type="hidden" name="lang" value="${lang}"><label>${tr(lang,'Search','بحث')}<input name="q" type="search" maxlength="80" value="${e(filters.q)}"></label><label>${tr(lang,'Status','الحالة')}<select name="status">${option('',tr(lang,'All statuses','كل الحالات'),filters.status)}${option('published',tr(lang,'Published','منشور'),filters.status)}${option('draft',tr(lang,'Drafts','مسودات'),filters.status)}${option('private',tr(lang,'Private','خاص'),filters.status)}</select></label><label>${tr(lang,'Language','اللغة')}<select name="locale">${option('',tr(lang,'All languages','كل اللغات'),filters.locale)}${option('en','English',filters.locale)}${option('ar','العربية',filters.locale)}</select></label><button class="admin-secondary-button" type="submit">${tr(lang,'Filter','تصفية')}</button></form>`;
+  const cap=visible.length===100?`<p class="muted">${tr(lang,'The list stops at 100 matches.','تتوقف القائمة عند 100 نتيجة.')}</p>`:'';
   const table=`<div class="panel table-wrap"><table><thead><tr><th>${tr(lang,'Title','العنوان')}</th><th>${tr(lang,'Type','النوع')}</th><th>${tr(lang,'Language','اللغة')}</th><th>${tr(lang,'State','الحالة')}</th></tr></thead><tbody>${visible.map(v=>`<tr><td><a href="/admin/edit?id=${encodeURIComponent(v.id)}&amp;lang=${lang}">${e(v.title)||tr(lang,'Untitled','بدون عنوان')}</a></td><td>${e(v.type)}</td><td>${e(v.locale)}</td><td>${badge(lang,v.status)}${v.has_draft&&v.status!=='draft'?' '+badge(lang,'draft'):''}</td></tr>`).join('')||`<tr><td colspan="4">${tr(lang,'No content matches these filters.','لا يوجد محتوى يطابق هذه التصفية.')}</td></tr>`}</tbody></table></div>`;
-  return page(lang,tr(lang,'Content','المحتوى'),`<nav class="tabs" aria-label="${tr(lang,'Status','الحالة')}">${nav}</nav>${form}<div class="stats"><article class="stat"><b>${visible.length}</b><span class="muted">${tr(lang,'Items','عناصر')}</span></article><article class="stat"><b>${published}</b><span class="muted">${tr(lang,'Published','منشور')}</span></article><article class="stat"><b>${drafts}</b><span class="muted">${tr(lang,'Drafts','مسودات')}</span></article></div>${table}`,c,'content',contentQuery(filters.status,filters.locale,filters.q),`<a class="admin-primary-button" href="/admin/edit?lang=${lang}">${tr(lang,'New content','محتوى جديد')}</a>`);
+  return page(lang,tr(lang,'Content','المحتوى'),`<nav class="tabs" aria-label="${tr(lang,'Status','الحالة')}">${nav}</nav>${form}<div class="stats"><article class="stat"><b>${visible.length}</b><span class="muted">${tr(lang,'Items','عناصر')}</span></article><article class="stat"><b>${published}</b><span class="muted">${tr(lang,'Published','منشور')}</span></article><article class="stat"><b>${drafts}</b><span class="muted">${tr(lang,'Drafts','مسودات')}</span></article></div>${cap}${table}`,c,'content',contentQuery(filters.status,filters.locale,filters.q),`<a class="admin-primary-button" href="/admin/edit?lang=${lang}">${tr(lang,'New content','محتوى جديد')}</a>`);
 }
-interface ManagerRow { id: string; label: string; key_hint: string; primary_manager: number; created_at: string }
+interface ManagerRow { id: string; label: string; key_hint: string; primary_manager: number; created_at: string; key_matches: number }
 function managerLabel(raw: string|null) {const label=(raw??'').trim()||'GoRun';return label.length<=80&&!/[\u0000-\u001f<>]/.test(label)?label:null;}
-async function managersView(c: Context,lang: string,shown='') {
-  const rows=await c.env.DB.prepare('SELECT id,label,key_hint,primary_manager,created_at FROM edge_managers WHERE site_id=? ORDER BY primary_manager DESC,created_at').bind(c.env.SITE_ID).all<ManagerRow>();
+async function managersView(c: Context,r: Request,lang: string) {
+  const raw=readCookie(r,cookieName(c,'manager'));
+  const candidateHash=/^[A-Za-z0-9_-]{43}$/.test(raw)?await managerHash(c.env.SITE_ID,raw):'';
+  const rows=await c.env.DB.prepare('SELECT id,label,key_hint,primary_manager,created_at,CASE WHEN primary_manager=1 AND key_hash=?2 THEN 1 ELSE 0 END key_matches FROM edge_managers WHERE site_id=?1 ORDER BY primary_manager DESC,created_at').bind(c.env.SITE_ID,candidateHash).all<ManagerRow>();
+  const shown=rows.results.some(v=>v.key_matches===1)?raw:'';
   const hasPrimary=rows.results.some(v=>v.primary_manager===1);
   const once=shown?`<section class="warning"><p>${tr(lang,'Copy this primary key into GoRun → Settings → Edge. It is shown once and is not stored on this page after you leave.','انسخ هذا المفتاح الأساسي إلى GoRun ← الإعدادات ← Edge. يظهر مرة واحدة ولا يبقى في هذه الصفحة بعد المغادرة.')}</p><p class="key-once" data-manager-key="${e(shown)}">${e(shown)}</p></section>`:'';
   const create=hasPrimary?'':`<form class="panel" method="post" action="/admin/managers/create?lang=${lang}">${hidden(c)}<label>${tr(lang,'Label','الاسم')}<input name="label" maxlength="80" value="GoRun" required></label><button>${tr(lang,'Create GoRun key','إنشاء مفتاح GoRun')}</button></form>`;
   const table=`<div class="panel table-wrap"><table><thead><tr><th>${tr(lang,'Label','الاسم')}</th><th>${tr(lang,'Key hint','آخر المفتاح')}</th><th>${tr(lang,'Role','الدور')}</th><th>${tr(lang,'Created','أُنشئ')}</th><th>${tr(lang,'Actions','إجراءات')}</th></tr></thead><tbody>${rows.results.map(v=>`<tr><td>${e(v.label)}</td><td dir="ltr">••••${e(v.key_hint)}</td><td>${v.primary_manager?tr(lang,'Primary','أساسي'):tr(lang,'Manager','مدير')}</td><td>${e(v.created_at)}</td><td>${v.primary_manager?`<form method="post" action="/admin/managers/rotate?lang=${lang}">${hidden(c)}<input type="hidden" name="id" value="${e(v.id)}"><button>${tr(lang,'Rotate key','تدوير المفتاح')}</button></form><form method="post" action="/admin/managers/revoke?lang=${lang}">${hidden(c)}<input type="hidden" name="id" value="${e(v.id)}"><label><input type="checkbox" name="confirm" value="yes" required> ${tr(lang,'Revoke this primary key.','إلغاء هذا المفتاح الأساسي.')}</label><button class="admin-secondary-button">${tr(lang,'Revoke','إلغاء')}</button></form>`:'—'}</td></tr>`).join('')||`<tr><td colspan="5">${tr(lang,'No manager key yet.','لا يوجد مفتاح مدير بعد.')}</td></tr>`}</tbody></table></div>`;
-  return page(lang,tr(lang,'Managers','المديرون'),`${once}<p class="muted">${tr(lang,'GoRun Full is the primary manager of this Edge site. Only a hash of the key is stored. The check confirms identity and does not edit Edge content from GoRun.','GoRun Full هو المدير الأساسي لهذا الموقع. تُحفظ بصمة المفتاح فقط. التحقق يثبت الهوية ولا يعدّل محتوى Edge من GoRun.')}</p>${create}${table}`,c,'managers','/admin/managers');
+  const out=page(lang,tr(lang,'Managers','المديرون'),`${once}<p class="muted">${tr(lang,'GoRun Full is the primary manager of this Edge site. Only a hash of the key is stored. The check confirms identity and does not edit Edge content from GoRun.','GoRun Full هو المدير الأساسي لهذا الموقع. تُحفظ بصمة المفتاح فقط. التحقق يثبت الهوية ولا يعدّل محتوى Edge من GoRun.')}</p>${create}${table}`,c,'managers','/admin/managers');
+  if(raw) out.headers.append('set-cookie',cookie(c,'manager','',0));
+  return out;
+}
+function showManagerKey(c: Context,lang: string,raw: string) {
+  const out=redirect('/admin/managers?lang='+lang);
+  out.headers.append('set-cookie',cookie(c,'manager',raw,120));
+  return out;
 }
 async function managerWrite(c: Context,path: string,f: URLSearchParams,lang: string) {
   if(path==='/admin/managers/create') {
@@ -164,7 +186,7 @@ async function managerWrite(c: Context,path: string,f: URLSearchParams,lang: str
       audit(c,'manager.created',id,proof,pa),
     ]);
     if(!results[0].meta.changes) return fail(lang,'A primary manager already exists',409);
-    return managersView(c,lang,raw);
+    return showManagerKey(c,lang,raw);
   }
   const id=f.get('id')??'';if(!/^[0-9a-f-]{36}$/.test(id)) return fail(lang,'Invalid manager',400);
   if(path==='/admin/managers/rotate') {
@@ -175,7 +197,7 @@ async function managerWrite(c: Context,path: string,f: URLSearchParams,lang: str
       audit(c,'manager.rotated',id,proof,pa),
     ]);
     if(!results[0].meta.changes) return fail(lang,'Primary manager changed; reload',409);
-    return managersView(c,lang,raw);
+    return showManagerKey(c,lang,raw);
   }
   if(f.get('confirm')!=='yes') return fail(lang,'Confirmation required',403);
   const results=await c.env.DB.batch([
@@ -183,7 +205,9 @@ async function managerWrite(c: Context,path: string,f: URLSearchParams,lang: str
     audit(c,'manager.revoked',id,'changes()=1'),
   ]);
   if(!results[0].meta.changes) return fail(lang,'Primary manager changed; reload',409);
-  return redirect('/admin/managers?lang='+lang);
+  const out=redirect('/admin/managers?lang='+lang);
+  out.headers.append('set-cookie',cookie(c,'manager','',0));
+  return out;
 }
 export async function admin(r: Request,env: AdminEnv): Promise<Response> {
   const lang=language(r);let c: Context|null;try{c=await context(r,env);}catch{return reply('Unavailable',503);}if(!c)return reply('Not found',404);
@@ -206,11 +230,11 @@ export async function admin(r: Request,env: AdminEnv): Promise<Response> {
     if(path==='/admin/audit') {const rows=await env.DB.prepare('SELECT action,content_id,at FROM edge_audit WHERE site_id=? ORDER BY at DESC LIMIT 100').bind(env.SITE_ID).all<{action:string;content_id:string;at:string}>();return page(lang,tr(lang,'Audit','السجل'),`<div class="panel table-wrap"><table><thead><tr><th>${tr(lang,'When','الوقت')}</th><th>${tr(lang,'Action','الإجراء')}</th><th>${tr(lang,'Content','المحتوى')}</th></tr></thead><tbody>${rows.results.map(v=>`<tr><td>${e(v.at)}</td><td>${e(v.action)}</td><td>${e(v.content_id)||'—'}</td></tr>`).join('')||`<tr><td colspan="3">${tr(lang,'No audit entries yet.','لا توجد قيود في السجل بعد.')}</td></tr>`}</tbody></table></div>`,c,'audit','/admin/audit');}
     if(path==='/admin/media') {const rows=await env.DB.prepare('SELECT id,content_type,visibility FROM edge_media WHERE site_id=? LIMIT 100').bind(env.SITE_ID).all<{id:string;content_type:string;visibility:string}>();return page(lang,tr(lang,'Media metadata','بيانات الوسائط'),`<p class="muted">${tr(lang,'Existing R2 records only. Upload and private download are not implemented; no private object is exposed.','سجلات R2 الموجودة فقط. الرفع والتنزيل الخاص غير متاحين؛ لا تُعرض أي ملفات خاصة.')}</p><div class="panel table-wrap"><table><thead><tr><th>${tr(lang,'Record','السجل')}</th><th>${tr(lang,'Type','النوع')}</th><th>${tr(lang,'Visibility','الظهور')}</th></tr></thead><tbody>${rows.results.map(v=>`<tr><td>${e(v.id)}</td><td>${e(v.content_type)}</td><td>${badge(lang,v.visibility==='public'?'published':'private')}</td></tr>`).join('')||`<tr><td colspan="3">${tr(lang,'No media records.','لا توجد سجلات وسائط.')}</td></tr>`}</tbody></table></div>`,c,'media','/admin/media');}
     if(path==='/admin/edit') {const id=new URL(r.url).searchParams.get('id')??crypto.randomUUID();return idPattern.test(id)?editor(c,id,lang):fail(lang,'Invalid content ID',400);}
-    if(path==='/admin/managers') return managersView(c,lang);
+    if(path==='/admin/managers') return managersView(c,r,lang);
     if(path==='/admin') return contentList(c,lang,new URL(r.url));
     return reply('Not found',404);
   }
-  if(path==='/admin/logout') {await logout(c);const out=redirect('/admin/login?lang='+lang);out.headers.append('set-cookie',cookie(c,'session','',0));return out;}
+  if(path==='/admin/logout') {await logout(c);const out=redirect('/admin/login?lang='+lang);out.headers.append('set-cookie',cookie(c,'session','',0));out.headers.append('set-cookie',cookie(c,'manager','',0));return out;}
   if(path.startsWith('/admin/managers/')) return managerWrite(c,path,f!,lang);
   const id=f!.get('id')??'',dv=version(f!.get('draft_version')),sv=version(f!.get('source_version'));
   if(!idPattern.test(id)||dv===null||sv===null)return fail(lang,'Invalid content version',400);

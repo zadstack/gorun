@@ -372,6 +372,7 @@
   "settings.edge.unchecked": "Saved, and not checked yet.",
   "settings.edge.error.origin": "Enter a public https origin with no path, user, or private address.",
   "settings.edge.error.key": "Enter the primary manager key from the Edge admin.",
+  "settings.edge.error.conflict": "Edge settings changed while this request was running. Review the current settings and try again; this request saved no changes.",
   "settings.edge.error.check": "The Edge site did not accept this key.",
   "settings.edge.error.encrypt": "The key could not be encrypted.",
   "settings.edge.site": "Site",
