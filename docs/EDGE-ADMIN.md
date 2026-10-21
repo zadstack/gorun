@@ -39,7 +39,7 @@ Bodies are plain text, escaped on both public and administration pages. Media ad
 
 ## Primary manager key
 
-Managers, in the owner admin, has one button that creates the primary key for GoRun Full. The page shows the key once. The database stores only `SHA-256("gorun-edge-manager:v1:<site>:<key>")` and the last four characters. Rotate replaces that hash. Revoke deletes the row. A later visit does not show the key again, and content export does not include it.
+Managers, in the owner admin, has one button that creates the primary key for GoRun Full. Creating or rotating the key answers with a redirect. The next page shows the key once, carried in a short-lived HttpOnly cookie that is cleared as the page is displayed. Reloading that page does not issue another key, and the raw key is not put in the address or the database. The database stores only `SHA-256("gorun-edge-manager:v1:<site>:<key>")` and the last four characters. Rotate replaces that hash. Revoke deletes the row. A later visit does not show the key again, and content export does not include it.
 
 `GET /api/v1/manager` with `Authorization: Bearer <key>` returns the site id, manager id, label, and `primary: true`. Any other key, including the owner key, is rejected. GoRun Full saves the origin in settings and the key with `db.Encrypt` (AAD `edge.manager_key`), then the Check connection button calls only that endpoint. The saved page and the audit record do not contain the key. This handshake does not create drafts, publish, or open MCP.
 
@@ -49,7 +49,7 @@ Administration requires all of `EDGE_ADMIN_ENABLED=true`, an active owner, an ex
 
 Login uses an expiring, signed cookie/form challenge and rejects replay. Failed-key accounting is durable and bounded to one row per site; repeated failures receive 429, while the valid generated owner key remains usable. Sessions expire after one hour, rotate at login and are bounded to twenty per site. Mutating requests require same-origin POST and the session CSRF token. Every database mutation rechecks the current owner epoch, live session and expiry inside the transaction. Owner recovery during an in-flight edit therefore revokes its authority. Default D1 binding queries use the primary database; this implementation does not enable read replication or a potentially stale session read path.
 
-Exports contain only content, drafts and revisions, never owner keys, sessions, login challenges or rate state. Each export section is limited to 1,000 records and reports those limits: this is a bounded content export, not a complete database backup. Use D1's operator backup/export tools for full disaster recovery. Lists are also bounded; there is no bulk import, media upload or multi-user role administration in this milestone. HEAD requests to administration return 405. Public GET/HEAD behavior is unchanged.
+Exports contain only content, drafts and revisions, never owner keys, sessions, login challenges or rate state. Each export section is limited to 1,000 records and reports those limits: this is a bounded content export, not a complete database backup. Use D1's operator backup/export tools for full disaster recovery. Content filters query the site and then stop at 100 matches. Lists are also bounded; there is no bulk import, media upload or multi-user role administration in this milestone. HEAD requests to administration return 405. Public GET/HEAD behavior is unchanged.
 
 ## Explicit remote acceptance
 

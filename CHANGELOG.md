@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Edge
+
+- Content filters query the whole site, then stop at 100 matches, so a draft past the first 100 titles is still found. `%` and `_` in the search are literal characters.
+- Creating or rotating the primary manager key redirects and shows the key once. Reloading that page does not issue another key.
+- Saving or checking Edge settings writes the origin, encrypted key, and check result together. A failure leaves the previous values in place.
+
 ## [0.13.0] - 2026-10-21
 
 ### Edge on Cloudflare

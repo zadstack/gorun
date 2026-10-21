@@ -2,13 +2,16 @@ package admin
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
+	"maps"
 	"net"
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -211,15 +214,27 @@ func (h *handlers) settingsEdgeSave(w http.ResponseWriter, r *http.Request) {
 		h.renderEdge(w, r, http.StatusUnprocessableEntity, page, fields)
 		return
 	}
-	for k, v := range vals {
-		if err := h.d.Settings.Set(r.Context(), k, v); err != nil {
-			h.serverError(w, r, err)
-			return
-		}
+	if err := h.saveEdgeKeys(r.Context(), vals); err != nil {
+		h.serverError(w, r, err)
+		return
 	}
 	h.d.Audit.Record(r.Context(), "settings.edge", "settings", "edge.origin", map[string]any{"origin": vals[settingEdgeOrigin], "key_replaced": replaced})
 	httpx.SetFlash(w, "success", "admin.settings.saved")
 	redirect(w, r, "/admin/settings/edge")
+}
+
+// saveEdgeKeys writes every Edge setting in one transaction. A failure rolls
+// the whole set back, so a stored key cannot be left pointing at a new origin.
+func (h *handlers) saveEdgeKeys(ctx context.Context, vals map[string]any) error {
+	keys := slices.Sorted(maps.Keys(vals))
+	return db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
+		for _, k := range keys {
+			if err := h.d.Settings.SetTx(ctx, tx, k, vals[k]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (h *handlers) settingsEdgeCheck(w http.ResponseWriter, r *http.Request) {
@@ -249,11 +264,9 @@ func (h *handlers) settingsEdgeCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	checked := time.Now().UTC().Format(time.RFC3339)
-	for k, v := range map[string]any{settingEdgeManager: info.ManagerID, settingEdgeLabel: info.Label, settingEdgeSite: info.SiteID, settingEdgeChecked: checked} {
-		if err := h.d.Settings.Set(ctx, k, v); err != nil {
-			h.serverError(w, r, err)
-			return
-		}
+	if err := h.saveEdgeKeys(ctx, map[string]any{settingEdgeManager: info.ManagerID, settingEdgeLabel: info.Label, settingEdgeSite: info.SiteID, settingEdgeChecked: checked}); err != nil {
+		h.serverError(w, r, err)
+		return
 	}
 	h.d.Audit.Record(ctx, "settings.edge_check", "settings", info.SiteID, map[string]any{"manager_id": info.ManagerID, "origin": origin})
 	httpx.SetFlash(w, "success", "admin.settings.edge.checked")

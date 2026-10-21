@@ -94,19 +94,29 @@ test('discard serializes once: expiry before write is no-op, expiry after marker
 test('content filters and the editor show status without changing publication',async()=>{
  const {jar,csrf}=await login();
  assert.equal((await post('/admin/save',{...input('filter-ar',{locale:'ar',title:'مسودة عربية'}),csrf},jar)).status,303);
+ for(let i=0;i<100;i++){const id='pad-'+String(i).padStart(3,'0');await db.prepare("INSERT INTO edge_content(site_id,id,type,slug,locale,title,status) VALUES('demo',?1,'post',?1,'en',?2,'private')").bind(id,'AAA '+id).run();}
  const html=await(await request('/admin?status=draft&locale=ar&q='+encodeURIComponent('مسودة'),{headers:{cookie:cookies(jar)}})).text();
- assert.match(html,/مسودة عربية/);assert.match(html,/aria-current="page"/);assert.equal(html.includes('reviewed'),false);
+ assert.match(html,/مسودة عربية/);assert.match(html,/aria-current="page"/);assert.equal(html.includes('reviewed'),false);assert.equal(html.includes('The list stops at 100 matches.'),false);
+ const all=await(await request('/admin',{headers:{cookie:cookies(jar)}})).text();assert.match(all,/The list stops at 100 matches\./);assert.equal(all.includes('مسودة عربية'),false);
+ const folded=await(await request('/admin?q='+encodeURIComponent('aaa pad-000'),{headers:{cookie:cookies(jar)}})).text();assert.match(folded,/AAA pad-000/);
+ const wild=await(await request('/admin?q='+encodeURIComponent('%_'),{headers:{cookie:cookies(jar)}})).text();assert.equal(wild.includes('AAA pad-000'),false);
  assert.equal((await request('/admin?status=nope',{headers:{cookie:cookies(jar)}})).status,400);
  const editor=await(await request('/admin/edit?id=reviewed&lang=en',{headers:{cookie:cookies(jar)}})).text();
  assert.match(editor,/class="badge private"/);assert.equal(editor.includes('href="/post/reviewed"'),false);
 });
 test('primary manager key is shown once and whoami accepts only that key',async()=>{
  const {jar,csrf}=await login();
- const created=await post('/admin/managers/create',{csrf,label:'GoRun Full'},jar);assert.equal(created.status,200);
- const html=await created.text();const shown=html.match(/data-manager-key="([^"]+)"/);assert.ok(shown);const managerKey=shown[1];
- assert.match(managerKey,/^[A-Za-z0-9_-]{43}$/);assert.equal((html.match(new RegExp(managerKey,'g'))??[]).length,2);
+ const hashOf=async()=>(await db.prepare("SELECT key_hash FROM edge_managers WHERE site_id='demo' AND primary_manager=1").first())?.key_hash??'';
+ const created=await post('/admin/managers/create',{csrf,label:'GoRun Full'},jar);assert.equal(created.status,303);
+ assert.equal(created.headers.get('location'),'/admin/managers?lang=en');
+ const managerKey=jar['__Host-edge_manager'];assert.match(managerKey,/^[A-Za-z0-9_-]{43}$/);
+ assert.equal((await created.text()).includes(managerKey),false);assert.equal(created.headers.get('location').includes(managerKey),false);
+ assert.match(created.headers.get('set-cookie'),/Max-Age=120/);assert.match(created.headers.get('set-cookie'),/HttpOnly/);
+ const stored=await hashOf();
+ const page=await request('/admin/managers',{headers:{cookie:cookies(jar)}});const html=await page.text();absorb(jar,page);
+ assert.equal((html.match(new RegExp(managerKey,'g'))??[]).length,2);assert.equal(jar['__Host-edge_manager'],undefined);
  const again=await(await request('/admin/managers',{headers:{cookie:cookies(jar)}})).text();
- assert.equal(again.includes(managerKey),false);assert.match(again,/GoRun Full/);assert.match(again,new RegExp(managerKey.slice(-4)));
+ assert.equal(again.includes(managerKey),false);assert.equal(await hashOf(),stored);assert.match(again,/GoRun Full/);assert.match(again,new RegExp(managerKey.slice(-4)));
  const ok=await request('/api/v1/manager',{headers:{authorization:'Bearer '+managerKey}});assert.equal(ok.status,200);
  const body=await ok.json();assert.equal(body.ok,true);assert.equal(body.data.primary,true);assert.equal(body.data.site_id,'demo');assert.equal(body.data.label,'GoRun Full');
  assert.equal(JSON.stringify(body).includes(managerKey),false);
@@ -114,9 +124,14 @@ test('primary manager key is shown once and whoami accepts only that key',async(
  assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+key}})).status,401);
  const exported=await(await request('/admin/export',{headers:{cookie:cookies(jar)}})).text();
  assert.equal(exported.includes(managerKey),false);assert.equal(exported.includes('key_hash'),false);
- const rotated=await post('/admin/managers/rotate',{csrf,id:body.data.manager_id},jar);assert.equal(rotated.status,200);
- const next=(await rotated.text()).match(/data-manager-key="([^"]+)"/)[1];assert.notEqual(next,managerKey);
+ const rotated=await post('/admin/managers/rotate',{csrf,id:body.data.manager_id},jar);assert.equal(rotated.status,303);
+ const next=jar['__Host-edge_manager'];assert.notEqual(next,managerKey);assert.equal((await rotated.text()).includes(next),false);
  assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+managerKey}})).status,401);
+ const rotatedPage=await request('/admin/managers',{headers:{cookie:cookies(jar)}});const rotatedHtml=await rotatedPage.text();absorb(jar,rotatedPage);
+ assert.equal((rotatedHtml.match(new RegExp(next,'g'))??[]).length,2);
+ const rotatedHash=await hashOf();
+ const rotatedAgain=await(await request('/admin/managers',{headers:{cookie:cookies(jar)}})).text();
+ assert.equal(rotatedAgain.includes(next),false);assert.equal(await hashOf(),rotatedHash);
  assert.equal((await request('/api/v1/manager',{headers:{authorization:'Bearer '+next}})).status,200);
  assert.equal((await post('/admin/managers/create',{csrf,label:'Second'},jar)).status,409);
  assert.equal((await post('/admin/managers/revoke',{csrf,id:body.data.manager_id,confirm:'yes'},jar)).status,303);

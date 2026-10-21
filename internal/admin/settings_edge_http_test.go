@@ -84,6 +84,34 @@ func TestEdgeSettingsRejectPrivateOriginAndFailedCheck(t *testing.T) {
 	}
 }
 
+func TestEdgeSettingsSaveRollsBackPartialWrite(t *testing.T) {
+	s := boot(t)
+	s.login("edge-atomic@example.com", "admin", "en")
+	ctx := context.Background()
+	// edge.origin sorts last, so this aborts after the ciphertext insert in the
+	// same transaction. A non-atomic save would leave that ciphertext behind.
+	if _, err := s.app.Deps.DB.Exec(`CREATE TRIGGER edge_origin_blocked BEFORE INSERT ON settings WHEN NEW.key = 'edge.origin' BEGIN SELECT RAISE(ABORT, 'edge origin blocked'); END`); err != nil {
+		t.Fatal(err)
+	}
+	resp, page := s.post("/admin/settings/edge", url.Values{"origin": {"https://Edge.Example"}, "key": {edgeManagerKey}})
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("save: %d\n%s", resp.StatusCode, page)
+	}
+	for _, key := range []string{"edge.origin", "edge.manager_key", "edge.manager_hint", "edge.checked_at"} {
+		if got := s.app.Deps.Settings.GetString(ctx, key, ""); got != "" {
+			t.Fatalf("%s committed after failed save: %q", key, got)
+		}
+	}
+	mustNotContain(t, page, edgeManagerKey)
+	var n int
+	if err := s.app.Deps.DB.QueryRow(`SELECT count(*) FROM audit_log WHERE action = 'settings.edge'`).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 0 {
+		t.Fatalf("failed save was audited: %d", n)
+	}
+}
+
 func TestEdgeSettingsRequirePermission(t *testing.T) {
 	s := boot(t)
 	s.login("ed@example.com", "editor", "en")
