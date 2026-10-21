@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-labelledby="title desc" lang="ar">
+<title id="title">GoRun — محتواك وفريقك ووكلاؤك، على بنيتك التحتية</title><desc id="desc">ملف Go واحد وقاعدة SQLite، مع إدارة بالعربية والإنجليزية وواجهتي MCP وREST. يربط Core المحتوى والقوالب والوكلاء. الرسم مكتمل دون حركة؛ يظهر خط تزييني مرة واحدة فقط عند السماح بالحركة.</desc>
+<style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+    svg[lang="ar"] text { font-family: Tahoma, Arial, sans-serif; }
+    .ink { fill: #080e14; } .muted { fill: #545e69; }
+    .mobile { display: none; }
+    @media (max-width: 600px) { .desktop { display: none; } .mobile { display: inline; } }
+    .signal { opacity: 0; }
+    @media (prefers-reduced-motion: no-preference) {
+      .signal { animation: pass 3.6s ease-out 1; }
+      @keyframes pass { 0% { opacity: 0; stroke-dashoffset: 160; } 18% { opacity: .65; } 75% { opacity: .65; } 100% { opacity: 0; stroke-dashoffset: 0; } }
+    }
+    @media (prefers-reduced-motion: reduce) { .signal { animation: none; opacity: 0; } }
+  </style>
+<rect x=".5" y=".5" width="1199" height="359" rx="18" fill="#f7f9fc" stroke="#dce2e8"/>
+<g class="desktop"><path d="M600 32v296" stroke="#e0e6ee"/>
+<g transform="translate(1087 31) scale(.64)"><g fill="none" stroke="#1748ed" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M61 24H32a16 16 0 0 0-16 16v24a16 16 0 0 0 16 16h28a16 16 0 0 0 16-16V48H47"/><path d="M35 16h29a16 16 0 0 1 16 16v5"/></g><circle cx="47" cy="48" r="6" fill="#080e14"/></g>
+<text x="1068" y="79" class="ink" font-size="38" font-weight="700" text-anchor="end" >GoRun</text>
+<text x="1148" y="119" class="muted" font-size="14" font-weight="400" text-anchor="start" direction="rtl" unicode-bidi="plaintext" >إدارة محتوى تستضيفها بنفسك</text>
+<text x="1148" y="182" class="ink" font-size="42" font-weight="700" text-anchor="start" direction="rtl" unicode-bidi="plaintext" >محتواك.</text>
+<text x="1148" y="235" class="ink" font-size="42" font-weight="700" text-anchor="start" direction="rtl" unicode-bidi="plaintext" >بنيتك التحتية.</text>
+<text x="1148" y="278" class="muted" font-size="19" font-weight="400" text-anchor="start" direction="rtl" unicode-bidi="plaintext" >ملف Go واحد. قاعدة SQLite. موقعك.</text>
+<text x="1148" y="324" class="muted" font-size="15" font-weight="400" text-anchor="start" direction="rtl" unicode-bidi="plaintext" >العربية والإنجليزية  ·  MCP + REST</text>
+<g transform="translate(-568 0)">
+<rect x="640" y="38" width="520" height="284" rx="14" fill="#fff" stroke="#dce2e8"/>
+<circle cx="663" cy="61" r="3" fill="#bdc9db"/><circle cx="675" cy="61" r="3" fill="#bdc9db"/><circle cx="687" cy="61" r="3" fill="#bdc9db"/>
+<text x="1140" y="66" class="muted" font-size="11" font-weight="400" text-anchor="start" direction="rtl" unicode-bidi="plaintext" >خادمك</text>
+<path d="M640 82h520" stroke="#edf0f5"/>
+<path d="M900 172v32M726 228v-24h348v24" fill="none" stroke="#c5d0e1" stroke-width="2" stroke-linecap="round"/>
+<path class="signal" d="M900 172v32H726v24M900 204h174v24" fill="none" stroke="#1748ed" stroke-width="3" stroke-linecap="round" stroke-dasharray="32 160" opacity="0"/>
+<rect x="808" y="103" width="184" height="69" rx="10" fill="#eef3ff" stroke="#cbd8ff"/>
+<text x="900" y="132" class="ink" font-size="21" font-weight="700" text-anchor="middle" >GoRun Core</text>
+<text x="900" y="154" class="muted" font-size="13" font-weight="400" text-anchor="middle" >Go + SQLite</text>
+<rect x="660" y="228" width="132" height="65" rx="9" fill="#f9fafc" stroke="#dce2e8"/>
+<text x="726" y="268" class="ink" font-size="17" font-weight="600" text-anchor="middle" direction="rtl" unicode-bidi="plaintext" >الوكلاء</text>
+<rect x="834" y="228" width="132" height="65" rx="9" fill="#f9fafc" stroke="#dce2e8"/>
+<text x="900" y="268" class="ink" font-size="17" font-weight="600" text-anchor="middle" direction="rtl" unicode-bidi="plaintext" >القوالب</text>
+<rect x="1008" y="228" width="132" height="65" rx="9" fill="#f9fafc" stroke="#dce2e8"/>
+<text x="1074" y="268" class="ink" font-size="17" font-weight="600" text-anchor="middle" direction="rtl" unicode-bidi="plaintext" >المحتوى</text>
+</g></g>
+<g class="mobile" display="none">
+<g transform="translate(1030 22) scale(1.22)"><g fill="none" stroke="#1748ed" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M61 24H32a16 16 0 0 0-16 16v24a16 16 0 0 0 16 16h28a16 16 0 0 0 16-16V48H47"/><path d="M35 16h29a16 16 0 0 1 16 16v5"/></g><circle cx="47" cy="48" r="6" fill="#080e14"/></g>
+<text x="990" y="119" class="ink" font-size="86" font-weight="700" text-anchor="end" >GoRun</text>
+<text x="1148" y="228" class="ink" font-size="58" font-weight="700" text-anchor="start" direction="rtl" unicode-bidi="plaintext" >محتواك. بنيتك التحتية.</text>
+<text x="1148" y="314" class="muted" font-size="37" font-weight="400" text-anchor="start" direction="rtl" unicode-bidi="plaintext" >Go + SQLite  ·  العربية والإنجليزية  ·  MCP / REST</text>
+</g>
+</svg>

@@ -2,11 +2,15 @@
 
 [![CI](https://github.com/zadstack/gorun/actions/workflows/ci.yml/badge.svg)](https://github.com/zadstack/gorun/actions/workflows/ci.yml) [![Latest release](https://img.shields.io/github/v/release/zadstack/gorun?label=release&color=167252)](https://github.com/zadstack/gorun/releases/latest) [![License: AGPL v3](https://img.shields.io/badge/license-AGPL--3.0-167252.svg)](LICENSE)
 
-![GoRun: content through scoped agents to human review, with Classic Modern Minimal Serif Docs identity themes](assets/branding/readme-hero.svg)
+![GoRun: your content and infrastructure, with one Go binary and SQLite connecting content, themes and agents](assets/branding/readme-hero.svg)
 
-GoRun is a self-hosted CMS for your team and AI agents: one Go binary, SQLite, and a bilingual admin (English and Arabic, with RTL). Editors publish content; agents connect over MCP (REST for other clients) with scoped keys, human approval for sensitive changes, and an audit trail.
+**A self-hosted CMS for your team and AI agents.** One Go binary, SQLite, and an English and Arabic admin with RTL.
 
-[العربية](README.ar.md) · [Website guides](https://gorun.gocloud.run/gorun-guides) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [Security](SECURITY.md) · [Contribute](CONTRIBUTING.md)
+Write and publish content, shape your site with themes, and connect agents over MCP. Scoped keys, human approval for sensitive actions and an audit trail keep access explicit. REST serves other integrations; external providers are optional.
+
+[**Quick start**](#run-it-now) · [Why GoRun](#why-gorun) · [Documentation](docs/README.md) · [Releases](https://github.com/zadstack/gorun/releases) · [العربية](README.ar.md)
+
+[Website guides](https://gorun.gocloud.run/gorun-guides) · [Security](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
 ## Run it now
 

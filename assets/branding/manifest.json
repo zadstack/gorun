@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-20",
+  "date": "2026-10-21",
   "files": [
     {
       "path": "github-banner.svg",
@@ -39,16 +39,17 @@
     },
     {
       "path": "reviewed-workflow.svg",
-      "bytes": 1748,
-      "sha256": "13bda65a1f699d1f644823cce99cc4c2b721d4c813ec36cf1cc56727c43c1195",
-      "viewBox": "0 0 1000 370"
+      "bytes": 4709,
+      "sha256": "cf2a18bfdb3d2aff3e7deae03655e87c5bfdb7b78629c27f0ba0b16a1e1a394b",
+      "viewBox": "0 0 1000 270"
     },
     {
       "path": "readme-hero.svg",
-      "bytes": 6608,
-      "sha256": "c7830fde0766d003f8805eab66ff086f896729f413ff5a2bb73d10e2afb10765",
+      "bytes": 4762,
+      "sha256": "8d0ebbb1f8279513938f17adf071a13ebe64c54aea77c97a600fda1f8db85572",
       "viewBox": "0 0 1200 360",
-      "animated": true
+      "animated": true,
+      "motion": "CSS, one 3.6-second decorative pass; disabled for prefers-reduced-motion; complete static fallback"
     },
     {
       "path": "screenshots/agent-keys-en.png",
@@ -121,6 +122,20 @@
         780,
         1688
       ]
+    },
+    {
+      "path": "readme-hero-ar.svg",
+      "bytes": 5408,
+      "sha256": "be13518ab247ffb58af887756bf5bbf3078d9b907106de2babb0014f59a1ffa8",
+      "viewBox": "0 0 1200 360",
+      "animated": true,
+      "motion": "CSS, one 3.6-second decorative pass; disabled for prefers-reduced-motion; complete static fallback"
+    },
+    {
+      "path": "reviewed-workflow-ar.svg",
+      "bytes": 5874,
+      "sha256": "4051c580567ae6dc7548570a2d604ef478b7dc1d2479e9a25a8acd2c08f9fce9",
+      "viewBox": "0 0 1000 270"
     }
   ]
 }
