@@ -13,6 +13,7 @@ import (
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/update"
 )
 
 // Local backup schedule / retention settings (System → Backups).
@@ -139,6 +140,18 @@ func backupScheduleAt(ctx context.Context, d *kernel.Deps, now time.Time) error 
 	last := backupScheduleLast(ctx, d)
 	if !last.IsZero() && now.Before(last.Add(time.Duration(hours)*time.Hour)) {
 		return nil
+	}
+	if svc, ok := kernel.Get[*update.Service](d, update.ServiceName); ok {
+		owner := update.HolderBackup + ":schedule:" + update.NewOwnerToken()
+		if err := svc.Lease().Acquire(ctx, update.HolderBackup, owner, ""); err != nil {
+			var held *update.ErrLeaseHeld
+			if errors.As(err, &held) {
+				d.Log.Info("backup: scheduled backup skipped, data directory busy", "holder", held.Holder, "operation", held.OperationID)
+				return nil
+			}
+			return err
+		}
+		defer svc.Lease().Release(context.WithoutCancel(ctx), owner)
 	}
 	backupMu.Lock()
 	defer backupMu.Unlock()

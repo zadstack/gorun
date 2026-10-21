@@ -5,6 +5,7 @@
 package admin
 
 import (
+	"context"
 	"embed"
 	"errors"
 	"io/fs"
@@ -15,6 +16,8 @@ import (
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/mailer"
+	"github.com/zadstack/gorun/internal/observe"
+	"github.com/zadstack/gorun/internal/update"
 )
 
 //go:embed catalog/*.json
@@ -58,10 +61,11 @@ type handlers struct {
 	mail    *mailer.Mailer
 	aiLimit *aiLimiter // POST /admin/x/ai/write, per user
 	started time.Time
+	observe *observe.Service // durable background observations
+	update  *update.Service  // staged update lifecycle
 	// userMu serialises user guard checks with the mutation they protect
 	// (last-admin / self rules); GoRun is a single process.
 	userMu            sync.Mutex
-	updateMu          sync.Mutex
 	inboundRateMu     sync.Mutex
 	inboundRateWindow time.Time
 	inboundRateCount  int
@@ -97,6 +101,18 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Services.Set(mailer.ServiceName, m)
 
 	h := &handlers{d: d, tpl: tpl, users: users, roles: roles, keys: keys, mail: m, aiLimit: newAILimiter(), started: time.Now()}
+	h.observe = observe.New(d.DB, d.Jobs, d.Log)
+	h.update = h.buildUpdateService(d)
+	h.update.Register()
+	h.registerReleaseObservation()
+	d.Services.Set(observe.ServiceName, h.observe)
+	d.Services.Set(update.ServiceName, h.update)
+	// Operations left running by a previous process are reconciled before
+	// the workers start: an activation whose identity now serves continues,
+	// anything else is marked interrupted instead of looking in progress.
+	if err := h.update.Reconcile(context.Background(), true); err != nil {
+		return err
+	}
 	tpl.SetSidebarBrandResolver(h.sidebarBrand)
 	d.Services.Set(kernel.ServiceNavigationPins, kernel.NavigationPins(h))
 	addNav(d)
@@ -115,11 +131,15 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Jobs.Cron("studio.recover", time.Minute, h.studioRecover)
 	h.apiOperations()
 	h.capabilityAPIOperations()
+	h.updateAPIOperations()
+	h.observationAPIOperations()
 	h.roleAPIOperations()
 	h.keyAPIOperations()
 	h.canvasReadAPIOperations()
 	d.Jobs.Cron("jobs.prune", time.Hour, h.pruneJobs)
 	d.Jobs.Cron("backup.schedule", time.Hour, h.backupScheduleTick)
+	d.Jobs.Cron("observe.tick", time.Minute, h.observe.Tick)
+	d.Jobs.Cron("update.reconcile", time.Minute, func(ctx context.Context) error { return h.update.Reconcile(ctx, false) })
 	return nil
 }
 

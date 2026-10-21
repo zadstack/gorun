@@ -17,6 +17,7 @@ import (
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/observe"
 )
 
 //go:embed migrations/*.sql
@@ -103,6 +104,8 @@ func (m *Module) Register(d *kernel.Deps) error {
 	}
 	registerAdmin(d, s, tpl)
 	registerAPI(d, s)
+	obs, _ := kernel.Get[*observe.Service](d, observe.ServiceName)
+	s.registerObservation(obs)
 	d.Hooks.Filter(admin.HealthCheckFilter, 50, s.healthChecks)
 	if err := seedAccountRedirect(context.Background(), d); err != nil {
 		d.Log.Warn("commerce: default /my-account redirect not created", "err", err)

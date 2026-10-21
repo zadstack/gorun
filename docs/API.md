@@ -205,6 +205,68 @@ follow-up work in [CORE-UPGRADE-ROADMAP.md](CORE-UPGRADE-ROADMAP.md). Connection
 credentials and raw upstream errors are excluded. Unreadable saved records return the standard
 `500 internal_error`; access failures are `401 unauthorized` / `403 forbidden`.
 
+### Background observations
+
+Expensive or external checks never run inside a page or read-only API request. Each registered
+capability kind keeps one **observation** row per key with the last successful read (`saved`, with
+its age, revision and evidence `scope`) separately from the newest attempt (`attempt`). A failed
+attempt therefore never erases or relabels the last good result, and missing values are `null`,
+never a fabricated zero.
+
+| Endpoint | Scope | Behaviour |
+| --- | --- | --- |
+| `GET /api/v1/system/observations[?kind=…]` | `system.health` | Bounded local read of every saved observation (or one kind). |
+| `GET /api/v1/system/observations/{kind}/{key}` | `system.health` | One key; `status: never` when it exists but was never refreshed; `404` for an unknown kind or a removed key. |
+| `POST /api/v1/system/observations/{kind}/{key}/refresh` | `settings.manage` | Queues one background job and answers `202` with `{job_id, generation, deduplicated}`. A refresh already queued or running for the same key and configuration revision is returned instead of a second job; `409 capability_disabled` when the capability is off. |
+
+`status` is one of `never`, `waiting`, `running`, `fresh`, `stale` (older than the kind's freshness
+interval or saved for another configuration revision), `failed` (newest attempt failed; `saved`
+still holds the last success) or `disabled`. Attempts run with a per-kind timeout and a bounded
+number of retries through the job queue; the scheduler admits at most a few in-flight refreshes per
+kind. Results are fenced: an attempt queued for one configuration revision is discarded
+(`attempt.status: superseded`) when the key was edited or removed before or while it ran, so a late
+result never certifies new credentials. Disabled capabilities are neither scheduled nor refreshed;
+their queued jobs are parked (`parked_reason`) and released unchanged when the handler returns.
+
+Registered kinds in this release: `update.release` (key `latest`: the trusted release index) and
+`commerce.billing_server` (one key per billing server: read-only catalog fetch). Error strings are
+truncated and come from the module's own sanitized messages; credentials, hosts and raw upstream
+bodies are not stored.
+
+```json
+{"kind":"commerce.billing_server","key":"01J…","status":"failed","enabled":true,
+ "attempt":{"status":"failed","started_at":"2026-10-22T10:05:00Z","finished_at":"2026-10-22T10:05:05Z","number":2,
+            "duration_ms":5000,"error":"timeout","remediation":"Check the billing server address, client id and secret, then run the server test.","job_id":"01J…","generation":3},
+ "saved":{"at":"2026-10-22T09:00:00Z","age_seconds":3900,"revision":"4f1c…","revision_match":true,"duration_ms":212,"scope":"connectivity","data":{"plans":3}}}
+```
+
+### Staged updates
+
+`GET /api/v1/system/update` (`system.update`) reports the serving identity (`running_version`,
+with `is_release` false for development builds), the last durably accepted target
+(`accepted_version`), the saved `latest` observation (version, observed time and age, source,
+status) and `update_available` (`null` whenever latest or the running identity is unknown or stale),
+plus the `active` and `last` operations. Nothing in this read contacts a provider.
+
+`POST /api/v1/system/update` with `{"version":"0.15.0","expected_digest":"sha256:…"}` records an
+operation, takes the durable data-directory lease and queues the lifecycle job; it answers `202`
+with the **pending** operation. Errors: `422 validation_failed` (not a release tag / bad digest),
+`409 operation_in_progress` with `fields.operation_id` and `fields.holder` (another operation, a
+backup or a restore owns the data directory, or the provider still reports an earlier accepted
+deployment in progress), `503 update_not_configured` (no trusted release source).
+
+Operations (`GET /api/v1/system/update/operations[/{id}]`) carry independent phases —
+`compatibility`, `verification`, `backup`, `activation`, `health`, `acceptance`, and on a health
+failure `rollback_compatibility`, `rollback_activation`, `rollback_health` — each with `status`,
+`started_at`, `finished_at`, `duration_ms`, `progress` (null when unmeasurable), `attempts`,
+`result`, `error`, `remediation` and `retryable`. `requested_version`, `running_version` (serving
+identity at request), `activated_version` (confirmed by the serving process) and `accepted_version`
+are separate fields; `deployment_ref` is a provider reference and never means activation.
+`migration_state` records whether activation applied migrations, independently from acceptance.
+Terminal statuses are `succeeded`, `failed`, `interrupted` (process restarted mid-phase; nothing is
+assumed), `rolled_back` and `rollback_failed`. See [UPGRADE.md](UPGRADE.md#7-staged-updates-in-app)
+for configuration, adapters and limits.
+
 ### Transport limits
 
 `x-gorun.limits` exposes the pagination/helper limits and installed builder/media module limits.
@@ -259,7 +321,7 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **166 operations** in 24 tags.
+Generated from the current locally booted OpenAPI document: **173 operations** in 24 tags.
 
 ### builder
 
@@ -467,7 +529,14 @@ Generated from the current locally booted OpenAPI document: **166 operations** i
 | GET | `/api/v1/audit` | List audit log entries | `system.health` |
 | GET | `/api/v1/jobs` | List jobs | `system.health` |
 | GET | `/api/v1/system/health` | System health report | `system.health` |
+| GET | `/api/v1/system/observations/{kind}/{key}` | One saved observation; status never is a key that was never refreshed | `system.health` |
+| GET | `/api/v1/system/observations` | Saved background observations of expensive or external checks, with age and attempt state (no external calls) | `system.health` |
+| GET | `/api/v1/system/update/operations/{id}` | One staged update operation with every phase, its timing, result and remediation | `system.update` |
+| GET | `/api/v1/system/update/operations` | List staged update operations, newest first (phases omitted) | `system.update` |
+| GET | `/api/v1/system/update` | Running, accepted and latest versions with the active and last staged operations (no external calls) | `system.update` |
 | POST | `/api/v1/jobs/{id}/retry` | Retry a failed or dead job | `system.health` |
+| POST | `/api/v1/system/observations/{kind}/{key}/refresh` | Queue a background refresh and return its task reference at once; concurrent requests share one job | `settings.manage` |
+| POST | `/api/v1/system/update` | Start a staged update operation; returns 202 with the pending operation, never a completed update | `system.update` |
 
 ### taxonomies
 

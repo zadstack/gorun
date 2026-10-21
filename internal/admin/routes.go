@@ -71,6 +71,7 @@ func (h *handlers) routes() {
 	updates := r.With(auth.RequirePerm(PermUpdate))
 	updates.With(auth.RequireRecentAuth).Get("/system/updates", h.updatesPage)
 	updates.With(auth.RequireRecentAuth).Post("/system/updates", h.updateDeploy)
+	updates.Post("/system/updates/refresh", h.refreshLatest)
 
 	sys := r.With(auth.RequirePerm(PermHealth))
 	sys.Get("/system/health", h.health)

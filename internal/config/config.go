@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -35,6 +36,9 @@ const (
 type Config struct {
 	// Coolify deployment integration: operator-only environment, never editable by a web request.
 	UpdateURL, UpdateToken, UpdateResource string
+	// Update configures the staged update lifecycle (trusted release source,
+	// verification policy, health links). Operator-only, like the Coolify fields.
+	Update UpdateConfig
 
 	Addons          map[string]string // Optional addon modes: enabled, disabled or auto.
 	TrustedProxies  []string          // GORUN_TRUSTED_PROXIES; empty trusts no forwarded headers
@@ -61,6 +65,22 @@ type Config struct {
 	Theme        string                                    // GORUN_THEME default "default"
 	SetupToken   string                                    // GORUN_SETUP_TOKEN: honored in every environment; required for prod setup (≥ 16 chars)
 	S3           S3                                        // [s3] / GORUN_S3_*: media in an S3-compatible bucket
+}
+
+// UpdateConfig is the operator configuration of staged core updates. An
+// empty SourceURL disables requests; reads still work. Hosts and
+// credentials never come from web requests.
+type UpdateConfig struct {
+	SourceURL   string   // GORUN_UPDATE_SOURCE_URL / [update] source_url: HTTPS release index (JSON)
+	SourceToken string   // GORUN_UPDATE_SOURCE_TOKEN / [update] source_token: optional bearer for the index
+	Artifact    string   // GORUN_UPDATE_ARTIFACT / [update] artifact: which artifact of a release to activate
+	HealthLinks []string // GORUN_UPDATE_HEALTH_LINKS / [update] health_links: absolute URLs that must answer 2xx after activation
+	// AllowDowngrade lets compatibility pass for a lower target version.
+	AllowDowngrade bool // GORUN_UPDATE_ALLOW_DOWNGRADE / [update] allow_downgrade
+	// AllowMissingDigest accepts releases whose source publishes no digest.
+	AllowMissingDigest bool // GORUN_UPDATE_ALLOW_MISSING_DIGEST / [update] allow_missing_digest
+	// ActivationTimeout bounds waiting for the provider or operator (default 15m).
+	ActivationTimeout time.Duration // GORUN_UPDATE_ACTIVATION_TIMEOUT / [update] activation_timeout ("15m")
 }
 
 // S3 is an S3-compatible bucket for media (empty = media on disk).
@@ -95,6 +115,15 @@ type fileConfig struct {
 		SecretKey     *string `toml:"secret_key"`
 		WebhookSecret *string `toml:"webhook_secret"`
 	} `toml:"stripe"`
+	Update struct {
+		SourceURL          *string  `toml:"source_url"`
+		SourceToken        *string  `toml:"source_token"`
+		Artifact           *string  `toml:"artifact"`
+		HealthLinks        []string `toml:"health_links"`
+		AllowDowngrade     *bool    `toml:"allow_downgrade"`
+		AllowMissingDigest *bool    `toml:"allow_missing_digest"`
+		ActivationTimeout  *string  `toml:"activation_timeout"`
+	} `toml:"update"`
 	S3 struct {
 		Endpoint  *string `toml:"endpoint"`
 		Region    *string `toml:"region"`
@@ -254,6 +283,24 @@ func applyFile(c *Config, secret *string) error {
 	setStr(&c.S3.AccessKey, fc.S3.AccessKey)
 	setStr(&c.S3.SecretKey, fc.S3.SecretKey)
 	setStr(&c.S3.PublicURL, fc.S3.PublicURL)
+	setStr(&c.Update.SourceURL, fc.Update.SourceURL)
+	setStr(&c.Update.SourceToken, fc.Update.SourceToken)
+	setStr(&c.Update.Artifact, fc.Update.Artifact)
+	if fc.Update.HealthLinks != nil {
+		c.Update.HealthLinks = append([]string(nil), fc.Update.HealthLinks...)
+	}
+	if fc.Update.ActivationTimeout != nil {
+		d, err := time.ParseDuration(*fc.Update.ActivationTimeout)
+		if err != nil || d <= 0 {
+			return fmt.Errorf("config: %s: update.activation_timeout must be a positive duration", path)
+		}
+		c.Update.ActivationTimeout = d
+	}
+	for dst, v := range map[*bool]*bool{&c.Update.AllowDowngrade: fc.Update.AllowDowngrade, &c.Update.AllowMissingDigest: fc.Update.AllowMissingDigest} {
+		if v != nil {
+			*dst = *v
+		}
+	}
 	if fc.AllowPrivateNet != nil {
 		c.AllowPrivateNet = *fc.AllowPrivateNet
 	}
@@ -277,6 +324,24 @@ func applyEnv(c *Config, secret *string) error {
 	envStr(&c.UpdateURL, "GORUN_UPDATE_COOLIFY_URL")
 	envStr(&c.UpdateToken, "GORUN_UPDATE_COOLIFY_TOKEN")
 	envStr(&c.UpdateResource, "GORUN_UPDATE_COOLIFY_RESOURCE")
+	envStr(&c.Update.SourceURL, "GORUN_UPDATE_SOURCE_URL")
+	envStr(&c.Update.SourceToken, "GORUN_UPDATE_SOURCE_TOKEN")
+	envStr(&c.Update.Artifact, "GORUN_UPDATE_ARTIFACT")
+	if v, ok := os.LookupEnv("GORUN_UPDATE_HEALTH_LINKS"); ok {
+		c.Update.HealthLinks = strings.FieldsFunc(v, func(r rune) bool { return r == ',' || r == ' ' || r == '\t' || r == '\n' })
+	}
+	for dst, name := range map[*bool]string{&c.Update.AllowDowngrade: "GORUN_UPDATE_ALLOW_DOWNGRADE", &c.Update.AllowMissingDigest: "GORUN_UPDATE_ALLOW_MISSING_DIGEST"} {
+		if v, ok := os.LookupEnv(name); ok {
+			*dst = v == "1" || strings.EqualFold(v, "true") || strings.EqualFold(v, "yes")
+		}
+	}
+	if v := os.Getenv("GORUN_UPDATE_ACTIVATION_TIMEOUT"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil || d <= 0 {
+			return fmt.Errorf("config: GORUN_UPDATE_ACTIVATION_TIMEOUT must be a positive duration")
+		}
+		c.Update.ActivationTimeout = d
+	}
 	if raw, ok := os.LookupEnv("GORUN_ADDONS"); ok {
 		var modes map[string]string
 		if err := json.Unmarshal([]byte(raw), &modes); err != nil {

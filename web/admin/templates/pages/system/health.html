@@ -23,6 +23,22 @@
   </ul>
 </section>
 
+<section class="mb-4 rounded border border-line bg-panel p-4" aria-labelledby="h-observations" data-observations>
+  <h2 id="h-observations" class="text-base font-bold mb-1">{{t "admin.health.observations"}}</h2>
+  <p class="mb-3 text-xs text-muted">{{t "admin.health.observations_help"}}</p>
+  {{if .Observations}}
+  <ul class="divide-y divide-line">
+    {{range .Observations}}
+    <li class="py-2 flex flex-wrap items-center gap-3" data-observation="{{.Kind}}/{{.Key}}" data-status="{{.Status}}">
+      <span class="inline-flex w-16 justify-center rounded-chip border px-1.5 py-0.5 text-[11px] font-mono uppercase {{if eq .Status "fresh"}}border-green bg-green-soft text-green{{else if eq .Status "failed"}}border-red bg-red-soft text-red{{else if or (eq .Status "stale") (eq .Status "waiting") (eq .Status "running")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2 text-muted{{end}}">{{t (print "admin.health.status_" .Status)}}</span>
+      <span class="text-sm font-mono" dir="ltr">{{.Kind}} · {{.Key}}</span>
+      <span class="text-muted text-xs" dir="ltr">{{if .Saved}}{{t "admin.health.observation_saved" (age .Saved.AgeSeconds)}}{{else}}{{t "admin.health.observation_none"}}{{end}}{{if .Attempt}}{{if .Attempt.Error}} · {{t "admin.health.observation_attempt" .Attempt.Status}}: {{.Attempt.Error}}{{end}}{{end}}</span>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}<p class="text-muted">{{t "admin.health.no_observations"}}</p>{{end}}
+</section>
+
 <details class="mb-4"><summary class="cursor-pointer font-medium py-2">{{t "operator.technical_details"}}</summary>
 <div class="grid gap-4 lg:grid-cols-2 mb-4">
   <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-runtime">

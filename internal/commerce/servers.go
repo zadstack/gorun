@@ -136,7 +136,7 @@ func (s *service) saveServer(ctx context.Context, srv Server) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("commerce: save server: %w", err)
 	}
-	s.health.forget(srv.ID)
+	s.refreshServer(ctx, srv.ID)
 	s.audit.Record(ctx, "commerce.server.save", "billing_server", srv.ID, map[string]any{"name": srv.Name, "created": create, "secret_changed": srv.Secret != ""})
 	return s.Server(ctx, srv.ID)
 }
@@ -155,7 +155,9 @@ func (s *service) DeleteServer(ctx context.Context, id string) error {
 	if n, _ := res.RowsAffected(); n == 0 {
 		return ErrNotFound
 	}
-	s.health.forget(id)
+	if s.observe != nil {
+		_ = s.observe.Forget(ctx, ObservationKind, id)
+	}
 	s.audit.Record(ctx, "commerce.server.delete", "billing_server", id, nil)
 	return nil
 }
@@ -193,7 +195,7 @@ func (s *service) TestServer(ctx context.Context, id string) (Catalog, error) {
 		status, s.nowString(), lastErr, raw, id); err != nil {
 		return Catalog{}, fmt.Errorf("commerce: record server check: %w", err)
 	}
-	s.health.put(id, callErr)
+	s.refreshServer(ctx, id)
 	s.audit.Record(ctx, "commerce.server.test", "billing_server", id, map[string]any{"status": status, "error": lastErr, "plans": len(cat.Plans)})
 	return cat, callErr
 }

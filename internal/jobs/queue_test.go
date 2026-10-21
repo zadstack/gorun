@@ -186,19 +186,83 @@ func TestRunAtDelaysJob(t *testing.T) {
 	}
 }
 
-func TestPanicAndMissingHandlerCountAsFailure(t *testing.T) {
+func TestPanicCountsAsFailureAndMissingHandlerWaits(t *testing.T) {
 	q := newQueue(t)
 	ctx := context.Background()
 	q.Register("panics", func(context.Context, json.RawMessage) error { panic("kaboom") }, 3)
 	p, _ := q.Enqueue(ctx, "panics", nil)
 	m, _ := q.Enqueue(ctx, "unregistered", nil)
 	q.runOnce(ctx, "w")
-	q.runOnce(ctx, "w")
+	if ran, _ := q.runOnce(ctx, "w"); ran {
+		t.Fatal("claimed a job without a handler")
+	}
 	if j := getJob(t, q, p); j.Attempts != 1 || j.LastError == "" {
 		t.Fatalf("%+v", j)
 	}
-	if j := getJob(t, q, m); j.Attempts != 1 || j.LastError == "" {
+	// A disabled or missing module's work waits untouched: no attempt, no error.
+	if j := getJob(t, q, m); j.Status != "queued" || j.Attempts != 0 || j.LastError != "" {
 		t.Fatalf("%+v", j)
+	}
+	waiting, err := q.Unregistered(ctx)
+	if err != nil || waiting["unregistered"] != 1 {
+		t.Fatalf("unregistered=%v err=%v", waiting, err)
+	}
+	// Registering the handler later runs the preserved job as-is.
+	q.Register("unregistered", func(context.Context, json.RawMessage) error { return nil }, 1)
+	if ran, _ := q.runOnce(ctx, "w"); !ran {
+		t.Fatal("registered handler did not claim the waiting job")
+	}
+	if j := getJob(t, q, m); j.Status != "done" {
+		t.Fatalf("%+v", j)
+	}
+}
+
+func TestParkHoldsQueuedWorkAndUnparkReleasesItUnchanged(t *testing.T) {
+	q := newQueue(t)
+	ctx := context.Background()
+	var runs atomic.Int32
+	q.Register("probe", func(context.Context, json.RawMessage) error { runs.Add(1); return nil }, 2)
+	id, _ := q.Enqueue(ctx, "probe", map[string]string{"profile": "a"}, Idempotency("probe:a:1"))
+	q.db.Exec(`UPDATE jobs SET attempts = 1 WHERE id = ?`, id)
+	if n, err := q.Park(ctx, "probe", "module disabled"); err != nil || n != 1 {
+		t.Fatalf("park n=%d err=%v", n, err)
+	}
+	if ran, _ := q.runOnce(ctx, "w"); ran || runs.Load() != 0 {
+		t.Fatal("parked job was claimed")
+	}
+	st, _ := q.Stats(ctx)
+	if st.Parked != 1 || st.Queued != 0 || st.Failed != 0 {
+		t.Fatalf("stats %+v", st)
+	}
+	parked, _ := q.Parked(ctx)
+	if parked["probe"] != 1 {
+		t.Fatalf("parked %v", parked)
+	}
+	if j := getJob(t, q, id); j.ParkedReason != "module disabled" || j.Attempts != 1 || j.IdempotencyKey != "probe:a:1" {
+		t.Fatalf("%+v", j)
+	}
+	// Parking twice is a no-op; an in-flight lookup still sees the job.
+	if n, _ := q.Park(ctx, "probe", "again"); n != 0 {
+		t.Fatal("re-parked")
+	}
+	if jid, ok, _ := q.InFlight(ctx, "probe:a:1"); !ok || jid != id {
+		t.Fatal("parked job must stay in flight for deduplication")
+	}
+	if n, err := q.Unpark(ctx, "probe"); err != nil || n != 1 {
+		t.Fatalf("unpark n=%d err=%v", n, err)
+	}
+	if ran, _ := q.runOnce(ctx, "w"); !ran || runs.Load() != 1 {
+		t.Fatal("released job did not run")
+	}
+	j, err := q.Get(ctx, id)
+	if err != nil || j.Status != "done" || j.ParkedReason != "" || j.Attempts != 1 {
+		t.Fatalf("%+v %v", j, err)
+	}
+	if _, ok, _ := q.InFlight(ctx, "probe:a:1"); ok {
+		t.Fatal("done job reported in flight")
+	}
+	if _, err := q.Get(ctx, "missing"); !errors.Is(err, ErrNotFound) {
+		t.Fatal(err)
 	}
 }
 

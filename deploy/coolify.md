@@ -362,11 +362,14 @@ you change its tag in Coolify. Keep the existing `/data` volume and secret key,
 and retain the stop-then-start strategy described above.
 
 The button requires the `system.update` permission, a recent password sign-in,
-CSRF validation and explicit confirmation. It creates and verifies a local
-backup before sending an authenticated `POST /api/v1/deploy` for the configured
-resource. Local backups are not a substitute for an off-host backup and a
-separate copy of the site secrets. Requests are spaced ten minutes apart,
-including uncertain failures, to reduce accidental duplicate deployments.
+CSRF validation and explicit confirmation. It starts a staged operation
+([UPGRADE.md §7](../docs/UPGRADE.md#7-staged-updates-in-app)): the release is
+verified against the configured source index, a local backup is created and
+verified, then an authenticated `POST /api/v1/deploy` is sent for the configured
+resource and `/api/v1/deployments/{id}` is polled. Local backups are not a
+substitute for an off-host backup and a separate copy of the site secrets. One
+operation owns the data directory at a time; a second request, a backup or a
+restore is refused with the owning operation until it finishes.
 
 An accepted request means **queued**, not deployed. Check progress in Coolify,
 then open GoRun System Health to verify the running version. A timeout can occur

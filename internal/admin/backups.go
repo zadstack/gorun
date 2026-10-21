@@ -12,6 +12,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/backup"
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/update"
 )
 
 // backupMu serializes backups: two at once would race for the same timestamp.
@@ -77,6 +78,17 @@ func (h *handlers) backupsList(w http.ResponseWriter, r *http.Request) {
 
 // backupCreate makes a backup now (the same as `gorun backup`) and audits it.
 func (h *handlers) backupCreate(w http.ResponseWriter, r *http.Request) {
+	release, err := h.holdDataLease(r.Context(), update.HolderBackup)
+	if err != nil {
+		if leaseHeld(err) {
+			httpx.SetFlash(w, "error", "admin.backups.busy")
+			http.Redirect(w, r, "/admin/system/backups", http.StatusSeeOther)
+			return
+		}
+		h.serverError(w, r, err)
+		return
+	}
+	defer release()
 	backupMu.Lock()
 	now := time.Now()
 	res, err := backup.Create(h.d.Config.DataDir, h.d.Config.DBPath(), now)

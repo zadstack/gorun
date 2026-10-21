@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"reflect"
 	"regexp"
 	"slices"
 	"strings"
@@ -474,6 +475,9 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 		"icon":  icon,
 		"json":  toJSON,
 		"date":  formatDate,
+		"age":   formatAge,
+		"deref": deref,
+		"pct":   func(f float64) float64 { return f * 100 },
 		"asset": func(name string) string { return assetURL(assets, name) },
 		"pagination": func(page, perPage, total int) Pagination {
 			return NewPagination(page, perPage, total)
@@ -637,4 +641,33 @@ func (t *Templates) RegisterExtension(fsys fs.FS) error {
 	}
 	t.cached = set
 	return nil
+}
+
+// formatAge renders a duration in seconds for "x ago" labels: 45s, 12m, 3h, 2d.
+func formatAge(seconds int64) string {
+	switch {
+	case seconds < 60:
+		return fmt.Sprintf("%ds", seconds)
+	case seconds < 3600:
+		return fmt.Sprintf("%dm", seconds/60)
+	case seconds < 86400:
+		return fmt.Sprintf("%dh", seconds/3600)
+	}
+	return fmt.Sprintf("%dd", seconds/86400)
+}
+
+// deref returns the value behind a pointer (nil → nil) so templates can
+// print optional fields.
+func deref(v any) any {
+	rv := reflect.ValueOf(v)
+	if !rv.IsValid() {
+		return nil
+	}
+	if rv.Kind() == reflect.Pointer {
+		if rv.IsNil() {
+			return nil
+		}
+		return rv.Elem().Interface()
+	}
+	return v
 }
