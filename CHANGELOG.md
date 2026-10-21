@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-21
+
 ### Commerce launch checklist
 
 - Add **Commerce → Launch store** (`/admin/commerce/setup`): read-only checklist for Stripe keys, webhook URL, billing servers and sellable provisioning products, with links to settings and docs. Store settings registration copy uses i18n catalogs (EN/AR).
@@ -18,6 +20,8 @@ All notable changes to GoRun are recorded here. The format follows
   on, into a grace period, or off. Customers open the billing portal from `/account`. Admins refund
   a PaymentIntent from the order screen. Test and live webhook URLs are separate, and plugins can
   subscribe to `subscription.activated`, `subscription.past_due` and `subscription.canceled`.
+
+Existing installations keep data and settings. Publishing this release does not upgrade a running GoCloud/site process.
 
 ## [0.11.0] - 2026-10-20
 
