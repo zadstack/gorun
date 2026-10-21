@@ -70,7 +70,7 @@ test('owner/session expiry is checked by D1 at write, content export excludes au
 test('cross-site restore/IDs are isolated; unpublish revokes public content and audit is scoped',async()=>{
  const {jar,csrf}=await login();assert.equal((await post('/admin/restore',{csrf,id:'reviewed',draft_version:'2',source_version:'1',revision:'other-site-revision'},jar)).status,404);
  assert.equal((await post('/admin/unpublish',{csrf,id:'reviewed',draft_version:'2',source_version:'1',confirm:'yes'},jar)).status,303);assert.equal((await request('/post/reviewed')).status,404);
- const html=await(await request('/admin?lang=ar',{headers:{cookie:cookies(jar)}})).text();assert.match(html,/dir="rtl"/);assert.ok(!html.includes('OTHER SECRET'));
+ const html=await(await request('/admin?lang=ar',{headers:{cookie:cookies(jar)}})).text();assert.match(html,/dir="rtl"/);assert.match(html,/admin-workspace/);assert.match(html,/admin-sidebar/);assert.match(html,/محتوى جديد/);assert.equal(html.includes('<script'),false);assert.ok(!html.includes('OTHER SECRET'));
 });
 
 test('login challenge is consumed and expired signed challenges fail',async()=>{
