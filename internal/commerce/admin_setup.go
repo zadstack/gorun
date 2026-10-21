@@ -8,12 +8,12 @@ import (
 // setupPage feeds pages/commerce/setup.html — a read-only launch checklist for
 // Stripe, billing servers and sellable provisioning products.
 type setupPage struct {
-	StripeReady, WebhookReady        bool
-	StripeFromEnv, WebhookFromEnv    bool
-	StripeFromDB, WebhookFromDB      bool
-	ServerCount, SellableProducts    int
-	ReadyToSell                      bool
-	WebhookURL, ShopURL, Currency    string
+	StripeReady, WebhookReady     bool
+	StripeFromEnv, WebhookFromEnv bool
+	StripeFromDB, WebhookFromDB   bool
+	ServerCount, SellableProducts int
+	ReadyToSell                   bool
+	WebhookURL, ShopURL, Currency string
 }
 
 func (h *adminHandlers) setupData(ctx context.Context) setupPage {
@@ -45,7 +45,7 @@ func (h *adminHandlers) setupData(ctx context.Context) setupPage {
 		StripeFromDB: stripeDB, WebhookFromDB: webhookDB,
 		ServerCount: serverCount, SellableProducts: sellable,
 		ReadyToSell: stripeReady && webhookReady && serverCount > 0 && sellable > 0,
-		WebhookURL: base + "/webhooks/stripe", ShopURL: base + "/shop",
+		WebhookURL:  base + "/webhooks/stripe", ShopURL: base + "/shop",
 		Currency: s.currency(ctx),
 	}
 }
