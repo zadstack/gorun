@@ -242,7 +242,7 @@ test('capture current README product screens with synthetic campaign data', asyn
   await setLocale(page,'ar');await shot('site-design-identity-ar.png');
   await page.setViewportSize({width:390,height:844});await shot('site-design-identity-ar-mobile.png',true);
   await page.setViewportSize({width:1600,height:1040});await setLocale(page,'en');
-  await page.goto('/admin/agents/templates');await expect(page.locator('.agent-role-card')).toHaveCount(6);
+  await page.goto('/admin/agents/templates');await expect(page.locator('.agent-role-card')).toHaveCount(7);
   await expect(page.locator('.agent-role-card details[open]')).toHaveCount(0);await shot('agent-roles-en.png');
   await setLocale(page,'ar');await shot('agent-roles-ar.png');
   await page.setViewportSize({width:390,height:844});await shot('agent-roles-ar-mobile.png',true);
