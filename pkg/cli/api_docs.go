@@ -105,9 +105,10 @@ func apiDocsCmd(args []string, out io.Writer) (err error) {
 func apiOperationTables(raw []byte) (string, error) {
 	var doc struct {
 		Paths map[string]map[string]struct {
-			Summary string   `json:"summary"`
-			Tags    []string `json:"tags"`
-			Scopes  []string `json:"x-scopes"`
+			Summary  string                `json:"summary"`
+			Tags     []string              `json:"tags"`
+			Scopes   []string              `json:"x-scopes"`
+			Security []map[string][]string `json:"security"`
 		} `json:"paths"`
 	}
 	if err := json.Unmarshal(raw, &doc); err != nil {
@@ -124,6 +125,8 @@ func apiOperationTables(raw []byte) (string, error) {
 			scopes := "any key or session"
 			if len(op.Scopes) > 0 {
 				scopes = "`" + strings.Join(op.Scopes, "`, `") + "`"
+			} else if op.Security != nil && len(op.Security) == 0 {
+				scopes = "public"
 			}
 			summary := strings.ReplaceAll(strings.ReplaceAll(op.Summary, "\n", " "), "|", "\\|")
 			groups[tag] = append(groups[tag], fmt.Sprintf("| %s | `/api%s` | %s | %s |", strings.ToUpper(method), path, summary, scopes))

@@ -42,6 +42,9 @@ type service struct {
 	mu       sync.Mutex
 	cache    map[string]*compiled
 	patterns PatternLayer // optional layout layer (see pattern_layer.go)
+
+	appearanceMu sync.Mutex
+	appearance   *appearanceSnapshot
 }
 
 func newService(d *kernel.Deps, root string, log *slog.Logger) *service {
@@ -213,6 +216,9 @@ func (s *service) ReadTemplate(ctx context.Context, name string) (string, error)
 }
 
 func (s *service) invalidate() {
+	s.appearanceMu.Lock()
+	s.appearance = nil
+	s.appearanceMu.Unlock()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	clear(s.cache)

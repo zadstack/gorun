@@ -202,6 +202,7 @@ func wire(ctx context.Context, d *sql.DB, cfg config.Config, mods, all []Module)
 		Services: NewServiceRegistry(),
 	}
 	deps.Services.Set(diagnostics.ServiceName, collector)
+	deps.Services.Set(serviceModuleInventory, moduleInventory(cfg, mods, all))
 	deps.Hooks.AttachQueue(deps.Jobs)
 	guard := requireAuthenticator(deps.Router)
 	deps.Router.Admin.Use(guard)

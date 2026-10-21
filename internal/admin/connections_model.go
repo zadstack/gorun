@@ -39,6 +39,7 @@ type connectionRecord struct {
 	TestStatus   string `json:"test_status,omitempty"`
 	TestCount    int    `json:"test_count,omitempty"`
 	TestProtocol string `json:"test_protocol,omitempty"`
+	TestVersion  string `json:"test_version,omitempty"`
 }
 
 type connectionSecrets struct {
@@ -136,11 +137,13 @@ func changedConnection(c connectionRecord) connectionRecord {
 	c.TestStatus = ""
 	c.TestCount = 0
 	c.TestProtocol = ""
+	c.TestVersion = ""
 	return c
 }
 func recordConnectionProbe(c connectionRecord, result connectionProbeResult, err error) connectionRecord {
 	c.TestedAt = time.Now().UTC().Format(time.RFC3339)
 	c.TestStatus = "pass"
+	c.TestVersion = c.Version
 	c.TestCount = result.Count
 	c.TestProtocol = result.Protocol
 	if err != nil {

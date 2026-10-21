@@ -61,6 +61,7 @@ type Health struct {
 }
 
 func registerCoreOps(d *kernel.Deps) {
+	registerSiteInformationOps(d)
 	d.API.Add(Op("GET", "/site", "Site structure: content types, taxonomies, menus, theme, templates",
 		[]string{"site"}, []string{"content.view"}, nil, SiteStructure{}, siteHandler(d)))
 	d.API.Add(Op("GET", "/me", "Current principal and effective scopes",

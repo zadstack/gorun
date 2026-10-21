@@ -5,6 +5,19 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Shared core discovery
+
+- Add public `/api/v1/site/info` with the running build, existing site identity/logo, supported locales,
+  and active theme appearance declarations with provenance and explicit unavailable values. Keep
+  the existing authenticated `/site` contract and downstream theme services compatible.
+- Separate protected `/api/v1/site/runtime` details behind `settings.manage`; document both in the
+  generated OpenAPI contract. Discovery does not alter site content, settings, themes or media.
+- Add `/api/v1/site/capabilities` behind `system.health`, separating module availability/activation,
+  local connection configuration, and saved connectivity evidence from operation verification.
+  Preserve legacy probe records and bind new checks to the configuration revision without a SQL migration.
+- Document follow-up acceptance criteria for staged updates and durable background checks, including
+  runtime rollback without overwriting newer data with a pre-upgrade database.
+
 ## [0.13.0] - 2026-10-21
 
 ### Edge on Cloudflare

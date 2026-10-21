@@ -114,6 +114,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Jobs.Register("studio.generate", h.studioGenerateJob, 1)
 	d.Jobs.Cron("studio.recover", time.Minute, h.studioRecover)
 	h.apiOperations()
+	h.capabilityAPIOperations()
 	h.roleAPIOperations()
 	h.keyAPIOperations()
 	h.canvasReadAPIOperations()
