@@ -101,5 +101,8 @@ func (m *Module) Register(d *kernel.Deps) error {
 	if err := seedAccountRedirect(context.Background(), d); err != nil {
 		d.Log.Warn("commerce: default /my-account redirect not created", "err", err)
 	}
+	if err := seedExampleProducts(context.Background(), s); err != nil {
+		return fmt.Errorf("commerce: example products: %w", err)
+	}
 	return nil
 }

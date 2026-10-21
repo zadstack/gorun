@@ -69,7 +69,7 @@ func TestUpsertFromWPMapsMCBBMeta(t *testing.T) {
 	if p2.ID != p.ID || p2.Name != "Egypt Research Pro" || p2.PriceMinor != 12900 || p2.Active || p2.Sort != 7 || p2.Features[0] != "Kept" || p2.SEO["title"] != "Kept SEO" {
 		t.Fatalf("re-import = %+v", p2)
 	}
-	if n := e.count(`SELECT count(*) FROM products`); n != 1 {
+	if n := e.countNonExampleProducts(); n != 1 {
 		t.Fatalf("products = %d", n)
 	}
 

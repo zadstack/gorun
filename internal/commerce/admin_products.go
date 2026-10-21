@@ -53,12 +53,14 @@ func registerAdmin(d *kernel.Deps, s *service, tpl *httpx.Templates) {
 	m.Post("/commerce/servers/{id}", h.serverSave)
 	m.Post("/commerce/servers/{id}/delete", h.serverDelete)
 	m.Post("/commerce/servers/{id}/test", h.serverTest)
+	m.Get("/commerce/setup", h.setup)
 	m.Get("/commerce/settings", h.settings)
 	m.Post("/commerce/settings", h.settingsSave)
 
 	nav := func(id, icon, href, perm string, pos int) {
 		d.Admin.AddNav(kernel.NavItem{ID: "commerce." + id, LabelKey: "commerce.nav." + id, Icon: icon, Href: href, Permission: perm, Group: "commerce", Position: pos})
 	}
+	nav("setup", "rocket", "/admin/commerce/setup", PermManage, 295)
 	nav("products", "package", "/admin/commerce/products", PermManage, 300)
 	nav("orders", "receipt", "/admin/commerce/orders", PermViewOrders, 310)
 	nav("entitlements", "key-round", "/admin/commerce/entitlements", PermViewOrders, 320)
@@ -85,6 +87,7 @@ type productRow struct {
 	Product
 	Price, ServerName string
 	DigitalReady      bool
+	Example           bool
 }
 
 func (h *adminHandlers) products(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +99,7 @@ func (h *adminHandlers) products(w http.ResponseWriter, r *http.Request) {
 	names := h.serverNames(r)
 	rows := make([]productRow, len(list))
 	for i, p := range list {
-		rows[i] = productRow{Product: p, Price: FormatPrice(p.PriceMinor, p.Currency) + " " + p.Currency, ServerName: names[p.ServerID], DigitalReady: p.Kind == ProductDigital && h.svc.digitalFileExists(p.DigitalFile)}
+		rows[i] = productRow{Product: p, Price: FormatPrice(p.PriceMinor, p.Currency) + " " + p.Currency, ServerName: names[p.ServerID], DigitalReady: p.Kind == ProductDigital && h.svc.digitalFileExists(p.DigitalFile), Example: isExampleProductSlug(p.Slug)}
 	}
 	h.tpl.Render(w, r, "pages/commerce/products.html", map[string]any{"Products": rows})
 }

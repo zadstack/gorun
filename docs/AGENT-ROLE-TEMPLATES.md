@@ -1,6 +1,6 @@
 # Shared agent role templates
 
-Open **Agent role templates** from the opposite-side Agents drawer, or visit `/admin/agents/templates` in the advanced workspace. Team members with content editing permission can inspect six built-in examples in English or Arabic:
+Open **Agent role templates** from the opposite-side Agents drawer, or visit `/admin/agents/templates` in the advanced workspace. Team members with content editing permission can inspect seven built-in examples in English or Arabic:
 
 - Researcher: source discipline and research handoff.
 - Bilingual editor: faithful Arabic/English drafting and editorial review.
@@ -8,6 +8,7 @@ Open **Agent role templates** from the opposite-side Agents drawer, or visit `/a
 - Support knowledge assistant: grounded answers and escalation.
 - Operations reader: read-only diagnosis and operator handoff.
 - Campaign planner: campaign structure and approval handoff.
+- Orchestrator: step plans and role routing without automatic execution.
 
 Each role combines five bounded complementary skills and a role-specific suggested setup: sources for research, supplied research/glossary for editing, provided pages/read-only sources for SEO, approved knowledge for support, sanitized logs/read-only checks for operations, and reviewed drafts with human Metricool handoff for campaigns. These hints never select or authorize a connection. Each example explains its goal, inputs, private text output, skill instructions and a sample handoff. The catalog contains no company resources, credentials, private endpoints or preselected profile IDs. These roles are teaching recipes, not deployed clients, new runtimes or an unattended team. A person supplies approved sources and transfers or connects reviewed output to the next task. Read the instructions before adopting an example for your organization.
 

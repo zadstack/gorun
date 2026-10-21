@@ -5,7 +5,7 @@ import "testing"
 func TestAgentRoleExamplesStayWithinBundleBoundsWithoutBindings(t *testing.T) {
 	for _, locale := range []string{"en", "ar"} {
 		roles := agentRoles(locale)
-		if len(roles) != 6 {
+		if len(roles) != 7 {
 			t.Fatal(len(roles))
 		}
 		ids := map[string]bool{}

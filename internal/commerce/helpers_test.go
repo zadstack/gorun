@@ -282,6 +282,10 @@ func (e *env) count(q string, args ...any) int {
 	return n
 }
 
+func (e *env) countNonExampleProducts() int {
+	return e.count(`SELECT count(*) FROM products WHERE slug NOT IN ('example-provisioning','example-service','example-digital')`)
+}
+
 func (e *env) str(q string, args ...any) string {
 	e.t.Helper()
 	var s string

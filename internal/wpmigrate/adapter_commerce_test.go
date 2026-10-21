@@ -31,8 +31,17 @@ func TestWXRProductsImportIntoCommerce(t *testing.T) {
 		t.Fatalf("status %s products %v %+v", st.Status, st.Counts["product"], e.failedItems(id))
 	}
 	prods, err := cs.Products(e.ctx(), false)
-	if err != nil || len(prods) != 2 {
-		t.Fatalf("commerce products: %d %v", len(prods), err)
+	if err != nil {
+		t.Fatalf("commerce products: %v", err)
+	}
+	imported := 0
+	for _, p := range prods {
+		if !commerce.IsExampleProductSlug(p.Slug) {
+			imported++
+		}
+	}
+	if imported != 2 {
+		t.Fatalf("imported commerce products: %d (total %d)", imported, len(prods))
 	}
 	item := e.item(id, "product", "product", "1068")
 	var p *commerce.Product
