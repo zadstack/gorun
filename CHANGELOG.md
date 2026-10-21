@@ -5,6 +5,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Commerce launch checklist
+
+- Add **Commerce → Launch store** (`/admin/commerce/setup`): read-only checklist for Stripe keys, webhook URL, billing servers and sellable provisioning products, with links to settings and docs. Store settings registration copy uses i18n catalogs (EN/AR).
+
 ## [0.11.0] - 2026-10-20
 
 ### Pattern plugins (site layouts)

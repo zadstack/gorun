@@ -4,22 +4,25 @@
 <link rel="stylesheet" href="{{asset "admin-contained.css"}}">
 <div class="admin-contained admin-commerce-settings">
 <h1 class="text-[22px] font-bold mb-1">{{t "commerce.settings.title"}}</h1>
-<p class="text-muted mb-4">{{t "commerce.settings.intro"}}</p>
+<p class="text-muted mb-2">{{t "commerce.settings.intro"}}</p>
+<p class="mb-4"><a href="/admin/commerce/setup" class="text-blue underline">{{t "commerce.setup.link_from_settings"}}</a></p>
 <form method="post" action="/admin/commerce/settings" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
-<input type="hidden" name="registration_present" value="true"><label class="block"><input type="checkbox" name="registration_enabled" value="true" {{if .RegistrationEnabled}}checked{{end}}> السماح بإنشاء حساب عميل / Allow customer registration</label><p class="text-muted text-sm">التسجيل لا يفعّل عضوية مدفوعة ولا يرسل بريدًا تلقائيًا.</p>
+  <input type="hidden" name="registration_present" value="true">
+  <label class="block"><input type="checkbox" name="registration_enabled" value="true" {{if .RegistrationEnabled}}checked{{end}}> {{t "commerce.settings.registration_enable"}}</label>
+  <p class="text-muted text-sm">{{t "commerce.settings.registration_help"}}</p>
   <div class="max-w-40">
     <label for="c-currency" class="block font-medium mb-1">{{t "commerce.field.currency"}}</label>
     <input id="c-currency" name="currency" value="{{.Currency}}" maxlength="3" dir="ltr" {{with index .Fields "currency"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono uppercase">
     {{template "partials/field_errors" (index .Fields "currency")}}
   </div>
-  <div>
+  <div id="stripe">
     <label for="c-stripe" class="block font-medium mb-1">{{t "commerce.settings.stripe_key"}}</label>
     <input id="c-stripe" name="stripe_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_live_… / sk_test_…" aria-describedby="c-stripe-help" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
     <p id="c-stripe-help" class="mt-1 text-xs text-muted">{{if .StripeSet}}{{t "commerce.settings.secret_set"}}{{else if .StripeFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .StripeSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_secret_key" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>
-  <div>
+  <div id="webhook">
     <label for="c-webhook" class="block font-medium mb-1">{{t "commerce.settings.webhook_secret"}}</label>
     <input id="c-webhook" name="stripe_webhook_secret" type="password" autocomplete="new-password" dir="ltr" placeholder="whsec_…" aria-describedby="c-webhook-help" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
     <p id="c-webhook-help" class="mt-1 text-xs text-muted">{{if .WebhookSet}}{{t "commerce.settings.secret_set"}}{{else if .WebhookFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
