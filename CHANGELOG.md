@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-21
+
 ### Shared core discovery
 
 - Add public `/api/v1/site/info` with the running build, existing site identity/logo, supported locales,
@@ -17,6 +19,9 @@ All notable changes to GoRun are recorded here. The format follows
   Preserve legacy probe records and bind new checks to the configuration revision without a SQL migration.
 - Document follow-up acceptance criteria for staged updates and durable background checks, including
   runtime rollback without overwriting newer data with a pre-upgrade database.
+
+Existing installations keep data, settings and themes. Publishing this release does not upgrade a
+running site process. Background observation and staged runtime updates remain follow-up work.
 
 ## [0.13.0] - 2026-10-21
 
@@ -658,7 +663,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/zadstack/gorun/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/zadstack/gorun/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/zadstack/gorun/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/zadstack/gorun/compare/v0.10.0...v0.11.0
