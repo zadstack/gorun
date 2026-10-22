@@ -23,6 +23,26 @@ type AIConnectionSummary struct {
 // destination no longer matches the fingerprint that was reviewed.
 var ErrAIDestinationChanged = errors.New("admin: ai destination changed since it was reviewed")
 
+// ErrAIModelUnsupported is returned before any request for a model the
+// shared client cannot drive: OpenAI reasoning models (gpt-5 family,
+// o-series) require max_completion_tokens on chat/completions, which the
+// client does not send.
+var ErrAIModelUnsupported = errors.New("admin: the ai client cannot drive this model")
+
+// AIClientCannotDrive reports such a model.
+func AIClientCannotDrive(provider, model string) bool {
+	if strings.ToLower(provider) != AIProviderOpenAI {
+		return false
+	}
+	m := strings.ToLower(model)
+	for _, prefix := range []string{"gpt-5", "o1", "o3", "o4"} {
+		if strings.HasPrefix(m, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // ListAIConnections lists the valid saved AI connection profiles: id, name,
 // provider, model, the host the request really goes to (the saved
 // endpoint) and the last recorded test status.
@@ -43,27 +63,31 @@ func ListAIConnections(ctx context.Context, d *kernel.Deps) ([]AIConnectionSumma
 }
 
 // WritingAIDestination describes the site's writing settings (ai.*) as a
-// destination: provider, model and host, without the key. ok is false when
-// the writing settings are not configured or the key is unreadable.
+// destination: provider, model and host, without the key.
 func WritingAIDestination(ctx context.Context, d *kernel.Deps) (AIConnectionSummary, bool) {
-	h := &handlers{d: d}
-	c, err := h.loadAIConfig(ctx)
-	if err != nil || c.Model == "" {
-		return AIConnectionSummary{}, false
+	summary, _, ok := AIDestination(ctx, d, "")
+	return summary, ok
+}
+
+// AIDestination returns, from one read, what the operator is shown for
+// connectionID ("" is the writing settings) and the fingerprint of exactly
+// those stored values. ok is false when the destination cannot be resolved
+// (missing, invalid, or an unreadable credential).
+func AIDestination(ctx context.Context, d *kernel.Deps, connectionID string) (AIConnectionSummary, string, bool) {
+	dest, err := loadAIDestination(ctx, d, connectionID, "")
+	if err != nil {
+		return AIConnectionSummary{}, "", false
 	}
-	host := hostOf(c.BaseURL)
-	if c.Provider == AIProviderAnthropic {
-		host = hostOf(anthropicURL)
-	}
-	return AIConnectionSummary{Provider: c.Provider, Model: c.Model, Host: host}, true
+	return dest.summary, dest.fingerprint(), true
 }
 
 // aiDestination is one destination as read in a single pass: the config a
 // request is built from and the fingerprint of the very same stored values,
 // so no settings change can slip between the check and the send.
 type aiDestination struct {
-	config aiConfig
-	parts  []string // the stored values the fingerprint hashes (secrets in their encrypted form only)
+	config  aiConfig
+	summary AIConnectionSummary // what the operator is shown, from the same read
+	parts   []string            // the stored values the fingerprint hashes (secrets in their encrypted form only)
 }
 
 // afterAIDestinationLoad is a test seam called after the single read and
@@ -108,7 +132,12 @@ func loadAIDestination(ctx context.Context, d *kernel.Deps, connectionID, model 
 		if c.Provider == AIProviderAnthropic && c.Model == "" {
 			c.Model = defaultAnthropicModel
 		}
-		dest = aiDestination{config: c, parts: []string{"writing", snap["ai.provider"], snap["ai.base_url"], snap["ai.model"], snap["ai.api_key"]}}
+		host := hostOf(c.BaseURL)
+		if c.Provider == AIProviderAnthropic {
+			host = hostOf(anthropicURL)
+		}
+		dest = aiDestination{config: c, summary: AIConnectionSummary{Provider: c.Provider, Model: c.Model, Host: host},
+			parts: []string{"writing", snap["ai.provider"], snap["ai.base_url"], snap["ai.model"], snap["ai.api_key"]}}
 	} else {
 		c, err := h.loadConnection(ctx, connectionID)
 		if err != nil || c.Kind != "ai" || validateConnection(c) != nil {
@@ -119,13 +148,15 @@ func loadAIDestination(ctx context.Context, d *kernel.Deps, connectionID, model 
 			return dest, errors.New("AI credential unavailable")
 		}
 		dest = aiDestination{config: aiConfig{Provider: c.Provider, BaseURL: c.Endpoint, Model: c.Model, APIKey: secret.Token, NamedConnection: true},
-			parts: []string{"connection", c.ID, c.Version, c.Provider, c.Endpoint, c.Model, c.Secret}}
+			summary: AIConnectionSummary{ID: c.ID, Name: c.Name, Provider: c.Provider, Model: c.Model, Host: hostOf(c.Endpoint), TestStatus: c.TestStatus},
+			parts:   []string{"connection", c.ID, c.Version, c.Provider, c.Endpoint, c.Model, c.Secret}}
 	}
 	if model != "" {
 		if !aiModelRe.MatchString(model) {
 			return dest, errors.New("invalid AI model")
 		}
 		dest.config.Model = model
+		dest.summary.Model = model
 	}
 	if dest.config.Model == "" {
 		return dest, errAINotConfigured
@@ -141,17 +172,10 @@ func (a aiDestination) fingerprint() string {
 	return hex.EncodeToString(sum[:])
 }
 
-// AIDestinationFingerprint hashes everything that decides where an AI
-// request goes and with which credential: for a saved connection its
-// provider, endpoint, model, version and the encrypted secret as stored;
-// for the writing settings (connectionID "") the ai.* rows including the
-// encrypted key. ok is false when the destination cannot be resolved.
+// AIDestinationFingerprint is the fingerprint part of AIDestination.
 func AIDestinationFingerprint(ctx context.Context, d *kernel.Deps, connectionID string) (string, bool) {
-	dest, err := loadAIDestination(ctx, d, connectionID, "")
-	if err != nil {
-		return "", false
-	}
-	return dest.fingerprint(), true
+	_, fp, ok := AIDestination(ctx, d, connectionID)
+	return fp, ok
 }
 
 // CompleteWorkAgentBounded sends one bounded request to the destination
@@ -174,6 +198,9 @@ func CompleteWorkAgentBounded(ctx context.Context, d *kernel.Deps, connectionID,
 			return "", errors.New("invalid AI model")
 		}
 		dest.config.Model = model
+	}
+	if AIClientCannotDrive(dest.config.Provider, dest.config.Model) {
+		return "", ErrAIModelUnsupported
 	}
 	return aiCompleteBounded(ctx, dest.config, system, input, maxTokens)
 }

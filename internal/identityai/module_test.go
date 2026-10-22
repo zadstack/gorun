@@ -46,13 +46,20 @@ func (f *fakeProvider) hooks() Hooks {
 			f.lastSystem, f.lastInput, f.lastModel, f.lastMaxTokens = system, input, model, maxTokens
 			return f.reply, f.err
 		},
-		Ready:       func(context.Context, *kernel.Deps, string, string) bool { return f.ready },
 		Connections: func(context.Context, *kernel.Deps) ([]Connection, error) { return f.connections, nil },
-		Writing: func(context.Context, *kernel.Deps) (Connection, bool) {
-			return f.writing, f.ready && f.writing.Provider != ""
-		},
-		Fingerprint: func(_ context.Context, _ *kernel.Deps, id string) (string, bool) {
-			return id + ":" + f.fingerprint, f.ready
+		Destination: func(_ context.Context, _ *kernel.Deps, id string) (Connection, string, bool) {
+			if !f.ready {
+				return Connection{}, "", false
+			}
+			if id == "" {
+				return f.writing, "writing:" + f.fingerprint, f.writing.Provider != ""
+			}
+			for _, c := range f.connections {
+				if c.ID == id {
+					return c, id + ":" + f.fingerprint, true
+				}
+			}
+			return Connection{}, "", false
 		},
 	}
 }

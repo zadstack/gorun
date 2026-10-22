@@ -172,26 +172,13 @@ func ClientCannotDrive(provider, model string) bool {
 	return false
 }
 
-// destination resolves the chosen connection for display; "" means the
-// writing settings.
-func (s *service) destination(ctx context.Context, id string) (Connection, bool) {
-	if id == "" {
-		if s.hooks.Writing == nil {
-			return Connection{}, false
-		}
-		w, ok := s.hooks.Writing(ctx, s.d)
-		return w, ok && s.hooks.Ready(ctx, s.d, "", "")
+// destination resolves the chosen connection for display together with
+// the fingerprint of the same read; "" means the writing settings.
+func (s *service) destination(ctx context.Context, id string) (Connection, string, bool) {
+	if s.hooks.Destination == nil {
+		return Connection{}, "", false
 	}
-	list, err := s.hooks.Connections(ctx, s.d)
-	if err != nil {
-		return Connection{}, false
-	}
-	for _, c := range list {
-		if c.ID == id {
-			return c, s.hooks.Ready(ctx, s.d, c.ID, c.Model)
-		}
-	}
-	return Connection{}, false
+	return s.hooks.Destination(ctx, s.d, id)
 }
 
 func (s *service) owner(ctx context.Context) string {
@@ -217,7 +204,7 @@ func (s *service) current(ctx context.Context, st IdentityStore, slug string) th
 // is sent.
 func (s *service) Preview(ctx context.Context, b Brief) (review, error) {
 	b = b.normalize()
-	conn, ready := s.destination(ctx, b.Connection)
+	conn, fingerprint, ready := s.destination(ctx, b.Connection)
 	if !ready {
 		return review{}, errNotReady
 	}
@@ -231,10 +218,6 @@ func (s *service) Preview(ctx context.Context, b Brief) (review, error) {
 	info := st.Active(ctx)
 	if !theme.SupportsIdentity(info) {
 		return review{}, errUnsupported
-	}
-	fingerprint, ok := s.fingerprint(ctx, b.Connection)
-	if !ok {
-		return review{}, errNotReady
 	}
 	input := userPrompt(b, s.current(ctx, st, info.Slug), info.Name)
 	r := review{Token: db.NewID(), Owner: s.owner(ctx), Expires: time.Now().Add(reviewTTL), Brief: b, Connection: conn, Fingerprint: fingerprint, Theme: info.Slug,
@@ -254,14 +237,6 @@ func (s *service) peek(ctx context.Context, token string) (review, bool) {
 		return review{}, false
 	}
 	return r, true
-}
-
-// fingerprint is the current destination fingerprint for connectionID.
-func (s *service) fingerprint(ctx context.Context, connectionID string) (string, bool) {
-	if s.hooks.Fingerprint == nil {
-		return "", false
-	}
-	return s.hooks.Fingerprint(ctx, s.d, connectionID)
 }
 
 // take consumes the owner's review when token matches and it is fresh.
@@ -296,7 +271,7 @@ func (s *service) Generate(ctx context.Context, token string, approved bool) (Su
 	// (configuration and credential) and the same theme. Anything else was
 	// never reviewed, so nothing is sent and nothing is recorded against
 	// the destination that was approved.
-	if now, ok := s.fingerprint(ctx, r.Brief.Connection); !ok || now != r.Fingerprint || info.Slug != r.Theme {
+	if _, now, ok := s.destination(ctx, r.Brief.Connection); !ok || now != r.Fingerprint || info.Slug != r.Theme {
 		return Suggestion{}, errChanged
 	}
 	audit := func(outcome string) {

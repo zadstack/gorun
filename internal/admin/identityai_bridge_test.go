@@ -270,3 +270,55 @@ func TestCompleteWorkAgentBoundedRefusesModelOverrideOutsideApproval(t *testing.
 		t.Fatalf("matching override refused: err=%v seen=%v", err, seen)
 	}
 }
+
+// A model the shared client cannot drive is refused by the bridge before
+// any request, whatever the caller approved (the reviewer's regression).
+func TestCompleteWorkAgentBoundedNeverSendsUnsupportedReasoningPayload(t *testing.T) {
+	h, ctx, _, _ := canvasOperationFixture(t)
+	var seen map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&seen)
+		w.WriteHeader(400)
+	}))
+	defer srv.Close()
+	enc, _ := mailer.EncryptSecret(h.d.Config.SecretKey, "fixture-key")
+	for k, v := range map[string]any{"ai.provider": "openai", "ai.base_url": srv.URL, "ai.model": "o3", "ai.api_key": enc} {
+		if err := h.d.Settings.Set(ctx, k, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	fp, _ := AIDestinationFingerprint(ctx, h.d, "")
+	if _, err := CompleteWorkAgentBounded(ctx, h.d, "", "o3", "system", "input", 1500, fp); err != ErrAIModelUnsupported || seen != nil {
+		t.Fatalf("reasoning payload not refused: err=%v seen=%v", err, seen)
+	}
+	if _, err := CompleteWorkAgentBounded(ctx, h.d, "", "", "system", "input", 1500, ""); err != ErrAIModelUnsupported || seen != nil {
+		t.Fatalf("reasoning payload not refused without a fingerprint: err=%v seen=%v", err, seen)
+	}
+}
+
+// AIDestination returns the display summary and the fingerprint from one
+// read, so what the operator sees is what the fingerprint covers.
+func TestAIDestinationDisplayAndFingerprintShareOneRead(t *testing.T) {
+	h, ctx, _, _ := canvasOperationFixture(t)
+	c := seedAIConnection(t, h, ctx, "https://provider.example/v1")
+	defer func() { afterAIDestinationLoad = nil }()
+	afterAIDestinationLoad = func() {
+		next := c
+		next.Model = "gpt-4o"
+		_ = h.d.Settings.Set(ctx, connectionPrefix+c.ID, next)
+	}
+	summary, fp, ok := AIDestination(ctx, h.d, c.ID)
+	if !ok || summary.Model != "gpt-4o-mini" || summary.Host != "provider.example" {
+		t.Fatalf("summary = %+v ok=%v", summary, ok)
+	}
+	afterAIDestinationLoad = nil
+	// The stored record now says gpt-4o: the fingerprint shown with the
+	// gpt-4o-mini summary must not match the current record.
+	if now, _ := AIDestinationFingerprint(ctx, h.d, c.ID); now == fp {
+		t.Fatal("fingerprint does not come from the same read as the summary")
+	}
+	_ = h.d.Settings.Set(ctx, connectionPrefix+c.ID, c)
+	if again, _ := AIDestinationFingerprint(ctx, h.d, c.ID); again != fp {
+		t.Fatal("fingerprint of the summarised record differs from its own read")
+	}
+}

@@ -106,11 +106,9 @@ func identityAIHooks() identityai.Hooks {
 			}
 			return out, err
 		},
-		Ready:       admin.WorkAgentProviderReady,
-		Fingerprint: admin.AIDestinationFingerprint,
-		Writing: func(ctx context.Context, d *kernel.Deps) (identityai.Connection, bool) {
-			w, ok := admin.WritingAIDestination(ctx, d)
-			return identityai.Connection{Provider: w.Provider, Model: w.Model, Host: w.Host}, ok
+		Destination: func(ctx context.Context, d *kernel.Deps, id string) (identityai.Connection, string, bool) {
+			s, fp, ok := admin.AIDestination(ctx, d, id)
+			return identityai.Connection{ID: s.ID, Name: s.Name, Provider: s.Provider, Model: s.Model, Host: s.Host, TestStatus: s.TestStatus}, fp, ok
 		},
 		Connections: func(ctx context.Context, d *kernel.Deps) ([]identityai.Connection, error) {
 			rows, err := admin.ListAIConnections(ctx, d)
