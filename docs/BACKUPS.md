@@ -134,7 +134,8 @@ pause content/media writes for a fully consistent recovery point.
 
 Copies on the same disk are not off-site protection. Encrypted S3/R2
 uploads can be manual or explicitly enabled for the schedule. A failed scheduled
-upload keeps local copies and skips cleanup for that run; cloud objects are never
+upload keeps the new verified local pair; configured local retention still
+applies to older pairs. Cloud objects are never
 automatically deleted.
 See [storage](STORAGE.md), [production recovery](PRODUCTION.md) and
 [staging/cutover](STAGING.md).
@@ -145,8 +146,8 @@ See [storage](STORAGE.md), [production recovery](PRODUCTION.md) and
 السليمة التي تريد الاحتفاظ بها. يعرض النظام آخر نجاح والمساحة، وينبّه داخل لوحة
 النسخ وحالة النظام عند الفشل. النسخة الجديدة لا تحذف نسخة سليمة قديمة إلا بعد
 اجتياز الفحص؛ النسخ التالفة أو الجزئية تُترك للمراجعة. يمكنك تفعيل رفع النسخ
-المجدولة المشفّرة إلى وجهة الباك أب صراحةً؛ عند فشل الرفع تبقى النسخ المحلية
-ويظهر تحذير مستقل عن نجاح الفحص المحلي.
+المجدولة المشفّرة إلى وجهة الباك أب صراحةً؛ عند فشل الرفع تبقى النسخة الجديدة
+مع تطبيق عدد الاحتفاظ المحدد على النسخ الأقدم، ويظهر تحذير مستقل عن نجاح الفحص المحلي.
 
 قبل نقل الموقع للعمل، استخدم `gorun backup-preview --input …` لمعاينة نسخة
 مؤقتة على localhost دون مهام أو تكاملات أو دخول للحسابات أو تشغيل إضافات.

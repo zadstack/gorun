@@ -147,6 +147,9 @@ func (h *handlers) backupRemoteCreate(w http.ResponseWriter, r *http.Request) {
 			state.Status = "partial"
 		}
 		if receiptErr := backup.StoreUploadReceipt(res, state.Receipt); receiptErr != nil {
+			if err == nil && state.Receipt.State == "uploaded" {
+				state.Status = "uploaded_unrecorded"
+			}
 			err = errors.Join(err, receiptErr)
 		}
 		cancel()
@@ -166,4 +169,17 @@ func (h *handlers) backupRemoteCreate(w http.ResponseWriter, r *http.Request) {
 		httpx.SetFlash(w, "success", "admin.storage.remote_success")
 	}
 	redirect(w, r, "/admin/system/backups")
+}
+
+func (state remoteBackupState) StatusKey() string {
+	switch state.Status {
+	case "success":
+		return "admin.storage.remote_success"
+	case "uploaded_unrecorded":
+		return "remotebackup.uploaded_unrecorded"
+	case "paused":
+		return "remotebackup.paused"
+	default:
+		return "admin.storage.remote_failed"
+	}
 }

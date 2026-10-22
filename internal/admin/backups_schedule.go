@@ -191,25 +191,22 @@ func backupScheduleWithClient(ctx context.Context, d *kernel.Deps, now time.Time
 		return fail("record", err)
 	}
 	d.Audit.Record(ctx, "system.backup_scheduled", "backup", res.Stamp, map[string]any{"files": res.Count, "verified": true})
+	var remoteErr error
 	if remoteID := d.Settings.GetString(ctx, SettingBackupRemoteSchedule, ""); remoteID != "" {
-		if err := scheduledRemoteUpload(ctx, d, res, remoteID, client); err != nil {
+		remoteErr = scheduledRemoteUpload(ctx, d, res, remoteID, client)
+		if remoteErr != nil {
 			state.Status, state.Stage = "warning", "remote"
-			saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
-			stateErr := d.Settings.Set(saveCtx, SettingBackupScheduleState, state)
-			cancel()
-			return errors.Join(err, stateErr)
 		}
 	}
 	if err := renewLease(); err != nil {
-		return fail("record", err)
+		state.Status, state.Stage = "warning", "lease"
+		return saveScheduledWarning(ctx, d, state, errors.Join(remoteErr, err))
 	}
 	pruned := 0
 	if keep := backupRetain(ctx, d); keep > 0 {
-		pruned, err = backup.PruneVerified(d.Config.DataDir, keep)
+		pruned, err = backup.PruneVerifiedKeeping(d.Config.DataDir, keep, res.Stamp)
 		if err != nil {
 			state.Status, state.Stage = "warning", "prune"
-			stateErr := d.Settings.Set(ctx, SettingBackupScheduleState, state)
-			err = errors.Join(err, stateErr)
 			d.Audit.Record(ctx, "system.backup_retention_failed", "backup", res.Stamp, map[string]string{"stage": "prune"})
 			d.Log.Error("backup.schedule: retention failed", "err", err)
 		}
@@ -218,6 +215,9 @@ func backupScheduleWithClient(ctx context.Context, d *kernel.Deps, now time.Time
 		d.Audit.Record(ctx, "system.backup_retention", "backup", res.Stamp, map[string]any{"pruned": pruned, "retain": backupRetain(ctx, d)})
 	}
 	d.Log.Info("backup.schedule: verified", "stamp", res.Stamp, "pruned", pruned)
+	if state.Status == "warning" {
+		return saveScheduledWarning(ctx, d, state, errors.Join(remoteErr, err))
+	}
 	return err
 }
 
@@ -255,4 +255,15 @@ func backupScheduleDue(ctx context.Context, d *kernel.Deps, now time.Time) bool 
 	}
 	last := backupScheduleLast(ctx, d)
 	return last.IsZero() || !now.Before(last.Add(time.Duration(hours)*time.Hour))
+}
+
+func (state backupScheduleState) WarningKey() string {
+	switch state.Stage {
+	case "remote":
+		return "remotebackup.warning"
+	case "lease":
+		return "remotebackup.lease_warning"
+	default:
+		return "admin.backups.alert_retention"
+	}
 }

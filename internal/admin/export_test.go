@@ -39,3 +39,7 @@ func BackupScheduleWithClient(ctx context.Context, d *kernel.Deps, now time.Time
 func BackupScheduleTick(ctx context.Context, d *kernel.Deps) error {
 	return (&handlers{d: d}).backupScheduleTick(ctx)
 }
+
+func RunScheduledBackup(ctx context.Context, d *kernel.Deps, client *http.Client) error {
+	return runScheduledBackup(ctx, d, client)
+}

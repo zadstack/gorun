@@ -8,8 +8,10 @@ All notable changes to GoRun are recorded here. The format follows
 ### Scheduled encrypted remote backups
 
 - Allow explicit opt-in to upload verified scheduled backups to the active R2/S3
-  backup destination; preserve local copies and skip cleanup on upload failure.
-  Keep the last fully acknowledged upload separately from the latest attempt.
+  backup destination; protect the new local pair while keeping configured
+  retention bounded during upload failures.
+  Keep the last fully acknowledged upload separately from the latest attempt,
+  including an explicit warning when its local receipt could not be saved.
 - Run scheduled snapshots/uploads in a deduplicated background job, and pause
   uploads when the selected destination is disabled or replaced.
 - Add bilingual backup controls, remote failure warnings in System Health, and

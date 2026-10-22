@@ -33,7 +33,7 @@ backups/<site-id>/YYYY/MM/DD/<timestamp>.db.gorb
 backups/<site-id>/YYYY/MM/DD/<timestamp>.tar.gz.gorb
 ```
 
-The limit is **64 MiB per plaintext backup file**. This bounded implementation is intended for small sites; it does not implement multipart uploads. A remote failure leaves completed local backup files available. Remote objects can be incomplete when only one upload succeeds; only success for both files is recorded as a successful remote backup. **Nothing in the bucket is automatically deleted** — retain-N applies only to local pairs under `<data>/backups/`. Bucket ACL settings are not treated as proof of privacy: uploaded backup bytes are always encrypted.
+The limit is **64 MiB per plaintext backup file**. This bounded implementation is intended for small sites; it does not implement multipart uploads. A remote failure leaves the new completed local backup pair available; scheduled retention can still remove older verified pairs. Remote objects can be incomplete when only one upload succeeds; only success for both files is recorded as a successful remote backup. **Nothing in the bucket is automatically deleted** — retain-N applies only to local pairs under `<data>/backups/`. Bucket ACL settings are not treated as proof of privacy: uploaded backup bytes are always encrypted.
 
 ### Local schedule and retention
 
@@ -91,17 +91,27 @@ The hourly cron only enqueues work. One queued/running `backup.scheduled` job is
 admitted at a time. Scheduled upload attempts have a 90-second total deadline,
 no cloud deletes and no automatic ACL/lifecycle changes. The shared data lease
 is renewed before the bounded upload and before local pruning. Jobs use one
-attempt: an upload failure does not cause another local snapshot on immediate
-queue retry. The next due snapshot attempts upload again. Scheduled execution
+attempt. A persisted upload warning completes the job without adding a dead-job
+alert; creation/recording failures return a generic error without filesystem or
+provider details. An upload warning does not cause another local snapshot on an
+immediate queue retry. The next due snapshot attempts upload again. Scheduled execution
 still requires a running GoRun Full server with job workers; this is not a
 Cloudflare Queues/Workers Cron integration.
 
-A failed/partial upload or failure recording its receipt keeps local recovery
-copies and skips retention for that run. `backup.local.last_success` still
+A failed/partial upload keeps the new verified local pair. The configured
+retain-N policy still applies to older verified pairs (including while a
+destination is paused); the new pair reserves one slot even after a host clock
+rollback. This prevents an upload outage from creating unlimited extra copies
+when retain-N is enabled. `backup.local.last_success` still
 reports the locally verified snapshot; `backup.schedule.state` reports a
 `warning` at stage `remote`. System Health shows the warning. The per-backup
 receipt separates acknowledgement of each file from read-back verification.
 `storage.backup.last` is the latest attempt, and `storage.backup.last_success`
-retains the latest fully acknowledged pair even after later failures. Older
+retains the latest fully acknowledged pair even after later failures. If both
+objects were acknowledged but writing the local receipt fails, the saved state
+is `uploaded_unrecorded`; acknowledgement remains recorded, while the missing
+receipt is an explicit warning. Losing the data-directory lease after recording
+local success similarly produces a `lease` warning and skips cleanup, rather
+than relabelling the verified snapshot as failed. Older
 versions did not preserve the latter, so it is empty until a new upload succeeds.
 A successful upload is not proof of a complete restore or a remote read-back.

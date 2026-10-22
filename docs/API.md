@@ -796,5 +796,10 @@ The response uses the standard envelope and includes `hours`, `retain`,
 `remote_destination`, `active_remote_destination`, `last_local`, `last_attempt`,
 `last_upload`, and `last_acknowledged_upload`. Empty evidence timestamps mean
 not recorded, not success. Upload acknowledgement is not remote read-back or
-restore evidence. No credentials are returned. Policy changes are audited as
+restore evidence. `last_upload.status` can be `paused` when the pinned
+destination changed, or `uploaded_unrecorded` when both files were acknowledged
+but the local receipt could not be saved. `last_attempt` stays a warning after
+remote/receipt/lease trouble without erasing `last_local`. Configured local
+retention still applies, protecting the current pair. No credentials are
+returned. Policy changes are audited as
 `system.backup_schedule`; the scheduler runs them later in job `backup.scheduled`.

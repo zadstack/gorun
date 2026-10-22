@@ -14,7 +14,9 @@ import (
 
 	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/backup"
+	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/media"
+	"github.com/zadstack/gorun/internal/update"
 )
 
 type scheduledBackupTransport func(*http.Request) (*http.Response, error)
@@ -85,8 +87,8 @@ func TestScheduledRemoteBackupPreservesLocalAndLastAcknowledgementOnFailure(t *t
 		t.Fatal("failure overwrote last acknowledged upload")
 	}
 	entries, err := backup.List(s.app.Deps.Config.DataDir)
-	if err != nil || len(entries) != 2 {
-		t.Fatal("failed upload pruned local recovery copies", entries, err)
+	if err != nil || len(entries) != 1 {
+		t.Fatal("failed upload lost the protected pair or exceeded local retention", entries, err)
 	}
 	if _, err = os.Stat(filepath.Join(backup.Dir(s.app.Deps.Config.DataDir), now.Add(24*time.Hour).Format("20060102T150405Z")+".db")); err != nil {
 		t.Fatal(err)
@@ -230,5 +232,153 @@ func TestScheduledBackupsQueueOnceAndRespectDisabledPolicy(t *testing.T) {
 	}
 	if entries, err := backup.List(s.app.Deps.Config.DataDir); err != nil || len(entries) != 0 {
 		t.Fatal("cron performed backup instead of enqueueing", err)
+	}
+}
+
+func TestScheduledUploadWarningCompletesJobAndShutdownDoesNotDuplicatePair(t *testing.T) {
+	s := boot(t)
+	s.login("shutdown-backup@example.invalid", "admin", "en")
+	ctx := context.Background()
+	dest, err := media.PrepareDestination("Fixture", "backup", media.S3Config{Endpoint: "https://objects.example.invalid", Bucket: "backups", AccessKey: "access", SecretKey: "secret"}, s.app.Deps.Config.SecretKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = media.SaveDestination(ctx, s.app.Deps.DB, s.app.Deps.Settings, dest); err != nil {
+		t.Fatal(err)
+	}
+	s.post("/admin/system/backups/schedule", url.Values{"schedule_hours": {"24"}, "retain": {"1"}, "remote_destination": {dest.ID}})
+	attemptCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	calls := 0
+	client := &http.Client{Transport: scheduledBackupTransport(func(*http.Request) (*http.Response, error) { calls++; cancel(); return nil, context.Canceled })}
+	if err = admin.RunScheduledBackup(attemptCtx, s.app.Deps, client); err != nil {
+		t.Fatal("persisted upload warning must not create a dead job", err)
+	}
+	before, err := backup.List(s.app.Deps.Config.DataDir)
+	if err != nil || len(before) != 1 {
+		t.Fatal("local pair lost at shutdown", err)
+	}
+	if err = admin.RunScheduledBackup(ctx, s.app.Deps, client); err != nil {
+		t.Fatal(err)
+	}
+	after, err := backup.List(s.app.Deps.Config.DataDir)
+	if err != nil || len(after) != 1 || after[0].Stamp != before[0].Stamp || calls != 1 {
+		t.Fatal("recovered job created/uploaded a second pair", err, calls)
+	}
+}
+
+func TestUploadAcknowledgementSurvivesReceiptFileFailure(t *testing.T) {
+	s := boot(t)
+	s.login("receipt-backup@example.invalid", "admin", "en")
+	ctx := context.Background()
+	dest, err := media.PrepareDestination("Fixture", "backup", media.S3Config{Endpoint: "https://objects.example.invalid", Bucket: "backups", AccessKey: "access", SecretKey: "secret"}, s.app.Deps.Config.SecretKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = media.SaveDestination(ctx, s.app.Deps.DB, s.app.Deps.Settings, dest); err != nil {
+		t.Fatal(err)
+	}
+	s.post("/admin/system/backups/schedule", url.Values{"schedule_hours": {"24"}, "retain": {"1"}, "remote_destination": {dest.ID}})
+	calls := 0
+	client := &http.Client{Transport: scheduledBackupTransport(func(r *http.Request) (*http.Response, error) {
+		calls++
+		if calls == 2 {
+			stamp := strings.TrimSuffix(filepath.Base(r.URL.Path), ".tar.gz.gorb")
+			if err := os.Mkdir(filepath.Join(backup.Dir(s.app.Deps.Config.DataDir), stamp+".remote.json"), 0700); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(""))}, nil
+	})}
+	if err = admin.RunScheduledBackup(ctx, s.app.Deps, client); err != nil {
+		t.Fatal(err)
+	}
+	var ack struct {
+		Status  string
+		Receipt backup.UploadReceipt
+	}
+	if err = s.app.Deps.Settings.Get(ctx, "storage.backup.last_success", &ack); err != nil || ack.Status != "uploaded_unrecorded" || ack.Receipt.State != "uploaded" || ack.Receipt.ReadBackVerified {
+		t.Fatal("lost/overstated actual provider acknowledgement", ack, err)
+	}
+	_, page := s.do("GET", "/admin/system/backups", nil)
+	mustContain(t, page, "Both files were acknowledged", "local receipt could not be saved")
+}
+
+func TestScheduledJobSkipsAnUpdateLease(t *testing.T) {
+	s := boot(t)
+	ctx := context.Background()
+	if err := s.app.Deps.Settings.Set(ctx, admin.SettingBackupScheduleHours, 24); err != nil {
+		t.Fatal(err)
+	}
+	service, ok := kernel.Get[*update.Service](s.app.Deps, update.ServiceName)
+	if !ok {
+		t.Fatal("update service missing")
+	}
+	if err := service.Lease().Acquire(ctx, update.HolderUpdate, "fixture-update", ""); err != nil {
+		t.Fatal(err)
+	}
+	defer service.Lease().Release(ctx, "fixture-update")
+	client := &http.Client{Transport: scheduledBackupTransport(func(*http.Request) (*http.Response, error) {
+		t.Fatal("leased data directory performed upload")
+		return nil, io.ErrUnexpectedEOF
+	})}
+	if err := admin.RunScheduledBackup(ctx, s.app.Deps, client); err != nil {
+		t.Fatal("busy data directory should wait for the next scheduler tick", err)
+	}
+	if copies, err := backup.List(s.app.Deps.Config.DataDir); err != nil || len(copies) != 0 {
+		t.Fatal("backup created during update", err)
+	}
+}
+
+func TestScheduledJobErrorsDoNotExposeLocalPaths(t *testing.T) {
+	s := boot(t)
+	ctx := context.Background()
+	if err := s.app.Deps.Settings.Set(ctx, admin.SettingBackupScheduleHours, 24); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(backup.Dir(s.app.Deps.Config.DataDir), []byte("block local directory creation"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	err := admin.RunScheduledBackup(ctx, s.app.Deps, &http.Client{})
+	if err == nil || strings.Contains(err.Error(), s.app.Deps.Config.DataDir) {
+		t.Fatal("job error missing or exposes local filesystem", err)
+	}
+}
+
+func TestLeaseLossAfterUploadRemainsALocalSuccess(t *testing.T) {
+	s := boot(t)
+	s.login("lease-backup@example.invalid", "admin", "en")
+	ctx := context.Background()
+	dest, err := media.PrepareDestination("Fixture", "backup", media.S3Config{Endpoint: "https://objects.example.invalid", Bucket: "backups", AccessKey: "access", SecretKey: "secret"}, s.app.Deps.Config.SecretKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = media.SaveDestination(ctx, s.app.Deps.DB, s.app.Deps.Settings, dest); err != nil {
+		t.Fatal(err)
+	}
+	s.post("/admin/system/backups/schedule", url.Values{"schedule_hours": {"24"}, "retain": {"1"}, "remote_destination": {dest.ID}})
+	calls := 0
+	client := &http.Client{Transport: scheduledBackupTransport(func(*http.Request) (*http.Response, error) {
+		calls++
+		if calls == 2 {
+			if _, err := s.app.Deps.DB.Exec(`UPDATE ops_leases SET owner='fixture-new-owner' WHERE scope='data'`); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(strings.NewReader(""))}, nil
+	})}
+	if err = admin.RunScheduledBackup(ctx, s.app.Deps, client); err != nil {
+		t.Fatal(err)
+	}
+	var state struct{ Status, Stage string }
+	if err = s.app.Deps.Settings.Get(ctx, admin.SettingBackupScheduleState, &state); err != nil || state.Status != "warning" || state.Stage != "lease" {
+		t.Fatal("lease loss reclassified verified local copy as failed", state, err)
+	}
+	var local struct{ Stamp string }
+	if err = s.app.Deps.Settings.Get(ctx, admin.SettingBackupLastSuccess, &local); err != nil || local.Stamp == "" {
+		t.Fatal("lost local verification evidence", err)
+	}
+	if s.auditCount("system.backup_schedule_failed", "schedule") != 0 {
+		t.Fatal("recorded false failure after local success")
 	}
 }

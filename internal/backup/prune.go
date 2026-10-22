@@ -70,6 +70,19 @@ func removeStamp(dir, stamp string) (int, error) {
 // Incomplete, legacy, and corrupt copies never displace a known-good copy and
 // are left for the operator to inspect rather than silently deleted.
 func PruneVerified(dataDir string, keep int) (removed int, err error) {
+	return pruneVerified(dataDir, keep, "")
+}
+
+// PruneVerifiedKeeping reserves one retention slot for the just-created pair,
+// even when the host clock moved backwards since an earlier run.
+func PruneVerifiedKeeping(dataDir string, keep int, stamp string) (int, error) {
+	if !ValidStamp(stamp) {
+		return 0, fmt.Errorf("backup: invalid protected stamp")
+	}
+	return pruneVerified(dataDir, keep, stamp)
+}
+
+func pruneVerified(dataDir string, keep int, protected string) (removed int, err error) {
 	if keep < 1 {
 		return 0, nil
 	}
@@ -94,7 +107,21 @@ func PruneVerified(dataDir string, keep int) (removed int, err error) {
 	if len(verified) <= keep {
 		return 0, nil
 	}
-	for _, entry := range verified[keep:] {
+	slots := keep
+	for _, entry := range verified {
+		if entry.Stamp == protected {
+			slots--
+			break
+		}
+	}
+	for _, entry := range verified {
+		if entry.Stamp == protected {
+			continue
+		}
+		if slots > 0 {
+			slots--
+			continue
+		}
 		n, removeErr := removeStamp(Dir(dataDir), entry.Stamp)
 		removed += n
 		if removeErr != nil && err == nil {

@@ -401,8 +401,12 @@ Admin owns the opt-in `backup.schedule.remote_destination` policy. Its hourly
 cron queues one `backup.scheduled` job (at most one queued/running), instead of
 performing network I/O on the serial cron loop. The existing data lease and
 backup mutex cover local snapshot creation, verification, bounded encrypted
-upload and pruning. A remote failure records a separate warning and skips
-pruning, preserving local recovery copies; no bucket retention/ACL is changed.
-The job has one attempt, so a provider failure is retried with the next due
-snapshot rather than creating duplicates through queue retries. The API and
+upload and pruning. A remote failure records a separate warning while protecting the just-created
+local pair; configured retention still bounds older verified pairs. Losing the
+data lease after local success skips cleanup with a warning instead of recording
+a false backup failure. No bucket retention/ACL is changed.
+The job has one attempt; a successfully persisted upload warning completes it
+without a dead-job alert. Provider uploads are retried with the next due
+snapshot rather than creating duplicate pairs through queue retries. Job errors
+that cannot be represented by a saved warning are generic and redacted. The API and
 form share one transactional policy writer. No new modules or boot-order changes.
