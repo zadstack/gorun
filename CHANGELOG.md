@@ -5,6 +5,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+
 ### Added
 
 - `pkg/cli/theme_switch_test.go`: switching through every bundled theme keeps content, media,
@@ -45,13 +46,6 @@ All notable changes to GoRun are recorded here. The format follows
   same selection as `gorun serve` (`kernel.MigrateAllWithConfig`). While a module is off its
   public routes, API operations, job kinds, crons, admin pages, theme kinds and hooks are absent
   and its tables are kept; re-enabling reads the same data back.
-### Optional modules
-
-- New optional module `identityai` (switchable in System → Modules via `addons.identityai.enabled`): Appearance →
-  Identity AI asks a saved text AI connection for colours, fonts, taglines and a written logo brief
-  after the operator previews the exact request and approves its estimated cost; results go to the
-  identity draft only. This stage is text only: no image, vector or animation is produced or
-  claimed; logo generation with the same gating is follow-up work. See `docs/IDENTITY-AI.md`.
 
 ### Identity
 
@@ -87,6 +81,14 @@ All notable changes to GoRun are recorded here. The format follows
 - Default theme store pages (cart, checkout, account, product quantity) use translation keys
   (`store.*` in `themes/default/lang`) instead of Arabic-only copy, so an English store reads in
   English; the account page no longer hard-links optional modules' pages (`/agents`, `/saas`).
+
+### Optional modules
+
+- New optional module `identityai` (switchable in System → Modules via `addons.identityai.enabled`): Appearance →
+  Identity AI asks a saved text AI connection for colours, fonts, taglines and a written logo brief
+  after the operator previews the exact request and approves its estimated cost; results go to the
+  identity draft only. This stage is text only: no image, vector or animation is produced or
+  claimed; logo generation with the same gating is follow-up work. See `docs/IDENTITY-AI.md`.
 
 ## [0.15.1] - 2026-10-22
 
