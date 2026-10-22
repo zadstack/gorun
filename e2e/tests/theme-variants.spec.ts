@@ -110,16 +110,28 @@ async function keyboardReaches(page: Page, sel: string): Promise<void> {
 test.describe.serial('design variants', () => {
   const slugs: Record<string, { plain: string; image: string }> = {};
   let mediaID = '';
+  let category = '';
 
   test('fixtures: long posts with and without a wide image', async ({ page }) => {
     mediaID = await uploadWide(page);
+    const ids: string[] = [];
     for (const locale of ['ar', 'en'] as const) {
       const tag = randomUUID().slice(0, 6);
       slugs[locale] = {
         plain: await createPost(page, locale, `variant-${locale}-plain-${tag}`, null),
         image: await createPost(page, locale, `variant-${locale}-image-${tag}`, mediaID),
       };
+      const database = db();
+      for (const slug of Object.values(slugs[locale])) ids.push((database.prepare('SELECT id FROM content WHERE slug=?').get(slug) as any).id as string);
+      database.close();
     }
+    // One category holding the four posts, for the taxonomy pass.
+    category = 'variants-' + randomUUID().slice(0, 6);
+    const database = db();
+    const termID = 'category:' + category;
+    database.prepare('INSERT INTO terms(id,taxonomy,slug,name) VALUES(?,?,?,?)').run(termID, 'category', category, 'Variants / متغيرات');
+    for (const id of ids) database.prepare('INSERT INTO content_terms(content_id,term_id) VALUES(?,?)').run(id, termID);
+    database.close();
   });
 
   for (const [theme, declared] of Object.entries(DECLARED)) {
@@ -157,6 +169,26 @@ test.describe.serial('design variants', () => {
             await checkPage(page, `${prefix}/blog`, 'data-variant-archive', want, width, `${theme}-archive-${variant}-${locale}-${width}`);
             await expect(page.locator('[data-variant-archive] a[href*="/post/"]').first()).toBeVisible();
             await keyboardReaches(page, '[data-variant-archive]');
+          }
+        }
+      }
+      // Taxonomy pages and empty search results follow archive_style too,
+      // in both languages.
+      for (const variant of declared.archive) {
+        setSetting(`theme.${theme}.archive_style`, variant);
+        for (const locale of ['ar', 'en'] as const) {
+          const prefix = locale === 'en' ? '/en' : '';
+          for (const width of WIDTHS) {
+            await checkPage(page, `${prefix}/category/${category}`, 'data-variant-archive', variant, width, `${theme}-taxonomy-${variant}-${locale}-${width}`);
+            await expect(page.locator('[data-variant-archive] a[href*="/post/"]').first()).toBeVisible();
+            await keyboardReaches(page, '[data-variant-archive]');
+            const empty = await page.goto(`${prefix}/search?q=zzz-no-match-${category}`);
+            expect(empty?.status(), 'empty search').toBe(200);
+            expect(await page.content()).not.toContain(MARKER_500);
+            expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `empty search overflows at ${width}`).toBe(true);
+            await expect(page.locator('.gr-card-grid, .gr-list-compact')).toHaveCount(0);
+            await expect(page.locator('a[href*="/post/variant-"]')).toHaveCount(0);
+            await page.screenshot({ path: test.info().outputPath(`${theme}-search-empty-${variant}-${locale}-${width}.png`), fullPage: true });
           }
         }
       }
