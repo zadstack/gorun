@@ -61,7 +61,10 @@ npm run package:check
 npm run smoke:local
 ```
 
-Tests execute the actual compiled Worker in local `workerd` using real emulated D1 and R2, with isolated ephemeral test storage. They cover site/locale/status isolation, future/null timestamps, SQL and path attacks, HTML escaping, bounded queries, no mutation/admin routes, media namespaces/MIME/size/private/missing objects, immediate revocation, HEAD and generic readiness errors. They do not replace remote acceptance tests. The path-scoped [Edge workflow](../.github/workflows/edge.yml) repeats them on pinned Node, checks the upload bundle and exercises the documented local migration/seed commands without Cloudflare credentials.
+Tests execute the actual compiled Worker in local `workerd` using real emulated D1 and R2, with isolated ephemeral test storage. They cover site/locale/status isolation, future/null timestamps, SQL and path attacks, HTML escaping, bounded queries, no mutation/admin routes, media namespaces/MIME/size/private/missing objects, immediate revocation, HEAD and generic readiness errors. They do not replace remote acceptance tests. The local run on 22 October 2026 is recorded in
+[validation/edge-local-2026-10-22.json](validation/edge-local-2026-10-22.json) (what ran, results,
+and what only a real Cloudflare deployment can prove); the smoke now restarts the Worker and checks
+that the persisted local D1 rows survive. The path-scoped [Edge workflow](../.github/workflows/edge.yml) repeats them on pinned Node, checks the upload bundle and exercises the documented local migration/seed commands without Cloudflare credentials.
 
 Dependencies and the upload tool are exact versions in `package-lock.json`. Miniflare is deliberately pinned to Wrangler's own current runtime dependency (which currently has a beta version), using its exported v4-options adapter; this POC is experimental. A dry-run build validates packaging without uploading or provisioning anything. Node or dependency upgrades should repeat the integration suite.
 

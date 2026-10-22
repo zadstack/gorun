@@ -80,6 +80,24 @@
       {{template "media_picker_slot" .Logo}}
       <p class="mt-1 text-xs text-muted">{{t "admin.settings.logo_help"}}</p>
       {{template "partials/field_errors" (index .Fields "logo")}}
+      <div class="mt-4 grid gap-4 sm:grid-cols-3" data-logo-variants>
+        <div>
+          <span id="s-logo-dark-label" class="block font-medium mb-1">{{t "admin.settings.logo_dark"}}</span>
+          {{template "media_picker_slot" .LogoDark}}
+          {{template "partials/field_errors" (index .Fields "logo_dark")}}
+        </div>
+        <div>
+          <span id="s-logo-light-label" class="block font-medium mb-1">{{t "admin.settings.logo_light"}}</span>
+          {{template "media_picker_slot" .LogoLight}}
+          {{template "partials/field_errors" (index .Fields "logo_light")}}
+        </div>
+        <div>
+          <span id="s-icon-label" class="block font-medium mb-1">{{t "admin.settings.icon"}}</span>
+          {{template "media_picker_slot" .Icon}}
+          {{template "partials/field_errors" (index .Fields "icon")}}
+        </div>
+      </div>
+      <p class="mt-1 text-xs text-muted">{{t "admin.settings.logo_variants_help"}}</p>
     </div>
     <div class="space-y-4">
       <div>

@@ -9,7 +9,7 @@
 <footer data-shell-footer="{{$shellFooter}}" class="default-site-footer dt-footer">
   <div class="gp-site-width dt-footer-main">
     <div class="dt-footer-about">
-      <a href="{{url "/"}}" class="dt-brand">{{with media (setting "site.logo")}}{{img . "thumbnail" "dt-logo"}}{{else}}<span class="dt-mark" aria-hidden="true">{{printf "%.1s" $.Site.Title}}</span>{{end}}<span>{{.Site.Title}}</span></a>
+      <a href="{{url "/"}}" class="dt-brand">{{with logo "primary"}}{{brandImg . "thumbnail" "dt-logo"}}{{else}}<span class="dt-mark" aria-hidden="true">{{printf "%.1s" $.Site.Title}}</span>{{end}}<span>{{.Site.Title}}</span></a>
       {{with .Site.Tagline}}<p>{{.}}</p>{{end}}
     </div>
     {{with $footerMenu}}

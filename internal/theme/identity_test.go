@@ -1,6 +1,10 @@
 package theme
 
 import (
+	"context"
+	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/media"
+	"github.com/zadstack/gorun/internal/theme/fake"
 	"os"
 	"path/filepath"
 	"strings"
@@ -71,5 +75,64 @@ func TestThemeFonts(t *testing.T) {
 	}
 	if f.Heading != `"El Messiri", serif` || !strings.HasPrefix(f.Body, "Almarai,") {
 		t.Fatalf("heading %q body %q", f.Heading, f.Body)
+	}
+}
+
+// brandImg keeps the plain <img> markup when no distinct dark logo exists,
+// switches to a <picture> with a dark-mode source when one does, prefers
+// the dark mark when the site identity forces dark, and favicon follows the
+// site icon, then the theme manifest, then nothing.
+func TestBrandImgAndFaviconFollowLogoVariants(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", `{"name":"Brand","version":"1","supports":["identity"],"logos":{"icon":"icon.svg"}}`, map[string]string{
+		"templates/index.html": `{{with logo "primary"}}{{brandImg . "thumbnail" "mark"}}{{else}}NOLOGO{{end}}|{{favicon}}`,
+		"assets/icon.svg":      "<svg/>",
+	})
+	e := newEnv(t, root)
+	ms, _ := kernel.Get[media.Service](e.app.Deps, kernel.ServiceMedia)
+	store, ok := ms.(*fake.Media)
+	if !ok {
+		t.Fatal("fake media service expected")
+	}
+	add := func(id, file string) *media.Media {
+		m := media.Media{ID: id, Filename: file, URL: "/media/2026/10/" + file, Mime: "image/png", Width: 64, Height: 64, Variants: map[string]media.Variant{"thumbnail": {URL: "/media/2026/10/thumb-" + file, Width: 32, Height: 32}}}
+		store.Add(m)
+		return &m
+	}
+	primary, dark, icon := add("01PRIMARY", "logo.png"), add("01DARK", "logo-dark.png"), add("01ICON", "icon.png")
+	_ = context.Background()
+	body := func() string {
+		rec, err := e.render(kernel.KindRequest{Kind: "index"}, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return rec.Body.String()
+	}
+	if got := body(); !strings.Contains(got, "NOLOGO|") || !strings.Contains(got, `<link rel="icon" href="/themes/default/assets/icon.svg">`) {
+		t.Fatalf("empty settings: %s", got)
+	}
+	e.setting("site.logo", primary.ID)
+	got := body()
+	if !strings.Contains(got, `<img src="`+primary.Variants["thumbnail"].URL+`"`) || strings.Contains(got, "<picture") {
+		t.Fatalf("primary only must keep the plain img: %s", got)
+	}
+	e.setting("site.logo_dark", dark.ID)
+	got = body()
+	if !strings.Contains(got, `<picture><source srcset="`+dark.Variants["thumbnail"].URL+`" media="(prefers-color-scheme: dark)"><img src="`+primary.Variants["thumbnail"].URL+`"`) {
+		t.Fatalf("dark variant: %s", got)
+	}
+	e.setting(SettingKey("default", idScheme), "dark")
+	got = body()
+	if !strings.Contains(got, `<source srcset="`+primary.Variants["thumbnail"].URL+`" media="(prefers-color-scheme: light)"><img src="`+dark.Variants["thumbnail"].URL+`"`) {
+		t.Fatalf("forced dark scheme: %s", got)
+	}
+	e.setting("site.icon", icon.ID)
+	if got = body(); !strings.Contains(got, `<link rel="icon" href="`+icon.URL+`"`) || strings.Contains(got, "icon.svg") {
+		t.Fatalf("site icon must outrank the manifest: %s", got)
+	}
+	// Dark pointing at the same file as primary is not a variant.
+	e.setting("site.logo_dark", primary.ID)
+	if got = body(); strings.Contains(got, "<picture") {
+		t.Fatalf("identical dark logo rendered a picture: %s", got)
 	}
 }

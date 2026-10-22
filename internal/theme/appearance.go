@@ -43,11 +43,43 @@ type AppearanceTheme struct {
 // settings are read for each report. InvalidateCache or restarting refreshes
 // cached files. Only one theme snapshot is retained per service.
 type AppearanceReport struct {
-	Theme       AppearanceTheme            `json:"theme"`
-	Colors      map[string]AppearanceValue `json:"colors"`
-	Fonts       map[string]AppearanceValue `json:"fonts"`
+	Theme AppearanceTheme `json:"theme"`
+	// Colors and Fonts are the effective values after site customisation
+	// (identity settings) was applied to the theme's declarations; each
+	// value names its source. Declared keeps the theme's own declarations.
+	Colors      map[string]AppearanceValue `json:"colors" doc:"Effective values after site identity settings; source says which setting or theme token supplied each"`
+	Fonts       map[string]AppearanceValue `json:"fonts" doc:"Effective values after site identity settings"`
+	Declared    *AppearanceDeclared        `json:"declared" doc:"The theme's own declarations before site customisation; null when the theme cannot be read"`
+	Overrides   []AppearanceOverride       `json:"overrides" doc:"Site settings that changed a declared value, with provenance"`
+	Scheme      AppearanceValue            `json:"scheme" doc:"Site colour scheme setting (light, dark) or the theme default"`
+	Radius      AppearanceValue            `json:"radius" doc:"Site corner-radius setting or the theme default"`
+	CustomCSS   AppearanceCustomCSS        `json:"custom_css"`
 	ObservedAt  time.Time                  `json:"observed_at"`
 	Limitations []string                   `json:"limitations"`
+}
+
+// AppearanceDeclared is the theme's declaration layer only.
+type AppearanceDeclared struct {
+	Colors map[string]AppearanceValue `json:"colors"`
+	Fonts  map[string]AppearanceValue `json:"fonts"`
+}
+
+// AppearanceOverride records one effective value that a site setting
+// supplied instead of the theme declaration.
+type AppearanceOverride struct {
+	Role     string  `json:"role" doc:"colors.<role> or fonts.<role>"`
+	Source   string  `json:"source"`
+	Value    string  `json:"value"`
+	Declared *string `json:"declared" doc:"The theme's declared value it replaced; null when the theme declared none"`
+}
+
+// AppearanceCustomCSS says whether site custom CSS is applied after the
+// theme styles. Its effect cannot be reported per value without a browser.
+type AppearanceCustomCSS struct {
+	Present bool   `json:"present"`
+	Bytes   int    `json:"bytes"`
+	Source  string `json:"source"`
+	Status  string `json:"status" enum:"none,applied_requires_browser_evaluation,invalid_not_applied"`
 }
 
 type appearanceSnapshot struct {
@@ -105,15 +137,28 @@ func (s *service) Appearance(ctx context.Context) AppearanceReport {
 	report := cloneAppearance(s.appearance.report)
 	s.appearanceMu.Unlock()
 	report.Theme.Slug = appearanceKnown(info.Slug, source)
+	report.Declared = &AppearanceDeclared{Colors: maps.Clone(report.Colors), Fonts: maps.Clone(report.Fonts)}
+	report.Overrides = []AppearanceOverride{}
+	report.Scheme = appearanceMissing("theme:default", "theme_default")
+	report.Radius = appearanceMissing("theme:default", "theme_default")
+	report.CustomCSS = AppearanceCustomCSS{Status: "none"}
 	if info.Dir == "" || s.d.Settings == nil {
 		return report
+	}
+	override := func(kind, role, source, value string, declared map[string]AppearanceValue) {
+		o := AppearanceOverride{Role: kind + "." + role, Source: source, Value: value}
+		if d, ok := declared[role]; ok && d.Value != nil {
+			v := *d.Value
+			o.Declared = &v
+		}
+		report.Overrides = append(report.Overrides, o)
 	}
 
 	// Only validated settings that rendering actually accepts are public.
 	if supportsIdentity(info) {
 		setting := func(key string) string { return "settings:" + SettingKey(info.Slug, key) }
 		values := map[string]string{}
-		for _, key := range []string{idScheme, idAccent, idBackground, idText, idBody, idHeading, idCustomCSS} {
+		for _, key := range []string{idScheme, idAccent, idBackground, idText, idBody, idHeading, idCustomCSS, idRadius} {
 			var value string
 			err := s.d.Settings.Get(ctx, SettingKey(info.Slug, key), &value)
 			if err != nil && !errors.Is(err, settings.ErrNotFound) {
@@ -123,6 +168,9 @@ func (s *service) Appearance(ctx context.Context) AppearanceReport {
 			values[key] = value
 		}
 		get := func(key string) string { return values[key] }
+		if scheme := get(idScheme); scheme == "dark" || scheme == "light" {
+			report.Scheme = appearanceKnown(scheme, setting(idScheme))
+		}
 		if get(idScheme) == "dark" {
 			palette := map[string]string{}
 			for _, token := range darkPalette {
@@ -130,20 +178,30 @@ func (s *service) Appearance(ctx context.Context) AppearanceReport {
 			}
 			for role, token := range map[string]string{"background": "--bg", "text": "--ink", "surface": "--panel", "muted": "--muted", "line": "--line"} {
 				report.Colors[role] = appearanceKnown(palette[token], setting(idScheme))
+				override("colors", role, setting(idScheme), palette[token], report.Declared.Colors)
 			}
 		}
 		for role, key := range map[string]string{"background": idBackground, "text": idText, "accent": idAccent, "link": idAccent} {
 			if value := get(key); hexColor.MatchString(value) {
 				report.Colors[role] = appearanceKnown(value, setting(key))
+				override("colors", role, setting(key), value, report.Declared.Colors)
 			}
 		}
 		for role, key := range map[string]string{"body": idBody, "heading": idHeading} {
 			if font, ok := findFont(get(key)); ok {
 				report.Fonts[role] = appearanceKnown(font.Family, setting(key))
+				override("fonts", role, setting(key), font.Family, report.Declared.Fonts)
 			}
 		}
-		if css := get(idCustomCSS); css != "" && checkCustomCSS(css) == "" {
-			obscureAppearance(&report, setting(idCustomCSS), "custom_css_requires_browser_evaluation")
+		if r, ok := identityRadii[get(idRadius)]; ok {
+			report.Radius = appearanceKnown(r, setting(idRadius))
+		}
+		if css := get(idCustomCSS); css != "" {
+			report.CustomCSS = AppearanceCustomCSS{Present: true, Bytes: len(css), Source: setting(idCustomCSS), Status: "invalid_not_applied"}
+			if checkCustomCSS(css) == "" {
+				report.CustomCSS.Status = "applied_requires_browser_evaluation"
+				obscureAppearance(&report, setting(idCustomCSS), "custom_css_requires_browser_evaluation")
+			}
 		}
 	}
 	var identity brand.Identity
@@ -186,6 +244,17 @@ func cloneAppearance(in AppearanceReport) AppearanceReport {
 		out.Fonts[key] = clone(value)
 	}
 	out.Limitations = slices.Clone(in.Limitations)
+	out.Overrides = slices.Clone(in.Overrides)
+	if in.Declared != nil {
+		d := AppearanceDeclared{Colors: maps.Clone(in.Declared.Colors), Fonts: maps.Clone(in.Declared.Fonts)}
+		for key, value := range d.Colors {
+			d.Colors[key] = clone(value)
+		}
+		for key, value := range d.Fonts {
+			d.Fonts[key] = clone(value)
+		}
+		out.Declared = &d
+	}
 	return out
 }
 
