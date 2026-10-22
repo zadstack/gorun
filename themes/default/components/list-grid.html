@@ -1,0 +1,9 @@
+{{/* Usage: {{component "list-grid" .}} — archive variant "grid": the theme's card for every item, then pagination. */}}
+{{if .Items}}
+<div class="gr-card-grid" data-variant-list="grid">
+  {{range .Items}}{{component "card" .}}{{end}}
+</div>
+{{component "pagination" .}}
+{{else}}
+<p class="default-empty rounded border border-line bg-panel p-6 text-muted">{{t "empty"}}</p>
+{{end}}

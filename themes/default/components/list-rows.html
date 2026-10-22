@@ -1,0 +1,9 @@
+{{/* Usage: {{component "list-rows" .}} — archive variant "compact": dense title rows with dates, then pagination. */}}
+{{if .Items}}
+<ol class="gr-list gr-list-compact" data-variant-list="compact">
+  {{range .Items}}<li class="gr-list-row gr-list-row-compact"><a class="title" href="{{url .}}">{{.Title}}</a>{{with .PublishedAt}}<time datetime="{{.}}" class="gr-list-meta"><bdi>{{date .}}</bdi></time>{{end}}</li>{{end}}
+</ol>
+{{component "pagination" .}}
+{{else}}
+<p class="default-empty rounded border border-line bg-panel p-6 text-muted">{{t "empty"}}</p>
+{{end}}

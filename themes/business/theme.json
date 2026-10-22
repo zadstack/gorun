@@ -128,6 +128,71 @@
         "ar": "سطر لكل معلومة: البريد، الهاتف، العنوان.",
         "en": "One line each: email, phone, address."
       }
+    },
+    {
+      "key": "single_style",
+      "type": "select",
+      "label": {
+        "ar": "شكل المقال",
+        "en": "Post layout"
+      },
+      "options": [
+        {
+          "value": "native",
+          "label": {
+            "ar": "تصميم القالب",
+            "en": "Theme design"
+          }
+        },
+        {
+          "value": "wide",
+          "label": {
+            "ar": "عريض",
+            "en": "Wide"
+          }
+        },
+        {
+          "value": "centered",
+          "label": {
+            "ar": "مُتوسَّط",
+            "en": "Centered"
+          }
+        }
+      ],
+      "help": {
+        "ar": "يغيّر عرض المقال ومحاذاة عنوانه فقط؛ النص والصور كما هي.",
+        "en": "Changes the article measure and title alignment only; text and images stay as they are."
+      },
+      "default": "native"
+    },
+    {
+      "key": "archive_style",
+      "type": "select",
+      "label": {
+        "ar": "شكل الأرشيف",
+        "en": "Archive layout"
+      },
+      "options": [
+        {
+          "value": "native",
+          "label": {
+            "ar": "تصميم القالب",
+            "en": "Theme design"
+          }
+        },
+        {
+          "value": "compact",
+          "label": {
+            "ar": "قائمة مضغوطة",
+            "en": "Compact list"
+          }
+        }
+      ],
+      "help": {
+        "ar": "شكل قوائم المقالات والتصنيفات ونتائج البحث.",
+        "en": "How post lists, categories and search results are laid out."
+      },
+      "default": "native"
     }
   ],
   "supports": [
@@ -138,6 +203,9 @@
     "header:editorial",
     "footer:signature",
     "footer:columns",
-    "footer:minimal"
+    "footer:minimal",
+    "single:wide",
+    "single:centered",
+    "archive:compact"
   ]
 }

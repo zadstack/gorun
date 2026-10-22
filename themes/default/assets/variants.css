@@ -1,0 +1,27 @@
+/* Design variants shared by the catalog themes. A template prints the
+   resolved value with {{variant "single" .}} / {{variant "archive" .}} as a
+   data attribute; these rules only change measure, alignment and list
+   shape, so every theme keeps its own type, colour and chrome. Selectors
+   stay at (0,2,0) so theme CSS declared under :where(html[data-theme]) is
+   overridden, while custom CSS and identity settings still win. */
+html[data-theme] [data-variant-single="wide"] { max-width: min(100%, var(--gp-width, 1280px)); width: auto; }
+html[data-theme] [data-variant-single="wide"] .prose-gp { max-width: none; }
+html[data-theme] [data-variant-single="wide"] figure:first-of-type { margin-inline: calc(50% - 50vw); max-width: 100vw; width: 100vw; }
+html[data-theme] [data-variant-single="wide"] figure:first-of-type img { width: 100%; max-height: 70vh; object-fit: cover; }
+html[data-theme] [data-variant-single="centered"] > header { text-align: center; margin-inline: auto; max-width: 48rem; }
+html[data-theme] [data-variant-single="centered"] > header :is(.gr-list-meta, time, .ed-eyebrow, .sb-eyebrow, .studio-kicker) { justify-content: center; }
+html[data-theme] [data-variant-single="centered"] .prose-gp { margin-inline: auto; }
+
+html[data-theme] .gr-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); gap: var(--space-5, 24px); align-items: stretch; }
+html[data-theme] .gr-card-grid > * { min-width: 0; }
+html[data-theme] .gr-list-compact { border-top: 1px solid var(--line); }
+html[data-theme] .gr-list-row-compact { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2, 8px) var(--space-4, 16px); align-items: baseline; padding-block: var(--space-2, 8px); min-height: 44px; border-bottom: 1px solid var(--line); }
+html[data-theme] .gr-list-row-compact .title { font-weight: 600; text-decoration: none; color: var(--head, var(--ink)); overflow-wrap: anywhere; }
+html[data-theme] .gr-list-row-compact .title:hover, html[data-theme] .gr-list-row-compact .title:focus-visible { text-decoration: underline; text-underline-offset: .25em; }
+html[data-theme] .gr-list-row-compact .gr-list-meta { color: var(--muted); font-size: .8rem; }
+@media (max-width: 700px) {
+  html[data-theme] [data-variant-single="wide"] figure:first-of-type { margin-inline: 0; width: auto; max-width: 100%; }
+}
+@media (forced-colors: active) {
+  html[data-theme] .gr-list-row-compact { border-bottom-color: CanvasText; }
+}

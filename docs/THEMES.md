@@ -215,6 +215,19 @@ Two settings can restyle the same tokens:
 
 Precedence, per token: **site identity › builder identity › the theme's own tokens**. A token the site identity leaves empty keeps the builder value, and one neither sets keeps the theme default. For example, a builder accent of `#167252` with a site identity accent of `#c2410c` gives `#c2410c`, and the builder's background and text colors stay. Every catalog head prints `{{builderIdentity}}` before `{{identity .}}`; `TestSiteIdentityOutranksBuilderIdentity` checks this. Custom CSS comes last in the identity stylesheet, so it can override both.
 
+### Design variants
+
+A theme declares the layouts it really implements in `theme.json` `supports` as `<slot>:<value>`; the matching theme setting `<slot>_style` (a `select` in `settings`) chooses one, and templates print the resolved value with `{{variant "<slot>" .}}` as a data attribute. A stored value the theme does not declare, an unknown value, or a hand-edited setting resolves to `native` (the theme's own design), and **Appearance → Theme settings** offers only the declared options, naming the others as not offered by this theme. Declarations are not inherited from a parent theme, exactly like `identity`.
+
+| Slot | Values | Where it applies |
+|---|---|---|
+| `header` | `rail`, `framed`, `editorial` | `parts/header.html` prints `data-shell-header="{{variant "header" .}}"`; styled by `shell.css` |
+| `footer` | `signature`, `columns`, `minimal` | `parts/footer.html`, `data-shell-footer` |
+| `single` | `wide`, `centered` | the `<article>` of `single.html` prints `data-variant-single`; `variants.css` changes measure and title alignment only |
+| `archive` | `grid`, `compact` | `archive.html` prints `data-variant-archive` and renders `list-grid` (the theme's `card` component in a responsive grid) or `list-rows` (dense title rows) instead of the theme's own `list` |
+
+The catalog themes declare: `default` every slot; `business` the header/footer sets, both single variants and `archive:compact` (its native archive is already a card grid); `magazine` every slot; `portfolio` the header/footer sets, both single variants and `archive:compact`; `docs` the header/footer sets only (it has no post templates of its own). `TestCatalogThemesRenderDeclaredVariants` renders every declared single and archive variant of each theme in Arabic and English with a 3 000-word post, a 120-character title, no featured image and a twelve-item archive where half the items have no image, and checks one `<h1>`, the skip link, `alt` on every image, no empty `src` and the fallback to `native`. `shell.css`, `anatomy.css` and `variants.css` are shared by every theme that includes `{{part "shell" .}}`.
+
 ### Writing theme CSS that others can restyle
 
 Declare tokens inside `:where(html[data-theme="<slug>"])` (zero specificity) and style components through those tokens. Keep component selectors short (one class, or `:where()` around structural parts) so a child theme, the identity settings or custom CSS can change a color or a font without out-ranking long `:is(...)` chains.

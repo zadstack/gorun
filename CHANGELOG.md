@@ -5,6 +5,13 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Themes
+
+- Design variants are declared per theme in `theme.json` `supports` as `<slot>:<value>` and resolved
+  by the new `{{variant "<slot>" .}}` template func with a `native` fallback for undeclared, unknown or
+  hand-edited values; Theme settings offers only declared options. New `single_style` (`wide`,
+  `centered`) and `archive_style` (`grid`, `compact`) settings for the default, business, magazine and
+  portfolio themes, implemented by the shared `variants.css`, `list-grid` and `list-rows` components.
 ### Improved
 
 - Integrations keeps saved results updating while checks are pending, with bounded background
