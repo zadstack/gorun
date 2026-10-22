@@ -234,6 +234,7 @@ func resolveLogos(ctx context.Context, d *kernel.Deps) (SiteLogos, error) {
 				logo.Fallback = key
 			}
 			if !hasMedia {
+				logo.URL = logo.InformationValue
 				return logo, nil
 			}
 			m, err := mediaSvc.Get(ctx, id)
@@ -242,6 +243,7 @@ func resolveLogos(ctx context.Context, d *kernel.Deps) (SiteLogos, error) {
 			}
 			if err != nil || m == nil {
 				logo.Reason = "media_not_found"
+				logo.URL = logo.InformationValue
 				return logo, nil
 			}
 			return mediaLogo(m, "settings:"+key, logo.Fallback), nil
@@ -249,10 +251,12 @@ func resolveLogos(ctx context.Context, d *kernel.Deps) (SiteLogos, error) {
 		if path, ok := manifest[variant]; ok && path != "" && slug != "" && theme.ValidAssetPath(path) {
 			url := "/themes/" + slug + "/assets/" + path
 			v := SiteLogo{InformationValue: information(url, "theme:"+slug+":manifest:logos."+variant), Variants: map[string]string{}, Fallback: "theme_manifest"}
+			v.URL = v.InformationValue
 			v.Path = &url
 			return v, nil
 		}
-		return SiteLogo{InformationValue: InformationValue{Source: "settings:" + chain[0], Reason: "not_configured"}, Variants: map[string]string{}}, nil
+		missing := InformationValue{Source: "settings:" + chain[0], Reason: "not_configured"}
+		return SiteLogo{InformationValue: missing, URL: missing, Variants: map[string]string{}}, nil
 	}
 	var out SiteLogos
 	var err error
