@@ -274,3 +274,43 @@ func TestIdentityRevertRestoresHeaderLinks(t *testing.T) {
 		t.Fatalf("revert did not restore links: %q %q %q", get("theme.default.cta_label"), get("theme.default.cta_url"), get("theme.default.identity_accent"))
 	}
 }
+
+// The baseline revision (the state before the first apply) carries the
+// header links too, so reverting to it restores them.
+func TestIdentityRevertToBaselineRestoresHeaderLinks(t *testing.T) {
+	e, ctx := identityEnv(t)
+	e.setting("theme.default.cta_label", "Original")
+	e.setting("theme.default.cta_url", "/original")
+	b := snap("default", map[string]string{idAccent: "#222222"}, nil)
+	b.Links = map[string]string{"cta_label": "Book", "cta_url": "/book"}
+	if _, err := e.svc.ApplyIdentity(ctx, b); err != nil {
+		t.Fatal(err)
+	}
+	hist, _ := e.svc.IdentityHistory(ctx, "default")
+	baseline := hist[len(hist)-1]
+	if baseline.Kind != "baseline" || baseline.Snapshot.Links["cta_url"] != "/original" {
+		t.Fatalf("baseline = %+v", baseline)
+	}
+	if _, err := e.svc.RevertIdentity(ctx, "default", baseline.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := e.app.Deps.Settings.GetString(ctx, "theme.default.cta_url", ""); got != "/original" {
+		t.Fatalf("baseline revert left cta_url = %q", got)
+	}
+}
+
+// A site that never stored site.title still gets a restorable baseline.
+func TestIdentityBaselineWithoutStoredTitleIsRestorable(t *testing.T) {
+	e, ctx := identityEnv(t)
+	if _, err := e.svc.ApplyIdentity(ctx, snap("default", map[string]string{idAccent: "#222222"}, map[string]string{"site.title": "Named"})); err != nil {
+		t.Fatal(err)
+	}
+	hist, _ := e.svc.IdentityHistory(ctx, "default")
+	baseline := hist[len(hist)-1]
+	if baseline.Snapshot.Site["site.title"] == "" {
+		t.Fatal("baseline has no title")
+	}
+	if _, err := e.svc.RevertIdentity(ctx, "default", baseline.ID); err != nil {
+		t.Fatalf("baseline revert failed: %v", err)
+	}
+}

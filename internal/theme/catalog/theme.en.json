@@ -223,5 +223,6 @@
   "identity.error_theme_changed": "The active theme changed since this page was opened. Nothing was saved; reload the page to edit the identity of the current theme.",
   "identity.draft_rebased": "The live site changed these values after the draft was saved; the draft now uses the live values: %s.",
   "identity.preview_open": "Open in a new tab",
-  "identity.kind_import": "Imported"
+  "identity.kind_import": "Imported",
+  "identity.needs_themes_manage": "Colours, fonts, shape and custom CSS need the Manage themes permission (they are the same settings as Theme settings). Logos, name, tagline and the header link can still be changed."
 }

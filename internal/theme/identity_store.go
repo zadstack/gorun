@@ -105,9 +105,13 @@ func (s IdentitySnapshot) normalize() IdentitySnapshot {
 	return out
 }
 
-// LiveIdentity reads the applied identity of theme slug.
+// LiveIdentity reads the applied identity of theme slug, header links
+// included, so a baseline revision can restore everything the page edits.
 func (s *service) LiveIdentity(ctx context.Context, slug string) IdentitySnapshot {
-	snap := IdentitySnapshot{Theme: slug, Values: map[string]string{}, Site: map[string]string{}}
+	snap := IdentitySnapshot{Theme: slug, Values: map[string]string{}, Site: map[string]string{}, Links: map[string]string{}}
+	for _, k := range identityLinkKeys {
+		snap.Links[k] = s.d.Settings.GetString(ctx, SettingKey(slug, k), "")
+	}
 	for _, k := range IdentityKeys {
 		if v := s.d.Settings.GetString(ctx, SettingKey(slug, k), ""); v != "" {
 			snap.Values[k] = v
@@ -237,11 +241,7 @@ func (s *service) SaveIdentityDraft(ctx context.Context, snap IdentitySnapshot) 
 
 // DiscardIdentityDraft removes the pending draft of slug.
 func (s *service) DiscardIdentityDraft(ctx context.Context, slug string) error {
-	err := s.d.Settings.Delete(ctx, identityDraftKey(slug))
-	if errors.Is(err, settings.ErrNotFound) {
-		return nil
-	}
-	return err
+	return s.d.Settings.Delete(ctx, identityDraftKey(slug)) // deleting a missing row is not an error
 }
 
 // IdentityHistory lists the revisions of slug, newest first. ok is false
@@ -287,7 +287,11 @@ func (s *service) applyIdentity(ctx context.Context, snap IdentitySnapshot, kind
 	rev := IdentityRevision{ID: db.NewID(), At: now, Author: author, Kind: kind, Snapshot: snap}
 	hist, _ := s.IdentityHistory(ctx, snap.Theme)
 	if len(hist) == 0 {
-		hist = []IdentityRevision{{ID: db.NewID(), At: now, Author: author, Kind: "baseline", Snapshot: s.LiveIdentity(ctx, snap.Theme)}}
+		base := s.LiveIdentity(ctx, snap.Theme)
+		if base.Site["site.title"] == "" {
+			base.Site["site.title"] = s.siteInfo(ctx).Title // a site that never stored a title still gets a restorable baseline
+		}
+		hist = []IdentityRevision{{ID: db.NewID(), At: now, Author: author, Kind: "baseline", Snapshot: base}}
 	}
 	hist = append([]IdentityRevision{rev}, hist...)
 	if len(hist) > identityHistoryKeep {

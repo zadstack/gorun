@@ -295,3 +295,66 @@ func TestIdentityPageHeaderLinksDraftAndApply(t *testing.T) {
 		t.Fatalf("cta_url = %q", got)
 	}
 }
+
+// Colours, fonts and custom CSS need themes.manage (as on Theme settings);
+// a settings-only user can still change logos, name and tagline.
+func TestIdentityDesignFieldsRequireThemesManage(t *testing.T) {
+	e := newEnv(t, "../../themes")
+	e.setting("theme.default.custom_css", ".keep{}")
+	const role = "design-settings-only"
+	if _, err := e.app.Deps.DB.Exec(`INSERT INTO roles(slug,name_json,system) VALUES(?, ?,0)`, role, `{"en":"Design settings"}`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.app.Deps.DB.Exec(`INSERT INTO role_permissions(role,permission) VALUES(?,?)`, role, "settings.manage"); err != nil {
+		t.Fatal(err)
+	}
+	if err := auth.ReloadRoles(context.Background(), e.app.Deps.DB); err != nil {
+		t.Fatal(err)
+	}
+	c := e.client()
+	e.login(c, "limited@example.com", role)
+	_, page := c.do("GET", identityPath, nil, "Accept-Language", "en")
+	mustContain(t, page, "Manage themes permission")
+	if !regexp.MustCompile(`<fieldset[^>]*\bdisabled\b[^>]*>(?:[^<]|<[^/]|</[^f])*?name="custom_css"`).MatchString(page) {
+		t.Fatal("custom CSS editable without themes.manage")
+	}
+	csrf := csrfFrom(t, page)
+	resp, _ := c.post(identityPath, identityForm(csrf, "apply", "site.title", "Renamed", "custom_css", "body{display:none}", "identity_accent", "#c2410c"))
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("apply: %d", resp.StatusCode)
+	}
+	ctx := adminCtx()
+	if got := e.app.Deps.Settings.GetString(ctx, "theme.default.custom_css", ""); got != ".keep{}" {
+		t.Fatalf("custom_css changed without themes.manage: %q", got)
+	}
+	if got := e.app.Deps.Settings.GetString(ctx, "theme.default.identity_accent", ""); got != "" {
+		t.Fatalf("accent changed without themes.manage: %q", got)
+	}
+	if got := e.app.Deps.Settings.GetString(ctx, "site.title", ""); got != "Renamed" {
+		t.Fatalf("title = %q", got)
+	}
+}
+
+func TestIdentityPreviewDeniesAnonymous(t *testing.T) {
+	e := newEnv(t, "../../themes")
+	c := e.client()
+	if resp, _ := c.get(identityPath + "/preview?view=home"); resp.StatusCode == 200 {
+		t.Fatal("anonymous preview served")
+	}
+}
+
+// Revert validation problems are reported as 422, not a server error.
+func TestIdentityRevertValidationIs422(t *testing.T) {
+	e := newEnv(t, "../../themes")
+	e.fake.Media.Add(media.Media{ID: "m1", Filename: "logo.png", Mime: "image/png"})
+	c, csrf := identityClient(t, e)
+	c.post(identityPath, identityForm(csrf, "apply", "site.logo", "m1"))
+	c.post(identityPath, identityForm(csrf, "apply", "site.logo", ""))
+	hist, _ := e.svc.IdentityHistory(adminCtx(), "default")
+	withLogo := hist[1]
+	e.fake.Media.Delete(context.Background(), "m1")
+	resp, body := c.post(identityPath, url.Values{"_csrf": {csrf}, "action": {"revert"}, "revision": {withLogo.ID}})
+	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(body, "data-design-error") {
+		t.Fatalf("revert with a deleted logo: %d", resp.StatusCode)
+	}
+}

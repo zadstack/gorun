@@ -39,6 +39,9 @@ func (s IdentitySnapshot) lookup(key string) (string, bool) {
 		if slices.Contains(IdentityKeys, k) {
 			return s.Values[k], true
 		}
+		if v, ok := s.Links[k]; ok && slices.Contains(identityLinkKeys, k) {
+			return v, true
+		}
 	}
 	return "", false
 }
