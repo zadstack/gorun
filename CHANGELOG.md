@@ -11,6 +11,18 @@ All notable changes to GoRun are recorded here. The format follows
   menus, site identity, custom CSS and per-theme settings, and renders both locales, inner pages,
   search and the 404 page with the site's logo, title and menu; every bundled theme renders
   without the commerce, saas and membership modules and their routes are absent.
+- Store settings show the current Stripe mode as a badge and report each mode in three separate
+  states: configured, authenticated (a read-only **Verify key** call tied to the stored key) and
+  webhook delivery verified (signed events from Stripe only; the local test event never counts).
+  Switching to live now needs an explicit confirmation and server-side checks (live key present
+  and not test-prefixed, live webhook secret, Stripe reports a live key); a refused switch saves
+  nothing. Orders and Stripe events record the mode that created or verified them and Orders
+  shows it; a test order is never paid by a live-signed event and refunds use the order's own mode.
+  A key whose prefix contradicts its slot (live key in the test slot, test key in the live
+  slot) is refused on every save. Delivery evidence is bound to the credentials in place when it was verified, so rotating a
+  webhook secret or changing the account key starts again from "unverified". Fresh installs
+  (stamped `kernel.install_epoch` by the kernel when it creates the database) start in test mode;
+  upgraded sites keep their effective mode and historical orders are never relabelled.
 - `docs/BOUNDARIES.md`: the core / theme / built-in module / external extension boundary map with
   the import graph (generated and checked by `internal/kernel/boundaries_test.go`), runtime
   contracts (services, hooks, job kinds, crons, routes, API operations, MCP tools, permissions,
