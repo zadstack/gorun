@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/zadstack/gorun/internal/admin"
+	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/jobs"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/mcp"
@@ -384,5 +386,46 @@ func TestWXRPreviewWithoutPublishedServiceKeepsEnabledEmbeddingFallback(t *testi
 	var count int
 	if err := app.Deps.DB.QueryRow("SELECT count(*) FROM wp_sources").Scan(&count); err != nil || count != 1 {
 		t.Fatalf("enabled fallback did not create preview source: %d %v", count, err)
+	}
+}
+
+func TestMembershipNavigationTracksWorkAgentsAcrossDisableAndReenable(t *testing.T) {
+	ctx, data := context.Background(), t.TempDir()
+	app := bootData(t, data, "")
+	users, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
+	user, err := users.Create(ctx, "membership-nav@fixture.test", "Member", "fixture-password-12345", "author")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := app.Deps.DB.ExecContext(ctx, `INSERT INTO membership_plans(id,name,limits_json) VALUES('kept-navigation-plan','Kept navigation plan','{}')`); err != nil {
+		t.Fatal(err)
+	}
+	assertMembershipAgentsLink(t, app, user, true)
+	app.Close()
+	app = bootData(t, data, `{"workagents":"disabled"}`)
+	assertMembershipAgentsLink(t, app, user, false)
+	if status, _ := serveStatus(app.Handler, "GET", "/agents", nil); status != 404 {
+		t.Fatalf("disabled agents HTTP %d", status)
+	}
+	app.Close()
+	app = bootData(t, data, "")
+	defer app.Close()
+	assertMembershipAgentsLink(t, app, user, true)
+}
+
+func assertMembershipAgentsLink(t *testing.T, app *kernel.App, user *auth.User, available bool) {
+	t.Helper()
+	request := httptest.NewRequest("GET", "/membership", nil).WithContext(auth.WithUser(context.Background(), user))
+	response := httptest.NewRecorder()
+	app.Handler.ServeHTTP(response, request)
+	if response.Code != 200 {
+		t.Fatalf("membership HTTP %d: %s", response.Code, response.Body.String())
+	}
+	if linked := strings.Contains(response.Body.String(), `href="/agents"`); linked != available {
+		t.Fatalf("membership agents link=%v want %v", linked, available)
+	}
+	var count int
+	if err := app.Deps.DB.QueryRow(`SELECT count(*) FROM membership_plans WHERE id='kept-navigation-plan' AND name='Kept navigation plan'`).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("membership row changed across workagents activation: %d %v", count, err)
 	}
 }
