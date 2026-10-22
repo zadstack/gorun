@@ -75,9 +75,10 @@ module.
 | 16 | saas | `internal/saas` | **optional, on by default**: SaaS plans and tenants on top of commerce |
 | 17 | membership | `internal/membership` | **optional, on by default**: member-only content and access rules |
 | 18 | workagents | `internal/workagents` | work agents and their workflows |
-| 19 | wpmigrate | `internal/wpmigrate` | WordPress/WooCommerce migrator: REST/WXR sources, 7-step wizard, job pipeline, validation report, `gorun import-wxr`; imports WooCommerce products through commerce (`wpmigrate.product_importer` adapter) |
-| 20 | mcp | `internal/mcp` | Model Context Protocol server (`/mcp`, `gorun mcp`), human approvals |
-| 21 | ext | `internal/ext` | extensions: manifests, HTTP hook bridge, scoped API keys |
+| 19 | identityai | `internal/identityai` | optional (`addons.identityai.enabled`): text-only AI identity suggestions written to the identity draft after a reviewed, approved request ([IDENTITY-AI.md](IDENTITY-AI.md)) |
+| 20 | wpmigrate | `internal/wpmigrate` | WordPress/WooCommerce migrator: REST/WXR sources, 7-step wizard, job pipeline, validation report, `gorun import-wxr`; imports WooCommerce products through commerce (`wpmigrate.product_importer` adapter) |
+| 21 | mcp | `internal/mcp` | Model Context Protocol server (`/mcp`, `gorun mcp`), human approvals |
+| 22 | ext | `internal/ext` | extensions: manifests, HTTP hook bridge, scoped API keys |
 
 `db`, `i18n`, `audit` and `jobs` appear in `BootOrder` for ordering, but they are kernel
 infrastructure, not modules you list in `Modules()`.

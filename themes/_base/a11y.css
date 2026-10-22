@@ -154,3 +154,20 @@ html[dir="rtl"] :where(.gr-go-arrow, .gr-ext-arrow, .ed-go-arrow) {
 :where(header, footer, nav, .ed-topline, .ed-story-meta, .ed-eyebrow, .ed-colophon, .ed-read, .sb-eyebrow, .studio-kicker, .dt-kicker-label, .gr-section-path) {
   font-size: max(12px, 0.8125rem);
 }
+
+/* Keep editorial columns readable instead of squeezing words into letters.
+   The table owns horizontal overflow; identifiers may still wrap inside cells. */
+.prose-gp table:not(.gp-s-compare) {
+  display: block;
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+.prose-gp table:not(.gp-s-compare) :is(th, td) {
+  min-inline-size: 14ch;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.prose-gp table:not(.gp-s-compare):focus-visible {
+  outline: 2px solid var(--focus-ring, var(--accent));
+  outline-offset: 3px;
+}

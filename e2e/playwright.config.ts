@@ -37,7 +37,7 @@ export default defineConfig({
     {
       name: 'chromium',
       dependencies: ['setup'],
-      testIgnore: [/global\.setup\.ts/, /public-theme\.spec\.ts/, /visual\.spec\.ts/, /catalog-themes\.spec\.ts/, /theme-acceptance\.spec\.ts/],
+      testIgnore: [/global\.setup\.ts/, /public-theme\.spec\.ts/, /visual\.spec\.ts/, /catalog-themes\.spec\.ts/, /theme-acceptance\.spec\.ts/, /theme-variants\.spec\.ts/],
       use: { storageState: '.auth/admin.json' },
     },
     {
@@ -46,7 +46,7 @@ export default defineConfig({
       // Also runs brief §6 acceptance (home + 3 inners @ 1440/390).
       name: 'catalog',
       dependencies: ['chromium'],
-      testMatch: /catalog-themes\.spec\.ts|theme-acceptance\.spec\.ts/,
+      testMatch: /catalog-themes\.spec\.ts|theme-acceptance\.spec\.ts|theme-variants\.spec\.ts/,
       use: { storageState: '.auth/admin.json' },
     },
     {

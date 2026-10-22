@@ -62,7 +62,8 @@ func (s *service) StartCheckout(ctx context.Context, productID, email string) (s
 	if len(p.Intake) > 0 || !p.Active || (p.Kind == ProductDigital && !s.digitalFileExists(p.DigitalFile)) || (p.Kind == ProductProvisioning && (p.PlanCode == "" || p.ServerID == "")) || (amount <= 0 && priceID == "") {
 		return "", "", &ValidationError{Fields: map[string]string{"product": "commerce.error.product_unavailable"}}
 	}
-	key := s.stripeSecretKey(ctx)
+	stripeMode := s.stripeMode(ctx)
+	key := s.stripeSecretFor(ctx, stripeMode)
 	if key == "" {
 		return "", "", ErrStripeNotConfigured
 	}
@@ -84,14 +85,14 @@ func (s *service) StartCheckout(ctx context.Context, productID, email string) (s
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO orders (id, number, customer_id, email, status, currency, total_minor, product_id,
-			product_snapshot_json, created_at, updated_at) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?)`,
-			orderID, number, customerID, email, currency, amount, p.ID, jsonText(snap, "{}"), now, now); err != nil {
+			product_snapshot_json, stripe_mode, created_at, updated_at) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?)`,
+			orderID, number, customerID, email, currency, amount, p.ID, jsonText(snap, "{}"), stripeMode, now, now); err != nil {
 			return fmt.Errorf("commerce: create order: %w", err)
 		}
 		if _, err := tx.ExecContext(ctx, `INSERT INTO order_items(id,order_id,product_id,quantity,unit_minor,snapshot_json) VALUES(?,?,?,1,?,?)`, db.NewID(), orderID, p.ID, amount, jsonText(snap, "{}")); err != nil {
 			return err
 		}
-		s.audit.RecordTx(ctx, tx, "commerce.order.create", "order", orderID, map[string]any{"number": number, "product": p.Slug, "email": email})
+		s.audit.RecordTx(ctx, tx, "commerce.order.create", "order", orderID, map[string]any{"number": number, "product": p.Slug, "email": email, "stripe_mode": stripeMode})
 		return nil
 	})
 	if err != nil {
