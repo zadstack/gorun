@@ -258,7 +258,7 @@ func openDB(args []string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := kernel.MigrateAll(context.Background(), d, Modules(cfg)); err != nil {
+	if err := kernel.MigrateAllWithConfig(context.Background(), cfg, d, Modules(cfg)); err != nil {
 		d.Close()
 		return nil, err
 	}

@@ -5,6 +5,27 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Commerce, saas and membership are optional modules behind the existing `kernel.OptionalModule`
+  gate, **enabled by default** so existing installs boot the same set of modules. They answer with
+  the new `kernel.AddonEnabled`, which reads the site setting `addons.<name>.enabled` (JSON
+  boolean; missing means enabled). `GORUN_ADDONS` / `[addons]` mode `disabled` now switches an
+  optional module off (restrict only: `enabled` and `auto` leave the decision to the module); a
+  mode set for a module that is not optional is logged and ignored. `gorun migrate` applies the
+  same selection as `gorun serve` (`kernel.MigrateAllWithConfig`). While a module is off its
+  public routes, API operations, job kinds, crons, admin pages, theme kinds and hooks are absent
+  and its tables are kept; re-enabling reads the same data back.
+
+### Added
+
+- `docs/BOUNDARIES.md`: the core / theme / built-in module / external extension boundary map with
+  the import graph (generated and checked by `internal/kernel/boundaries_test.go`), runtime
+  contracts (services, hooks, job kinds, crons, routes, API operations, MCP tools, permissions,
+  theme helpers), the audit findings and the `CoreModules` decision. The test also fails on an
+  undeclared import between feature modules, on Go code under `themes/` or `patterns/`, and on a
+  `pkg/` contract package importing `internal/`.
+
 ## [0.15.1] - 2026-10-22
 
 ### Fixed

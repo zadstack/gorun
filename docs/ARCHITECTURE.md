@@ -71,9 +71,9 @@ module.
 | 12 | api | `internal/api` | REST layer: mounts every registered operation, OpenAPI |
 | 13 | admin | `internal/admin` | dashboard, users, settings, health, jobs, API keys, audit viewer, admin search, mailer |
 | 14 | webhooks | `internal/webhooks` | outgoing webhooks: subscriptions, signed deliveries, retries |
-| 15 | commerce | `internal/commerce` | products, Stripe Checkout, orders, entitlements, billing servers (mcp-billing/v1) |
-| 16 | saas | `internal/saas` | SaaS plans and tenants on top of commerce |
-| 17 | membership | `internal/membership` | member-only content and access rules |
+| 15 | commerce | `internal/commerce` | **optional, on by default**: products, Stripe Checkout, orders, entitlements, billing servers (mcp-billing/v1) |
+| 16 | saas | `internal/saas` | **optional, on by default**: SaaS plans and tenants on top of commerce |
+| 17 | membership | `internal/membership` | **optional, on by default**: member-only content and access rules |
 | 18 | workagents | `internal/workagents` | work agents and their workflows |
 | 19 | wpmigrate | `internal/wpmigrate` | WordPress/WooCommerce migrator: REST/WXR sources, 7-step wizard, job pipeline, validation report, `gorun import-wxr`; imports WooCommerce products through commerce (`wpmigrate.product_importer` adapter) |
 | 20 | mcp | `internal/mcp` | Model Context Protocol server (`/mcp`, `gorun mcp`), human approvals |
@@ -81,6 +81,22 @@ module.
 
 `db`, `i18n`, `audit` and `jobs` appear in `BootOrder` for ordering, but they are kernel
 infrastructure, not modules you list in `Modules()`.
+
+### Optional modules
+
+A module that implements `kernel.OptionalModule` (`Enabled(ctx, db) (bool, error)`) is evaluated
+before any catalog, migration, route, job or hook registration. Disabled, it registers nothing and
+its tables, settings and queued jobs are left untouched; enabled again, it reads them back.
+Built-in optional modules (commerce, saas, membership) answer with `kernel.AddonEnabled`, which
+reads the site setting `addons.<name>.enabled` (a JSON boolean; missing means **enabled**, so
+existing installs change nothing). The operator config (`[addons]` in the site config or
+`GORUN_ADDONS='{"commerce":"disabled"}'`) can only restrict: mode `disabled` turns an optional
+module off without asking it; `enabled` and `auto` leave the decision to the module, and a mode
+set for a module that is not optional is ignored (logged, shown in the inventory). `gorun migrate`
+applies the same selection as `gorun serve`. Activation is read at boot; a change needs a restart,
+and `kernel.Modules(d)`, the capability report and System → Health report the booted state, never
+the intent. The layer map, dependency policy and the audit behind this are in
+[BOUNDARIES.md](BOUNDARIES.md); `internal/kernel/boundaries_test.go` enforces the import policy.
 
 ### Building on the core / البناء فوق النواة
 

@@ -240,9 +240,12 @@ Example connection evidence fragment:
 
 Module activation reuses `kernel.OptionalModule`, before catalogs, migrations, routes and job handlers
 are registered. Disabled modules retain their tables/settings and re-enable through their existing
-activation configuration and a restart. Core modules that do not implement that gate stay enabled;
-`GORUN_ADDONS` alone is not a universal switch for arbitrary modules. The report captures boot state,
-so editing desired configuration does not pretend that the running process has restarted.
+activation configuration and a restart. The built-in optional modules are commerce, saas and
+membership (enabled by default; `addons.<name>.enabled` setting or `GORUN_ADDONS` mode `disabled`,
+see [ARCHITECTURE.md](ARCHITECTURE.md#optional-modules)). Core modules that do not implement that
+gate stay enabled; `GORUN_ADDONS` alone is not a universal switch for arbitrary modules. The report
+captures boot state, so editing desired configuration does not pretend that the running process has
+restarted.
 
 Coverage is explicit: this is module inventory and managed connection evidence, not a complete report
 of every business workflow, legacy mail/storage configuration, or caller's operation permissions.

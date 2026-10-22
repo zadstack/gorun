@@ -5,6 +5,7 @@ package commerce
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -44,6 +45,15 @@ func (*Module) Migrations() fs.FS { return migrations }
 
 // Catalogs implements kernel.CatalogProvider.
 func (*Module) Catalogs() fs.FS { return catalogs }
+
+// Enabled implements kernel.OptionalModule. The store is on unless the
+// operator turned it off (addons.commerce in the config, or the
+// addons.commerce.enabled setting). Disabled, it registers no routes, jobs,
+// theme kinds, admin pages or hooks; products, orders and entitlements stay
+// in the database for when it is enabled again.
+func (*Module) Enabled(ctx context.Context, d *sql.DB) (bool, error) {
+	return kernel.AddonEnabled(ctx, d, "commerce")
+}
 
 // Register publishes kernel.ServiceCommerce and wires jobs, theme kinds and
 // funcs, public routes, the Stripe webhook, admin screens, API operations
