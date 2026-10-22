@@ -163,6 +163,9 @@ func BootWithOptions(ctx context.Context, cfg config.Config, mods []Module, opts
 	handler := assemble(deps)
 	jobsCtx, cancel := context.WithCancel(ctx)
 	if opts.StartJobs {
+		// Hold the queued work of disabled modules (and release that of
+		// re-enabled ones) before any worker can look at the queue.
+		parkDisabledWork(ctx, deps.Log, deps.Jobs, Modules(deps))
 		deps.Jobs.Start(jobsCtx, jobWorkers)
 		deps.Log.Info("jobs: workers started", "workers", jobWorkers)
 	} else {
@@ -211,18 +214,19 @@ func wire(ctx context.Context, d *sql.DB, cfg config.Config, mods, all []Module)
 		Services: NewServiceRegistry(),
 	}
 	deps.Services.Set(diagnostics.ServiceName, collector)
-	deps.Services.Set(serviceModuleInventory, moduleInventory(cfg, mods, all))
 	deps.Hooks.AttachQueue(deps.Jobs)
 	guard := requireAuthenticator(deps.Router)
 	deps.Router.Admin.Use(guard)
 	deps.Router.API.Use(guard)
 
+	regs := map[string]ModuleRegistration{}
 	idx := slices.IndexFunc(mods, func(m Module) bool { return m.Name() == settingsModule })
-	rep, err := setup(ctx, deps, mods[idx])
+	rep, reg, err := setup(ctx, deps, mods[idx])
 	if err != nil {
 		return nil, err
 	}
 	reports = append(reports, rep)
+	regs[mods[idx].Name()] = reg
 	bundle, err := i18n.Load(catalogs(mods)...)
 	if err != nil {
 		return nil, err
@@ -232,12 +236,19 @@ func wire(ctx context.Context, d *sql.DB, cfg config.Config, mods, all []Module)
 		if i == idx {
 			continue
 		}
-		rep, err := setup(ctx, deps, m)
+		rep, reg, err := setup(ctx, deps, m)
 		if err != nil {
 			return nil, err
 		}
 		reports = append(reports, rep)
+		regs[m.Name()] = reg
 	}
+	if err := rememberJobKinds(ctx, deps.Settings, regs); err != nil {
+		return nil, err
+	}
+	deps.Services.Set(serviceModuleInventory, moduleInventory(cfg, mods, all, regs, func(name string) []string {
+		return lastKnownJobKinds(ctx, deps.Settings, name)
+	}))
 	warnChecksumMismatches(deps.Log, reports)
 	warnSchemaAhead(ctx, deps.Log, d, all)
 	deps.Services.Set(ServiceSchema, SchemaInspector(func(ctx context.Context) (db.SchemaInspection, error) {
@@ -247,21 +258,37 @@ func wire(ctx context.Context, d *sql.DB, cfg config.Config, mods, all []Module)
 }
 
 // setup migrates then registers one module, converting a Register panic
-// (e.g. a duplicate registration) into an error.
-func setup(ctx context.Context, deps *Deps, m Module) (rep db.MigrateReport, err error) {
+// (e.g. a duplicate registration) into an error, and records what the
+// module registered (ModuleRegistration) for the module inventory.
+func setup(ctx context.Context, deps *Deps, m Module) (rep db.MigrateReport, reg ModuleRegistration, err error) {
 	rep, err = db.MigrateWithReport(ctx, deps.DB, m.Name(), m.Migrations())
 	if err != nil {
-		return rep, err
+		return rep, reg, err
 	}
+	before := snapshot(deps)
+	deps.Services.setCurrent(m.Name())
+	deps.Perms.setCurrent(m.Name())
 	defer func() {
+		deps.Services.setCurrent("")
+		deps.Perms.setCurrent("")
 		if p := recover(); p != nil {
 			err = fmt.Errorf("register %s: panic: %v", m.Name(), p)
 		}
 	}()
 	if err := m.Register(deps); err != nil {
-		return rep, fmt.Errorf("register %s: %w", m.Name(), err)
+		return rep, reg, fmt.Errorf("register %s: %w", m.Name(), err)
 	}
-	return rep, nil
+	reg = diff(before, snapshot(deps))
+	reg.ServicesConsumed = deps.Services.consumedBy(m.Name())
+	reg.Permissions = deps.Perms.declaredBy(m.Name()) // declared by this module, even when another module named it first
+	_, reg.Catalog = m.(CatalogProvider)
+	reg.Migrations = len(rep.Applied) + len(rep.Backfilled) + len(rep.Mismatched)
+	if files := m.Migrations(); files != nil {
+		if names, err := fs.Glob(files, "migrations/*.sql"); err == nil {
+			reg.Migrations = len(names)
+		}
+	}
+	return rep, reg, nil
 }
 
 func catalogs(mods []Module) []fs.FS {

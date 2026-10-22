@@ -131,6 +131,18 @@ func (a *AdminRegistry) Nav(ctx context.Context) []NavItem {
 	return out
 }
 
+// NavIDs returns the IDs of the statically registered navigation items
+// (providers are evaluated per request and not listed).
+func (a *AdminRegistry) NavIDs() []string {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	out := make([]string, 0, len(a.nav))
+	for _, n := range a.nav {
+		out = append(out, n.ID)
+	}
+	return out
+}
+
 // Widgets returns the dashboard widgets in registration order.
 func (a *AdminRegistry) Widgets() []Widget {
 	a.mu.RLock()
@@ -182,6 +194,18 @@ func (t *ThemeRegistry) Funcs() template.FuncMap {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	return maps.Clone(t.funcs)
+}
+
+// Kinds returns the registered template-hierarchy kinds, sorted.
+func (t *ThemeRegistry) Kinds() []string {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	out := make([]string, 0, len(t.kinds))
+	for k := range t.kinds {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // Candidates returns the template names for req.Kind, or nil if the kind is
@@ -296,15 +320,20 @@ type Permission struct {
 	Label map[string]string
 }
 
-// PermissionRegistry collects permissions declared by modules.
+// PermissionRegistry collects permissions declared by modules. A name may
+// be declared by more than one module (the auth base catalog lists the
+// names default roles grant, and the owning module declares it again), so
+// the registry also records which module declared what for the inventory.
 type PermissionRegistry struct {
-	mu    sync.RWMutex
-	perms map[string]map[string]string
+	mu       sync.RWMutex
+	perms    map[string]map[string]string
+	current  string
+	byModule map[string]map[string]bool
 }
 
 // NewPermissionRegistry returns an empty registry.
 func NewPermissionRegistry() *PermissionRegistry {
-	return &PermissionRegistry{perms: map[string]map[string]string{}}
+	return &PermissionRegistry{perms: map[string]map[string]string{}, byModule: map[string]map[string]bool{}}
 }
 
 // Declare adds perm; declaring it again merges the labels.
@@ -315,6 +344,30 @@ func (p *PermissionRegistry) Declare(perm string, label map[string]string) {
 		p.perms[perm] = map[string]string{}
 	}
 	maps.Copy(p.perms[perm], label)
+	if p.current != "" {
+		if p.byModule[p.current] == nil {
+			p.byModule[p.current] = map[string]bool{}
+		}
+		p.byModule[p.current][perm] = true
+	}
+}
+
+func (p *PermissionRegistry) setCurrent(module string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.current = module
+}
+
+// declaredBy returns the permissions module declared, sorted.
+func (p *PermissionRegistry) declaredBy(module string) []string {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	out := make([]string, 0, len(p.byModule[module]))
+	for name := range p.byModule[module] {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
 }
 
 // All returns every permission sorted by name.
@@ -334,10 +387,47 @@ func (p *PermissionRegistry) All() []Permission {
 type ServiceRegistry struct {
 	mu       sync.RWMutex
 	services map[string]any
+	// current is the module whose Register is running (set by the kernel);
+	// Get calls made meanwhile are recorded as that module's consumption.
+	current  string
+	consumed map[string]map[string]bool
 }
 
 // NewServiceRegistry returns an empty registry.
-func NewServiceRegistry() *ServiceRegistry { return &ServiceRegistry{services: map[string]any{}} }
+func NewServiceRegistry() *ServiceRegistry {
+	return &ServiceRegistry{services: map[string]any{}, consumed: map[string]map[string]bool{}}
+}
+
+// Names returns the registered service names, sorted.
+func (s *ServiceRegistry) Names() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]string, 0, len(s.services))
+	for n := range s.services {
+		out = append(out, n)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func (s *ServiceRegistry) setCurrent(module string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.current = module
+}
+
+// consumedBy returns the service names module looked up during its
+// Register, sorted (lookups made later, at request time, are not seen).
+func (s *ServiceRegistry) consumedBy(module string) []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	out := make([]string, 0, len(s.consumed[module]))
+	for n := range s.consumed[module] {
+		out = append(out, n)
+	}
+	sort.Strings(out)
+	return out
+}
 
 // Set registers v under name, replacing any previous value.
 func (s *ServiceRegistry) Set(name string, v any) {
@@ -354,7 +444,16 @@ func Get[T any](d *Deps, name string) (T, bool) {
 	}
 	d.Services.mu.RLock()
 	v, ok := d.Services.services[name]
+	current := d.Services.current
 	d.Services.mu.RUnlock()
+	if current != "" {
+		d.Services.mu.Lock()
+		if d.Services.consumed[current] == nil {
+			d.Services.consumed[current] = map[string]bool{}
+		}
+		d.Services.consumed[current][name] = true
+		d.Services.mu.Unlock()
+	}
 	if !ok {
 		return zero, false
 	}

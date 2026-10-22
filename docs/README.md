@@ -55,6 +55,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Modular monolith, boot order, data dir, building on `pkg/cli` |
 | [BOUNDARIES.md](BOUNDARIES.md) | Core / theme / built-in module / extension boundary map, import policy, optional-module decision |
+| [MODULES.md](MODULES.md) | System → Modules catalog, switching optional modules off and on, parked jobs, core services, dependency consequences |
 | [EDGE.md](EDGE.md) | Experimental Edge Worker. The Deploy to Cloudflare button provisions D1, R2 and the preview; owner admin is optional; GoRun can store the primary manager key and check identity only |
 | [PLUGIN-DEVELOPMENT.md](PLUGIN-DEVELOPMENT.md) | Step-by-step plugin tutorial: manifest, signed HTTP hooks, install and test (AR/EN) |
 | [EXTENSIONS.md](EXTENSIONS.md) | Full hosted extension manifest and HTTP bridge reference |

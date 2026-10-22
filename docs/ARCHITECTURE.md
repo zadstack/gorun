@@ -100,8 +100,12 @@ gorun settings set addons.<name>.enabled true`). Events are not held for a modul
 off the `subscription.*` events are delivered to nobody and are not replayed when saas is enabled
 again (its local grants then need a manual review). Activation is read at boot; a change needs a restart,
 and `kernel.Modules(d)`, the capability report and System → Health report the booted state, never
-the intent. The layer map, dependency policy and the audit behind this are in
-[BOUNDARIES.md](BOUNDARIES.md); `internal/kernel/boundaries_test.go` enforces the import policy.
+the intent. **System → Modules** and `GET /api/v1/system/modules` list every module with what it
+registered (observed by the kernel during `Register`), its dependencies, activation and
+configuration; the page switches optional modules for the next boot, and queued jobs of a disabled
+module are parked until it is on again ([MODULES.md](MODULES.md)). The layer map, dependency
+policy and the audit behind this are in [BOUNDARIES.md](BOUNDARIES.md);
+`internal/kernel/boundaries_test.go` enforces the import policy.
 
 ### Building on the core / البناء فوق النواة
 

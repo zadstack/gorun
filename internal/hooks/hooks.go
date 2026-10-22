@@ -200,6 +200,21 @@ func (r *Registry) AttachQueue(q *jobs.Queue) {
 	r.queue = q
 }
 
+// Subscriptions returns the number of action and filter subscribers per
+// hook name (names with no subscriber are absent).
+func (r *Registry) Subscriptions() map[string]int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	out := make(map[string]int, len(r.actions)+len(r.filters))
+	for n, list := range r.actions {
+		out[n] += len(list)
+	}
+	for n, list := range r.filters {
+		out[n] += len(list)
+	}
+	return out
+}
+
 // Names returns every action and filter name, sorted and de-duplicated.
 func (r *Registry) Names() []string {
 	r.mu.RLock()
