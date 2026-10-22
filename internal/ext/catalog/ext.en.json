@@ -117,5 +117,7 @@
   "group.upload_help": "Recorded by InstallZip for this installation. Review the manifest, permissions and destination separately.",
   "group.legacy_unknown": "Existing installations with unknown method",
   "group.legacy_unknown_help": "These records predate installation-method tracking. Their original method cannot be established from the saved data.",
-  "group.empty": "No installed extensions in this group."
+  "group.empty": "No installed extensions in this group.",
+  "catalog.no_description": "No description in the manifest.",
+  "catalog.error": "Delivery stopped after repeated failures (%s). Re-activate the extension to reset the counter."
 }
