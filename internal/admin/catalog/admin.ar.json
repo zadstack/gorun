@@ -959,6 +959,7 @@
   "modules.msg.parked_jobs": "%d مهمة في الطابور موقوفة لهذه الوحدة وتُنفَّذ بعد تفعيلها؛ لا يضيع شيء.",
   "modules.msg.dependency_off": "تعتمد على %s وهي متوقفة؛ قد لا تعمل هذه الوحدة حتى تفعيلها.",
   "modules.msg.if_off_affects": "إيقاف هذه الوحدة يؤثر أيضًا على %s (انظر صفها).",
+  "modules.dep.workagents.membership": "وحدة WorkAgents متوقفة: رابط الإيجنتس ومسار /agents غير متاحين؛ بيانات العضوية محفوظة.",
   "modules.dep.commerce.saas": "المتجر متوقف: تتوقف مزامنة الاشتراكات من Stripe؛ منح SaaS المحلية تعمل.",
   "modules.dep.commerce.wpmigrate": "المتجر متوقف: تُتخطى منتجات WooCommerce أثناء الاستيراد؛ المقالات والصفحات والوسائط تُستورد.",
   "modules.dep.commerce.mcp": "المتجر متوقف: أداة list_products لا تُعرض للوكلاء.",
