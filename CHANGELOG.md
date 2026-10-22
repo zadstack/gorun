@@ -5,6 +5,18 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Store settings show the current Stripe mode as a badge and report each mode in three separate
+  states: configured, authenticated (a read-only **Verify key** call tied to the stored key) and
+  webhook delivery verified (signed events from Stripe only; the local test event never counts).
+  Switching to live now needs an explicit confirmation and server-side checks (live key present
+  and not test-prefixed, live webhook secret, Stripe reports a live key); a refused switch saves
+  nothing. Orders and Stripe events record the mode that created or verified them and Orders
+  shows it; a test order is never paid by a live-signed event and refunds use the order's own mode.
+  New stores start in test mode through a versioned bootstrap; existing stores keep their
+  effective mode and historical orders are never relabelled.
+
 ### Improved
 
 - Integrations keeps saved results updating while checks are pending, with bounded background

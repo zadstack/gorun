@@ -1,4 +1,20 @@
 {{/* Data: settingsPage */}}
+{{define "commerce/mode_badge"}}{{if eq . "test"}}<span data-stripe-mode="test" class="inline-flex items-center rounded-chip border border-amber bg-amber-soft text-amber-text px-2 py-0.5 text-xs font-mono uppercase tracking-wide">{{t "commerce.settings.badge_test"}}</span>{{else}}<span data-stripe-mode="live" class="inline-flex items-center rounded-chip border border-green bg-green-soft text-green px-2 py-0.5 text-xs font-mono uppercase tracking-wide">{{t "commerce.settings.badge_live"}}</span>{{end}}{{end}}
+{{/* Three separate states of one mode: configured, authenticated, webhook delivery verified. */}}
+{{define "commerce/mode_status"}}{{$st := .}}
+<section class="rounded border border-line bg-panel p-3 text-sm" data-mode-status="{{$st.Mode}}" aria-labelledby="mode-{{$st.Mode}}-h">
+  <h3 id="mode-{{$st.Mode}}-h" class="font-medium mb-2 flex items-center gap-2">{{if eq $st.Mode "test"}}{{t "commerce.settings.mode_test"}}{{else}}{{t "commerce.settings.mode_live"}}{{end}}{{if .Current}} <span class="text-xs text-muted">({{t "commerce.settings.mode_active"}})</span>{{end}}</h3>
+  <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1">
+    <dt class="text-muted">{{t "commerce.settings.state_configured"}}</dt>
+    <dd data-stripe-configured="{{if and $st.KeyConfigured $st.WebhookConfigured}}yes{{else}}no{{end}}">{{if $st.KeyConfigured}}{{t "commerce.settings.key_present"}}{{if eq $st.KeySource "env"}} ({{t "commerce.settings.from_env"}}){{end}}{{if eq $st.KeyPrefix "test"}}{{if eq $st.Mode "live"}} · <span class="text-amber-text">{{t "commerce.settings.prefix_test_in_live"}}</span>{{end}}{{else if eq $st.KeyPrefix "live"}}{{if eq $st.Mode "test"}} · <span class="text-red">{{t "commerce.settings.prefix_live_in_test"}}</span>{{end}}{{end}}{{else}}{{t "commerce.settings.key_missing"}}{{end}} · {{if $st.WebhookConfigured}}{{t "commerce.settings.webhook_present"}}{{else}}{{t "commerce.settings.webhook_missing"}}{{end}}</dd>
+    <dt class="text-muted">{{t "commerce.settings.state_authenticated"}}</dt>
+    <dd data-stripe-auth="{{$st.Auth.State}}">{{if eq $st.Auth.State "authenticated"}}<span class="text-green">{{t "commerce.settings.auth_ok"}}</span>{{else if eq $st.Auth.State "mismatch"}}<span class="text-red">{{t "commerce.settings.auth_mismatch"}}</span>{{else if eq $st.Auth.State "failed"}}<span class="text-red">{{t "commerce.settings.auth_failed"}}</span>{{with $st.Auth.Error}} · <span class="font-mono text-xs break-all" dir="ltr">{{.}}</span>{{end}}{{else}}{{t "commerce.settings.auth_unverified"}}{{end}}{{with $st.Auth.CheckedAt}} · <span class="font-mono text-xs">{{date .}}</span>{{end}}</dd>
+    <dt class="text-muted">{{t "commerce.settings.state_delivery"}}</dt>
+    <dd data-stripe-delivery="{{if $st.Delivery.Verified}}verified{{else}}unverified{{end}}">{{if $st.Delivery.Verified}}<span class="text-green">{{t "commerce.settings.delivery_ok" $st.Delivery.Count}}</span> · <span class="font-mono text-xs">{{date $st.Delivery.LastAt}}</span>{{else}}{{t "commerce.settings.delivery_unverified"}}{{end}}</dd>
+  </dl>
+  <code class="mt-2 block font-mono text-xs break-all text-muted" dir="ltr">{{.WebhookURL}}</code>
+  <form method="post" action="/admin/commerce/settings/verify" class="mt-2"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="mode" value="{{$st.Mode}}"><button type="submit" {{if not $st.KeyConfigured}}disabled{{end}} class="h-8 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong disabled:opacity-50">{{t "commerce.settings.verify_key"}}</button></form>
+</section>{{end}}
 {{define "title"}}{{t "commerce.settings.title"}}{{end}}
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "admin-contained.css"}}">
@@ -6,17 +22,32 @@
 <h1 class="text-[22px] font-bold mb-1">{{t "commerce.settings.title"}}</h1>
 <p class="text-muted mb-2">{{t "commerce.settings.intro"}}</p>
 <p class="mb-4"><a href="/admin/commerce/setup" class="text-blue underline">{{t "commerce.setup.link_from_settings"}}</a></p>
+<section id="mode-status" class="rounded border border-line bg-panel p-4 space-y-3 max-w-3xl mb-4" aria-labelledby="mode-status-h">
+  <h2 id="mode-status-h" class="font-medium flex flex-wrap items-center gap-2">{{t "commerce.settings.current_mode"}} {{template "commerce/mode_badge" .Mode}}</h2>
+  {{with index .Fields "verify"}}<p class="field-error text-xs text-red">{{t .}}</p>{{end}}
+  <div class="grid gap-3 md:grid-cols-2">
+    {{template "commerce/mode_status" .Test}}
+    {{template "commerce/mode_status" .Live}}
+  </div>
+</section>
 <form method="post" action="/admin/commerce/settings" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <input type="hidden" name="registration_present" value="true">
   <label class="block"><input type="checkbox" name="registration_enabled" value="true" {{if .RegistrationEnabled}}checked{{end}}> {{t "commerce.settings.registration_enable"}}</label>
   <p class="text-muted text-sm">{{t "commerce.settings.registration_help"}}</p>
-  <div>
-    <label for="c-mode" class="block font-medium mb-1">{{t "commerce.settings.mode"}}</label>
-    <select id="c-mode" name="stripe_mode" class="h-9 rounded border border-line bg-panel px-3">
-      <option value="live" {{if ne .Mode "test"}}selected{{end}}>{{t "commerce.settings.mode_live"}}</option>
-      <option value="test" {{if eq .Mode "test"}}selected{{end}}>{{t "commerce.settings.mode_test"}}</option>
-    </select>
+  <div id="mode" class="rounded border border-line bg-panel-2 p-3 space-y-3">
+    <div class="grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
+      <div>
+        <label for="c-mode" class="block font-medium mb-1">{{t "commerce.settings.mode"}}</label>
+        <select id="c-mode" name="stripe_mode" {{with index .Fields "stripe_mode"}}aria-invalid="true"{{end}} class="h-9 rounded border border-line bg-panel px-3">
+          <option value="live" {{if ne .Mode "test"}}selected{{end}}>{{t "commerce.settings.mode_live"}}</option>
+          <option value="test" {{if eq .Mode "test"}}selected{{end}}>{{t "commerce.settings.mode_test"}}</option>
+        </select>
+      </div>
+      <label class="flex items-start gap-2 text-sm sm:pt-7"><input type="checkbox" name="confirm_live" value="1" class="mt-1 accent-[var(--green)]"> <span>{{t "commerce.settings.confirm_live"}}</span></label>
+    </div>
+    {{with index .Fields "stripe_mode"}}<p class="field-error text-xs text-red">{{t .}}{{with $.ModeDetail}} · <span dir="ltr">{{.}}</span>{{end}}</p>{{end}}
+    <p class="text-xs text-muted">{{t "commerce.settings.mode_help"}}</p>
   </div>
   <div class="grid gap-3 sm:grid-cols-2">
     <div>
@@ -69,6 +100,7 @@
 <form method="post" action="/admin/commerce/settings/test-event" class="mt-4">
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <button type="submit" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "commerce.settings.send_test_event"}}</button>
+  <p class="mt-1 text-xs text-muted">{{t "commerce.settings.send_test_event_help"}}</p>
 </form>
 </div>
 {{end}}

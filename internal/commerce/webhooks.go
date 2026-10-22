@@ -81,11 +81,21 @@ func (s *service) HandleStripeEvent(ctx context.Context, payload []byte, sigHead
 	return s.handleStripeEvent(ctx, payload, sigHeader, "")
 }
 
+// handleStripeEvent processes a delivery from Stripe. mode "" is the original
+// endpoint: the active mode's secret verifies it.
 func (s *service) handleStripeEvent(ctx context.Context, payload []byte, sigHeader, mode string) error {
-	secret := s.webhookSecret(ctx)
-	if mode == "test" || mode == "live" {
-		secret = s.webhookSecretFor(ctx, mode)
+	return s.handleStripeEventFrom(ctx, payload, sigHeader, mode, "stripe")
+}
+
+// handleStripeEventFrom verifies and processes an event. The mode whose
+// secret verified the signature and the source ("stripe" for a delivery on
+// a public endpoint, "local" for the admin's self-signed test event) are
+// recorded with the event: only "stripe" rows count as delivery evidence.
+func (s *service) handleStripeEventFrom(ctx context.Context, payload []byte, sigHeader, mode, source string) error {
+	if mode != "test" && mode != "live" {
+		mode = s.stripeMode(ctx)
 	}
+	secret := s.webhookSecretFor(ctx, mode)
 	if secret == "" {
 		return ErrStripeNotConfigured
 	}
@@ -102,8 +112,8 @@ func (s *service) handleStripeEvent(ctx context.Context, payload []byte, sigHead
 	var paid *paidEvent
 	var hooks []hookEmit
 	err = db.InTx(ctx, s.db, func(tx *sql.Tx) error {
-		res, err := tx.ExecContext(ctx, `INSERT INTO stripe_events (id, type, received_at, payload_json) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
-			ev.ID, string(ev.Type), s.nowString(), string(payload))
+		res, err := tx.ExecContext(ctx, `INSERT INTO stripe_events (id, type, received_at, payload_json, mode, source) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
+			ev.ID, string(ev.Type), s.nowString(), string(payload), mode, source)
 		if err != nil {
 			return fmt.Errorf("commerce: record stripe event: %w", err)
 		}
@@ -112,7 +122,7 @@ func (s *service) handleStripeEvent(ctx context.Context, payload []byte, sigHead
 		}
 		switch string(ev.Type) {
 		case evCheckoutCompleted, evCheckoutAsyncSuccess:
-			paid, err = s.markPaid(ctx, tx, ev.ID, ev.Data.Raw)
+			paid, err = s.markPaid(ctx, tx, ev.ID, mode, ev.Data.Raw)
 		case evCheckoutExpired:
 			err = s.closeSession(ctx, tx, ev.ID, ev.Data.Raw, OrderCancelled, "commerce.order.cancelled")
 		case evCheckoutAsyncFailed:
@@ -337,7 +347,7 @@ func sessionMismatch(obj sessionObject, o *Order, refOK bool) string {
 
 // markPaid moves a pending order to paid and enqueues provisioning, once,
 // but only for a session that matches the order exactly.
-func (s *service) markPaid(ctx context.Context, tx *sql.Tx, eventID string, raw json.RawMessage) (*paidEvent, error) {
+func (s *service) markPaid(ctx context.Context, tx *sql.Tx, eventID, eventMode string, raw json.RawMessage) (*paidEvent, error) {
 	var obj sessionObject
 	if err := json.Unmarshal(raw, &obj); err != nil {
 		return nil, fmt.Errorf("commerce: decode checkout session: %w", err)
@@ -364,14 +374,21 @@ func (s *service) markPaid(ctx context.Context, tx *sql.Tx, eventID string, raw 
 	if o.Status != OrderPending && o.PaidAt != "" && o.StripeSessionID == obj.ID {
 		return nil, nil
 	}
-	if why := sessionMismatch(obj, o, refOK); why != "" {
+	why := sessionMismatch(obj, o, refOK)
+	// Provenance: an order created with one mode's key is only ever paid by
+	// an event the same mode's secret verified. Orders without a recorded
+	// mode (before provenance) are matched on the session alone.
+	if why == "" && o.StripeMode != "" && o.StripeMode != eventMode {
+		why = "stripe_mode"
+	}
+	if why != "" {
 		var amount any
 		if obj.AmountTotal != nil {
 			amount = *obj.AmountTotal
 		}
 		s.audit.RecordTx(ctx, tx, "commerce.order.mismatch", "order", o.ID, map[string]any{"event": eventID, "session": obj.ID,
 			"expected_session": o.StripeSessionID, "amount_total": amount, "total_minor": o.TotalMinor, "currency": obj.Currency,
-			"order_currency": o.Currency, "mode": obj.Mode, "reason": why})
+			"order_currency": o.Currency, "mode": obj.Mode, "order_stripe_mode": o.StripeMode, "event_stripe_mode": eventMode, "reason": why})
 		s.log.Warn("commerce: checkout session does not match order", "order", o.ID, "session", obj.ID, "reason", why)
 		return nil, nil
 	}

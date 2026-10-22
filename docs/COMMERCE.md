@@ -61,9 +61,30 @@ and entitlement records.
    `Service.RequirePlan` allow an account with an active, trialing, or in-grace subscription.
    An empty plan means any such subscription. Plugins should subscribe to the three events above
    instead of calling Stripe.
-9. **Test mode.** Store settings keep separate test and live secrets. **Send test event** signs a
-   local `customer.subscription.updated` with the test webhook secret and processes it. Secrets are
-   not written to logs. The setup checklist is `/admin/commerce/setup`.
+9. **Test and live mode.** Store settings keep separate test and live secrets and select the mode
+   with `commerce.stripe_mode`. Store settings show the current mode as a badge and, for each mode,
+   three separate states: **configured** (key and webhook secret present), **authenticated** (the
+   stored key passed a read-only `GET /v1/balance` after **Verify key**; the result is tied to that
+   key's fingerprint, so a replaced key is unverified again) and **webhook delivery verified** (a
+   signed event from Stripe reached `/webhooks/stripe/<mode>`; the local **Send test event** is
+   recorded as `source=local` and never counts). A key's presence or `sk_test_`/`sk_live_` prefix is
+   only a hint, never verification. Switching to **test** needs no confirmation and no Stripe call
+   (a live-prefixed key in the test slot is refused). Switching to **live** is refused unless the
+   form carries the explicit confirmation, a live key that is not test-prefixed and a live webhook
+   secret are effective, and the read-only check reports `livemode=true`; a refused switch saves
+   nothing. No charge is ever created by these checks. **Send test event** signs a local
+   `customer.subscription.updated` with the test webhook secret and processes it. Secrets are not
+   written to logs. The setup checklist is `/admin/commerce/setup`.
+10. **Provenance.** `orders.stripe_mode` records the mode whose key created the Checkout Session
+   and `stripe_events.mode`/`source` the mode whose secret verified each event; both are shown as
+   chips in Orders. The current setting never relabels an order: a test order is only ever paid by
+   an event the test secret verified (a live-signed event is audited as `commerce.order.mismatch`
+   with reason `stripe_mode`), and a refund uses the order's own mode's key. Orders from before
+   this column keep `''` ("unrecorded").
+11. **Bootstrap.** `commerce.settings_version` pins `commerce.stripe_mode` once per store: a store
+   with no orders and no Stripe secret in settings or the environment starts in **test**; any other
+   store is pinned to the mode it already runs in (live when the value was absent). An absent
+   value still means live at read time; the bootstrap only makes the choice explicit.
 
 ## Flow
 
@@ -265,6 +286,10 @@ another version and GoRun reads only stable `data.object` fields.
 | `commerce.currency` | Store currency, default `AED`. Products may set their own. |
 | `commerce.stripe_secret_key` | Encrypted (`db.Encrypt`, AAD = key). Overrides `STRIPE_SECRET_KEY`. |
 | `commerce.stripe_webhook_secret` | Encrypted (`db.Encrypt`, AAD = key). Overrides `STRIPE_WEBHOOK_SECRET`. |
+| `commerce.stripe_mode` | `test` or `live`; absent means live. Pinned explicitly by the bootstrap (new stores: `test`). |
+| `commerce.stripe_test_secret_key`, `commerce.stripe_test_webhook_secret` | Encrypted test-mode secrets; no environment fallback. |
+| `commerce.settings_version` | Bootstrap steps applied to this store (`1`: mode pinned). |
+| `commerce.stripe_verify.<mode>` | Last read-only key check: key fingerprint, ok, livemode, time, error. Not a secret. |
 
 Billing-server secrets are stored in `billing_servers.secret_enc`, encrypted with `db.Encrypt`
 (AAD = server id).
@@ -280,8 +305,12 @@ Billing-server secrets are stored in `billing_servers.secret_enc`, encrypted wit
 - Billing servers: CRUD and "Test connection" (`GET /catalog`, lists the plans).
 - Store settings.
 
-**Health.** System Health shows "Stripe configured", "Stripe webhook secret set" and one line per
-billing server. Server reachability is cached for 5 minutes.
+**Health.** System Health reports the active mode's Stripe key (configured / authenticated /
+failed / mismatch) and webhook (secret set / signed delivery observed) plus one line per billing
+server; the capability report (`system.capabilities.modules`) uses the same three states as reasons
+`stripe_secret_key_missing`, `stripe_webhook_secret_missing`, `stripe_key_mode_mismatch`,
+`configured_not_authenticated`, `authenticated_delivery_unverified` and `verified`. Checkout itself
+is proven only by a real order. Server reachability is cached for 5 minutes.
 
 **REST.** All `/api/v1/commerce/*` operations need `commerce.manage`, except listing orders and
 entitlements, which needs `commerce.view_orders`.

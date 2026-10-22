@@ -114,6 +114,7 @@ type Order struct {
 	ProductSnapshot     map[string]any `json:"product_snapshot"`
 	StripeSessionID     string         `json:"stripe_session_id"`
 	StripePaymentIntent string         `json:"stripe_payment_intent"`
+	StripeMode          string         `json:"stripe_mode" doc:"Mode whose key created the Checkout Session: test, live, or empty for orders recorded before provenance existed"`
 	PaidAt              string         `json:"paid_at"`
 	CreatedAt           string         `json:"created_at"`
 	UpdatedAt           string         `json:"updated_at"`
