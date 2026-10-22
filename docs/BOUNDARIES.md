@@ -169,7 +169,7 @@ Public paths are mounted at `/`, admin paths under `/admin`, API operations unde
 | webhooks | — | `/webhooks/*` | 1 | — | `webhooks.manage` |
 | **commerce** | `/shop`, `/product/{slug}`, `/cart*`, `/checkout*`, `/account*`; `/webhooks/stripe{,/test,/live}` | `/commerce/*` (products, orders, entitlements, servers, settings, setup) | 14 | `list_products` (registered by mcp when the service exists) | `commerce.manage`, `commerce.view_orders` |
 | **saas** | `/saas`, `/saas/assets.css` | `/saas`, `/saas/new`, `/saas/apps/*`, `/saas/subscriptions/*` | 8 | — | `saas.read`, `saas.use`, `saas.manage` |
-| **membership** | `/membership`, `/membership/submissions` | `/membership`, `/membership/grants` | 7 | — | `membership.manage`, `membership.read`, `membership.unlimited`, `membership.submit` |
+| **membership** | `/membership`, `/membership/assets.css`, `/membership/submissions` | `/membership`, `/membership/grants` | 7 | — | `membership.manage`, `membership.read`, `membership.unlimited`, `membership.submit` |
 | launch | `/start`, `/start/login`, `/start/verify` | — | — | — | — |
 | workagents | `/agents`, `/agents/*`, `/static/workagents.css` | `/workagents`, `/workspace` | `/v1/workagents/*` | — | `workagents.manage`, `workagents.read`, `workagents.run` |
 | wpmigrate | — | `/migrations/*` | 1 | `get_migration_status`, `run_migration_preview` | `migrations.run` |
