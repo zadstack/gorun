@@ -151,10 +151,13 @@ func TestAddonEnabledReadsSetting(t *testing.T) {
 	if on, err := kernel.AddonEnabled(ctx, d, "commerce"); err != nil || !on {
 		t.Fatalf("true setting: on=%v err=%v", on, err)
 	}
-	if err := st.Set(ctx, kernel.AddonSettingKey("commerce"), "yes"); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := kernel.AddonEnabled(ctx, d, "commerce"); err == nil || !strings.Contains(err.Error(), "JSON boolean") {
-		t.Fatalf("non-boolean must fail loudly: %v", err)
+	// null, strings, numbers and objects are refused, never read as "off".
+	for _, bad := range []any{nil, "yes", "false", 0, 1, map[string]bool{"enabled": false}} {
+		if err := st.Set(ctx, kernel.AddonSettingKey("commerce"), bad); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := kernel.AddonEnabled(ctx, d, "commerce"); err == nil || !strings.Contains(err.Error(), "JSON boolean") {
+			t.Fatalf("non-boolean %v must fail loudly, not disable: %v", bad, err)
+		}
 	}
 }

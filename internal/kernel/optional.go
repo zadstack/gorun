@@ -59,11 +59,14 @@ func AddonEnabled(ctx context.Context, d *sql.DB, name string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("kernel: addon %s: read setting: %w", name, err)
 	}
-	var on bool
-	if err := json.Unmarshal([]byte(raw), &on); err != nil {
+	// Decode into a pointer: encoding/json accepts "null" into a plain bool
+	// and leaves it false, which would read as "disabled" instead of as an
+	// invalid value.
+	var on *bool
+	if err := json.Unmarshal([]byte(raw), &on); err != nil || on == nil {
 		return false, fmt.Errorf("kernel: setting %s must be a JSON boolean (true or false), got %s", AddonSettingKey(name), raw)
 	}
-	return on, nil
+	return *on, nil
 }
 
 func enabledModules(ctx context.Context, cfg config.Config, log *slog.Logger, d *sql.DB, mods []Module) ([]Module, error) {
