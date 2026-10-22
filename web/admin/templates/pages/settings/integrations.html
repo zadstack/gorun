@@ -1,0 +1,253 @@
+{{/* Data: integrationsPage */}}
+{{define "title"}}{{t "admin.integrations.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "connection-setup.css"}}">
+<link rel="stylesheet" href="{{asset "integrations.css"}}">
+<script src="{{asset "integrations.js"}}" defer></script>
+<div class="integrations space-y-6">
+<h1 class="text-[22px] font-bold mb-3">{{t "admin.settings.title"}}</h1>
+{{template "partials/settings_tabs" "integrations"}}
+<p class="max-w-3xl text-sm text-muted">{{t "admin.integrations.intro"}}</p>
+<nav class="integrations-jump" aria-label="{{t "admin.integrations.sections"}}"><a href="#integrations-cloudflare">Cloudflare</a><a href="#integrations-discovery">{{t "admin.integrations.discovery.title"}}</a><a href="#integrations-storage">{{t "admin.integrations.storage.title"}}</a><a href="#integrations-mail">{{t "admin.integrations.mail.title"}}</a></nav>
+
+{{/* ---------------------------------------------------------------- Cloudflare */}}
+<section id="integrations-cloudflare" class="rounded border border-line bg-panel p-4 space-y-4" aria-labelledby="cf-heading">
+<header><h2 id="cf-heading" class="text-base font-bold">{{t "admin.integrations.cloudflare.title"}}</h2><p class="text-sm text-muted mt-1">{{t "admin.integrations.cloudflare.intro"}}</p></header>
+{{with index .Fields "cloudflare"}}<p role="alert" class="field-error border border-red p-3 text-red">{{t .}}</p>{{end}}
+<div class="grid gap-4 md:grid-cols-2">
+<form method="post" action="/admin/settings/integrations/cloudflare" class="space-y-3" novalidate>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <div>
+    <label for="cf-token" class="block font-medium mb-1">{{t "admin.integrations.cloudflare.token"}}</label>
+    <input id="cf-token" name="token" type="password" value="" maxlength="160" autocomplete="off" dir="ltr" class="h-11 w-full rounded border {{if index .Fields "token"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs">
+    {{template "partials/field_errors" (index .Fields "token")}}
+    <p class="mt-1 text-xs text-muted">{{t "admin.integrations.cloudflare.token.help"}}{{if .Cloudflare.TokenHint}} {{t "admin.integrations.cloudflare.token.set"}} <span dir="ltr">••••{{.Cloudflare.TokenHint}}</span>{{end}}</p>
+  </div>
+  <div>
+    <label for="cf-account" class="block font-medium mb-1">{{t "admin.integrations.cloudflare.account"}}</label>
+    {{if .Cloudflare.Accounts}}
+    <select id="cf-account" name="account_id" class="h-11 w-full rounded border border-line bg-panel px-2" dir="ltr">
+      <option value="">{{t "admin.integrations.cloudflare.account.choose"}}</option>
+      {{range .Cloudflare.Accounts}}<option value="{{.ID}}" {{if eq .ID $.Cloudflare.AccountID}}selected{{end}}>{{.Name}} · {{.ID}}</option>{{end}}
+    </select>
+    {{if not .Cloudflare.AccountsFull}}<p class="mt-1 text-xs text-amber-text">{{t "admin.integrations.cloudflare.account.incomplete"}}</p>{{end}}
+    {{else}}
+    <input id="cf-account" name="account_id" value="{{if index .Form "account_id"}}{{index .Form "account_id"}}{{else}}{{.Cloudflare.AccountID}}{{end}}" maxlength="32" dir="ltr" autocomplete="off" class="h-11 w-full rounded border {{if index .Fields "account_id"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs" placeholder="{{t "admin.integrations.cloudflare.account.placeholder"}}">
+    {{end}}
+    {{template "partials/field_errors" (index .Fields "account_id")}}
+    <p class="mt-1 text-xs text-muted">{{t "admin.integrations.cloudflare.account.help"}}{{if .Cloudflare.AccountID}} {{t "admin.integrations.cloudflare.account.current"}} <span dir="ltr">{{if .Cloudflare.AccountName}}{{.Cloudflare.AccountName}} · {{end}}{{.Cloudflare.AccountID}}</span>{{end}}</p>
+  </div>
+  <div class="flex flex-wrap gap-2"><button class="admin-primary-button">{{t "admin.integrations.cloudflare.save"}}</button></div>
+</form>
+<div class="space-y-3">
+  <h3 class="font-medium">{{t "admin.integrations.cloudflare.scopes.minimum"}}</h3>
+  <ul class="list-disc ps-5 text-sm">{{range .Cloudflare.MinimumScopes}}<li dir="ltr">{{.}}</li>{{end}}</ul>
+  <p class="text-xs text-muted">{{t "admin.integrations.cloudflare.scopes.dedicated"}}</p>
+  <p class="text-xs text-muted">{{t "admin.integrations.cloudflare.scopes.not_s3"}}</p>
+  {{if .Cloudflare.Configured}}
+  <div class="flex flex-wrap gap-2">
+  <form method="post" action="/admin/settings/integrations/cloudflare/check"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="admin-secondary-button">{{t "admin.integrations.cloudflare.check"}}</button></form>
+  <form method="post" action="/admin/settings/integrations/cloudflare/clear" data-confirm="{{t "admin.integrations.cloudflare.clear.confirm"}}"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="clear" value="1"><button class="admin-secondary-button text-red">{{t "admin.integrations.cloudflare.clear"}}</button></form>
+  </div>
+  {{end}}
+</div>
+</div>
+{{if .Cloudflare.Configured}}
+<div>
+  <h3 class="font-medium mb-1">{{t "admin.integrations.cloudflare.scopes.title"}}</h3>
+  <p class="text-xs text-muted mb-2">{{template "integrations/meta" .Cloudflare.ScopesMeta}}</p>
+  <div class="connections-table-scroll" role="region" tabindex="0"><table class="integrations-table"><caption class="sr-only">{{t "admin.integrations.cloudflare.scopes.title"}}</caption>
+  <thead><tr><th scope="col">{{t "admin.integrations.scope"}}</th><th scope="col">{{t "admin.integrations.permission"}}</th><th scope="col">{{t "admin.integrations.status"}}</th><th scope="col">{{t "admin.integrations.evidence"}}</th><th scope="col">{{t "admin.integrations.checked_at"}}</th><th scope="col">{{t "admin.integrations.repair"}}</th></tr></thead>
+  <tbody>{{range .Cloudflare.Scopes}}<tr data-scope="{{.ID}}" data-status="{{.Status}}">
+    <th scope="row" dir="ltr">{{.ID}}</th><td dir="ltr">{{.Permission}}</td>
+    <td><span class="integrations-lamp integrations-lamp-{{.Status}}">{{t (printf "admin.integrations.lamp.%s" .Status)}}</span></td>
+    <td dir="ltr" class="text-xs">{{if .Error}}<span class="text-red">{{.Error}}</span>{{else}}{{.Evidence}}{{end}}</td>
+    <td>{{with .CheckedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
+    <td class="text-xs">{{if ne .Status "passed"}}{{.Repair}}{{else}}—{{end}}</td>
+  </tr>{{end}}</tbody></table></div>
+  <p class="text-xs text-muted mt-2">{{t "admin.integrations.cloudflare.scopes.note"}}</p>
+</div>
+{{end}}
+</section>
+
+{{/* ---------------------------------------------------------------- Discovery */}}
+<section id="integrations-discovery" class="rounded border border-line bg-panel p-4 space-y-5" aria-labelledby="discovery-heading">
+<header><h2 id="discovery-heading" class="text-base font-bold">{{t "admin.integrations.discovery.title"}}</h2><p class="text-sm text-muted mt-1">{{t "admin.integrations.discovery.intro"}}</p></header>
+{{if not .Cloudflare.Configured}}<p class="text-sm text-muted">{{t "admin.integrations.discovery.needs_token"}}</p>
+{{else if not .Cloudflare.AccountID}}<p class="text-sm text-muted">{{t "admin.integrations.discovery.needs_account"}}</p>
+{{else}}
+{{range .Inventory}}
+<div class="space-y-2" data-resource-table data-kind="{{.Kind}}">
+  <header class="flex flex-wrap items-end justify-between gap-2">
+    <div><h3 class="font-medium">{{t (printf "admin.integrations.discovery.%s" .Kind)}} <span class="text-muted">({{.Count}})</span>{{if and (ne .Meta.Status "never") (not .Complete)}} <span class="integrations-lamp integrations-lamp-incomplete">{{t "admin.integrations.discovery.incomplete"}}</span>{{end}}</h3>
+    <p class="text-xs text-muted">{{template "integrations/meta" .Meta}}</p></div>
+    <form method="post" action="/admin/settings/integrations/cloudflare/inventory/{{.Kind}}/refresh"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="admin-secondary-button">{{t "admin.integrations.refresh"}}</button></form>
+  </header>
+  {{if .Items}}
+  <div class="integrations-tools">
+    <label>{{t "admin.integrations.search"}} <input type="search" data-resource-search placeholder="{{t "admin.integrations.search_hint"}}"></label>
+    <label>{{t "admin.integrations.filter"}} <select data-resource-filter><option value="">{{t "admin.integrations.filter.all"}}</option><option value="bound">{{t "admin.integrations.filter.bound"}}</option><option value="candidate">{{t "admin.integrations.filter.candidate"}}</option>{{if eq .Kind "workers"}}<option value="identified">{{t "admin.integrations.filter.identified"}}</option>{{end}}</select></label>
+    <span role="status" aria-live="polite" class="text-xs text-muted"><span data-resource-count>{{len .Items}}</span> / {{len .Items}}</span>
+  </div>
+  <div class="connections-table-scroll" role="region" tabindex="0"><table class="integrations-table"><caption class="sr-only">{{t (printf "admin.integrations.discovery.%s" .Kind)}}</caption>
+  <thead><tr><th scope="col">{{t "admin.integrations.name"}}</th>
+  {{if eq .Kind "r2"}}<th scope="col">{{t "admin.integrations.location"}}</th><th scope="col">{{t "admin.integrations.created"}}</th><th scope="col">{{t "admin.integrations.binding"}}</th><th scope="col">{{t "admin.integrations.actions"}}</th>
+  {{else if eq .Kind "d1"}}<th scope="col">ID</th><th scope="col">{{t "admin.integrations.tables"}}</th><th scope="col">{{t "admin.integrations.size"}}</th><th scope="col">{{t "admin.integrations.created"}}</th>
+  {{else}}<th scope="col">{{t "admin.integrations.modified"}}</th><th scope="col">{{t "admin.integrations.identity"}}</th><th scope="col">{{t "admin.integrations.binding"}}</th><th scope="col">{{t "admin.integrations.actions"}}</th>{{end}}
+  </tr></thead><tbody>
+  {{range .Items}}<tr data-search="{{.Name}} {{.ID}} {{.Location}} {{.Class}}{{with .Identity}} {{.SiteID}} {{.ManagerID}} {{.Label}}{{end}}" data-bound="{{if .Bound}}bound{{else}}candidate{{end}}" data-identity="{{.Checked}}">
+    <th scope="row" dir="ltr">{{.Name}}</th>
+    {{if eq $.Kind "r2"}}
+    <td dir="ltr">{{.Location}}{{with .Class}} · {{.}}{{end}}</td><td>{{with .CreatedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
+    <td>{{if .Bound}}{{range .Bound}}<span class="integrations-lamp integrations-lamp-passed">{{t (printf "admin.integrations.purpose.%s" .)}}</span> {{end}}{{else}}<span class="text-muted">{{t "admin.integrations.candidate"}}</span>{{end}}</td>
+    <td><button type="button" class="admin-secondary-button" data-use-bucket="{{.Name}}">{{t "admin.integrations.storage.use"}}</button></td>
+    {{else if eq $.Kind "d1"}}
+    <td dir="ltr" class="font-mono text-xs">{{.ID}}</td><td>{{.Tables}}</td><td dir="ltr">{{.SizeBytes}}</td><td>{{with .CreatedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
+    {{else}}
+    <td>{{with .ModifiedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
+    <td>{{if eq .Checked "passed"}}<span class="integrations-lamp integrations-lamp-passed">{{t "admin.integrations.workers.edge"}}</span> <span dir="ltr" class="text-xs">{{.Identity.Label}} · {{.Identity.SiteID}} · {{.Identity.ManagerID}}</span><br><span class="text-xs text-muted">{{t (printf "admin.integrations.workers.association.%s" .Identity.Association)}}</span>{{else if eq .Checked "failed"}}<span class="integrations-lamp integrations-lamp-incomplete">{{t "admin.integrations.workers.failed"}}</span>{{else if eq .Checked "stale"}}<span class="integrations-lamp integrations-lamp-not_checked">{{t "admin.integrations.workers.stale"}}</span>{{else}}<span class="text-muted">{{t "admin.integrations.workers.ordinary"}}</span>{{end}}</td>
+    <td>{{if .Bound}}<span class="integrations-lamp integrations-lamp-passed">{{t "admin.integrations.purpose.edge"}}</span>{{else}}<span class="text-muted">{{t "admin.integrations.candidate"}}</span>{{end}}</td>
+    <td><details {{if eq (index $.Form "worker") .Name}}open{{end}}><summary>{{t "admin.integrations.workers.identify"}}</summary>
+      <form method="post" action="/admin/settings/integrations/cloudflare/workers/{{.Name}}/identify" class="space-y-2 mt-2" novalidate>
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <label class="block text-xs">{{t "admin.integrations.workers.origin"}}<input name="origin" type="url" dir="ltr" maxlength="200" autocomplete="off" value="{{if eq (index $.Form "worker") .Name}}{{index $.Form "origin"}}{{end}}" placeholder="https://{{.Name}}.example.workers.dev" class="block w-full h-10 rounded border border-line bg-panel px-2 font-mono text-xs mt-1"></label>
+        {{if eq (index $.Fields "worker") .Name}}{{template "partials/field_errors" (index $.Fields "identify_origin")}}{{end}}
+        <label class="block text-xs">{{t "admin.integrations.workers.key"}}<input name="manager_key" type="password" dir="ltr" maxlength="43" autocomplete="off" class="block w-full h-10 rounded border border-line bg-panel px-2 font-mono text-xs mt-1"></label>
+        {{if eq (index $.Fields "worker") .Name}}{{template "partials/field_errors" (index $.Fields "identify")}}{{template "partials/field_errors" (index $.Fields "identify_worker")}}{{end}}
+        <p class="text-xs text-muted">{{t "admin.integrations.workers.key.help"}}</p>
+        <button class="admin-secondary-button">{{t "admin.integrations.workers.run"}}</button>
+      </form></details></td>
+    {{end}}
+  </tr>{{end}}
+  <tr data-resource-empty hidden><td colspan="5" class="text-muted">{{t "admin.integrations.no_matches"}}</td></tr>
+  </tbody></table></div>
+  {{else if eq .Meta.Status "never"}}<p class="text-sm text-muted">{{t "admin.integrations.discovery.never"}}</p>
+  {{else if eq .Meta.Status "failed"}}<p class="text-sm text-red">{{t "admin.integrations.discovery.failed"}} <span dir="ltr">{{.Meta.Error}}</span></p><p class="text-xs text-muted">{{.Meta.Remediation}}</p>
+  {{else if or (eq .Meta.Status "waiting") (eq .Meta.Status "running")}}<p class="text-sm text-muted">{{t "admin.integrations.discovery.running"}}</p>
+  {{else}}<p class="text-sm text-muted">{{t "admin.integrations.discovery.empty"}}</p>{{end}}
+</div>
+{{end}}
+{{end}}
+<p class="text-xs text-muted">{{t "admin.integrations.discovery.note"}}</p>
+</section>
+
+{{/* ---------------------------------------------------------------- Storage */}}
+<section id="integrations-storage" class="rounded border border-line bg-panel p-4 space-y-4" aria-labelledby="storage-heading">
+<header><h2 id="storage-heading" class="text-base font-bold">{{t "admin.integrations.storage.title"}}</h2><p class="text-sm text-muted mt-1">{{t "admin.integrations.storage.intro"}}</p></header>
+{{with index .Fields "storage"}}<p role="alert" class="field-error border border-red p-3 text-red">{{t .}}</p>{{end}}
+<div class="connections-table-scroll" role="region" tabindex="0"><table class="integrations-table"><caption class="sr-only">{{t "admin.integrations.storage.resolved"}}</caption>
+<thead><tr><th scope="col">{{t "admin.integrations.purpose"}}</th><th scope="col">{{t "admin.integrations.source"}}</th><th scope="col">{{t "admin.integrations.location"}}</th><th scope="col">{{t "admin.integrations.prefix"}}</th><th scope="col">{{t "admin.integrations.status"}}</th><th scope="col">{{t "admin.integrations.actions"}}</th></tr></thead>
+<tbody>{{range .Storage}}<tr data-purpose="{{.Purpose}}">
+  <th scope="row">{{t (printf "admin.integrations.purpose.%s" .Purpose)}}</th>
+  <td>{{t (printf "admin.integrations.source.%s" .Source)}}</td>
+  <td dir="ltr" class="text-xs">{{if .Bucket}}{{.Endpoint}} / {{.Bucket}} ({{.Region}}){{else}}—{{end}}</td>
+  <td dir="ltr" class="font-mono text-xs">{{.Prefix}}</td>
+  <td class="text-xs">{{if .Configured}}<span class="integrations-lamp integrations-lamp-passed">{{t "admin.integrations.configured"}}</span>{{else}}<span class="integrations-lamp integrations-lamp-not_checked">{{t "admin.integrations.not_configured"}}</span>{{end}} <span dir="ltr">{{.Reason}}</span><br><span class="text-muted">{{.Remediation}}</span></td>
+  <td class="text-xs"><div class="flex flex-wrap gap-2">
+    {{if .ConnectionID}}<form method="post" action="/admin/settings/connections/{{.ConnectionID}}/test"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="version" value="{{index $.ConnectionVersions .ConnectionID}}"><button class="admin-secondary-button">{{t "admin.integrations.storage.check"}}</button></form>{{end}}
+    {{if and $.CanTest .Configured}}<form method="post" action="/admin/settings/integrations/storage/{{.Purpose}}/probe" data-confirm="{{t "admin.integrations.storage.probe.confirm"}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="admin-secondary-button">{{t "admin.integrations.storage.probe"}}</button></form>{{end}}
+    {{if eq .Source "settings"}}<form method="post" action="/admin/settings/storage/disable"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="purpose" value="{{.Purpose}}"><input type="hidden" name="destination_id" value="{{.DestinationID}}"><button class="admin-secondary-button">{{t "admin.integrations.storage.unbind"}}</button></form>{{end}}
+  </div></td>
+</tr>{{end}}</tbody></table></div>
+<p class="text-xs text-muted">{{t "admin.integrations.storage.probe.help"}}</p>
+<div class="grid gap-4 md:grid-cols-2">
+<form id="storage-bind" method="post" action="/admin/settings/integrations/storage/bind" class="space-y-3" novalidate data-r2-endpoint="{{.Cloudflare.R2Endpoint}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <h3 class="font-medium">{{t "admin.integrations.storage.bind"}}</h3>
+  <fieldset><legend class="text-sm font-medium">{{t "admin.integrations.storage.source"}}</legend>
+    <label class="inline-flex items-center gap-1.5 me-4"><input type="radio" name="source" value="r2" data-source-r2 {{if or (eq (index .Form "source") "r2") (and (not (index .Form "source")) .Cloudflare.AccountID)}}checked{{end}} {{if not .Cloudflare.AccountID}}disabled{{end}}> Cloudflare R2</label>
+    <label class="inline-flex items-center gap-1.5"><input type="radio" name="source" value="s3" data-source-s3 {{if or (eq (index .Form "source") "s3") (not .Cloudflare.AccountID)}}checked{{end}}> {{t "admin.integrations.storage.s3"}}</label>
+    {{template "partials/field_errors" (index .Fields "source")}}
+    <p class="text-xs text-muted">{{t "admin.integrations.storage.source.help"}}</p>
+  </fieldset>
+  <div data-s3-only><label class="block text-sm">{{t "admin.connections.endpoint"}}<input name="endpoint" type="url" dir="ltr" value="{{index .Form "endpoint"}}" placeholder="https://s3.eu-central-1.amazonaws.com" class="block w-full h-10 rounded border {{if index .Fields "endpoint"}}border-red{{else}}border-line{{end}} bg-panel px-2 font-mono text-xs mt-1"></label>{{template "partials/field_errors" (index .Fields "endpoint")}}</div>
+  <div class="grid gap-3 sm:grid-cols-2">
+    <div><label class="block text-sm">{{t "admin.connections.bucket"}}<input name="bucket" dir="ltr" list="r2-buckets" value="{{index .Form "bucket"}}" maxlength="63" class="block w-full h-10 rounded border {{if index .Fields "bucket"}}border-red{{else}}border-line{{end}} bg-panel px-2 font-mono text-xs mt-1"></label>{{template "partials/field_errors" (index .Fields "bucket")}}
+      <datalist id="r2-buckets">{{range .Inventory}}{{if eq .Kind "r2"}}{{range .Items}}<option value="{{.Name}}"></option>{{end}}{{end}}{{end}}</datalist></div>
+    <div><label class="block text-sm">{{t "admin.connections.region"}}<input name="region" dir="ltr" value="{{if index .Form "region"}}{{index .Form "region"}}{{else}}auto{{end}}" maxlength="64" class="block w-full h-10 rounded border border-line bg-panel px-2 font-mono text-xs mt-1"></label>{{template "partials/field_errors" (index .Fields "region")}}</div>
+  </div>
+  <div><label class="block text-sm">{{t "admin.connections.name"}}<input name="name" value="{{index .Form "name"}}" maxlength="100" class="block w-full h-10 rounded border border-line bg-panel px-2 mt-1"></label>{{template "partials/field_errors" (index .Fields "name")}}</div>
+  <div class="grid gap-3 sm:grid-cols-2">
+    <div><label class="block text-sm">{{t "admin.connections.access_key"}}<input name="access_key" type="password" dir="ltr" autocomplete="new-password" class="block w-full h-10 rounded border {{if index .Fields "access_key"}}border-red{{else}}border-line{{end}} bg-panel px-2 font-mono text-xs mt-1"></label>{{template "partials/field_errors" (index .Fields "access_key")}}</div>
+    <div><label class="block text-sm">{{t "admin.connections.secret_key"}}<input name="secret_key" type="password" dir="ltr" autocomplete="new-password" class="block w-full h-10 rounded border border-line bg-panel px-2 font-mono text-xs mt-1"></label></div>
+  </div>
+  <p class="text-xs text-muted">{{t "admin.integrations.storage.credentials.help"}}</p>
+  {{if .S3Profiles}}<div><label class="block text-sm">{{t "admin.integrations.storage.reuse"}}<select name="connection_id" class="block w-full h-10 rounded border border-line bg-panel px-2 mt-1"><option value="">—</option>{{range .S3Profiles}}<option value="{{.ID}}" {{if eq .ID (index $.Form "connection_id")}}selected{{end}}>{{.Name}} · {{.Bucket}}</option>{{end}}</select></label>{{template "partials/field_errors" (index .Fields "connection_id")}}</div>{{end}}
+  <fieldset><legend class="text-sm font-medium">{{t "admin.integrations.storage.purpose"}}</legend>
+    <label class="inline-flex items-center gap-1.5 me-4"><input type="checkbox" name="purposes" value="media" data-purpose {{if or (eq (index .Form "purposes") "media") (eq (index .Form "purposes") "media,backup") (eq (index .Form "purposes") "backup,media")}}checked{{end}}> {{t "admin.integrations.purpose.media"}}</label>
+    <label class="inline-flex items-center gap-1.5"><input type="checkbox" name="purposes" value="backup" data-purpose {{if or (eq (index .Form "purposes") "backup") (eq (index .Form "purposes") "media,backup") (eq (index .Form "purposes") "backup,media")}}checked{{end}}> {{t "admin.integrations.purpose.backup"}}</label>
+    {{template "partials/field_errors" (index .Fields "purposes")}}
+    <label class="mt-2 flex items-start gap-1.5 text-xs" data-confirm-both hidden><input type="checkbox" name="confirm_both" value="1"> {{t "admin.integrations.storage.confirm_both"}}</label>
+    {{template "partials/field_errors" (index .Fields "confirm_both")}}
+  </fieldset>
+  <button class="admin-primary-button">{{t "admin.integrations.storage.bind.save"}}</button>
+</form>
+<div class="space-y-2 text-sm">
+  <h3 class="font-medium">{{t "admin.integrations.backup.title"}}</h3>
+  <dl class="integrations-dl">
+    <dt>{{t "admin.integrations.backup.schedule"}}</dt><dd dir="ltr">{{.Backup.ScheduleHours}} h</dd>
+    <dt>{{t "admin.integrations.backup.retain"}}</dt><dd dir="ltr">{{.Backup.Retain}}</dd>
+    {{if .Backup.RemoteDestination}}<dt>{{t "admin.integrations.backup.remote"}}</dt><dd dir="ltr" class="font-mono text-xs">{{.Backup.RemoteDestination}}</dd>{{end}}
+    {{if .Backup.LastRemote}}<dt>{{t "admin.integrations.backup.last_remote"}}</dt><dd dir="ltr">{{.Backup.LastRemote}} · {{.Backup.LastRemoteStatus}}</dd>{{end}}
+  </dl>
+  <p class="text-xs text-muted">{{t "admin.integrations.backup.help"}} <a class="underline" href="/admin/system/backups">{{t "admin.backups.title"}}</a> · <a class="underline" href="/admin/settings/storage">{{t "admin.storage.title"}}</a></p>
+</div>
+</div>
+</section>
+
+{{/* ---------------------------------------------------------------- Mail */}}
+<section id="integrations-mail" class="rounded border border-line bg-panel p-4 space-y-4" aria-labelledby="mail-heading">
+<header><h2 id="mail-heading" class="text-base font-bold">{{t "admin.integrations.mail.title"}}</h2><p class="text-sm text-muted mt-1">{{t "admin.integrations.mail.intro"}}</p></header>
+{{with index .Fields "mail_conflict"}}<p role="alert" class="field-error border border-red p-3 text-red">{{t .}}</p>{{end}}
+<dl class="integrations-dl text-sm">
+  <dt>{{t "admin.integrations.status"}}</dt><dd>{{if .Mail.Configured}}<span class="integrations-lamp integrations-lamp-passed">{{t "admin.integrations.configured"}}</span>{{else}}<span class="integrations-lamp integrations-lamp-not_checked">{{t "admin.integrations.not_configured"}}</span>{{end}} <span class="text-xs text-muted">{{t "admin.integrations.source.settings"}}</span></dd>
+  <dt>{{t "admin.mail.provider"}}</dt><dd dir="ltr">{{.Mail.Provider}}</dd>
+  {{if eq .Mail.Provider "smtp"}}<dt>SMTP</dt><dd dir="ltr">{{if .Mail.Host}}{{.Mail.Host}}:{{.Mail.Port}} · {{.Mail.TLS}}{{else}}—{{end}}</dd>
+  <dt>{{t "admin.mail.username"}}</dt><dd dir="ltr">{{if .Mail.Username}}{{.Mail.Username}}{{else}}—{{end}} · {{if .Mail.PasswordSet}}{{t "admin.mail.password_set"}}{{else}}{{t "admin.mail.password_unset"}}{{end}}</dd>
+  {{else}}<dt>Resend</dt><dd>{{if .Mail.APIKeySet}}{{t "admin.mail.key_set"}}{{else}}{{t "admin.mail.key_unset"}}{{end}}</dd>{{end}}
+  <dt>{{t "admin.mail.from"}}</dt><dd dir="ltr">{{if .Mail.From}}{{.Mail.FromName}} &lt;{{.Mail.From}}&gt;{{else}}—{{end}}</dd>
+  <dt>{{t "admin.mail.reply_to"}}</dt><dd dir="ltr">{{if .Mail.ReplyTo}}{{.Mail.ReplyTo}}{{else}}—{{end}}</dd>
+  <dt>{{t "admin.integrations.mail.evidence"}}</dt><dd>{{with .Mail.Operation}}<span class="integrations-lamp integrations-lamp-{{if eq .Status "passed"}}passed{{else if eq .Status "failed"}}incomplete{{else}}not_checked{{end}}">{{.Status}}</span> {{with .CheckedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{end}} <span class="text-xs text-muted" dir="ltr">{{.Reason}}</span>{{else}}<span class="text-muted">{{t "admin.integrations.lamp.not_checked"}}</span>{{end}}</dd>
+</dl>
+<details class="integrations-editor" {{if or (index .Fields "mail_host") (index .Fields "mail_from") (index .Fields "mail_port") (index .Fields "mail_tls") (index .Fields "mail_reply_to") (index .Fields "mail_provider") (index .Fields "mail_password") (index .Fields "mail_resend_api_key")}}open{{end}}><summary>{{t "admin.integrations.mail.edit"}}</summary>
+<form method="post" action="/admin/settings/integrations/mail" class="space-y-3 mt-3" novalidate x-data="{ provider: $el.dataset.provider }" data-provider="{{.MailForm.Provider}}">
+  <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="edit_token" value="{{.MailForm.EditToken}}">
+  <div><label for="im-provider" class="block text-sm">{{t "admin.mail.provider"}}</label><select id="im-provider" name="provider" x-model="provider" class="h-10 w-full rounded border border-line bg-panel px-2"><option value="smtp" {{if eq .MailForm.Provider "smtp"}}selected{{end}}>SMTP</option><option value="resend" {{if eq .MailForm.Provider "resend"}}selected{{end}}>Resend</option></select>{{template "partials/field_errors" (index .Fields "mail_provider")}}</div>
+  <fieldset x-show="provider === 'smtp'" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_6rem_9rem]">
+    <legend class="sr-only">SMTP</legend>
+    <div><label class="block text-sm">{{t "admin.mail.host"}}<input name="host" value="{{.MailForm.Host}}" dir="ltr" class="block w-full h-10 rounded border {{if index .Fields "mail_host"}}border-red{{else}}border-line{{end}} bg-panel px-2 font-mono text-xs mt-1"></label>{{template "partials/field_errors" (index .Fields "mail_host")}}</div>
+    <div><label class="block text-sm">{{t "admin.mail.port"}}<input name="port" value="{{.MailForm.Port}}" inputmode="numeric" dir="ltr" class="block w-full h-10 rounded border {{if index .Fields "mail_port"}}border-red{{else}}border-line{{end}} bg-panel px-2 font-mono text-xs mt-1"></label>{{template "partials/field_errors" (index .Fields "mail_port")}}</div>
+    <div><label class="block text-sm">{{t "admin.mail.tls"}}<select name="tls" class="block w-full h-10 rounded border border-line bg-panel px-2 mt-1">{{range .TLSModes}}<option value="{{.}}" {{if eq . $.MailForm.TLS}}selected{{end}}>{{t (printf "admin.mail.tls_%s" .)}}</option>{{end}}</select></label>{{template "partials/field_errors" (index .Fields "mail_tls")}}</div>
+    <div><label class="block text-sm">{{t "admin.mail.username"}}<input name="username" value="{{.MailForm.Username}}" dir="ltr" autocomplete="off" class="block w-full h-10 rounded border border-line bg-panel px-2 mt-1"></label></div>
+    <div class="sm:col-span-2"><label class="block text-sm">{{t "admin.mail.password"}}<input name="password" type="password" autocomplete="new-password" class="block w-full h-10 rounded border border-line bg-panel px-2 mt-1"></label><p class="text-xs text-muted">{{if .Mail.PasswordSet}}{{t "admin.mail.password_set"}}{{else}}{{t "admin.mail.password_unset"}}{{end}}</p>{{if .Mail.PasswordSet}}<label class="inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_password"> {{t "admin.mail.password_clear"}}</label>{{end}}{{template "partials/field_errors" (index .Fields "mail_password")}}</div>
+  </fieldset>
+  <fieldset x-show="provider === 'resend'"><legend class="sr-only">Resend</legend><label class="block text-sm">{{t "admin.mail.resend_key"}}<input name="resend_api_key" type="password" dir="ltr" autocomplete="new-password" class="block w-full h-10 rounded border border-line bg-panel px-2 mt-1"></label><p class="text-xs text-muted">{{if .Mail.APIKeySet}}{{t "admin.mail.key_set"}}{{else}}{{t "admin.mail.key_unset"}}{{end}}</p>{{if .Mail.APIKeySet}}<label class="inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_resend_api_key"> {{t "admin.mail.key_clear"}}</label>{{end}}{{template "partials/field_errors" (index .Fields "mail_resend_api_key")}}</fieldset>
+  <div class="grid gap-3 sm:grid-cols-3">
+    <div><label class="block text-sm">{{t "admin.mail.from"}}<input name="from" type="email" value="{{.MailForm.From}}" dir="ltr" class="block w-full h-10 rounded border {{if index .Fields "mail_from"}}border-red{{else}}border-line{{end}} bg-panel px-2 mt-1"></label>{{template "partials/field_errors" (index .Fields "mail_from")}}</div>
+    <div><label class="block text-sm">{{t "admin.mail.from_name"}}<input name="from_name" value="{{.MailForm.FromName}}" class="block w-full h-10 rounded border border-line bg-panel px-2 mt-1"></label></div>
+    <div><label class="block text-sm">{{t "admin.mail.reply_to"}}<input name="reply_to" type="email" value="{{.MailForm.ReplyTo}}" dir="ltr" class="block w-full h-10 rounded border {{if index .Fields "mail_reply_to"}}border-red{{else}}border-line{{end}} bg-panel px-2 mt-1"></label>{{template "partials/field_errors" (index .Fields "mail_reply_to")}}</div>
+  </div>
+  <button class="admin-primary-button">{{t "core.action.save"}}</button>
+</form>
+</details>
+<div class="space-y-2">
+  <h3 class="font-medium">{{t "admin.mail.test_title"}}</h3>
+  {{with .TestOutcome}}<div role="status" class="rounded border {{if .Accepted}}border-green bg-green-soft{{else}}border-red{{end}} px-3 py-2 text-sm">
+    <p><strong>{{t "admin.integrations.mail.acceptance"}}:</strong> {{if .Accepted}}{{t "admin.integrations.mail.accepted"}}{{else}}{{t "admin.integrations.mail.rejected"}} <span dir="ltr">{{.Error}}</span>{{end}} <span dir="ltr" class="text-xs text-muted">({{.Provider}} · {{.Recipient}} · {{.At}})</span></p>
+    <p><strong>{{t "admin.integrations.mail.delivery"}}:</strong> {{t "admin.integrations.mail.delivery.not_verified"}}</p>
+  </div>{{end}}
+  {{with index .Fields "mail_test"}}<p class="field-error text-red text-sm">{{t .}}</p>{{end}}
+  {{if .CanTest}}
+  <form method="post" action="/admin/settings/integrations/mail/test" class="flex flex-wrap items-end gap-3" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div><label for="im-test-to" class="block text-sm">{{t "admin.integrations.mail.test_to"}}</label><input id="im-test-to" name="to" type="email" dir="ltr" value="{{index .Form "to"}}" placeholder="{{with user}}{{.Email}}{{end}}" class="h-10 w-72 max-w-full rounded border {{if index .Fields "mail_to"}}border-red{{else}}border-line{{end}} bg-panel px-2">{{template "partials/field_errors" (index .Fields "mail_to")}}</div>
+    <button class="admin-secondary-button" {{if not .Mail.Configured}}disabled{{end}}>{{icon "send"}} {{t "admin.mail.test_send"}}</button>
+  </form>
+  <p class="text-xs text-muted">{{t "admin.integrations.mail.test_help"}}</p>
+  {{else}}<p class="text-xs text-muted">{{t "admin.integrations.mail.test_permission"}}</p>{{end}}
+</div>
+</section>
+</div>
+{{end}}
+
+{{define "integrations/meta"}}{{if eq .Status "never"}}{{t "admin.integrations.meta.never"}}{{else}}{{t (printf "admin.integrations.meta.%s" .Status)}}{{with .CheckedAt}} · <time datetime="{{.}}" dir="ltr">{{.}}</time>{{end}}{{if .Age}} · {{t "admin.integrations.meta.age"}} <span dir="ltr">{{.Age}}</span>{{end}}{{if .Error}} · <span class="text-red" dir="ltr">{{.Error}}</span>{{end}}{{end}}{{end}}

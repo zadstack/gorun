@@ -72,6 +72,8 @@ type handlers struct {
 
 	canvasAIOnce        sync.Once
 	canvasAISuggestions *canvasAICache
+
+	mailTests mailTestLimiter // Integrations → Mail test sends, per operator
 }
 
 // Register declares permissions, publishes the mailer, adds nav items,
@@ -106,6 +108,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.update.Register()
 	h.registerReleaseObservation()
 	h.registerCapabilityObservations()
+	h.registerIntegrationObservations()
 	d.Services.Set(observe.ServiceName, h.observe)
 	d.Services.Set(update.ServiceName, h.update)
 	// Operations left running by a previous process are reconciled before
@@ -133,6 +136,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.apiOperations()
 	h.capabilityAPIOperations()
 	h.capabilityTestAPIOperations()
+	h.integrationAPIOperations()
 	h.updateAPIOperations()
 	h.observationAPIOperations()
 	h.backupScheduleAPIOperations()
@@ -171,6 +175,7 @@ func addNav(d *kernel.Deps) {
 		{ID: "storage", LabelKey: "admin.storage.title", Icon: "hard-drive", Href: "/admin/settings/storage", Permission: PermSettings, Group: "integrations", Position: 820},
 		{ID: "users", LabelKey: "admin.nav.users", Icon: "users", Href: "/admin/users", Permission: PermUsers, Group: "settings", Position: 720},
 		{ID: "roles", LabelKey: "admin.nav.roles", Icon: "shield", Href: "/admin/roles", Permission: PermUsers, Group: "settings", Position: 725},
+		{ID: "settings.integrations", LabelKey: "admin.integrations.title", Icon: "layers", Href: "/admin/settings/integrations", Permission: PermSettings, Group: "integrations", Position: 790},
 		{ID: "settings.connections", LabelKey: "admin.connections.title", Icon: "plug", Href: "/admin/settings/connections", Permission: PermSettings, Group: "integrations", Position: 800},
 		{ID: "settings", LabelKey: "admin.nav.settings", Icon: "settings", Href: "/admin/settings/general", Permission: PermSettings, Group: "settings", Position: 700},
 		{ID: "settings.workspace", LabelKey: "admin.workspace.nav", Icon: "layout-template", Href: "/admin/workspace", Permission: PermSettings, Group: "settings", Position: 702},

@@ -125,7 +125,7 @@ func (h *handlers) mailRevision(ctx context.Context, key string) (string, error)
 		return "", nil
 	}
 	parts := []string{}
-	for _, k := range []string{"mail.host", "mail.port", "mail.username", "mail.from", "mail.from_name", "mail.tls"} {
+	for _, k := range []string{"mail.provider", "mail.host", "mail.port", "mail.username", "mail.from", "mail.from_name", "mail.tls", "mail.reply_to"} {
 		parts = append(parts, h.d.Settings.GetString(ctx, k, ""))
 	}
 	parts = append(parts, u.Email)
@@ -277,6 +277,8 @@ func (h *handlers) capabilityRefresh(w http.ResponseWriter, r *http.Request, kin
 		api.NotFound(w)
 	case errors.Is(err, observe.ErrDisabled):
 		api.WriteError(w, http.StatusConflict, "capability_disabled", "the capability is not configured or disabled", nil)
+	case errors.Is(err, observe.ErrManual):
+		api.WriteError(w, http.StatusConflict, "manual_only", "results of this kind are recorded by an explicit action, not a refresh", nil)
 	default:
 		api.Fail(w, r, err)
 	}

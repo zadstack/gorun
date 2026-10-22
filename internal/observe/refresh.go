@@ -156,7 +156,7 @@ func (s *Service) Tick(ctx context.Context) error {
 
 func (s *Service) tickKind(ctx context.Context, kind string) error {
 	spec, _ := s.spec(kind)
-	if spec.Keys == nil || spec.Freshness <= 0 || !spec.enabled(ctx) {
+	if spec.Manual || spec.Keys == nil || spec.Freshness <= 0 || !spec.enabled(ctx) {
 		return nil
 	}
 	keys, err := spec.Keys(ctx)

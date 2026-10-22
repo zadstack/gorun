@@ -17,6 +17,7 @@ import (
 var observationErrors = []kernel.APIErrorResponse{
 	{Status: 404, Code: "not_found", Description: "Unknown capability kind, or the key no longer exists in configuration"},
 	{Status: 409, Code: "capability_disabled", Description: "The capability is disabled; saved observations stay readable but no refresh runs"},
+	{Status: 409, Code: "manual_only", Description: "Results of this kind are recorded by an explicit action (for example a Worker identity check with a pasted key), never by a refresh"},
 }
 
 func (h *handlers) observationAPIOperations() {
@@ -80,6 +81,8 @@ func (h *handlers) apiObservationRefresh(w http.ResponseWriter, r *http.Request)
 		api.NotFound(w)
 	case errors.Is(err, observe.ErrDisabled):
 		api.WriteError(w, http.StatusConflict, "capability_disabled", "the capability is disabled; enable it and restart before refreshing", nil)
+	case errors.Is(err, observe.ErrManual):
+		api.WriteError(w, http.StatusConflict, "manual_only", "results of this kind are recorded by an explicit action, not a refresh", nil)
 	default:
 		api.Fail(w, r, err)
 	}

@@ -56,6 +56,7 @@ var (
 	ErrUnknownKind = errors.New("observe: unknown capability kind")
 	ErrDisabled    = errors.New("observe: capability disabled")
 	ErrNotFound    = errors.New("observe: key not found")
+	ErrManual      = errors.New("observe: results of this kind are recorded by explicit actions only")
 )
 
 // NotFound lets api.Fail map ErrNotFound to 404.
@@ -100,6 +101,11 @@ type Spec struct {
 	Run func(ctx context.Context, key, revision string) (Result, error)
 	// Remediation is the operator hint stored with a failed attempt.
 	Remediation string
+	// Manual marks a kind whose results come only from Record (an explicit
+	// operator action with input the job queue cannot carry, such as a
+	// pasted key). Refresh returns ErrManual, the scheduler never admits
+	// it, and Run is never called.
+	Manual bool
 }
 
 func (s Spec) jobKind() string { return JobKindPrefix + s.Kind }
@@ -232,6 +238,9 @@ func (s *Service) Refresh(ctx context.Context, kind, key string) (Ref, error) {
 	spec, ok := s.spec(kind)
 	if !ok {
 		return Ref{}, ErrUnknownKind
+	}
+	if spec.Manual {
+		return Ref{}, ErrManual
 	}
 	if !spec.enabled(ctx) {
 		return Ref{}, ErrDisabled

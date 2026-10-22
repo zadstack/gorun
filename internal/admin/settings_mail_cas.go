@@ -60,7 +60,7 @@ func mailFromSnapshot(s map[string]string) mailInput {
 	if tls == "" {
 		tls = "starttls"
 	}
-	return mailInput{EditToken: generalEditToken(s), Provider: provider, Host: get("mail.host", ""), Port: port, Username: get("mail.username", ""), From: get("mail.from", ""), FromName: get("mail.from_name", ""), TLS: tls}
+	return mailInput{EditToken: generalEditToken(s), Provider: provider, Host: get("mail.host", ""), Port: port, Username: get("mail.username", ""), From: get("mail.from", ""), FromName: get("mail.from_name", ""), ReplyTo: get("mail.reply_to", ""), TLS: tls}
 }
 
 // Both groups are checked inside the write transaction when an API patch changes both.

@@ -27,7 +27,13 @@ func (h *handlers) listConnections(ctx context.Context) ([]connectionRecord, err
 	return rows, nil
 }
 func (h *handlers) writeConnection(ctx context.Context, c connectionRecord, expected, action string, remove bool) error {
-	return db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
+	return db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error { return h.writeConnectionTx(ctx, tx, c, expected, action, remove) })
+}
+
+// writeConnectionTx is writeConnection inside the caller's transaction, so
+// a profile and the destinations activated from it commit together.
+func (h *handlers) writeConnectionTx(ctx context.Context, tx *sql.Tx, c connectionRecord, expected, action string, remove bool) error {
+	{
 		var raw string
 		err := tx.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key=?`, connectionPrefix+c.ID).Scan(&raw)
 		if errors.Is(err, sql.ErrNoRows) {
@@ -62,5 +68,5 @@ func (h *handlers) writeConnection(ctx context.Context, c connectionRecord, expe
 		}
 		h.d.Audit.RecordTx(ctx, tx, action, "connection", c.ID, map[string]any{"kind": c.Kind})
 		return nil
-	})
+	}
 }
