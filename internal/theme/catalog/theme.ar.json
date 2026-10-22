@@ -157,5 +157,6 @@
   "overview.show_all_previews": "عرض كل المعاينات",
   "overview.no_preview_match": "لا توجد معاينة مطابقة للبحث.",
   "overview.focus_preview": "التركيز على هذه الصفحة",
-  "overview.link_preview": "رابط في الموقع"
+  "overview.link_preview": "رابط في الموقع",
+  "settings.variant_unavailable": "غير متاح في هذا القالب: %s."
 }

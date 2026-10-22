@@ -120,6 +120,12 @@
   ],
   "supports": [
     "rtl",
-    "identity"
+    "identity",
+    "header:rail",
+    "header:framed",
+    "header:editorial",
+    "footer:signature",
+    "footer:columns",
+    "footer:minimal"
   ]
 }

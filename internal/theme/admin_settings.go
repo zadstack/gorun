@@ -111,8 +111,20 @@ func (a *admin) settingViews(ctx context.Context, schema []content.Field, values
 			b, _ := values[f.Key].(bool)
 			v.Checked = b || v.Value == "true" || v.Value == "1"
 		case "select":
+			declared, isVariant := []string(nil), false
+			if slot, ok := variantSlotOf(f.Key); ok {
+				declared, isVariant = DeclaredVariants(a.s.Active(ctx), slot), true
+			}
+			var missing []string
 			for _, o := range f.Options {
+				if isVariant && !slices.Contains(declared, o.Value) {
+					missing = append(missing, pickLabel(o.Label, locale, o.Value))
+					continue
+				}
 				v.Options = append(v.Options, settingChoice{Value: o.Value, Label: pickLabel(o.Label, locale, o.Value), Selected: o.Value == v.Value})
+			}
+			if len(missing) > 0 && a.s.d.I18n != nil {
+				v.Help = strings.TrimSpace(v.Help + " " + a.s.d.I18n.T(locale, "theme.settings.variant_unavailable", strings.Join(missing, "، ")))
 			}
 		}
 		v.CanResetIdentity = isIdentityResetKey(f.Key)
