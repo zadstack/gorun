@@ -14,5 +14,5 @@
 </section>
 {{- /* Services and prices come from the store when it has active products. */ -}}
 {{with products}}<section class="sb-services-home" aria-labelledby="sb-services-title"><div class="sb-section-head"><h2 id="sb-services-title">{{t "biz.services_title"}}</h2><a href="{{url "/shop"}}">{{t "biz.all_services"}}</a></div><div class="sb-service-grid">{{$n := 0}}{{range .}}{{range .Products}}{{if lt $n 6}}{{$n = add $n 1}}<article class="sb-service-card"><h3><a href="{{url (print "/product/" .Slug)}}">{{.Name}}</a></h3>{{with .ShortDescription}}<p>{{excerpt . 24}}</p>{{end}}<p class="sb-service-price" dir="ltr">{{if eq .PriceMinor 0}}{{t "biz.free_price"}}{{else}}{{money .PriceMinor .Currency}}{{end}}</p></article>{{end}}{{end}}{{end}}</div></section>{{end}}
-<section class="sb-archive">{{component "home-stories" .}}</section>
+<section class="sb-archive">{{if .Items}}{{component "home-stories" .}}{{else}}<p class="sb-empty">{{t "empty"}}</p>{{end}}</section>
 {{part "footer" .}}
