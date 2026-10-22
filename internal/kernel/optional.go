@@ -64,7 +64,7 @@ func AddonEnabled(ctx context.Context, d *sql.DB, name string) (bool, error) {
 	// invalid value.
 	var on *bool
 	if err := json.Unmarshal([]byte(raw), &on); err != nil || on == nil {
-		return false, fmt.Errorf("kernel: setting %s must be a JSON boolean (true or false), got %s", AddonSettingKey(name), raw)
+		return false, fmt.Errorf("kernel: setting %s must be a JSON boolean (true or false), got %s; repair it with GORUN_ADDONS='{\"%s\":\"disabled\"}' gorun settings set %s true", AddonSettingKey(name), raw, name, AddonSettingKey(name))
 	}
 	return *on, nil
 }
