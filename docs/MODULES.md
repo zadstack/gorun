@@ -148,4 +148,4 @@ Disabling the `ext` module removes its Extensions UI, routes, hook subscriptions
 worker. It does not revoke existing `ext:<slug>` API keys: scoped REST access remains available
 through the core API. Deactivating an individual extension stops its hook delivery but also keeps
 its API key. Uninstalling the extension revokes its key; operators can explicitly revoke a key
-through API key administration when immediate REST access removal is required.
+under **Admin → API keys** when immediate REST access removal is required.

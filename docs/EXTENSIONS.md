@@ -85,7 +85,7 @@ Unknown manifest fields are rejected.
 |---|---|---|
 | **Install** | manifest validated; package stored in `<DataDir>/extensions/<slug>/`; row `installed`; declared **content types registered** (`system=false`); setting defaults written to `ext.<slug>.settings.<key>` (existing values kept); type slugs recorded in `ext.<slug>.types`; an **HMAC secret** generated and stored encrypted (AES-GCM under `GORUN_SECRET_KEY`); an **API key** named `ext:<slug>` issued with the manifest permissions as scopes (owned by the installing admin). The secret and the key are **shown once** in the install response and never again. | `ext.install` |
 | **Activate** | missing declared types re-created (existing ones are never overwritten); hooks subscribed; status `active`; failure counter reset | `ext.activate` |
-| **Deactivate** | delivery stops immediately (no restart); data kept; status `disabled` | `ext.deactivate` |
+| **Deactivate** | delivery stops immediately (no restart); data kept; status `disabled`; the `ext:<slug>` API key remains valid for scoped REST access. Uninstall the extension or revoke the key under **Admin → API keys** to remove REST access. | `ext.deactivate` |
 | **Uninstall** | subscriptions removed, API key revoked, extension rows deleted. Content types, their content and settings are **kept** unless **purge** is chosen, which hard-deletes every item of the declared types, the types, the `ext.<slug>.*` settings and the package directory. | `ext.uninstall` |
 
 Reinstalling a slug (after an uninstall without purge) reuses the kept
