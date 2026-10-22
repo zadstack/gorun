@@ -3,7 +3,9 @@ package update
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -691,6 +693,10 @@ func TestCoolifyAdapterNeverLeaksCredentialsAndRequiresResourceAcceptance(t *tes
 			t.Error("missing bearer")
 		}
 		switch {
+		case r.Method == "GET" && r.URL.Path == "/api/v1/applications/site_123":
+			w.Write([]byte(`{"build_pack":"dockerimage","docker_registry_image_name":"ghcr.io/zadstack/gorun","docker_registry_image_tag":"0.15.0"}`))
+		case r.Method == "PATCH" && r.URL.Path == "/api/v1/applications/site_123":
+			w.Write([]byte(`{}`))
 		case r.Method == "POST" && r.URL.Path == "/api/v1/deploy":
 			w.Write([]byte(`{"deployments":[{"resource_uuid":"site_123","deployment_uuid":"job123"}]}`))
 		case r.Method == "GET" && r.URL.Path == "/api/v1/deployments/job123":
@@ -715,7 +721,7 @@ func TestCoolifyAdapterNeverLeaksCredentialsAndRequiresResourceAcceptance(t *tes
 	if err != nil {
 		t.Fatal(err)
 	}
-	ref, err := ad.Activate(context.Background(), Artifact{Version: "0.15.0"})
+	ref, err := ad.Activate(context.Background(), Artifact{Version: "0.15.0", ID: "ghcr.io/zadstack/gorun:0.15.0"})
 	if err != nil || ref != "job123" {
 		t.Fatalf("%q %v", ref, err)
 	}
@@ -733,11 +739,15 @@ func TestCoolifyAdapterNeverLeaksCredentialsAndRequiresResourceAcceptance(t *tes
 	}
 	// A provider that does not echo the configured resource is not accepted.
 	other := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			w.Write([]byte(`{"build_pack":"dockerimage","docker_registry_image_name":"ghcr.io/zadstack/gorun","docker_registry_image_tag":"0.15.0"}`))
+			return
+		}
 		w.Write([]byte(`{"deployments":[{"resource_uuid":"other","deployment_uuid":"job9"}]}`))
 	}))
 	defer other.Close()
 	ad2, _ := NewCoolifyAdapter(other.URL, "fake-token", "site_123", other.Client())
-	if _, err := ad2.Activate(context.Background(), Artifact{}); err == nil {
+	if _, err := ad2.Activate(context.Background(), Artifact{Version: "0.15.0", ID: "ghcr.io/zadstack/gorun:0.15.0"}); err == nil {
 		t.Fatal("accepted an unrelated deployment")
 	}
 }
@@ -794,5 +804,141 @@ func TestVersionComparison(t *testing.T) {
 		if _, ok := parseVersion(bad); ok {
 			t.Errorf("parsed %q", bad)
 		}
+	}
+}
+
+// pinningAdapter refuses unpinnable targets before any backup.
+type pinningAdapter struct {
+	fakeAdapter
+	refuse error
+}
+
+func (p *pinningAdapter) CanActivate(context.Context, Artifact) error { return p.refuse }
+
+func TestUnpinnableTargetIsRefusedBeforeBackup(t *testing.T) {
+	w := newWorld(t)
+	ad := &pinningAdapter{refuse: fmt.Errorf("%w: resource build pack \"nixpacks\" deploys its configured source", ErrUnpinnable)}
+	ad.status = Activation{Status: ActivationQueued}
+	q := jobs.New(w.sqlDB(), w.log)
+	s := New(w.sqlDB(), q, w.log, w.h.config("0.14.1", w.src, ad))
+	s.Register()
+	ctx := context.Background()
+	op, err := s.Request(ctx, Request{Version: "0.15.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	(&process{q: q, s: s}).drain(t)
+	got, _ := s.Get(ctx, op.ID)
+	ph := phaseOf(got, PhaseVerification)
+	if got.Status != StatusFailed || ph.Status != PhaseFailed || !strings.Contains(ph.Error, "cannot guarantee") || got.Retryable || !strings.Contains(string(ph.Result), `"target_pinnable":false`) {
+		t.Fatalf("%+v %+v", got, ph)
+	}
+	if w.h.backups.Load() != 0 || ad.count() != 0 || got.DeploymentRef != "" {
+		t.Fatal("unpinnable target reached backup or activation")
+	}
+	// A pinnable target passes verification and proceeds.
+	ad.refuse = nil
+	op, _ = s.Request(ctx, Request{Version: "0.15.0"})
+	(&process{q: q, s: s}).drain(t)
+	got, _ = s.Get(ctx, op.ID)
+	if phaseOf(got, PhaseVerification).Status != PhasePassed || !strings.Contains(string(phaseOf(got, PhaseVerification).Result), `"target_pinnable":true`) || w.h.backups.Load() != 1 {
+		t.Fatalf("%+v", got)
+	}
+}
+
+func TestReleaseCompatibilityDataGuardsSchemaAndTheme(t *testing.T) {
+	w := newWorld(t)
+	a := w.src.releases["0.15.0"]
+	a.Migrations = []string{"content/0001_content.sql"}
+	a.Themes = []string{"default"}
+	w.src.releases["0.15.0"] = a
+	w.h.migrations.Store([]string{"content/0001_content.sql", "content/0002_newer.sql"})
+	p := w.boot("0.14.1")
+	ctx := context.Background()
+	op, _ := p.s.Request(ctx, Request{Version: "0.15.0"})
+	p.drain(t)
+	got, _ := p.s.Get(ctx, op.ID)
+	ph := phaseOf(got, PhaseCompatibility)
+	if ph.Status != PhaseFailed || !strings.Contains(ph.Error, "does not know") || !strings.Contains(string(ph.Result), `"migrations_unknown_to_target":["content/0002_newer.sql"]`) || w.h.backups.Load() != 0 {
+		t.Fatalf("%+v", ph)
+	}
+	// Schema fine, theme unsupported by the release.
+	w.h.migrations.Store([]string{"content/0001_content.sql"})
+	w.h.compat = Report{OK: true, Data: map[string]any{"theme": "magazine"}}
+	op, _ = p.s.Request(ctx, Request{Version: "0.15.0"})
+	p.drain(t)
+	got, _ = p.s.Get(ctx, op.ID)
+	if ph := phaseOf(got, PhaseCompatibility); ph.Status != PhaseFailed || !strings.Contains(ph.Error, "theme") {
+		t.Fatalf("%+v", ph)
+	}
+	// Supported theme and known migrations pass with release_data checked;
+	// a release without data records unknown instead of guessing.
+	w.h.compat = Report{OK: true, Data: map[string]any{"theme": "default"}}
+	op, _ = p.s.Request(ctx, Request{Version: "0.15.0"})
+	p.drain(t)
+	got, _ = p.s.Get(ctx, op.ID)
+	if ph := phaseOf(got, PhaseCompatibility); ph.Status != PhasePassed || !strings.Contains(string(ph.Result), `"release_data":"checked"`) {
+		t.Fatalf("%+v", ph)
+	}
+	w.ad.setStatus(Activation{Status: ActivationFailed})
+	op, _ = p.s.Request(ctx, Request{Version: "0.16.0"})
+	p.drain(t)
+	got, _ = p.s.Get(ctx, op.ID)
+	if ph := phaseOf(got, PhaseCompatibility); !strings.Contains(string(ph.Result), `"release_data":"unknown"`) {
+		t.Fatalf("%+v", ph)
+	}
+}
+
+func TestCoolifyAdapterPinsImageTagOrRefuses(t *testing.T) {
+	app := map[string]string{"build_pack": "dockerimage", "docker_registry_image_name": "ghcr.io/zadstack/gorun", "docker_registry_image_tag": "0.14.1"}
+	var calls []string
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, r.Method+" "+r.URL.Path)
+		switch {
+		case r.Method == "GET" && r.URL.Path == "/api/v1/applications/site_123":
+			json.NewEncoder(w).Encode(app)
+		case r.Method == "PATCH" && r.URL.Path == "/api/v1/applications/site_123":
+			var body map[string]string
+			json.NewDecoder(r.Body).Decode(&body)
+			app["docker_registry_image_name"], app["docker_registry_image_tag"] = body["docker_registry_image_name"], body["docker_registry_image_tag"]
+			w.Write([]byte(`{}`))
+		case r.Method == "POST" && r.URL.Path == "/api/v1/deploy":
+			w.Write([]byte(`{"deployments":[{"resource_uuid":"site_123","deployment_uuid":"dep1"}]}`))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	defer server.Close()
+	ad, err := NewCoolifyAdapter(server.URL, "fake-token", "site_123", server.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	artifact := Artifact{Version: "0.15.0", ID: "ghcr.io/zadstack/gorun:0.15.0"}
+	if err := ad.CanActivate(context.Background(), artifact); err != nil {
+		t.Fatal(err)
+	}
+	ref, err := ad.Activate(context.Background(), artifact)
+	if err != nil || ref != "dep1" || app["docker_registry_image_tag"] != "0.15.0" {
+		t.Fatalf("ref=%q err=%v app=%v", ref, err, app)
+	}
+	if strings.Join(calls, ",") != "GET /api/v1/applications/site_123,GET /api/v1/applications/site_123,PATCH /api/v1/applications/site_123,GET /api/v1/applications/site_123,POST /api/v1/deploy" {
+		t.Fatalf("calls %v", calls)
+	}
+	// A git-based resource cannot be pinned: refused before deploying.
+	app["build_pack"] = "nixpacks"
+	calls = nil
+	if _, err := ad.Activate(context.Background(), artifact); !errors.Is(err, ErrUnpinnable) {
+		t.Fatalf("%v", err)
+	}
+	if strings.Contains(strings.Join(calls, ","), "deploy") || strings.Contains(strings.Join(calls, ","), "PATCH") {
+		t.Fatalf("unpinnable resource was deployed: %v", calls)
+	}
+	// A different image on the resource is refused too.
+	app["build_pack"], app["docker_registry_image_name"] = "dockerimage", "ghcr.io/other/app"
+	if err := ad.CanActivate(context.Background(), artifact); !errors.Is(err, ErrUnpinnable) {
+		t.Fatal(err)
+	}
+	if _, _, ok := splitImage("ghcr.io/zadstack/gorun"); ok {
+		t.Fatal("untagged image accepted")
 	}
 }

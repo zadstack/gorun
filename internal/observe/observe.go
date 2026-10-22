@@ -158,7 +158,6 @@ type Service struct {
 
 	mu    sync.RWMutex
 	specs map[string]Spec
-	once  sync.Once
 }
 
 // New returns a service on d; q must be the queue whose workers will run

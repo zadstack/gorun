@@ -284,7 +284,7 @@ page only shows the running version, and the manual procedures above still apply
 | Downgrade | `GORUN_UPDATE_ALLOW_DOWNGRADE` / `allow_downgrade` | Lets compatibility pass for a lower target after you reviewed schema, feature and security constraints. Recorded on the operation. |
 | Missing digest | `GORUN_UPDATE_ALLOW_MISSING_DIGEST` / `allow_missing_digest` | Accepts releases whose index publishes no `sha256:` digest. Off by default. |
 | Activation timeout | `GORUN_UPDATE_ACTIVATION_TIMEOUT` / `activation_timeout` | How long activation may wait for the provider or operator (default `15m`). |
-| Coolify adapter | `GORUN_UPDATE_COOLIFY_URL/TOKEN/RESOURCE` | Existing operator configuration; when set, activation posts `/api/v1/deploy` and polls `/api/v1/deployments/{id}`. Otherwise the **manual** adapter is used. |
+| Coolify adapter | `GORUN_UPDATE_COOLIFY_URL/TOKEN/RESOURCE` | Existing operator configuration. The resource must be a **Docker image** application: verification reads it (`GET /api/v1/applications/{uuid}`), activation pins `docker_registry_image_name/tag` to the verified artifact (`PATCH`), confirms the pin, then posts `/api/v1/deploy` and polls `/api/v1/deployments/{id}`. A resource that builds from a repository cannot be pinned and the update is **refused at verification**, before any backup. Otherwise the **manual** adapter is used. |
 
 Release index format (publish it from CI or a local supervisor):
 
@@ -292,8 +292,15 @@ Release index format (publish it from CI or a local supervisor):
 {"latest":"0.15.0",
  "releases":[{"version":"0.15.0",
               "artifacts":[{"id":"ghcr.io/zadstack/gorun:0.15.0","digest":"sha256:…"},
-                           {"id":"gorun-0.15.0-linux-amd64.tar.gz","digest":"sha256:…"}]}]}
+                           {"id":"gorun-0.15.0-linux-amd64.tar.gz","digest":"sha256:…"}],
+              "migrations":["content/0001_content.sql","…"],
+              "themes":["default","business","portfolio","magazine","docs"]}]}
 ```
+
+`migrations` (every migration the release knows) and `themes` (slugs it ships or supports)
+are optional compatibility data. When present, the compatibility phase refuses a target that does
+not know a migration already applied to this data, or that does not support the active theme.
+When absent the phase records `release_data: unknown` instead of guessing.
 
 “Latest” is a background observation of this index (System Health → Background
 observations, `GET /api/v1/system/update` → `latest`) with its observed time and
@@ -345,12 +352,12 @@ explicit recovery decision.
 
 ### Limits in this release
 
-- The Coolify adapter deploys the resource's configured source; it cannot pin an
-  image tag to the requested version. Confirm the resource points at the artifact
-  the index describes. Rollback through Coolify requires the prior artifact to be
-  resolvable from the index and the resource to use that tag.
-- Compatibility cannot inspect the target binary's migrations before activation;
-  it records the running schema and refuses when the database is already ahead.
+- The Coolify adapter only updates Docker image resources (pinned tag). Git-built
+  resources are refused rather than deployed as a "version". Rollback re-pins the
+  prior image resolved from the index.
+- Compatibility uses the release index's `migrations`/`themes` when published;
+  without them it can only refuse a database already ahead of the running binary
+  and records `release_data: unknown`.
 - No in-app downgrade of security-sensitive migrations; see §6 A.
 
 ## 8. Path cheat sheet

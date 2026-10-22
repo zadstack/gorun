@@ -382,3 +382,48 @@ func TestUnregisteredKindJobsAreParkedThenReleasedOnReenable(t *testing.T) {
 		t.Fatalf("%+v", o)
 	}
 }
+
+// Parking under live workers: a capability disabled while the queue runs
+// keeps its queued refreshes parked (never claimed), and enabling it
+// again releases them unchanged so they run.
+func TestDisabledCapabilityParksQueuedWorkWhileWorkersRun(t *testing.T) {
+	h := newHarness(t)
+	var enabled atomic.Bool
+	enabled.Store(true)
+	h.register(Spec{Enabled: func(context.Context) bool { return enabled.Load() }})
+	ctx := context.Background()
+	wctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	// Disable first, queue a refresh on the operator's behalf through the
+	// scheduler path (Refresh itself refuses), then start workers.
+	enabled.Store(false)
+	enabled.Store(true)
+	ref, _ := h.s.Refresh(ctx, "probe", "a")
+	enabled.Store(false)
+	if err := h.s.Tick(ctx); err != nil {
+		t.Fatal(err)
+	}
+	h.q.Start(wctx, 2)
+	time.Sleep(150 * time.Millisecond)
+	job, _ := h.q.Get(ctx, ref.JobID)
+	if job.Status != "queued" || job.ParkedReason != "capability disabled" || h.runs.Load() != 0 {
+		t.Fatalf("parked job ran or changed: %+v runs=%d", job, h.runs.Load())
+	}
+	if o := h.get("a"); o.Status != "disabled" {
+		t.Fatalf("%+v", o)
+	}
+	enabled.Store(true)
+	if err := h.s.Tick(ctx); err != nil {
+		t.Fatal(err)
+	}
+	deadline := time.Now().Add(5 * time.Second)
+	for h.get("a").Status != "fresh" && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	cancel()
+	h.q.Wait()
+	job, _ = h.q.Get(ctx, ref.JobID)
+	if job.Status != "done" || job.ParkedReason != "" || job.Attempts != 0 || h.runs.Load() != 1 {
+		t.Fatalf("released job: %+v runs=%d", job, h.runs.Load())
+	}
+}
