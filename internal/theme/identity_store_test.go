@@ -173,3 +173,80 @@ func TestIdentityApplyRejectsInvalid(t *testing.T) {
 		t.Fatalf("invalid applies must not create revisions: %d", len(hist))
 	}
 }
+
+// Header-link values travel with the draft and are written in the apply
+// transaction, after validation, only when the theme declares them.
+func TestIdentityDraftKeepsHeaderLinks(t *testing.T) {
+	e, ctx := identityEnv(t)
+	s := snap("default", map[string]string{idAccent: "#c2410c"}, nil)
+	s.Links = map[string]string{"cta_label": "Call us", "cta_url": "/contact"}
+	if err := e.svc.SaveIdentityDraft(ctx, s); err != nil {
+		t.Fatal(err)
+	}
+	d, ok := e.svc.IdentityDraft(ctx, "default")
+	if !ok || d.Snapshot.Links["cta_label"] != "Call us" {
+		t.Fatalf("draft lost links: %+v", d.Snapshot)
+	}
+	bad := s
+	bad.Links = map[string]string{"cta_label": "Call us", "cta_url": "javascript:alert(1)"}
+	_, err := e.svc.ApplyIdentity(ctx, bad)
+	var ve *IdentityValidationError
+	if !errors.As(err, &ve) || ve.Fields["cta_url"] == "" {
+		t.Fatalf("bad url accepted: %v", err)
+	}
+	if got := e.app.Deps.Settings.GetString(ctx, "theme.default.cta_label", ""); got != "" {
+		t.Fatalf("link written despite invalid apply: %q", got)
+	}
+	if got := e.app.Deps.Settings.GetString(ctx, "theme.default.identity_accent", ""); got != "" {
+		t.Fatalf("identity written despite invalid apply: %q", got)
+	}
+	if _, err := e.svc.ApplyIdentity(ctx, s); err != nil {
+		t.Fatal(err)
+	}
+	if got := e.app.Deps.Settings.GetString(ctx, "theme.default.cta_url", ""); got != "/contact" {
+		t.Fatalf("cta_url = %q", got)
+	}
+}
+
+// A draft remembers the site values it started from; when those changed
+// meanwhile (another theme applied a new title), the draft takes the live
+// value instead of silently restoring the old one.
+func TestIdentityDraftRebasesChangedSiteKeys(t *testing.T) {
+	e, ctx := identityEnv(t)
+	e.setting("site.title", "Before")
+	if err := e.svc.SaveIdentityDraft(ctx, snap("default", nil, map[string]string{"site.title": "Before", "site.tagline": "Draft tag"})); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.ApplyIdentity(ctx, snap("business", nil, map[string]string{"site.title": "Bar"})); err != nil {
+		t.Fatal(err)
+	}
+	d, ok := e.svc.IdentityDraft(ctx, "default")
+	if !ok || d.Snapshot.Site["site.title"] != "Bar" || d.Snapshot.Site["site.tagline"] != "Draft tag" {
+		t.Fatalf("draft not rebased: %+v ok=%v", d.Snapshot.Site, ok)
+	}
+	if len(d.Rebased) != 1 || d.Rebased[0] != "site.title" {
+		t.Fatalf("rebased = %v", d.Rebased)
+	}
+}
+
+// Text contrast is checked against the theme's declared background when
+// the snapshot leaves it empty, as the page promises.
+func TestIdentityApplyContrastUsesThemeDeclaredBackground(t *testing.T) {
+	e, ctx := identityEnv(t)
+	_, err := e.svc.ApplyIdentity(ctx, snap("default", map[string]string{idText: "#fafafa"}, nil))
+	var ve *IdentityValidationError
+	if !errors.As(err, &ve) || ve.Fields[idText] == "" {
+		t.Fatalf("near-white text on the light default theme accepted: %v", err)
+	}
+}
+
+func TestIdentityLengthsCountCharacters(t *testing.T) {
+	e, ctx := identityEnv(t)
+	title := strings.Repeat("ع", 150) // 300 bytes, 150 characters
+	if _, err := e.svc.ApplyIdentity(ctx, snap("default", nil, map[string]string{"site.title": title})); err != nil {
+		t.Fatalf("150-character Arabic title rejected: %v", err)
+	}
+	if _, err := e.svc.ApplyIdentity(ctx, snap("default", nil, map[string]string{"site.title": strings.Repeat("ع", 201)})); err == nil {
+		t.Fatal("201-character title accepted")
+	}
+}

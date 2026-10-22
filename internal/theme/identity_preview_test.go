@@ -1,6 +1,7 @@
 package theme
 
 import (
+	"github.com/zadstack/gorun/internal/kernel"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -71,4 +72,35 @@ func TestIdentityPreviewLogoOverride(t *testing.T) {
 	if got := e.app.Deps.Settings.GetString(adminCtx(), "site.logo", ""); got != "" {
 		t.Fatalf("site.logo persisted: %q", got)
 	}
+}
+
+// The preview must keep its origin so bundled fonts load, allow https
+// images like the public policy, and be frameable by the admin page.
+func TestIdentityPreviewHeadersAllowFontsImagesAndFraming(t *testing.T) {
+	e := newEnv(t, "../../themes")
+	rec := previewRequest(e, IdentityPreviewOptions{View: "home", Locale: "en", Snapshot: snap("default", nil, nil)})
+	csp := rec.Header().Get("Content-Security-Policy")
+	for _, want := range []string{"sandbox allow-same-origin", "img-src 'self' data: blob: https:", "frame-ancestors 'self'", "script-src 'none'"} {
+		if !strings.Contains(csp, want) {
+			t.Errorf("CSP missing %q: %s", want, csp)
+		}
+	}
+	if got := rec.Header().Get("X-Frame-Options"); got != "SAMEORIGIN" {
+		t.Errorf("X-Frame-Options = %q", got)
+	}
+}
+
+// Templates cannot read the draft or the revision list through {{setting}}.
+func TestSettingFuncHidesIdentityDraftAndHistory(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", baseTheme(map[string]string{"templates/index.html": `{{part "header"}}D[{{setting "theme.default.identity_draft"}}]H[{{setting "theme.default.identity_history"}}]A[{{setting "theme.default.identity_accent"}}]{{part "footer"}}`}))
+	e := newEnv(t, root)
+	e.setting("theme.default.identity_draft", map[string]any{"snapshot": map[string]any{"theme": "default", "site": map[string]string{"site.title": "Secret"}}})
+	e.setting("theme.default.identity_history", []map[string]any{{"id": "r1", "author": "u1"}})
+	e.setting("theme.default.identity_accent", "#c2410c")
+	rec, err := e.render(kernel.KindRequest{Kind: KindHome}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustContain(t, rec.Body.String(), "D[]H[]A[#c2410c]")
 }

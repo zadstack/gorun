@@ -17,7 +17,9 @@ type IdentityPreviewOptions struct {
 
 // identityPreviewCSP keeps the preview inert inside the admin iframe: no
 // scripts, no navigation out, framed by this origin only.
-const identityPreviewCSP = "sandbox; default-src 'none'; script-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; frame-ancestors 'self'; form-action 'none'; base-uri 'none'"
+// allow-same-origin keeps the document's origin so bundled fonts and media
+// load; scripts stay blocked by script-src.
+const identityPreviewCSP = "sandbox allow-same-origin; default-src 'none'; script-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; frame-ancestors 'self'; form-action 'none'; base-uri 'none'"
 
 // RenderIdentityPreview renders the active theme with o.Snapshot replacing
 // the stored identity, logos, title and tagline for this request only.
@@ -25,6 +27,7 @@ const identityPreviewCSP = "sandbox; default-src 'none'; script-src 'none'; styl
 func (s *service) RenderIdentityPreview(ctx context.Context, w http.ResponseWriter, r *http.Request, o IdentityPreviewOptions) error {
 	w.Header().Set("Cache-Control", "private, no-store")
 	w.Header().Set("Content-Security-Policy", identityPreviewCSP)
+	w.Header().Set("X-Frame-Options", "SAMEORIGIN") // the admin page frames it; /admin defaults to DENY
 	req := kernel.KindRequest{Kind: KindHome}
 	tc := &Context{Request: r, Locale: o.Locale, Extra: map[string]any{}, Query: map[string]string{}}
 	if o.View == "single" {

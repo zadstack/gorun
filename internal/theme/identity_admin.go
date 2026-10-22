@@ -28,10 +28,6 @@ const (
 	PermIdentity = "settings.manage"
 )
 
-// identityCTAKeys are per-theme header link settings shown on the page when
-// the theme declares them.
-var identityCTAKeys = []string{"cta_label", "cta_url"}
-
 type identityLogoSlot struct {
 	Key, Name, ID, Value, Label, Help string
 	CanPick, Multiple                 bool
@@ -78,6 +74,7 @@ type identityPage struct {
 	CanPickMedia bool
 	PreviewURL   string
 	Locale       string
+	Rebased      string // site keys the draft took from the live site
 }
 
 // registerIdentityAdmin adds the identity page and its preview.
@@ -189,7 +186,7 @@ func (a *admin) identityLogoSlots(ctx context.Context, site map[string]string, e
 
 // identityViews renders the identity schema fields with the form names the
 // page posts (the bare key).
-func (a *admin) identityViews(ctx context.Context, schema []content.Field, values map[string]string, errs map[string]string, disabled bool) []settingView {
+func (a *admin) identityViews(ctx context.Context, schema []content.Field, values map[string]string, errs map[string]string) []settingView {
 	vals := map[string]any{}
 	for k, v := range values {
 		vals[k] = v
@@ -197,7 +194,6 @@ func (a *admin) identityViews(ctx context.Context, schema []content.Field, value
 	views := a.settingViews(ctx, schema, vals, errs)
 	for i := range views {
 		views[i].Name, views[i].ID, views[i].CanResetIdentity = views[i].Key, "identity-"+views[i].Key, false
-		views[i].Disabled = disabled
 	}
 	return views
 }
@@ -214,7 +210,7 @@ func (a *admin) identityState(ctx context.Context, slug string) (IdentitySnapsho
 func (a *admin) ctaSchema(info Info) []content.Field {
 	var out []content.Field
 	for _, f := range settingsSchema(info) {
-		for _, k := range identityCTAKeys {
+		for _, k := range identityLinkKeys {
 			if f.Key == k {
 				out = append(out, f)
 			}
@@ -235,23 +231,24 @@ func (a *admin) renderIdentity(w http.ResponseWriter, r *http.Request, status in
 		views = append(views, identityRevisionView{IdentityRevision: rev, Accent: rev.Snapshot.Get(idAccent), Title: rev.Snapshot.Site["site.title"], Current: i == 0})
 	}
 	cta := map[string]string{}
-	for _, k := range identityCTAKeys {
+	for _, k := range identityLinkKeys {
 		cta[k] = a.s.d.Settings.GetString(ctx, SettingKey(info.Slug, k), "")
-	}
-	for k, v := range snap.Values {
-		if k == "cta_label" || k == "cta_url" {
+		if v, ok := snap.Links[k]; ok {
 			cta[k] = v
 		}
 	}
 	var b brand.Identity
 	canImport := a.s.d.Settings.Get(ctx, "builder.identity", &b) == nil && brand.Validate(b) == nil
 	page := identityPage{Design: a.identityDesign(ctx), Theme: info, Supports: supports, Title: snap.Site["site.title"], Tagline: snap.Site["site.tagline"],
-		Logos: a.identityLogoSlots(ctx, snap.Site, errs), Fields: a.identityViews(ctx, identityFields(), snap.Values, errs, !supports),
-		CTA: a.identityViews(ctx, a.ctaSchema(info), cta, errs, false), Contrast: a.identityContrastFor(ctx, snap), Draft: draft,
+		Logos: a.identityLogoSlots(ctx, snap.Site, errs), Fields: a.identityViews(ctx, identityFields(), snap.Values, errs),
+		CTA: a.identityViews(ctx, a.ctaSchema(info), cta, errs), Contrast: a.identityContrastFor(ctx, snap), Draft: draft,
 		History: views, HistoryValid: valid, CanImport: canImport, Errors: errs, Error: message, CanPickMedia: a.canPickMedia(ctx),
 		PreviewURL: "/admin" + adminIdentityPath + "/preview", Locale: i18n.Locale(ctx)}
 	if page.Title == "" {
 		page.Title = live.Site["site.title"]
+	}
+	if draft != nil && len(draft.Rebased) > 0 {
+		page.Rebased = strings.Join(draft.Rebased, ", ")
 	}
 	if r.Method == http.MethodGet {
 		for _, n := range []string{"saved", "draft", "reverted", "imported", "discarded"} {
@@ -278,10 +275,14 @@ func (a *admin) identityFromForm(r *http.Request, info Info) IdentitySnapshot {
 		for _, k := range IdentityKeys {
 			snap.Values[k] = r.PostForm.Get(k)
 		}
+	} else {
+		// The theme renders none of these; keep whatever it stores.
+		snap.Values = a.s.LiveIdentity(r.Context(), info.Slug).Values
 	}
-	for _, k := range identityCTAKeys {
-		if r.PostForm.Has(k) {
-			snap.Values[k] = r.PostForm.Get(k)
+	if declared := a.ctaSchema(info); len(declared) > 0 {
+		snap.Links = map[string]string{}
+		for _, f := range declared {
+			snap.Links[f.Key] = r.PostForm.Get(f.Key)
 		}
 	}
 	for _, k := range SiteIdentityKeys {
@@ -300,7 +301,14 @@ func (a *admin) identitySave(w http.ResponseWriter, r *http.Request) {
 	info := a.s.Active(ctx)
 	slug := info.Slug
 	redirect := func(flag string) { http.Redirect(w, r, "/admin"+adminIdentityPath+"?"+flag+"=1", http.StatusSeeOther) }
-	switch r.PostForm.Get("action") {
+	action := r.PostForm.Get("action")
+	if posted := r.PostForm.Get("theme"); (action == "apply" || action == "draft" || action == "") && posted != slug {
+		// The page was opened for another theme; never mix identities.
+		snap, _ := a.identityState(ctx, slug)
+		a.renderIdentity(w, r, http.StatusConflict, snap, nil, a.s.d.I18n.T(i18n.Locale(ctx), "theme.identity.error_theme_changed"))
+		return
+	}
+	switch action {
 	case "revert":
 		if _, err := a.s.RevertIdentity(ctx, slug, r.PostForm.Get("revision")); err != nil {
 			if errors.Is(err, ErrNotFound) {
@@ -338,10 +346,6 @@ func (a *admin) identitySave(w http.ResponseWriter, r *http.Request) {
 		redirect("imported")
 	case "apply":
 		snap := a.identityFromForm(r, info)
-		if err := a.applyCTA(ctx, slug, snap); err != nil {
-			a.identityFailed(w, r, slug, err)
-			return
-		}
 		if _, err := a.s.ApplyIdentity(ctx, snap); err != nil {
 			a.identityInvalid(w, r, snap, err)
 			return
@@ -360,21 +364,6 @@ func (a *admin) identitySave(w http.ResponseWriter, r *http.Request) {
 		}
 		redirect("draft")
 	}
-}
-
-// applyCTA stores the header link settings (ordinary theme settings, not
-// part of the identity revision) when the theme declares them.
-func (a *admin) applyCTA(ctx context.Context, slug string, snap IdentitySnapshot) error {
-	for _, k := range identityCTAKeys {
-		v, ok := snap.Values[k]
-		if !ok {
-			continue
-		}
-		if err := a.s.d.Settings.Set(ctx, SettingKey(slug, k), strings.TrimSpace(v)); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (a *admin) identityInvalid(w http.ResponseWriter, r *http.Request, snap IdentitySnapshot, err error) {

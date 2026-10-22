@@ -164,7 +164,7 @@ func (f *funcs) t(key string, args ...any) string {
 
 var (
 	settingPrefixes = []string{"site.", "seo.", "theme.", "social.", "contact."}
-	settingSecrets  = []string{"password", "secret", "token", "apikey", "api_key", "private", "smtp"}
+	settingSecrets  = []string{"password", "secret", "token", "apikey", "api_key", "private", "smtp", "identity_draft", "identity_history"}
 )
 
 // setting returns a public setting as a string. Only keys under

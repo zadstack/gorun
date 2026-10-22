@@ -20,6 +20,10 @@ type IdentitySnapshot struct {
 	Theme  string            `json:"theme"`
 	Values map[string]string `json:"values"`
 	Site   map[string]string `json:"site"`
+	// Links are the theme's header link settings (cta_label, cta_url) when
+	// the theme declares them; they are written with the identity but are
+	// ordinary theme settings, not design tokens.
+	Links map[string]string `json:"links,omitempty"`
 }
 
 // lookup answers a settings key read by templates during a preview: the

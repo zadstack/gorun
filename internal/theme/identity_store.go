@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/db"
@@ -45,6 +46,23 @@ type IdentityDraft struct {
 	Snapshot IdentitySnapshot `json:"snapshot"`
 	SavedAt  string           `json:"saved_at"`
 	Author   string           `json:"author"`
+	// Base holds the live site values when the draft was saved, so a draft
+	// never restores a title or logo that another apply changed meanwhile.
+	Base map[string]string `json:"base,omitempty"`
+	// Rebased lists the site keys replaced by their live value on load.
+	Rebased []string `json:"-"`
+}
+
+// identityLinkKeys are the header link settings a theme may declare.
+var identityLinkKeys = []string{"cta_label", "cta_url"}
+
+// safeLinkURL accepts an internal path or an http(s) URL.
+func safeLinkURL(v string) bool {
+	if v == "" || strings.HasPrefix(v, "/") && !strings.HasPrefix(v, "//") {
+		return true
+	}
+	low := strings.ToLower(v)
+	return strings.HasPrefix(low, "http://") || strings.HasPrefix(low, "https://")
 }
 
 // IdentityValidationError lists invalid fields (identity key or site key →
@@ -76,6 +94,14 @@ func (s IdentitySnapshot) normalize() IdentitySnapshot {
 			out.Site[k] = v
 		}
 	}
+	if s.Links != nil {
+		out.Links = map[string]string{}
+		for _, k := range identityLinkKeys {
+			if v, ok := s.Links[k]; ok {
+				out.Links[k] = strings.TrimSpace(v)
+			}
+		}
+	}
 	return out
 }
 
@@ -102,6 +128,18 @@ func (s *service) IdentityDraft(ctx context.Context, slug string) (IdentityDraft
 	if err := s.d.Settings.Get(ctx, identityDraftKey(slug), &d); err != nil || d.Snapshot.Theme != slug {
 		return IdentityDraft{}, false
 	}
+	if d.Snapshot.Site == nil {
+		d.Snapshot.Site = map[string]string{}
+	}
+	if d.Base != nil {
+		live := s.LiveIdentity(ctx, slug).Site
+		for _, k := range SiteIdentityKeys {
+			if live[k] != d.Base[k] {
+				d.Snapshot.Site[k] = live[k]
+				d.Rebased = append(d.Rebased, k)
+			}
+		}
+	}
 	return d, true
 }
 
@@ -113,14 +151,20 @@ func (s *service) validateSnapshot(ctx context.Context, snap IdentitySnapshot) e
 		vals[k] = v
 	}
 	fields := validateIdentity(vals)
-	if t, b := snap.Values[idText], snap.Values[idBackground]; t != "" && b != "" && hexColor.MatchString(t) && hexColor.MatchString(b) && contrast(t, b) < minTextContrast {
+	if t, b := s.effectiveTextBackground(ctx, snap); t != "" && b != "" && contrast(t, b) < minTextContrast && contrast(t, b) > 0 {
 		fields[idText] = "theme.identity.error_text_contrast"
 	}
-	if title := snap.Site["site.title"]; title == "" || len(title) > 200 {
+	if n := utf8.RuneCountInString(snap.Site["site.title"]); n == 0 || n > 200 {
 		fields["site.title"] = "theme.identity.error_title"
 	}
-	if len(snap.Site["site.tagline"]) > 500 {
+	if utf8.RuneCountInString(snap.Site["site.tagline"]) > 500 {
 		fields["site.tagline"] = "theme.identity.error_tagline"
+	}
+	if utf8.RuneCountInString(snap.Links["cta_label"]) > 200 {
+		fields["cta_label"] = "theme.identity.error_title"
+	}
+	if !safeLinkURL(snap.Links["cta_url"]) {
+		fields["cta_url"] = "theme.identity.error_url"
 	}
 	ms, hasMedia := kernel.Get[media.Service](s.d, kernel.ServiceMedia)
 	for _, k := range []string{"site.logo", "site.logo_light", "site.logo_dark", "site.icon"} {
@@ -142,6 +186,38 @@ func (s *service) validateSnapshot(ctx context.Context, snap IdentitySnapshot) e
 	return nil
 }
 
+// effectiveTextBackground returns the snapshot's text and background colours
+// with the theme's declared colours as fallback (only when the snapshot sets
+// at least one of them, so an untouched theme is never re-validated).
+func (s *service) effectiveTextBackground(ctx context.Context, snap IdentitySnapshot) (text, back string) {
+	text, back = snap.Values[idText], snap.Values[idBackground]
+	if text == "" && back == "" {
+		return "", ""
+	}
+	if text == "" || back == "" {
+		rep := s.Appearance(ctx)
+		declared := func(role string) string {
+			if rep.Declared == nil {
+				return ""
+			}
+			if v := rep.Declared.Colors[role]; v.Available && v.Value != nil {
+				return *v.Value
+			}
+			return ""
+		}
+		if text == "" {
+			text = declared("text")
+		}
+		if back == "" {
+			back = declared("background")
+		}
+	}
+	if !hexColor.MatchString(text) || !hexColor.MatchString(back) {
+		return "", ""
+	}
+	return text, back
+}
+
 func identityAuthor(ctx context.Context) string {
 	if u := auth.UserFromContext(ctx); u != nil {
 		return u.ID
@@ -156,7 +232,7 @@ func (s *service) SaveIdentityDraft(ctx context.Context, snap IdentitySnapshot) 
 	if err := s.validateSnapshot(ctx, snap); err != nil {
 		return err
 	}
-	return s.d.Settings.Set(ctx, identityDraftKey(snap.Theme), IdentityDraft{Snapshot: snap, SavedAt: db.Now(), Author: identityAuthor(ctx)})
+	return s.d.Settings.Set(ctx, identityDraftKey(snap.Theme), IdentityDraft{Snapshot: snap, SavedAt: db.Now(), Author: identityAuthor(ctx), Base: s.LiveIdentity(ctx, snap.Theme).Site})
 }
 
 // DiscardIdentityDraft removes the pending draft of slug.
@@ -225,6 +301,11 @@ func (s *service) applyIdentity(ctx context.Context, snap IdentitySnapshot, kind
 		}
 		for _, k := range SiteIdentityKeys {
 			if err := s.d.Settings.SetTx(ctx, tx, k, snap.Site[k]); err != nil {
+				return err
+			}
+		}
+		for k, v := range snap.Links {
+			if err := s.d.Settings.SetTx(ctx, tx, SettingKey(snap.Theme, k), v); err != nil {
 				return err
 			}
 		}

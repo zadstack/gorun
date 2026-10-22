@@ -170,3 +170,15 @@ func TestIdentitySpacingScalesSpaceTokens(t *testing.T) {
 		}
 	}
 }
+
+func TestValidateIdentityRejectsUnknownOptions(t *testing.T) {
+	for _, tc := range []struct{ key, value string }{{idHeading, "comic"}, {idBody, "comic"}, {idLatinFont, "zad"}, {idScheme, "sepia"}, {idRadius, "pill"}, {idSpacing, "huge"}} {
+		errs := validateIdentity(map[string]any{tc.key: tc.value})
+		if errs[tc.key] != "theme.identity.error_option" {
+			t.Errorf("%s=%q: errs = %v", tc.key, tc.value, errs)
+		}
+	}
+	if errs := validateIdentity(map[string]any{idHeading: "readex", idLatinFont: "inter", idScheme: "dark", idRadius: "soft", idSpacing: "compact", idBody: ""}); len(errs) != 0 {
+		t.Errorf("valid options rejected: %v", errs)
+	}
+}

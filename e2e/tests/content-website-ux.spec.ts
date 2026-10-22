@@ -22,6 +22,7 @@ test('website setup is three deliberate steps, bundled previews load and a missi
  await page.locator('input[name=starter][value=company]').check();await page.locator('[data-wizard-controls]').getByRole('button',{name:'Next',exact:true}).click();await page.fill('[name=title]','Draft-only company');await page.locator('[data-wizard-controls]').getByRole('button',{name:'Next',exact:true}).click();await expect(page.locator('[data-wizard-review]')).toContainText('Draft-only company');await expect(page.locator('form[action="/admin/site-builder"] button[type=submit]')).toBeVisible();
  await page.goto('/admin/appearance/identity');await page.fill('[name="site.title"]','Local identity preview');await page.locator('[name=identity_background]').fill('#ffffff');await expect(page.locator('[data-identity-preview-frame]')).toBeVisible();await expect(page.frameLocator('[data-identity-preview-frame]').locator('body')).toHaveCSS('background-color','rgb(255, 255, 255)',{timeout:10000});
  await page.setViewportSize({width:390,height:844});await setLocale(page,'ar');await expect(page.locator('[data-identity-preview-frame]')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);await page.screenshot({path:testInfo.outputPath('identity-live-preview-ar.png'),animations:'disabled'});
+ const database=db();database.prepare("DELETE FROM settings WHERE key LIKE 'theme.%.identity_draft'").run();database.close();
 });
 
 test('onboarding language updates immediately without resetting entered account fields',async({page})=>{

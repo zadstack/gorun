@@ -217,5 +217,11 @@
   "identity.notice_reverted": "أُعيدت الهوية.",
   "identity.notice_imported": "نُسخت هوية المنشئ إلى المسودة.",
   "identity.notice_discarded": "أُلغيت المسودة.",
-  "identity.view_site": "عرض الموقع"
+  "identity.view_site": "عرض الموقع",
+  "identity.error_option": "اختر أحد الخيارات المتاحة",
+  "identity.error_url": "استخدم مسارًا داخليًا مثل /contact أو رابط http(s) كاملًا",
+  "identity.error_theme_changed": "تغيّر القالب النشط منذ فتح هذه الصفحة. لم يُحفظ شيء؛ أعد تحميل الصفحة لتحرير هوية القالب الحالي.",
+  "identity.draft_rebased": "تغيّرت هذه القيم في الموقع بعد حفظ المسودة؛ المسودة تستخدم الآن القيم الحية: %s.",
+  "identity.preview_open": "فتح في تبويب جديد",
+  "identity.kind_import": "مستوردة"
 }

@@ -161,6 +161,20 @@ func validateIdentity(vals map[string]any) map[string]string {
 			errs[idCustomCSS] = err
 		}
 	}
+	known := func(key string, ok func(string) bool) {
+		if v := displayValue(vals[key]); v != "" && !ok(v) {
+			errs[key] = "theme.identity.error_option"
+		}
+	}
+	inFonts := func(fonts []identityFont) func(string) bool {
+		return func(v string) bool { _, ok := findFontIn(fonts, v); return ok }
+	}
+	known(idHeading, inFonts(identityFonts))
+	known(idBody, inFonts(identityFonts))
+	known(idLatinFont, inFonts(latinFonts))
+	known(idScheme, func(v string) bool { return v == "light" || v == "dark" })
+	known(idRadius, func(v string) bool { _, ok := identityRadii[v]; return ok })
+	known(idSpacing, func(v string) bool { _, ok := identitySpacing[v]; return ok })
 	return errs
 }
 

@@ -28,7 +28,7 @@ func identityClient(t *testing.T, e *env) (*client, string) {
 }
 
 func identityForm(csrf, action string, kv ...string) url.Values {
-	v := url.Values{"_csrf": {csrf}, "action": {action}, "site.title": {"Studio"}}
+	v := url.Values{"_csrf": {csrf}, "action": {action}, "site.title": {"Studio"}, "theme": {"default"}}
 	for i := 0; i+1 < len(kv); i += 2 {
 		v.Set(kv[i], kv[i+1])
 	}
@@ -123,7 +123,7 @@ func TestIdentityPageForThemeWithoutIdentitySupport(t *testing.T) {
 	if resp, _ := c.get(identityPath + "/preview?view=single"); resp.StatusCode != 200 {
 		t.Fatalf("preview: %d", resp.StatusCode)
 	}
-	resp, _ := c.post(identityPath, identityForm(csrf, "apply", "site.title", "Renamed", "identity_accent", "#c2410c"))
+	resp, _ := c.post(identityPath, identityForm(csrf, "apply", "theme", "child", "site.title", "Renamed", "identity_accent", "#c2410c"))
 	if resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("apply: %d", resp.StatusCode)
 	}
@@ -223,5 +223,75 @@ func TestIdentityPageHidesBuildTabForSettingsOnlyUser(t *testing.T) {
 	tabs := body[start : start+end]
 	if strings.Contains(tabs, `href="/admin/site-builder"`) || !strings.Contains(tabs, `href="/admin/appearance/identity"`) {
 		t.Fatal("settings-only user received Build tab")
+	}
+}
+
+// Applying on a theme without identity support keeps the values it already
+// stores (custom CSS included) and only writes the site keys.
+func TestIdentityApplyKeepsStoredValuesForUnsupportedTheme(t *testing.T) {
+	e := newEnv(t, adminThemes(t), func(c *config.Config) { c.Theme = "child" })
+	e.setting("theme.child.custom_css", ".keep{}")
+	e.setting("theme.child.identity_accent", "#123456")
+	c, csrf := identityClient(t, e)
+	resp, _ := c.post(identityPath, identityForm(csrf, "apply", "theme", "child", "site.title", "Renamed", "custom_css", ".dropped{}"))
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("apply: %d", resp.StatusCode)
+	}
+	ctx := adminCtx()
+	if got := e.app.Deps.Settings.GetString(ctx, "theme.child.custom_css", ""); got != ".keep{}" {
+		t.Fatalf("custom_css = %q", got)
+	}
+	if got := e.app.Deps.Settings.GetString(ctx, "theme.child.identity_accent", ""); got != "#123456" {
+		t.Fatalf("accent = %q", got)
+	}
+	if got := e.app.Deps.Settings.GetString(ctx, "site.title", ""); got != "Renamed" {
+		t.Fatalf("title = %q", got)
+	}
+}
+
+// A form opened for one theme cannot be saved after another theme became
+// active: the server compares the posted theme with the active one.
+func TestIdentitySaveRejectsThemeMismatch(t *testing.T) {
+	e := newEnv(t, "../../themes")
+	c, csrf := identityClient(t, e)
+	_, page := c.get(identityPath)
+	mustContain(t, page, `name="theme" value="default"`)
+	if err := e.svc.Activate(adminCtx(), "business"); err != nil {
+		t.Fatal(err)
+	}
+	for _, action := range []string{"apply", "draft"} {
+		resp, body := c.post(identityPath, identityForm(csrf, action, "theme", "default", "identity_accent", "#c2410c"))
+		if resp.StatusCode != http.StatusConflict || !strings.Contains(body, "data-design-error") {
+			t.Fatalf("%s with stale theme: %d", action, resp.StatusCode)
+		}
+	}
+	ctx := adminCtx()
+	for _, slug := range []string{"default", "business"} {
+		if got := e.app.Deps.Settings.GetString(ctx, "theme."+slug+".identity_accent", ""); got != "" {
+			t.Fatalf("%s accent written: %q", slug, got)
+		}
+		if _, ok := e.svc.IdentityDraft(ctx, slug); ok {
+			t.Fatalf("%s draft written", slug)
+		}
+	}
+}
+
+// Header links are part of the page's draft and apply.
+func TestIdentityPageHeaderLinksDraftAndApply(t *testing.T) {
+	e := newEnv(t, "../../themes")
+	c, csrf := identityClient(t, e)
+	if resp, _ := c.post(identityPath, identityForm(csrf, "draft", "theme", "default", "cta_label", "Book", "cta_url", "/book")); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("draft: %d", resp.StatusCode)
+	}
+	_, page := c.get(identityPath)
+	mustContain(t, page, `value="Book"`, `value="/book"`)
+	if got := e.app.Deps.Settings.GetString(adminCtx(), "theme.default.cta_label", ""); got != "" {
+		t.Fatalf("draft link went live: %q", got)
+	}
+	if resp, _ := c.post(identityPath, identityForm(csrf, "apply", "theme", "default", "cta_label", "Book", "cta_url", "/book")); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("apply: %d", resp.StatusCode)
+	}
+	if got := e.app.Deps.Settings.GetString(adminCtx(), "theme.default.cta_url", ""); got != "/book" {
+		t.Fatalf("cta_url = %q", got)
 	}
 }
