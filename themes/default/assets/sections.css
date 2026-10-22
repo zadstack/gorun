@@ -9,52 +9,359 @@
    win over zero-specificity rules, so the block at the end re-applies those
    properties under ":root .prose-gp" (0,3,0). To restyle a section inside a
    page body, use the same prefix or put the rule later (custom CSS loads after).
+   Graphics are CSS only (gradients and data-URI SVG masks): the sanitizer strips
+   inline <svg>, and every drawing takes its color from the tokens.
    Markup examples: docs/THEMES.md → "Section library". */
+
+/* ---- Depth and icon tokens (themes may override) ---- */
+:where(:root) {
+  --gp-s-shadow: 0 1px 2px rgb(0 0 0 / .06), 0 10px 28px -14px rgb(0 0 0 / .18);
+  --gp-s-shadow-lg: 0 2px 4px rgb(0 0 0 / .06), 0 28px 56px -24px rgb(0 0 0 / .3);
+  --gp-s-icon-bolt: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 2 4 14h7l-1 8 9-12h-7z'/%3E%3C/svg%3E");
+  --gp-s-icon-shield: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+  --gp-s-icon-chart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20h16M7 16v-5M12 16V8M17 16v-3'/%3E%3C/svg%3E");
+  --gp-s-icon-globe: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18'/%3E%3C/svg%3E");
+  --gp-s-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
+  --gp-s-icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E");
+  --gp-s-icon-layers: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 3 9 5-9 5-9-5z'/%3E%3Cpath d='m3 13 9 5 9-5M3 17l9 5 9-5'/%3E%3C/svg%3E");
+  --gp-s-icon-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E");
+  --gp-s-icon-minus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+  --gp-s-icon-cross: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 6 12 12M18 6 6 18'/%3E%3C/svg%3E");
+  --gp-s-icon-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12h16m-6-6 6 6-6 6'/%3E%3C/svg%3E");
+  --gp-s-icon-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4v16m-6-6 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* ---- Section backgrounds ----
+   A section with gp-s-bg gets a masked color layer behind its content. The
+   drawing (--gp-pattern-image, a mask) and its tile (--gp-pattern-size) come
+   either from the site identity (theme.<slug>.identity_pattern writes
+   .gp-s-bg{--gp-pattern-image:var(--gp-pat-<name>);…} into /site/identity.css)
+   or from a modifier class: gp-s-bg gp-s-bg-dots (the modifiers carry (0,2,0)
+   so they beat the identity's (0,1,0) site default). Color and density are
+   tokens too: --gp-pattern-ink (identity_pattern_color, default accent) and
+   --gp-pattern-scale (identity_pattern_density: .72 / 1 / 1.4). */
+:where(.gp-s-bg) {
+  position: relative;
+  isolation: isolate;
+  /* --gp-pattern-scale is inherited from the identity stylesheet; a section modifier wins. */
+  --gp-s-scale: var(--gp-pattern-scale-section, var(--gp-pattern-scale, 1));
+  --gp-pattern-alpha: 22%;
+  --gp-pattern-color: color-mix(in srgb, var(--gp-pattern-ink, var(--accent, var(--green, #1f6feb))) var(--gp-pattern-alpha), transparent);
+  --gp-pat-none: linear-gradient(transparent, transparent);
+  --gp-pat-none-size: 100% 100%;
+  --gp-pat-dots: radial-gradient(circle at center, #000 1.2px, transparent 1.9px);
+  --gp-pat-dots-size: calc(20px * var(--gp-s-scale)) calc(20px * var(--gp-s-scale));
+  --gp-pat-grid: linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px);
+  --gp-pat-grid-size: calc(40px * var(--gp-s-scale)) calc(40px * var(--gp-s-scale));
+  --gp-pat-lines: linear-gradient(135deg, transparent calc(50% - .75px), #000 calc(50% - .75px) calc(50% + .75px), transparent calc(50% + .75px));
+  --gp-pat-lines-size: calc(28px * var(--gp-s-scale)) calc(28px * var(--gp-s-scale));
+  --gp-pat-circles: repeating-radial-gradient(circle at 88% -10%, #000 0 1.5px, transparent 1.5px calc(64px * var(--gp-s-scale)));
+  --gp-pat-circles-size: 100% 100%;
+  --gp-pat-waves: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' width='120' height='120' fill='none' stroke='%23000' stroke-width='1.4'%3E%3Cpath d='M0 12q15-10 30 0t30 0 30 0 30 0M0 36q15-10 30 0t30 0 30 0 30 0M0 60q15-10 30 0t30 0 30 0 30 0M0 84q15-10 30 0t30 0 30 0 30 0M0 108q15-10 30 0t30 0 30 0 30 0'/%3E%3C/svg%3E");
+  --gp-pat-waves-size: calc(120px * var(--gp-s-scale)) calc(120px * var(--gp-s-scale));
+  --gp-pat-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.3 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  --gp-pat-paper-size: calc(160px * var(--gp-s-scale)) calc(160px * var(--gp-s-scale));
+  --gp-pat-solid: linear-gradient(rgb(0 0 0 / .4), rgb(0 0 0 / .4));
+  --gp-pat-solid-size: 100% 100%;
+}
+/* Anchors follow the reading direction. */
+:where(html[dir="rtl"]) :where(.gp-s-bg) {
+  --gp-pat-circles: repeating-radial-gradient(circle at 12% -10%, #000 0 1.5px, transparent 1.5px calc(64px * var(--gp-s-scale)));
+}
+:where(.gp-s-bg)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--gp-pattern-color);
+  -webkit-mask-image: var(--gp-pattern-image, var(--gp-pat-none));
+  mask-image: var(--gp-pattern-image, var(--gp-pat-none));
+  -webkit-mask-size: var(--gp-pattern-size, var(--gp-pat-none-size));
+  mask-size: var(--gp-pattern-size, var(--gp-pat-none-size));
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+:where(.gp-s-bg-fade)::before {
+  background: linear-gradient(180deg, var(--gp-pattern-color) 0%, var(--gp-pattern-color) 45%, transparent 100%);
+}
+.gp-s-bg.gp-s-bg-none { --gp-pattern-image: var(--gp-pat-none); --gp-pattern-size: var(--gp-pat-none-size); }
+.gp-s-bg.gp-s-bg-dots { --gp-pattern-image: var(--gp-pat-dots); --gp-pattern-size: var(--gp-pat-dots-size); }
+.gp-s-bg.gp-s-bg-grid { --gp-pattern-image: var(--gp-pat-grid); --gp-pattern-size: var(--gp-pat-grid-size); --gp-pattern-alpha: 16%; }
+.gp-s-bg.gp-s-bg-lines { --gp-pattern-image: var(--gp-pat-lines); --gp-pattern-size: var(--gp-pat-lines-size); --gp-pattern-alpha: 14%; }
+.gp-s-bg.gp-s-bg-circles { --gp-pattern-image: var(--gp-pat-circles); --gp-pattern-size: var(--gp-pat-circles-size); }
+.gp-s-bg.gp-s-bg-waves { --gp-pattern-image: var(--gp-pat-waves); --gp-pattern-size: var(--gp-pat-waves-size); --gp-pattern-alpha: 18%; }
+.gp-s-bg.gp-s-bg-paper { --gp-pattern-image: var(--gp-pat-paper); --gp-pattern-size: var(--gp-pat-paper-size); --gp-pattern-alpha: 30%; }
+.gp-s-bg.gp-s-bg-solid { --gp-pattern-image: var(--gp-pat-solid); --gp-pattern-size: var(--gp-pat-solid-size); }
+:where(.gp-s-bg-sparse) { --gp-pattern-scale-section: .72; }
+:where(.gp-s-bg-dense) { --gp-pattern-scale-section: 1.4; }
+/* Full-bleed inside a page body: the background spans the viewport, the
+   content stays on the site grid. */
+:where(.gp-s-bleed) {
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(1rem, calc(50vw - var(--site-width, 1160px) / 2));
+}
+:where(html):has(.gp-s-bleed) { overflow-x: clip; }
+
+/* ---- Hero ---- */
 :where(.gp-s-hero, .gp-s-band, .gp-s-cta) { padding-block: clamp(32px, 6vw, 72px); }
 :where(.gp-s-hero) { border-bottom: 1px solid var(--line, #e5e5e5); }
 :where(.gp-s-hero) :where(h1) { font-size: clamp(36px, 5.2vw, 60px); line-height: 1.2; margin: 12px 0 16px; text-wrap: balance; }
-:where(.gp-s-eyebrow) { display: inline-block; font-size: 14px; font-weight: 600; color: var(--green, #1f6feb); }
+/* A hero used lower on a page (one h1 per page) titles itself with an h2. */
+:where(.gp-s-hero) :where(h2) { font-size: clamp(30px, 4.2vw, 48px); line-height: 1.2; margin: 12px 0 16px; text-wrap: balance; }
+:where(.gp-s-copy) { min-width: 0; }
+:where(.gp-s-eyebrow) { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--green, #1f6feb); }
+:where(.gp-s-eyebrow)::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
 :where(.gp-s-lead) { font-size: clamp(18px, 1.6vw, 21px); color: var(--muted, #555); max-width: 40em; margin: 0 0 24px; }
 :where(.gp-s-actions) { display: flex; flex-wrap: wrap; gap: 12px; margin-block: 8px; }
 :where(.gp-s-btn) {
   display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px;
   border-radius: var(--radius, 8px); background: var(--green, #1f6feb); color: var(--on-accent, #fff); border: 1px solid var(--green, #1f6feb);
   font-weight: 600; text-decoration: none;
+  transition: background-color .15s ease, transform .15s ease;
 }
 :where(.gp-s-btn):hover { background: var(--green-hover, var(--green, #1f6feb)); }
+:where(.gp-s-btn):active { transform: translateY(1px); }
 :where(.gp-s-btn-ghost) { background: transparent; color: var(--ink, #111); border-color: var(--line-strong, var(--line, #ccc)); }
+:where(.gp-s-btn-ghost):hover { background: var(--panel, #fff); border-color: var(--ink, #111); }
+/* Split hero: copy beside media (an image, a product preview or a diagram). */
+:where(.gp-s-hero-split) { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(24px, 4vw, 56px); align-items: center; }
+:where(.gp-s-hero-split) > :where(*) { min-width: 0; }
+:where(.gp-s-hero-split) :where(h1, h2) { max-width: 16ch; }
+:where(.gp-s-hero-centered) { text-align: center; }
+:where(.gp-s-hero-centered) :where(h1, h2, .gp-s-lead) { margin-inline: auto; }
+:where(.gp-s-hero-centered) :where(.gp-s-actions) { justify-content: center; }
+:where(.gp-s-hero-centered) > :where(.gp-s-media) { max-width: 52rem; margin: clamp(28px, 4vw, 48px) auto 0; }
+:where(.gp-s-media) :where(img) { display: block; width: 100%; height: auto; }
+/* Key figures under a hero (dl of dt/dd pairs). */
+:where(.gp-s-facts) { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, max-content)); gap: 16px 32px; margin: 28px 0 0; padding: 0; }
+:where(.gp-s-facts) > :where(div) { margin: 0; }
+:where(.gp-s-facts) :where(dt) { margin: 0; font-size: .8rem; color: var(--muted, #555); font-weight: 500; }
+:where(.gp-s-facts) :where(dd) { margin: 2px 0 0; font-size: 1.5rem; font-weight: 700; color: var(--ink, #111); font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
+
+/* ---- Bands, cards, feature grids ---- */
 :where(.gp-s-band) { border-bottom: 1px solid var(--line, #e5e5e5); }
 :where(.gp-s-band) > :where(h2) { font-size: clamp(26px, 3.4vw, 40px); margin: 0 0 12px; text-wrap: balance; }
 :where(.gp-s-band) > :where(p) { color: var(--muted, #555); max-width: 44em; }
 :where(.gp-s-grid) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 16px; margin-block: 24px; }
-:where(.gp-s-card) { background: var(--panel, #fff); border: 1px solid var(--line, #e5e5e5); border-radius: var(--radius, 8px); padding: 24px; display: flex; flex-direction: column; gap: 8px; }
+:where(.gp-s-card) {
+  position: relative; background: var(--panel, #fff); border: 1px solid var(--line, #e5e5e5); border-radius: var(--radius-card, var(--radius, 8px));
+  padding: 24px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--gp-s-shadow);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+:where(.gp-s-card):hover { transform: translateY(-2px); box-shadow: var(--gp-s-shadow-lg); border-color: var(--line-strong, var(--line, #ccc)); }
 :where(.gp-s-card) :where(h3) { font-size: 20px; margin: 0; }
 :where(.gp-s-card) :where(p) { color: var(--muted, #555); margin: 0; }
-:where(.gp-s-card) > :where(a:last-child) { margin-top: auto; font-weight: 600; color: var(--green, #1f6feb); text-decoration: none; }
+:where(.gp-s-card) > :where(a:last-child) { margin-top: auto; padding-top: 8px; font-weight: 600; color: var(--green, #1f6feb); text-decoration: none; }
+:where(.gp-s-card-featured) { border-top: 3px solid var(--green, #1f6feb); }
 :where(.gp-s-price) { font-size: 24px; font-weight: 700; color: var(--ink, #111); }
-:where(.gp-s-steps) { list-style: none; padding: 0; margin-block: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px; counter-reset: gp-s-step; }
-:where(.gp-s-steps) > :where(li) { border-top: 2px solid var(--green, #1f6feb); padding-top: 14px; counter-increment: gp-s-step; }
-:where(.gp-s-steps) > :where(li)::before { content: counter(gp-s-step, decimal-leading-zero); display: block; font-weight: 700; color: var(--green, #1f6feb); }
+/* Icon tile: <span class="gp-s-icon gp-s-icon-bolt"></span> (decorative, empty). */
+:where(.gp-s-icon) {
+  display: inline-grid; place-items: center; width: 44px; height: 44px; margin-bottom: 8px;
+  border-radius: var(--radius, 8px); background: var(--accent-soft, var(--green-soft, color-mix(in srgb, var(--green, #1f6feb) 12%, transparent)));
+  color: var(--accent-ink, var(--green, #1f6feb));
+}
+:where(.gp-s-icon)::before {
+  content: ""; width: 24px; height: 24px; background: currentColor;
+  -webkit-mask: var(--gp-s-icon, var(--gp-s-icon-check)) center / contain no-repeat; mask: var(--gp-s-icon, var(--gp-s-icon-check)) center / contain no-repeat;
+}
+:where(.gp-s-icon-bolt) { --gp-s-icon: var(--gp-s-icon-bolt); }
+:where(.gp-s-icon-shield) { --gp-s-icon: var(--gp-s-icon-shield); }
+:where(.gp-s-icon-chart) { --gp-s-icon: var(--gp-s-icon-chart); }
+:where(.gp-s-icon-globe) { --gp-s-icon: var(--gp-s-icon-globe); }
+:where(.gp-s-icon-clock) { --gp-s-icon: var(--gp-s-icon-clock); }
+:where(.gp-s-icon-check) { --gp-s-icon: var(--gp-s-icon-check); }
+:where(.gp-s-icon-layers) { --gp-s-icon: var(--gp-s-icon-layers); }
+
+/* ---- Steps: numbered badges on a connector track ---- */
+:where(.gp-s-steps) { list-style: none; padding: 0; margin-block: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 24px; counter-reset: gp-s-step; }
+:where(.gp-s-steps) > :where(li) { position: relative; counter-increment: gp-s-step; padding: 0; }
+:where(.gp-s-steps) > :where(li)::before {
+  content: counter(gp-s-step); display: grid; place-items: center; position: relative; z-index: 1;
+  width: 36px; height: 36px; margin-bottom: 14px; border-radius: 50%;
+  background: var(--green, #1f6feb); color: var(--on-accent, #fff); font-weight: 700; font-size: .95rem; font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 4px var(--bg, #fff);
+}
+:where(.gp-s-steps) > :where(li)::after { content: ""; position: absolute; top: 17px; inset-inline-start: 36px; inset-inline-end: -24px; height: 2px; background: var(--line, #e5e5e5); }
+:where(.gp-s-steps) > :where(li:last-child)::after { display: none; }
+:where(.gp-s-steps) :where(h3) { font-size: 18px; margin: 0 0 4px; }
+:where(.gp-s-steps) :where(p) { color: var(--muted, #555); margin: 0; }
+
+/* ---- Flow diagram: node → node → node (ol of li) ---- */
+:where(.gp-s-flow) { list-style: none; padding: 0; margin-block: 24px; display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px 44px; }
+:where(.gp-s-flow) > :where(li) {
+  position: relative; flex: 1 1 10rem; min-width: 0; padding: 14px 16px; background: var(--panel, #fff); border: 1px solid var(--line, #e5e5e5);
+  border-radius: var(--radius, 8px); box-shadow: var(--gp-s-shadow); font-weight: 600;
+}
+:where(.gp-s-flow) > :where(li) :where(small, p) { display: block; font-weight: 400; color: var(--muted, #555); font-size: .875rem; margin: 2px 0 0; }
+:where(.gp-s-flow) > :where(li):not(:last-child)::after {
+  content: ""; position: absolute; top: 50%; inset-inline-end: -36px; width: 28px; height: 28px; translate: 0 -50%;
+  background: var(--accent-ink, var(--green, #1f6feb));
+  -webkit-mask: var(--gp-s-icon-arrow) center / contain no-repeat; mask: var(--gp-s-icon-arrow) center / contain no-repeat;
+}
+:where(html[dir="rtl"]) :where(.gp-s-flow) > :where(li):not(:last-child)::after { transform: scaleX(-1); }
+
+/* ---- Checklist ---- */
 :where(.gp-s-checks) { list-style: none; padding: 0; display: grid; gap: 10px; }
 :where(.gp-s-checks) > :where(li) { position: relative; padding-inline-start: 28px; }
-:where(.gp-s-checks) > :where(li)::before { content: "✓"; position: absolute; inset-inline-start: 0; color: var(--green, #1f6feb); font-weight: 700; }
-:where(.gp-s-faq) :where(details) { border-bottom: 1px solid var(--line, #e5e5e5); padding-block: 14px; }
-:where(.gp-s-faq) :where(summary) { cursor: pointer; font-weight: 600; }
+:where(.gp-s-checks) > :where(li)::before {
+  content: ""; position: absolute; inset-inline-start: 0; top: .2em; width: 18px; height: 18px; background: var(--green, #1f6feb);
+  -webkit-mask: var(--gp-s-icon-check) center / contain no-repeat; mask: var(--gp-s-icon-check) center / contain no-repeat;
+}
+
+/* ---- Comparison table: column 2 is the highlighted plan ---- */
+:where(.gp-s-compare-wrap) { overflow-x: auto; margin-block: 24px; border: 1px solid var(--line, #e5e5e5); border-radius: var(--radius-card, var(--radius, 8px)); background: var(--panel, #fff); box-shadow: var(--gp-s-shadow); }
+:where(.gp-s-compare) { width: 100%; min-width: 34rem; border-collapse: separate; border-spacing: 0; font-size: .95rem; margin: 0; }
+:where(.gp-s-compare) :where(th, td) { padding: 14px 18px; text-align: start; vertical-align: top; border: 0; border-bottom: 1px solid var(--line, #e5e5e5); }
+:where(.gp-s-compare) :where(tbody tr:last-child) :where(th, td) { border-bottom: 0; }
+:where(.gp-s-compare) :where(thead th) { font-size: .85rem; font-weight: 600; color: var(--muted, #555); background: var(--panel-2, #f3f3f3); }
+:where(.gp-s-compare) :where(tbody th) { font-weight: 600; color: var(--ink, #111); }
+:where(.gp-s-compare):not(.gp-s-compare-plain) :where(th:nth-child(2), td:nth-child(2)) { background: var(--accent-tint, color-mix(in srgb, var(--green, #1f6feb) 7%, transparent)); }
+:where(.gp-s-compare):not(.gp-s-compare-plain) :where(thead th:nth-child(2)) { color: var(--accent-ink, var(--green, #1f6feb)); box-shadow: inset 0 3px 0 var(--green, #1f6feb); }
+:where(.gp-s-yes, .gp-s-no) { position: relative; padding-inline-start: 44px; }
+:where(.gp-s-yes, .gp-s-no)::before {
+  content: ""; position: absolute; inset-inline-start: 18px; top: 15px; width: 18px; height: 18px;
+  background: var(--green, #1f6feb); -webkit-mask: var(--gp-s-icon-check) center / contain no-repeat; mask: var(--gp-s-icon-check) center / contain no-repeat;
+}
+:where(.gp-s-no)::before { background: var(--muted, #777); -webkit-mask-image: var(--gp-s-icon-cross); mask-image: var(--gp-s-icon-cross); }
+:where(.gp-s-no) { color: var(--muted, #555); }
+:where(.gp-s-sr) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---- FAQ ---- */
+:where(.gp-s-faq) :where(details) { border-bottom: 1px solid var(--line, #e5e5e5); padding-block: 0; }
+:where(.gp-s-faq) :where(summary) {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; padding-block: 12px;
+  list-style: none; cursor: pointer; font-weight: 600;
+}
+:where(.gp-s-faq) :where(summary)::-webkit-details-marker { display: none; }
+:where(.gp-s-faq) :where(summary)::after {
+  content: ""; flex: 0 0 auto; width: 22px; height: 22px; background: var(--accent-ink, var(--green, #1f6feb));
+  -webkit-mask: var(--gp-s-icon-plus) center / contain no-repeat; mask: var(--gp-s-icon-plus) center / contain no-repeat;
+  transition: transform .18s ease;
+}
+:where(.gp-s-faq) :where(details[open] > summary)::after { -webkit-mask-image: var(--gp-s-icon-minus); mask-image: var(--gp-s-icon-minus); transform: rotate(180deg); }
+:where(.gp-s-faq) :where(details) > :where(:not(summary)) { margin: 0 0 16px; color: var(--muted, #555); max-width: 60ch; }
+:where(.gp-s-faq-cols) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); column-gap: 40px; }
+:where(.gp-s-faq-cols) > :where(h2, p) { grid-column: 1 / -1; }
+
+/* ---- Product preview: a window frame around a screenshot or a drawn UI ---- */
+:where(.gp-s-preview) {
+  position: relative; margin: 0; padding-top: 36px; overflow: hidden; background: var(--panel, #fff); border: 1px solid var(--line, #e5e5e5);
+  border-radius: calc(var(--radius, 8px) + 6px); box-shadow: var(--gp-s-shadow-lg);
+}
+:where(.gp-s-preview)::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 36px; background: var(--panel-2, #f3f3f3); border-bottom: 1px solid var(--line, #e5e5e5); }
+:where(.gp-s-preview)::after {
+  content: ""; position: absolute; top: 13px; inset-inline-start: 14px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--line-strong, #bbb); box-shadow: 16px 0 0 var(--line-strong, #bbb), 32px 0 0 var(--line-strong, #bbb);
+}
+:where(html[dir="rtl"]) :where(.gp-s-preview)::after { box-shadow: -16px 0 0 var(--line-strong, #bbb), -32px 0 0 var(--line-strong, #bbb); }
+:where(.gp-s-preview) :where(img) { display: block; width: 100%; height: auto; margin: 0; border-radius: 0; }
+:where(.gp-s-preview) :where(figcaption) { padding: 10px 16px; font-size: .85rem; color: var(--muted, #555); border-top: 1px solid var(--line, #e5e5e5); }
+/* Drawn interface (clearly illustrative; empty spans with gp-s-ui-* classes). */
+:where(.gp-s-preview-ui) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto; gap: 12px; padding: 16px; min-height: 240px; background: var(--bg, #f6f6f6); }
+:where(.gp-s-preview-ui) > :where(*) { display: block; min-width: 0; border-radius: var(--radius, 8px); background: var(--panel, #fff); border: 1px solid var(--line, #e5e5e5); }
+:where(.gp-s-ui-side) { grid-row: 1 / -1; min-height: 100%; padding: 14px 12px;
+  background: linear-gradient(var(--panel-2, #eee), var(--panel-2, #eee)) 0 0 / 55% 10px no-repeat,
+    repeating-linear-gradient(to bottom, var(--line, #e5e5e5) 0 8px, transparent 8px 22px) 0 28px / 85% auto no-repeat, var(--panel, #fff); background-origin: content-box; }
+:where(.gp-s-ui-stat) { min-height: 64px; padding: 12px;
+  background: linear-gradient(var(--line, #e5e5e5), var(--line, #e5e5e5)) 0 0 / 40% 8px no-repeat,
+    linear-gradient(var(--ink, #111), var(--ink, #111)) 0 20px / 60% 14px no-repeat, var(--panel, #fff); background-origin: content-box; }
+:where(.gp-s-ui-chart) { grid-column: 2 / -1; min-height: 120px; padding: 12px;
+  background: linear-gradient(to top, var(--green, #1f6feb) 35%, transparent 35%) 0% 100% / 12% 100% no-repeat,
+    linear-gradient(to top, var(--green, #1f6feb) 55%, transparent 55%) 16.5% 100% / 12% 100% no-repeat,
+    linear-gradient(to top, var(--green, #1f6feb) 45%, transparent 45%) 33% 100% / 12% 100% no-repeat,
+    linear-gradient(to top, var(--green, #1f6feb) 70%, transparent 70%) 49.5% 100% / 12% 100% no-repeat,
+    linear-gradient(to top, var(--green, #1f6feb) 62%, transparent 62%) 66% 100% / 12% 100% no-repeat,
+    linear-gradient(to top, var(--accent-soft, #cfe0f5) 88%, transparent 88%) 82.5% 100% / 12% 100% no-repeat,
+    linear-gradient(to top, var(--accent-soft, #cfe0f5) 95%, transparent 95%) 100% 100% / 12% 100% no-repeat, var(--panel, #fff); background-origin: content-box; }
+:where(html[dir="rtl"]) :where(.gp-s-ui-chart) { transform: scaleX(-1); }
+:where(.gp-s-ui-rows) { grid-column: 2 / -1; min-height: 72px; padding: 12px;
+  background: repeating-linear-gradient(to bottom, var(--line, #e5e5e5) 0 8px, transparent 8px 20px) 0 0 / 100% auto no-repeat, var(--panel, #fff); background-origin: content-box; }
+
+/* ---- Closing call to action ---- */
 :where(.gp-s-cta) { text-align: center; }
 :where(.gp-s-cta) :where(h2) { font-size: clamp(28px, 4vw, 48px); margin: 0 auto 12px; max-width: 16em; }
 :where(.gp-s-cta) :where(.gp-s-actions) { justify-content: center; }
+:where(.gp-s-cta-panel) { padding: clamp(32px, 6vw, 64px) clamp(16px, 4vw, 48px); border: 1px solid var(--accent-line, var(--line, #e5e5e5)); border-radius: var(--radius-card, var(--radius, 8px)); background: var(--panel, #fff); box-shadow: var(--gp-s-shadow); }
+
+@media (max-width: 760px) {
+  :where(.gp-s-hero-split) { grid-template-columns: 1fr; }
+  :where(.gp-s-hero-split) > :where(.gp-s-media) { order: 2; }
+  :where(.gp-s-hero-split) :where(h1, h2) { max-width: none; }
+  :where(.gp-s-steps) { gap: 20px; }
+  :where(.gp-s-steps) > :where(li) { padding-inline-start: 52px; }
+  :where(.gp-s-steps) > :where(li)::before { position: absolute; inset-inline-start: 0; top: 0; margin: 0; }
+  :where(.gp-s-steps) > :where(li)::after { top: 40px; bottom: -22px; inset-inline-start: 17px; inset-inline-end: auto; width: 2px; height: auto; }
+  :where(.gp-s-flow) { flex-direction: column; gap: 40px; }
+  :where(.gp-s-flow) > :where(li):not(:last-child)::after { inset-inline-end: auto; inset-inline-start: 50%; top: auto; bottom: -36px; translate: -50% 0; -webkit-mask-image: var(--gp-s-icon-arrow-down); mask-image: var(--gp-s-icon-arrow-down); }
+  :where(html[dir="rtl"]) :where(.gp-s-flow) > :where(li):not(:last-child)::after { transform: none; translate: 50% 0; }
+  :where(.gp-s-preview-ui) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  :where(.gp-s-ui-side) { display: none; }
+  :where(.gp-s-ui-chart, .gp-s-ui-rows) { grid-column: 1 / -1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.gp-s-btn, .gp-s-card, .gp-s-faq summary)::after, :where(.gp-s-btn, .gp-s-card) { transition: none; }
+  :where(.gp-s-card):hover, :where(.gp-s-btn):active { transform: none; }
+  :where(.gp-s-faq) :where(details[open] > summary)::after { transform: none; }
+}
+
+/* Resets that load later (the Tailwind preflight in default/docs: *{border:0},
+   p/h1/dl/dd{margin:0}, ol{list-style:none}, summary{display:list-item},
+   a{color:inherit}) outrank :where(); these (0,1,n) rules restore the block
+   properties they would strip. Themes override them at the same prefix. */
+:root .gp-s-hero, :root .gp-s-band { border-bottom: 1px solid var(--line, #e5e5e5); }
+:root .gp-s-hero :is(h1, h2) { margin: 12px 0 16px; }
+:root .gp-s-lead { margin: 0 0 24px; }
+:root .gp-s-btn { border: 1px solid var(--green, #1f6feb); }
+:root .gp-s-btn-ghost { border-color: var(--line-strong, var(--line, #ccc)); }
+:root .gp-s-btn-ghost:hover { border-color: var(--ink, #111); }
+:root :is(.gp-s-card, .gp-s-flow > li, .gp-s-preview, .gp-s-compare-wrap) { border: 1px solid var(--line, #e5e5e5); }
+:root .gp-s-card-featured { border-top: 3px solid var(--green, #1f6feb); }
+:root .gp-s-cta-panel { border: 1px solid var(--accent-line, var(--line, #e5e5e5)); }
+:root .gp-s-preview::before { border-bottom: 1px solid var(--line, #e5e5e5); }
+:root .gp-s-preview figcaption { border-top: 1px solid var(--line, #e5e5e5); }
+:root .gp-s-preview-ui > * { border: 1px solid var(--line, #e5e5e5); }
+:root .gp-s-steps > li::before { margin-bottom: 14px; }
+:root .gp-s-facts dd { margin: 2px 0 0; }
+:root .gp-s-faq details { border-bottom: 1px solid var(--line, #e5e5e5); }
+:root .gp-s-faq summary { display: flex; list-style: none; padding-block: 12px; }
+:root .gp-s-faq details > :not(summary) { margin: 0 0 16px; }
+:root .gp-s-compare :is(th, td) { border: 0; border-bottom: 1px solid var(--line, #e5e5e5); padding: 14px 18px; }
+:root .gp-s-compare tbody tr:last-child :is(th, td) { border-bottom: 0; }
+:root .gp-s-compare :is(.gp-s-yes, .gp-s-no) { padding-inline-start: 44px; }
+@media (max-width: 760px) {
+  :root .gp-s-steps > li::before { margin: 0; }
+}
 
 /* Page bodies: the properties .prose-gp would otherwise take over. */
 :root .prose-gp > :is(.gp-s-hero, .gp-s-band, .gp-s-cta) { margin-top: 0; }
 :root .prose-gp .gp-s-hero h1 { font-size: clamp(36px, 5.2vw, 60px); line-height: 1.2; margin: 12px 0 16px; }
+:root .prose-gp .gp-s-hero h2 { font-size: clamp(30px, 4.2vw, 48px); line-height: 1.2; margin: 12px 0 16px; padding: 0; border: 0; }
 :root .prose-gp :is(.gp-s-band, .gp-s-faq) > h2 { font-size: clamp(26px, 3.4vw, 40px); margin: 0 0 12px; padding: 0; border: 0; }
 :root .prose-gp .gp-s-cta h2 { font-size: clamp(28px, 4vw, 48px); margin: 0 auto 12px; padding: 0; border: 0; }
 :root .prose-gp .gp-s-card h3 { font-size: 20px; margin: 0; }
 :root .prose-gp :is(.gp-s-steps, .gp-s-checks) h3 { margin: 0 0 4px; }
+:root .prose-gp .gp-s-steps h3 { font-size: 18px; }
 :root .prose-gp .gp-s-actions { margin-block: 8px; }
 :root .prose-gp .gp-s-btn, :root .prose-gp .gp-s-btn:hover { color: var(--on-accent, #fff); text-decoration: none; }
 :root .prose-gp .gp-s-btn-ghost, :root .prose-gp .gp-s-btn-ghost:hover { color: var(--ink, #111); }
 :root .prose-gp .gp-s-card > a:last-child { color: var(--green, #1f6feb); text-decoration: none; }
-:root .prose-gp :is(.gp-s-steps, .gp-s-checks) { list-style: none; padding: 0; }
-:root .prose-gp .gp-s-steps { margin-block: 24px; }
+:root .prose-gp :is(.gp-s-steps, .gp-s-checks, .gp-s-flow) { list-style: none; padding: 0; }
+:root .prose-gp :is(.gp-s-steps, .gp-s-flow) { margin-block: 24px; }
 :root .prose-gp .gp-s-checks > li { padding-inline-start: 28px; }
+:root .prose-gp .gp-s-steps > li { padding: 0; }
+:root .prose-gp :is(.gp-s-hero-split, .gp-s-media, .gp-s-facts, .gp-s-preview, .gp-s-compare-wrap, .gp-s-preview-ui) > * { margin-top: 0; }
+:root .prose-gp .gp-s-facts dd { margin: 2px 0 0; }
+:root .prose-gp .gp-s-compare { display: table; width: 100%; margin: 0; }
+:root .prose-gp .gp-s-compare :is(th, td) { border: 0; border-bottom: 1px solid var(--line, #e5e5e5); padding: 14px 18px; }
+:root .prose-gp .gp-s-compare tbody tr:last-child :is(th, td) { border-bottom: 0; }
+:root .prose-gp .gp-s-compare :is(.gp-s-yes, .gp-s-no) { padding-inline-start: 44px; }
+:root .prose-gp .gp-s-preview img { border-radius: 0; margin: 0; }
+:root .prose-gp .gp-s-faq summary { list-style: none; }
+:root .prose-gp .gp-s-faq details > :not(summary) { margin: 0 0 16px; }
+:root .prose-gp .gp-s-flow > li :is(p, small) { margin: 2px 0 0; }
+@media (max-width: 760px) {
+  :root .prose-gp .gp-s-steps > li { padding-inline-start: 52px; }
+}
