@@ -11,7 +11,11 @@ All notable changes to GoRun are recorded here. The format follows
   by the new `{{variant "<slot>" .}}` template func with a `native` fallback for undeclared, unknown or
   hand-edited values; Theme settings offers only declared options. New `single_style` (`wide`,
   `centered`) and `archive_style` (`grid`, `compact`) settings for the default, business, magazine and
-  portfolio themes, implemented by the shared `variants.css`, `list-grid` and `list-rows` components.
+  portfolio themes, implemented by the shared `variants.css`, `list-grid`, `list-rows` and
+  `list-variant` components; `archive_style` applies to post archives, taxonomy pages and search
+  results alike. Upgrade note: a custom child theme that rendered `header_style`/`footer_style`
+  through the inherited catalog parts without declaring `header:*`/`footer:*` in its own
+  `supports` now renders `native` until it declares the variants it implements.
 ### Improved
 
 - Integrations keeps saved results updating while checks are pending, with bounded background

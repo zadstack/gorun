@@ -92,6 +92,7 @@ func (a *admin) canPickMedia(ctx context.Context) bool {
 func (a *admin) settingViews(ctx context.Context, schema []content.Field, values map[string]any, errs map[string]string) []settingView {
 	locale := i18n.Locale(ctx)
 	canPick := a.canPickMedia(ctx)
+	var active *Info // the active theme, read once when a variant select needs it
 	out := make([]settingView, 0, len(schema))
 	for _, f := range schema {
 		name := "settings[" + f.Key + "]"
@@ -113,18 +114,32 @@ func (a *admin) settingViews(ctx context.Context, schema []content.Field, values
 		case "select":
 			declared, isVariant := []string(nil), false
 			if slot, ok := variantSlotOf(f.Key); ok {
-				declared, isVariant = DeclaredVariants(a.s.Active(ctx), slot), true
+				if active == nil {
+					info := a.s.Active(ctx)
+					active = &info
+				}
+				declared, isVariant = DeclaredVariants(*active, slot), true
 			}
 			var missing []string
 			for _, o := range f.Options {
 				if isVariant && !slices.Contains(declared, o.Value) {
-					missing = append(missing, pickLabel(o.Label, locale, o.Value))
+					label := pickLabel(o.Label, locale, o.Value)
+					missing = append(missing, label)
+					if o.Value == v.Value && v.Value != "" {
+						// Keep the stored value selected (it renders as native) so a
+						// save does not silently replace it.
+						v.Options = append(v.Options, settingChoice{Value: o.Value, Label: label + " — " + a.s.d.I18n.T(locale, "theme.settings.variant_not_offered"), Selected: true})
+					}
 					continue
 				}
 				v.Options = append(v.Options, settingChoice{Value: o.Value, Label: pickLabel(o.Label, locale, o.Value), Selected: o.Value == v.Value})
 			}
 			if len(missing) > 0 && a.s.d.I18n != nil {
-				v.Help = strings.TrimSpace(v.Help + " " + a.s.d.I18n.T(locale, "theme.settings.variant_unavailable", strings.Join(missing, "، ")))
+				sep := ", "
+				if locale == "ar" {
+					sep = "، "
+				}
+				v.Help = strings.TrimSpace(v.Help + " " + a.s.d.I18n.T(locale, "theme.settings.variant_unavailable", strings.Join(missing, sep)))
 			}
 		}
 		v.CanResetIdentity = isIdentityResetKey(f.Key)

@@ -24,7 +24,7 @@ func themeSettingsGroups(fields []settingView) []themeSettingsGroup {
 			index = 0
 		case strings.HasPrefix(field.Key, "footer_"):
 			index = 1
-		case strings.HasPrefix(field.Key, "identity_"):
+		case strings.HasPrefix(field.Key, "identity_"), strings.HasPrefix(field.Key, "single_"), strings.HasPrefix(field.Key, "archive_"):
 			index = 2
 		}
 		groups[index].Fields = append(groups[index].Fields, field)

@@ -1,9 +1,8 @@
 {{/* A content type archive (/blog/). Also the fallback for taxonomy and search. */}}
 {{part "header" .}}
 {{$title := t "latest_posts"}}{{with .Extra.title}}{{$title = .}}{{end}}
-{{$archive := variant "archive" .}}
-<section class="gr-section" aria-labelledby="archive-title" data-variant-archive="{{$archive}}">
+<section class="gr-section" aria-labelledby="archive-title">
   {{component "section-head" (dict "Path" "/archive" "Title" $title "TitleID" "archive-title" "Level" 1)}}
-  {{if eq $archive "grid"}}{{component "list-grid" .}}{{else if eq $archive "compact"}}{{component "list-rows" .}}{{else}}{{component "list" .}}{{end}}
+  {{component "list-variant" .}}
 </section>
 {{part "footer" .}}

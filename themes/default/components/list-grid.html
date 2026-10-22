@@ -4,6 +4,4 @@
   {{range .Items}}{{component "card" .}}{{end}}
 </div>
 {{component "pagination" .}}
-{{else}}
-<p class="default-empty rounded border border-line bg-panel p-6 text-muted">{{t "empty"}}</p>
-{{end}}
+{{else}}{{component "list" .}}{{end}}

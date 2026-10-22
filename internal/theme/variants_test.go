@@ -90,8 +90,18 @@ func TestThemeSettingsVariantOptionsFollowDeclarations(t *testing.T) {
 	}
 	views := (&admin{s: e.svc}).settingViews(adminCtx(), settingsSchema(e.svc.Active(adminCtx())), map[string]any{"header_style": "framed"}, nil)
 	for _, v := range views {
-		if v.Key == "header_style" && v.Value != "framed" {
+		if v.Key != "header_style" {
+			continue
+		}
+		if v.Value != "framed" {
 			t.Fatalf("stored value must be kept for display: %q", v.Value)
+		}
+		kept := false
+		for _, o := range v.Options {
+			kept = kept || (o.Value == "framed" && o.Selected && strings.HasPrefix(o.Label, "Framed — "))
+		}
+		if !kept {
+			t.Fatalf("stored undeclared value must stay selected and labelled: %+v", v.Options)
 		}
 	}
 	_ = content.Field{}

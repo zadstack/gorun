@@ -1,1 +1,1 @@
-{{part "header" .}}{{$archive := variant "archive" .}}<section class="studio-shell studio-listing" data-variant-archive="{{$archive}}"><h1>{{with .Extra.title}}{{.}}{{else}}{{t "latest_posts"}}{{end}}</h1>{{if eq $archive "grid"}}{{component "list-grid" .}}{{else if eq $archive "compact"}}{{component "list-rows" .}}{{else}}{{component "list" .}}{{end}}</section>{{part "footer" .}}
+{{part "header" .}}<section class="studio-shell studio-listing"><h1>{{with .Extra.title}}{{.}}{{else}}{{t "latest_posts"}}{{end}}</h1>{{component "list-variant" .}}</section>{{part "footer" .}}

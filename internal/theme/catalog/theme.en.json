@@ -158,5 +158,6 @@
   "overview.no_preview_match": "No preview matches this search.",
   "overview.focus_preview": "Focus this page",
   "overview.link_preview": "Site link",
-  "settings.variant_unavailable": "Not offered by this theme: %s."
+  "settings.variant_unavailable": "Not offered by this theme: %s.",
+  "settings.variant_not_offered": "not offered by this theme"
 }
