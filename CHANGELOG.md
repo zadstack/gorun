@@ -5,7 +5,6 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
-
 ### Added
 
 - `pkg/cli/theme_switch_test.go`: switching through every bundled theme keeps content, media,
@@ -34,6 +33,15 @@ All notable changes to GoRun are recorded here. The format follows
   `module <name> disabled`, never run, failed or deleted; enabling the module releases them
   unchanged. Accessors `hooks.Registry.Subscriptions`, `jobs.Queue.CronNames`,
   `jobs.Queue.QueuedByKind`, `ThemeRegistry.Kinds`, `AdminRegistry.NavIDs`, `ServiceRegistry.Names`.
+- Design variants are declared per theme in `theme.json` `supports` as `<slot>:<value>` and resolved
+  by the new `{{variant "<slot>" .}}` template func with a `native` fallback for undeclared, unknown or
+  hand-edited values; Theme settings offers only declared options. New `single_style` (`wide`,
+  `centered`) and `archive_style` (`grid`, `compact`) settings for the default, business, magazine and
+  portfolio themes, implemented by the shared `variants.css`, `list-grid`, `list-rows` and
+  `list-variant` components; `archive_style` applies to post archives, taxonomy pages and search
+  results alike. Upgrade note: a custom child theme that rendered `header_style`/`footer_style`
+  through the inherited catalog parts without declaring `header:*`/`footer:*` in its own
+  `supports` now renders `native` until it declares the variants it implements.
 
 ### Changed
 
@@ -47,17 +55,6 @@ All notable changes to GoRun are recorded here. The format follows
   public routes, API operations, job kinds, crons, admin pages, theme kinds and hooks are absent
   and its tables are kept; re-enabling reads the same data back.
 
-### Identity
-
-- Appearance → Identity (`/admin/appearance/identity`) is now one page, owned by the theme module,
-  for the site identity contract: four logo slots (`site.logo*`), name and tagline, accent /
-  background / text with a WCAG contrast check, Arabic heading and body fonts plus a new Latin
-  font (`identity_latin_font`), scheme, corners and a new spacing scale (`identity_spacing`),
-  header link and custom CSS. Edits go to a per-theme draft rendered by a live preview of the real
-  site (home or post, desktop or mobile, Arabic or English); **Apply** writes the live
-  `theme.<slug>.identity_*` and site keys in one transaction and records a revision (last 10);
-  **Revert** restores an earlier identity without touching content. The builder's `builder.identity`
-  stays a fallback layer and can be imported into the draft; its separate identity form is removed.
 ### Improved
 
 - Integrations keeps saved results updating while checks are pending, with bounded background
@@ -71,7 +68,6 @@ All notable changes to GoRun are recorded here. The format follows
 - Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
   or Worker identity checks. Configuration changes during these operations return conflict.
   Failed local reads and malformed saved results appear as unavailable rather than empty success.
-
 - Bundled themes: the header no longer shows a fallback "Search" button beside an existing search
   control (business, docs, portfolio on phones, magazine), so a configured CTA (`cta_label` +
   `cta_url`) is the only button there; Business keeps its search field usable at phone widths
@@ -81,6 +77,18 @@ All notable changes to GoRun are recorded here. The format follows
 - Default theme store pages (cart, checkout, account, product quantity) use translation keys
   (`store.*` in `themes/default/lang`) instead of Arabic-only copy, so an English store reads in
   English; the account page no longer hard-links optional modules' pages (`/agents`, `/saas`).
+
+### Identity
+
+- Appearance → Identity (`/admin/appearance/identity`) is now one page, owned by the theme module,
+  for the site identity contract: four logo slots (`site.logo*`), name and tagline, accent /
+  background / text with a WCAG contrast check, Arabic heading and body fonts plus a new Latin
+  font (`identity_latin_font`), scheme, corners and a new spacing scale (`identity_spacing`),
+  header link and custom CSS. Edits go to a per-theme draft rendered by a live preview of the real
+  site (home or post, desktop or mobile, Arabic or English); **Apply** writes the live
+  `theme.<slug>.identity_*` and site keys in one transaction and records a revision (last 10);
+  **Revert** restores an earlier identity without touching content. The builder's `builder.identity`
+  stays a fallback layer and can be imported into the draft; its separate identity form is removed.
 
 ### Optional modules
 

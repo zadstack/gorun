@@ -8,10 +8,12 @@
   <button type="submit" class="h-9 rounded bg-green px-4 font-medium text-on-accent hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "search"}}</button>
 </form>
 {{if $q}}
-  {{if .Items}}
-  <div class="default-content-grid grid gap-4 sm:grid-cols-2">{{range .Items}}{{component "card" .}}{{end}}</div>
+  {{$archive := variant "archive" .}}
+  {{if not .Items}}{{else if eq $archive "native"}}
+  <div class="default-content-grid grid gap-4 sm:grid-cols-2" data-variant-archive="native">{{range .Items}}{{component "card" .}}{{end}}</div>
   {{component "pagination" .}}
-  {{else}}
+  {{else}}{{component "list-variant" .}}{{end}}
+  {{if not .Items}}
   <p class="default-empty rounded border border-line bg-panel p-6 text-muted">{{t "no_results"}}</p>
   {{end}}
 {{end}}

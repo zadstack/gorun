@@ -90,6 +90,7 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 		"setting":         f.setting,
 		"builderStyle":    f.builderStyle,
 		"builderIdentity": f.builderIdentity,
+		"variant":         f.variant,
 		"identity": func(...any) template.HTML {
 			// Only a theme that declares the capability itself is restyled.
 			if st.tc == nil || st.tc.Theme.Slug == "" || !supportsIdentity(st.tc.Theme) {

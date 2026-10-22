@@ -1,5 +1,4 @@
 </main>
-{{$shellFooter := setting (printf "theme.%s.footer_style" .Theme.Slug)}}
-{{if not (or (eq $shellFooter "signature") (eq $shellFooter "columns") (eq $shellFooter "minimal"))}}{{$shellFooter = "native"}}{{end}}
+{{$shellFooter := variant "footer" .}}
 <footer data-shell-footer="{{$shellFooter}}" class="ed-footer"><div class="gp-site-width ed-footer-inner"><div><a class="ed-footer-name" href="{{url "/"}}">{{.Site.Title}}</a>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}<p class="ed-small">{{t "ed.footer_note"}}</p></div>{{$footerMenu := menu "footer"}}{{if not $footerMenu}}{{$footerMenu = menu "primary"}}{{end}}{{with $footerMenu}}<nav aria-label="{{t "footer_menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}<a class="ed-back-top" href="#main">{{t "ed.back_top"}} ↑</a></div><div class="gp-site-width ed-colophon"><span>{{t "ed.independent"}}</span><span>{{t "powered_by"}}</span></div></footer>
 </body></html>
