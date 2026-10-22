@@ -120,3 +120,51 @@ func TestSiteInformationLogoVariantsFollowSettingsThenThemeManifest(t *testing.T
 		t.Fatalf("missing icon media must not fall through to the theme silently: %+v", logos.Icon)
 	}
 }
+
+// Every logo branch carries provenance on the url field too: a missing
+// setting, a dangling media id, an absent media module and a manifest mark
+// must never leave url as an empty value without source or reason.
+func TestSiteInformationLogoURLAlwaysCarriesProvenance(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "default")
+	for path, body := range map[string]string{"theme.json": `{"name":"Brand","version":"1.0.0","logos":{"icon":"icon.svg"}}`, "templates/index.html": "x", "assets/icon.svg": "<svg/>"} {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, path)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, path), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	check := func(t *testing.T, name string, l api.SiteLogo, wantReason string) {
+		t.Helper()
+		if l.URL.Source == "" || l.URL.Available != (l.URL.Value != nil) {
+			t.Fatalf("%s: url without provenance: %+v", name, l.URL)
+		}
+		if wantReason != "" && (l.URL.Available || l.URL.Reason != wantReason) {
+			t.Fatalf("%s: url reason %+v, want %s", name, l.URL, wantReason)
+		}
+	}
+	// No media module at all.
+	bare := apitest.Boot(t, theme.New(theme.WithThemesDir(root)))
+	if err := bare.Deps.Settings.Set(t.Context(), "site.logo", "some-id"); err != nil {
+		t.Fatal(err)
+	}
+	logos, _ := siteLogos(t, bare)
+	check(t, "primary without media module", logos.Primary, "media_module_unavailable")
+	check(t, "dark fallback without media module", logos.Dark, "media_module_unavailable")
+	check(t, "manifest icon", logos.Icon, "")
+	if !logos.Icon.URL.Available || *logos.Icon.URL.Value != "/themes/default/assets/icon.svg" {
+		t.Fatalf("manifest url: %+v", logos.Icon.URL)
+	}
+	// Media module present: not configured and dangling ids.
+	app := apitest.Boot(t, media.New(), theme.New(theme.WithThemesDir(root)))
+	logos, _ = siteLogos(t, app)
+	check(t, "not configured", logos.Primary, "not_configured")
+	check(t, "light not configured", logos.Light, "not_configured")
+	if err := app.Deps.Settings.Set(t.Context(), "site.logo", "missing-media"); err != nil {
+		t.Fatal(err)
+	}
+	logos, _ = siteLogos(t, app)
+	check(t, "dangling media", logos.Primary, "media_not_found")
+	check(t, "dark via dangling media", logos.Dark, "media_not_found")
+}
