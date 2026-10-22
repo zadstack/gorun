@@ -21,6 +21,20 @@ All notable changes to GoRun are recorded here. The format follows
   `gp-s-bg-<name>` modifier still wins. Validation record and screenshots in
   `docs/validation/sections-pilot/`; Basecoat evaluated there and not added.
 
+### Improved
+
+- Integrations keeps saved results updating while checks are pending, with bounded background
+  refresh, offline/hidden pause, preserved form drafts and compact bilingual resource tables.
+  HTML inventories use 100-row pages and saved-data search; API snapshots remain complete.
+- Worker identity reports reuse one configuration snapshot instead of rereading settings per
+  identity. Local large-inventory benchmarks and their limits are recorded under `docs/reports/`.
+
+### Fixed
+
+- Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
+  or Worker identity checks. Configuration changes during these operations return conflict.
+  Failed local reads and malformed saved results appear as unavailable rather than empty success.
+
 ## [0.15.1] - 2026-10-22
 
 ### Fixed
