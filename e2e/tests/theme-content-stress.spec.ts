@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { csrf, db } from "../lib/helpers.ts";
 
@@ -245,7 +247,19 @@ test("five themes preserve bilingual stress content and keep it reachable", asyn
       resolve(output, "theme-stress-acceptance.json"),
       JSON.stringify(
         {
-          commit: "a75850d",
+          fixtureBase: "a75850d",
+          testedCommit: execFileSync("git", ["rev-parse", "HEAD"], {
+            encoding: "utf8",
+          }).trim(),
+          trackedDirty:
+            execFileSync(
+              "git",
+              ["status", "--porcelain", "--untracked-files=no"],
+              { encoding: "utf8" },
+            ).trim() !== "",
+          a11ySHA256: createHash("sha256")
+            .update(readFileSync(resolve("../themes/default/assets/a11y.css")))
+            .digest("hex"),
           records,
           errors: info.errors.map((e) => e.message),
         },
