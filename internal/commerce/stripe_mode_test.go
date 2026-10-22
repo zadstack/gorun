@@ -3,12 +3,14 @@ package commerce
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/webhook"
 
 	"github.com/zadstack/gorun/internal/admin"
@@ -121,6 +123,17 @@ func TestStripeModeBootstrapExistingStoreKeepsLive(t *testing.T) {
 		t.Fatal("upgrade bootstrap not audited as existing")
 	}
 
+	// A malformed install stamp is logged and treated as an existing store.
+	if _, err := e.svc.db.ExecContext(ctx, `INSERT INTO settings (key, value_json, updated_at) VALUES (?, '"soon"', '2026-01-01T00:00:00Z')`, kernel.InstallSettingKey); err != nil {
+		t.Fatal(err)
+	}
+	if fresh, err := e.svc.storeIsNew(ctx); err != nil || fresh {
+		t.Fatalf("malformed stamp: fresh=%v err=%v", fresh, err)
+	}
+	if _, err := e.svc.db.ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, kernel.InstallSettingKey); err != nil {
+		t.Fatal(err)
+	}
+
 	// An upgraded store with orders is existing for the same reason.
 	for _, k := range []string{SettingStripeMode, SettingSettingsVersion} {
 		if err := e.svc.d.Settings.Delete(ctx, k); err != nil {
@@ -162,11 +175,30 @@ func TestStripeModeSwitchToLiveRequiresConfirmationAndUsableKeys(t *testing.T) {
 		t.Fatal("switching to test must not call Stripe")
 	}
 
-	// 1. no confirmation
+	// Slot guard without any mode switch: in test mode, a live key into the
+	// test slot and a test key into the live slot are both refused and
+	// nothing is saved, so checkout can never run on a key from the other mode.
+	for _, form := range []url.Values{
+		{"currency": {"AED"}, "stripe_mode": {"test"}, "stripe_test_secret_key": {"sk_live_sneaked_in"}},
+		{"currency": {"AED"}, "stripe_test_secret_key": {"rk_live_restricted"}},
+		{"currency": {"AED"}, "stripe_mode": {"test"}, "stripe_secret_key": {"sk_test_in_live_slot"}, "grace_days": {"9"}},
+	} {
+		r, page := e.adminPost("/admin/commerce/settings", form)
+		if r.StatusCode != http.StatusUnprocessableEntity {
+			t.Fatalf("slot guard %v: %d", form, r.StatusCode)
+		}
+		mustContain(t, page, `aria-invalid="true"`, "field-error", `data-stripe-mode="test"`)
+		if e.svc.stripeSecretFor(ctx, "test") != "sk_test_only" || e.svc.stripeSecretFor(ctx, "live") != "sk_test_config" || e.svc.graceDays(ctx) == 9 {
+			t.Fatalf("refused save stored something: %v", form)
+		}
+	}
+	// 1. no confirmation: refused, and the page keeps the current mode's badge
+	// while the select shows what was submitted.
 	if r, page := e.adminPost("/admin/commerce/settings", url.Values{"currency": {"AED"}, "stripe_mode": {"live"}}); r.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("live without confirmation: %d\n%s", r.StatusCode, page)
 	} else {
-		mustContain(t, page, `id="c-mode"`, "field-error")
+		mustContain(t, page, `id="c-mode"`, "field-error", `data-stripe-mode="test"`, `<option value="live" selected>`)
+		mustNotContain(t, page, `data-stripe-mode="live"`)
 	}
 	// 2. confirmed, but the live slot holds a test-prefixed key (the env value sk_test_config)
 	if r, _ := e.adminPost("/admin/commerce/settings", url.Values{"currency": {"AED"}, "stripe_mode": {"live"}, "confirm_live": {"1"}}); r.StatusCode != http.StatusUnprocessableEntity {
@@ -204,6 +236,11 @@ func TestStripeModeSwitchToLiveRequiresConfirmationAndUsableKeys(t *testing.T) {
 	}
 	if auditCount(e, "commerce.settings.mode") != 2 {
 		t.Fatal("live switch not audited")
+	}
+	// Cases 4–6 each verified the key submitted in the form (never stored
+	// before case 6): the audit names that source, not the stored state.
+	if e.count(`SELECT count(*) FROM audit_log WHERE action = 'commerce.stripe.verify' AND meta_json LIKE '%"key_source":"form"%'`) != 3 || e.count(`SELECT count(*) FROM audit_log WHERE action = 'commerce.stripe.verify'`) != 3 {
+		t.Fatal("verification of the submitted key must be audited with key_source form")
 	}
 	st := e.svc.stripeStatus(ctx, "live")
 	if st.Auth.State != authAuthenticated {
@@ -266,6 +303,19 @@ func TestStripeVerifyKeyAndThreeStates(t *testing.T) {
 	_, page := e.do("GET", "/admin/commerce/settings", nil)
 	mustContain(t, page, `data-stripe-auth="failed"`)
 	mustNotContain(t, page, "sk_live_new", "sk_test_config")
+	// Authentication ages out: a check older than a day is stale, which is
+	// not authenticated for the capability report either.
+	fv.err = nil
+	e.adminPost("/admin/commerce/settings/verify", url.Values{"mode": {"live"}})
+	if st := e.svc.stripeStatus(ctx, "live"); st.Auth.State != authAuthenticated {
+		t.Fatalf("fresh check = %+v", st.Auth)
+	}
+	realNow := e.svc.now
+	e.svc.now = func() time.Time { return realNow().Add(maxAuthAge + time.Hour) }
+	if st := e.svc.stripeStatus(ctx, "live"); st.Auth.State != authStale {
+		t.Fatalf("day-old check = %+v", st.Auth)
+	}
+	e.svc.now = realNow
 
 	// Webhook delivery: the locally signed test event never proves delivery;
 	// a signed delivery on the public test endpoint does.
@@ -439,4 +489,49 @@ func TestOrderStripeModeProvenance(t *testing.T) {
 	if err != nil || o.StripeMode != "test" {
 		t.Fatalf("Order.StripeMode = %q (%v)", o.StripeMode, err)
 	}
+}
+
+func TestStripeErrorSummaryNeverCarriesTheKey(t *testing.T) {
+	se := &stripe.Error{Type: stripe.ErrorType("authentication_error"), Code: stripe.ErrorCodeAPIKeyExpired, HTTPStatusCode: 401,
+		Msg: "Invalid API Key provided: sk_live_****abcd"}
+	if got := stripeErrorSummary(se); got != "authentication_error api_key_expired (HTTP 401)" {
+		t.Fatalf("stripe error summary = %q", got)
+	}
+	if got := stripeErrorSummary(fmt.Errorf("dial failed for sk_test_51abc: refused")); strings.Contains(got, "sk_test_51abc") || !strings.Contains(got, "[redacted]") {
+		t.Fatalf("plain error summary = %q", got)
+	}
+	if got := stripeErrorSummary(context.DeadlineExceeded); got != "timeout" {
+		t.Fatalf("timeout summary = %q", got)
+	}
+}
+
+// Regression for the review of #133: with the store already in test mode
+// (no switch in the request), a live-prefixed key posted into the test slot
+// is refused and never stored; and a refused switch renders the stored
+// mode's badge, not the target's.
+func TestStripeModeSlotGuardWithoutSwitchAndRefusedBadge(t *testing.T) {
+	e := boot(t)
+	ctx := context.Background()
+	e.signInAdmin("admin@example.com", "admin")
+	if err := e.svc.d.Settings.Set(ctx, SettingStripeMode, "test"); err != nil {
+		t.Fatal(err)
+	}
+	r, page := e.adminPost("/admin/commerce/settings", url.Values{"currency": {"AED"}, "stripe_mode": {"test"}, "stripe_test_secret_key": {"sk_live_forbidden"}})
+	if r.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("live key into the test slot while in test mode: %d, stored %q", r.StatusCode, e.svc.stripeSecretFor(ctx, "test"))
+	}
+	if e.svc.stripeSecretFor(ctx, "test") != "" {
+		t.Fatal("refused key was stored")
+	}
+	mustContain(t, page, `id="c-test-key"`, `aria-invalid="true"`, `data-stripe-mode="test"`)
+	// Checkout in test mode therefore has no key at all rather than a live one.
+	if _, _, err := e.svc.StartCheckout(ctx, e.product("guarded", e.server()).ID, "buyer@example.com"); !errors.Is(err, ErrStripeNotConfigured) {
+		t.Fatalf("checkout after the refused save: %v", err)
+	}
+	r, page = e.adminPost("/admin/commerce/settings", url.Values{"currency": {"AED"}, "stripe_mode": {"live"}})
+	if r.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("unconfirmed live switch: %d", r.StatusCode)
+	}
+	mustContain(t, page, `data-stripe-mode="test"`, `<option value="live" selected>`)
+	mustNotContain(t, page, `data-stripe-mode="live"`)
 }

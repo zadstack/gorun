@@ -18,7 +18,8 @@ All notable changes to GoRun are recorded here. The format follows
   and not test-prefixed, live webhook secret, Stripe reports a live key); a refused switch saves
   nothing. Orders and Stripe events record the mode that created or verified them and Orders
   shows it; a test order is never paid by a live-signed event and refunds use the order's own mode.
-  Delivery evidence is bound to the credentials in place when it was verified, so rotating a
+  A key whose prefix contradicts its slot (live key in the test slot, test key in the live
+  slot) is refused on every save. Delivery evidence is bound to the credentials in place when it was verified, so rotating a
   webhook secret or changing the account key starts again from "unverified". Fresh installs
   (stamped `kernel.install_epoch` by the kernel when it creates the database) start in test mode;
   upgraded sites keep their effective mode and historical orders are never relabelled.

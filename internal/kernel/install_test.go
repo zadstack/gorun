@@ -2,6 +2,7 @@ package kernel_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -36,6 +37,16 @@ func TestInstallEpochStampsOnlyFreshDatabases(t *testing.T) {
 	}
 	if n, err := kernel.InstalledEpoch(ctx, d); err != nil || n != 0 {
 		t.Fatalf("upgraded database must stay unstamped, got %d, %v", n, err)
+	}
+	// A malformed stamp is reported, never fatal: the caller treats it as 0.
+	if _, err := d.Exec(`INSERT INTO settings (key, value_json, updated_at) VALUES (?, '"soon"', '2026-01-01T00:00:00Z')`, kernel.InstallSettingKey); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := kernel.InstalledEpoch(ctx, d); !errors.Is(err, kernel.ErrInstallEpochMalformed) || n != 0 {
+		t.Fatalf("malformed stamp = %d, %v", n, err)
+	}
+	if _, err := d.Exec(`DELETE FROM settings WHERE key = ?`, kernel.InstallSettingKey); err != nil {
+		t.Fatal(err)
 	}
 	// Boot stamps a fresh data directory the same way.
 	app, err := kernel.Boot(ctx, testConfig(t), mods)

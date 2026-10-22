@@ -72,8 +72,14 @@ and entitlement records.
    webhook secret or pointing the slot at another account's key starts again from "unverified"
    without touching the old rows; the local **Send test event** is recorded as `source=local` and
    never counts). A key's presence or `sk_test_`/`sk_live_` prefix is
-   only a hint, never verification. Switching to **test** needs no confirmation and no Stripe call
-   (a live-prefixed key in the test slot is refused). Switching to **live** is refused unless the
+   only a hint, never verification — except for the slot rule: on every save, whatever the mode, a
+   `sk_live_`/`rk_live_` key is refused in the test slot and a `sk_test_`/`rk_test_` key in the
+   live slot, so checkout never runs on a key from the other mode (the environment's
+   `STRIPE_SECRET_KEY` is not a form write; a test key there is flagged on the status card and
+   blocks the live switch). A successful check counts as authenticated for 24 hours, then shows
+   "stale" until **Verify key** runs again; the check uses a 10 s timeout and no retries, and a
+   failure stores only the Stripe error type, code and HTTP status (never the message, which
+   quotes the masked key). Switching to **test** needs no confirmation and no Stripe call. Switching to **live** is refused unless the
    form carries the explicit confirmation, a live key that is not test-prefixed and a live webhook
    secret are effective, and the read-only check reports `livemode=true`; a refused switch saves
    nothing. No charge is ever created by these checks. **Send test event** signs a local

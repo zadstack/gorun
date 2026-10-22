@@ -383,5 +383,9 @@
   "health.authenticated": "تمت مصادقة المفتاح مع Stripe قبل %s",
   "health.auth_mismatch": "المفتاح المخزّن يخص الوضع الآخر",
   "health.auth_failed": "فشل آخر فحص للمفتاح",
-  "health.webhook_verified": "تسليم موقّع من Stripe قبل %s"
+  "health.webhook_verified": "تسليم موقّع من Stripe قبل %s",
+  "error.test_slot_live_key": "حقل المفتاح السري التجريبي يقبل مفتاح اختبار فقط (sk_test_…): مفتاح فعلي هنا سيقبل مدفوعات حقيقية في وضع الاختبار. لم يُحفظ شيء.",
+  "error.live_slot_test_key": "حقل مفتاح Stripe السري يقبل مفتاحًا فعليًا فقط (sk_live_…): ضع مفاتيح الاختبار في حقل المفتاح السري التجريبي. لم يُحفظ شيء.",
+  "settings.auth_stale": "آخر فحص أقدم من يوم: تحقق مجددًا",
+  "health.auth_stale": "عمر فحص المفتاح %s؛ تحقق مجددًا"
 }

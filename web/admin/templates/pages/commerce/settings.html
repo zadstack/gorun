@@ -8,7 +8,7 @@
     <dt class="text-muted">{{t "commerce.settings.state_configured"}}</dt>
     <dd data-stripe-configured="{{if and $st.KeyConfigured $st.WebhookConfigured}}yes{{else}}no{{end}}">{{if $st.KeyConfigured}}{{t "commerce.settings.key_present"}}{{if eq $st.KeySource "env"}} ({{t "commerce.settings.from_env"}}){{end}}{{if eq $st.KeyPrefix "test"}}{{if eq $st.Mode "live"}} · <span class="text-amber-text">{{t "commerce.settings.prefix_test_in_live"}}</span>{{end}}{{else if eq $st.KeyPrefix "live"}}{{if eq $st.Mode "test"}} · <span class="text-red">{{t "commerce.settings.prefix_live_in_test"}}</span>{{end}}{{end}}{{else}}{{t "commerce.settings.key_missing"}}{{end}} · {{if $st.WebhookConfigured}}{{t "commerce.settings.webhook_present"}}{{else}}{{t "commerce.settings.webhook_missing"}}{{end}}</dd>
     <dt class="text-muted">{{t "commerce.settings.state_authenticated"}}</dt>
-    <dd data-stripe-auth="{{$st.Auth.State}}">{{if eq $st.Auth.State "authenticated"}}<span class="text-green">{{t "commerce.settings.auth_ok"}}</span>{{else if eq $st.Auth.State "mismatch"}}<span class="text-red">{{t "commerce.settings.auth_mismatch"}}</span>{{else if eq $st.Auth.State "failed"}}<span class="text-red">{{t "commerce.settings.auth_failed"}}</span>{{with $st.Auth.Error}} · <span class="font-mono text-xs break-all" dir="ltr">{{.}}</span>{{end}}{{else}}{{t "commerce.settings.auth_unverified"}}{{end}}{{with $st.Auth.CheckedAt}} · <span class="font-mono text-xs">{{date .}}</span>{{end}}</dd>
+    <dd data-stripe-auth="{{$st.Auth.State}}">{{if eq $st.Auth.State "authenticated"}}<span class="text-green">{{t "commerce.settings.auth_ok"}}</span>{{else if eq $st.Auth.State "mismatch"}}<span class="text-red">{{t "commerce.settings.auth_mismatch"}}</span>{{else if eq $st.Auth.State "stale"}}<span class="text-amber-text">{{t "commerce.settings.auth_stale"}}</span>{{else if eq $st.Auth.State "failed"}}<span class="text-red">{{t "commerce.settings.auth_failed"}}</span>{{with $st.Auth.Error}} · <span class="font-mono text-xs break-all" dir="ltr">{{.}}</span>{{end}}{{else}}{{t "commerce.settings.auth_unverified"}}{{end}}{{with $st.Auth.CheckedAt}} · <span class="font-mono text-xs">{{date .}}</span>{{end}}</dd>
     <dt class="text-muted">{{t "commerce.settings.state_delivery"}}</dt>
     <dd data-stripe-delivery="{{if $st.Delivery.Verified}}verified{{else}}unverified{{end}}">{{if $st.Delivery.Verified}}<span class="text-green">{{t "commerce.settings.delivery_ok" $st.Delivery.Count}}</span> · <span class="font-mono text-xs">{{date $st.Delivery.LastAt}}</span>{{else}}{{t "commerce.settings.delivery_unverified"}}{{end}}</dd>
   </dl>
@@ -40,8 +40,8 @@
       <div>
         <label for="c-mode" class="block font-medium mb-1">{{t "commerce.settings.mode"}}</label>
         <select id="c-mode" name="stripe_mode" {{with index .Fields "stripe_mode"}}aria-invalid="true"{{end}} class="h-9 rounded border border-line bg-panel px-3">
-          <option value="live" {{if ne .Mode "test"}}selected{{end}}>{{t "commerce.settings.mode_live"}}</option>
-          <option value="test" {{if eq .Mode "test"}}selected{{end}}>{{t "commerce.settings.mode_test"}}</option>
+          <option value="live" {{if ne .Selected "test"}}selected{{end}}>{{t "commerce.settings.mode_live"}}</option>
+          <option value="test" {{if eq .Selected "test"}}selected{{end}}>{{t "commerce.settings.mode_test"}}</option>
         </select>
       </div>
       <label class="flex items-start gap-2 text-sm sm:pt-7"><input type="checkbox" name="confirm_live" value="1" class="mt-1 accent-[var(--green)]"> <span>{{t "commerce.settings.confirm_live"}}</span></label>
@@ -64,7 +64,8 @@
   </div>
   <div id="stripe">
     <label for="c-stripe" class="block font-medium mb-1">{{t "commerce.settings.stripe_key"}}</label>
-    <input id="c-stripe" name="stripe_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_live_… / sk_test_…" aria-describedby="c-stripe-help" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <input id="c-stripe" name="stripe_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_live_…" aria-describedby="c-stripe-help" {{with index .Fields "stripe_secret_key"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    {{template "partials/field_errors" (index .Fields "stripe_secret_key")}}
     <p id="c-stripe-help" class="mt-1 text-xs text-muted">{{if .StripeSet}}{{t "commerce.settings.secret_set"}}{{else if .StripeFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .StripeSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_secret_key" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>
@@ -76,7 +77,8 @@
   </div>
   <div>
     <label for="c-test-key" class="block font-medium mb-1">{{t "commerce.settings.test_key"}}</label>
-    <input id="c-test-key" name="stripe_test_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_test_…" class="h-9 w-full rounded border border-line bg-panel px-3">
+    <input id="c-test-key" name="stripe_test_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_test_…" {{with index .Fields "stripe_test_secret_key"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3">
+    {{template "partials/field_errors" (index .Fields "stripe_test_secret_key")}}
     <p class="mt-1 text-xs text-muted">{{if .TestKeySet}}{{t "commerce.settings.secret_set"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .TestKeySet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_test_secret_key" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>

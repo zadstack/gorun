@@ -383,5 +383,9 @@
   "health.authenticated": "key authenticated with Stripe %s ago",
   "health.auth_mismatch": "the stored key belongs to the other mode",
   "health.auth_failed": "the last key check failed",
-  "health.webhook_verified": "signed delivery from Stripe %s ago"
+  "health.webhook_verified": "signed delivery from Stripe %s ago",
+  "error.test_slot_live_key": "The test secret key field only takes a test key (sk_test_…): a live key here would take real payments in test mode. Nothing was saved.",
+  "error.live_slot_test_key": "The Stripe secret key field only takes a live key (sk_live_…): put test keys in the test secret key field. Nothing was saved.",
+  "settings.auth_stale": "last check is older than a day: verify again",
+  "health.auth_stale": "key check is %s old; verify again"
 }

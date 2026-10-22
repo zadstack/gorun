@@ -8,7 +8,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/stripe/stripe-go/v82"
 
@@ -32,9 +35,20 @@ const (
 const (
 	authUnverified    = "unverified"
 	authAuthenticated = "authenticated"
+	authStale         = "stale" // authenticated longer than maxAuthAge ago: verify again
 	authFailed        = "failed"
 	authMismatch      = "mismatch"
 )
+
+// maxAuthAge bounds how long a successful key check counts as
+// "authenticated"; after that the state is stale until Verify key runs
+// again (the key may have been revoked in the Dashboard meanwhile).
+const maxAuthAge = 24 * time.Hour
+
+// verifyTimeout bounds the synchronous read-only call made from an admin
+// POST; stripe-go's defaults (80 s per attempt, 2 retries) are too long
+// for a request handler.
+const verifyTimeout = 10 * time.Second
 
 // keyVerification is what a read-only Stripe call reports about a key.
 type keyVerification struct {
@@ -52,12 +66,40 @@ type keyVerifier interface {
 type stripeVerifier struct{}
 
 func (stripeVerifier) Verify(ctx context.Context, secretKey string) (keyVerification, error) {
-	sc := stripe.NewClient(secretKey)
+	ctx, cancel := context.WithTimeout(ctx, verifyTimeout)
+	defer cancel()
+	backend := stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{
+		HTTPClient: &http.Client{Timeout: verifyTimeout}, MaxNetworkRetries: stripe.Int64(0)})
+	sc := stripe.NewClient(secretKey, stripe.WithBackends(&stripe.Backends{API: backend, Connect: backend, Uploads: backend, MeterEvents: backend}))
 	b, err := sc.V1Balance.Retrieve(ctx, &stripe.BalanceRetrieveParams{})
 	if err != nil {
 		return keyVerification{}, err
 	}
 	return keyVerification{Livemode: b.Livemode}, nil
+}
+
+var secretTokenRe = regexp.MustCompile(`\b[sr]k_(?:live|test)_[A-Za-z0-9*…]+`)
+
+// stripeErrorSummary is what is stored and shown for a failed check: for a
+// Stripe API error only its type, code and HTTP status (never the message,
+// which quotes the masked key); for anything else a short class of failure
+// with any key-shaped token redacted.
+func stripeErrorSummary(err error) string {
+	var se *stripe.Error
+	if errors.As(err, &se) {
+		s := string(se.Type)
+		if se.Code != "" {
+			s += " " + string(se.Code)
+		}
+		if se.HTTPStatusCode != 0 {
+			s += fmt.Sprintf(" (HTTP %d)", se.HTTPStatusCode)
+		}
+		return strings.TrimSpace(s)
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "timeout"
+	}
+	return truncate(secretTokenRe.ReplaceAllString(err.Error(), "[redacted]"), 120)
 }
 
 // storedVerification is the persisted result of the last key check for a
@@ -198,6 +240,8 @@ func (s *service) authStatusFor(ctx context.Context, mode, key string) authStatu
 		st.State = authFailed
 	case v.Livemode != (mode == "live"):
 		st.State = authMismatch
+	case time.Duration(ageSeconds(s.now(), v.CheckedAt))*time.Second > maxAuthAge:
+		st.State = authStale
 	default:
 		st.State = authAuthenticated
 	}
@@ -226,30 +270,50 @@ func (s *service) verifyStripeKey(ctx context.Context, mode string) (authStatus,
 	if key == "" {
 		return authStatus{State: authUnverified}, ErrStripeNotConfigured
 	}
-	return s.verifyKeyAs(ctx, mode, key)
+	return s.verifyKeyAs(ctx, mode, key, s.stripeKeySource(ctx, mode))
 }
 
 // verifyKeyAs checks key as mode's key and records the outcome under that
-// key's fingerprint.
-func (s *service) verifyKeyAs(ctx context.Context, mode, key string) (authStatus, error) {
+// key's fingerprint. source says where the checked key came from
+// ("settings", "env" or "form" for a value submitted but not yet stored).
+func (s *service) verifyKeyAs(ctx context.Context, mode, key, source string) (authStatus, error) {
 	v := storedVerification{Fingerprint: s.keyFingerprint(key), CheckedAt: s.nowString()}
 	res, err := s.verifier.Verify(ctx, key)
 	if err != nil {
-		v.Error = truncate(err.Error(), 200)
+		v.Error = stripeErrorSummary(err)
 	} else {
 		v.OK, v.Livemode = true, res.Livemode
 	}
 	if err := s.storeVerification(ctx, mode, v); err != nil {
 		return authStatus{}, err
 	}
-	s.audit.Record(ctx, "commerce.stripe.verify", "settings", "commerce", map[string]any{"mode": mode, "ok": v.OK, "livemode": v.Livemode, "key_source": s.stripeKeySource(ctx, mode)})
+	s.audit.Record(ctx, "commerce.stripe.verify", "settings", "commerce", map[string]any{"mode": mode, "ok": v.OK, "livemode": v.Livemode, "key_source": source})
 	return s.authStatusFor(ctx, mode, key), nil
+}
+
+// slotKeyError refuses a key whose documented prefix contradicts the slot
+// it is being written to, whatever the current mode: a live key in the
+// test slot would take real payments while "testing", a test key in the
+// live slot would mark test transactions as live. It is applied to every
+// save, not only to a mode switch. Prefix is a hint; the slot rule is the
+// one place a hint is enough, because the contradiction is explicit.
+func slotKeyError(slot, key string) string {
+	switch {
+	case key == "":
+		return ""
+	case slot == "test" && keyPrefixHint(key) == "live":
+		return "commerce.error.test_slot_live_key"
+	case slot == "live" && keyPrefixHint(key) == "test":
+		return "commerce.error.live_slot_test_key"
+	}
+	return ""
 }
 
 // modeSwitchInput is what the settings form would make effective for each
 // slot: the submitted value, else the stored/env value, else "" when cleared.
 type modeSwitchInput struct {
 	LiveKey, LiveWebhook, TestKey string
+	LiveKeySource                 string // form | settings | env
 	Confirmed                     bool
 }
 
@@ -287,7 +351,7 @@ func (s *service) validateModeSwitch(ctx context.Context, target string, in mode
 		if in.LiveWebhook == "" {
 			return &modeSwitchError{Field: "commerce.error.mode_live_webhook_missing"}
 		}
-		st, err := s.verifyKeyAs(ctx, "live", in.LiveKey)
+		st, err := s.verifyKeyAs(ctx, "live", in.LiveKey, in.LiveKeySource)
 		if err != nil {
 			return err
 		}
@@ -350,6 +414,10 @@ func bootstrapStripeMode(ctx context.Context, s *service) error {
 // configure the live slot.
 func (s *service) storeIsNew(ctx context.Context) (bool, error) {
 	epoch, err := kernel.InstalledEpoch(ctx, s.db)
+	if errors.Is(err, kernel.ErrInstallEpochMalformed) {
+		s.log.Warn("commerce: install epoch unreadable; treating the store as existing", "err", err)
+		epoch, err = 0, nil
+	}
 	if err != nil {
 		return false, err
 	}

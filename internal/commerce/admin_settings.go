@@ -11,7 +11,8 @@ import (
 
 type settingsPage struct {
 	Currency                      string
-	Mode                          string
+	Mode                          string // the current (stored) mode: the badge
+	Selected                      string // the select's value (the submitted target on a refused save)
 	GraceDays                     int
 	AutomaticTax                  bool
 	RegistrationEnabled           bool
@@ -35,7 +36,7 @@ func (h *adminHandlers) settingsData(r *http.Request) settingsPage {
 	live.Current, live.WebhookURL = mode == "live", base+"/webhooks/stripe/live"
 	test.Current, test.WebhookURL = mode == "test", base+"/webhooks/stripe/test"
 	return settingsPage{
-		Currency: s.currency(ctx), Mode: mode, GraceDays: s.graceDays(ctx), AutomaticTax: s.automaticTax(ctx),
+		Currency: s.currency(ctx), Mode: mode, Selected: mode, GraceDays: s.graceDays(ctx), AutomaticTax: s.automaticTax(ctx),
 		RegistrationEnabled: s.registrationEnabled(ctx),
 		StripeSet:           s.d.Settings.GetString(ctx, SettingStripeSecret, "") != "", WebhookSet: s.d.Settings.GetString(ctx, SettingWebhookSecret, "") != "",
 		TestKeySet: s.d.Settings.GetString(ctx, SettingStripeTestKey, "") != "", TestWebhookSet: s.d.Settings.GetString(ctx, SettingWebhookTest, "") != "",
@@ -92,13 +93,26 @@ func (h *adminHandlers) settingsSave(w http.ResponseWriter, r *http.Request) {
 	f.TestSecretKey, f.TestWebhookSecret = strings.TrimSpace(f.TestSecretKey), strings.TrimSpace(f.TestWebhookSecret)
 	reject := func(field, key, detail string) {
 		pg := h.settingsData(r)
-		pg.Currency, pg.Mode, pg.ModeDetail = f.Currency, f.StripeMode, detail
+		pg.Currency, pg.ModeDetail = f.Currency, detail
+		if f.StripeMode == "test" || f.StripeMode == "live" {
+			pg.Selected = f.StripeMode
+		}
 		pg.Fields = map[string]string{field: key}
 		h.tpl.RenderWith(w, r, http.StatusUnprocessableEntity, "admin", "pages/commerce/settings.html", pg)
 	}
 	cur := strings.ToUpper(strings.TrimSpace(f.Currency))
 	if !validCurrency(cur) {
 		reject("currency", "commerce.error.currency_invalid", "")
+		return
+	}
+	// A key whose prefix contradicts its slot is refused on every save,
+	// whatever the current mode and whether or not the mode changes.
+	if key := slotKeyError("live", f.StripeSecretKey); key != "" {
+		reject("stripe_secret_key", key, "")
+		return
+	}
+	if key := slotKeyError("test", f.TestSecretKey); key != "" {
+		reject("stripe_test_secret_key", key, "")
 		return
 	}
 	grace := -1
@@ -117,14 +131,18 @@ func (h *adminHandlers) settingsSave(w http.ResponseWriter, r *http.Request) {
 	switching := (f.StripeMode == "test" || f.StripeMode == "live") && f.StripeMode != current
 	if switching {
 		in := modeSwitchInput{
-			Confirmed:   f.ConfirmLive,
-			LiveKey:     effective(f.StripeSecretKey, f.ClearStripeSecret, s.secretSetting(ctx, SettingStripeSecret, "")),
-			LiveWebhook: effective(f.WebhookSecret, f.ClearWebhookSecret, s.secretSetting(ctx, SettingWebhookSecret, "")),
-			TestKey:     effective(f.TestSecretKey, f.ClearTestSecret, s.secretSetting(ctx, SettingStripeTestKey, "")),
+			Confirmed:     f.ConfirmLive,
+			LiveKey:       effective(f.StripeSecretKey, f.ClearStripeSecret, s.secretSetting(ctx, SettingStripeSecret, "")),
+			LiveKeySource: "settings",
+			LiveWebhook:   effective(f.WebhookSecret, f.ClearWebhookSecret, s.secretSetting(ctx, SettingWebhookSecret, "")),
+			TestKey:       effective(f.TestSecretKey, f.ClearTestSecret, s.secretSetting(ctx, SettingStripeTestKey, "")),
+		}
+		if f.StripeSecretKey != "" && !f.ClearStripeSecret {
+			in.LiveKeySource = "form"
 		}
 		// A cleared or empty stored live slot falls back to the environment.
 		if in.LiveKey == "" {
-			in.LiveKey = s.d.Config.Stripe.SecretKey
+			in.LiveKey, in.LiveKeySource = s.d.Config.Stripe.SecretKey, "env"
 		}
 		if in.LiveWebhook == "" {
 			in.LiveWebhook = s.d.Config.Stripe.WebhookSecret

@@ -49,9 +49,16 @@ func stampInstall(ctx context.Context, d *sql.DB) error {
 	return nil
 }
 
+// ErrInstallEpochMalformed reports a kernel.install_epoch value that is not
+// a non-negative integer. InstalledEpoch returns it together with 0 so a
+// caller can log and carry on as for an existing database; it is never
+// fatal at boot.
+var ErrInstallEpochMalformed = errors.New("kernel: install epoch is not a non-negative integer")
+
 // InstalledEpoch returns the install epoch stamped when this database was
 // created, or 0 for a database created before the stamp existed (an
-// upgraded site) — the caller must treat 0 as "existing".
+// upgraded site) — the caller must treat 0 as "existing". A malformed value
+// returns 0 and ErrInstallEpochMalformed.
 func InstalledEpoch(ctx context.Context, d *sql.DB) (int, error) {
 	var raw string
 	err := d.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, InstallSettingKey).Scan(&raw)
@@ -63,7 +70,7 @@ func InstalledEpoch(ctx context.Context, d *sql.DB) (int, error) {
 	}
 	n, err := strconv.Atoi(raw)
 	if err != nil || n < 0 {
-		return 0, fmt.Errorf("kernel: setting %s must be a non-negative integer, got %s", InstallSettingKey, raw)
+		return 0, fmt.Errorf("%w: %s=%s", ErrInstallEpochMalformed, InstallSettingKey, raw)
 	}
 	return n, nil
 }

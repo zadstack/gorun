@@ -108,6 +108,8 @@ func (s *service) healthChecks(ctx context.Context, v any) (any, error) {
 		add(t("commerce.health.stripe"), admin.CheckFail, modeLabel+" · "+t("commerce.health.auth_mismatch"))
 	case st.Auth.State == authFailed:
 		add(t("commerce.health.stripe"), admin.CheckFail, modeLabel+" · "+t("commerce.health.auth_failed"))
+	case st.Auth.State == authStale:
+		add(t("commerce.health.stripe"), admin.CheckWarn, modeLabel+" · "+t("commerce.health.auth_stale", formatAge(ageSeconds(s.now(), st.Auth.CheckedAt))))
 	default:
 		add(t("commerce.health.stripe"), admin.CheckWarn, modeLabel+" · "+t("commerce.health.configured"))
 	}

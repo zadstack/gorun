@@ -1,10 +1,10 @@
 // Stripe test/live mode in Store settings: the current-mode badge, the three
 // separate states per mode (configured / authenticated / webhook delivery),
 // the confirmation and server-side checks before live mode, and the
-// per-order mode chip. Runs after commerce.spec.ts (orders exist) and before
-// subscription.spec.ts, which expects the store back in live mode: this
-// store boots pinned to live (STRIPE_WEBHOOK_SECRET is in its environment),
-// and the spec restores that at the end through the database because a
+// per-order mode chip. Runs after commerce.spec.ts (orders exist; it leaves
+// the store in test mode) and before subscription.spec.ts. This store boots
+// pinned to live (STRIPE_WEBHOOK_SECRET is in its environment); the spec
+// pins live again at its start and end through the database, because a
 // genuine switch to live needs a live key that Stripe accepts.
 import { test, expect, type Page } from '@playwright/test';
 import { db, expectNoServerError, setLocale } from '../lib/helpers.ts';
@@ -26,11 +26,12 @@ async function shoot(page: Page, name: string): Promise<void> {
   await page.setViewportSize({ width: 1280, height: 900 });
 }
 
+const pinLive = () => db().prepare("UPDATE settings SET value_json = '\"live\"' WHERE key = 'commerce.stripe_mode'").run();
+
 test.describe.serial('Stripe mode', () => {
-  test.afterAll(async () => {
-    // Fixture restore (see the header): the store is pinned to live again.
-    db().prepare("UPDATE settings SET value_json = '\"live\"' WHERE key = 'commerce.stripe_mode'").run();
-  });
+  // Fixture (see the header): the store is pinned to live before and after.
+  test.beforeAll(pinLive);
+  test.afterAll(pinLive);
 
   test('settings show the current mode badge and three states per mode (en + ar, 1280 + 375)', async ({ page }) => {
     await page.goto('/admin/commerce/settings');
@@ -53,19 +54,29 @@ test.describe.serial('Stripe mode', () => {
     }
   });
 
-  test('a live-prefixed key in the test slot is refused and nothing is saved', async ({ page }) => {
+  test('a key whose prefix contradicts its slot is refused on any save and nothing is stored', async ({ page }) => {
     await page.goto('/admin/commerce/settings');
     await setLocale(page, 'en');
+    // live key into the test slot, together with a switch to test
     await page.selectOption('#c-mode', 'test');
     await page.fill('#c-test-key', 'sk_live_e2e_wrong_slot');
-    const posted = page.waitForResponse(r => r.request().method() === 'POST' && r.url().endsWith('/admin/commerce/settings'));
+    let posted = page.waitForResponse(r => r.request().method() === 'POST' && r.url().endsWith('/admin/commerce/settings'));
     await page.locator(`${SETTINGS} button[type="submit"]`).click();
     expect((await posted).status()).toBe(422);
-    await expect(page.locator('#mode .field-error')).toBeVisible();
-    await expect(page.locator('#c-mode')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#c-test-key')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('[data-stripe-mode="live"]').first()).toBeVisible(); // badge: still the stored mode
+    await expect(page.locator('#c-mode')).toHaveValue('test'); // select: what was submitted
     expect(db().prepare("SELECT value_json AS v FROM settings WHERE key = 'commerce.stripe_mode'").get()!.v).toBe('"live"');
     expect(db().prepare("SELECT count(*) AS n FROM settings WHERE key = 'commerce.stripe_test_secret_key' AND value_json <> '\"\"'").get()!.n).toBe(0);
     await page.screenshot({ path: 'screenshots/stripe-mode-refused-test-slot-1280.png', fullPage: true });
+    // test key into the live slot, no mode change at all
+    await page.goto('/admin/commerce/settings');
+    await page.fill('#c-stripe', 'sk_test_e2e_wrong_slot');
+    posted = page.waitForResponse(r => r.request().method() === 'POST' && r.url().endsWith('/admin/commerce/settings'));
+    await page.locator(`${SETTINGS} button[type="submit"]`).click();
+    expect((await posted).status()).toBe(422);
+    await expect(page.locator('#c-stripe')).toHaveAttribute('aria-invalid', 'true');
+    expect(db().prepare("SELECT count(*) AS n FROM settings WHERE key = 'commerce.stripe_secret_key' AND value_json <> '\"\"'").get()!.n).toBe(0);
   });
 
   test('switching to test needs no confirmation; back to live needs confirmation and a usable live key', async ({ page }) => {
@@ -102,6 +113,9 @@ test.describe.serial('Stripe mode', () => {
     await page.locator(`${SETTINGS} button[type="submit"]`).click();
     expect((await posted).status()).toBe(422);
     await expect(page.locator('#mode .field-error')).toBeVisible();
+    await expect(page.locator('[data-stripe-mode="test"]').first()).toBeVisible(); // badge keeps the stored mode
+    await expect(page.locator('[data-stripe-mode="live"]')).toHaveCount(0);
+    await expect(page.locator('#c-mode')).toHaveValue('live'); // the select keeps the refused choice
     await page.screenshot({ path: 'screenshots/stripe-mode-refused-no-confirm-1280.png', fullPage: true });
     expect(db().prepare("SELECT value_json AS v FROM settings WHERE key = 'commerce.stripe_mode'").get()!.v).toBe('"test"');
 
@@ -130,20 +144,29 @@ test.describe.serial('Stripe mode', () => {
     // one row without provenance stands in for a pre-migration order.
     const before = db().prepare("SELECT id, stripe_mode FROM orders ORDER BY created_at DESC").all() as { id: string; stripe_mode: string }[];
     expect(before.length).toBeGreaterThan(0);
-    expect(before.some(o => o.stripe_mode === 'live')).toBe(true); // manual (non-Stripe) requests keep ''
-    const historic = before.length > 1 ? before[before.length - 1] : null;
+    // commerce.spec.ts checks out with a dummy key in the test slot (or the
+    // environment's sk_test_ key in the live slot): every Stripe order
+    // carries the mode that created it; manual requests keep ''.
+    const stamped = before.filter(o => o.stripe_mode === 'test' || o.stripe_mode === 'live');
+    expect(stamped.length).toBeGreaterThan(0);
+    const last = before[before.length - 1];
+    const historic = last.id !== stamped[0].id ? last : null;
     if (historic) db().prepare("UPDATE orders SET stripe_mode = '' WHERE id = ?").run(historic.id);
+    // One order is flipped to the other mode in the database to show the
+    // chip reads the row, never the store's current (test) mode.
+    const other = stamped[0].stripe_mode === 'test' ? 'live' : 'test';
+    db().prepare('UPDATE orders SET stripe_mode = ? WHERE id = ?').run(other, stamped[0].id);
 
     await page.goto('/admin/commerce/orders');
     for (const locale of ['en', 'ar'] as const) {
       await setLocale(page, locale);
-      await expect(page.locator('[data-order-mode="live"]').first()).toBeVisible();
+      await expect(page.locator(`[data-order-mode="${other}"]`).first()).toBeVisible();
       if (historic) await expect(page.locator('[data-order-mode=""]').first()).toBeVisible();
-      await expect(page.locator('[data-order-mode="test"]')).toHaveCount(0); // the store is in test mode now
       await shoot(page, `stripe-mode-orders-${locale}`);
     }
-    await page.goto(`/admin/commerce/orders/${before[0].id}`);
-    await expect(page.locator('[data-order-mode="live"]')).toBeVisible();
-    if (historic) db().prepare("UPDATE orders SET stripe_mode = 'live' WHERE id = ?").run(historic.id);
+    await page.goto(`/admin/commerce/orders/${stamped[0].id}`);
+    await expect(page.locator(`[data-order-mode="${other}"]`)).toBeVisible();
+    db().prepare('UPDATE orders SET stripe_mode = ? WHERE id = ?').run(stamped[0].stripe_mode, stamped[0].id);
+    if (historic) db().prepare('UPDATE orders SET stripe_mode = ? WHERE id = ?').run(historic.stripe_mode, historic.id);
   });
 });
