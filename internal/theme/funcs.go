@@ -103,17 +103,21 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 			// Same sanitized-content contract as the existing safe body helper.
 			return template.HTML(body)
 		},
-		"url":      f.url,
-		"asset":    f.asset,
-		"menu":     f.menu,
-		"query":    f.query,
-		"content":  f.content,
-		"field":    field,
-		"terms":    f.terms,
-		"media":    f.media,
-		"img":      f.img,
-		"seo":      f.seo,
-		"comments": f.comments,
+		"url":       f.url,
+		"asset":     f.asset,
+		"menu":      f.menu,
+		"query":     f.query,
+		"content":   f.content,
+		"field":     field,
+		"terms":     f.terms,
+		"media":     f.media,
+		"img":       f.img,
+		"logo":      f.logo,
+		"themeLogo": f.themeLogo,
+		"brandImg":  f.brandImg,
+		"favicon":   f.favicon,
+		"seo":       f.seo,
+		"comments":  f.comments,
 		"component": func(name string, data ...any) (template.HTML, error) {
 			return f.include("components."+name+".html", data)
 		},
@@ -690,4 +694,79 @@ func dict(kv ...any) (map[string]any, error) {
 		m[k] = kv[i+1]
 	}
 	return m, nil
+}
+
+// logoSettings is the precedence of site settings per logo variant.
+var logoSettings = map[string][]string{"primary": {"site.logo"}, "dark": {"site.logo_dark", "site.logo"}, "light": {"site.logo_light", "site.logo"}, "icon": {"site.icon"}}
+
+// logo returns the media item for a logo variant ("primary", "dark",
+// "light", "icon") following the site-setting precedence, or nil. Themes
+// render it with {{img (logo "dark") "thumbnail"}}.
+func (f *funcs) logo(variant string) *media.Media {
+	for _, key := range logoSettings[variant] {
+		if id := f.setting(key); id != "" {
+			if m := f.media(id); m != nil {
+				return m
+			}
+		}
+	}
+	return nil
+}
+
+// themeLogo returns the public URL of a logo the theme manifest ships for
+// variant ("" when the theme declares none). Site settings take precedence:
+// themes should try {{logo "icon"}} first.
+func (f *funcs) themeLogo(variant string) string {
+	info := f.s.Active(f.st.ctx)
+	path, ok := info.Logos[variant]
+	if !ok || !ValidAssetPath(path) {
+		return ""
+	}
+	return "/themes/" + info.Slug + "/assets/" + path
+}
+
+// brandImg renders the site mark for the primary logo m: the same <img>
+// as {{img}} when no distinct dark logo exists (so existing themes keep
+// their markup), otherwise a <picture> whose dark source is served to
+// browsers in dark mode. When the site identity scheme forces dark, the
+// dark logo becomes the default image and the primary serves light mode.
+func (f *funcs) brandImg(m *media.Media, variant string, class ...string) template.HTML {
+	if m == nil {
+		return ""
+	}
+	dark := f.logo("dark")
+	if dark == nil || dark.ID == m.ID {
+		return f.img(m, variant, class...)
+	}
+	main, alt, query := m, dark, "(prefers-color-scheme: dark)"
+	if f.setting(SettingKey(f.s.Active(f.st.ctx).Slug, idScheme)) == "dark" {
+		main, alt, query = dark, m, "(prefers-color-scheme: light)"
+	}
+	src := alt.URL
+	if v, ok := alt.Variants[variant]; ok && v.URL != "" {
+		src = v.URL
+	}
+	if !safeURL(src) {
+		return f.img(main, variant, class...)
+	}
+	return template.HTML(`<picture><source srcset="` + template.HTMLEscapeString(src) + `" media="` + query + `">` + string(f.img(main, variant, class...)) + `</picture>`)
+}
+
+// favicon renders the <link rel="icon"> for the site icon: the site.icon
+// media when set, else the theme manifest's icon, else nothing.
+func (f *funcs) favicon() template.HTML {
+	var href, mime string
+	if m := f.logo("icon"); m != nil && safeURL(m.URL) {
+		href, mime = m.URL, m.Mime
+	} else if u := f.themeLogo("icon"); u != "" {
+		href = u
+	}
+	if href == "" {
+		return ""
+	}
+	attrs := ` href="` + template.HTMLEscapeString(href) + `"`
+	if mime != "" {
+		attrs += ` type="` + template.HTMLEscapeString(mime) + `"`
+	}
+	return template.HTML(`<link rel="icon"` + attrs + `>`)
 }

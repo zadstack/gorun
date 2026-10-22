@@ -110,13 +110,25 @@ guessing missing values. It contains:
 - `identity`: current title, tagline and canonical base URL. Sources identify specific settings,
   resolved runtime configuration, or the renderer's translated default title. The URL follows
   `site.base_url` → `config.BaseURL`, with whitespace/trailing slashes normalized.
-- `logos.primary`: the public media URL referenced by `site.logo`; absent media/modules are explicit.
-  Core has no separate light/dark logo settings, so it does not invent them or inspect arbitrary template content.
+- `logos.primary|dark|light|icon`: each variant resolves with an explicit precedence — the variant's
+  own setting (`site.logo`, `site.logo_dark`, `site.logo_light`, `site.icon`), then `site.logo` for
+  dark/light, then the theme manifest's `logos` entry (`/themes/<slug>/assets/<path>`) — and says
+  which lower source supplied it in `fallback`. Each logo reports `value` (the best public address),
+  `url` (the storage URL templates print, withheld as `unsafe_public_url` when signed or with
+  credentials), `path` (the site-served `/media/…` path for the same file, which stays public even
+  when the storage URL cannot be published), `rendered` (the thumbnail variant themes print in
+  headers), `media_id`, `mime` and `variants`. Nothing is invented: a missing setting is
+  `not_configured`, a dangling media id is `media_not_found` and does not fall through to the theme.
 - `languages`: default `site.locale` (existing fallback `ar`), direction, and locales accepted by the
   running `i18n.Supported` registry. Supported locales do not promise every page has a translation.
-- `appearance`: active theme identity, known color/font declarations and validated identity settings,
-  with each source, last static-file observation time and limitations. An older downstream theme service
-  without the optional `theme.AppearanceProvider` returns `null` plus `appearance_reason`.
+- `appearance`: active theme identity; `colors` and `fonts` are the **effective** values after site
+  identity settings, each with its source; `declared` keeps the theme's own declarations; `overrides`
+  lists every effective value a setting supplied together with the declared value it replaced;
+  `scheme` and `radius` report the site settings or the theme default; `custom_css` reports whether a
+  site stylesheet is applied (size and status) — its per-value effect needs a browser, so effective
+  values become unavailable with `custom_css_requires_browser_evaluation` while `declared` stays.
+  An older downstream theme service without the optional `theme.AppearanceProvider` returns `null`
+  plus `appearance_reason`.
 
 Theme declarations are not browser-computed styles. The report resolves supported local root tokens
 through the parent/child chain and respects the theme's explicit identity opt-in. Custom CSS and builder
@@ -137,7 +149,15 @@ Example value fragments (the actual values come from the running site):
 ```json
 {"version":{"value":"v0.13.0","source":"process.build","available":true},
  "identity":{"title":{"value":"My site","source":"settings:site.title","available":true}},
- "logos":{"primary":{"value":null,"source":"settings:site.logo","available":false,"reason":"not_configured"}}}
+ "logos":{"primary":{"value":"/media/2026/10/logo.svg","source":"settings:site.logo -> media.path","available":true,
+                     "url":{"value":null,"source":"settings:site.logo -> media.url","available":false,"reason":"unsafe_public_url"},
+                     "path":"/media/2026/10/logo.svg","rendered":"/media/2026/10/logo.svg","media_id":"01J…","mime":"image/svg+xml","variants":{}},
+          "dark":{"value":"/media/2026/10/logo.svg","source":"settings:site.logo -> media.path","available":true,"fallback":"site.logo"},
+          "icon":{"value":"/themes/default/assets/icon.svg","source":"theme:default:manifest:logos.icon","available":true,"fallback":"theme_manifest"}},
+ "appearance":{"colors":{"accent":{"value":"#123456","source":"settings:theme.default.identity_accent","available":true}},
+               "declared":{"colors":{"accent":{"value":"#111","source":"theme:default:css-token:--accent","available":true}}},
+               "overrides":[{"role":"colors.accent","source":"settings:theme.default.identity_accent","value":"#123456","declared":"#111"}],
+               "custom_css":{"present":false,"bytes":0,"source":"","status":"none"}}}
 ```
 
 `GET /api/v1/site/runtime` requires **`settings.manage`** and returns the running build, API contract

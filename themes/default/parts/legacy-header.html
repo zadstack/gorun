@@ -8,7 +8,7 @@
 {{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="default-site-header border-b border-line bg-panel">
   <div class="gp-site-width mx-auto max-w-5xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-    <a href="{{url "/"}}" class="default-site-brand text-lg font-bold hover:text-green focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded inline-flex items-center gap-3">{{with media (setting "site.logo")}}{{img . "thumbnail" "h-10 w-auto max-w-32 object-contain"}}{{end}}{{.Site.Title}}</a>
+    <a href="{{url "/"}}" class="default-site-brand text-lg font-bold hover:text-green focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded inline-flex items-center gap-3">{{with logo "primary"}}{{brandImg . "thumbnail" "h-10 w-auto max-w-32 object-contain"}}{{end}}{{.Site.Title}}</a>
     {{with menu "primary"}}
     <nav class="gr-default-desktop" aria-label="{{t "menu"}}">
       <ul class="flex flex-wrap gap-1">

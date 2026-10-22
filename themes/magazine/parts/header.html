@@ -7,7 +7,7 @@
 {{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="ed-header">
   <div class="ed-topline gp-site-width"><span>{{t "ed.independent"}}</span><span>{{t "ed.reading"}}</span></div>
-  <div class="ed-masthead gp-site-width"><a class="ed-wordmark" href="{{url "/"}}">{{with media (setting "site.logo")}}{{img . "thumbnail" "ed-logo"}}{{end}}<span>{{.Site.Title}}</span></a>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</div>
+  <div class="ed-masthead gp-site-width"><a class="ed-wordmark" href="{{url "/"}}">{{with logo "primary"}}{{brandImg . "thumbnail" "ed-logo"}}{{end}}<span>{{.Site.Title}}</span></a>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</div>
   <div class="ed-nav-shell gp-site-width">
     {{with menu "primary"}}<nav class="ed-desktop-nav" aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}
     <div class="ed-nav-tools">

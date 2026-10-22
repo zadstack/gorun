@@ -1,0 +1,17 @@
+{
+  "scope": "Local isolated Edge verification (workerd, emulated D1/R2, synthetic fixtures). Cloudflare itself was NOT exercised: no account, deployment, DNS or secret was used or changed.",
+  "edge_source_commit_before_smoke_change": "32989f067d2cd88e47da07c59629b3119a906152",
+  "tested_at": "2026-10-22T07:40:00Z",
+  "node": "v26.12.0",
+  "commands": [
+    {"command": "npm ci", "result": "ok"},
+    {"command": "npm test (tsc + node --test: admin, runtime, owner, deploy-button, process)", "result": "all tests passed in real local workerd with emulated D1/R2"},
+    {"command": "wrangler deploy --dry-run --outdir dist-upload (package:check)", "result": "bundle built, 65.27 KiB / gzip 16.83 KiB, nothing uploaded"},
+    {"command": "npm run db:migrate && npm run seed:local && npm run smoke:local", "result": "passed; readiness is 503 until migrations exist (fail-closed, as documented); after migrations: EN/AR pages, JSON API, HEAD, writes rejected, no admin; restart cycle serves the same persisted rows"},
+    {"command": "npm run browser:local (fresh temp fixture, owner CLI, Chromium)", "result": "passed: owner init (.dev.vars 0600, duplicate init refused), login, private draft, stale save conflict, exact review/publish, public body preserved, private export without secrets, Arabic mobile review, unpublish, offline recovery + old session revoked, logout, owner revoke"}
+  ],
+  "covered_by_unit_tests": ["invalid-key budget", "CSRF/origin/body limits", "draft vs published isolation", "owner/session expiry at write", "cross-site isolation", "login challenge consumption", "content filters before result cap", "Unicode search past 100 rows with literal punctuation", "incomplete search reports scan limit", "primary manager key shown once; whoami accepts only it", "rotated/revoked keys not shown; logout clears handoff", "publication rejects recovery between review and execution", "missing bindings fail closed with generic 503"],
+  "full_edge_contract_go": "internal/admin settings_edge tests (atomic save, stale-result rejection on origin/key change, no success on failure) ran in go test ./... on the merged stack and passed",
+  "not_verified": ["Behaviour on Cloudflare's production workerd/D1/R2 (needs an authorised test account: wrangler login, dedicated D1 + private R2, deploy, then test/admin-browser.mjs against the HTTPS origin, then revoke owner access)", "Deploy-to-Cloudflare button end to end", "Re-deploy (wrangler deploy twice) data retention on a real D1; locally only restart was tested", "Performance"],
+  "defects_found": "none; one test improvement: smoke now restarts the Worker and checks persisted data"
+}

@@ -18,7 +18,11 @@ type Info struct {
 	Locations []string        `json:"locations"`
 	Settings  []content.Field `json:"settings"`
 	Supports  []string        `json:"supports"`
-	Dir       string          `json:"dir"`
+	// Logos are optional theme-shipped marks by variant (primary, dark,
+	// light, icon): asset paths relative to the theme's assets/ directory,
+	// served at /themes/<slug>/assets/<path>. Site settings take precedence.
+	Logos map[string]string `json:"logos,omitempty"`
+	Dir   string            `json:"dir"`
 }
 
 type Context struct {

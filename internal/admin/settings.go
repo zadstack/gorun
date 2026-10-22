@@ -26,6 +26,9 @@ type generalPage struct {
 	EditToken      string
 	Form           generalInput
 	Logo           mediaSlot
+	LogoDark       mediaSlot
+	LogoLight      mediaSlot
+	Icon           mediaSlot
 	CanPickMedia   bool
 	Fields         map[string]string
 	Locales        []string
@@ -41,7 +44,8 @@ func (h *handlers) currentGeneral(r *http.Request) generalInput {
 	return generalInput{Title: get("site.title", ""), Tagline: get("site.tagline", ""), Locale: get("site.locale", i18n.DefaultLocale),
 		Timezone: get("site.timezone", "UTC"), BaseURL: get("site.base_url", h.d.Config.BaseURL),
 		Theme: get("site.theme", h.d.Config.Theme), FrontPage: get("site.front_page", ""),
-		Logo: get("site.logo", ""), ContactEmail: get("contact.email", ""), PostsPerPage: strconv.Itoa(h.postsPerPage(r))}
+		Logo: get("site.logo", ""), LogoDark: get("site.logo_dark", ""), LogoLight: get("site.logo_light", ""), Icon: get("site.icon", ""),
+		ContactEmail: get("contact.email", ""), PostsPerPage: strconv.Itoa(h.postsPerPage(r))}
 }
 
 // postsPerPage reads site.posts_per_page (a number; default 10).
@@ -69,7 +73,10 @@ func (h *handlers) renderGeneral(w http.ResponseWriter, r *http.Request, status 
 	_, hasMedia := h.mediaService()
 	canPick := hasMedia && auth.Can(r.Context(), "media.upload")
 	data := generalPage{EditToken: token, Form: form, Fields: fields, Locales: i18n.Supported, Timezones: commonTimezones, CanPickMedia: canPick,
-		Logo: mediaSlot{Name: "logo", ID: "s-logo", Value: form.Logo, CanPick: canPick}}
+		Logo:      mediaSlot{Name: "logo", ID: "s-logo", Value: form.Logo, CanPick: canPick},
+		LogoDark:  mediaSlot{Name: "logo_dark", ID: "s-logo-dark", Value: form.LogoDark, CanPick: canPick},
+		LogoLight: mediaSlot{Name: "logo_light", ID: "s-logo-light", Value: form.LogoLight, CanPick: canPick},
+		Icon:      mediaSlot{Name: "icon", ID: "s-icon", Value: form.Icon, CanPick: canPick}}
 	if ts, ok := h.themeService(); ok {
 		if list, err := ts.List(r.Context()); err == nil {
 			data.Themes = list

@@ -24,7 +24,7 @@ const maxSettingLen = 500
 // generalKeys are the General screen and settings API fields.
 var (
 	generalKeys = []string{"site.title", "site.tagline", "site.locale", "site.timezone", "site.base_url", "site.theme", "site.front_page",
-		"site.logo", "contact.email", "site.posts_per_page"}
+		"site.logo", "site.logo_dark", "site.logo_light", "site.icon", "contact.email", "site.posts_per_page"}
 	slugRe = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,63}$`)
 )
 
@@ -38,6 +38,9 @@ type generalInput struct {
 	Theme        string `form:"theme"`
 	FrontPage    string `form:"front_page"`
 	Logo         string `form:"logo"`           // media id
+	LogoDark     string `form:"logo_dark"`      // media id shown on dark backgrounds (falls back to Logo)
+	LogoLight    string `form:"logo_light"`     // media id shown on light backgrounds (falls back to Logo)
+	Icon         string `form:"icon"`           // media id for the favicon / app icon
 	ContactEmail string `form:"contact_email"`  // contact form recipient
 	PostsPerPage string `form:"posts_per_page"` // 1–100, stored as a number
 }
@@ -110,10 +113,12 @@ func (h *handlers) validateGeneral(ctx context.Context, in generalInput) (map[st
 	if n, ok := PostsPerPage(in.PostsPerPage); ok {
 		vals["site.posts_per_page"] = n // the site reads it as a JSON number
 	}
-	if logo := strings.TrimSpace(in.Logo); h.validLogo(ctx, logo) {
-		vals["site.logo"] = logo
-	} else {
-		fields["logo"] = "admin.settings.error_logo"
+	for _, l := range []struct{ field, key, value string }{{"logo", "site.logo", in.Logo}, {"logo_dark", "site.logo_dark", in.LogoDark}, {"logo_light", "site.logo_light", in.LogoLight}, {"icon", "site.icon", in.Icon}} {
+		if id := strings.TrimSpace(l.value); h.validLogo(ctx, id) {
+			vals[l.key] = id
+		} else {
+			fields[l.field] = "admin.settings.error_logo"
+		}
 	}
 	if th := strings.TrimSpace(in.Theme); h.validTheme(ctx, th) {
 		vals["site.theme"] = th
