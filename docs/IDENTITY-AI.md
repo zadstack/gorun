@@ -4,7 +4,7 @@
 
 ## Turning it on
 
-The module is off until the setting `addons.identityai.enabled` is `true` (JSON boolean). Set it from the settings CLI or the System → Modules catalog when that lands; the kernel evaluates the gate before any route or navigation is registered, so a disabled module leaves no page, no nav entry and no data. Turning it off keeps whatever drafts it produced; they are ordinary identity drafts.
+The module is an optional module like commerce, saas or membership: it is on unless `addons.identityai.enabled` is `false` (System → Modules, or the settings CLI), through `kernel.AddonEnabled`. The kernel evaluates the gate before any route or navigation is registered, so a disabled module leaves no page, no nav entry and no data. Being on only adds the page: nothing is sent to a provider without a reviewed, approved request. Turning it off keeps whatever drafts it produced; they are ordinary identity drafts.
 
 ## What it does
 

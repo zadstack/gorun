@@ -74,10 +74,8 @@ func boot(t *testing.T, enabled bool, fp *fakeProvider) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if enabled {
-		if err := pre.Deps.Settings.Set(context.Background(), SettingEnabled, true); err != nil {
-			t.Fatal(err)
-		}
+	if err := pre.Deps.Settings.Set(context.Background(), SettingEnabled, enabled); err != nil {
+		t.Fatal(err)
 	}
 	pre.Close()
 	app, err := kernel.Boot(context.Background(), cfg, []kernel.Module{settingsmod.New(), auth.New(), theme.New(theme.WithThemesDir(root), theme.WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil)))), New(fp.hooks())})
@@ -177,7 +175,7 @@ func adminCtx() context.Context {
 
 const goodReply = `{"accent":"#c2410c","background":"#fffdf8","text":"#1b1b1f","heading_font":"readex","body_font":"ibm-plex-arabic","latin_font":"inter","radius":"soft","tagline_ar":"متجر للقهوة المختصة","tagline_en":"Specialty coffee, roasted weekly","logo_brief":"A wordmark in a warm serif with a small bean mark; keep it flat and single-colour."}`
 
-func TestModuleDisabledByDefaultHidesPageAndNav(t *testing.T) {
+func TestModuleSwitchedOffHidesPageAndNav(t *testing.T) {
 	e := boot(t, false, &fakeProvider{})
 	if resp, _ := e.get(testPage); resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("disabled module page: %d", resp.StatusCode)

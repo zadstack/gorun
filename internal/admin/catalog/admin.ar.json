@@ -1020,5 +1020,7 @@
   "modules.desc.mail": "تسليم SMTP الذي تستخدمه النماذج والمتجر وروابط الدخول. خدمة أساسية تنشرها وحدة الإدارة.",
   "modules.compat.built_in": "مضمَّنة في هذا الإصدار",
   "modules.compat.manifest_unverified": "إصدار ملف البيان؛ التوافق مع هذا الإصدار غير متحقق منه",
-  "modules.compat.not_in_build": "مذكورة في GORUN_ADDONS لكنها ليست جزءًا من هذا الإصدار"
+  "modules.compat.not_in_build": "مذكورة في GORUN_ADDONS لكنها ليست جزءًا من هذا الإصدار",
+  "modules.name.identityai": "ذكاء الهوية",
+  "modules.desc.identityai": "اقتراحات هوية بالذكاء الاصطناعي (نص فقط) تُحفظ في مسودة الهوية بعد مراجعة الطلب والموافقة عليه."
 }

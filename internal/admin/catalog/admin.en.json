@@ -1020,5 +1020,7 @@
   "modules.desc.mail": "SMTP delivery used by forms, the store and sign-in links. A core service published by the admin module.",
   "modules.compat.built_in": "compiled into this release",
   "modules.compat.manifest_unverified": "manifest version; compatibility with this build is not verified",
-  "modules.compat.not_in_build": "named in GORUN_ADDONS but not part of this build"
+  "modules.compat.not_in_build": "named in GORUN_ADDONS but not part of this build",
+  "modules.name.identityai": "Identity AI",
+  "modules.desc.identityai": "AI identity suggestions (text only) written to the identity draft after a reviewed, approved request."
 }

@@ -47,7 +47,7 @@ All notable changes to GoRun are recorded here. The format follows
   and its tables are kept; re-enabling reads the same data back.
 ### Optional modules
 
-- New optional module `identityai` (off until `addons.identityai.enabled` is true): Appearance →
+- New optional module `identityai` (switchable in System → Modules via `addons.identityai.enabled`): Appearance →
   Identity AI asks a saved text AI connection for colours, fonts, taglines and a written logo brief
   after the operator previews the exact request and approves its estimated cost; results go to the
   identity draft only. This stage is text only: no image, vector or animation is produced or

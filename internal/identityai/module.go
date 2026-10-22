@@ -9,11 +9,9 @@ import (
 	"context"
 	"database/sql"
 	"embed"
-	"encoding/json"
 	"errors"
 	"io/fs"
 	"net/http"
-	"strings"
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/httpx"
@@ -25,7 +23,7 @@ import (
 var files embed.FS
 
 const (
-	// SettingEnabled turns the module on; missing means off (kernel.OptionalModule).
+	// SettingEnabled switches the module (kernel.AddonEnabled): false turns it off.
 	SettingEnabled = "addons.identityai.enabled"
 	// PermGenerate is the permission the page requires (the same as the identity page).
 	PermGenerate = "settings.manage"
@@ -78,22 +76,12 @@ func (*Module) Name() string      { return "identityai" }
 func (*Module) Migrations() fs.FS { return nil }
 func (*Module) Catalogs() fs.FS   { return files }
 
-// Enabled implements kernel.OptionalModule: on only when the setting is
-// true. Nothing is read beyond that one row.
+// Enabled implements kernel.OptionalModule through the shared addon gate:
+// on unless addons.identityai.enabled is false (System → Modules), like the
+// other optional modules. Being on only adds the page; nothing is sent to
+// a provider without a reviewed, approved request.
 func (*Module) Enabled(ctx context.Context, d *sql.DB) (bool, error) {
-	var raw string
-	err := d.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, SettingEnabled).Scan(&raw)
-	if errors.Is(err, sql.ErrNoRows) || (err != nil && strings.Contains(err.Error(), "no such table")) {
-		return false, nil // an empty database is valid: nothing is enabled yet
-	}
-	if err != nil {
-		return false, err
-	}
-	var on bool
-	if json.Unmarshal([]byte(raw), &on) != nil {
-		return false, nil
-	}
-	return on, nil
+	return kernel.AddonEnabled(ctx, d, "identityai")
 }
 
 // Register mounts the page and its navigation entry.
