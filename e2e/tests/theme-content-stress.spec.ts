@@ -31,7 +31,7 @@ test("five themes preserve bilingual stress content and keep it reachable", asyn
           ? "محتوى عربي طويل قابل للقراءة "
           : "Long editorial content remains readable ";
       const slug = `stress-${locale}`;
-      const body = `<p>${phrase.repeat(100)}</p><p>${(locale === "ar" ? "كلمة" : "Unbroken").repeat(120)}</p><table><tbody><tr>${Array.from({ length: 16 }, (_, i) => `<th>Column ${i}</th>`).join("")}</tr><tr>${Array.from({ length: 16 }, (_, i) => `<td>Value ${i} ${"word".repeat(12)}</td>`).join("")}</tr></tbody></table><pre>${"long_preformatted_line_".repeat(100)}</pre><img src="/missing-stress-image.png" alt="Missing image description ${locale}">`;
+      const body = `<p>${phrase.repeat(100)}</p><p>${(locale === "ar" ? "كلمة" : "Unbroken").repeat(120)}</p><table><tbody><tr>${Array.from({ length: 16 }, (_, i) => `<th>${locale === "ar" ? "العمود" : "Column"} ${i}</th>`).join("")}</tr><tr>${Array.from({ length: 16 }, (_, i) => `<td>${locale === "ar" ? "قيمة" : "Value"} ${i} ${(locale === "ar" ? "معرف" : "word").repeat(12)}</td>`).join("")}</tr></tbody></table><pre>${"long_preformatted_line_".repeat(100)}</pre><img src="/missing-stress-image.png" alt="Missing image description ${locale}">`;
       const result = await page.request.post("/api/v1/content", {
         headers: { "X-CSRF-Token": await csrf(page) },
         data: {
@@ -98,6 +98,20 @@ test("five themes preserve bilingual stress content and keep it reachable", asyn
             ) as HTMLImageElement;
             return {
               documentWidth: document.documentElement.scrollWidth,
+              narrowestCellCharacters: Math.min(
+                ...Array.from(
+                  document.querySelectorAll("main th, main td"),
+                  (cell) => {
+                    const style = getComputedStyle(cell);
+                    const context = document
+                      .createElement("canvas")
+                      .getContext("2d")!;
+                    context.font = style.font;
+                    const characterWidth = context.measureText("0").width;
+                    return cell.getBoundingClientRect().width / characterWidth;
+                  },
+                ),
+              ),
               tableReachable: accessible(document.querySelector("main table")),
               preReachable: accessible(document.querySelector("main pre")),
               titleUnclipped:
@@ -113,8 +127,71 @@ test("five themes preserve bilingual stress content and keep it reachable", asyn
               imageHeight: img?.height,
             };
           });
-          records.push({ theme, locale: f.locale, width, ...metrics });
           const label = `${theme}/${f.locale}/${width}`;
+          // Allow one hundredth of a character for subpixel font/layout rounding.
+          expect
+            .soft(
+              metrics.narrowestCellCharacters,
+              `${label} readable cell measure`,
+            )
+            .toBeGreaterThanOrEqual(14 - 0.01);
+          const table = page.locator("main table");
+          // Chromium exposes overflowing scroll containers in the natural Tab order.
+          // Exercise the keyboard rather than injecting focusability in the fixture.
+          await page.keyboard.press("Control+Home");
+          for (let tab = 0; tab < 60; tab++) {
+            await page.keyboard.press("Tab");
+            if (await table.evaluate((el) => el === document.activeElement))
+              break;
+          }
+          const keyboardFocused = await table.evaluate(
+            (el) => el === document.activeElement,
+          );
+          expect
+            .soft(keyboardFocused, `${label} table keyboard focus`)
+            .toBe(true);
+          const focusOutline = await table.evaluate((el) => {
+            const style = getComputedStyle(el);
+            return {
+              style: style.outlineStyle,
+              width: parseFloat(style.outlineWidth),
+              color: style.outlineColor,
+            };
+          });
+          if (keyboardFocused) {
+            expect
+              .soft(focusOutline.style, `${label} visible keyboard focus`)
+              .not.toBe("none");
+            expect
+              .soft(focusOutline.width, `${label} focus outline width`)
+              .toBeGreaterThanOrEqual(2);
+            expect
+              .soft(focusOutline.color, `${label} focus outline color`)
+              .not.toBe("rgba(0, 0, 0, 0)");
+          }
+          let keyboardScrolled = false;
+          if (keyboardFocused) {
+            const start = await table.evaluate((el) => el.scrollLeft);
+            await page.keyboard.press(
+              f.locale === "ar" ? "ArrowLeft" : "ArrowRight",
+            );
+            await expect
+              .poll(() => table.evaluate((el) => el.scrollLeft), {
+                message: `${label} keyboard table scroll`,
+              })
+              .not.toBe(start);
+            keyboardScrolled =
+              (await table.evaluate((el) => el.scrollLeft)) !== start;
+          }
+          records.push({
+            theme,
+            locale: f.locale,
+            width,
+            ...metrics,
+            keyboardFocused,
+            focusOutline,
+            keyboardScrolled,
+          });
           expect
             .soft(metrics.documentWidth, `${label} viewport`)
             .toBeLessThanOrEqual(width + 1);
@@ -139,13 +216,31 @@ test("five themes preserve bilingual stress content and keep it reachable", asyn
       }
     }
   } finally {
-    const restore = db();
-    if (previous)
-      restore
-        .prepare("UPDATE settings SET value_json=? WHERE key='site.theme'")
-        .run(previous.value_json);
-    else restore.prepare("DELETE FROM settings WHERE key='site.theme'").run();
-    restore.close();
+    await page.goto("/admin/appearance/themes");
+    const token = await csrf(page);
+    for (const fixture of fixtures) {
+      expect(
+        (
+          await page.request.delete(`/api/v1/content/${fixture.id}?hard=1`, {
+            headers: { "X-CSRF-Token": token },
+          })
+        ).status(),
+      ).toBe(200);
+      expect(
+        (await page.request.get(`/api/v1/content/${fixture.id}`)).status(),
+      ).toBe(404);
+    }
+    const previousTheme = previous
+      ? JSON.parse(previous.value_json)
+      : "default";
+    expect(
+      (
+        await page.request.post(
+          `/admin/appearance/themes/${previousTheme}/activate`,
+          { form: { _csrf: token }, maxRedirects: 0 },
+        )
+      ).status(),
+    ).toBe(303);
     writeFileSync(
       resolve(output, "theme-stress-acceptance.json"),
       JSON.stringify(
