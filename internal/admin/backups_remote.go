@@ -15,11 +15,12 @@ import (
 )
 
 type remoteBackupState struct {
-	Stamp       string               `json:"stamp"`
-	At          string               `json:"at"`
-	Status      string               `json:"status"`
-	Destination string               `json:"destination"`
-	Receipt     backup.UploadReceipt `json:"receipt"`
+	Stamp         string               `json:"stamp"`
+	At            string               `json:"at"`
+	Status        string               `json:"status"`
+	DestinationID string               `json:"destination_id"`
+	Destination   string               `json:"destination"`
+	Receipt       backup.UploadReceipt `json:"receipt"`
 }
 
 func (h *handlers) backupRemoteView(ctx context.Context, page *backupsPage) error {
@@ -34,6 +35,10 @@ func (h *handlers) backupRemoteView(ctx context.Context, page *backupsPage) erro
 			return err
 		}
 		page.RemoteName = d.Name
+		page.RemoteID = d.ID
+	}
+	if err := h.d.Settings.Get(ctx, remoteBackupLastSuccess, &page.RemoteSuccess); err != nil && !errors.Is(err, settings.ErrNotFound) {
+		return err
 	}
 	err = h.d.Settings.Get(ctx, "storage.backup.last", &page.RemoteLast)
 	if errors.Is(err, settings.ErrNotFound) {
@@ -132,7 +137,7 @@ func (h *handlers) backupRemoteCreate(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	state := remoteBackupState{At: time.Now().UTC().Format(time.RFC3339), Status: "failed", Destination: dest.Name}
+	state := remoteBackupState{At: time.Now().UTC().Format(time.RFC3339), Status: "failed", Destination: dest.Name, DestinationID: dest.ID}
 	res, err := backup.Create(h.d.Config.DataDir, h.d.Config.DBPath(), time.Now())
 	if err == nil {
 		state.Stamp = res.Stamp
@@ -142,6 +147,9 @@ func (h *handlers) backupRemoteCreate(w http.ResponseWriter, r *http.Request) {
 			state.Status = "partial"
 		}
 		if receiptErr := backup.StoreUploadReceipt(res, state.Receipt); receiptErr != nil {
+			if err == nil && state.Receipt.State == "uploaded" {
+				state.Status = "uploaded_unrecorded"
+			}
 			err = errors.Join(err, receiptErr)
 		}
 		cancel()
@@ -149,7 +157,7 @@ func (h *handlers) backupRemoteCreate(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		state.Status = "success"
 	}
-	if saveErr := h.d.Settings.Set(r.Context(), "storage.backup.last", state); saveErr != nil {
+	if saveErr := saveRemoteBackupState(r.Context(), h.d, state); saveErr != nil {
 		h.serverError(w, r, saveErr)
 		return
 	}
@@ -161,4 +169,17 @@ func (h *handlers) backupRemoteCreate(w http.ResponseWriter, r *http.Request) {
 		httpx.SetFlash(w, "success", "admin.storage.remote_success")
 	}
 	redirect(w, r, "/admin/system/backups")
+}
+
+func (state remoteBackupState) StatusKey() string {
+	switch state.Status {
+	case "success":
+		return "admin.storage.remote_success"
+	case "uploaded_unrecorded":
+		return "remotebackup.uploaded_unrecorded"
+	case "paused":
+		return "remotebackup.paused"
+	default:
+		return "admin.storage.remote_failed"
+	}
 }

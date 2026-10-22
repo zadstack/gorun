@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/zadstack/gorun/internal/auth"
@@ -29,4 +30,16 @@ func SetAnthropicURL(u string) (restore func()) {
 	old := anthropicURL
 	anthropicURL = u
 	return func() { anthropicURL = old }
+}
+
+func BackupScheduleWithClient(ctx context.Context, d *kernel.Deps, now time.Time, client *http.Client) error {
+	return backupScheduleWithClient(ctx, d, now, client)
+}
+
+func BackupScheduleTick(ctx context.Context, d *kernel.Deps) error {
+	return (&handlers{d: d}).backupScheduleTick(ctx)
+}
+
+func RunScheduledBackup(ctx context.Context, d *kernel.Deps, client *http.Client) error {
+	return runScheduledBackup(ctx, d, client)
 }

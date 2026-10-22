@@ -13,7 +13,7 @@
 </div>
 <div class="grid gap-3 md:grid-cols-3 mb-4" data-backup-outcomes>
 <section class="border border-line bg-panel p-3"><h2 class="font-bold">{{t "operator.local_verified"}}</h2><p class="mt-2">{{if .LastSuccess.At}}<time dir="ltr">{{.LastSuccess.At}}</time>{{else}}<strong>{{t "admin.backups.no_verified"}}</strong>{{end}}</p></section>
-<section class="border border-line bg-panel p-3"><h2 class="font-bold">{{t "operator.upload_ack"}}</h2><p class="mt-2">{{if .RemoteLast.At}}<time dir="ltr">{{.RemoteLast.At}}</time> · {{if eq .RemoteLast.Status "success"}}{{t "admin.storage.remote_success"}}{{else}}{{t "admin.storage.remote_failed"}}{{end}}{{else}}{{t "admin.storage.remote_pending"}}{{end}}</p><p class="text-xs text-muted mt-2">{{t "operator.upload_boundary"}}</p></section>
+<section class="border border-line bg-panel p-3"><h2 class="font-bold">{{t "operator.upload_ack"}}</h2><p class="mt-2">{{if .RemoteLast.At}}<time dir="ltr">{{.RemoteLast.At}}</time> · {{t .RemoteLast.StatusKey}}{{else}}{{t "admin.storage.remote_pending"}}{{end}}</p><p class="text-xs text-muted mt-2">{{t "operator.upload_boundary"}}</p></section>
 <section class="border border-line bg-panel p-3"><h2 class="font-bold">{{t "operator.restore_test"}}</h2><p class="text-sm mt-2">{{t "operator.not_recorded"}}</p><a href="https://github.com/zadstack/gorun/blob/main/docs/BACKUPS.md" class="underline text-sm">{{t "operator.recovery_guide"}}</a></section>
 </div>
 <section class="border border-line bg-panel p-4 mb-5 space-y-2" data-backup-storage>
@@ -24,12 +24,12 @@
 {{if eq .Schedule.State.Status "failed"}}
 <div role="alert" class="border border-red bg-red-soft text-red p-4 mb-5" data-schedule-status="failed"><p>{{t "admin.backups.alert_failed"}}</p><p class="text-sm mt-1">{{t "admin.backups.attempt_at"}}: <time dir="ltr">{{.Schedule.State.AttemptAt}}</time> · {{t (print "admin.backups.stage." .Schedule.State.Stage)}}</p></div>
 {{else if eq .Schedule.State.Status "warning"}}
-<div role="alert" class="border border-amber bg-amber-soft p-4 mb-5" data-schedule-status="warning">{{t "admin.backups.alert_retention"}}</div>
+<div role="alert" class="border border-amber bg-amber-soft p-4 mb-5" data-schedule-status="warning">{{t .Schedule.State.WarningKey}}</div>
 {{else if eq .Schedule.State.Status "running"}}
 <p role="status" class="mb-5" data-schedule-status="running">{{t "admin.backups.running"}}</p>
 {{end}}
 <section class="border border-line bg-panel p-4 mb-5 space-y-3" data-backup-schedule>
-  <h2 class="font-bold">{{t "admin.backups.schedule_title"}}</h2>
+  <h2 class="font-bold">{{t "remotebackup.schedule_title"}}</h2>
   <p class="text-muted text-sm">{{t "admin.backups.schedule_help"}}</p>
   <form method="post" action="/admin/system/backups/schedule" class="flex flex-wrap items-end gap-3">
     <input type="hidden" name="_csrf" value="{{csrf}}">
@@ -46,6 +46,13 @@
       <span class="text-muted">{{t "admin.backups.retain"}}</span>
       <input type="number" name="retain" min="0" max="100" value="{{.Schedule.Retain}}" class="mt-1 block w-28 h-9 px-2 rounded border border-line bg-panel-2 font-mono" dir="ltr">
     </label>
+    <div class="w-full" data-remote-schedule-enabled="{{if .Schedule.RemoteDestination}}1{{else}}0{{end}}">
+      {{if .RemoteID}}
+      <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="remote_destination" value="{{.RemoteID}}" {{if eq .Schedule.RemoteDestination .RemoteID}}checked{{end}}> <span>{{t "remotebackup.enable"}}: <strong>{{.RemoteName}}</strong></span></label>
+      {{else}}<p class="text-sm text-muted">{{t "remotebackup.configure"}} <a class="underline" href="/admin/settings/storage">{{t "admin.storage.title"}}</a></p>{{end}}
+      {{if and .Schedule.RemoteDestination (ne .Schedule.RemoteDestination .RemoteID)}}<p role="alert" class="text-sm mt-2">{{t "remotebackup.changed"}}</p>{{end}}
+      <p class="text-sm text-muted mt-2">{{t "remotebackup.help"}}</p>
+    </div>
     <button type="submit" class="h-9 px-3 rounded border border-line bg-panel-2 font-medium hover:bg-panel">{{t "admin.backups.schedule_save"}}</button>
   </form>
   {{if .Schedule.Enabled}}
@@ -60,7 +67,8 @@
 <section class="border border-line bg-panel p-4 mb-5 space-y-3"><h2 class="font-bold">{{t "admin.storage.backup"}}</h2><p class="text-muted">{{t "admin.storage.remote_note"}}</p>
 {{if .RemoteName}}<p>{{t "admin.storage.remote_ready"}}: <strong>{{.RemoteName}}</strong></p><form method="post" action="/admin/system/backups/remote"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="admin-primary-button">{{t "admin.storage.remote_create"}}</button></form>{{else}}<p>{{t "admin.storage.remote_unconfigured"}}</p>{{end}}
 <a href="/admin/settings/storage" class="text-blue underline">{{t "admin.storage.title"}}</a>
-{{if .RemoteLast.At}}<p>{{t "admin.storage.remote_last"}}: <time>{{.RemoteLast.At}}</time> · {{if eq .RemoteLast.Status "success"}}{{t "admin.storage.remote_success"}}{{else}}{{t "admin.storage.remote_failed"}}{{end}}</p>{{else}}<p class="text-muted text-sm">{{t "admin.storage.remote_pending"}}</p>{{end}}
+{{if .RemoteLast.At}}<p>{{t "admin.storage.remote_last"}}: <time>{{.RemoteLast.At}}</time> · {{t .RemoteLast.StatusKey}}</p>{{else}}<p class="text-muted text-sm">{{t "admin.storage.remote_pending"}}</p>{{end}}
+<p data-remote-last-success class="text-sm">{{t "remotebackup.last_success"}}: {{if .RemoteSuccess.At}}<time dir="ltr">{{.RemoteSuccess.At}}</time> · {{.RemoteSuccess.Destination}} · <span dir="ltr">{{.RemoteSuccess.Stamp}}</span>{{else}}{{t "admin.storage.remote_pending"}}{{end}}</p>
 <p class="text-muted text-sm">{{t "admin.storage.recovery"}}</p></section>
 <p class="text-muted text-sm mb-3">{{t "admin.backups.completeness_help"}}</p>
 {{if .Backups}}

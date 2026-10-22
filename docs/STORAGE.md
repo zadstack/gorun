@@ -1,6 +1,6 @@
 # Storage, generated media and encrypted backups
 
-GoRun can activate a saved S3-compatible connection from **Settings → Storage**. Saving a connection or running its read-only bucket test does not activate storage. Encrypted remote backup upload is still a manual action; local schedule/retention (if enabled under **System → Backups**) never uploads to the bucket.
+GoRun can activate a saved S3-compatible connection from **Settings → Storage**. Saving a connection or running its read-only bucket test does not activate storage. Encrypted remote backup upload can be manual or explicitly enabled for scheduled snapshots under **System → Backups**; it is off by default.
 
 ## Website media
 
@@ -24,7 +24,7 @@ Storage destinations allow HTTPS endpoints only. Managed runtime requests use DN
 
 ## Encrypted backups
 
-Choose **Use for encrypted backups**, then **System → Backups → Create and upload encrypted backup**. This is an explicit manual action (not driven by the local schedule). The existing **Create backup** action and optional in-app schedule remain local-only.
+Choose **Use for encrypted backups**, then **System → Backups → Create and upload encrypted backup**. This is an explicit manual action. The **Create backup** action remains local-only. The optional schedule can also upload encrypted copies when you explicitly enable its backup-destination checkbox.
 
 GoRun first creates its existing consistent SQLite/database and file archive locally. Each file is encrypted with AES-256-GCM using a purpose-derived key from the site's recovery secret before upload. The format authenticates the original filename and file bytes. Uploaded object names are:
 
@@ -33,11 +33,11 @@ backups/<site-id>/YYYY/MM/DD/<timestamp>.db.gorb
 backups/<site-id>/YYYY/MM/DD/<timestamp>.tar.gz.gorb
 ```
 
-The limit is **64 MiB per plaintext backup file**. This bounded implementation is intended for small sites; it does not implement multipart uploads. A remote failure leaves completed local backup files available. Remote objects can be incomplete when only one upload succeeds; only success for both files is recorded as a successful remote backup. **Nothing in the bucket is automatically deleted or scheduled** — retain-N applies only to local pairs under `<data>/backups/`. Bucket ACL settings are not treated as proof of privacy: uploaded backup bytes are always encrypted.
+The limit is **64 MiB per plaintext backup file**. This bounded implementation is intended for small sites; it does not implement multipart uploads. A remote failure leaves the new completed local backup pair available; scheduled retention can still remove older verified pairs. Remote objects can be incomplete when only one upload succeeds; only success for both files is recorded as a successful remote backup. **Nothing in the bucket is automatically deleted** — retain-N applies only to local pairs under `<data>/backups/`. Bucket ACL settings are not treated as proof of privacy: uploaded backup bytes are always encrypted.
 
 ### Local schedule and retention
 
-On **System → Backups**, choose **Daily** or **Weekly** (existing custom 1–168 hour intervals remain supported; `0` = off) and optional **retain N** locally verified pairs (`0` = never auto-delete). While the server runs with job workers, cron `backup.schedule` creates and verifies a local pair (secrets still excluded) before pruning older verified pairs. Corrupt, legacy and partial entries do not count toward retention and remain for review. Last success, space usage and failure alerts appear on the page and System Health. See [automatic backups and safe recovery](BACKUPS.md). Manual **Back up now** does not prune. Hosts without a long-running process can use host cron instead:
+On **System → Backups**, choose **Daily** or **Weekly** (existing custom 1–168 hour intervals remain supported; `0` = off) and optional **retain N** locally verified pairs (`0` = never auto-delete). While the server runs with job workers, cron `backup.schedule` queues a single `backup.scheduled` job. That job creates and verifies a local pair (secrets still excluded), optionally uploads it to the explicitly selected backup destination, then prunes older verified pairs. Corrupt, legacy and partial entries do not count toward retention and remain for review. Last success, space usage and failure alerts appear on the page and System Health. See [automatic backups and safe recovery](BACKUPS.md). Manual **Back up now** does not prune. Hosts without a long-running process can use host cron instead:
 
 ```sh
 gorun backup --data /var/lib/gorun --retain 7
@@ -68,6 +68,50 @@ The directory must contain the original `secret.key`, or supply the original `GO
 
 تُرتّب الصور والفيديوهات المولّدة حسب الموقع والمحتوى والتاريخ. تخضع لنفس فحص نوع الملف وحد الحجم الموجودين في مكتبة الوسائط.
 
-النسخ المشفّرة تُنشأ وتُرفع يدويًا من شاشة النسخ الاحتياطية، بحد 64 ميبيبايت لكل ملف قبل التشفير. الجدولة المحلية الاختيارية (ساعات + احتفاظ N) لا ترفع إلى الحاوية ولا تحذف كائنات S3. احتفظ بنسخة مستقلة وآمنة من سر الموقع؛ فقدانه يمنع استعادة النسخ المشفّرة. فشل الرفع لا يحذف النسخة المحلية، ولا يعني وجود ملف خارجي واحد اكتمال النسخة. استعادة الملفات بأمر `backup-decrypt` لا تعدّل الموقع الجاري ولا تستبدل ملفًا موجودًا. يمكن أيضًا `gorun backup --retain N` من cron المضيف.
+يمكن إنشاء النسخ المشفّرة ورفعها يدويًا، أو تفعيل رفع كل نسخة مجدولة صراحةً من شاشة النسخ الاحتياطية، بحد 64 ميبيبايت لكل ملف قبل التشفير. الاحتفاظ N يطبّق على النسخ المحلية فقط؛ لا تُحذف كائنات S3 تلقائيًا. احتفظ بنسخة مستقلة وآمنة من سر الموقع؛ فقدانه يمنع استعادة النسخ المشفّرة. فشل الرفع لا يحذف النسخة المحلية، ولا يعني وجود ملف خارجي واحد اكتمال النسخة. استعادة الملفات بأمر `backup-decrypt` لا تعدّل الموقع الجاري ولا تستبدل ملفًا موجودًا. يمكن أيضًا `gorun backup --retain N` من cron المضيف.
 
 No real bucket credentials are required to build or test these paths. Unit tests use synthetic data and fake S3 responses. A configured destination is not evidence of a successful real-provider upload.
+
+## Scheduled encrypted uploads
+
+After choosing a backup-purpose destination, open **System → Backups**, choose an
+interval and enable **Upload each scheduled backup to this destination**, then
+save. The default remains local-only. This uses the existing S3-compatible
+credentials (including R2); a Cloudflare management API token is not substituted
+for bucket credentials.
+
+`backup.schedule.remote_destination` pins the destination ID selected by the
+operator. Saving validates it against `storage.active.backup` in the same
+transaction as interval/retention updates. A different or disabled destination
+pauses uploads until explicitly reselected; local snapshots continue. An upload
+already started uses its captured destination and reports that destination ID.
+Credential rotation for the same bucket retains its identity.
+
+The hourly cron only enqueues work. One queued/running `backup.scheduled` job is
+admitted at a time. Scheduled upload attempts have a 90-second total deadline,
+no cloud deletes and no automatic ACL/lifecycle changes. The shared data lease
+is renewed before the bounded upload and before local pruning. Jobs use one
+attempt. A persisted upload warning completes the job without adding a dead-job
+alert; creation/recording failures return a generic error without filesystem or
+provider details. An upload warning does not cause another local snapshot on an
+immediate queue retry. The next due snapshot attempts upload again. Scheduled execution
+still requires a running GoRun Full server with job workers; this is not a
+Cloudflare Queues/Workers Cron integration.
+
+A failed/partial upload keeps the new verified local pair. The configured
+retain-N policy still applies to older verified pairs (including while a
+destination is paused); the new pair reserves one slot even after a host clock
+rollback. This prevents an upload outage from creating unlimited extra copies
+when retain-N is enabled. `backup.local.last_success` still
+reports the locally verified snapshot; `backup.schedule.state` reports a
+`warning` at stage `remote`. System Health shows the warning. The per-backup
+receipt separates acknowledgement of each file from read-back verification.
+`storage.backup.last` is the latest attempt, and `storage.backup.last_success`
+retains the latest fully acknowledged pair even after later failures. If both
+objects were acknowledged but writing the local receipt fails, the saved state
+is `uploaded_unrecorded`; acknowledgement remains recorded, while the missing
+receipt is an explicit warning. Losing the data-directory lease after recording
+local success similarly produces a `lease` warning and skips cleanup, rather
+than relabelling the verified snapshot as failed. Older
+versions did not preserve the latter, so it is empty until a new upload succeeds.
+A successful upload is not proof of a complete restore or a remote read-back.

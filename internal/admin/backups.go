@@ -21,6 +21,8 @@ var backupMu sync.Mutex
 // backupsPage is the data of System → Backups.
 type backupsPage struct {
 	RemoteName           string
+	RemoteID             string
+	RemoteSuccess        remoteBackupState
 	RemoteLast           remoteBackupState
 	Schedule             backupSchedulePolicy
 	Backups              []backupRow
