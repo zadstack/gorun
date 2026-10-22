@@ -147,6 +147,7 @@ func templateFuncs(d *kernel.Deps) httpx.Funcs {
 			}
 			return nil
 		},
+		Can:     Can,
 		CSRF:    CSRFToken,
 		Setting: func(ctx context.Context, key string) string { return d.Settings.GetString(ctx, key, "") },
 	}
