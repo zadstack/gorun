@@ -155,3 +155,13 @@ html[data-theme="docs"] #main .docs-hero h1{font-size:clamp(2.15rem,5vw,3.25rem)
 html[data-theme="docs"][dir="rtl"] #main .docs-hero h1{letter-spacing:0}
 html[data-theme="docs"] .docs-hero-search{border-radius:8px;box-shadow:none}
 html[data-theme="docs"] .docs-hero-search:focus-within{box-shadow:none;outline:3px solid var(--docs-accent);outline-offset:3px}
+
+/* A viewport-wide section cannot be centered on an off-center article column.
+   Keep desktop section backgrounds inside Docs' sidebar/article layout. */
+@media (min-width: 768px) {
+  html[data-theme="docs"] .docs-prose .gp-s-bleed {
+    width: 100%;
+    margin-inline: 0;
+    padding-inline: 1rem;
+  }
+}
