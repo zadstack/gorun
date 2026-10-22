@@ -1,5 +1,10 @@
 package theme
 
+import (
+	"slices"
+	"strings"
+)
+
 // IdentityKeys are the theme.<slug>.* keys the identity page owns, in form
 // order. Every value is a string; "" means "keep the theme's design".
 var IdentityKeys = []string{idAccent, idBackground, idText, idHeading, idBody, idLatinFont, idScheme, idRadius, idSpacing, idCustomCSS}
@@ -16,6 +21,25 @@ type IdentitySnapshot struct {
 	Values map[string]string `json:"values"`
 	Site   map[string]string `json:"site"`
 }
+
+// lookup answers a settings key read by templates during a preview: the
+// theme's identity keys and the logo settings. Site title and tagline go
+// through the render context instead.
+func (s IdentitySnapshot) lookup(key string) (string, bool) {
+	if v, ok := logoKeys[key]; ok && v {
+		return s.Site[key], true
+	}
+	prefix := "theme." + s.Theme + "."
+	if strings.HasPrefix(key, prefix) {
+		k := strings.TrimPrefix(key, prefix)
+		if slices.Contains(IdentityKeys, k) {
+			return s.Values[k], true
+		}
+	}
+	return "", false
+}
+
+var logoKeys = map[string]bool{"site.logo": true, "site.logo_light": true, "site.logo_dark": true, "site.icon": true}
 
 // Get returns the theme identity value for key ("" when absent).
 func (s IdentitySnapshot) Get(key string) string { return s.Values[key] }

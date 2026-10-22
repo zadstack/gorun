@@ -42,6 +42,9 @@ type reqState struct {
 	previewIdentity *brand.Identity
 	previewMenu     *menus.Menu
 	previewSettings map[string]string
+	// identityOverride replaces the stored identity and logo settings for
+	// this render only (Appearance → Identity preview).
+	identityOverride *IdentitySnapshot
 }
 
 func (st *reqState) cached(slot **string, load func() string) string {
@@ -93,7 +96,11 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 				return ""
 			}
 			slug := st.tc.Theme.Slug
-			return identityCSS(func(k string) string { return f.setting(SettingKey(slug, k)) }, httpx.Nonce(st.ctx))
+			get := func(k string) string { return f.setting(SettingKey(slug, k)) }
+			if st.identityOverride != nil {
+				return identityInlineCSS(get, httpx.Nonce(st.ctx))
+			}
+			return identityCSS(get, httpx.Nonce(st.ctx))
 		},
 		"builderBody": f.builderBody,
 		"addonBody": func(name, body string) template.HTML {
@@ -178,6 +185,11 @@ func (f *funcs) setting(key string) string {
 	if key == "site.logo" {
 		if value, ok := f.st.previewSettings[key]; ok {
 			return value
+		}
+	}
+	if o := f.st.identityOverride; o != nil {
+		if v, ok := o.lookup(key); ok {
+			return v
 		}
 	}
 	if f.st.settings != nil {

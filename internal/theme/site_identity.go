@@ -327,3 +327,22 @@ func identityCSS(get func(key string) string, _ string) template.HTML {
 	}
 	return template.HTML(b.String())
 }
+
+// identityInlineCSS is identityCSS for request-scoped previews: the draft
+// is not stored, so the stylesheet is printed inline under the CSP nonce
+// instead of linking /site/identity.css.
+func identityInlineCSS(get func(key string) string, nonce string) template.HTML {
+	parts := buildIdentity(get)
+	if parts.CSS == "" && len(parts.Google) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	if len(parts.Google) > 0 {
+		q := "family=" + strings.Join(parts.Google, "&family=") + "&display=swap"
+		b.WriteString(`<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?` + template.HTMLEscapeString(q) + `">`)
+	}
+	if parts.CSS != "" {
+		b.WriteString(`<style nonce="` + template.HTMLEscapeString(nonce) + `" data-gorun-identity>` + parts.CSS + `</style>`)
+	}
+	return template.HTML(b.String())
+}
