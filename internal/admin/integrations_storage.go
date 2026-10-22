@@ -3,7 +3,9 @@ package admin
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"maps"
 	"net/url"
 	"strings"
 
@@ -83,6 +85,7 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 	if c.Region == "" {
 		c.Region = "auto"
 	}
+	var cfBindingSnapshot *cfSnapshot
 	switch in.Source {
 	case "r2":
 		snapshot, err := h.cloudflareSnapshot(ctx)
@@ -91,8 +94,11 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 		}
 		if snapshot.AccountID == "" {
 			fields["source"] = "admin.integrations.storage.error.account"
+		} else if !h.cloudflareResourceDiscoveredFor(ctx, snapshot, "r2", c.Bucket) {
+			fields["source"] = "admin.integrations.storage.error.inventory"
 		} else {
 			c.Endpoint = r2Endpoint(snapshot.AccountID)
+			cfBindingSnapshot = &snapshot
 		}
 	case "s3", "":
 		var err error
@@ -190,6 +196,34 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 	res.ConnectionID, res.Destinations = c.ID, map[string]string{}
 	// Profile and destinations commit together: a failure leaves neither.
 	err := db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
+		if cfBindingSnapshot != nil {
+			current := map[string]string{}
+			rows, err := tx.QueryContext(ctx, `SELECT key,value_json FROM settings WHERE key IN (?,?)`, settingCFToken, settingCFAccount)
+			if err != nil {
+				return err
+			}
+			for rows.Next() {
+				var key, value string
+				if err := rows.Scan(&key, &value); err != nil {
+					rows.Close()
+					return err
+				}
+				var valid any
+				if json.Unmarshal([]byte(value), &valid) != nil {
+					rows.Close()
+					return errConnectionConflict
+				}
+				current[key] = value
+			}
+			err = rows.Err()
+			rows.Close()
+			if err != nil {
+				return err
+			}
+			if !maps.Equal(cfBindingSnapshot.raw, current) {
+				return errConnectionConflict
+			}
+		}
 		if rewrite {
 			if err := h.writeConnectionTx(ctx, tx, c, expected, "connections.save", false); err != nil {
 				return err

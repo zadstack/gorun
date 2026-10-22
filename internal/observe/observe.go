@@ -354,6 +354,27 @@ func (s *Service) List(ctx context.Context, kind string) ([]Observation, error) 
 	if !ok {
 		return nil, ErrUnknownKind
 	}
+	return s.list(ctx, kind, spec)
+}
+
+// ListWithRevision resolves saved observations against a caller's consistent
+// configuration snapshot. The resolver must use already-read configuration;
+// enabled state is evaluated once per list rather than once per saved key.
+// Freshness, attempts and revision mismatch use the same rules as List.
+func (s *Service) ListWithRevision(ctx context.Context, kind string, revision func(context.Context, string) (string, error)) ([]Observation, error) {
+	spec, ok := s.spec(kind)
+	if !ok {
+		return nil, ErrUnknownKind
+	}
+	if revision != nil {
+		spec.Revision = revision
+	}
+	enabled := spec.enabled(ctx)
+	spec.Enabled = func(context.Context) bool { return enabled }
+	return s.list(ctx, kind, spec)
+}
+
+func (s *Service) list(ctx context.Context, kind string, spec Spec) ([]Observation, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT `+rowColumns+` FROM observations WHERE kind = ? ORDER BY key`, kind)
 	if err != nil {
 		return nil, fmt.Errorf("observe: list: %w", err)
