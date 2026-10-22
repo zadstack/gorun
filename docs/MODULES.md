@@ -4,7 +4,7 @@
 > `GET /api/v1/system/modules` تعرضان كل ما يشغّله هذا الإصدار: الوحدات المدمجة (النواة والميزات)، الخدمات
 > الأساسية (النماذج والتخزين والنسخ الاحتياطي والبريد) والإضافات الخارجية، ولكلٍّ: وظيفتها، مصدرها، إصدارها،
 > توافقها، ما تعتمد عليه، صلاحياتها، ما سجّلته فعلًا في هذه العملية، حالتها، وهل تحتاج إعدادًا. الوحدات
-> الاختيارية (المتجر وSaaS والعضوية) تُوقَف وتُفعَّل من الصفحة أو عبر
+> الاختيارية (commerce وsaas وmembership وlaunch وworkagents وwpmigrate وmcp وext) تُوقَف وتُفعَّل من الصفحة أو عبر
 > `PUT /system/modules/{name}/activation`؛ يُطبَّق التغيير بعد إعادة التشغيل، ولا تُحذف بيانات، وتُوقَف مهام
 > الوحدة المعطّلة في الطابور (parked) حتى تفعيلها. كل ما لم يُرصد يُعرض «غير معروف» ولا يُفترض.
 
@@ -14,7 +14,7 @@ are called:
 | Kind | What it is | Where it lives | Switch |
 |---|---|---|---|
 | **Core module** | A domain every install boots (settings, auth, content, taxonomy, media, menus, redirects, seo, theme, pattern, builder, site, api, admin, webhooks). | `internal/<name>`, `kernel.BootOrder` up to `webhooks` | always on |
-| **Built-in feature module** | A feature compiled into the binary that owns its routes, workers, admin pages, migrations and permissions (commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext). | `internal/<name>`, after `webhooks` | **commerce, saas, membership** implement `kernel.OptionalModule`; the others are always on in this release |
+| **Built-in feature module** | A feature compiled into the binary that owns its routes, workers, admin pages, migrations and permissions (commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext). | `internal/<name>`, after `webhooks` | All eight implement `kernel.OptionalModule` using `kernel.AddonEnabled` |
 | **Core service** | A general service that is a feature of a core module and is configured by settings: forms (site), storage (media), backups (admin), mail (admin). | the owning module | never switched; configured |
 | **External extension** | A separate program described by `manifest.json`, receiving hooks over signed HTTP and calling the REST API with a scoped key ([EXTENSIONS.md](EXTENSIONS.md)). | `<data>/extensions/<slug>` | activate / deactivate / uninstall on its own page |
 
@@ -84,8 +84,15 @@ stops a boot; it changes behaviour, and the catalog says how on the dependent's 
 | commerce | theme | Store pages (`/shop`, `/cart`, `/account`) are not served; themes render with empty product lists. |
 | wpmigrate | mcp | The migration tools are not offered to agents. |
 
-A hard dependency that is off (none can be today, since only the three store modules are optional
-and nothing hard-depends on them) shows "Depends on X, which is off".
+A hard dependency that is off shows "Depends on X, which is off".
+
+Membership and SaaS each serve their own stylesheet (`/membership/assets.css` and
+`/saas/assets.css`). Their account navigation follows the services actually registered at boot;
+Membership also hides `/agents` when WorkAgents is off. With Commerce off, anonymous visitors
+receive an actionable sign-in-unavailable response (503); authenticated users can still use
+the standalone pages. The independent-addon boot/browser tests cover Commerce/SaaS/Membership
+combinations, and `TestMembershipNavigationTracksWorkAgentsAcrossDisableAndReenable` covers
+the Agents link and preserved membership data.
 
 ### Orphan jobs
 
