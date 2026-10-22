@@ -335,9 +335,20 @@ func TestObservationsAPIRefreshesInBackgroundOnly(t *testing.T) {
 	if resp.StatusCode != http.StatusAccepted || !strings.Contains(body, `"job_id"`) || !strings.Contains(body, `"deduplicated":false`) {
 		t.Fatalf("%d %s", resp.StatusCode, body)
 	}
+	var first struct {
+		Data struct {
+			JobID string `json:"job_id"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal([]byte(body), &first)
+	// The booted workers may finish the first job before the second request
+	// lands (slow CI); deduplication is asserted only while it is in flight.
 	resp, body = s.jsonPost("/api/v1/system/observations/update.release/latest/refresh", "")
-	if resp.StatusCode != http.StatusAccepted || !strings.Contains(body, `"deduplicated":true`) {
+	if resp.StatusCode != http.StatusAccepted {
 		t.Fatalf("%d %s", resp.StatusCode, body)
+	}
+	if job, err := s.app.Deps.Jobs.Get(context.Background(), first.Data.JobID); err == nil && (job.Status == "queued" || job.Status == "running") && !strings.Contains(body, `"deduplicated":true`) {
+		t.Fatalf("in-flight refresh was not deduplicated: %s", body)
 	}
 	s.waitFor("fresh latest", func(e statusEnvelope) bool { return e.Data.Latest.Status == "fresh" })
 	resp, body = s.do("GET", "/api/v1/system/observations?kind=update.release", nil)

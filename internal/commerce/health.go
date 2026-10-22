@@ -169,3 +169,22 @@ func itoa(n int64) string {
 	}
 	return string(b[i:])
 }
+
+// requirements reports the store's configuration to the capability report:
+// a Stripe secret key and webhook secret are required for live checkout.
+// Presence is configuration only; delivery is never claimed here.
+func (s *service) requirements(ctx context.Context, v any) (any, error) {
+	list, ok := v.(*[]admin.ModuleRequirement)
+	if !ok || list == nil {
+		return v, nil
+	}
+	req := admin.ModuleRequirement{Module: "commerce", Configured: true, Reason: "configured_not_verified", Remediation: "Checkout and webhook delivery are verified only by a real Stripe test-mode order; see docs/COMMERCE.md."}
+	switch {
+	case s.stripeSecretKey(ctx) == "":
+		req.Configured, req.Reason, req.Remediation = false, "stripe_secret_key_missing", "Set STRIPE_SECRET_KEY (or the Stripe key under Commerce → Launch store) before selling."
+	case s.webhookSecret(ctx) == "":
+		req.Configured, req.Reason, req.Remediation = false, "stripe_webhook_secret_missing", "Set STRIPE_WEBHOOK_SECRET and point the Stripe webhook at /webhooks/stripe."
+	}
+	*list = append(*list, req)
+	return list, nil
+}

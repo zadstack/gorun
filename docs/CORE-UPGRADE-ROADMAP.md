@@ -2,8 +2,8 @@
 
 This document tracks the Shared Core operations work after v0.14.1. The first
 PR (#114) added site information and the capability report. The second PR
-implements the staged update lifecycle and durable background observations and
-records, per requirement, whether it is **complete**, **partial** or
+implements the staged update lifecycle and durable background observations; the
+third adds capability evidence and operation tests. This table records, per requirement, whether it is **complete**, **partial** or
 **deferred**, with the test that proves it. Documentation or an announcement is
 never evidence; only the listed tests and code are.
 
@@ -55,18 +55,21 @@ deferred** — not in this PR, listed for the next one.
 | 4.6 | Process interruption recovers work | complete | `TestInterruptedRefreshRecoversAndCompletes` |
 | 4.7 | Disabled modules do not run their work; queued work is parked and preserved for re-enable | complete | `internal/jobs/queue_test.go: TestParkHoldsQueuedWorkAndUnparkReleasesItUnchanged`, `TestPanicCountsAsFailureAndMissingHandlerWaits`; observe `TestUnregisteredKindJobsAreParkedThenReleasedOnReenable` (boot) and `TestDisabledCapabilityParksQueuedWorkWhileWorkersRun` (runtime disable/enable with live workers) |
 | 4.8 | Unauthorized callers cannot refresh or read | complete | admin `TestObservationsAPIRefreshesInBackgroundOnly` (editor 403), `TestUpdatesDisabledUntilOperatorConfiguration` |
-| 4.9 | Connection probes (AI/MCP/S3) as background observations | deferred | The explicit connection test POST still runs in the request (25 s timeout) and saves its evidence as before; moving it behind an observation kind is the next PR together with operation-level tests (section 2). |
+| 4.9 | Connection probes (AI/MCP/S3) as background observations | complete | See 2.6: scheduled `connection` observations plus the API check endpoint; the explicit admin button stays synchronous (operator-initiated, 25 s bound) and records the same evidence. |
 | 4.10 | Health hook checks of other modules (commerce) | complete | billing-server reachability moved; Stripe presence checks remain local reads |
 
-## 2. Capability evidence (next PR)
+## 2. Capability evidence
 
-| # | Requirement | Status | Note |
+| # | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 2.1 | Separate available / enabled / configured / connected / operation-tested | partial | Available, enabled, configured and connectivity exist (#114). Operation-tested evidence is not produced yet. |
-| 2.2 | Optional, safe operation tests with explicit permissions and isolated samples | deferred | Requires per-integration test operations (send a test mail to the operator, write/delete a probe object, dry-run a tool) with a cleanup policy. |
-| 2.3 | Bind evidence to configuration revision and test time; invalidate on change/expiry | partial | Connection probes carry `test_version` (#114); observations carry revision and freshness (this PR). Capability report does not yet surface observations. |
-| 2.4 | Module configuration report with failure cause and repair step | partial | Observations and update phases carry `remediation`; module-level configuration requirements are still not published by every module. |
+| 2.1 | Separate available / enabled / configured / connected / operation-tested | complete | `CapabilityState.available/enabled/configured/connected/tested`; `internal/admin/capabilities_evidence_test.go: TestCapabilityOperationTestsRunInBackgroundWithIsolatedSamples` (connectivity never sets `tested`) |
+| 2.2 | Optional, safe operation tests with explicit permissions and isolated samples, no hidden external operations | complete | `system.capability_test` permission; S3 probe object written/read/deleted (asserted against a fake bucket, no leftover), AI completion capped at 16 tokens, mail to the requester only; nothing runs on GET; MCP refused (`operation_unsupported`) |
+| 2.3 | Bind evidence to configuration revision and test time; invalidate on change or expiry | complete | `checkFromObservation`; `TestCheckFromObservationSeparatesResultFromApplicability`; stale after edit and expired after 7 days asserted in the API test |
+| 2.4 | Module configuration report with failure cause and repair step | partial | `system.capabilities.modules` filter and `ModuleRequirement`; commerce (Stripe keys), media (active storage: managed destination / config bucket / local, `media.ActiveStorage.Describe`) and the mail service publish verdicts (`TestCapabilityModulesReportPublishedRequirements`, `TestCapabilityMailServiceEvidence`, `TestCapabilityStorageServiceOperationUsesActiveStorage`). Modules with nothing to configure say `module_publishes_no_requirements` instead of an ambiguous unknown. Still unpublished: membership, saas, workagents, mcp, ext, wpmigrate (their requirements are per-record, not module-level). |
+| 2.7 | Operation test of the storage configured by env/config, not only profiles | complete | `operation.storage` on `media.ActiveStorage` (managed destination, `[s3]` config or local disk), probe object cleaned; `TestCapabilityStorageServiceOperationUsesActiveStorage` |
+| 2.8 | MCP operation test | not solvable safely | Invoking any tool executes remote actions; `readOnlyHint` is a server claim. Kept `409 operation_unsupported`; connectivity stays `initialize` + `tools/list`. Documented in `docs/API.md`. |
 | 2.5 | Disabled modules stop consuming their jobs safely | complete | See 4.7. |
+| 2.6 | Connection probes as background observations | complete | `connection` kind (12-hour schedule, API check endpoint); the synchronous admin test records the same evidence (`observe.Record`) |
 
 ## 1. Identity and appearance (next PR)
 

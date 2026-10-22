@@ -40,6 +40,14 @@ type S3Storage struct {
 	now                    func() time.Time
 }
 
+// SetClient replaces the HTTP client (a safe client with a private-network
+// guard for operator-entered endpoints).
+func (s *S3Storage) SetClient(c *http.Client) {
+	if c != nil {
+		s.client = c
+	}
+}
+
 // NewS3Storage validates c and returns the driver. Plain http endpoints are allowed only when
 // insecure is set (dev, a local MinIO).
 func NewS3Storage(c S3Config, local *LocalStorage, insecure bool) (*S3Storage, error) {

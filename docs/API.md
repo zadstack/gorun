@@ -167,8 +167,35 @@ configuration. `observed_at` is the report read time; `last_check.checked_at` is
 | `available` | The module was supplied to this boot, or Core recognizes the profile type. Configured add-ons missing from the binary are explicitly unavailable. |
 | `enabled` | Actual boot selection for modules. `null` for a reusable connection profile: saving a profile does not activate its consumers. |
 | `configured` | Local profile validation and readable required credentials. `null` when a module does not publish its requirements; never infer success from this value. |
-| `tested` | Successful operation evidence for the current configuration. Currently `false`: existing connection probes only discover models/tools or check a bucket. |
-| `last_check` | `null` when never checked; otherwise the saved connectivity result/time, applicability status, reason and remediation. No fabricated zero counts are emitted. |
+| `connected` | `true` only for a current, unexpired, passed connectivity check; `false` after a failed or stale one; `null` when never checked. |
+| `tested` | `true` only for a current, unexpired, passed **operation test** (see below). Connectivity never sets it. |
+| `operation_supported` | Whether a safe operation test exists: S3 (write/read/delete one probe object), AI (one tiny completion), mail (one message to the requesting operator). MCP has none: invoking a tool would execute remote actions. |
+| `last_check` / `operation` | `null` when never run; otherwise the saved result/time, `scope` (what ran), `expires_at`, applicability status, reason and remediation. No fabricated zero counts are emitted. |
+
+Evidence is bound to the configuration revision and to time. Status is `passed` only while the
+revision still matches and the result is younger than 7 days; an edit makes it `stale` and age makes
+it `expired`, both keeping `result: passed` so the history is not erased. A newer failed attempt is
+reported `failed` with its own time. `services` lists the core mail service with the same fields.
+
+Running checks never happens on `GET`. Explicit requests queue background jobs and answer `202`
+with a task reference (see Background observations):
+
+| Endpoint | Scope | Runs |
+| --- | --- | --- |
+| `POST /api/v1/site/capabilities/connections/{id}/check` | `settings.manage` | Read-only connectivity/discovery (list models, discover tools, probe the bucket). Also scheduled every 12 hours per profile. |
+| `POST /api/v1/site/capabilities/connections/{id}/operation` | `system.capability_test` | S3: write, read back and delete one `YYYY/MM/gorun-capability-probe-<id>.txt` object (always deleted, even after a failed read). AI: one chat completion of a fixed prompt capped at 16 output tokens. `409 operation_unsupported` for MCP. |
+| `POST /api/v1/site/capabilities/services/mail/operation` | `system.capability_test` | One test message to the requesting operator's own address; `409 capability_disabled` until SMTP is configured. |
+| `POST /api/v1/site/capabilities/services/storage/operation` | `system.capability_test` | Write, read back and delete one probe object through the storage new uploads actually use: the managed destination selected under Settings → Storage, else the `[s3]` bucket from config/env, else local disk. `services.storage` reports which one (`source`) and whether it is configured. |
+
+MCP profiles have **no operation test** on purpose: invoking a tool executes an action on the
+remote server, and a server's own read-only annotation is a claim, not a guarantee. The MCP
+connectivity check performs `initialize` + `tools/list` only; `tested` stays `false` for MCP.
+Modules that publish no requirements report `configuration_status: unknown` with
+`module_publishes_no_requirements`; the media module's configuration comes from its active storage.
+
+The admin "test" buttons (connections, mail) still run synchronously and record the same evidence.
+Modules publish their configuration verdict through the `system.capabilities.modules` filter
+(`admin.ModuleRequirement`: configured, reason, remediation); commerce reports missing Stripe keys.
 
 Legacy checks without a configuration revision keep their historical result but report
 `configuration_match: null`; they do not certify the current configuration. New explicit probes also
@@ -228,8 +255,10 @@ kind. Results are fenced: an attempt queued for one configuration revision is di
 result never certifies new credentials. Disabled capabilities are neither scheduled nor refreshed;
 their queued jobs are parked (`parked_reason`) and released unchanged when the handler returns.
 
-Registered kinds in this release: `update.release` (key `latest`: the trusted release index) and
-`commerce.billing_server` (one key per billing server: read-only catalog fetch). Error strings are
+Registered kinds: `update.release` (key `latest`: the trusted release index), `commerce.billing_server`
+(one key per billing server: read-only catalog fetch), `connection` (per profile connectivity),
+`operation.s3`, `operation.ai` (per profile operation tests, on request only) and `operation.mail`
+(key `user:<id>`, on request only). Error strings are
 truncated and come from the module's own sanitized messages; credentials, hosts and raw upstream
 bodies are not stored.
 
@@ -321,7 +350,7 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **173 operations** in 24 tags.
+Generated from the current locally booted OpenAPI document: **177 operations** in 24 tags.
 
 ### builder
 
@@ -517,10 +546,14 @@ Generated from the current locally booted OpenAPI document: **173 operations** i
 |---|---|---|---|
 | GET | `/api/v1/health` | Readiness: database reachable | any key or session |
 | GET | `/api/v1/me` | Current principal and effective scopes | any key or session |
-| GET | `/api/v1/site/capabilities` | Saved capability evidence and actual module activation (no external checks) | `system.health` |
+| GET | `/api/v1/site/capabilities` | Saved capability evidence (availability, activation, configuration, connectivity, operation tests) with no external checks | `system.health` |
 | GET | `/api/v1/site/info` | Public site identity, running build, languages and theme appearance with provenance | public |
 | GET | `/api/v1/site/runtime` | Protected running process information; no credentials or deployment paths | `settings.manage` |
 | GET | `/api/v1/site` | Site structure: content types, taxonomies, menus, theme, templates | `content.view` |
+| POST | `/api/v1/site/capabilities/connections/{id}/check` | Queue a read-only connectivity/discovery check of a connection profile; answers 202 with the task reference | `settings.manage` |
+| POST | `/api/v1/site/capabilities/connections/{id}/operation` | Queue an isolated operation test (S3: write/read/delete one probe object; AI: one tiny completion); answers 202 | `system.capability_test` |
+| POST | `/api/v1/site/capabilities/services/mail/operation` | Queue one test message to the requesting operator's own address; answers 202 | `system.capability_test` |
+| POST | `/api/v1/site/capabilities/services/storage/operation` | Queue one write/read/delete probe on the storage new uploads use (managed destination, configured bucket or local disk); answers 202 | `system.capability_test` |
 
 ### system
 

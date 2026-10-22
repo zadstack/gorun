@@ -105,6 +105,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.update = h.buildUpdateService(d)
 	h.update.Register()
 	h.registerReleaseObservation()
+	h.registerCapabilityObservations()
 	d.Services.Set(observe.ServiceName, h.observe)
 	d.Services.Set(update.ServiceName, h.update)
 	// Operations left running by a previous process are reconciled before
@@ -131,6 +132,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Jobs.Cron("studio.recover", time.Minute, h.studioRecover)
 	h.apiOperations()
 	h.capabilityAPIOperations()
+	h.capabilityTestAPIOperations()
 	h.updateAPIOperations()
 	h.observationAPIOperations()
 	h.roleAPIOperations()
@@ -152,6 +154,7 @@ func declarePermissions(d *kernel.Deps) {
 		{PermSettings, "Manage settings", "إدارة الإعدادات"},
 		{PermHealth, "View system health", "عرض حالة النظام"},
 		{PermUpdate, "Deploy configured site updates", "نشر تحديثات الموقع المهيأة"},
+		{PermCapabilityTest, "Run isolated capability operation tests", "تشغيل اختبارات تشغيل معزولة للقدرات"},
 		{PermAPIKeys, "Manage API keys", "إدارة مفاتيح API"},
 		{PermBackup, "Make, download and restore backups", "إنشاء النسخ الاحتياطية وتنزيلها واستعادتها"},
 	} {

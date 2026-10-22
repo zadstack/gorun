@@ -207,3 +207,36 @@ func (s *Service) Forget(ctx context.Context, kind, key string) error {
 
 // Age formats a saved result's age for templates.
 func Age(seconds int64) string { return (time.Duration(seconds) * time.Second).String() }
+
+// Record saves the outcome of a check that ran synchronously (an explicit
+// operator action) as the key's newest attempt, outside the job path. The
+// generation is unchanged; a refresh queued for the same key keeps its own
+// fence. A nil err saves the result as the last success; otherwise the
+// previous success is kept and only the attempt is recorded.
+func (s *Service) Record(ctx context.Context, kind, key, revision string, res Result, runErr error, duration time.Duration) error {
+	spec, ok := s.spec(kind)
+	if !ok {
+		return ErrUnknownKind
+	}
+	now := db.FormatTime(s.now())
+	ms := duration.Milliseconds()
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO observations (kind, key, updated_at) VALUES (?, ?, ?) ON CONFLICT (kind, key) DO NOTHING`, kind, key, now); err != nil {
+		return err
+	}
+	if runErr == nil {
+		data, err := json.Marshal(res.Data)
+		if err != nil {
+			return fmt.Errorf("observe: result not serializable")
+		}
+		_, err = s.db.ExecContext(ctx, `UPDATE observations SET attempt_status = 'succeeded', attempt_started_at = ?, attempt_finished_at = ?, attempt_number = 1,
+			attempt_error = '', attempt_remediation = '', attempt_duration_ms = ?, pending_revision = ?,
+			success_at = ?, success_revision = ?, success_duration_ms = ?, success_scope = ?, result_json = ?, updated_at = ? WHERE kind = ? AND key = ?`,
+			now, now, ms, revision, now, revision, ms, res.Scope, string(data), now, kind, key)
+		return err
+	}
+	msg := sanitizeError(runErr, ctx)
+	_, err := s.db.ExecContext(ctx, `UPDATE observations SET attempt_status = 'failed', attempt_started_at = ?, attempt_finished_at = ?, attempt_number = 1,
+		attempt_error = ?, attempt_remediation = ?, attempt_duration_ms = ?, pending_revision = ?, updated_at = ? WHERE kind = ? AND key = ?`,
+		now, now, msg, spec.Remediation, ms, revision, now, kind, key)
+	return err
+}
