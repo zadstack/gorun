@@ -2,6 +2,7 @@ package workagents
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -29,6 +30,10 @@ func New(complete Completion) *Module { return &Module{complete: complete} }
 func (*Module) Name() string          { return "workagents" }
 func (*Module) Migrations() fs.FS     { return files }
 func (*Module) Catalogs() fs.FS       { return files }
+func (*Module) Enabled(ctx context.Context, database *sql.DB) (bool, error) {
+	return kernel.AddonEnabled(ctx, database, "workagents")
+}
+
 func (m *Module) Register(d *kernel.Deps) error {
 	// Auth registered before this module's permission migration was applied.
 	if err := auth.ReloadRoles(context.Background(), d.DB); err != nil {

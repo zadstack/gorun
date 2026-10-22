@@ -242,10 +242,13 @@ optional registrations behind the existing `kernel.OptionalModule` gate?
    tables; the test disables, reboots, re-enables and reads the same product and plan rows back.
 
 **Decision.** They become optional registrations, enabled by default. `CoreModules()` keeps its
-name and order (downstream binaries call it); the modules themselves implement `Enabled`. launch,
-workagents, wpmigrate, mcp and ext are feature modules by the same definition and are candidates
-for the same gate; they are left unchanged in this PR to keep the diff reviewable, and the
-catalog PR will list them with their state.
+name and order (downstream binaries call it); commerce, saas, membership, launch, workagents,
+wpmigrate, mcp and ext implement `Enabled` through `kernel.AddonEnabled`. Each is enabled by
+default and can be disabled independently. MCP omits migration tools while wpmigrate is off.
+WXR CLI import and preview reject an explicitly disabled wpmigrate addon; MCP stdio requires mcp
+to be booted. Disabled modules do not register routes, jobs, navigation or hook subscribers.
+Their stored rows remain intact. A server boot with job workers parks queued jobs by their
+last observed kinds until re-enabled. System → Modules derives their optional/switchable state from this boot inventory.
 
 **How to switch.** Operator: `GORUN_ADDONS='{"commerce":"disabled"}'` or `[addons]` in the site
 config, then restart. Site setting: `addons.commerce.enabled = false` (JSON boolean; written by

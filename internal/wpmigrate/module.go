@@ -40,6 +40,10 @@ func (*Module) Migrations() fs.FS { return migrations }
 // Catalogs implements kernel.CatalogProvider.
 func (*Module) Catalogs() fs.FS { return catalogs }
 
+func (*Module) Enabled(ctx context.Context, database *sql.DB) (bool, error) {
+	return kernel.AddonEnabled(ctx, database, "wpmigrate")
+}
+
 // Register publishes the Service, binds the pipeline jobs, the wizard
 // (admin → System → Migrations), the /v1/migrations API and the health
 // check.
@@ -172,6 +176,16 @@ func PreviewWXR(ctx context.Context, deps *kernel.Deps, f WXRFile, opts Options)
 func prepareWXR(ctx context.Context, deps *kernel.Deps, f WXRFile, opts Options) (run *service, q *inlineQueue, m *MigrationView, src *SourceView, optionsKept bool, err error) {
 	svc, ok := registered(deps)
 	if !ok {
+		enabled := deps.Config.Addons["wpmigrate"] != kernel.AddonModeDisabled
+		if enabled {
+			var gateErr error
+			if enabled, gateErr = kernel.AddonEnabled(ctx, deps.DB, "wpmigrate"); gateErr != nil {
+				return nil, nil, nil, nil, false, gateErr
+			}
+		}
+		if !enabled {
+			return nil, nil, nil, nil, false, errors.New("wpmigrate: addon disabled; enable it and restart before importing or previewing WXR")
+		}
 		var err error
 		if svc, err = newService(deps); err != nil {
 			return nil, nil, nil, nil, false, err

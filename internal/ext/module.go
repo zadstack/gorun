@@ -79,6 +79,10 @@ type service struct {
 	rt       *bridge
 }
 
+func (*Module) Enabled(ctx context.Context, database *sql.DB) (bool, error) {
+	return kernel.AddonEnabled(ctx, database, "ext")
+}
+
 // Register declares the permission, publishes the service, resubscribes
 // active extensions, and adds the delivery job, health check, admin screens
 // and API operations.
