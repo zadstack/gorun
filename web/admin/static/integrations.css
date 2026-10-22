@@ -17,3 +17,24 @@
 .integrations-dl dt { font-weight: 600; color: var(--muted, #6b7280); }
 .integrations-editor > summary { cursor: pointer; font-weight: 500; }
 @media (max-width: 640px) { .integrations-dl { grid-template-columns: 1fr; } .integrations-dl dt { margin-block-start: .5rem; } }
+/* Preserve the native admin surface while keeping long provider data readable. */
+.integrations { min-inline-size: 0; }
+.integrations > section { min-inline-size: 0; scroll-margin-block-start: 1rem; }
+.integrations > section + section { margin-block-start: 1rem; }
+.integrations .connections-table-scroll { max-inline-size: 100%; border: 1px solid var(--line, #e5e7eb); border-radius: .375rem; }
+.integrations-table td { overflow-wrap: anywhere; max-inline-size: 28rem; }
+.integrations-table th[scope="row"] { overflow-wrap: anywhere; min-inline-size: 7rem; max-inline-size: 20rem; }
+.integrations-table time { font-size: .75rem; white-space: nowrap; }
+.integrations-table tbody tr:last-child > * { border-block-end: 0; }
+.integrations-table button:disabled { cursor: not-allowed; opacity: .55; }
+.integrations-issue { border: 1px solid var(--line, #e5e7eb); border-radius: .375rem; padding: .5rem .75rem; line-height: 1.6; background: var(--amber-soft, #fef3c7); color: var(--amber-text, #92400e); }
+.integrations-form-fields { min-inline-size: 0; display: grid; gap: .75rem; }
+.integrations-form-fields:disabled { opacity: .65; }
+.integrations input:focus-visible, .integrations select:focus-visible, .integrations summary:focus-visible, .integrations a:focus-visible { outline: 2px solid var(--green, #16a34a); outline-offset: 3px; }
+.integrations-dl dd { min-inline-size: 0; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .integrations-jump { gap: .375rem .875rem; }
+  .integrations-tools label { display: flex; flex: 1 1 14rem; align-items: center; justify-content: space-between; }
+  .integrations-tools input, .integrations-tools select { min-block-size: 2.75rem; min-inline-size: 0; max-inline-size: 75%; }
+  .integrations button, .integrations summary { min-block-size: 2.75rem; }
+}

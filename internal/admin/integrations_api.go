@@ -51,7 +51,7 @@ func (h *handlers) integrationAPIOperations() {
 	identify := api.Op("POST", "/site/integrations/cloudflare/workers/{name}/identify", "Confirm a Worker as a GoRun Edge instance through its manager contract with a pasted manager key (never stored); records identity evidence",
 		[]string{"site"}, []string{PermSettings}, workerIdentifyInput{}, cfEdgeIdentity{}, h.apiWorkerIdentify)
 	identify.Params = []kernel.APIParam{{Name: "name", In: "path", Type: "string", Required: true}}
-	identify.Contract = &kernel.APIContract{Errors: []kernel.APIErrorResponse{integrationErrors[3], integrationErrors[5], integrationErrors[6]}}
+	identify.Contract = &kernel.APIContract{Errors: []kernel.APIErrorResponse{integrationErrors[1], integrationErrors[3], integrationErrors[5], integrationErrors[6]}}
 	bind := api.Op("POST", "/site/integrations/storage/bind", "Bind an existing bucket (discovered R2 or any S3 endpoint) as the media and/or backup destination with its own S3 keys; queues the read-only check",
 		[]string{"site"}, []string{PermSettings}, storageBindInput{}, storageBindResult{}, h.apiStorageBind)
 	bind.Contract = &kernel.APIContract{Errors: []kernel.APIErrorResponse{integrationErrors[1], integrationErrors[5]}}
@@ -185,6 +185,8 @@ func (h *handlers) apiWorkerIdentify(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case err == nil:
 		api.WriteItem(w, identity)
+	case errors.Is(err, errConnectionConflict):
+		api.WriteError(w, http.StatusConflict, "conflict", "the connection configuration changed during the check", nil)
 	case errors.Is(err, errCFNoAccount):
 		api.WriteError(w, http.StatusConflict, "account_required", "select a Cloudflare account first", nil)
 	case errors.Is(err, errConnectionInvalid):
@@ -207,7 +209,7 @@ func (h *handlers) apiStorageBind(w http.ResponseWriter, r *http.Request) {
 	res, fields, err := h.bindStorage(r.Context(), in)
 	switch {
 	case errors.Is(err, errConnectionConflict):
-		api.WriteError(w, http.StatusConflict, "conflict", "the S3 profile changed since it was read", nil)
+		api.WriteError(w, http.StatusConflict, "conflict", "the connection configuration changed since it was read", nil)
 	case err != nil:
 		api.Fail(w, r, err)
 	case len(fields) > 0:
