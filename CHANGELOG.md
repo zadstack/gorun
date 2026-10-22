@@ -11,6 +11,18 @@ All notable changes to GoRun are recorded here. The format follows
   menus, site identity, custom CSS and per-theme settings, and renders both locales, inner pages,
   search and the 404 page with the site's logo, title and menu; every bundled theme renders
   without the commerce, saas and membership modules and their routes are absent.
+- Store settings show the current Stripe mode as a badge and report each mode in three separate
+  states: configured, authenticated (a read-only **Verify key** call tied to the stored key) and
+  webhook delivery verified (signed events from Stripe only; the local test event never counts).
+  Switching to live now needs an explicit confirmation and server-side checks (live key present
+  and not test-prefixed, live webhook secret, Stripe reports a live key); a refused switch saves
+  nothing. Orders and Stripe events record the mode that created or verified them and Orders
+  shows it; a test order is never paid by a live-signed event and refunds use the order's own mode.
+  A key whose prefix contradicts its slot (live key in the test slot, test key in the live
+  slot) is refused on every save. Delivery evidence is bound to the credentials in place when it was verified, so rotating a
+  webhook secret or changing the account key starts again from "unverified". Fresh installs
+  (stamped `kernel.install_epoch` by the kernel when it creates the database) start in test mode;
+  upgraded sites keep their effective mode and historical orders are never relabelled.
 - `docs/BOUNDARIES.md`: the core / theme / built-in module / external extension boundary map with
   the import graph (generated and checked by `internal/kernel/boundaries_test.go`), runtime
   contracts (services, hooks, job kinds, crons, routes, API operations, MCP tools, permissions,
@@ -33,6 +45,15 @@ All notable changes to GoRun are recorded here. The format follows
   `module <name> disabled`, never run, failed or deleted; enabling the module releases them
   unchanged. Accessors `hooks.Registry.Subscriptions`, `jobs.Queue.CronNames`,
   `jobs.Queue.QueuedByKind`, `ThemeRegistry.Kinds`, `AdminRegistry.NavIDs`, `ServiceRegistry.Names`.
+- Design variants are declared per theme in `theme.json` `supports` as `<slot>:<value>` and resolved
+  by the new `{{variant "<slot>" .}}` template func with a `native` fallback for undeclared, unknown or
+  hand-edited values; Theme settings offers only declared options. New `single_style` (`wide`,
+  `centered`) and `archive_style` (`grid`, `compact`) settings for the default, business, magazine and
+  portfolio themes, implemented by the shared `variants.css`, `list-grid`, `list-rows` and
+  `list-variant` components; `archive_style` applies to post archives, taxonomy pages and search
+  results alike. Upgrade note: a custom child theme that rendered `header_style`/`footer_style`
+  through the inherited catalog parts without declaring `header:*`/`footer:*` in its own
+  `supports` now renders `native` until it declares the variants it implements.
 
 ### Changed
 
@@ -59,7 +80,6 @@ All notable changes to GoRun are recorded here. The format follows
 - Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
   or Worker identity checks. Configuration changes during these operations return conflict.
   Failed local reads and malformed saved results appear as unavailable rather than empty success.
-
 - Bundled themes: the header no longer shows a fallback "Search" button beside an existing search
   control (business, docs, portfolio on phones, magazine), so a configured CTA (`cta_label` +
   `cta_url`) is the only button there; Business keeps its search field usable at phone widths
@@ -69,6 +89,26 @@ All notable changes to GoRun are recorded here. The format follows
 - Default theme store pages (cart, checkout, account, product quantity) use translation keys
   (`store.*` in `themes/default/lang`) instead of Arabic-only copy, so an English store reads in
   English; the account page no longer hard-links optional modules' pages (`/agents`, `/saas`).
+
+### Identity
+
+- Appearance → Identity (`/admin/appearance/identity`) is now one page, owned by the theme module,
+  for the site identity contract: four logo slots (`site.logo*`), name and tagline, accent /
+  background / text with a WCAG contrast check, Arabic heading and body fonts plus a new Latin
+  font (`identity_latin_font`), scheme, corners and a new spacing scale (`identity_spacing`),
+  header link and custom CSS. Edits go to a per-theme draft rendered by a live preview of the real
+  site (home or post, desktop or mobile, Arabic or English); **Apply** writes the live
+  `theme.<slug>.identity_*` and site keys in one transaction and records a revision (last 10);
+  **Revert** restores an earlier identity without touching content. The builder's `builder.identity`
+  stays a fallback layer and can be imported into the draft; its separate identity form is removed.
+
+### Optional modules
+
+- New optional module `identityai` (switchable in System → Modules via `addons.identityai.enabled`): Appearance →
+  Identity AI asks a saved text AI connection for colours, fonts, taglines and a written logo brief
+  after the operator previews the exact request and approves its estimated cost; results go to the
+  identity draft only. This stage is text only: no image, vector or animation is produced or
+  claimed; logo generation with the same gating is follow-up work. See `docs/IDENTITY-AI.md`.
 
 ## [0.15.1] - 2026-10-22
 

@@ -42,6 +42,9 @@ type reqState struct {
 	previewIdentity *brand.Identity
 	previewMenu     *menus.Menu
 	previewSettings map[string]string
+	// identityOverride replaces the stored identity and logo settings for
+	// this render only (Appearance → Identity preview).
+	identityOverride *IdentitySnapshot
 }
 
 func (st *reqState) cached(slot **string, load func() string) string {
@@ -87,13 +90,18 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 		"setting":         f.setting,
 		"builderStyle":    f.builderStyle,
 		"builderIdentity": f.builderIdentity,
+		"variant":         f.variant,
 		"identity": func(...any) template.HTML {
 			// Only a theme that declares the capability itself is restyled.
 			if st.tc == nil || st.tc.Theme.Slug == "" || !supportsIdentity(st.tc.Theme) {
 				return ""
 			}
 			slug := st.tc.Theme.Slug
-			return identityCSS(func(k string) string { return f.setting(SettingKey(slug, k)) }, httpx.Nonce(st.ctx))
+			get := func(k string) string { return f.setting(SettingKey(slug, k)) }
+			if st.identityOverride != nil {
+				return identityInlineCSS(get, httpx.Nonce(st.ctx))
+			}
+			return identityCSS(get, httpx.Nonce(st.ctx))
 		},
 		"builderBody": f.builderBody,
 		"addonBody": func(name, body string) template.HTML {
@@ -157,7 +165,7 @@ func (f *funcs) t(key string, args ...any) string {
 
 var (
 	settingPrefixes = []string{"site.", "seo.", "theme.", "social.", "contact."}
-	settingSecrets  = []string{"password", "secret", "token", "apikey", "api_key", "private", "smtp"}
+	settingSecrets  = []string{"password", "secret", "token", "apikey", "api_key", "private", "smtp", "identity_draft", "identity_history"}
 )
 
 // setting returns a public setting as a string. Only keys under
@@ -178,6 +186,11 @@ func (f *funcs) setting(key string) string {
 	if key == "site.logo" {
 		if value, ok := f.st.previewSettings[key]; ok {
 			return value
+		}
+	}
+	if o := f.st.identityOverride; o != nil {
+		if v, ok := o.lookup(key); ok {
+			return v
 		}
 	}
 	if f.st.settings != nil {

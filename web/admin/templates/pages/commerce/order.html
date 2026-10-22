@@ -10,6 +10,7 @@
   <dt class="text-muted">{{t "commerce.col.total"}}</dt><dd class="font-mono text-start" dir="ltr">{{.Total}}</dd>
   <dt class="text-muted">{{t "commerce.col.created"}}</dt><dd class="font-mono text-xs">{{date .CreatedAt}}</dd>
   <dt class="text-muted">{{t "commerce.orders.paid_at"}}</dt><dd class="font-mono text-xs">{{if .PaidAt}}{{date .PaidAt}}{{else}}—{{end}}</dd>
+  <dt class="text-muted">{{t "commerce.col.mode"}}</dt><dd>{{template "partials/commerce_order_mode" .StripeMode}}</dd>
   <dt class="text-muted">Stripe</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.StripeSessionID}} {{.StripePaymentIntent}}</dd>
 {{if .ReceiptStatus}}
   <dt class="text-muted">{{t "commerce.receipt.label"}}</dt><dd>{{t (print "commerce.receipt." .ReceiptStatus)}}{{if .ReceiptSentAt}} · {{date .ReceiptSentAt}}{{end}}{{if .ReceiptError}}<p class="text-sm text-muted">{{t "commerce.receipt.check_provider"}}</p>{{end}}</dd>

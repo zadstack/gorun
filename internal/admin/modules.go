@@ -135,6 +135,7 @@ var moduleCatalogTable = map[string]builtin{
 	"membership": {kind: CatalogKindFeature, dependencies: []string{"api", "auth", "content"}},
 	"launch":     {kind: CatalogKindFeature, dependencies: []string{"auth"}},
 	"workagents": {kind: CatalogKindFeature, dependencies: []string{"admin", "auth", "content"}},
+	"identityai": {kind: CatalogKindFeature, dependencies: []string{"admin", "auth", "theme"}},
 	"wpmigrate":  {kind: CatalogKindFeature, dependencies: []string{"admin", "api", "content", "taxonomy", "media", "menus", "redirects", "theme"}, optional: []string{"commerce"}},
 	"mcp":        {kind: CatalogKindFeature, dependencies: []string{"admin", "api", "auth", "content", "media", "taxonomy", "theme"}, optional: []string{"commerce", "wpmigrate"}},
 	"ext":        {kind: CatalogKindFeature, dependencies: []string{"admin", "api", "auth", "content"}},

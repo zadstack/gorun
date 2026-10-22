@@ -1,7 +1,6 @@
 {{/* Compatibility shell for child themes inheriting the default header. */}}
 {{part "head" .}}
-{{$shellHeader := setting (printf "theme.%s.header_style" .Theme.Slug)}}
-{{if not (or (eq $shellHeader "rail") (eq $shellHeader "framed") (eq $shellHeader "editorial"))}}{{$shellHeader = "native"}}{{end}}
+{{$shellHeader := variant "header" .}}
 {{part "shell" .}}
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
