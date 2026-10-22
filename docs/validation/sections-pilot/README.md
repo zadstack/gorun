@@ -27,18 +27,22 @@ Go tests (`internal/theme/sections_pilot_test.go`) and imported by
 | Hero background is a masked colour layer from the tokens | same | pass |
 | Reduced motion: card transition ≈ 0 s, no hover transform | Playwright `reduced motion removes the card lift` | pass |
 | `identity_pattern=waves`, `density=dense`, `color=#c2410c` reach `/site/identity.css` and the page; a section's own modifier still wins; a bad colour is rejected | Playwright `identity pattern settings reach the pages` | pass |
-| Existing suites: `catalog-themes` (5 themes, starter About page sections) and `theme-acceptance` (§6, 5 themes × 1440/390) | Playwright `catalog` project | 34 passed |
+| `sections.css` absent on home, archive, search and 404 in default and business; present on both pilot pages | Playwright `sections.css is a used asset` | pass |
+| Existing suites: `catalog-themes` (5 themes, starter About page sections) and `theme-acceptance` (§6, 5 themes × 1440/390) | Playwright `catalog` project | 33 passed + pilot spec 10 passed |
 
 ## Performance (same fixture before and after)
 
 Limits stated before measuring: `sections.css` ≤ 32 KiB raw / ≤ 8 KiB gzip; no new
-request on any page; render time within 1.5× of a home page render.
+request on any page; render time within 1.5× of a home page render; pages whose content
+has no `gp-s-` block must not load the stylesheet at all (used-assets-only).
 
 | Measure | Before (main 00f123b) | After | Note |
 |---|---|---|---|
 | `sections.css` raw | 5 426 B | 28 322 B | one file, already loaded by every catalog theme |
 | `sections.css` gzip | 1 671 B | 6 212 B | +4.5 KiB per first visit, cached afterwards |
 | Requests on the demo page | 14 (default) / 12 (business) | 14 / 12 | no new request; icons and patterns are inline CSS |
+| `sections.css` on pages without sections (home, archive, search, 404) | loaded on every page (1 671 B gzip) | not linked (`{{sections .}}` prints nothing) | one request and 1.7 KiB gzip less than main on those pages; `TestSectionsStylesheetLoadsOnlyWhenContentUsesIt` (5 themes) and the spec's used-asset test |
+| CSS transferred, home page (encoded) | ≈ 18.7 KiB default / 16.8 KiB business | 17.0 KiB default / 15.1 KiB business, 13 requests | measured by the spec; before = after + the 1.7 KiB the old file cost |
 | CSS transferred, demo page (encoded) | ≈ 19.3 KiB / 15.9 KiB | 23.9 KiB (default) / 20.4 KiB (business) | before = after − stylesheet delta; everything else unchanged |
 | Document transferred (encoded) | — | 2.9–3.4 KiB | HTML body unchanged by the CSS |
 | `domContentLoaded` (local, Chromium) | — | 14–27 ms | from `performance.getEntriesByType('navigation')` |
@@ -77,7 +81,7 @@ Tailwind build moves to v4.
    `faq` → `gp-s-faq`, `stats` → `gp-s-facts`, `pricing` → `gp-s-compare`) and
    exposing `identity_pattern` to builder sections is the next step; it needs
    the builder's own tests and screenshots.
-3. **Magazine, portfolio and docs.** They load `sections.css` and pass the
+3. **Magazine, portfolio and docs.** Their heads call `{{sections .}}` too and they pass the
    existing catalog checks with the starter About page, but the pilot page was
    screenshotted only in default and business. Add them to
    `sections-pilot.spec.ts` once their page widths are reviewed.

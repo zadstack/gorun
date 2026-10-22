@@ -14,6 +14,9 @@ All notable changes to GoRun are recorded here. The format follows
   `gp-s-preview` window frame (real screenshot or drawn interface) and a `gp-s-cta-panel`.
   Everything is static CSS and data-URI SVG masks coloured from the theme tokens; motion stops
   under `prefers-reduced-motion`; RTL and 375 px covered by `e2e/tests/sections-pilot.spec.ts`.
+  The stylesheet is now a used asset: the new `{{sections .}}` head func links it only on pages
+  whose content carries a `gp-s-` class (it was loaded on every page before), so pages without
+  sections load less CSS than on 0.15.1.
 - Section backgrounds as identity tokens: `identity_pattern` (dots, fine grid, geometric
   lines, concentric circles, waves, paper, solid), `identity_pattern_density` and
   `identity_pattern_color` under Appearance → Theme settings → Design. `/site/identity.css`

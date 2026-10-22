@@ -168,8 +168,9 @@ func ValidateDir(dir string, roots []string, opts Options) Result {
 	if len(opts.ForbidScriptHosts) > 0 {
 		res.Issues = append(res.Issues, scanForbiddenHosts(dir, opts.ForbidScriptHosts)...)
 	}
-	if !headProvides(chain, "sections.css") {
-		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must load sections.css (own or inherited)", Path: "parts/head.html"})
+	// {{sections .}} links sections.css only on pages whose content uses it.
+	if !headProvides(chain, "{{sections") && !headProvides(chain, "sections.css") {
+		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call {{sections .}} or load sections.css (own or inherited)", Path: "parts/head.html"})
 	}
 	if !headProvides(chain, "builderIdentity") && !headProvides(chain, "builderStyle") {
 		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call builderIdentity or builderStyle (own or inherited)", Path: "parts/head.html"})

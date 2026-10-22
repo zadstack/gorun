@@ -111,6 +111,39 @@ func renderPilot(t testing.TB, slug, locale string) string {
 	return html
 }
 
+// The section library is a used-asset: a page whose content has no gp-s-
+// block links no sections.css at all; the pilot page links it before
+// tailwind.css (default) so the preflight still loads last.
+func TestSectionsStylesheetLoadsOnlyWhenContentUsesIt(t *testing.T) {
+	for _, slug := range []string{"default", "business", "magazine", "portfolio", "docs"} {
+		t.Run(slug, func(t *testing.T) {
+			e := newEnv(t, "../../themes", func(c *config.Config) { c.Theme = slug })
+			plain := content.Item{Type: "page", Slug: "plain", Title: "Plain", Body: "<p>No sections here.</p>", Status: "published"}
+			rec, err := e.render(kernel.KindRequest{Kind: KindPage, Type: "page", Slug: "plain"}, &Context{Content: &plain})
+			if err != nil || rec.Code != 200 {
+				t.Fatalf("plain page: status=%d err=%v", rec.Code, err)
+			}
+			mustNotContain(t, rec.Body.String(), "sections.css")
+			rec, err = e.render(kernel.KindRequest{Kind: Kind404}, &Context{Status: 404})
+			if err != nil {
+				t.Fatal(err)
+			}
+			mustNotContain(t, rec.Body.String(), "sections.css")
+			// A listing that prints a body with sections links it too.
+			post := content.Item{Type: "post", Slug: "p", Title: "P", Body: `<section class="gp-s-band"><h2>x</h2></section>`, Status: "published", PublishedAt: "2026-10-10T00:00:00Z"}
+			rec, err = e.render(kernel.KindRequest{Kind: KindHome}, &Context{Items: []content.Item{post}, Pagination: NewPagination(1, 1, 1)})
+			if err != nil || rec.Code != 200 {
+				t.Fatalf("home: status=%d err=%v", rec.Code, err)
+			}
+			mustContain(t, rec.Body.String(), "/themes/default/assets/sections.css")
+		})
+	}
+	html := renderPilot(t, "default", "en")
+	if i, j := strings.Index(html, "sections.css"), strings.Index(html, "tailwind.css"); i < 0 || j < i {
+		t.Errorf("default: sections.css must load before tailwind.css (got %d, %d)", i, j)
+	}
+}
+
 func TestSectionsPilotRendersInDefaultAndBusiness(t *testing.T) {
 	out := os.Getenv("GORUN_SECTIONS_PILOT_OUT")
 	for _, slug := range []string{"default", "business"} {

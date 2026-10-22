@@ -57,7 +57,7 @@ Ship-with themes share one contract in `pkg/themekit` (`CatalogOptions` / `Valid
 - `supports` includes `rtl` and `identity`
 - Own `lang/en.json` and `lang/ar.json` (not only inherited keys)
 - Required templates resolve via inheritance (`index`, `page`, `single`, `archive`, `taxonomy`, `search`, `404`, `500`, `page-builder`, `page-contact`, `form-result`, plus `front-page` or `home`)
-- `screenshot.png`; head (own or inherited) loads `sections.css`, `builderIdentity`, and `identity`
+- `screenshot.png`; head (own or inherited) calls `sections`, `builderIdentity`, and `identity`
 - Primary stylesheet declares tokens under `:where(html[data-theme="<slug>"])`
 - No third-party script CDN hosts in theme HTML/CSS/JS
 
@@ -146,6 +146,7 @@ Every template receives a `*theme.Context`: `Site`, `Request`, `Kind`, `Content`
 | `content id`, `field . "k"`, `terms . "tax"` | single item, custom field, resolved terms |
 | `media id`, `img m "variant" "class"` | media item; responsive `<img>` with srcset, alt and size |
 | `comments .` | for an item whose type supports `comments`: `{Open, ContentID, Action, Back, Count, Items}` (approved comments, one reply level, never an email), or nil; the form posts `content_id`, `name`, `email`, `body`, `_back`, `website` (honeypot) and `_csrf` to `.Action`, and the page then shows `.Extra.comment_flash` (pending, approved, invalid, closed, limited). `default` and `business` ship a `comments` component |
+| `sections .` | the `<link>` to `sections.css` (resolved through the theme chain), printed only when the page's content, or a listed item's body, carries a `gp-s-` class; pages without sections load nothing (see [Section library](#section-library)) |
 | `identity .` | the site identity `<style>` (and font links) from Appearance → Theme settings, only for a theme whose own `theme.json` `supports` lists `identity`; print it last in `<head>` (see [Site identity](#site-identity)) |
 | `seo .` | head meta (title, description, canonical, OG) and the `hreflang` alternates |
 | `part "name" .`, `component "name" data` | include a part or component |
@@ -224,7 +225,7 @@ Declare tokens inside `:where(html[data-theme="<slug>"])` (zero specificity) and
 
 ## Section library
 
-The content sanitizer keeps only `class` values that start with `gp-` (plus editor classes), so page bodies written as HTML use the `gp-s-*` blocks from `themes/default/assets/sections.css`. Every catalog theme loads it. Its base selectors have zero specificity (`:where()`) and use the theme tokens, so the blocks follow the theme, the identity settings and custom CSS. Page bodies render inside `.prose-gp`, whose rules (link color and underline, list markers, `h2`/`h3` sizes, sibling margins) reach (0,2,2) specificity in the catalog themes; a short block at the end of `sections.css` re-applies exactly those properties under `:root .prose-gp` (0,3,0). To restyle a block inside a page body, use the same prefix (`:root .prose-gp .gp-s-btn{…}`) or custom CSS, which loads later. (The page builder owns `gp-section`, `gp-grid`, `gp-entry` and friends.)
+The content sanitizer keeps only `class` values that start with `gp-` (plus editor classes), so page bodies written as HTML use the `gp-s-*` blocks from `themes/default/assets/sections.css`. Every catalog head calls `{{sections .}}`, which links the file only on pages whose content (or a listed item's body) uses a `gp-s-` class, so pages without sections pay nothing for it. Its base selectors have zero specificity (`:where()`) and use the theme tokens, so the blocks follow the theme, the identity settings and custom CSS. Page bodies render inside `.prose-gp`, whose rules (link color and underline, list markers, `h2`/`h3` sizes, sibling margins) reach (0,2,2) specificity in the catalog themes; a short block at the end of `sections.css` re-applies exactly those properties under `:root .prose-gp` (0,3,0). To restyle a block inside a page body, use the same prefix (`:root .prose-gp .gp-s-btn{…}`) or custom CSS, which loads later. (The page builder owns `gp-section`, `gp-grid`, `gp-entry` and friends.)
 
 | Class | Use |
 |---|---|

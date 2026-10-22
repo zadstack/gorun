@@ -221,6 +221,30 @@ test.describe.serial('section-component pilot', () => {
     await expect(page.locator('link[data-gorun-identity]')).toHaveCount(0);
   });
 
+  test('sections.css is a used asset: absent on pages without sections', async ({ page }) => {
+    for (const slug of THEMES) {
+      await activate(page, slug);
+      // A search that lists the pilot pages links the stylesheet (listed bodies
+      // count), so the probe searches for a term with no results.
+      for (const path of ['/', '/blog', '/search?q=zq-no-such-term', '/no-such-page-pilot']) {
+        const r = await page.request.get(path);
+        expect(await r.text(), `${slug} ${path} must not link sections.css`).not.toContain('sections.css');
+      }
+      for (const p of PAGES) {
+        const r = await page.request.get(p.path);
+        expect(await r.text(), `${slug} ${p.path} links sections.css`).toContain('/themes/default/assets/sections.css');
+      }
+      // Cost on a page without sections: CSS bytes transferred for the home page.
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+      const home = await page.evaluate(() => {
+        const res = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
+        return { cssBytes: res.filter((r) => r.name.includes('.css')).reduce((n, r) => n + (r.encodedBodySize || 0), 0), requests: res.length };
+      });
+      (weights as any)[`${slug}-home`] = home;
+    }
+  });
+
   test('page weight report and restore the default theme', async ({ page }) => {
     await test.info().attach('sections-pilot-weights.json', { body: JSON.stringify(weights, null, 2), contentType: 'application/json' });
     writeFileSync(test.info().outputPath('sections-pilot-weights.json'), JSON.stringify(weights, null, 2));

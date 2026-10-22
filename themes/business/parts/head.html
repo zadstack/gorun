@@ -1,5 +1,5 @@
 <!doctype html>
 <html lang="{{locale}}" dir="{{dir}}" data-theme="{{.Theme.Slug}}" data-kind="{{.Kind}}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">{{seo .}}{{favicon}}
-<link rel="stylesheet" href="/static/admin/zad-font.css"><link rel="stylesheet" href="{{asset "tokens.css"}}"><link rel="stylesheet" href="{{asset "a11y.css"}}">{{part "head-extra" .}}{{builderIdentity}}<link rel="stylesheet" href="{{asset "sections.css"}}">{{identity .}}</head>
+<link rel="stylesheet" href="/static/admin/zad-font.css"><link rel="stylesheet" href="{{asset "tokens.css"}}"><link rel="stylesheet" href="{{asset "a11y.css"}}">{{part "head-extra" .}}{{builderIdentity}}{{sections .}}{{identity .}}</head>
 <body><a href="#main" class="sb-skip">{{t "skip_to_content"}}</a>
