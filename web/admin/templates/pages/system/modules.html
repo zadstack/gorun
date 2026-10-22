@@ -1,74 +1,73 @@
 {{/* Data: admin.modulesPage */}}
 {{define "title"}}{{t "admin.modules.title"}}{{end}}
-{{define "modules_state"}}{{if or (eq . "enabled") (eq . "always_on") (eq . "active")}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else if or (eq . "pending_enable") (eq . "pending_disable")}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber px-1.5 py-0.5 text-xs" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else if eq . "error"}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-xs" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-xs" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{end}}{{end}}
-{{define "modules_config"}}{{if eq .Status "incomplete"}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber px-1.5 py-0.5 text-xs" title="{{.Remediation}}">{{t "admin.modules.config.incomplete"}}</span>{{else if eq .Status "configured"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs" title="{{.Remediation}}">{{t "admin.modules.config.configured"}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-xs" title="{{.Remediation}}">{{t (print "admin.modules.config." .Status)}}</span>{{end}}{{end}}
+{{define "modules_state"}}{{if or (eq . "enabled") (eq . "always_on") (eq . "active")}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else if or (eq . "pending_enable") (eq . "pending_disable")}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else if eq . "error"}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{end}}{{end}}
+{{define "modules_config"}}{{if eq .Status "incomplete"}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px]" title="{{.Remediation}}">{{t "admin.modules.config.incomplete"}}</span>{{else if eq .Status "configured"}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-ink px-1.5 py-0.5 text-[11px]" title="{{.Remediation}}">{{t "admin.modules.config.configured"}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px]" title="{{.Remediation}}">{{t (print "admin.modules.config." .Status)}}</span>{{end}}{{end}}
+{{define "modules_names"}}{{range $i, $v := .}}{{if $i}}, {{end}}<span class="mod-code">{{$v}}</span>{{end}}{{end}}
 {{define "modules_row"}}
 {{$loc := locale}}{{$e := .}}
-<tr data-module="{{$e.ID}}" data-kind="{{$e.Kind}}" data-status="{{$e.State.Status}}" class="align-top">
-  <td class="px-3 py-2">
-    <p class="font-medium">{{index $e.Name $loc}} <span class="font-mono text-xs text-muted" dir="ltr">{{$e.ID}}</span></p>
-    <p class="text-xs text-muted">{{index $e.Summary $loc}}</p>
-    <p class="text-[11px] text-muted" dir="ltr">{{t "admin.modules.version"}}: {{$e.Version}} · {{t (print "admin.modules.compat." $e.Compatibility)}}</p>
-    {{range $e.Messages}}<p class="mt-1 text-xs {{if eq .Level "warning"}}text-amber{{else}}text-muted{{end}}" data-message="{{.Level}}">{{index .Text $loc}}</p>{{end}}
-  </td>
-  <td class="px-3 py-2 text-xs">{{t (print "admin.modules.kind." $e.Kind)}}</td>
-  <td class="px-3 py-2">{{template "modules_state" $e.State.Status}}</td>
-  <td class="px-3 py-2">{{template "modules_config" $e.Configuration}}</td>
-  <td class="px-3 py-2 text-xs" dir="ltr">
-    {{if $e.Owner}}<span class="font-mono">{{$e.Owner}}</span>{{else}}{{range $i, $d := $e.Dependencies}}{{if $i}}, {{end}}<span class="font-mono">{{$d}}</span>{{end}}{{end}}
-    {{with $e.OptionalDependencies}}<p class="text-muted">{{t "admin.modules.optional_deps"}}: {{range $i, $d := .}}{{if $i}}, {{end}}<span class="font-mono">{{$d}}</span>{{end}}</p>{{end}}
-    {{with $e.Dependents}}<p class="text-muted">{{t "admin.modules.dependents"}}: {{range $i, $d := .}}{{if $i}}, {{end}}<span class="font-mono">{{$d}}</span>{{end}}</p>{{end}}
-  </td>
-  <td class="px-3 py-2 text-xs">
-    {{with $e.Registered}}<details><summary class="cursor-pointer">{{t "admin.modules.registered.summary" (len .APIOperations) (len .JobKinds) (len .Crons) (len .Permissions) (len .HookSubscriptions)}}</summary>
-      <dl class="mt-1 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 font-mono text-[11px]" dir="ltr">
-        {{with .APIOperations}}<dt>api</dt><dd>{{range $i, $v := .}}{{if $i}}, {{end}}{{$v}}{{end}}</dd>{{end}}
-        {{with .JobKinds}}<dt>jobs</dt><dd>{{range $i, $v := .}}{{if $i}}, {{end}}{{$v}}{{end}}</dd>{{end}}
-        {{with .Crons}}<dt>crons</dt><dd>{{range $i, $v := .}}{{if $i}}, {{end}}{{$v}}{{end}}</dd>{{end}}
-        {{with .Permissions}}<dt>perms</dt><dd>{{range $i, $v := .}}{{if $i}}, {{end}}{{$v}}{{end}}</dd>{{end}}
-        {{with .HookSubscriptions}}<dt>hooks</dt><dd>{{range $i, $v := .}}{{if $i}}, {{end}}{{$v}}{{end}}</dd>{{end}}
-        {{with .ServicesPublished}}<dt>publishes</dt><dd>{{range $i, $v := .}}{{if $i}}, {{end}}{{$v}}{{end}}</dd>{{end}}
-        {{with .ServicesConsumed}}<dt>consumes</dt><dd>{{range $i, $v := .}}{{if $i}}, {{end}}{{$v}}{{end}}</dd>{{end}}
-        {{with .Nav}}<dt>nav</dt><dd>{{range $i, $v := .}}{{if $i}}, {{end}}{{$v}}{{end}}</dd>{{end}}
-        {{with .MCPTools}}<dt>mcp</dt><dd>{{range $i, $v := .}}{{if $i}}, {{end}}{{$v}}{{end}}</dd>{{end}}
-        {{with .ThemeKinds}}<dt>theme</dt><dd>{{range .}}<span class="me-2">{{.}}</span>{{end}}{{range $e.Registered.ThemeFuncs}}<span class="me-2">{{.}}()</span>{{end}}</dd>{{end}}
-      </dl></details>{{else}}<span class="text-muted">—</span>{{end}}
-  </td>
-  <td class="px-3 py-2 text-xs" dir="ltr">{{if $e.Jobs.Kinds}}{{t "admin.modules.jobs.summary" $e.Jobs.Queued $e.Jobs.Parked}}<p class="font-mono text-[11px] text-muted">{{range $i, $k := $e.Jobs.Kinds}}{{if $i}}, {{end}}{{$k}}{{end}}</p>{{else}}<span class="text-muted">—</span>{{end}}</td>
-  <td class="px-3 py-2 text-xs">
-    {{if $e.State.Optional}}{{if $e.State.Switchable}}
-    <form method="post" action="/admin/system/modules/{{$e.ID}}/activation" class="inline">
-      <input type="hidden" name="_csrf" value="{{csrf}}">
-      {{if $e.State.Desired}}{{if deref $e.State.Desired}}<input type="hidden" name="enabled" value="false"><button type="submit" class="h-8 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.modules.action.disable"}}</button>{{else}}<input type="hidden" name="enabled" value="true"><button type="submit" class="h-8 px-3 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.modules.action.enable"}}</button>{{end}}{{end}}
-    </form>
-    {{else}}<span class="text-muted">{{t "admin.modules.action.forced"}}</span>{{end}}{{end}}
-    {{with $e.Links}}{{range $k, $v := .}}<a href="{{$v}}" class="block mt-1 text-blue hover:text-blue-hover underline underline-offset-2">{{$k}}</a>{{end}}{{end}}
-  </td>
-</tr>
+<li class="mod-row" data-module="{{$e.ID}}" data-kind="{{$e.Kind}}" data-status="{{$e.State.Status}}">
+  <div class="mod-head">
+    <span class="mod-title">{{index $e.Name $loc}}</span>
+    <span class="mod-id">{{$e.ID}}</span>
+    <span class="mod-chips">
+      <span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px]">{{t (print "admin.modules.kind." $e.Kind)}}</span>
+      {{template "modules_state" $e.State.Status}}
+      {{template "modules_config" $e.Configuration}}
+    </span>
+    <div class="mod-actions">
+      {{if $e.State.Optional}}{{if $e.State.Switchable}}
+      <form method="post" action="/admin/system/modules/{{$e.ID}}/activation">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        {{if $e.State.Desired}}{{if deref $e.State.Desired}}<input type="hidden" name="enabled" value="false"><button type="submit" class="h-8 px-3 rounded border border-line bg-panel text-sm hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.modules.action.disable"}}</button>{{else}}<input type="hidden" name="enabled" value="true"><button type="submit" class="h-8 px-3 rounded bg-green text-white text-sm font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.modules.action.enable"}}</button>{{end}}{{end}}
+      </form>
+      {{else}}<span class="text-xs text-muted">{{t "admin.modules.action.forced"}}</span>{{end}}{{end}}
+      {{range $k, $v := $e.Links}}<a href="{{$v}}" class="mod-link text-xs">{{$k}}</a>{{end}}
+    </div>
+  </div>
+  <p class="mod-summary">{{index $e.Summary $loc}}</p>
+  <p class="mod-meta"><span class="mod-code">{{$e.Version}}</span> · {{t (print "admin.modules.compat." $e.Compatibility)}}</p>
+  {{if $e.Messages}}<ul class="mod-messages">{{range $e.Messages}}<li data-message="{{.Level}}">{{index .Text $loc}}</li>{{end}}</ul>{{end}}
+  <div class="mod-grid">
+    <dl class="mod-cell">
+      <dt>{{t "admin.modules.col.depends"}}</dt>
+      <dd>{{if $e.Owner}}<span class="mod-code">{{$e.Owner}}</span>{{else if $e.Dependencies}}{{template "modules_names" $e.Dependencies}}{{else}}<span class="text-muted">—</span>{{end}}</dd>
+      {{with $e.OptionalDependencies}}<dt>{{t "admin.modules.optional_deps"}}</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+      {{with $e.Dependents}}<dt>{{t "admin.modules.dependents"}}</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+    </dl>
+    <dl class="mod-cell">
+      <dt>{{t "admin.modules.col.registered"}}</dt>
+      <dd>{{with $e.Registered}}<details><summary>{{t "admin.modules.registered.summary" (len .APIOperations) (len .JobKinds) (len .Crons) (len .Permissions) (len .HookSubscriptions)}}</summary>
+        <dl class="mod-reg">
+          {{with .APIOperations}}<dt>api</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .JobKinds}}<dt>jobs</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .Crons}}<dt>crons</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .Permissions}}<dt>perms</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .HookSubscriptions}}<dt>hooks</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .ServicesPublished}}<dt>publishes</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .ServicesConsumed}}<dt>consumes</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .Nav}}<dt>nav</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .MCPTools}}<dt>mcp</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .ThemeKinds}}<dt>theme kinds</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+          {{with .ThemeFuncs}}<dt>theme funcs</dt><dd>{{template "modules_names" .}}</dd>{{end}}
+        </dl></details>{{else}}<span class="text-muted">—</span>{{end}}</dd>
+    </dl>
+    <dl class="mod-cell">
+      <dt>{{t "admin.modules.col.jobs"}}</dt>
+      <dd>{{if $e.Jobs.Kinds}}{{t "admin.modules.jobs.summary" $e.Jobs.Queued $e.Jobs.Parked}}<br>{{template "modules_names" $e.Jobs.Kinds}}{{else}}<span class="text-muted">—</span>{{end}}</dd>
+    </dl>
+  </div>
+</li>
 {{end}}
-{{define "modules_table"}}
+{{define "modules_section"}}
 <section class="mb-6" aria-labelledby="modules-{{.Section}}">
   <h2 id="modules-{{.Section}}" class="text-base font-bold mb-2">{{t (print "admin.modules.section." .Section)}}</h2>
-  <div class="rounded border border-line bg-panel overflow-x-auto" tabindex="0" role="region" aria-label="{{t (print "admin.modules.section." .Section)}}">
-    <table class="w-full text-sm">
-      <thead class="bg-panel-2"><tr>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.modules.col.module"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.modules.col.kind"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.modules.col.state"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.modules.col.configuration"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.modules.col.depends"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.modules.col.registered"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.modules.col.jobs"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.modules.col.actions"}}</th>
-      </tr></thead>
-      <tbody class="divide-y divide-line">
-      {{range .Entries}}{{template "modules_row" .}}{{else}}<tr><td colspan="8" class="px-3 py-4 text-center text-muted">{{t "admin.modules.extensions.empty"}}</td></tr>{{end}}
-      </tbody>
-    </table>
-  </div>
+  {{if .Entries}}<ul class="mod-list">{{range .Entries}}{{template "modules_row" .}}{{end}}</ul>{{else}}<p class="rounded border border-line bg-panel px-4 py-3 text-sm text-muted">{{t "admin.modules.extensions.empty"}}</p>{{end}}
 </section>
 {{end}}
 {{define "content"}}
+<link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<link rel="stylesheet" href="{{asset "modules.css"}}">
+<div class="admin-contained admin-modules">
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <h1 class="text-[22px] font-bold">{{t "admin.modules.title"}}</h1>
   <a href="/admin/extensions" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "puzzle"}}<span>{{t "admin.modules.extensions.manage"}}</span></a>
@@ -76,9 +75,9 @@
 <p class="mb-4 max-w-3xl text-sm text-muted">{{t "admin.modules.intro"}}</p>
 {{with .Flash}}<p role="status" class="mb-4 rounded border border-green bg-green-soft px-3 py-2">{{t "admin.modules.saved" .}}</p>{{end}}
 {{with .Error}}<p role="alert" class="mb-4 rounded border border-red bg-red-soft px-3 py-2 text-red">{{t (print "admin.modules.error." .)}}</p>{{end}}
-<p class="mb-4 text-[11px] text-muted" dir="ltr">build {{.Catalog.Build}} · {{.Catalog.ObservedAt}}</p>
-
-{{template "modules_table" .Builtin}}
-{{template "modules_table" .Services}}
-{{template "modules_table" .Extensions}}
+<p class="mb-4 text-[11px] text-muted"><span class="mod-code">build {{.Catalog.Build}} · {{.Catalog.ObservedAt}}</span></p>
+{{template "modules_section" .Builtin}}
+{{template "modules_section" .Services}}
+{{template "modules_section" .Extensions}}
+</div>
 {{end}}
