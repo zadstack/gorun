@@ -33,10 +33,24 @@ type observationMeta struct {
 	Deduplicated  bool   `json:"-"`
 }
 
-// currentCFObservation fails closed when the revision cannot be read. Saved
-// snapshots remain visible, but cannot authorize operations or identity claims.
-func currentCFObservation(o observe.Observation) bool {
-	return o.Status == "fresh" && o.Saved != nil && o.Saved.RevisionMatch != nil && *o.Saved.RevisionMatch
+// currentCFObservation reports whether the saved read may authorize an
+// operation or an identity claim: it must exist, belong to the current
+// revision (fails closed when the revision cannot be read) and be no older
+// than freshness. A newer attempt that is waiting, running or failed does
+// not retract a current saved read: the scheduler refreshes inventories on
+// its own, and a transient provider failure must not revoke a binding that
+// the same token and account discovered a moment ago.
+func currentCFObservation(o observe.Observation, freshness time.Duration) bool {
+	if o.Saved == nil || o.Saved.RevisionMatch == nil || !*o.Saved.RevisionMatch {
+		return false
+	}
+	switch o.Status {
+	case "fresh":
+		return true
+	case "waiting", "running", "failed":
+		return freshness <= 0 || time.Duration(o.Saved.AgeSeconds)*time.Second <= freshness
+	}
+	return false
 }
 
 func metaOf(o observe.Observation) observationMeta {
@@ -170,7 +184,7 @@ func (h *handlers) cloudflareView(ctx context.Context, snapshot cfSnapshot) clou
 	if v.Configured {
 		if o, err := h.observe.Get(ctx, kindCFAccounts, cfObservationKey); err == nil {
 			v.AccountsMeta = cfSnapshotMeta(o, snapshot.revision(false))
-			v.AccountsCurrent = currentCFObservation(o) && o.Saved.Revision == snapshot.revision(false)
+			v.AccountsCurrent = currentCFObservation(o, cfScopesFreshness) && o.Saved.Revision == snapshot.revision(false)
 			if o.Saved != nil {
 				var data cfAccountsResult
 				if json.Unmarshal(o.Saved.Data, &data) == nil {
@@ -257,7 +271,7 @@ func (h *handlers) inventoryViews(ctx context.Context, snapshot cfSnapshot, bind
 			continue
 		}
 		iv.Meta = cfSnapshotMeta(o, snapshot.revision(true))
-		iv.Actionable = currentCFObservation(o) && o.Saved.Revision == snapshot.revision(true)
+		iv.Actionable = currentCFObservation(o, cfInventoryFresh) && o.Saved.Revision == snapshot.revision(true)
 		if o.Saved != nil {
 			var data cfInventoryResult
 			if json.Unmarshal(o.Saved.Data, &data) == nil && data.Kind == kind && data.Count >= 0 && data.Count == len(data.Items) {
@@ -275,7 +289,7 @@ func (h *handlers) inventoryViews(ctx context.Context, snapshot cfSnapshot, bind
 							switch {
 							case io.Attempt != nil && io.Attempt.Status == "failed" && (io.Saved == nil || io.Attempt.FinishedAt == nil || *io.Attempt.FinishedAt >= io.Saved.At):
 								rv.Checked = "failed"
-							case io.Saved != nil && (!iv.Actionable || !currentCFObservation(io)):
+							case io.Saved != nil && (!iv.Actionable || !currentCFObservation(io, evidenceTTL)):
 								rv.Checked = "stale"
 							case io.Saved != nil:
 								var id cfEdgeIdentity
@@ -311,14 +325,14 @@ func (h *handlers) integrationsReport(ctx context.Context) (integrationsReport, 
 		report.addIssue("cloudflare")
 		report.Cloudflare.AccountsMeta = unavailableObservation()
 		report.Cloudflare.ScopesMeta = unavailableObservation()
-		h.d.Log.Error("admin: integrations section unavailable", "section", "cloudflare", "request_id", httpx.RequestIDFromContext(ctx))
+		h.d.Log.Error("admin: integrations section unavailable", "section", "cloudflare", "err", err, "request_id", httpx.RequestIDFromContext(ctx))
 	} else {
 		report.Cloudflare = h.cloudflareView(ctx, snapshot)
 	}
 	bindings, err := h.storageBindings(ctx)
 	if err != nil {
 		report.addIssue("storage")
-		h.d.Log.Error("admin: integrations section unavailable", "section", "storage", "request_id", httpx.RequestIDFromContext(ctx))
+		h.d.Log.Error("admin: integrations section unavailable", "section", "storage", "err", err, "request_id", httpx.RequestIDFromContext(ctx))
 	} else {
 		report.Storage = bindings
 	}
@@ -330,7 +344,7 @@ func (h *handlers) integrationsReport(ctx context.Context) (integrationsReport, 
 	mailSt, err := h.mailStatus(ctx)
 	if err != nil {
 		report.addIssue("mail")
-		h.d.Log.Error("admin: integrations section unavailable", "section", "mail", "request_id", httpx.RequestIDFromContext(ctx))
+		h.d.Log.Error("admin: integrations section unavailable", "section", "mail", "err", err, "request_id", httpx.RequestIDFromContext(ctx))
 	} else {
 		report.Mail = mailSt
 	}
@@ -368,11 +382,13 @@ func (h *handlers) renderIntegrations(w http.ResponseWriter, r *http.Request, st
 	snap, err := mailSnapshot(r.Context(), h.d.DB)
 	if err != nil {
 		report.addIssue("mail")
+		h.d.Log.Error("admin: integrations section unavailable", "section", "mail", "err", err, "request_id", httpx.RequestIDFromContext(r.Context()))
 	}
 	page := integrationsPage{integrationsReport: report, Fields: fields, Form: form, CanTest: auth.Can(r.Context(), PermCapabilityTest), MailForm: mailFromSnapshot(snap), TLSModes: tlsModes, ConnectionVersions: map[string]string{}}
 	profiles, err := h.listConnections(r.Context())
 	if err != nil {
 		page.addIssue("storage")
+		h.d.Log.Error("admin: integrations section unavailable", "section", "storage", "err", err, "request_id", httpx.RequestIDFromContext(r.Context()))
 	}
 	for _, p := range profiles {
 		if p.Kind == "s3" {

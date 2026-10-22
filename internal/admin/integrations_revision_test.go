@@ -8,6 +8,61 @@ import (
 	"testing"
 )
 
+// A refresh that is waiting, running or failed for the *same* token and
+// account does not retract the saved read: the scheduler re-queues
+// inventories on its own and a transient provider failure must not revoke
+// bindings or identity checks that the current configuration discovered.
+func TestCloudflareInventoryStaysActionableWhileSameConfigRefreshPendingOrFailed(t *testing.T) {
+	for _, state := range []string{"waiting", "failed"} {
+		t.Run(state, func(t *testing.T) {
+			newFakeCloudflare(t)
+			h, app := integrationsHandlers(t)
+			ctx := context.Background()
+			storeCloudflare(t, h, fakeCFToken, fakeCFAccount)
+			h.queueCloudflareChecks(ctx)
+			if _, err := h.observe.Refresh(ctx, kindCFInventory, "workers"); err != nil {
+				t.Fatal(err)
+			}
+			runObserveJobs(t, app)
+			if !h.workerDiscovered(ctx, "edge-worker") {
+				t.Fatal("fresh worker was not actionable")
+			}
+			// Queue another refresh of the unchanged configuration and do not run it.
+			if _, err := h.observe.Refresh(ctx, kindCFInventory, "workers"); err != nil {
+				t.Fatal(err)
+			}
+			if state == "failed" {
+				if _, err := h.d.DB.Exec(`UPDATE observations SET attempt_status = 'failed' WHERE kind = ? AND key = 'workers'`, kindCFInventory); err != nil {
+					t.Fatal(err)
+				}
+			}
+			o, err := h.observe.Get(ctx, kindCFInventory, "workers")
+			if err != nil || o.Status != state || o.Saved == nil || o.Saved.RevisionMatch == nil || !*o.Saved.RevisionMatch {
+				t.Fatalf("observation after re-queue: status=%s saved=%v err=%v", o.Status, o.Saved != nil, err)
+			}
+			if !h.workerDiscovered(ctx, "edge-worker") {
+				t.Fatalf("%s refresh of the same configuration revoked the discovered worker", state)
+			}
+			report, err := h.integrationsReport(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, iv := range report.Inventory {
+				if iv.Kind == "workers" && !iv.Actionable {
+					t.Fatalf("%s refresh of the same configuration made the inventory non-actionable", state)
+				}
+			}
+			// An old read is still not current while an attempt is pending.
+			if _, err := h.d.DB.Exec(`UPDATE observations SET success_at = '2000-01-01T00:00:00Z' WHERE kind = ?`, kindCFInventory); err != nil {
+				t.Fatal(err)
+			}
+			if h.workerDiscovered(ctx, "edge-worker") {
+				t.Fatal("expired read authorized an identity check while a refresh was pending")
+			}
+		})
+	}
+}
+
 // Keep historical snapshots inspectable without allowing resources from another
 // account (or an expired read) to authorize a new identity check.
 func TestCloudflareInventoryActionsRequireCurrentEvidence(t *testing.T) {

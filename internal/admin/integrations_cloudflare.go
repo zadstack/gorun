@@ -219,7 +219,7 @@ func (h *handlers) cloudflareValues(ctx context.Context, in cloudflareInput, sna
 // observation; an account the token has not listed keeps an empty label.
 func (h *handlers) cloudflareAccountName(ctx context.Context, id string) string {
 	o, err := h.observe.Get(ctx, kindCFAccounts, cfObservationKey)
-	if err != nil || !currentCFObservation(o) {
+	if err != nil || !currentCFObservation(o, cfScopesFreshness) {
 		return ""
 	}
 	var data cfAccountsResult
@@ -785,7 +785,7 @@ func (h *handlers) cloudflareResourceDiscovered(ctx context.Context, kind, name 
 
 func (h *handlers) cloudflareResourceDiscoveredFor(ctx context.Context, snapshot cfSnapshot, kind, name string) bool {
 	o, err := h.observe.Get(ctx, kindCFInventory, kind)
-	if err != nil || !currentCFObservation(o) || o.Saved.Revision != snapshot.revision(true) {
+	if err != nil || !currentCFObservation(o, cfInventoryFresh) || o.Saved.Revision != snapshot.revision(true) {
 		return false
 	}
 	var data cfInventoryResult
