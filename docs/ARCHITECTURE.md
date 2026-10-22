@@ -95,8 +95,12 @@ module off without asking it; `enabled` and `auto` leave the decision to the mod
 set for a module that is not optional is ignored (logged, shown in the inventory). `gorun migrate`
 applies the same selection as `gorun serve`. Activation is read at boot; a change needs a restart,
 and `kernel.Modules(d)`, the capability report and System → Health report the booted state, never
-the intent. The layer map, dependency policy and the audit behind this are in
-[BOUNDARIES.md](BOUNDARIES.md); `internal/kernel/boundaries_test.go` enforces the import policy.
+the intent. **System → Modules** and `GET /api/v1/system/modules` list every module with what it
+registered (observed by the kernel during `Register`), its dependencies, activation and
+configuration; the page switches optional modules for the next boot, and queued jobs of a disabled
+module are parked until it is on again ([MODULES.md](MODULES.md)). The layer map, dependency
+policy and the audit behind this are in [BOUNDARIES.md](BOUNDARIES.md);
+`internal/kernel/boundaries_test.go` enforces the import policy.
 
 ### Building on the core / البناء فوق النواة
 

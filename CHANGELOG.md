@@ -5,6 +5,26 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **System → Modules** (`/admin/system/modules`, `system.health`) and `GET /api/v1/system/modules`:
+  a catalog of every built-in module, core service (forms, storage, backups, mail) and installed
+  external extension with its function (ar/en), source, version, compatibility, declared
+  dependencies and dependents, permissions, what it registered in this process (observed by the
+  kernel: permissions, API operations, MCP tools, job kinds, crons, admin navigation and widgets,
+  theme funcs and kinds, services published and looked up, hook subscriptions), activation state
+  (booted, desired, pending restart, forced by config), configuration verdict and queued/parked
+  jobs, plus actionable messages (dependency off and its consequence, parked work, restart needed).
+  `PUT /api/v1/system/modules/{name}/activation` (`settings.manage`, audited `module.activation`)
+  and the page's button switch an optional module for the next boot. See `docs/MODULES.md`.
+- Kernel: `kernel.ModuleRegistration` on every `ModuleState` (what a module registered) and
+  job parking for disabled modules: at boot the queued jobs of a module that is off are parked by
+  its last known job kinds (`kernel.inventory.<name>.job_kinds`) with the reason
+  `module <name> disabled`, never run, failed or deleted; enabling the module releases them
+  unchanged. Accessors `hooks.Registry.Subscriptions`, `jobs.Queue.CronNames`,
+  `jobs.Queue.QueuedByKind`, `ThemeRegistry.Kinds`, `AdminRegistry.NavIDs`, `ServiceRegistry.Names`.
+
+
 ### Changed
 
 - Commerce, saas and membership are optional modules behind the existing `kernel.OptionalModule`
