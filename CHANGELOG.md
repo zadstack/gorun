@@ -6,6 +6,7 @@ All notable changes to GoRun are recorded here. The format follows
 ## [Unreleased]
 
 
+
 ### Improved
 
 - Integrations keeps saved results updating while checks are pending, with bounded background
@@ -19,6 +20,23 @@ All notable changes to GoRun are recorded here. The format follows
 - Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
   or Worker identity checks. Configuration changes during these operations return conflict.
   Failed local reads and malformed saved results appear as unavailable rather than empty success.
+
+- Bundled themes: the header no longer shows a fallback "Search" button beside an existing search
+  control (business, docs, portfolio on phones, magazine), so a configured CTA (`cta_label` +
+  `cta_url`) is the only button there; Business keeps its search field usable at phone widths
+  (the field no longer collapsed beside a full-width button) and shows "Nothing published yet."
+  on a home page without posts instead of an empty band; the default theme's phone header puts
+  the CTA, language switch and menu toggle on one row instead of stacking them beside the title.
+- Default theme store pages (cart, checkout, account, product quantity) use translation keys
+  (`store.*` in `themes/default/lang`) instead of Arabic-only copy, so an English store reads in
+  English; the account page no longer hard-links optional modules' pages (`/agents`, `/saas`).
+
+### Added
+
+- `pkg/cli/theme_switch_test.go`: switching through every bundled theme keeps content, media,
+  menus, site identity, custom CSS and per-theme settings, and renders both locales, inner pages,
+  search and the 404 page with the site's logo, title and menu; every bundled theme renders
+  without the commerce, saas and membership modules and their routes are absent.
 
 ### Changed
 
