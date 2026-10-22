@@ -90,7 +90,9 @@ async function checkPage(page: Page, path: string, attr: string, want: string, w
     expect(await img.getAttribute('alt'), 'img alt').not.toBeNull();
   }
   await page.screenshot({ path: test.info().outputPath(shot + '.png'), fullPage: true });
-  const box = await page.locator(`[${attr}]`).first().boundingBox();
+  // The reading measure is what single variants change; the wrapper may be fixed-width (magazine).
+  const measured = attr === 'data-variant-single' ? page.locator(`[${attr}] .prose-gp`).first() : page.locator(`[${attr}]`).first();
+  const box = await measured.boundingBox();
   return box ? box.width : 0;
 }
 
@@ -139,7 +141,7 @@ test.describe.serial('design variants', () => {
           }
         }
       }
-      // "wide" is a real layout change on desktop: the article is measurably wider than native.
+      // "wide" is a real layout change on desktop: the reading measure is measurably wider than native.
       if (declared.single.includes('wide')) {
         for (const locale of ['ar', 'en'] as const) {
           expect(articleWidth[`wide-${locale}-1280-plain`], `${theme} wide ${locale}`).toBeGreaterThan(articleWidth[`native-${locale}-1280-plain`] + 40);
