@@ -20,7 +20,7 @@
       <p class="text-lg font-bold" dir="ltr">{{money .PriceMinor .Currency}}</p>
       {{if ne .Kind "service"}}<p class="mt-1 text-sm text-muted">{{if eq .Kind "digital"}}{{t "commerce.request.months" .AccessMonths}}{{else}}{{t "commerce.product.months" .AccessMonths}}{{end}}</p>{{end}}
       {{with $x.checkout_error}}<p role="alert" class="mt-3 rounded border border-red bg-red-soft px-3 py-2 text-sm text-red">{{t .}}</p>{{end}}
-      {{if or (eq .Kind "service") (eq .Kind "digital")}}<p>{{t "commerce.request.notice"}}</p><form action="/cart/items" method="post"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="product_id" value="{{.ID}}"><label for="quantity">الكمية</label><input id="quantity" name="quantity" type="number" min="1" max="99" value="1" required><button type="submit">{{t "commerce.request.add"}}</button></form>{{else}}<form method="post" action="{{$x.checkout_action}}" class="mt-4 space-y-3" novalidate>
+      {{if or (eq .Kind "service") (eq .Kind "digital")}}<p>{{t "commerce.request.notice"}}</p><form action="/cart/items" method="post"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="product_id" value="{{.ID}}"><label for="quantity">{{t "store.cart.quantity"}}</label><input id="quantity" name="quantity" type="number" min="1" max="99" value="1" required><button type="submit">{{t "commerce.request.add"}}</button></form>{{else}}<form method="post" action="{{$x.checkout_action}}" class="mt-4 space-y-3" novalidate>
         <input type="hidden" name="_csrf" value="{{csrf}}">
         <div>
           <label for="checkout-email" class="block font-medium mb-1">{{t "commerce.product.email"}}</label>

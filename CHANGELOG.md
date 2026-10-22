@@ -5,18 +5,6 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
-### Added
-
-- Store settings show the current Stripe mode as a badge and report each mode in three separate
-  states: configured, authenticated (a read-only **Verify key** call tied to the stored key) and
-  webhook delivery verified (signed events from Stripe only; the local test event never counts).
-  Switching to live now needs an explicit confirmation and server-side checks (live key present
-  and not test-prefixed, live webhook secret, Stripe reports a live key); a refused switch saves
-  nothing. Orders and Stripe events record the mode that created or verified them and Orders
-  shows it; a test order is never paid by a live-signed event and refunds use the order's own mode.
-  New stores start in test mode through a versioned bootstrap; existing stores keep their
-  effective mode and historical orders are never relabelled.
-
 ### Improved
 
 - Integrations keeps saved results updating while checks are pending, with bounded background
@@ -30,6 +18,53 @@ All notable changes to GoRun are recorded here. The format follows
 - Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
   or Worker identity checks. Configuration changes during these operations return conflict.
   Failed local reads and malformed saved results appear as unavailable rather than empty success.
+
+- Bundled themes: the header no longer shows a fallback "Search" button beside an existing search
+  control (business, docs, portfolio on phones, magazine), so a configured CTA (`cta_label` +
+  `cta_url`) is the only button there; Business keeps its search field usable at phone widths
+  (the field no longer collapsed beside a full-width button) and shows "Nothing published yet."
+  on a home page without posts instead of an empty band; the default theme's phone header puts
+  the CTA, language switch and menu toggle on one row instead of stacking them beside the title.
+- Default theme store pages (cart, checkout, account, product quantity) use translation keys
+  (`store.*` in `themes/default/lang`) instead of Arabic-only copy, so an English store reads in
+  English; the account page no longer hard-links optional modules' pages (`/agents`, `/saas`).
+
+### Added
+
+- `pkg/cli/theme_switch_test.go`: switching through every bundled theme keeps content, media,
+  menus, site identity, custom CSS and per-theme settings, and renders both locales, inner pages,
+  search and the 404 page with the site's logo, title and menu; every bundled theme renders
+  without the commerce, saas and membership modules and their routes are absent.
+- Store settings show the current Stripe mode as a badge and report each mode in three separate
+  states: configured, authenticated (a read-only **Verify key** call tied to the stored key) and
+  webhook delivery verified (signed events from Stripe only; the local test event never counts).
+  Switching to live now needs an explicit confirmation and server-side checks (live key present
+  and not test-prefixed, live webhook secret, Stripe reports a live key); a refused switch saves
+  nothing. Orders and Stripe events record the mode that created or verified them and Orders
+  shows it; a test order is never paid by a live-signed event and refunds use the order's own mode.
+  New stores start in test mode through a versioned bootstrap; existing stores keep their
+  effective mode and historical orders are never relabelled.
+
+### Changed
+
+- Commerce, saas and membership are optional modules behind the existing `kernel.OptionalModule`
+  gate, **enabled by default** so existing installs boot the same set of modules. They answer with
+  the new `kernel.AddonEnabled`, which reads the site setting `addons.<name>.enabled` (JSON
+  boolean; missing means enabled). `GORUN_ADDONS` / `[addons]` mode `disabled` now switches an
+  optional module off (restrict only: `enabled` and `auto` leave the decision to the module); a
+  mode set for a module that is not optional is logged and ignored. `gorun migrate` applies the
+  same selection as `gorun serve` (`kernel.MigrateAllWithConfig`). While a module is off its
+  public routes, API operations, job kinds, crons, admin pages, theme kinds and hooks are absent
+  and its tables are kept; re-enabling reads the same data back.
+
+### Added
+
+- `docs/BOUNDARIES.md`: the core / theme / built-in module / external extension boundary map with
+  the import graph (generated and checked by `internal/kernel/boundaries_test.go`), runtime
+  contracts (services, hooks, job kinds, crons, routes, API operations, MCP tools, permissions,
+  theme helpers), the audit findings and the `CoreModules` decision. The test also fails on an
+  undeclared import between feature modules, on Go code under `themes/` or `patterns/`, and on a
+  `pkg/` contract package importing `internal/`.
 
 ## [0.15.1] - 2026-10-22
 

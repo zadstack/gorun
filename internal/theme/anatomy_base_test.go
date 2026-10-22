@@ -29,6 +29,10 @@ func TestAnatomyCSSShipped(t *testing.T) {
 	for _, slug := range []string{"default", "business", "magazine", "portfolio", "docs"} {
 		t.Run(slug, func(t *testing.T) {
 			e := newEnv(t, "../../themes", func(c *config.Config) { c.Theme = slug })
+			// Themes whose header already has a search control render no
+			// fallback button; a configured CTA uses the shared anatomy button.
+			e.setting("theme."+slug+".cta_label", "Book a call")
+			e.setting("theme."+slug+".cta_url", "/contact")
 			post := e.fake.Content.Add(content.Item{
 				Type: "post", Slug: "hello", Title: "Hello", Body: "<p>Body</p>",
 				Status: "published", PublishedAt: "2026-10-10T00:00:00Z",
@@ -41,7 +45,7 @@ func TestAnatomyCSSShipped(t *testing.T) {
 				t.Fatalf("status=%d err=%v\n%s", rec.Code, err, e.logs.String())
 			}
 			html := rec.Body.String()
-			mustContain(t, html, "/themes/default/assets/anatomy.css", "gr-btn")
+			mustContain(t, html, "/themes/default/assets/anatomy.css", "gr-btn", "Book a call")
 			if slug == "default" {
 				mustContain(t, html, "gr-hero", "gr-latest", "gr-closing")
 			}
