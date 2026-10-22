@@ -93,7 +93,12 @@ existing installs change nothing). The operator config (`[addons]` in the site c
 `GORUN_ADDONS='{"commerce":"disabled"}'`) can only restrict: mode `disabled` turns an optional
 module off without asking it; `enabled` and `auto` leave the decision to the module, and a mode
 set for a module that is not optional is ignored (logged, shown in the inventory). `gorun migrate`
-applies the same selection as `gorun serve`. Activation is read at boot; a change needs a restart,
+applies the same selection as `gorun serve`. A non-boolean value in that setting stops every
+command that opens the database; the error names the repair (`GORUN_ADDONS='{"<name>":"disabled"}'
+gorun settings set addons.<name>.enabled true`). Events are not held for a module that is off:
+`hooks.Emit` jobs run against the subscribers of the current process, so with commerce on and saas
+off the `subscription.*` events are delivered to nobody and are not replayed when saas is enabled
+again (its local grants then need a manual review). Activation is read at boot; a change needs a restart,
 and `kernel.Modules(d)`, the capability report and System → Health report the booted state, never
 the intent. **System → Modules** and `GET /api/v1/system/modules` list every module with what it
 registered (observed by the kernel during `Register`), its dependencies, activation and

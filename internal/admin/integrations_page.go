@@ -27,9 +27,30 @@ type observationMeta struct {
 	Age           string `json:"age,omitempty"`
 	AttemptAt     string `json:"attempt_at,omitempty" doc:"Time of the newest attempt when it differs"`
 	Error         string `json:"error,omitempty" doc:"Sanitized failure of the newest attempt"`
+	ErrorKey      string `json:"error_key,omitempty"`
 	Remediation   string `json:"remediation,omitempty"`
 	RevisionMatch *bool  `json:"revision_match"`
 	Deduplicated  bool   `json:"-"`
+}
+
+// currentCFObservation reports whether the saved read may authorize an
+// operation or an identity claim: it must exist, belong to the current
+// revision (fails closed when the revision cannot be read) and be no older
+// than freshness. A newer attempt that is waiting, running or failed does
+// not retract a current saved read: the scheduler refreshes inventories on
+// its own, and a transient provider failure must not revoke a binding that
+// the same token and account discovered a moment ago.
+func currentCFObservation(o observe.Observation, freshness time.Duration) bool {
+	if o.Saved == nil || o.Saved.RevisionMatch == nil || !*o.Saved.RevisionMatch {
+		return false
+	}
+	switch o.Status {
+	case "fresh":
+		return true
+	case "waiting", "running", "failed":
+		return freshness <= 0 || time.Duration(o.Saved.AgeSeconds)*time.Second <= freshness
+	}
+	return false
 }
 
 func metaOf(o observe.Observation) observationMeta {
@@ -48,24 +69,38 @@ func metaOf(o observe.Observation) observationMeta {
 	return m
 }
 
+func cfSnapshotMeta(o observe.Observation, revision string) observationMeta {
+	meta := metaOf(o)
+	if o.Saved != nil {
+		matches := o.Saved.Revision == revision
+		meta.RevisionMatch = &matches
+		if !matches && meta.Status == "fresh" {
+			meta.Status = "stale"
+		}
+	}
+	return meta
+}
+
 type cfScopeView struct {
 	cfScopeState
 	Permission string `json:"permission"`
 	Repair     string `json:"repair"`
+	RepairKey  string `json:"repair_key"`
 }
 
 type cloudflareView struct {
-	Configured    bool            `json:"configured"`
-	TokenHint     string          `json:"token_hint,omitempty" doc:"Last four characters of the token; the token itself is never returned"`
-	AccountID     string          `json:"account_id"`
-	AccountName   string          `json:"account_name"`
-	Accounts      []cfAccount     `json:"accounts" doc:"Accounts the token listed in the last saved read"`
-	AccountsFull  bool            `json:"accounts_complete"`
-	AccountsMeta  observationMeta `json:"accounts_observation"`
-	Scopes        []cfScopeView   `json:"scopes"`
-	ScopesMeta    observationMeta `json:"scopes_observation"`
-	MinimumScopes []string        `json:"minimum_scopes" doc:"Token permissions this integration needs; a dedicated token limited to one account is recommended"`
-	R2Endpoint    string          `json:"r2_endpoint,omitempty"`
+	Configured      bool            `json:"configured"`
+	TokenHint       string          `json:"token_hint,omitempty" doc:"Last four characters of the token; the token itself is never returned"`
+	AccountID       string          `json:"account_id"`
+	AccountName     string          `json:"account_name"`
+	Accounts        []cfAccount     `json:"accounts" doc:"Accounts the token listed in the last saved read"`
+	AccountsCurrent bool            `json:"accounts_current" doc:"Whether the saved account list is fresh and belongs to the current token"`
+	AccountsFull    bool            `json:"accounts_complete"`
+	AccountsMeta    observationMeta `json:"accounts_observation"`
+	Scopes          []cfScopeView   `json:"scopes"`
+	ScopesMeta      observationMeta `json:"scopes_observation"`
+	MinimumScopes   []string        `json:"minimum_scopes" doc:"Token permissions this integration needs; a dedicated token limited to one account is recommended"`
+	R2Endpoint      string          `json:"r2_endpoint,omitempty"`
 }
 
 type cfResourceView struct {
@@ -76,21 +111,35 @@ type cfResourceView struct {
 }
 
 type inventoryView struct {
-	Kind     string           `json:"kind"`
-	Meta     observationMeta  `json:"observation"`
-	Complete bool             `json:"complete"`
-	Count    int              `json:"count"`
-	Items    []cfResourceView `json:"items"`
+	ConfigRevision string           `json:"-"`
+	Kind           string           `json:"kind"`
+	Page           int              `json:"-"`
+	Pages          int              `json:"-"`
+	TotalItems     int              `json:"-"`
+	Search         string           `json:"-"`
+	PrevURL        string           `json:"-"`
+	NextURL        string           `json:"-"`
+	Actionable     bool             `json:"actionable" doc:"Whether saved resources are fresh and belong to the current token and account"`
+	Meta           observationMeta  `json:"observation"`
+	Complete       bool             `json:"complete"`
+	Count          int              `json:"count"`
+	Items          []cfResourceView `json:"items"`
+}
+
+type integrationIssue struct {
+	Section string `json:"section"`
+	Code    string `json:"code"`
 }
 
 type integrationsReport struct {
-	ObservedAt string           `json:"observed_at"`
-	Cloudflare cloudflareView   `json:"cloudflare"`
-	Inventory  []inventoryView  `json:"inventory"`
-	Storage    []storageBinding `json:"storage"`
-	Backup     backupSummary    `json:"backup"`
-	Mail       mailStatus       `json:"mail"`
-	Coverage   string           `json:"coverage"`
+	Issues     []integrationIssue `json:"issues"`
+	ObservedAt string             `json:"observed_at"`
+	Cloudflare cloudflareView     `json:"cloudflare"`
+	Inventory  []inventoryView    `json:"inventory"`
+	Storage    []storageBinding   `json:"storage"`
+	Backup     backupSummary      `json:"backup"`
+	Mail       mailStatus         `json:"mail"`
+	Coverage   string             `json:"coverage"`
 }
 
 // backupSummary shows the backup settings that already exist elsewhere
@@ -124,7 +173,7 @@ var cfScopeRepair = map[string]string{
 }
 
 func (h *handlers) cloudflareView(ctx context.Context, snapshot cfSnapshot) cloudflareView {
-	v := cloudflareView{Configured: snapshot.configured(), TokenHint: snapshot.Hint, AccountID: snapshot.AccountID, AccountName: snapshot.AccountName, Accounts: []cfAccount{}}
+	v := cloudflareView{Configured: snapshot.configured(), TokenHint: snapshot.Hint, AccountID: snapshot.AccountID, AccountName: snapshot.AccountName, Accounts: []cfAccount{}, AccountsMeta: observationMeta{Status: "never"}, ScopesMeta: observationMeta{Status: "never"}}
 	for _, d := range cfScopeDefs {
 		v.MinimumScopes = append(v.MinimumScopes, d.Permission)
 	}
@@ -134,22 +183,30 @@ func (h *handlers) cloudflareView(ctx context.Context, snapshot cfSnapshot) clou
 	lamps := map[string]cfScopeState{}
 	if v.Configured {
 		if o, err := h.observe.Get(ctx, kindCFAccounts, cfObservationKey); err == nil {
-			v.AccountsMeta = metaOf(o)
+			v.AccountsMeta = cfSnapshotMeta(o, snapshot.revision(false))
+			v.AccountsCurrent = currentCFObservation(o, cfScopesFreshness) && o.Saved.Revision == snapshot.revision(false)
 			if o.Saved != nil {
 				var data cfAccountsResult
 				if json.Unmarshal(o.Saved.Data, &data) == nil {
 					v.Accounts, v.AccountsFull = data.Accounts, data.Complete
+				} else {
+					v.AccountsMeta = unavailableObservation()
+					v.AccountsCurrent = false
 				}
 			}
+		} else {
+			v.AccountsMeta = unavailableObservation()
 		}
 		if o, err := h.observe.Get(ctx, kindCFScopes, cfObservationKey); err == nil {
-			v.ScopesMeta = metaOf(o)
+			v.ScopesMeta = cfSnapshotMeta(o, snapshot.revision(snapshot.AccountID != ""))
 			if o.Saved != nil {
 				var data cfScopesResult
 				if json.Unmarshal(o.Saved.Data, &data) == nil {
 					for _, s := range data.Scopes {
 						lamps[s.ID] = s
 					}
+				} else {
+					v.ScopesMeta = unavailableObservation()
 				}
 			}
 			// A failed newer attempt means the token itself could not be
@@ -163,6 +220,8 @@ func (h *handlers) cloudflareView(ctx context.Context, snapshot cfSnapshot) clou
 				}
 				lamps["token"] = cfScopeState{ID: "token", Status: status, Error: o.Attempt.Error, CheckedAt: v.ScopesMeta.AttemptAt}
 			}
+		} else {
+			v.ScopesMeta = unavailableObservation()
 		}
 	}
 	for _, d := range cfScopeDefs {
@@ -170,15 +229,15 @@ func (h *handlers) cloudflareView(ctx context.Context, snapshot cfSnapshot) clou
 		if !ok {
 			s = cfScopeState{ID: d.ID, Status: "not_checked"}
 		}
-		if s.Status == "passed" && v.ScopesMeta.Status == "stale" {
+		if s.Status == "passed" {
 			if v.ScopesMeta.RevisionMatch != nil && !*v.ScopesMeta.RevisionMatch {
 				// Saved for another token or account: it says nothing about this one.
 				s.Status, s.Evidence = "not_checked", "saved for an earlier configuration"
-			} else {
+			} else if v.ScopesMeta.Status == "stale" {
 				s.Evidence += " (older than the refresh window; a refresh is due)"
 			}
 		}
-		v.Scopes = append(v.Scopes, cfScopeView{cfScopeState: s, Permission: d.Permission, Repair: cfScopeRepair[d.ID]})
+		v.Scopes = append(v.Scopes, cfScopeView{cfScopeState: s, Permission: d.Permission, Repair: cfScopeRepair[d.ID], RepairKey: "admin.integrations.cloudflare.repair." + d.ID})
 	}
 	return v
 }
@@ -187,14 +246,19 @@ func (h *handlers) inventoryViews(ctx context.Context, snapshot cfSnapshot, bind
 	edgeOrigin := strings.ToLower(h.d.Settings.GetString(ctx, settingEdgeOrigin, ""))
 	edgeManager := h.d.Settings.GetString(ctx, settingEdgeManager, "")
 	identities := map[string]observe.Observation{}
-	if list, err := h.observe.List(ctx, kindCFEdge); err == nil {
+	identitiesFailed := false
+	if list, err := h.observe.ListWithRevision(ctx, kindCFEdge, func(_ context.Context, key string) (string, error) {
+		return cfEdgeRevisionFor(snapshot, key), nil
+	}); err == nil {
 		for _, o := range list {
 			identities[o.Key] = o
 		}
+	} else {
+		identitiesFailed = true
 	}
 	var out []inventoryView
 	for _, kind := range cfInventoryKinds {
-		iv := inventoryView{Kind: kind, Items: []cfResourceView{}}
+		iv := inventoryView{Kind: kind, Items: []cfResourceView{}, ConfigRevision: snapshot.revision(true)}
 		if !snapshot.configured() || snapshot.AccountID == "" {
 			iv.Meta.Status = "never"
 			out = append(out, iv)
@@ -202,20 +266,21 @@ func (h *handlers) inventoryViews(ctx context.Context, snapshot cfSnapshot, bind
 		}
 		o, err := h.observe.Get(ctx, kindCFInventory, kind)
 		if err != nil {
-			iv.Meta.Status = "never"
+			iv.Meta = unavailableObservation()
 			out = append(out, iv)
 			continue
 		}
-		iv.Meta = metaOf(o)
+		iv.Meta = cfSnapshotMeta(o, snapshot.revision(true))
+		iv.Actionable = currentCFObservation(o, cfInventoryFresh) && o.Saved.Revision == snapshot.revision(true)
 		if o.Saved != nil {
 			var data cfInventoryResult
-			if json.Unmarshal(o.Saved.Data, &data) == nil {
+			if json.Unmarshal(o.Saved.Data, &data) == nil && data.Kind == kind && data.Count >= 0 && data.Count == len(data.Items) {
 				iv.Complete, iv.Count = data.Complete, data.Count
 				for _, item := range data.Items {
 					rv := cfResourceView{cfResource: item, Bound: []string{}}
 					switch kind {
 					case "r2":
-						if b := r2BucketBound(bindings, snapshot.AccountID, item.Name); b != nil {
+						if b := r2BucketBound(bindings, snapshot.AccountID, item.Name); iv.Actionable && b != nil {
 							rv.Bound = b
 						}
 					case "workers":
@@ -224,7 +289,7 @@ func (h *handlers) inventoryViews(ctx context.Context, snapshot cfSnapshot, bind
 							switch {
 							case io.Attempt != nil && io.Attempt.Status == "failed" && (io.Saved == nil || io.Attempt.FinishedAt == nil || *io.Attempt.FinishedAt >= io.Saved.At):
 								rv.Checked = "failed"
-							case io.Saved != nil && io.Saved.RevisionMatch != nil && !*io.Saved.RevisionMatch:
+							case io.Saved != nil && (!iv.Actionable || !currentCFObservation(io, evidenceTTL)):
 								rv.Checked = "stale"
 							case io.Saved != nil:
 								var id cfEdgeIdentity
@@ -239,7 +304,14 @@ func (h *handlers) inventoryViews(ctx context.Context, snapshot cfSnapshot, bind
 					}
 					iv.Items = append(iv.Items, rv)
 				}
+			} else {
+				iv.Meta = unavailableObservation()
+				iv.Actionable = false
 			}
+		}
+		if kind == "workers" && identitiesFailed {
+			iv.Meta = unavailableObservation()
+			iv.Actionable = false
 		}
 		out = append(out, iv)
 	}
@@ -247,29 +319,38 @@ func (h *handlers) inventoryViews(ctx context.Context, snapshot cfSnapshot, bind
 }
 
 func (h *handlers) integrationsReport(ctx context.Context) (integrationsReport, error) {
+	report := integrationsReport{ObservedAt: time.Now().UTC().Format(time.RFC3339), Issues: []integrationIssue{}, Storage: []storageBinding{}}
 	snapshot, err := h.cloudflareSnapshot(ctx)
 	if err != nil {
-		return integrationsReport{}, err
+		report.addIssue("cloudflare")
+		report.Cloudflare.AccountsMeta = unavailableObservation()
+		report.Cloudflare.ScopesMeta = unavailableObservation()
+		h.d.Log.Error("admin: integrations section unavailable", "section", "cloudflare", "err", err, "request_id", httpx.RequestIDFromContext(ctx))
+	} else {
+		report.Cloudflare = h.cloudflareView(ctx, snapshot)
 	}
 	bindings, err := h.storageBindings(ctx)
 	if err != nil {
-		return integrationsReport{}, err
+		report.addIssue("storage")
+		h.d.Log.Error("admin: integrations section unavailable", "section", "storage", "err", err, "request_id", httpx.RequestIDFromContext(ctx))
+	} else {
+		report.Storage = bindings
+	}
+	if report.SectionAvailable("cloudflare") {
+		report.Inventory = h.inventoryViews(ctx, snapshot, bindings)
+	} else {
+		report.Inventory = []inventoryView{}
 	}
 	mailSt, err := h.mailStatus(ctx)
 	if err != nil {
-		return integrationsReport{}, err
+		report.addIssue("mail")
+		h.d.Log.Error("admin: integrations section unavailable", "section", "mail", "err", err, "request_id", httpx.RequestIDFromContext(ctx))
+	} else {
+		report.Mail = mailSt
 	}
-	return integrationsReport{
-		ObservedAt: time.Now().UTC().Format(time.RFC3339),
-		Cloudflare: h.cloudflareView(ctx, snapshot),
-		Inventory:  h.inventoryViews(ctx, snapshot, bindings),
-		Storage:    bindings,
-		Backup:     h.backupSummary(ctx),
-		Mail:       mailSt,
-		Coverage: "Saved Cloudflare token, account and read-only scope checks; R2/D1/Workers inventory as last read (complete or explicitly incomplete); " +
-			"active media and backup destinations with their source; mail settings and the newest test send. Nothing here contacts a provider; " +
-			"a verified token does not prove per-service permissions and permissions beyond the listed scopes are not detectable.",
-	}, nil
+	report.Backup = h.backupSummary(ctx)
+	report.Coverage = "Saved snapshots only; no provider calls on GET. Historical inventories are retained but cannot be used until refreshed for the current account and token. Issues explicitly identify unavailable sections. A valid token does not establish all service permissions; excess permissions are not detectable."
+	return report, nil
 }
 
 // --- HTML -----------------------------------------------------------------------------
@@ -300,14 +381,14 @@ func (h *handlers) renderIntegrations(w http.ResponseWriter, r *http.Request, st
 	}
 	snap, err := mailSnapshot(r.Context(), h.d.DB)
 	if err != nil {
-		h.serverError(w, r, err)
-		return
+		report.addIssue("mail")
+		h.d.Log.Error("admin: integrations section unavailable", "section", "mail", "err", err, "request_id", httpx.RequestIDFromContext(r.Context()))
 	}
 	page := integrationsPage{integrationsReport: report, Fields: fields, Form: form, CanTest: auth.Can(r.Context(), PermCapabilityTest), MailForm: mailFromSnapshot(snap), TLSModes: tlsModes, ConnectionVersions: map[string]string{}}
 	profiles, err := h.listConnections(r.Context())
 	if err != nil {
-		h.serverError(w, r, err)
-		return
+		page.addIssue("storage")
+		h.d.Log.Error("admin: integrations section unavailable", "section", "storage", "err", err, "request_id", httpx.RequestIDFromContext(r.Context()))
 	}
 	for _, p := range profiles {
 		if p.Kind == "s3" {
@@ -315,6 +396,7 @@ func (h *handlers) renderIntegrations(w http.ResponseWriter, r *http.Request, st
 			page.ConnectionVersions[p.ID] = p.Version
 		}
 	}
+	paginateIntegrations(&page.integrationsReport, r.URL.Query())
 	if extra != nil {
 		extra(&page)
 	}
@@ -413,6 +495,10 @@ func (h *handlers) integrationsWorkerIdentify(w http.ResponseWriter, r *http.Req
 	}
 	worker := chi.URLParam(r, "name")
 	_, err := h.identifyWorker(r.Context(), integrationsEdgeClient(), worker, in.Origin, in.Key)
+	if errors.Is(err, errConnectionConflict) {
+		h.renderIntegrations(w, r, http.StatusConflict, map[string]string{"worker": worker, "identify": "admin.connections.conflict"}, map[string]string{"worker": worker, "origin": in.Origin}, nil)
+		return
+	}
 	if err != nil {
 		field := "identify"
 		switch {

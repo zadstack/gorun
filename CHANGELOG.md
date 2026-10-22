@@ -5,25 +5,20 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
-### Added
 
-- **System → Modules** (`/admin/system/modules`, `system.health`) and `GET /api/v1/system/modules`:
-  a catalog of every built-in module, core service (forms, storage, backups, mail) and installed
-  external extension with its function (ar/en), source, version, compatibility, declared
-  dependencies and dependents, permissions, what it registered in this process (observed by the
-  kernel: permissions, API operations, MCP tools, job kinds, crons, admin navigation and widgets,
-  theme funcs and kinds, services published and looked up, hook subscriptions), activation state
-  (booted, desired, pending restart, forced by config), configuration verdict and queued/parked
-  jobs, plus actionable messages (dependency off and its consequence, parked work, restart needed).
-  `PUT /api/v1/system/modules/{name}/activation` (`settings.manage`, audited `module.activation`)
-  and the page's button switch an optional module for the next boot. See `docs/MODULES.md`.
-- Kernel: `kernel.ModuleRegistration` on every `ModuleState` (what a module registered) and
-  job parking for disabled modules: at boot the queued jobs of a module that is off are parked by
-  its last known job kinds (`kernel.inventory.<name>.job_kinds`) with the reason
-  `module <name> disabled`, never run, failed or deleted; enabling the module releases them
-  unchanged. Accessors `hooks.Registry.Subscriptions`, `jobs.Queue.CronNames`,
-  `jobs.Queue.QueuedByKind`, `ThemeRegistry.Kinds`, `AdminRegistry.NavIDs`, `ServiceRegistry.Names`.
+### Improved
 
+- Integrations keeps saved results updating while checks are pending, with bounded background
+  refresh, offline/hidden pause, preserved form drafts and compact bilingual resource tables.
+  HTML inventories use 100-row pages and saved-data search; API snapshots remain complete.
+- Worker identity reports reuse one configuration snapshot instead of rereading settings per
+  identity. Local large-inventory benchmarks and their limits are recorded under `docs/reports/`.
+
+### Fixed
+
+- Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
+  or Worker identity checks. Configuration changes during these operations return conflict.
+  Failed local reads and malformed saved results appear as unavailable rather than empty success.
 
 ### Changed
 
@@ -45,6 +40,25 @@ All notable changes to GoRun are recorded here. The format follows
   theme helpers), the audit findings and the `CoreModules` decision. The test also fails on an
   undeclared import between feature modules, on Go code under `themes/` or `patterns/`, and on a
   `pkg/` contract package importing `internal/`.
+
+### Added
+
+- **System → Modules** (`/admin/system/modules`, `system.health`) and `GET /api/v1/system/modules`:
+  a catalog of every built-in module, core service (forms, storage, backups, mail) and installed
+  external extension with its function (ar/en), source, version, compatibility, declared
+  dependencies and dependents, permissions, what it registered in this process (observed by the
+  kernel: permissions, API operations, MCP tools, job kinds, crons, admin navigation and widgets,
+  theme funcs and kinds, services published and looked up, hook subscriptions), activation state
+  (booted, desired, pending restart, forced by config), configuration verdict and queued/parked
+  jobs, plus actionable messages (dependency off and its consequence, parked work, restart needed).
+  `PUT /api/v1/system/modules/{name}/activation` (`settings.manage`, audited `module.activation`)
+  and the page's button switch an optional module for the next boot. See `docs/MODULES.md`.
+- Kernel: `kernel.ModuleRegistration` on every `ModuleState` (what a module registered) and
+  job parking for disabled modules: at boot the queued jobs of a module that is off are parked by
+  its last known job kinds (`kernel.inventory.<name>.job_kinds`) with the reason
+  `module <name> disabled`, never run, failed or deleted; enabling the module releases them
+  unchanged. Accessors `hooks.Registry.Subscriptions`, `jobs.Queue.CronNames`,
+  `jobs.Queue.QueuedByKind`, `ThemeRegistry.Kinds`, `AdminRegistry.NavIDs`, `ServiceRegistry.Names`.
 
 ## [0.15.1] - 2026-10-22
 
