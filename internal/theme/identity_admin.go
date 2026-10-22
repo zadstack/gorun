@@ -197,9 +197,7 @@ func (a *admin) identityViews(ctx context.Context, schema []content.Field, value
 	views := a.settingViews(ctx, schema, vals, errs)
 	for i := range views {
 		views[i].Name, views[i].ID, views[i].CanResetIdentity = views[i].Key, "identity-"+views[i].Key, false
-		if disabled {
-			views[i].Disabled = true
-		}
+		views[i].Disabled = disabled
 	}
 	return views
 }

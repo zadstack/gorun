@@ -117,7 +117,7 @@ func TestIdentityPageForThemeWithoutIdentitySupport(t *testing.T) {
 	c, csrf := identityClient(t, e)
 	_, page := c.do("GET", identityPath, nil, "Accept-Language", "en")
 	mustContain(t, page, "does not accept identity settings", `name="site.logo"`, `name="site.title"`)
-	if !regexp.MustCompile(`<input[^>]*name="identity_accent"[^>]*\bdisabled\b`).MatchString(page) {
+	if !regexp.MustCompile(`<fieldset[^>]*\bdisabled\b[^>]*>(?:[^<]|<[^/]|</[^f])*?name="identity_accent"`).MatchString(page) {
 		t.Fatal("identity fields must be disabled for a theme without identity support")
 	}
 	if resp, _ := c.get(identityPath + "/preview?view=single"); resp.StatusCode != 200 {

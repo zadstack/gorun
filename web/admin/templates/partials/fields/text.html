@@ -1,7 +1,7 @@
 {{define "fields/text"}}
 <div class="gp-field" data-field-type="text" data-field-key="{{.Key}}">
   {{template "fields/label" .}}
-  <input id="{{.ID}}" name="{{.Name}}" type="text" value="{{.Value}}" dir="auto" {{if .Required}}required{{end}} {{if .Disabled}}disabled{{end}} {{if .Error}}aria-invalid="true"{{end}} {{if .Help}}aria-describedby="{{.ID}}-help"{{end}}
+  <input id="{{.ID}}" name="{{.Name}}" type="text" value="{{.Value}}" dir="auto" {{if .Required}}required{{end}} {{if .Error}}aria-invalid="true"{{end}} {{if .Help}}aria-describedby="{{.ID}}-help"{{end}}
          class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
   {{template "fields/help" .}}
 </div>
