@@ -146,7 +146,7 @@ Every template receives a `*theme.Context`: `Site`, `Request`, `Kind`, `Content`
 | `content id`, `field . "k"`, `terms . "tax"` | single item, custom field, resolved terms |
 | `media id`, `img m "variant" "class"` | media item; responsive `<img>` with srcset, alt and size |
 | `comments .` | for an item whose type supports `comments`: `{Open, ContentID, Action, Back, Count, Items}` (approved comments, one reply level, never an email), or nil; the form posts `content_id`, `name`, `email`, `body`, `_back`, `website` (honeypot) and `_csrf` to `.Action`, and the page then shows `.Extra.comment_flash` (pending, approved, invalid, closed, limited). `default` and `business` ship a `comments` component |
-| `sections .` | the `<link>` to `sections.css` (resolved through the theme chain), printed only when the page's content, or a listed item's body, carries a `gp-s-` class; pages without sections load nothing (see [Section library](#section-library)) |
+| `sections .` | the `<link>` to `sections.css` (resolved through the theme chain), printed only when the page's content, a listed item's body, or a string in `.Extra` carries a `gp-s-` class, or a module set `.Extra.sections` to true (the commerce product page does, for a description using the blocks); pages without sections load nothing. A theme or pattern whose **own templates** use `gp-s-*` keeps a plain `<link rel="stylesheet" href="{{asset "sections.css"}}">` instead, which the contract also accepts (see [Section library](#section-library)) |
 | `identity .` | the site identity `<style>` (and font links) from Appearance → Theme settings, only for a theme whose own `theme.json` `supports` lists `identity`; print it last in `<head>` (see [Site identity](#site-identity)) |
 | `seo .` | head meta (title, description, canonical, OG) and the `hreflang` alternates |
 | `part "name" .`, `component "name" data` | include a part or component |
@@ -241,7 +241,7 @@ The content sanitizer keeps only `class` values that start with `gp-` (plus edit
 | `figure.gp-s-preview` | Product preview: a window frame around an `img` (plus optional `figcaption`). `div.gp-s-preview-ui` with empty `span`s `gp-s-ui-side`, `gp-s-ui-stat`, `gp-s-ui-chart`, `gp-s-ui-rows` draws a clearly illustrative interface when no screenshot exists. |
 | `gp-s-cta`, `gp-s-cta gp-s-cta-panel` | Closing call to action (plain, or in a bordered panel) |
 | `gp-s-bg` (+ `gp-s-bg-dots`, `-grid`, `-lines`, `-circles`, `-waves`, `-paper`, `-solid`, `-none`; `gp-s-bg-fade`, `gp-s-bg-sparse`, `gp-s-bg-dense`) | Background pattern behind any section. `gp-s-bg` alone takes the site default from `identity_pattern`; a modifier picks its own. Color and density follow `identity_pattern_color` / `identity_pattern_density`. |
-| `gp-s-bleed` | Lets a section span the viewport inside a page body (content stays on the site width) |
+| `gp-s-bleed` | Lets a section span the viewport inside a page body (content stays on the site width). It assumes a centred body column: default, business, magazine and portfolio; in `docs` (article beside a sidebar) the band is shifted and clipped, so leave it off there. |
 
 ```html
 <section class="gp-s-hero gp-s-hero-split gp-s-bg gp-s-bg-dots gp-s-bleed">

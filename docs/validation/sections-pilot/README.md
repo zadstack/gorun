@@ -11,14 +11,17 @@ Demo page: `internal/theme/testdata/sections-pilot.{en,ar}.html`, rendered by th
 Go tests (`internal/theme/sections_pilot_test.go`) and imported by
 `e2e/tests/sections-pilot.spec.ts` as `/en/sections-pilot-en` and
 `/sections-pilot-ar`. Screenshots in this folder come from that Playwright run
-(default and business themes; 1280 and 375 px; English LTR and Arabic RTL).
+(default and business themes; 1280 and 375 px; English LTR and Arabic RTL). Both
+fixtures carry both hero variants (the second under an `h2`), so the split hero
+with the fading dots and the centered hero on circles are rendered in both
+directions.
 
 ## What the suites verified
 
 | Check | Where | Result |
 |---|---|---|
 | Sanitizer keeps every section class and element the pilot uses; strips `<svg>`, `style`, `aria-*` | Go `TestSanitizerKeepsPilotSections` | pass |
-| Stylesheet covers every class, embeds only `data:` SVG, no `@import`, ≤ 32 KiB raw / ≤ 8 KiB gzip | Go `TestSectionsStylesheetCoversPilotAndStaysStatic` | pass (28 322 B raw, 6 212 B gzip) |
+| Stylesheet covers every class, embeds only `data:` SVG, no `@import`, ≤ 32 KiB raw / ≤ 8 KiB gzip | Go `TestSectionsStylesheetCoversPilotAndStaysStatic` | pass (31012 B raw, 6745 B gzip) |
 | Identity pattern keys: tokens only, unknown values ignored, hex validated, design tab, reset | Go `TestIdentityPattern*` | pass |
 | Pilot page renders 200 in default and business, en and ar | Go `TestSectionsPilotRendersInDefaultAndBusiness` | pass |
 | No 500 marker, no horizontal scroll, no page errors, `dir` per locale | Playwright, 2 themes × 2 widths × 2 locales | pass |
@@ -38,10 +41,10 @@ has no `gp-s-` block must not load the stylesheet at all (used-assets-only).
 
 | Measure | Before (main 00f123b) | After | Note |
 |---|---|---|---|
-| `sections.css` raw | 5 426 B | 28 322 B | one file, already loaded by every catalog theme |
-| `sections.css` gzip | 1 671 B | 6 212 B | +4.5 KiB per first visit, cached afterwards |
+| `sections.css` raw | 5 426 B | 31 012 B | one file, linked only on pages that use it |
+| `sections.css` gzip | 1 671 B | 6 745 B | +5.0 KiB on pages with sections, cached afterwards |
 | Requests on the demo page | 14 (default) / 12 (business) | 14 / 12 | no new request; icons and patterns are inline CSS |
-| `sections.css` on pages without sections (home, archive, search, 404) | loaded on every page (1 671 B gzip) | not linked (`{{sections .}}` prints nothing) | one request and 1.7 KiB gzip less than main on those pages; `TestSectionsStylesheetLoadsOnlyWhenContentUsesIt` (5 themes) and the spec's used-asset test |
+| `sections.css` on pages without sections (home, archive, search, 404) | loaded on every page (1 671 B gzip) | not linked (`{{sections .}}` prints nothing) | one request and 1.7 KiB gzip less than main on those pages; `TestSectionsStylesheetLoadsOnlyWhenContentUsesIt` (5 themes) and the spec's used-asset test. A listing links it whenever a listed body uses a block (the default index prints full bodies), so the home-page numbers hold while no listed post uses the library. Commerce product pages opt in through `Extra["sections"]`. |
 | CSS transferred, home page (encoded) | ≈ 18.7 KiB default / 16.8 KiB business | 17.0 KiB default / 15.1 KiB business, 13 requests | measured by the spec; before = after + the 1.7 KiB the old file cost |
 | CSS transferred, demo page (encoded) | ≈ 19.3 KiB / 15.9 KiB | 23.9 KiB (default) / 20.4 KiB (business) | before = after − stylesheet delta; everything else unchanged |
 | Document transferred (encoded) | — | 2.9–3.4 KiB | HTML body unchanged by the CSS |
@@ -95,6 +98,6 @@ Tailwind build moves to v4.
 6. **Hero scenes.** The Three.js hero scenes stay builder-only. A static
    `gp-s-media` slot takes an image or the drawn preview; a scene would need a
    script loaded only on pages that use it.
-7. **Circles pattern anchor.** `--gp-pat-circles` anchors at `88% -10%`; in RTL
-   the anchor stays at the same physical side. Mirroring it by direction is a
-   one-line follow-up if the design review prefers it.
+7. **Shadows in the dark scheme.** `--gp-s-shadow*` are black-based and all but
+   vanish on a dark background; a dark-palette shadow token in the identity
+   stylesheet would restore depth there.

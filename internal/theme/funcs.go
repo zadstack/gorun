@@ -784,7 +784,10 @@ func (f *funcs) sectionsCSS(tc *Context) template.HTML {
 }
 
 // usesSections reports whether any body the page may print carries a gp-s-
-// class (the sanitizer keeps only gp-* classes, so the prefix is reliable).
+// class (the sanitizer keeps only gp-* classes, so the prefix is reliable):
+// the item being rendered, any listed item, any string in Extra, or a module
+// that renders its own sanitized HTML and sets Extra["sections"] = true (the
+// commerce product page does this for a description using the blocks).
 func usesSections(tc *Context) bool {
 	if tc == nil {
 		return false
@@ -794,6 +797,14 @@ func usesSections(tc *Context) bool {
 	}
 	for i := range tc.Items {
 		if strings.Contains(tc.Items[i].Body, "gp-s-") {
+			return true
+		}
+	}
+	if on, _ := tc.Extra["sections"].(bool); on {
+		return true
+	}
+	for _, v := range tc.Extra {
+		if x, ok := v.(string); ok && strings.Contains(x, "gp-s-") {
 			return true
 		}
 	}

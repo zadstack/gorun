@@ -64,6 +64,10 @@
   --gp-pat-solid: linear-gradient(rgb(0 0 0 / .4), rgb(0 0 0 / .4));
   --gp-pat-solid-size: 100% 100%;
 }
+/* Anchors follow the reading direction. */
+:where(html[dir="rtl"]) :where(.gp-s-bg) {
+  --gp-pat-circles: repeating-radial-gradient(circle at 12% -10%, #000 0 1.5px, transparent 1.5px calc(64px * var(--gp-s-scale)));
+}
 :where(.gp-s-bg)::before {
   content: "";
   position: absolute;
@@ -104,6 +108,9 @@
 :where(.gp-s-hero, .gp-s-band, .gp-s-cta) { padding-block: clamp(32px, 6vw, 72px); }
 :where(.gp-s-hero) { border-bottom: 1px solid var(--line, #e5e5e5); }
 :where(.gp-s-hero) :where(h1) { font-size: clamp(36px, 5.2vw, 60px); line-height: 1.2; margin: 12px 0 16px; text-wrap: balance; }
+/* A hero used lower on a page (one h1 per page) titles itself with an h2. */
+:where(.gp-s-hero) :where(h2) { font-size: clamp(30px, 4.2vw, 48px); line-height: 1.2; margin: 12px 0 16px; text-wrap: balance; }
+:where(.gp-s-copy) { min-width: 0; }
 :where(.gp-s-eyebrow) { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--green, #1f6feb); }
 :where(.gp-s-eyebrow)::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
 :where(.gp-s-lead) { font-size: clamp(18px, 1.6vw, 21px); color: var(--muted, #555); max-width: 40em; margin: 0 0 24px; }
@@ -121,9 +128,9 @@
 /* Split hero: copy beside media (an image, a product preview or a diagram). */
 :where(.gp-s-hero-split) { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(24px, 4vw, 56px); align-items: center; }
 :where(.gp-s-hero-split) > :where(*) { min-width: 0; }
-:where(.gp-s-hero-split) :where(h1) { max-width: 16ch; }
+:where(.gp-s-hero-split) :where(h1, h2) { max-width: 16ch; }
 :where(.gp-s-hero-centered) { text-align: center; }
-:where(.gp-s-hero-centered) :where(h1, .gp-s-lead) { margin-inline: auto; }
+:where(.gp-s-hero-centered) :where(h1, h2, .gp-s-lead) { margin-inline: auto; }
 :where(.gp-s-hero-centered) :where(.gp-s-actions) { justify-content: center; }
 :where(.gp-s-hero-centered) > :where(.gp-s-media) { max-width: 52rem; margin: clamp(28px, 4vw, 48px) auto 0; }
 :where(.gp-s-media) :where(img) { display: block; width: 100%; height: auto; }
@@ -268,6 +275,7 @@
     linear-gradient(to top, var(--green, #1f6feb) 62%, transparent 62%) 66% 100% / 12% 100% no-repeat,
     linear-gradient(to top, var(--accent-soft, #cfe0f5) 88%, transparent 88%) 82.5% 100% / 12% 100% no-repeat,
     linear-gradient(to top, var(--accent-soft, #cfe0f5) 95%, transparent 95%) 100% 100% / 12% 100% no-repeat, var(--panel, #fff); background-origin: content-box; }
+:where(html[dir="rtl"]) :where(.gp-s-ui-chart) { transform: scaleX(-1); }
 :where(.gp-s-ui-rows) { grid-column: 2 / -1; min-height: 72px; padding: 12px;
   background: repeating-linear-gradient(to bottom, var(--line, #e5e5e5) 0 8px, transparent 8px 20px) 0 0 / 100% auto no-repeat, var(--panel, #fff); background-origin: content-box; }
 
@@ -280,7 +288,7 @@
 @media (max-width: 760px) {
   :where(.gp-s-hero-split) { grid-template-columns: 1fr; }
   :where(.gp-s-hero-split) > :where(.gp-s-media) { order: 2; }
-  :where(.gp-s-hero-split) :where(h1) { max-width: none; }
+  :where(.gp-s-hero-split) :where(h1, h2) { max-width: none; }
   :where(.gp-s-steps) { gap: 20px; }
   :where(.gp-s-steps) > :where(li) { padding-inline-start: 52px; }
   :where(.gp-s-steps) > :where(li)::before { position: absolute; inset-inline-start: 0; top: 0; margin: 0; }
@@ -295,7 +303,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   :where(.gp-s-btn, .gp-s-card, .gp-s-faq summary)::after, :where(.gp-s-btn, .gp-s-card) { transition: none; }
-  :where(.gp-s-card):hover { transform: none; }
+  :where(.gp-s-card):hover, :where(.gp-s-btn):active { transform: none; }
   :where(.gp-s-faq) :where(details[open] > summary)::after { transform: none; }
 }
 
@@ -304,7 +312,7 @@
    a{color:inherit}) outrank :where(); these (0,1,n) rules restore the block
    properties they would strip. Themes override them at the same prefix. */
 :root .gp-s-hero, :root .gp-s-band { border-bottom: 1px solid var(--line, #e5e5e5); }
-:root .gp-s-hero h1 { margin: 12px 0 16px; }
+:root .gp-s-hero :is(h1, h2) { margin: 12px 0 16px; }
 :root .gp-s-lead { margin: 0 0 24px; }
 :root .gp-s-btn { border: 1px solid var(--green, #1f6feb); }
 :root .gp-s-btn-ghost { border-color: var(--line-strong, var(--line, #ccc)); }
@@ -330,6 +338,7 @@
 /* Page bodies: the properties .prose-gp would otherwise take over. */
 :root .prose-gp > :is(.gp-s-hero, .gp-s-band, .gp-s-cta) { margin-top: 0; }
 :root .prose-gp .gp-s-hero h1 { font-size: clamp(36px, 5.2vw, 60px); line-height: 1.2; margin: 12px 0 16px; }
+:root .prose-gp .gp-s-hero h2 { font-size: clamp(30px, 4.2vw, 48px); line-height: 1.2; margin: 12px 0 16px; padding: 0; border: 0; }
 :root .prose-gp :is(.gp-s-band, .gp-s-faq) > h2 { font-size: clamp(26px, 3.4vw, 40px); margin: 0 0 12px; padding: 0; border: 0; }
 :root .prose-gp .gp-s-cta h2 { font-size: clamp(28px, 4vw, 48px); margin: 0 auto 12px; padding: 0; border: 0; }
 :root .prose-gp .gp-s-card h3 { font-size: 20px; margin: 0; }

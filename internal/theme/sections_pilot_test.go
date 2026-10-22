@@ -138,6 +138,26 @@ func TestSectionsStylesheetLoadsOnlyWhenContentUsesIt(t *testing.T) {
 			mustContain(t, rec.Body.String(), "/themes/default/assets/sections.css")
 		})
 	}
+	// Modules that print their own sanitized HTML (commerce product
+	// descriptions) opt in through Extra; any string in Extra counts too.
+	e := newEnv(t, "../../themes")
+	for name, extra := range map[string]map[string]any{
+		"flag":   {"sections": true},
+		"string": {"description": `<section class="gp-s-band"><h2>x</h2></section>`},
+	} {
+		plain := content.Item{Type: "page", Slug: "plain", Title: "Plain", Body: "<p>No sections here.</p>", Status: "published"}
+		rec, err := e.render(kernel.KindRequest{Kind: KindPage, Type: "page", Slug: "plain"}, &Context{Content: &plain, Extra: extra})
+		if err != nil || rec.Code != 200 {
+			t.Fatalf("%s: status=%d err=%v", name, rec.Code, err)
+		}
+		mustContain(t, rec.Body.String(), "/themes/default/assets/sections.css")
+	}
+	rec, err := e.render(kernel.KindRequest{Kind: KindPage, Type: "page", Slug: "plain"}, &Context{Content: &content.Item{Type: "page", Slug: "plain", Body: "<p>x</p>"}, Extra: map[string]any{"sections": false, "commerce": true}})
+	if err != nil || rec.Code != 200 {
+		t.Fatalf("extra off: status=%d err=%v", rec.Code, err)
+	}
+	mustNotContain(t, rec.Body.String(), "sections.css")
+
 	html := renderPilot(t, "default", "en")
 	if i, j := strings.Index(html, "sections.css"), strings.Index(html, "tailwind.css"); i < 0 || j < i {
 		t.Errorf("default: sections.css must load before tailwind.css (got %d, %d)", i, j)

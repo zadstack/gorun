@@ -52,6 +52,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- Existing `gp-s-*` blocks look different: pages already written with the section library
+  (the starter About page, any page built from `docs/THEMES.md` → "Section library") get the
+  pilot's eyebrow dot, card shadow and hover lift, numbered step badges on a track, FAQ
+  plus/minus markers and drawn check marks without any markup change. Colours, fonts and
+  corners still come from the theme tokens; nothing moves or changes size except the hero
+  eyebrow spacing and the step badge.
 - Commerce, saas and membership are optional modules behind the existing `kernel.OptionalModule`
   gate, **enabled by default** so existing installs boot the same set of modules. They answer with
   the new `kernel.AddonEnabled`, which reads the site setting `addons.<name>.enabled` (JSON
