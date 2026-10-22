@@ -18,9 +18,14 @@ type ModuleState struct {
 	Enabled   bool   `json:"enabled"`
 	Optional  bool   `json:"optional"`
 	Mode      string `json:"mode" doc:"Requested addon mode, or empty when not configured"`
+	// Registered is what the module registered during this boot (nil when it
+	// did not boot). LastKnownJobKinds are the job kinds it registered at its
+	// last enabled boot, the basis for parking its queued work while it is off.
+	Registered        *ModuleRegistration `json:"registered,omitempty"`
+	LastKnownJobKinds []string            `json:"last_known_job_kinds,omitempty"`
 }
 
-func moduleInventory(cfg config.Config, enabled, all []Module) []ModuleState {
+func moduleInventory(cfg config.Config, enabled, all []Module, regs map[string]ModuleRegistration, lastKnown func(string) []string) []ModuleState {
 	active := make(map[string]bool, len(enabled))
 	for _, m := range enabled {
 		active[m.Name()] = true
@@ -29,7 +34,14 @@ func moduleInventory(cfg config.Config, enabled, all []Module) []ModuleState {
 	out := make([]ModuleState, 0, len(all))
 	for _, m := range all {
 		_, optional := m.(OptionalModule)
-		out = append(out, ModuleState{m.Name(), true, active[m.Name()], optional, cfg.Addons[m.Name()]})
+		state := ModuleState{Name: m.Name(), Available: true, Enabled: active[m.Name()], Optional: optional, Mode: cfg.Addons[m.Name()]}
+		if reg, ok := regs[m.Name()]; ok {
+			state.Registered = &reg
+		}
+		if lastKnown != nil {
+			state.LastKnownJobKinds = lastKnown(m.Name())
+		}
+		out = append(out, state)
 		seen[m.Name()] = true
 	}
 	for name, mode := range cfg.Addons {

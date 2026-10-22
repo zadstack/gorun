@@ -14,6 +14,17 @@ func (q *Queue) Cron(name string, every time.Duration, fn func(ctx context.Conte
 	q.crons = append(q.crons, &cronEntry{name: name, every: every, fn: fn})
 }
 
+// CronNames returns the registered cron names in registration order.
+func (q *Queue) CronNames() []string {
+	q.mu.RLock()
+	defer q.mu.RUnlock()
+	out := make([]string, 0, len(q.crons))
+	for _, c := range q.crons {
+		out = append(out, c.name)
+	}
+	return out
+}
+
 func (q *Queue) schedule(ctx context.Context) {
 	t := time.NewTicker(q.tickInterval)
 	defer t.Stop()
