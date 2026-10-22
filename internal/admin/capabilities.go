@@ -95,6 +95,18 @@ func (h *handlers) capabilitiesAPI(w http.ResponseWriter, r *http.Request) {
 			state.Source, state.Reason, state.Remediation = "config.addons", "module_unavailable", "Install a compatible build containing this addon, then restart. Existing data is retained."
 		} else if !m.Enabled {
 			state.Reason, state.Remediation = "module_disabled", "Review the addon's activation configuration, then restart to enable it. Existing data is retained."
+		} else if m.Name == "media" {
+			// The media module boots before admin, so its storage description is read here.
+			if st, ok := h.activeStorage(); ok {
+				info := st.Describe(ctx)
+				state.Configured, state.Source, state.ConfigurationStatus = boolPtr(info.Configured), info.Source, "configured"
+				if !info.Configured {
+					state.ConfigurationStatus = "incomplete"
+				}
+				state.Reason, state.Remediation = info.Reason, info.Remediation
+			}
+		} else if _, ok := requirements[m.Name]; !ok {
+			state.Reason, state.Remediation = "module_publishes_no_requirements", "This module has not published configuration requirements; its configuration state is not reported, not assumed."
 		} else if req, ok := requirements[m.Name]; ok {
 			state.Configured, state.Source = boolPtr(req.Configured), "module.requirements"
 			state.ConfigurationStatus = "configured"
@@ -110,7 +122,7 @@ func (h *handlers) capabilitiesAPI(w http.ResponseWriter, r *http.Request) {
 		}
 		out.Modules = append(out.Modules, state)
 	}
-	out.Services = append(out.Services, h.mailCapability(ctx))
+	out.Services = append(out.Services, h.mailCapability(ctx), h.storageCapability(ctx))
 	for _, c := range profiles {
 		out.Connections = append(out.Connections, h.connectionCapabilityWithEvidence(ctx, c))
 	}
@@ -304,5 +316,29 @@ func (h *handlers) connectionCapability(c connectionRecord) CapabilityState {
 		}
 	}
 	state.LastCheck = check
+	return state
+}
+
+// storageCapability reports the storage new uploads use. Configured is the
+// module's own description; tested needs a passed write/read/delete probe.
+func (h *handlers) storageCapability(ctx context.Context) CapabilityState {
+	state := CapabilityState{ID: "storage", Kind: "service", Available: false, Source: "media.storage", OperationSupported: true, ConfigurationStatus: "unknown",
+		Reason: "media_module_unavailable", Remediation: "Boot with the media module to report storage."}
+	st, ok := h.activeStorage()
+	if !ok {
+		return state
+	}
+	info := st.Describe(ctx)
+	state.Available, state.Source = true, info.Source
+	state.Configured = boolPtr(info.Configured)
+	state.ConfigurationStatus = "configured"
+	if !info.Configured {
+		state.ConfigurationStatus = "incomplete"
+	}
+	state.Reason, state.Remediation = info.Reason, info.Remediation
+	if o, err := h.observe.Get(ctx, kindOperationStorage, "media"); err == nil && (o.Saved != nil || o.Attempt != nil) {
+		state.Operation = checkFromObservation(o, "operation")
+		state.Tested = state.Operation.Status == "passed"
+	}
 	return state
 }

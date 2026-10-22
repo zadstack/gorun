@@ -63,9 +63,11 @@ func (*Module) Register(d *kernel.Deps) error {
 	if err != nil {
 		return err
 	}
-	storage = &ManagedStorage{db: d.DB, settings: d.Settings, secret: d.Config.SecretKey, fallback: storage}
+	managed := &ManagedStorage{db: d.DB, settings: d.Settings, secret: d.Config.SecretKey, fallback: storage}
+	storage = managed
 	svc := newService(d, storage)
 	d.Services.Set(kernel.ServiceMedia, Service(svc))
+	d.Services.Set(ServiceStorage, ActiveStorage(managed))
 
 	d.Router.Public.Get(URLPrefix+"*", serveHandler(storage))
 

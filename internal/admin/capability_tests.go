@@ -33,10 +33,11 @@ import (
 const (
 	PermCapabilityTest = "system.capability_test"
 
-	kindConnection    = "connection"
-	kindOperationS3   = "operation.s3"
-	kindOperationAI   = "operation.ai"
-	kindOperationMail = "operation.mail"
+	kindConnection       = "connection"
+	kindOperationS3      = "operation.s3"
+	kindOperationAI      = "operation.ai"
+	kindOperationMail    = "operation.mail"
+	kindOperationStorage = "operation.storage"
 
 	connectionFreshness = 12 * time.Hour
 	evidenceTTL         = 7 * 24 * time.Hour
@@ -104,6 +105,9 @@ func (h *handlers) registerCapabilityObservations() {
 		Run: h.runS3Operation, Remediation: "Grant the credentials write, read and delete permission on the bucket; the probe object is removed after the test."})
 	h.observe.Register(observe.Spec{Kind: kindOperationAI, Freshness: 0, Timeout: operationTimeout, MaxAttempts: 1, Revision: h.profileRevision,
 		Run: h.runAIOperation, Remediation: "Confirm the model accepts chat completions for this key; the test sends one fixed prompt with a tiny token limit."})
+	h.observe.Register(observe.Spec{Kind: kindOperationStorage, Freshness: 0, Timeout: operationTimeout, MaxAttempts: 1,
+		Revision: h.storageRevision, Enabled: func(context.Context) bool { _, ok := h.activeStorage(); return ok },
+		Run: h.runStorageOperation, Remediation: "Grant the active media destination write, read and delete permission; the probe object is removed after the test."})
 	h.observe.Register(observe.Spec{Kind: kindOperationMail, Freshness: 0, Timeout: operationTimeout, MaxAttempts: 1,
 		Revision: h.mailRevision, Enabled: func(ctx context.Context) bool { return h.mail.Configured(ctx) },
 		Run: h.runMailOperation, Remediation: "Check the SMTP host, port, credentials and sender; the test sends one message to the requesting operator only."})
@@ -255,7 +259,10 @@ func (h *handlers) capabilityTestAPIOperations() {
 	mail := api.Op("POST", "/site/capabilities/services/mail/operation", "Queue one test message to the requesting operator's own address; answers 202",
 		[]string{"site"}, []string{PermCapabilityTest}, nil, observe.Ref{}, h.apiMailOperation)
 	mail.Contract = &kernel.APIContract{SuccessStatuses: []int{202}, Errors: capabilityTestErrors[2:]}
-	for _, op := range []kernel.APIOperation{check, operation, mail} {
+	storage := api.Op("POST", "/site/capabilities/services/storage/operation", "Queue one write/read/delete probe on the storage new uploads use (managed destination, configured bucket or local disk); answers 202",
+		[]string{"site"}, []string{PermCapabilityTest}, nil, observe.Ref{}, h.apiStorageOperation)
+	storage.Contract = &kernel.APIContract{SuccessStatuses: []int{202}, Errors: capabilityTestErrors[2:]}
+	for _, op := range []kernel.APIOperation{check, operation, mail, storage} {
 		h.d.API.Add(op)
 	}
 }
@@ -331,4 +338,73 @@ func mailOperationKey(u *auth.User) string {
 		return ""
 	}
 	return fmt.Sprintf("user:%s", u.ID)
+}
+
+func (h *handlers) activeStorage() (media.ActiveStorage, bool) {
+	return kernel.Get[media.ActiveStorage](h.d, media.ServiceStorage)
+}
+
+// storageRevision binds storage evidence to the active destination and the
+// config-level bucket, so switching destinations expires the evidence.
+func (h *handlers) storageRevision(ctx context.Context, key string) (string, error) {
+	if key != "media" {
+		return "", nil
+	}
+	st, ok := h.activeStorage()
+	if !ok {
+		return "", nil
+	}
+	info := st.Describe(ctx)
+	active := h.d.Settings.GetString(ctx, "storage.active.media", "")
+	sum := sha256.Sum256([]byte(info.Kind + "\x00" + info.Source + "\x00" + active + "\x00" + h.d.Config.S3.Endpoint + "\x00" + h.d.Config.S3.Bucket))
+	return hex.EncodeToString(sum[:8]), nil
+}
+
+// runStorageOperation writes, reads back and deletes one probe object
+// through the storage new uploads actually use (managed destination, env
+// bucket or local disk). The probe lives under the normal upload key shape
+// with a unique name and is removed even when a step fails.
+func (h *handlers) runStorageOperation(ctx context.Context, _, _ string) (observe.Result, error) {
+	st, ok := h.activeStorage()
+	if !ok {
+		return observe.Result{}, errOperationUnsupported
+	}
+	info := st.Describe(ctx)
+	key, err := st.UploadKey(ctx, time.Now().UTC().Format("2006/01")+"/"+probeObjectName+db.NewID()+".txt")
+	if err != nil {
+		return observe.Result{}, errors.New("probe key could not be mapped to the active destination")
+	}
+	sample := []byte("GoRun capability probe " + db.Now() + "\n")
+	steps := map[string]any{"kind": info.Kind, "source": info.Source, "write": false, "read": false, "delete": false}
+	if err := st.Put(ctx, key, bytes.NewReader(sample), "text/plain"); err != nil {
+		return observe.Result{Data: steps}, errors.New("write failed: " + short(err.Error()))
+	}
+	steps["write"] = true
+	deleted := false
+	defer func() {
+		if !deleted {
+			if err := st.Delete(context.WithoutCancel(ctx), key); err == nil {
+				steps["delete"] = true
+			}
+		}
+	}()
+	rc, err := st.Open(ctx, key)
+	if err != nil {
+		return observe.Result{Data: steps}, errors.New("read failed: " + short(err.Error()))
+	}
+	got, _ := io.ReadAll(io.LimitReader(rc, 1024))
+	rc.Close()
+	if !bytes.Equal(got, sample) {
+		return observe.Result{Data: steps}, errors.New("read returned different content")
+	}
+	steps["read"] = true
+	if err := st.Delete(ctx, key); err != nil {
+		return observe.Result{Data: steps}, errors.New("delete failed: " + short(err.Error()))
+	}
+	deleted, steps["delete"] = true, true
+	return observe.Result{Scope: "operation:write_read_delete", Data: steps}, nil
+}
+
+func (h *handlers) apiStorageOperation(w http.ResponseWriter, r *http.Request) {
+	h.capabilityRefresh(w, r, kindOperationStorage, "media", "capability.operation")
 }
