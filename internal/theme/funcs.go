@@ -103,17 +103,19 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 			// Same sanitized-content contract as the existing safe body helper.
 			return template.HTML(body)
 		},
-		"url":      f.url,
-		"asset":    f.asset,
-		"menu":     f.menu,
-		"query":    f.query,
-		"content":  f.content,
-		"field":    field,
-		"terms":    f.terms,
-		"media":    f.media,
-		"img":      f.img,
-		"seo":      f.seo,
-		"comments": f.comments,
+		"url":       f.url,
+		"asset":     f.asset,
+		"menu":      f.menu,
+		"query":     f.query,
+		"content":   f.content,
+		"field":     field,
+		"terms":     f.terms,
+		"media":     f.media,
+		"img":       f.img,
+		"logo":      f.logo,
+		"themeLogo": f.themeLogo,
+		"seo":       f.seo,
+		"comments":  f.comments,
 		"component": func(name string, data ...any) (template.HTML, error) {
 			return f.include("components."+name+".html", data)
 		},
@@ -690,4 +692,33 @@ func dict(kv ...any) (map[string]any, error) {
 		m[k] = kv[i+1]
 	}
 	return m, nil
+}
+
+// logoSettings is the precedence of site settings per logo variant.
+var logoSettings = map[string][]string{"primary": {"site.logo"}, "dark": {"site.logo_dark", "site.logo"}, "light": {"site.logo_light", "site.logo"}, "icon": {"site.icon"}}
+
+// logo returns the media item for a logo variant ("primary", "dark",
+// "light", "icon") following the site-setting precedence, or nil. Themes
+// render it with {{img (logo "dark") "thumbnail"}}.
+func (f *funcs) logo(variant string) *media.Media {
+	for _, key := range logoSettings[variant] {
+		if id := f.setting(key); id != "" {
+			if m := f.media(id); m != nil {
+				return m
+			}
+		}
+	}
+	return nil
+}
+
+// themeLogo returns the public URL of a logo the theme manifest ships for
+// variant ("" when the theme declares none). Site settings take precedence:
+// themes should try {{logo "icon"}} first.
+func (f *funcs) themeLogo(variant string) string {
+	info := f.s.Active(f.st.ctx)
+	path, ok := info.Logos[variant]
+	if !ok || !ValidAssetPath(path) {
+		return ""
+	}
+	return "/themes/" + info.Slug + "/assets/" + path
 }

@@ -63,5 +63,5 @@ func (h *handlers) generalFromSnapshot(values map[string]string) generalInput {
 	if json.Unmarshal([]byte(values["site.posts_per_page"]), &saved) == nil && saved >= 1 && saved <= 100 {
 		n = saved
 	}
-	return generalInput{Title: get("site.title", ""), Tagline: get("site.tagline", ""), Locale: get("site.locale", i18n.DefaultLocale), Timezone: get("site.timezone", "UTC"), BaseURL: get("site.base_url", h.d.Config.BaseURL), Theme: get("site.theme", h.d.Config.Theme), FrontPage: get("site.front_page", ""), Logo: get("site.logo", ""), ContactEmail: get("contact.email", ""), PostsPerPage: strconv.Itoa(n)}
+	return generalInput{Title: get("site.title", ""), Tagline: get("site.tagline", ""), Locale: get("site.locale", i18n.DefaultLocale), Timezone: get("site.timezone", "UTC"), BaseURL: get("site.base_url", h.d.Config.BaseURL), Theme: get("site.theme", h.d.Config.Theme), FrontPage: get("site.front_page", ""), Logo: get("site.logo", ""), LogoDark: get("site.logo_dark", ""), LogoLight: get("site.logo_light", ""), Icon: get("site.icon", ""), ContactEmail: get("contact.email", ""), PostsPerPage: strconv.Itoa(n)}
 }

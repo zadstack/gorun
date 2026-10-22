@@ -38,8 +38,29 @@ type SiteLanguages struct {
 	Direction string           `json:"direction"`
 }
 
+// SiteLogo resolves one logo variant. Value is the media URL templates use
+// for the original file; Path is the site-served /media/ path for the same
+// file, which stays public and unsigned even when the storage URL is remote
+// or signed; Rendered is the variant themes actually print in headers
+// (the thumbnail). Each falls back explicitly, never silently.
+type SiteLogo struct {
+	InformationValue
+	URL      InformationValue  `json:"url" doc:"The storage URL templates print; unavailable (unsafe_public_url) when it carries a signature, credentials or an unsupported scheme"`
+	Path     *string           `json:"path" doc:"Site-served public path (/media/…) when the storage key is known; null otherwise"`
+	Rendered *string           `json:"rendered" doc:"URL of the variant themes render in the header (thumbnail); null when the file has no variants"`
+	MediaID  *string           `json:"media_id"`
+	Mime     *string           `json:"mime"`
+	Variants map[string]string `json:"variants" doc:"Variant name → URL for the resolved file; empty when none"`
+	Fallback string            `json:"fallback,omitempty" doc:"Which lower-precedence source supplied the value (site.logo, theme manifest)"`
+}
+
+// SiteLogos lists the logo variants by precedence: the site setting for the
+// variant, then site.logo (for dark/light), then the theme manifest.
 type SiteLogos struct {
-	Primary InformationValue `json:"primary" doc:"Resolved public media URL for site.logo"`
+	Primary SiteLogo `json:"primary" doc:"site.logo → theme manifest logos.primary"`
+	Dark    SiteLogo `json:"dark" doc:"site.logo_dark → site.logo → theme manifest logos.dark"`
+	Light   SiteLogo `json:"light" doc:"site.logo_light → site.logo → theme manifest logos.light"`
+	Icon    SiteLogo `json:"icon" doc:"site.icon → theme manifest logos.icon"`
 }
 
 // SiteInformation is additive; the authenticated /site structure contract is unchanged.
@@ -126,7 +147,7 @@ func siteInformationHandler(d *kernel.Deps, version string) http.HandlerFunc {
 		ctx := r.Context()
 		out := SiteInformation{Version: information(version, "process.build"),
 			Languages:   SiteLanguages{Supported: append([]string{}, i18n.Supported...), Source: "runtime:i18n.Supported"},
-			Limitations: []string{"supported_languages_do_not_imply_translated_content", "only_site.logo_is_a_core_logo_setting"}}
+			Limitations: []string{"supported_languages_do_not_imply_translated_content", "logo_variants_fall_back_to_site.logo_then_theme_manifest", "rendered_logo_is_the_thumbnail_variant_themes_print"}}
 		for _, field := range []struct {
 			target                *InformationValue
 			key, fallback, source string
@@ -135,7 +156,6 @@ func siteInformationHandler(d *kernel.Deps, version string) http.HandlerFunc {
 			{&out.Identity.Tagline, "site.tagline", "", ""},
 			{&out.Identity.BaseURL, "site.base_url", d.Config.BaseURL, "config:base_url"},
 			{&out.Languages.Default, "site.locale", "ar", "core:site_locale_default"},
-			{&out.Logos.Primary, "site.logo", "", ""},
 		} {
 			value, err := settingInformation(ctx, d, field.key, field.fallback, field.source)
 			if err != nil {
@@ -166,22 +186,12 @@ func siteInformationHandler(d *kernel.Deps, version string) http.HandlerFunc {
 				out.Identity.Title = information(title, "i18n:core.app.name")
 			}
 		}
-		if out.Logos.Primary.Value != nil {
-			id := *out.Logos.Primary.Value
-			out.Logos.Primary = InformationValue{Source: "settings:site.logo", Reason: "media_module_unavailable"}
-			if svc, ok := kernel.Get[media.Service](d, kernel.ServiceMedia); ok {
-				logo, err := svc.Get(ctx, id)
-				if err != nil && !errors.Is(err, media.ErrNotFound) {
-					Fail(w, r, err)
-					return
-				}
-				if err == nil && logo != nil {
-					out.Logos.Primary = publicURLInformation(information(logo.URL, "settings:site.logo -> media.url"), true)
-				} else {
-					out.Logos.Primary.Reason = "media_not_found"
-				}
-			}
+		logos, err := resolveLogos(ctx, d)
+		if err != nil {
+			Fail(w, r, err)
+			return
 		}
+		out.Logos = logos
 		out.AppearanceReason = "theme_provider_unavailable"
 		if provider, ok := kernel.Get[theme.AppearanceProvider](d, kernel.ServiceTheme); ok {
 			report := provider.Appearance(ctx)
@@ -190,4 +200,102 @@ func siteInformationHandler(d *kernel.Deps, version string) http.HandlerFunc {
 		}
 		WriteItem(w, out)
 	}
+}
+
+// logoChain is the precedence of settings for one variant.
+var logoChain = map[string][]string{
+	"primary": {"site.logo"},
+	"dark":    {"site.logo_dark", "site.logo"},
+	"light":   {"site.logo_light", "site.logo"},
+	"icon":    {"site.icon"},
+}
+
+func resolveLogos(ctx context.Context, d *kernel.Deps) (SiteLogos, error) {
+	var manifest map[string]string
+	var slug string
+	if ts, ok := kernel.Get[theme.Service](d, kernel.ServiceTheme); ok {
+		info := ts.Active(ctx)
+		slug, manifest = info.Slug, info.Logos
+	}
+	mediaSvc, hasMedia := kernel.Get[media.Service](d, kernel.ServiceMedia)
+	resolve := func(variant string) (SiteLogo, error) {
+		chain := logoChain[variant]
+		for i, key := range chain {
+			var id string
+			err := d.Settings.Get(ctx, key, &id)
+			if errors.Is(err, settings.ErrNotFound) || (err == nil && strings.TrimSpace(id) == "") {
+				continue
+			}
+			if err != nil {
+				return SiteLogo{}, err
+			}
+			logo := SiteLogo{InformationValue: InformationValue{Source: "settings:" + key, Reason: "media_module_unavailable"}, Variants: map[string]string{}}
+			if i > 0 {
+				logo.Fallback = key
+			}
+			if !hasMedia {
+				return logo, nil
+			}
+			m, err := mediaSvc.Get(ctx, id)
+			if err != nil && !errors.Is(err, media.ErrNotFound) {
+				return SiteLogo{}, err
+			}
+			if err != nil || m == nil {
+				logo.Reason = "media_not_found"
+				return logo, nil
+			}
+			return mediaLogo(m, "settings:"+key, logo.Fallback), nil
+		}
+		if path, ok := manifest[variant]; ok && path != "" && slug != "" && theme.ValidAssetPath(path) {
+			url := "/themes/" + slug + "/assets/" + path
+			v := SiteLogo{InformationValue: information(url, "theme:"+slug+":manifest:logos."+variant), Variants: map[string]string{}, Fallback: "theme_manifest"}
+			v.Path = &url
+			return v, nil
+		}
+		return SiteLogo{InformationValue: InformationValue{Source: "settings:" + chain[0], Reason: "not_configured"}, Variants: map[string]string{}}, nil
+	}
+	var out SiteLogos
+	var err error
+	if out.Primary, err = resolve("primary"); err != nil {
+		return out, err
+	}
+	if out.Dark, err = resolve("dark"); err != nil {
+		return out, err
+	}
+	if out.Light, err = resolve("light"); err != nil {
+		return out, err
+	}
+	out.Icon, err = resolve("icon")
+	return out, err
+}
+
+// mediaLogo reports every public address of a media item. A remote or
+// signed storage URL is not published, but the site-served path still is,
+// so a logo that renders on pages is never reported as unavailable.
+func mediaLogo(m *media.Media, source, fallback string) SiteLogo {
+	storage := publicURLInformation(information(m.URL, source+" -> media.url"), true)
+	logo := SiteLogo{InformationValue: storage, URL: storage, Variants: map[string]string{}, Fallback: fallback}
+	id, mime := m.ID, m.Mime
+	logo.MediaID, logo.Mime = &id, &mime
+	if p := media.PublicPath(m.StorageKey); p != "" {
+		logo.Path = &p
+		if !logo.Available {
+			// The storage URL cannot be published, but the site serves the
+			// same file at its /media/ path: report that instead of nothing.
+			logo.InformationValue = information(p, source+" -> media.path")
+		}
+	}
+	for name, v := range m.Variants {
+		if candidate := publicURLInformation(information(v.URL, source), true); candidate.Available {
+			logo.Variants[name] = v.URL
+		}
+	}
+	if rendered, ok := logo.Variants["thumbnail"]; ok {
+		logo.Rendered = &rendered
+	} else if logo.Value != nil {
+		// Themes print the original when no thumbnail exists.
+		v := *logo.Value
+		logo.Rendered = &v
+	}
+	return logo
 }

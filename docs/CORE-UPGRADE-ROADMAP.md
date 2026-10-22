@@ -3,7 +3,8 @@
 This document tracks the Shared Core operations work after v0.14.1. The first
 PR (#114) added site information and the capability report. The second PR
 implements the staged update lifecycle and durable background observations; the
-third adds capability evidence and operation tests. This table records, per requirement, whether it is **complete**, **partial** or
+third adds capability evidence and operation tests; the fourth completes
+identity and appearance. This table records, per requirement, whether it is **complete**, **partial** or
 **deferred**, with the test that proves it. Documentation or an announcement is
 never evidence; only the listed tests and code are.
 
@@ -69,15 +70,16 @@ deferred** — not in this PR, listed for the next one.
 | 2.5 | Disabled modules stop consuming their jobs safely | complete | See 4.7. |
 | 2.6 | Connection probes as background observations | complete | `connection` kind (12-hour schedule, API check endpoint); the synchronous admin test records the same evidence (`observe.Record`) |
 
-## 1. Identity and appearance (next PR)
+## 1. Identity and appearance
 
-| # | Requirement | Status | Note |
+| # | Requirement | Status | Evidence |
 | --- | --- | --- | --- |
-| 1.1 | Theme logos: primary, dark, light, icon with site-setting precedence | deferred | `GET /api/v1/site/info` reports the existing logo only. |
-| 1.2 | Logo available through the API for every site that renders one | deferred | Needs the resolution order used by templates exposed through the same service. |
-| 1.3 | Declared vs effective colours and fonts after site customisation | deferred | — |
-| 1.4 | Setting overrides and custom CSS with per-value provenance; `unavailable` when undecidable | deferred | — |
-| 1.5 | Keep requests light; no browser rendering | complete by construction | Nothing in the current API renders a page. |
+| 1.1 | Theme logos: primary, dark, light, icon with site-setting precedence | complete | Settings `site.logo_dark/_light`, `site.icon` (form, API, MCP); manifest `logos`; `internal/api/site_logos_test.go: TestSiteInformationLogoVariantsFollowSettingsThenThemeManifest`; `internal/admin/settings_logo_variants_test.go`; `internal/theme: TestThemeManifestLogosMustStayUnderAssets` |
+| 1.2 | Logo available through the API for every site that renders one; no invented values, no automatic setting edits | complete | `path` (site-served) reported when the storage URL is signed/unsafe; dangling media stays `media_not_found`; reads change no settings (asserted) |
+| 1.3 | Declared vs effective colours and fonts after site customisation | complete | `appearance.declared` vs `colors/fonts`; `internal/theme: TestAppearanceSeparatesDeclaredFromEffectiveValues` |
+| 1.4 | Setting overrides and custom CSS with per-value provenance; `unavailable` when undecidable | complete | `overrides[]` with declared value; `custom_css` status; effective values unavailable with reason while declared stays; `scheme`/`radius` provenance |
+| 1.5 | Keep requests light; no browser rendering | complete | Only settings, media rows and the cached theme snapshot are read; no page render or browser. |
+| 1.6 | Shipped themes render dark/light/icon variants | partial | Catalog headers still print `site.logo`; the new `{{logo "dark"}}` / `{{themeLogo}}` funcs are available for themes to adopt. |
 
 ## Verification baseline
 

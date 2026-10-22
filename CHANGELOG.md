@@ -21,6 +21,18 @@ All notable changes to GoRun are recorded here. The format follows
   migration was applied; a database or media snapshot is never restored automatically.
 - Document `GET/POST /api/v1/system/update` and `/api/v1/system/update/operations[/{id}]` in OpenAPI.
 
+### Identity and appearance
+
+- Add `site.logo_dark`, `site.logo_light` and `site.icon` to General settings, the settings API and
+  the MCP settings tool, with the same media validation as `site.logo`. Themes may ship marks in
+  `theme.json` `logos` (files under `assets/`); site settings always win. New template funcs
+  `{{logo "dark"}}` and `{{themeLogo "icon"}}`.
+- `GET /api/v1/site/info` resolves every logo variant with explicit precedence and `fallback`, and
+  reports the site-served `/media/` path beside the storage URL so a logo that renders on pages is no
+  longer reported unavailable when its storage URL is signed. Appearance now separates `declared`
+  theme values from effective ones, lists `overrides` with provenance, and reports scheme, radius and
+  custom CSS status; undecidable values stay `unavailable`.
+
 ### Capability evidence
 
 - `GET /api/v1/site/capabilities` now separates available, enabled, configured, connected and

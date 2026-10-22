@@ -27,7 +27,7 @@ fail the process by themselves.
 
 | Check | Rule |
 |---|---|
-| `theme.json` | Present, valid JSON, non-empty `name` |
+| `theme.json` | Present, valid JSON, non-empty `name`. Optional `logos` object (`primary`, `dark`, `light`, `icon` → file path under `assets/`, no traversal) ships theme marks; site settings `site.logo*` / `site.icon` always take precedence. Templates read them with `{{logo "dark"}}` (media, settings precedence) and `{{themeLogo "icon"}}` (manifest URL). |
 | `supports` | Must include `rtl` and `identity` |
 | Locales | Own `lang/en.json` and `lang/ar.json` (flat string maps, ≥1 key each) — inheritance alone is not enough for ship-with |
 | Templates | Resolve via own files or parents: `index`, `page`, `single`, `archive`, `taxonomy`, `search`, `404`, `500`, `page-builder`, `page-contact`, `form-result`, plus `front-page` **or** `home` |

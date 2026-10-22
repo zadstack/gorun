@@ -80,6 +80,11 @@ func loadInfo(root, slug string) (Info, error) {
 	if err := json.Unmarshal(raw, &info); err != nil {
 		return Info{}, fmt.Errorf("%w: %s/theme.json: %v", ErrInvalidTheme, slug, err)
 	}
+	for variant, path := range info.Logos {
+		if !ValidAssetPath(path) || (variant != "primary" && variant != "dark" && variant != "light" && variant != "icon") {
+			return Info{}, fmt.Errorf("%w: %s/theme.json: logos.%s must name a file under assets/", ErrInvalidTheme, slug, variant)
+		}
+	}
 	if strings.TrimSpace(info.Name) == "" {
 		return Info{}, fmt.Errorf("%w: %s/theme.json: name is required", ErrInvalidTheme, slug)
 	}
@@ -236,3 +241,9 @@ func mergeLangDir(out map[string]map[string]string, dir string) {
 		}
 	}
 }
+
+var assetPathRe = regexp.MustCompile(`^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*\.[a-z0-9]{1,5}$`)
+
+// ValidAssetPath accepts a relative file path under a theme's assets/
+// directory (no traversal, no absolute path, no query).
+func ValidAssetPath(p string) bool { return assetPathRe.MatchString(p) }

@@ -32,6 +32,9 @@ var settingValidators = map[string]func(key, value string) (string, error){
 	"contact.email":               admin.ValidateGeneralSetting,
 	"site.posts_per_page":         admin.ValidateGeneralSetting,
 	"site.logo":                   validateLogoID, // existence checked against the media service in the tool
+	"site.logo_dark":              validateLogoID,
+	"site.logo_light":             validateLogoID,
+	"site.icon":                   validateLogoID,
 	seo.SettingTitleTemplate:      admin.ValidateSEOSetting,
 	seo.SettingDefaultDescription: admin.ValidateSEOSetting,
 	seo.SettingDefaultOGImage:     admin.ValidateSEOSetting,

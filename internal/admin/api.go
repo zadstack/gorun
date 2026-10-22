@@ -58,6 +58,9 @@ type SettingsDTO struct {
 	SiteTheme           string `json:"site.theme"`
 	SiteFrontPage       string `json:"site.front_page"`
 	SiteLogo            string `json:"site.logo"`
+	SiteLogoDark        string `json:"site.logo_dark" doc:"Media id shown on dark backgrounds; empty falls back to site.logo"`
+	SiteLogoLight       string `json:"site.logo_light" doc:"Media id shown on light backgrounds; empty falls back to site.logo"`
+	SiteIcon            string `json:"site.icon" doc:"Media id for the favicon / app icon"`
 	ContactEmail        string `json:"contact.email"`
 	PostsPerPage        int    `json:"site.posts_per_page"`
 	MailProvider        string `json:"mail.provider"`
@@ -84,6 +87,9 @@ type SettingsPatchDTO struct {
 	SiteTheme        *string `json:"site.theme,omitempty"`
 	SiteFrontPage    *string `json:"site.front_page,omitempty"`
 	SiteLogo         *string `json:"site.logo,omitempty"`
+	SiteLogoDark     *string `json:"site.logo_dark,omitempty"`
+	SiteLogoLight    *string `json:"site.logo_light,omitempty"`
+	SiteIcon         *string `json:"site.icon,omitempty"`
 	ContactEmail     *string `json:"contact.email,omitempty"`
 	PostsPerPage     *int    `json:"site.posts_per_page,omitempty"`
 	MailProvider     *string `json:"mail.provider,omitempty"`
@@ -177,7 +183,7 @@ func (h *handlers) apiSettingsGet(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusOK, SettingsDTO{
 		SiteTitle: g.Title, SiteTagline: g.Tagline, SiteLocale: g.Locale, SiteTimezone: g.Timezone,
 		SiteBaseURL: g.BaseURL, SiteTheme: g.Theme, SiteFrontPage: g.FrontPage,
-		SiteLogo: g.Logo, ContactEmail: g.ContactEmail, PostsPerPage: h.postsPerPage(r),
+		SiteLogo: g.Logo, SiteLogoDark: g.LogoDark, SiteLogoLight: g.LogoLight, SiteIcon: g.Icon, ContactEmail: g.ContactEmail, PostsPerPage: h.postsPerPage(r),
 		MailProvider: m.Provider, MailResendAPIKeySet: h.d.Settings.GetString(r.Context(), "mail.resend_api_key", "") != "",
 		MailHost: m.Host, MailPort: port, MailUsername: m.Username, MailFrom: m.From,
 		MailFromName: m.FromName, MailTLS: m.TLS, MailPasswordSet: pwSet,
@@ -209,7 +215,7 @@ func (h *handlers) apiSettingsPatch(w http.ResponseWriter, r *http.Request) {
 	m := mailFromSnapshot(mailState)
 	general := map[string]*string{"site.title": &g.Title, "site.tagline": &g.Tagline, "site.locale": &g.Locale, "site.timezone": &g.Timezone,
 		"site.base_url": &g.BaseURL, "site.theme": &g.Theme, "site.front_page": &g.FrontPage,
-		"site.logo": &g.Logo, "contact.email": &g.ContactEmail, "site.posts_per_page": &g.PostsPerPage}
+		"site.logo": &g.Logo, "site.logo_dark": &g.LogoDark, "site.logo_light": &g.LogoLight, "site.icon": &g.Icon, "contact.email": &g.ContactEmail, "site.posts_per_page": &g.PostsPerPage}
 	mailF := map[string]*string{"mail.provider": &m.Provider, "mail.resend_api_key": &m.ResendAPIKey, "mail.host": &m.Host, "mail.port": &m.Port, "mail.username": &m.Username, "mail.password": &m.Password,
 		"mail.from": &m.From, "mail.from_name": &m.FromName, "mail.tls": &m.TLS}
 	touchedGeneral, touchedMail := false, false

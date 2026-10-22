@@ -261,3 +261,73 @@ func TestAppearanceEmptyStoredThemeSelectionKeepsSettingsProvenance(t *testing.T
 		})
 	}
 }
+
+func TestAppearanceSeparatesDeclaredFromEffectiveValues(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", `{"name":"Identity","version":"1","supports":["identity"],"logos":{"icon":"icon.svg"}}`, map[string]string{"templates/index.html": "x", "assets/icon.svg": "<svg/>", "assets/style.css": `:root{--bg:#fff;--ink:#000;--accent:#111;--font:Example,sans-serif;}`})
+	e := newEnv(t, root)
+	got := e.svc.Appearance(context.Background())
+	if got.Declared == nil || len(got.Overrides) != 0 || got.Scheme.Available || got.Radius.Available || got.CustomCSS.Present || got.CustomCSS.Status != "none" {
+		t.Fatalf("untouched theme reported overrides: %+v", got)
+	}
+	assertAppearanceValue(t, got.Declared.Colors["accent"], "#111", "theme:default:css-token:--accent")
+	assertAppearanceValue(t, got.Colors["accent"], "#111", "theme:default:css-token:--accent")
+	e.setting(SettingKey("default", idAccent), "#123456")
+	e.setting(SettingKey("default", idBody), "zad")
+	e.setting(SettingKey("default", idScheme), "light")
+	e.setting(SettingKey("default", idRadius), "round")
+	got = e.svc.Appearance(context.Background())
+	assertAppearanceValue(t, got.Declared.Colors["accent"], "#111", "theme:default:css-token:--accent")
+	assertAppearanceValue(t, got.Colors["accent"], "#123456", "settings:theme.default.identity_accent")
+	assertAppearanceValue(t, got.Declared.Fonts["body"], "Example,sans-serif", "theme:default:css-token:--font")
+	assertAppearanceValue(t, got.Scheme, "light", "settings:theme.default.identity_scheme")
+	assertAppearanceValue(t, got.Radius, "16px", "settings:theme.default.identity_radius")
+	byRole := map[string]AppearanceOverride{}
+	for _, o := range got.Overrides {
+		byRole[o.Role] = o
+	}
+	accent, ok := byRole["colors.accent"]
+	if !ok || accent.Value != "#123456" || accent.Declared == nil || *accent.Declared != "#111" || accent.Source != "settings:theme.default.identity_accent" {
+		t.Fatalf("accent override: %+v", accent)
+	}
+	if body, ok := byRole["fonts.body"]; !ok || body.Declared == nil || *body.Declared != "Example,sans-serif" {
+		t.Fatalf("body override: %+v", byRole)
+	}
+	if heading, ok := byRole["fonts.heading"]; ok {
+		t.Fatalf("unset font reported as override: %+v", heading)
+	}
+	// Custom CSS is reported with its size and makes effective values unavailable.
+	e.setting(SettingKey("default", idCustomCSS), "body{color:red}")
+	got = e.svc.Appearance(context.Background())
+	if !got.CustomCSS.Present || got.CustomCSS.Bytes != 15 || got.CustomCSS.Status != "applied_requires_browser_evaluation" || got.Colors["accent"].Available {
+		t.Fatalf("%+v %+v", got.CustomCSS, got.Colors["accent"])
+	}
+	if got.Declared.Colors["accent"].Value == nil {
+		t.Fatal("custom css erased the declared layer")
+	}
+	e.setting(SettingKey("default", idCustomCSS), "@import url(x)")
+	got = e.svc.Appearance(context.Background())
+	if got.CustomCSS.Status != "invalid_not_applied" || !got.Colors["accent"].Available {
+		t.Fatalf("%+v", got.CustomCSS)
+	}
+	encoded, _ := json.Marshal(got)
+	if strings.Contains(string(encoded), root) || strings.Contains(string(encoded), "body{color:red}") {
+		t.Fatal("report leaked a path or the custom stylesheet body")
+	}
+	if info := e.svc.Active(context.Background()); info.Logos["icon"] != "icon.svg" {
+		t.Fatalf("manifest logos not loaded: %+v", info.Logos)
+	}
+}
+
+func TestThemeManifestLogosMustStayUnderAssets(t *testing.T) {
+	for _, bad := range []string{`{"name":"x","version":"1","logos":{"icon":"../secret.svg"}}`, `{"name":"x","version":"1","logos":{"icon":"/etc/passwd"}}`, `{"name":"x","version":"1","logos":{"banner":"icon.svg"}}`, `{"name":"x","version":"1","logos":{"icon":"icon.svg?x=1"}}`} {
+		root := t.TempDir()
+		writeTheme(t, root, "default", bad, map[string]string{"templates/index.html": "x"})
+		if _, err := loadInfo(root, "default"); err == nil {
+			t.Fatalf("accepted %s", bad)
+		}
+	}
+	if !ValidAssetPath("marks/light.svg") || ValidAssetPath("") || ValidAssetPath("a/../b.svg") {
+		t.Fatal("asset path rule")
+	}
+}
