@@ -58,6 +58,7 @@ type identityPage struct {
 	Design       identityDesignView
 	Theme        Info
 	Supports     bool
+	CanDesign    bool // theme supports identity and the user holds themes.manage
 	Title        string
 	Tagline      string
 	Logos        []identityLogoSlot
@@ -75,6 +76,7 @@ type identityPage struct {
 	PreviewURL   string
 	Locale       string
 	Rebased      string // site keys the draft took from the live site
+	HistoryKeep  int
 }
 
 // registerIdentityAdmin adds the identity page and its preview.
@@ -239,11 +241,11 @@ func (a *admin) renderIdentity(w http.ResponseWriter, r *http.Request, status in
 	}
 	var b brand.Identity
 	canImport := a.s.d.Settings.Get(ctx, "builder.identity", &b) == nil && brand.Validate(b) == nil
-	page := identityPage{Design: a.identityDesign(ctx), Theme: info, Supports: supports, Title: snap.Site["site.title"], Tagline: snap.Site["site.tagline"],
+	page := identityPage{Design: a.identityDesign(ctx), Theme: info, Supports: supports, CanDesign: a.canDesign(ctx, info), Title: snap.Site["site.title"], Tagline: snap.Site["site.tagline"],
 		Logos: a.identityLogoSlots(ctx, snap.Site, errs), Fields: a.identityViews(ctx, identityFields(), snap.Values, errs),
 		CTA: a.identityViews(ctx, a.ctaSchema(info), cta, errs), Contrast: a.identityContrastFor(ctx, snap), Draft: draft,
 		History: views, HistoryValid: valid, CanImport: canImport, Errors: errs, Error: message, CanPickMedia: a.canPickMedia(ctx),
-		PreviewURL: "/admin" + adminIdentityPath + "/preview", Locale: i18n.Locale(ctx)}
+		PreviewURL: "/admin" + adminIdentityPath + "/preview", Locale: i18n.Locale(ctx), HistoryKeep: identityHistoryKeep}
 	if page.Title == "" {
 		page.Title = live.Site["site.title"]
 	}
@@ -266,12 +268,20 @@ func (a *admin) identityPage(w http.ResponseWriter, r *http.Request) {
 	a.renderIdentity(w, r, http.StatusOK, snap, nil, "")
 }
 
-// identityFromForm reads the posted identity. Identity values are ignored
-// for a theme that does not declare the capability, so nothing is stored
-// that the theme would never render.
+// canDesign reports whether the user may change colours, fonts and custom
+// CSS: the theme must declare identity and the user must hold themes.manage
+// (the permission that guards Theme settings, where the same keys live).
+func (a *admin) canDesign(ctx context.Context, info Info) bool {
+	return supportsIdentity(info) && auth.Can(ctx, PermManage)
+}
+
+// identityFromForm reads the posted identity. Design values are ignored
+// for a theme that does not declare the capability and for a user without
+// themes.manage, so nothing is stored that the theme would never render or
+// the user may not set.
 func (a *admin) identityFromForm(r *http.Request, info Info) IdentitySnapshot {
 	snap := IdentitySnapshot{Theme: info.Slug, Values: map[string]string{}, Site: map[string]string{}}
-	if supportsIdentity(info) {
+	if a.canDesign(r.Context(), info) {
 		for _, k := range IdentityKeys {
 			snap.Values[k] = r.PostForm.Get(k)
 		}
@@ -315,7 +325,8 @@ func (a *admin) identitySave(w http.ResponseWriter, r *http.Request) {
 				http.NotFound(w, r)
 				return
 			}
-			a.identityFailed(w, r, slug, err)
+			snap, _ := a.identityState(ctx, slug)
+			a.identityInvalid(w, r, snap, err)
 			return
 		}
 		redirect("reverted")

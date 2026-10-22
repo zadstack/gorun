@@ -9,7 +9,7 @@
 <p class="text-muted mt-2 mb-4">{{t "theme.identity.intro"}}</p>
 {{with .Notice}}<p role="status" class="border border-green p-3 my-4">{{t (printf "theme.identity.notice_%s" .)}}</p>{{end}}
 {{with .Error}}<p role="alert" data-design-error tabindex="-1" class="border border-red text-red p-3 mb-4">{{.}}</p>{{end}}
-{{if not .Supports}}<p class="identity-note border border-line p-3 mb-4" data-identity-unsupported>{{t "theme.identity.unsupported" .Theme.Name}}</p>{{end}}
+{{if not .Supports}}<p class="identity-note border border-line p-3 mb-4" data-identity-unsupported>{{t "theme.identity.unsupported" .Theme.Name}}</p>{{else if not .CanDesign}}<p class="identity-note border border-line p-3 mb-4" data-identity-no-themes-manage>{{t "theme.identity.needs_themes_manage"}}</p>{{end}}
 {{with .Draft}}<p class="identity-note identity-draft border border-line p-3 mb-4" data-identity-draft>{{t "theme.identity.draft_pending" .SavedAt}}</p>{{end}}
 {{with .Rebased}}<p class="identity-note border border-line p-3 mb-4" role="note" data-identity-rebased>{{t "theme.identity.draft_rebased" .}}</p>{{end}}
 <form data-identity-form method="post" action="/admin/appearance/identity" class="identity-layout" novalidate>
@@ -25,19 +25,19 @@
 <fieldset class="border border-line p-4"><legend class="px-2">{{t "theme.identity.logos"}}</legend>
 <div class="grid gap-4 sm:grid-cols-2">{{range .Logos}}<div data-identity-logo="{{.Key}}"><span class="block font-medium mb-1">{{.Label}}</span>{{template "media_picker_slot" .}}<p class="mt-1 text-xs text-muted">{{.Help}}</p>{{template "partials/field_errors" .Error}}</div>{{end}}</div>
 </fieldset>
-<fieldset class="border border-line p-4" {{if not .Supports}}disabled{{end}}><legend class="px-2">{{t "theme.identity.colors"}}</legend>
+<fieldset class="border border-line p-4" {{if not .CanDesign}}disabled{{end}}><legend class="px-2">{{t "theme.identity.colors"}}</legend>
 <div class="grid gap-4 sm:grid-cols-3">{{range .Fields}}{{if or (eq .Key "identity_accent") (eq .Key "identity_background") (eq .Key "identity_text")}}<div data-identity-color="{{.Key}}">{{template "fields/field" .}}</div>{{end}}{{end}}</div>
 <p class="mt-3 text-sm" data-identity-contrast aria-live="polite" data-text="{{.Contrast.Text}}" data-back="{{.Contrast.Back}}" data-pass-text="{{t "theme.identity.contrast_pass"}}" data-fail-text="{{t "theme.identity.contrast_fail"}}">{{t "theme.identity.contrast"}}: <strong data-contrast-ratio>{{if .Contrast.Shown}}{{.Contrast.Ratio}}:1{{end}}</strong> <span data-contrast-verdict>{{if not .Contrast.Shown}}{{t "theme.identity.contrast_none"}}{{else if .Contrast.Pass}}{{t "theme.identity.contrast_pass"}}{{else}}{{t "theme.identity.contrast_fail"}}{{end}}</span></p>
 {{with .Contrast.OnAccent}}<p class="text-sm text-muted" data-identity-on-accent>{{t "theme.identity.on_accent"}}: <code>{{.}}</code></p>{{end}}
 </fieldset>
-<fieldset class="border border-line p-4" {{if not .Supports}}disabled{{end}}><legend class="px-2">{{t "theme.identity.fonts"}}</legend>
+<fieldset class="border border-line p-4" {{if not .CanDesign}}disabled{{end}}><legend class="px-2">{{t "theme.identity.fonts"}}</legend>
 <div class="grid gap-4 sm:grid-cols-3">{{range .Fields}}{{if or (eq .Key "identity_heading_font") (eq .Key "identity_body_font") (eq .Key "identity_latin_font")}}<div>{{template "fields/field" .}}</div>{{end}}{{end}}</div>
 </fieldset>
-<fieldset class="border border-line p-4" {{if not .Supports}}disabled{{end}}><legend class="px-2">{{t "theme.identity.shape"}}</legend>
+<fieldset class="border border-line p-4" {{if not .CanDesign}}disabled{{end}}><legend class="px-2">{{t "theme.identity.shape"}}</legend>
 <div class="grid gap-4 sm:grid-cols-3">{{range .Fields}}{{if or (eq .Key "identity_scheme") (eq .Key "identity_radius") (eq .Key "identity_spacing")}}<div>{{template "fields/field" .}}</div>{{end}}{{end}}</div>
 </fieldset>
 <details class="border border-line p-4 rounded" {{if index .Errors "custom_css"}}open{{end}}><summary class="font-medium">{{t "theme.identity.custom"}}</summary>
-<fieldset class="mt-3 border-0 p-0" {{if not .Supports}}disabled{{end}}>{{range .Fields}}{{if eq .Key "custom_css"}}{{template "fields/field" .}}{{end}}{{end}}</fieldset></details>
+<fieldset class="mt-3 border-0 p-0" {{if not .CanDesign}}disabled{{end}}>{{range .Fields}}{{if eq .Key "custom_css"}}{{template "fields/field" .}}{{end}}{{end}}</fieldset></details>
 <div class="identity-actions flex flex-wrap gap-3 items-center">
 <button type="submit" name="action" value="apply" class="identity-primary px-4 py-2 rounded">{{t "theme.identity.apply"}}</button>
 <button type="submit" name="action" value="draft" class="border border-line bg-panel px-4 py-2 rounded">{{t "theme.identity.save_draft"}}</button>
@@ -60,7 +60,7 @@
 {{if .CanImport}}<form method="post" action="/admin/appearance/identity" class="identity-import border border-line p-4 rounded mt-6"><input type="hidden" name="_csrf" value="{{csrf}}"><h3 class="font-medium">{{t "theme.identity.import"}}</h3><p class="text-sm text-muted my-2">{{t "theme.identity.import_help"}}</p><button type="submit" name="action" value="import" class="border border-line bg-panel px-4 py-2 rounded">{{t "theme.identity.import"}}</button></form>{{end}}
 <section class="identity-history mt-8" aria-labelledby="identity-history-title">
 <h3 id="identity-history-title" class="font-medium">{{t "theme.identity.history"}}</h3>
-<p class="text-sm text-muted my-2">{{t "theme.identity.history_help" 10}}</p>
+<p class="text-sm text-muted my-2">{{t "theme.identity.history_help" .HistoryKeep}}</p>
 {{if not .HistoryValid}}<p class="border border-line p-3 text-sm" role="note">{{t "theme.identity.history_invalid"}}</p>{{end}}
 {{if .History}}<ol class="identity-revisions">{{range .History}}<li class="flex flex-wrap items-center gap-3 border-b border-line py-2">
 <i class="identity-swatch" style="background-color:{{if .Accent}}{{.Accent}}{{else}}transparent{{end}}" aria-hidden="true"></i>

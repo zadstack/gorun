@@ -191,7 +191,7 @@ the head. No compiler runs in the browser and the app needs no Node.
 
 ## Site identity
 
-A theme opts in by listing `"identity"` in its `theme.json` `supports` (the five catalog themes `default`, `business`, `magazine`, `portfolio` and `docs` do). **Appearance → Identity** (`/admin/appearance/identity`, permission `settings.manage`) is the one place that edits it, together with the site name, tagline and the four logo slots (`site.title`, `site.tagline`, `site.logo`, `site.logo_light`, `site.logo_dark`, `site.icon`); the same identity group also appears at the end of **Appearance → Theme settings** (a theme that declares one of these keys keeps its own definition). `{{identity .}}` prints the stored values. Values are stored per theme as `theme.<slug>.<key>`; empty values keep the theme's design.
+A theme opts in by listing `"identity"` in its `theme.json` `supports` (the five catalog themes `default`, `business`, `magazine`, `portfolio` and `docs` do). **Appearance → Identity** (`/admin/appearance/identity`; the page needs `settings.manage`, and colours, fonts, shape and custom CSS additionally need `themes.manage`, the permission that guards the same keys on Theme settings; without it those fields are disabled and ignored on save) is the one place that edits it, together with the site name, tagline and the four logo slots (`site.title`, `site.tagline`, `site.logo`, `site.logo_light`, `site.logo_dark`, `site.icon`); the same identity group also appears at the end of **Appearance → Theme settings** (a theme that declares one of these keys keeps its own definition). `{{identity .}}` prints the stored values. Values are stored per theme as `theme.<slug>.<key>`; empty values keep the theme's design.
 
 ### Draft, preview, apply, revert
 

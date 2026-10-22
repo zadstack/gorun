@@ -104,3 +104,15 @@ func TestSettingFuncHidesIdentityDraftAndHistory(t *testing.T) {
 	}
 	mustContain(t, rec.Body.String(), "D[]H[]A[#c2410c]")
 }
+
+// A draft's header link shows in the preview, like its colours.
+func TestIdentityPreviewUsesDraftHeaderLinks(t *testing.T) {
+	e := newEnv(t, "../../themes")
+	e.setting("theme.default.cta_label", "Live link")
+	e.setting("theme.default.cta_url", "/live")
+	s := snap("default", nil, map[string]string{"site.title": "S"})
+	s.Links = map[string]string{"cta_label": "Draft link", "cta_url": "/draft-link"}
+	rec := previewRequest(e, IdentityPreviewOptions{View: "home", Locale: "en", Snapshot: s})
+	mustContain(t, rec.Body.String(), "Draft link", "/draft-link")
+	mustNotContain(t, rec.Body.String(), "Live link")
+}
