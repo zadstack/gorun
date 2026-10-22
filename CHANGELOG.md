@@ -5,6 +5,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-10-22
+
+### Fixed
+
+- `GET /api/v1/site/info`: every `logos.*.url` value now carries provenance. When a logo is not
+  configured, its media id no longer exists, the media module is absent, or the mark comes from
+  the theme manifest, `url` reports the same source and reason as the logo itself instead of an
+  empty value. Found during the 0.15.0 rollout; no change to site content, settings or logos.
+
 ## [0.15.0] - 2026-10-22
 
 ### Staged update lifecycle
