@@ -28,6 +28,16 @@ func TestModulesPageRendersCatalogAndRefusesAlwaysOn(t *testing.T) {
 	if resp.StatusCode != http.StatusSeeOther || !strings.Contains(resp.Header.Get("Location"), "error=not_optional") {
 		t.Fatalf("switching admin: %d %s", resp.StatusCode, resp.Header.Get("Location"))
 	}
+	// The form needs a literal true or false; anything else changes nothing.
+	for _, v := range []url.Values{{}, {"enabled": {"maybe"}}, {"enabled": {"0"}}, {"enabled": {""}}} {
+		resp, _ = s.post("/admin/system/modules/admin/activation", v)
+		if resp.StatusCode != http.StatusSeeOther || !strings.Contains(resp.Header.Get("Location"), "error=invalid") {
+			t.Fatalf("form %v: %d %s", v, resp.StatusCode, resp.Header.Get("Location"))
+		}
+	}
+	if n := s.auditCount("module.activation"); n != 0 {
+		t.Fatalf("invalid forms audited %d activations", n)
+	}
 	resp, _ = s.post("/admin/system/modules/nope/activation", url.Values{"enabled": {"false"}})
 	if resp.StatusCode != http.StatusSeeOther || !strings.Contains(resp.Header.Get("Location"), "error=not_found") {
 		t.Fatalf("switching unknown: %d %s", resp.StatusCode, resp.Header.Get("Location"))

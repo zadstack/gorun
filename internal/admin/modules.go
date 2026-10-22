@@ -388,14 +388,16 @@ func (h *handlers) moduleCatalogAPIOperations() {
 	op := api.Op("PUT", "/system/modules/{name}/activation", "Set whether an optional module boots next time (data is kept either way; a restart applies it)",
 		[]string{"system"}, []string{PermSettings}, ModuleActivation{}, CatalogEntry{}, h.moduleActivationAPI)
 	op.Params = []kernel.APIParam{{Name: "name", In: "path", Type: "string", Required: true, Description: "Module name as listed by GET /system/modules"}}
-	op.Contract = &kernel.APIContract{Errors: []kernel.APIErrorResponse{{Status: 404, Code: "not_found", Description: "No such module in this build"},
+	op.Contract = &kernel.APIContract{Errors: []kernel.APIErrorResponse{{Status: 422, Code: "validation_failed", Description: "enabled missing, null or not a boolean"}, {Status: 404, Code: "not_found", Description: "No such module in this build"},
 		{Status: 409, Code: "not_optional", Description: "The module is always on, or its activation is forced by the operator config"}}}
 	h.d.API.Add(op)
 }
 
 // ModuleActivation is the body of PUT /system/modules/{name}/activation.
+// Enabled is required: a missing or null value is rejected (422) rather
+// than read as false, so a malformed request can never switch a module off.
 type ModuleActivation struct {
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled"`
 }
 
 func (h *handlers) moduleCatalogAPI(w http.ResponseWriter, r *http.Request) {
@@ -447,7 +449,11 @@ func (h *handlers) moduleActivationAPI(w http.ResponseWriter, r *http.Request) {
 		api.Fail(w, r, err)
 		return
 	}
-	e, err := h.setModuleActivation(r.Context(), chi.URLParam(r, "name"), in.Enabled)
+	if in.Enabled == nil {
+		api.WriteError(w, http.StatusUnprocessableEntity, "validation_failed", "enabled must be true or false", map[string]string{"enabled": "required"})
+		return
+	}
+	e, err := h.setModuleActivation(r.Context(), chi.URLParam(r, "name"), *in.Enabled)
 	switch {
 	case errors.Is(err, errNotOptional):
 		api.WriteError(w, http.StatusConflict, "not_optional", "this module is always on or forced by the operator config", nil)
@@ -514,7 +520,17 @@ func (h *handlers) modulesActivationHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	name := chi.URLParam(r, "name")
-	_, err := h.setModuleActivation(r.Context(), name, r.Form.Get("enabled") == "true")
+	var enabled bool
+	switch r.Form.Get("enabled") {
+	case "true":
+		enabled = true
+	case "false":
+		enabled = false
+	default: // missing or anything else: no setting or audit write
+		http.Redirect(w, r, "/admin/system/modules?error=invalid", http.StatusSeeOther)
+		return
+	}
+	_, err := h.setModuleActivation(r.Context(), name, enabled)
 	switch {
 	case errors.Is(err, errNotOptional):
 		http.Redirect(w, r, "/admin/system/modules?error=not_optional", http.StatusSeeOther)

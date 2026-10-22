@@ -112,9 +112,25 @@ func TestModuleCatalogListsBuildAndSwitchesOptionalModules(t *testing.T) {
 	if status, _ := putJSON(app.Handler, "/api/v1/system/modules/nope/activation", `{"enabled":false}`, bearer); status != 404 {
 		t.Fatalf("disable unknown: %d", status)
 	}
+	// A missing, null or non-boolean "enabled" is refused and changes nothing.
+	for _, body := range []string{`{}`, `{"enabled":null}`, `{"enabled":"false"}`, `{"enabled":0}`} {
+		status, resp := putJSON(app.Handler, "/api/v1/system/modules/commerce/activation", body, bearer)
+		if status != 422 && status != 400 {
+			t.Fatalf("activation body %s: %d %s, want a validation error", body, status, resp)
+		}
+	}
+	if on, err := kernel.AddonEnabled(ctx, app.Deps.DB, "commerce"); err != nil || !on {
+		t.Fatalf("invalid bodies must not write the setting: on=%v err=%v", on, err)
+	}
+	if n := auditRows(t, app, "module.activation"); n != 0 {
+		t.Fatalf("invalid bodies audited %d activations", n)
+	}
 	status, body := putJSON(app.Handler, "/api/v1/system/modules/commerce/activation", `{"enabled":false}`, bearer)
 	if status != 200 {
 		t.Fatalf("disable commerce: %d %s", status, body)
+	}
+	if n := auditRows(t, app, "module.activation"); n != 1 {
+		t.Fatalf("activation audited %d times, want 1", n)
 	}
 	c = entry(t, catalogOf(t, app.Handler, bearer), "commerce")
 	if !c.State.Enabled || c.State.Desired == nil || *c.State.Desired || !c.State.PendingRestart || c.State.Status != "pending_disable" {
@@ -209,6 +225,15 @@ func freshKey(t *testing.T, app *kernel.App, n int) http.Header {
 		t.Fatal(err)
 	}
 	return http.Header{"Authorization": {"Bearer " + plain}}
+}
+
+func auditRows(t *testing.T, app *kernel.App, action string) int {
+	t.Helper()
+	var n int
+	if err := app.Deps.DB.QueryRow(`SELECT count(*) FROM audit_log WHERE action = ?`, action).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
 }
 
 func messageTexts(e admin.CatalogEntry, locale string) []string {
