@@ -3,14 +3,14 @@
 {{part "shell" .}}
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
-{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
+{{$hasCTA := and $ctaLabel $ctaURL}}
 <header data-shell-header="{{$shellHeader}}" class="ed-header">
   <div class="ed-topline gp-site-width"><span>{{t "ed.independent"}}</span><span>{{t "ed.reading"}}</span></div>
   <div class="ed-masthead gp-site-width"><a class="ed-wordmark" href="{{url "/"}}">{{with logo "primary"}}{{brandImg . "thumbnail" "ed-logo"}}{{end}}<span>{{.Site.Title}}</span></a>{{with .Site.Tagline}}<p>{{.}}</p>{{end}}</div>
   <div class="ed-nav-shell gp-site-width">
     {{with menu "primary"}}<nav class="ed-desktop-nav" aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}
     <div class="ed-nav-tools">
-      <a class="gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>
+      {{if $hasCTA}}<a class="gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>{{end}}
       <a href="{{url "/search"}}">{{t "search"}} <span class="gr-ext-arrow" aria-hidden="true">↗</span></a>
       {{range .Alternates}}{{if ne .Locale locale}}<a href="{{.URL}}" hreflang="{{.Locale}}" lang="{{.Locale}}">{{.Label}}</a>{{end}}{{end}}
       {{with menu "primary"}}<details class="ed-mobile-nav"><summary>{{t "menu"}}</summary><nav aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav></details>{{end}}

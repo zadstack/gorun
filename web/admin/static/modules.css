@@ -1,0 +1,38 @@
+/* System → Modules: one row per entry with a header line, a summary and a
+   three-column detail grid that collapses on phones. Logical properties keep
+   Arabic (RTL) and English (LTR) identical. */
+.admin-modules .mod-list{display:grid;gap:.5rem}
+.admin-modules .mod-row{display:grid;gap:.5rem;padding:.75rem 1rem;border:1px solid var(--line);border-radius:8px;background:var(--panel);min-width:0}
+.admin-modules .mod-head{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem .5rem;min-width:0}
+.admin-modules .mod-title{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.admin-modules .mod-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted);direction:ltr;unicode-bidi:isolate}
+.admin-modules .mod-chips{display:inline-flex;flex-wrap:wrap;gap:.25rem}
+.admin-modules .mod-actions{margin-inline-start:auto;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+.admin-modules .mod-summary{margin:0;color:var(--muted);font-size:.875rem;line-height:1.5;max-width:72ch}
+.admin-modules .mod-meta{margin:0;font-size:11px;color:var(--muted)}
+.admin-modules .mod-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem 1.25rem;border-top:1px solid var(--line);padding-top:.5rem}
+.admin-modules .mod-cell{min-width:0}
+.admin-modules .mod-cell dt{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:.25rem}
+html[dir=ltr] .admin-modules .mod-cell dt{text-transform:uppercase;letter-spacing:.04em;font-size:10px}
+.admin-modules .mod-cell dd{margin:0;font-size:.8125rem;line-height:1.5;overflow-wrap:anywhere}
+.admin-modules .mod-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;direction:ltr;unicode-bidi:isolate;display:inline}
+.admin-modules .mod-cell details summary{cursor:pointer;color:var(--ink);min-height:28px;display:inline-flex;align-items:center}
+.admin-modules .mod-reg{display:grid;grid-template-columns:auto minmax(0,1fr);gap:.125rem .5rem;margin-top:.375rem;font-size:11px}
+.admin-modules .mod-reg dt{margin:0;color:var(--muted)}
+.admin-modules .mod-reg dd{margin:0;overflow-wrap:anywhere}
+.admin-modules .mod-messages{display:grid;gap:.25rem;margin:0;padding:0;list-style:none;font-size:.8125rem}
+.admin-modules .mod-messages li{padding-inline-start:.75rem;border-inline-start:2px solid var(--line)}
+.admin-modules .mod-messages li[data-message=warning]{border-inline-start-color:var(--amber)}
+.admin-modules .mod-link{color:var(--blue);text-decoration:underline;text-underline-offset:2px}
+.admin-modules form{margin:0}
+@media(max-width:767px){
+ .admin-modules .mod-row{padding:.75rem}
+ .admin-modules .mod-grid{grid-template-columns:1fr}
+ .admin-modules .mod-actions{margin-inline-start:0;width:100%}
+ .admin-modules .mod-actions button,.admin-modules .mod-actions a{min-height:44px}
+}
+/* An opened registration list takes the whole row; identifiers stay whole and wrap between items. */
+.admin-modules .mod-cell:has(details[open]){grid-column:1/-1}
+.admin-modules .mod-reg .mod-code{white-space:nowrap;display:inline-block}
+.admin-modules .mod-reg dd{overflow-wrap:normal;word-break:normal}
+.admin-modules .mod-reg dt{white-space:nowrap}

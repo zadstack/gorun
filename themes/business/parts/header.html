@@ -3,9 +3,10 @@
 {{part "shell" .}}
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
-{{if not (and $ctaLabel $ctaURL)}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
+{{$hasCTA := and $ctaLabel $ctaURL}}
+{{- /* The header already has a search form, so no fallback button: a CTA shows only when configured. */ -}}
 <header data-shell-header="{{$shellHeader}}" class="sb-header"><div class="sb-header-inner">
 <a class="sb-brand" href="{{url "/"}}">{{with logo "primary"}}{{brandImg . "thumbnail" "sb-logo"}}{{else}}<span class="sb-mark" aria-hidden="true">+</span>{{end}}<span>{{.Site.Title}}</span></a>
 {{with menu "primary"}}<nav class="sb-desktop-nav" aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}
-<div class="sb-header-tools"><form action="{{url "/search"}}" method="get" role="search"><label class="sb-sr" for="site-search">{{t "search"}}</label><input id="site-search" name="q" type="search" placeholder="{{t "search_placeholder"}}"></form>{{range .Alternates}}{{if ne .Locale locale}}<a class="sb-language" href="{{.URL}}" hreflang="{{.Locale}}" lang="{{.Locale}}">{{.Label}}</a>{{end}}{{end}}<a class="sb-header-cta gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>{{with menu "primary"}}<details class="sb-mobile-nav"><summary>{{t "menu"}}</summary><nav aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav></details>{{end}}</div>
+<div class="sb-header-tools"><form action="{{url "/search"}}" method="get" role="search"><label class="sb-sr" for="site-search">{{t "search"}}</label><input id="site-search" name="q" type="search" placeholder="{{t "search_placeholder"}}"></form>{{range .Alternates}}{{if ne .Locale locale}}<a class="sb-language" href="{{.URL}}" hreflang="{{.Locale}}" lang="{{.Locale}}">{{.Label}}</a>{{end}}{{end}}{{if $hasCTA}}<a class="sb-header-cta gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>{{end}}{{with menu "primary"}}<details class="sb-mobile-nav"><summary>{{t "menu"}}</summary><nav aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav></details>{{end}}</div>
 </div></header><main id="main" tabindex="-1" class="sb-main">

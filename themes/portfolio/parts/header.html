@@ -4,7 +4,6 @@
 {{$ctaLabel := setting (printf "theme.%s.cta_label" .Theme.Slug)}}
 {{$ctaURL := setting (printf "theme.%s.cta_url" .Theme.Slug)}}
 {{$hasCTA := and $ctaLabel $ctaURL}}
-{{if not $hasCTA}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="studio-header">
  <div class="studio-shell studio-header-inner">
   <a href="{{url "/"}}" class="studio-brand">{{with logo "primary"}}{{brandImg . "thumbnail" "studio-logo"}}{{else}}<span class="studio-monogram" aria-hidden="true">✳</span>{{end}}<span>{{.Site.Title}}</span></a>
@@ -14,7 +13,7 @@
     {{range .Alternates}}{{if ne .Locale locale}}<a class="studio-locale" href="{{.URL}}" lang="{{.Locale}}" hreflang="{{.Locale}}">{{.Label}}</a>{{end}}{{end}}
     {{if $hasCTA}}<a class="gr-btn" href="{{url $ctaURL}}">{{$ctaLabel}}</a>{{end}}
   </div>
-  <a class="gr-btn studio-header-cta-mobile" href="{{url $ctaURL}}">{{$ctaLabel}}</a>
+  {{if $hasCTA}}<a class="gr-btn studio-header-cta-mobile" href="{{url $ctaURL}}">{{$ctaLabel}}</a>{{end}}
   <details class="studio-navigation">
    <summary>{{t "menu"}} <span aria-hidden="true">+</span></summary>
    <div class="studio-navigation-panel">
