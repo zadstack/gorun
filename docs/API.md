@@ -771,3 +771,28 @@ which callers should inspect rather than assuming every image has every size.
 `PATCH /api/v1/media/{id}` changes metadata only: omitted/null fields are retained,
 while an explicit empty string clears the corresponding field. MCP `get_media`
 exposes the same media object; `update_media` uses the approval pipeline.
+
+## Backup schedule
+
+`GET /api/v1/system/backups/schedule` and `PUT` on the same path require
+`system.backup`. GET reads local saved state only; neither request uploads files.
+PUT replaces the whole policy (all three fields are required and non-null):
+
+```json
+{"hours":24,"retain":7,"remote_destination":""}
+```
+
+`hours`: 0 disables scheduling, otherwise 1–168. `retain`: 0 disables local
+cleanup, otherwise 1–100 verified pairs. Empty `remote_destination` disables
+scheduled uploads. To opt in, use the ID of the currently active backup-purpose
+destination from Settings → Storage (also returned as
+`active_remote_destination` by GET). Invalid/changed destinations return 422
+`validation_failed` without partially changing the policy. Unknown fields,
+trailing JSON and bodies over 4096 bytes return 400 `bad_request`.
+
+The response uses the standard envelope and includes `hours`, `retain`,
+`remote_destination`, `active_remote_destination`, `last_local`, `last_attempt`,
+`last_upload`, and `last_acknowledged_upload`. Empty evidence timestamps mean
+not recorded, not success. Upload acknowledgement is not remote read-back or
+restore evidence. No credentials are returned. Policy changes are audited as
+`system.backup_schedule`; the scheduler runs them later in job `backup.scheduled`.

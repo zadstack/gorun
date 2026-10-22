@@ -132,8 +132,10 @@ CLI `--include-secrets` option stores them in plaintext and requires protected
 offline handling. Database/file capture is not one atomic filesystem snapshot:
 pause content/media writes for a fully consistent recovery point.
 
-Copies on the same disk are not off-site protection. The existing encrypted S3
-upload remains manual; the local schedule does not upload or delete cloud objects.
+Copies on the same disk are not off-site protection. Encrypted S3/R2
+uploads can be manual or explicitly enabled for the schedule. A failed scheduled
+upload keeps local copies and skips cleanup for that run; cloud objects are never
+automatically deleted.
 See [storage](STORAGE.md), [production recovery](PRODUCTION.md) and
 [staging/cutover](STAGING.md).
 
@@ -142,7 +144,9 @@ See [storage](STORAGE.md), [production recovery](PRODUCTION.md) and
 من **تشغيل النظام ← النسخ الاحتياطية** اختر يوميًا أو أسبوعيًا وحدد عدد النسخ
 السليمة التي تريد الاحتفاظ بها. يعرض النظام آخر نجاح والمساحة، وينبّه داخل لوحة
 النسخ وحالة النظام عند الفشل. النسخة الجديدة لا تحذف نسخة سليمة قديمة إلا بعد
-اجتياز الفحص؛ النسخ التالفة أو الجزئية تُترك للمراجعة.
+اجتياز الفحص؛ النسخ التالفة أو الجزئية تُترك للمراجعة. يمكنك تفعيل رفع النسخ
+المجدولة المشفّرة إلى وجهة الباك أب صراحةً؛ عند فشل الرفع تبقى النسخ المحلية
+ويظهر تحذير مستقل عن نجاح الفحص المحلي.
 
 قبل نقل الموقع للعمل، استخدم `gorun backup-preview --input …` لمعاينة نسخة
 مؤقتة على localhost دون مهام أو تكاملات أو دخول للحسابات أو تشغيل إضافات.

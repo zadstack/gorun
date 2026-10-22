@@ -1,0 +1,11 @@
+{
+  "enable": "Upload each scheduled backup to this destination",
+  "configure": "Choose a backup destination to enable scheduled encrypted uploads.",
+  "changed": "The selected destination changed or was disabled. Scheduled uploads are paused until you explicitly select the current destination and save. Local backups continue.",
+  "help": "Uploads run in a background job after local verification. If upload fails, local copies are kept and retention cleanup is skipped for that run. The next due backup tries again; no cloud objects are deleted. Provider acknowledgement is not a read-back or restore test.",
+  "warning": "Local backup verified; remote upload or its result recording failed. Local copies were kept and retention cleanup was skipped. Check the destination and the latest upload receipt.",
+  "last_success": "Last acknowledged complete upload",
+  "invalid_destination": "The backup destination changed or is unavailable. Reload, select the current backup destination and save again.",
+  "schedule_title": "Backup schedule and retention",
+  "storage_help": "Create encrypted backups manually, or explicitly enable scheduled uploads on Backups. Backup objects are never served as website media."
+}

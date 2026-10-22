@@ -5,6 +5,16 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Scheduled encrypted remote backups
+
+- Allow explicit opt-in to upload verified scheduled backups to the active R2/S3
+  backup destination; preserve local copies and skip cleanup on upload failure.
+  Keep the last fully acknowledged upload separately from the latest attempt.
+- Run scheduled snapshots/uploads in a deduplicated background job, and pause
+  uploads when the selected destination is disabled or replaced.
+- Add bilingual backup controls, remote failure warnings in System Health, and
+  documented `GET/PUT /api/v1/system/backups/schedule` operations.
+
 ### Staged update lifecycle
 
 - Replace the single deploy request with a persisted operation whose phases — compatibility,

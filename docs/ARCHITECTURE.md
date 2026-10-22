@@ -394,3 +394,15 @@ After grant mutations, `auth.ReloadRoles` refreshes the in-memory map used by `C
 Builder starter runs store an optional profile in their existing settings JSON; no new database migration or public API is required. Profile validation precedes immutable run capture and page creation. Resumable preparation uses the captured profile, preserving independent edits. Description/hero metadata is saved on the draft homepage. Batch publication updates content, draft baselines, menu, front page, identity and nonempty profile settings in one transaction. The theme preview uses request-local logo settings and never mutates global branding.
 
 Readiness is an authenticated GET with `settings.manage`, served by builder at `/admin/appearance/readiness`. It queries public published content (100-item cap) and raw primary menu references (200-link cap), rather than trusting resolved menus that hide draft targets. Local files use confined filesystem roots; external resources are marked unverified without HTTP requests. Identity/metadata, image/alt/sample text, SMTP configuration, URL configuration and backup-pair metadata have separate evidence rows. DB failures and partial inspection remain unverified; receipt, DNS/TLS, rendered routes and restore need separate runtime acceptance.
+
+## Scheduled remote backups
+
+Admin owns the opt-in `backup.schedule.remote_destination` policy. Its hourly
+cron queues one `backup.scheduled` job (at most one queued/running), instead of
+performing network I/O on the serial cron loop. The existing data lease and
+backup mutex cover local snapshot creation, verification, bounded encrypted
+upload and pruning. A remote failure records a separate warning and skips
+pruning, preserving local recovery copies; no bucket retention/ACL is changed.
+The job has one attempt, so a provider failure is retried with the next due
+snapshot rather than creating duplicates through queue retries. The API and
+form share one transactional policy writer. No new modules or boot-order changes.

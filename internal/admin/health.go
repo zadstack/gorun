@@ -291,6 +291,9 @@ func (h *handlers) backupHealth(ctx context.Context, tr func(string, ...any) str
 	}
 	if state.Status == "warning" {
 		check.Status, check.Detail = CheckWarn, tr("admin.backups.alert_retention")
+		if state.Stage == "remote" {
+			check.Detail = tr("remotebackup.warning")
+		}
 		return check
 	}
 	if hours < 1 {

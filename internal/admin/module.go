@@ -135,11 +135,12 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.capabilityTestAPIOperations()
 	h.updateAPIOperations()
 	h.observationAPIOperations()
+	h.backupScheduleAPIOperations()
 	h.roleAPIOperations()
 	h.keyAPIOperations()
 	h.canvasReadAPIOperations()
 	d.Jobs.Cron("jobs.prune", time.Hour, h.pruneJobs)
-	d.Jobs.Cron("backup.schedule", time.Hour, h.backupScheduleTick)
+	h.registerScheduledBackups()
 	d.Jobs.Cron("observe.tick", time.Minute, h.observe.Tick)
 	d.Jobs.Cron("update.reconcile", time.Minute, func(ctx context.Context) error { return h.update.Reconcile(ctx, false) })
 	return nil
