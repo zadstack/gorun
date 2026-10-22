@@ -40,14 +40,20 @@ var reservedNames = []string{"db", "i18n", "audit", "jobs", "diagnostics", "obse
 
 // MigrateAll validates the module list like Boot, then applies kernel
 // infrastructure migrations (audit, jobs, diagnostics, observe, update) and every module's migrations, in
-// order. Used by `gorun migrate`.
+// order. Optional modules are gated like Boot, with no operator config.
 func MigrateAll(ctx context.Context, d *sql.DB, mods []Module) error {
+	return MigrateAllWithConfig(ctx, config.Config{}, d, mods)
+}
+
+// MigrateAllWithConfig is MigrateAll honouring cfg.Addons, so `gorun migrate`
+// and `gorun serve` select the same modules. Used by the CLI.
+func MigrateAllWithConfig(ctx context.Context, cfg config.Config, d *sql.DB, mods []Module) error {
 	if err := validateModules(mods); err != nil {
 		return err
 	}
 	all := mods
 	var err error
-	mods, err = enabledModules(ctx, d, mods)
+	mods, err = enabledModules(ctx, cfg, slog.Default(), d, mods)
 	if err != nil {
 		return err
 	}
@@ -144,7 +150,7 @@ func BootWithOptions(ctx context.Context, cfg config.Config, mods []Module, opts
 		return fail(nil, err)
 	}
 	all := mods // disabled add-ons' applied migrations are still known
-	mods, err = enabledModules(ctx, d, mods)
+	mods, err = enabledModules(ctx, cfg, newLogger(cfg), d, mods)
 	if err != nil {
 		return fail(d, err)
 	}
