@@ -269,7 +269,7 @@ func TestBoundariesDocumentMatchesImportGraph(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc := string(raw)
+	doc := strings.ReplaceAll(string(raw), "\r\n", "\n")
 	start, end := strings.Index(doc, boundariesBegin), strings.Index(doc, boundariesEnd)
 	if start < 0 || end < start {
 		t.Fatalf("%s lacks the %s / %s markers", boundariesDoc, boundariesBegin, boundariesEnd)
