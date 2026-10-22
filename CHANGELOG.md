@@ -21,6 +21,17 @@ All notable changes to GoRun are recorded here. The format follows
   migration was applied; a database or media snapshot is never restored automatically.
 - Document `GET/POST /api/v1/system/update` and `/api/v1/system/update/operations[/{id}]` in OpenAPI.
 
+### Capability evidence
+
+- `GET /api/v1/site/capabilities` now separates available, enabled, configured, connected and
+  operation-tested, with each piece of evidence bound to the configuration revision and expiring
+  after 7 days (`stale` / `expired` keep the recorded result). Modules publish configuration
+  verdicts with a reason and repair step (`system.capabilities.modules`); the mail service is listed.
+- Add explicit, permissioned operation tests that run as isolated background jobs: S3 write/read/
+  delete of one probe object, one tiny AI completion, one mail to the requesting operator
+  (`system.capability_test`). Connectivity checks can be queued through the API and run on a
+  12-hour schedule; MCP has no operation test by design.
+
 ### Background observations
 
 - Add durable, revision-fenced observations for expensive or external checks: pages and read-only

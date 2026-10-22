@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/observe"
 )
 
 type connectionView struct {
@@ -219,10 +221,15 @@ func (h *handlers) connectionsTest(w http.ResponseWriter, r *http.Request) {
 		h.connectionError(w, r, err)
 		return
 	}
+	started := time.Now()
 	result, probeErr := probeConnection(r.Context(), c, s)
 	if err = h.writeConnection(r.Context(), recordConnectionProbe(c, result, probeErr), c.Version, "connections.test", false); err != nil {
 		h.connectionError(w, r, err)
 		return
+	}
+	// The same evidence feeds the capability report, bound to this revision.
+	if err := h.observe.Record(r.Context(), kindConnection, c.ID, c.Version, observe.Result{Scope: "connectivity", Data: map[string]any{"count": result.Count, "protocol": result.Protocol}}, probeErr, time.Since(started)); err != nil {
+		h.d.Log.Warn("admin: record connection observation", "err", err)
 	}
 	redirect(w, r, "/admin/settings/connections")
 }

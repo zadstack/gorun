@@ -7,11 +7,13 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/mailer"
+	"github.com/zadstack/gorun/internal/observe"
 )
 
 var mailKeys = []string{"mail.provider", "mail.resend_api_key", "mail.password", "mail.host", "mail.port", "mail.username", "mail.from", "mail.from_name", "mail.tls"}
@@ -107,11 +109,25 @@ func (h *handlers) settingsMailTest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	u := auth.UserFromContext(ctx)
 	res := mailTestResult{OK: true, Message: "admin.mail.test_sent", To: u.Email}
-	if err := h.sendTestMail(r, u); err != nil {
+	started := time.Now()
+	err := h.sendTestMail(r, u)
+	if err != nil {
 		h.d.Log.Error("admin: test mail", "err", err)
 		res = mailTestResult{Message: "admin.mail.test_failed", To: u.Email}
 	} else if !h.mail.Configured(ctx) {
 		res.Message = "admin.mail.test_logged"
+	}
+	if h.mail.Configured(ctx) {
+		// Record the explicit send as operation evidence for the current mail settings.
+		if rev, rerr := h.mailRevision(ctx, mailOperationKey(u)); rerr == nil && rev != "" {
+			var runErr error
+			if err != nil {
+				runErr = errors.New("message was not accepted by the mail server")
+			}
+			if rerr := h.observe.Record(ctx, kindOperationMail, mailOperationKey(u), rev, observe.Result{Scope: "operation:send", Data: map[string]any{"recipient": "requesting_operator"}}, runErr, time.Since(started)); rerr != nil {
+				h.d.Log.Warn("admin: record mail observation", "err", rerr)
+			}
+		}
 	}
 	if r.Header.Get("HX-Request") == "true" {
 		h.tpl.RenderWith(w, r, http.StatusOK, "", "pages/system/fragments/mail_test_result.html", res)

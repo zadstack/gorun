@@ -79,6 +79,11 @@ func (h *handlers) loadAIConfig(ctx context.Context) (aiConfig, error) {
 // aiComplete sends one system + user turn to the provider and returns the
 // reply text.
 func aiComplete(ctx context.Context, c aiConfig, system, user string) (string, error) {
+	return aiCompleteBounded(ctx, c, system, user, aiMaxTokens)
+}
+
+// aiCompleteBounded is aiComplete with an explicit output token cap.
+func aiCompleteBounded(ctx context.Context, c aiConfig, system, user string, maxTokens int) (string, error) {
 	var endpoint string
 	var payload any
 	headers := http.Header{"Content-Type": {"application/json"}}
@@ -88,13 +93,13 @@ func aiComplete(ctx context.Context, c aiConfig, system, user string) (string, e
 		if c.NamedConnection && c.BaseURL != "" {
 			endpoint = strings.TrimRight(c.BaseURL, "/") + "/messages"
 		}
-		payload = map[string]any{"model": c.Model, "max_tokens": aiMaxTokens, "system": system,
+		payload = map[string]any{"model": c.Model, "max_tokens": maxTokens, "system": system,
 			"messages": []map[string]string{{"role": "user", "content": user}}}
 		headers.Set("x-api-key", c.APIKey)
 		headers.Set("anthropic-version", anthropicVersion)
 	case AIProviderOpenAI:
 		endpoint = c.BaseURL + "/chat/completions"
-		payload = map[string]any{"model": c.Model, "messages": []map[string]string{
+		payload = map[string]any{"model": c.Model, "max_tokens": maxTokens, "messages": []map[string]string{
 			{"role": "system", "content": system}, {"role": "user", "content": user}}}
 		if c.APIKey != "" {
 			headers.Set("Authorization", "Bearer "+c.APIKey)

@@ -107,6 +107,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 	obs, _ := kernel.Get[*observe.Service](d, observe.ServiceName)
 	s.registerObservation(obs)
 	d.Hooks.Filter(admin.HealthCheckFilter, 50, s.healthChecks)
+	d.Hooks.Filter(admin.ModuleRequirementFilter, 50, s.requirements)
 	if err := seedAccountRedirect(context.Background(), d); err != nil {
 		d.Log.Warn("commerce: default /my-account redirect not created", "err", err)
 	}
