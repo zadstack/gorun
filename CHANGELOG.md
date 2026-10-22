@@ -115,6 +115,18 @@ All notable changes to GoRun are recorded here. The format follows
 Existing installations keep data, settings, themes and saved checks; the new tables are additive.
 Publishing this release does not upgrade a running site process.
 
+### Integrations hub
+
+- Add Settings → Integrations: an encrypted Cloudflare API token with account selection and
+  per-scope permission lamps (token verify, R2, D1, Workers) refreshed as background observations;
+  paginated inventory of R2 buckets, D1 databases and Workers with an explicit incomplete state;
+  GoRun Edge confirmed only through the manager identity check (association recorded as
+  `workers_dev_host` or `operator_asserted`, never inferred from a name); binding an existing
+  bucket as media or backup destination with separate prefixes; and an SMTP section reusing the
+  mailer with a rate-limited, fully audited test message. Discovery never creates or modifies
+  resources. Mail operation evidence is re-bound to the provider and reply-to settings, so saved
+  mail evidence goes stale once after upgrading.
+
 ### Known limits in this release
 
 - MCP profiles have no operation test: invoking a tool executes a remote action, so `tested` stays
