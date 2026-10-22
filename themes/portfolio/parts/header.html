@@ -8,7 +8,7 @@
 {{if not $hasCTA}}{{$ctaLabel = t "search"}}{{$ctaURL = "/search"}}{{end}}
 <header data-shell-header="{{$shellHeader}}" class="studio-header">
  <div class="studio-shell studio-header-inner">
-  <a href="{{url "/"}}" class="studio-brand">{{with media (setting "site.logo")}}{{img . "thumbnail" "studio-logo"}}{{else}}<span class="studio-monogram" aria-hidden="true">✳</span>{{end}}<span>{{.Site.Title}}</span></a>
+  <a href="{{url "/"}}" class="studio-brand">{{with logo "primary"}}{{brandImg . "thumbnail" "studio-logo"}}{{else}}<span class="studio-monogram" aria-hidden="true">✳</span>{{end}}<span>{{.Site.Title}}</span></a>
   <div class="studio-desktop-navigation">
     {{with menu "primary"}}<nav aria-label="{{t "menu"}}"><ul>{{range .Items}}<li><a href="{{url .URL}}"{{if .OpenInNew}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></li>{{end}}</ul></nav>{{end}}
     <form action="{{url "/search"}}" method="get" role="search"><label class="sr-only" for="studio-desktop-search">{{t "search"}}</label><input id="studio-desktop-search" type="search" name="q" placeholder="{{t "search_placeholder"}}"><button type="submit">{{t "search"}}</button></form>

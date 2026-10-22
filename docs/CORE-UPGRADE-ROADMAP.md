@@ -81,7 +81,7 @@ deferred** — not in this PR, listed for the next one.
 | 1.3 | Declared vs effective colours and fonts after site customisation | complete | `appearance.declared` vs `colors/fonts`; `internal/theme: TestAppearanceSeparatesDeclaredFromEffectiveValues` |
 | 1.4 | Setting overrides and custom CSS with per-value provenance; `unavailable` when undecidable | complete | `overrides[]` with declared value; `custom_css` status; effective values unavailable with reason while declared stays; `scheme`/`radius` provenance |
 | 1.5 | Keep requests light; no browser rendering | complete | Only settings, media rows and the cached theme snapshot are read; no page render or browser. |
-| 1.6 | Shipped themes render dark/light/icon variants | partial | Catalog headers still print `site.logo`; the new `{{logo "dark"}}` / `{{themeLogo}}` funcs are available for themes to adopt. |
+| 1.6 | Shipped themes render dark/light/icon variants | complete | Every shipped header/footer uses `{{with logo "primary"}}{{brandImg …}}` (plain `<img>` without variants, `<picture>` with a dark source otherwise; forced dark scheme swaps them) and heads print `{{favicon}}`; `internal/theme: TestBrandImgAndFaviconFollowLogoVariants`. Light variant is served through the `prefers-color-scheme: light` source when dark is forced; no separate light-only markup. |
 
 ## Verification baseline
 

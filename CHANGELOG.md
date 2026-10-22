@@ -26,7 +26,8 @@ All notable changes to GoRun are recorded here. The format follows
 - Add `site.logo_dark`, `site.logo_light` and `site.icon` to General settings, the settings API and
   the MCP settings tool, with the same media validation as `site.logo`. Themes may ship marks in
   `theme.json` `logos` (files under `assets/`); site settings always win. New template funcs
-  `{{logo "dark"}}` and `{{themeLogo "icon"}}`.
+  `{{logo "dark"}}`, `{{themeLogo "icon"}}`, `{{brandImg}}` and `{{favicon}}`; every shipped theme
+  header, footer and head uses them, keeping the existing markup when no variant is set.
 - `GET /api/v1/site/info` resolves every logo variant with explicit precedence and `fallback`, and
   reports the site-served `/media/` path beside the storage URL so a logo that renders on pages is no
   longer reported unavailable when its storage URL is signed. Appearance now separates `declared`
