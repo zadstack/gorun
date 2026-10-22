@@ -64,10 +64,14 @@ and entitlement records.
 9. **Test and live mode.** Store settings keep separate test and live secrets and select the mode
    with `commerce.stripe_mode`. Store settings show the current mode as a badge and, for each mode,
    three separate states: **configured** (key and webhook secret present), **authenticated** (the
-   stored key passed a read-only `GET /v1/balance` after **Verify key**; the result is tied to that
-   key's fingerprint, so a replaced key is unverified again) and **webhook delivery verified** (a
-   signed event from Stripe reached `/webhooks/stripe/<mode>`; the local **Send test event** is
-   recorded as `source=local` and never counts). A key's presence or `sk_test_`/`sk_live_` prefix is
+   stored key passed a read-only `GET /v1/balance` after **Verify key**; the result is tied to a
+   keyed fingerprint of that key, so a replaced key is unverified again) and **webhook delivery
+   verified** (a signed event from Stripe reached `/webhooks/stripe/<mode>` while the current
+   credentials were in place: each event records `config_rev`, a keyed fingerprint of the mode's
+   key and webhook secret, and only events under the current revision count, so rotating the
+   webhook secret or pointing the slot at another account's key starts again from "unverified"
+   without touching the old rows; the local **Send test event** is recorded as `source=local` and
+   never counts). A key's presence or `sk_test_`/`sk_live_` prefix is
    only a hint, never verification. Switching to **test** needs no confirmation and no Stripe call
    (a live-prefixed key in the test slot is refused). Switching to **live** is refused unless the
    form carries the explicit confirmation, a live key that is not test-prefixed and a live webhook
@@ -81,10 +85,14 @@ and entitlement records.
    an event the test secret verified (a live-signed event is audited as `commerce.order.mismatch`
    with reason `stripe_mode`), and a refund uses the order's own mode's key. Orders from before
    this column keep `''` ("unrecorded").
-11. **Bootstrap.** `commerce.settings_version` pins `commerce.stripe_mode` once per store: a store
-   with no orders and no Stripe secret in settings or the environment starts in **test**; any other
-   store is pinned to the mode it already runs in (live when the value was absent). An absent
-   value still means live at read time; the bootstrap only makes the choice explicit.
+11. **Bootstrap.** `commerce.settings_version` pins `commerce.stripe_mode` once per store. Whether
+   the store is a fresh install comes from install provenance, never from activity: the kernel
+   stamps `kernel.install_epoch` only when it creates the database from nothing (no migration
+   ledger yet), so an upgraded site — populated or not, with or without orders or Stripe secrets —
+   has no stamp and is pinned to the mode it already runs in (live when the value was absent). A
+   stamped fresh install starts in **test**, unless `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`
+   already configure the live slot, which is pinned to live. An absent value still means live at
+   read time; the bootstrap only makes the choice explicit.
 
 ## Flow
 
@@ -289,7 +297,8 @@ another version and GoRun reads only stable `data.object` fields.
 | `commerce.stripe_mode` | `test` or `live`; absent means live. Pinned explicitly by the bootstrap (new stores: `test`). |
 | `commerce.stripe_test_secret_key`, `commerce.stripe_test_webhook_secret` | Encrypted test-mode secrets; no environment fallback. |
 | `commerce.settings_version` | Bootstrap steps applied to this store (`1`: mode pinned). |
-| `commerce.stripe_verify.<mode>` | Last read-only key check: key fingerprint, ok, livemode, time, error. Not a secret. |
+| `commerce.stripe_verify.<mode>` | Last read-only key check: keyed key fingerprint, ok, livemode, time, error. Not a secret. |
+| `kernel.install_epoch` | Written by the kernel once, only for a database it created from nothing; absent on upgraded sites. |
 
 Billing-server secrets are stored in `billing_servers.secret_enc`, encrypted with `db.Encrypt`
 (AAD = server id).

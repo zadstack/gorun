@@ -112,8 +112,8 @@ func (s *service) handleStripeEventFrom(ctx context.Context, payload []byte, sig
 	var paid *paidEvent
 	var hooks []hookEmit
 	err = db.InTx(ctx, s.db, func(tx *sql.Tx) error {
-		res, err := tx.ExecContext(ctx, `INSERT INTO stripe_events (id, type, received_at, payload_json, mode, source) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
-			ev.ID, string(ev.Type), s.nowString(), string(payload), mode, source)
+		res, err := tx.ExecContext(ctx, `INSERT INTO stripe_events (id, type, received_at, payload_json, mode, source, config_rev) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
+			ev.ID, string(ev.Type), s.nowString(), string(payload), mode, source, s.stripeConfigRev(ctx, mode))
 		if err != nil {
 			return fmt.Errorf("commerce: record stripe event: %w", err)
 		}

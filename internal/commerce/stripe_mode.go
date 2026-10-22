@@ -2,6 +2,7 @@ package commerce
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/stripe/stripe-go/v82"
 
+	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/settings"
 )
 
@@ -97,9 +99,27 @@ type stripeModeStatus struct {
 	WebhookURL        string // this mode's public endpoint (set for the settings page)
 }
 
-func keyFingerprint(key string) string {
-	sum := sha256.Sum256([]byte(key))
-	return hex.EncodeToString(sum[:8])
+// fingerprint is a keyed, truncated MAC of parts under the server secret:
+// it identifies a configuration without being derivable from the stored
+// value alone.
+func (s *service) fingerprint(parts ...string) string {
+	mac := hmac.New(sha256.New, s.d.Config.SecretKey)
+	for _, p := range parts {
+		mac.Write([]byte(p))
+		mac.Write([]byte{0})
+	}
+	return hex.EncodeToString(mac.Sum(nil)[:8])
+}
+
+func (s *service) keyFingerprint(key string) string { return s.fingerprint("commerce.stripe_key", key) }
+
+// stripeConfigRev identifies mode's current credentials (secret key and
+// webhook secret, from settings or the environment). Delivery evidence is
+// recorded under the revision in place when the event was verified and
+// counts only while that revision is current: rotating the webhook secret
+// or pointing the slot at another account's key starts from "unverified".
+func (s *service) stripeConfigRev(ctx context.Context, mode string) string {
+	return s.fingerprint("commerce.stripe_config", mode, s.stripeSecretFor(ctx, mode), s.webhookSecretFor(ctx, mode))
 }
 
 // keyPrefixHint classifies a key by its documented prefix. It is only a hint
@@ -169,7 +189,7 @@ func (s *service) authStatusFor(ctx context.Context, mode, key string) authStatu
 		return authStatus{State: authUnverified}
 	}
 	v, ok := s.loadVerification(ctx, mode)
-	if !ok || v.Fingerprint != keyFingerprint(key) {
+	if !ok || v.Fingerprint != s.keyFingerprint(key) {
 		return authStatus{State: authUnverified}
 	}
 	st := authStatus{CheckedAt: v.CheckedAt, Error: v.Error}
@@ -192,7 +212,7 @@ func (s *service) stripeStatus(ctx context.Context, mode string) stripeModeStatu
 	st.Auth = s.authStatusFor(ctx, mode, key)
 	var n int
 	var last string
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*), COALESCE(MAX(received_at), '') FROM stripe_events WHERE mode = ? AND source = 'stripe'`, mode).Scan(&n, &last); err == nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*), COALESCE(MAX(received_at), '') FROM stripe_events WHERE mode = ? AND source = 'stripe' AND config_rev = ?`, mode, s.stripeConfigRev(ctx, mode)).Scan(&n, &last); err == nil {
 		st.Delivery = deliveryStatus{Verified: n > 0, LastAt: last, Count: n}
 	}
 	return st
@@ -212,7 +232,7 @@ func (s *service) verifyStripeKey(ctx context.Context, mode string) (authStatus,
 // verifyKeyAs checks key as mode's key and records the outcome under that
 // key's fingerprint.
 func (s *service) verifyKeyAs(ctx context.Context, mode, key string) (authStatus, error) {
-	v := storedVerification{Fingerprint: keyFingerprint(key), CheckedAt: s.nowString()}
+	v := storedVerification{Fingerprint: s.keyFingerprint(key), CheckedAt: s.nowString()}
 	res, err := s.verifier.Verify(ctx, key)
 	if err != nil {
 		v.Error = truncate(err.Error(), 200)
@@ -284,11 +304,16 @@ func (s *service) validateModeSwitch(ctx context.Context, target string, in mode
 }
 
 // bootstrapStripeMode pins commerce.stripe_mode once per store (versioned by
-// commerce.settings_version). A store that has never sold anything and has
-// no Stripe secret anywhere starts in test mode; any other store is pinned
-// to the mode it already runs in (live when the setting is absent), so an
-// existing deployment never changes behaviour. The absent-means-live
-// fallback in stripeMode is untouched.
+// commerce.settings_version). Whether the store is a fresh install comes
+// from install provenance, never from activity: the kernel stamps
+// kernel.install_epoch only when it creates the database from nothing, so
+// an upgraded site — populated or not, with or without orders or Stripe
+// secrets — has no stamp and is pinned to the mode it already runs in
+// (live when the setting is absent). A fresh install starts in test mode,
+// unless its environment already configures the live slot
+// (STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET), which is the operator's
+// explicit choice and is pinned to live. The absent-means-live fallback in
+// stripeMode is untouched.
 func bootstrapStripeMode(ctx context.Context, s *service) error {
 	if s.d.Settings.GetString(ctx, SettingSettingsVersion, "") >= stripeModeSettingsVersion {
 		return nil
@@ -305,9 +330,9 @@ func bootstrapStripeMode(ctx context.Context, s *service) error {
 			return err
 		}
 		if fresh {
-			mode, reason = "test", "new_store"
+			mode, reason = "test", "fresh_install"
 		} else {
-			reason = "existing_store"
+			reason = "existing_or_upgraded_store"
 		}
 		if err := s.d.Settings.Set(ctx, SettingStripeMode, mode); err != nil {
 			return fmt.Errorf("commerce: pin stripe mode: %w", err)
@@ -320,22 +345,18 @@ func bootstrapStripeMode(ctx context.Context, s *service) error {
 	return nil
 }
 
-// storeIsNew is true when nothing suggests the store has run before: no
-// orders and no Stripe secret in settings or the environment.
+// storeIsNew is true only for a database the kernel stamped as created by
+// this binary (install provenance) whose environment does not already
+// configure the live slot.
 func (s *service) storeIsNew(ctx context.Context) (bool, error) {
-	var orders int
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM orders`).Scan(&orders); err != nil {
-		return false, fmt.Errorf("commerce: count orders: %w", err)
+	epoch, err := kernel.InstalledEpoch(ctx, s.db)
+	if err != nil {
+		return false, err
 	}
-	if orders > 0 || s.d.Config.Stripe.SecretKey != "" || s.d.Config.Stripe.WebhookSecret != "" {
-		return false, nil
+	if epoch < kernel.InstallEpoch {
+		return false, nil // created before the stamp existed: an upgrade
 	}
-	for _, k := range []string{SettingStripeSecret, SettingWebhookSecret, SettingStripeTestKey, SettingWebhookTest} {
-		if s.d.Settings.GetString(ctx, k, "") != "" {
-			return false, nil
-		}
-	}
-	return true, nil
+	return s.d.Config.Stripe.SecretKey == "" && s.d.Config.Stripe.WebhookSecret == "", nil
 }
 
 // stripeKeyForOrder is the key of the order's recorded mode; an order from

@@ -13,6 +13,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/config"
+	"github.com/zadstack/gorun/internal/kernel"
 )
 
 // fakeVerifier stands in for the read-only Stripe key check.
@@ -81,24 +82,54 @@ func TestStripeModeBootstrapNewStoreStartsInTest(t *testing.T) {
 }
 
 func TestStripeModeBootstrapExistingStoreKeepsLive(t *testing.T) {
-	e := boot(t) // Stripe key in the environment: an existing deployment
+	e := boot(t) // fresh database, but the environment configures the live slot
 	ctx := context.Background()
 	if got := e.svc.d.Settings.GetString(ctx, SettingStripeMode, ""); got != "live" {
-		t.Fatalf("existing store must be pinned to its effective mode live, got %q", got)
+		t.Fatalf("fresh install with STRIPE_* in the environment must be pinned live, got %q", got)
 	}
-	// A store without any key but with orders is existing too.
+	if epoch, err := kernel.InstalledEpoch(ctx, e.svc.db); err != nil || epoch != kernel.InstallEpoch {
+		t.Fatalf("install epoch = %d, %v", epoch, err)
+	}
+
+	// Upgrade fixture: a database created before the install stamp existed
+	// (no kernel.install_epoch), a populated CMS (admin user, product,
+	// settings), no orders and no Stripe secret anywhere. Its effective mode
+	// is live (absent) and the bootstrap must pin exactly that.
+	e.signInAdmin("admin@example.com", "admin")
+	e.product("catalog-only", e.server())
+	for _, k := range []string{SettingStripeMode, SettingSettingsVersion, kernel.InstallSettingKey} {
+		if err := e.svc.d.Settings.Delete(ctx, k); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.svc.d.Config.Stripe.SecretKey, e.svc.d.Config.Stripe.WebhookSecret = "", ""
+	if got := e.svc.stripeMode(ctx); got != "live" {
+		t.Fatalf("absent mode must still mean live, got %q", got)
+	}
+	if e.count(`SELECT count(*) FROM orders`) != 0 || e.count(`SELECT count(*) FROM users`) == 0 {
+		t.Fatal("fixture: want users and no orders")
+	}
+	if err := bootstrapStripeMode(ctx, e.svc); err != nil {
+		t.Fatal(err)
+	}
+	if got := e.svc.d.Settings.GetString(ctx, SettingStripeMode, ""); got != "live" {
+		t.Fatalf("upgraded store without commerce activity bootstrapped to %q, want live", got)
+	}
+	// Two bootstraps so far (the boot with STRIPE_* in the environment, and
+	// this upgrade), both pinned live for an existing store.
+	if e.count(`SELECT count(*) FROM audit_log WHERE action = 'commerce.settings.bootstrap' AND meta_json LIKE '%existing_or_upgraded_store%'`) != 2 {
+		t.Fatal("upgrade bootstrap not audited as existing")
+	}
+
+	// An upgraded store with orders is existing for the same reason.
 	for _, k := range []string{SettingStripeMode, SettingSettingsVersion} {
 		if err := e.svc.d.Settings.Delete(ctx, k); err != nil {
 			t.Fatal(err)
 		}
 	}
-	srv := e.server()
-	p := e.product("history", srv)
-	e.checkout(p, "old@example.com")
-	e.svc.d.Config.Stripe.SecretKey, e.svc.d.Config.Stripe.WebhookSecret = "", ""
-	if got := e.svc.stripeMode(ctx); got != "live" {
-		t.Fatalf("absent mode must still mean live, got %q", got)
-	}
+	e.svc.d.Config.Stripe.SecretKey = "sk_test_config"
+	e.checkout(e.product("history", e.server()), "old@example.com")
+	e.svc.d.Config.Stripe.SecretKey = ""
 	if err := bootstrapStripeMode(ctx, e.svc); err != nil {
 		t.Fatal(err)
 	}
@@ -257,6 +288,44 @@ func TestStripeVerifyKeyAndThreeStates(t *testing.T) {
 	}
 	if st := e.svc.stripeStatus(ctx, "live"); st.Delivery.Verified {
 		t.Fatal("a test delivery must not verify the live endpoint")
+	}
+	// Evidence is bound to the credentials in place when it was verified:
+	// rotating the webhook secret or pointing the slot at another account's
+	// key starts again from unverified, and the old event rows stay as they
+	// are. A row from before revisions were recorded never counts.
+	if r, _ := e.adminPost("/admin/commerce/settings", url.Values{"currency": {"AED"}, "stripe_test_webhook_secret": {"whsec_test_rotated"}}); r.StatusCode != http.StatusSeeOther {
+		t.Fatalf("rotate webhook secret: %d", r.StatusCode)
+	}
+	if st := e.svc.stripeStatus(ctx, "test"); st.Delivery.Verified {
+		t.Fatalf("delivery still verified after rotating the webhook secret: %+v", st.Delivery)
+	}
+	if e.count(`SELECT count(*) FROM stripe_events WHERE id = 'evt_delivery_1' AND mode = 'test' AND source = 'stripe'`) != 1 {
+		t.Fatal("historic event row was modified")
+	}
+	body, _ = stripeEvent("evt_delivery_2", evSubUpdated, map[string]any{"id": "sub_d", "customer": "cus_d", "status": "active"})
+	if code := e.modeWebhook("test", "whsec_test_rotated", body); code != http.StatusOK {
+		t.Fatalf("test endpoint after rotation: %d", code)
+	}
+	if st := e.svc.stripeStatus(ctx, "test"); !st.Delivery.Verified || st.Delivery.Count != 1 {
+		t.Fatalf("delivery after a new signed event = %+v", st.Delivery)
+	}
+	if r, _ := e.adminPost("/admin/commerce/settings", url.Values{"currency": {"AED"}, "stripe_test_secret_key": {"sk_test_other_account"}}); r.StatusCode != http.StatusSeeOther {
+		t.Fatalf("change key: %d", r.StatusCode)
+	}
+	if st := e.svc.stripeStatus(ctx, "test"); st.Delivery.Verified {
+		t.Fatalf("delivery still verified after changing the account key: %+v", st.Delivery)
+	}
+	if r, _ := e.adminPost("/admin/commerce/settings", url.Values{"currency": {"AED"}, "stripe_test_secret_key": {"sk_test_only"}}); r.StatusCode != http.StatusSeeOther {
+		t.Fatalf("restore key: %d", r.StatusCode)
+	}
+	if st := e.svc.stripeStatus(ctx, "test"); !st.Delivery.Verified {
+		t.Fatal("evidence for the restored configuration must count again")
+	}
+	if _, err := e.svc.db.ExecContext(ctx, `INSERT INTO stripe_events (id, type, received_at, payload_json, mode, source, config_rev) VALUES ('evt_pre_rev', 'invoice.paid', '2026-01-01T00:00:00Z', '{}', 'live', 'stripe', '')`); err != nil {
+		t.Fatal(err)
+	}
+	if st := e.svc.stripeStatus(ctx, "live"); st.Delivery.Verified {
+		t.Fatal("an event without a recorded revision must not verify delivery")
 	}
 	_, page = e.do("GET", "/admin/commerce/settings", nil)
 	mustContain(t, page, `data-stripe-mode="test"`, `data-stripe-delivery="verified"`)

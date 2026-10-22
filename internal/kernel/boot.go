@@ -57,6 +57,10 @@ func MigrateAllWithConfig(ctx context.Context, cfg config.Config, d *sql.DB, mod
 	if err != nil {
 		return err
 	}
+	fresh, err := ledgerEmpty(ctx, d)
+	if err != nil {
+		return err
+	}
 	reports, err := migrateInfra(ctx, d)
 	if err != nil {
 		return err
@@ -67,6 +71,11 @@ func MigrateAllWithConfig(ctx context.Context, cfg config.Config, d *sql.DB, mod
 			return err
 		}
 		reports = append(reports, rep)
+		if fresh && m.Name() == settingsModule {
+			if err := stampInstall(ctx, d); err != nil {
+				return err
+			}
+		}
 	}
 	warnChecksumMismatches(slog.Default(), reports)
 	warnSchemaAhead(ctx, slog.Default(), d, all)
@@ -188,6 +197,10 @@ func BootWithOptions(ctx context.Context, cfg config.Config, mods []Module, opts
 // wire migrates and registers mods (the enabled modules); all is the full
 // module list, used to tell which applied migrations this binary knows.
 func wire(ctx context.Context, d *sql.DB, cfg config.Config, mods, all []Module) (*Deps, error) {
+	fresh, err := ledgerEmpty(ctx, d)
+	if err != nil {
+		return nil, err
+	}
 	reports, err := migrateInfra(ctx, d)
 	if err != nil {
 		return nil, err
@@ -223,6 +236,11 @@ func wire(ctx context.Context, d *sql.DB, cfg config.Config, mods, all []Module)
 		return nil, err
 	}
 	reports = append(reports, rep)
+	if fresh {
+		if err := stampInstall(ctx, d); err != nil {
+			return nil, err
+		}
+	}
 	bundle, err := i18n.Load(catalogs(mods)...)
 	if err != nil {
 		return nil, err
