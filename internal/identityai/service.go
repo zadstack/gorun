@@ -279,7 +279,10 @@ func (s *service) Generate(ctx context.Context, token string, approved bool) (Su
 			s.d.Audit.Record(ctx, "identityai.generate", "theme", info.Slug, map[string]any{"provider": r.Connection.Provider, "model": r.Connection.Model, "connection": r.Brief.Connection, "request": r.Hash(), "outcome": outcome})
 		}
 	}
-	reply, err := s.hooks.Complete(ctx, s.d, r.Brief.Connection, r.Connection.Model, r.System, r.Input, maxOutputTokens)
+	reply, err := s.hooks.Complete(ctx, s.d, r.Brief.Connection, r.Connection.Model, r.System, r.Input, maxOutputTokens, r.Fingerprint)
+	if errors.Is(err, ErrDestinationChanged) {
+		return Suggestion{}, errChanged
+	}
 	if err != nil {
 		s.d.Log.Warn("identityai: generation failed", "provider", r.Connection.Provider)
 		audit("upstream")
@@ -406,6 +409,8 @@ func (s *service) pageData(ctx context.Context, b Brief, r *review, msg string) 
 	v := pageView{Brief: b, Review: r, Error: msg, PricesAsOf: PricesAsOf, IdentityURL: "/admin/appearance/identity"}
 	if list, err := s.hooks.Connections(ctx, s.d); err == nil {
 		v.Connections = list
+	} else {
+		s.d.Log.Warn("identityai: listing AI connections failed", "err", err)
 	}
 	if st, ok := s.store(); ok {
 		v.Theme = st.Active(ctx)

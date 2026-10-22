@@ -30,6 +30,11 @@ const (
 	pagePath     = "/appearance/identity/ai"
 )
 
+// ErrDestinationChanged is what Hooks.Complete returns when the destination
+// differs from the reviewed fingerprint; the module then sends nothing and
+// records nothing.
+var ErrDestinationChanged = errors.New("identityai: destination changed since it was reviewed")
+
 // Connection describes an AI connection profile for display: never a secret.
 type Connection struct {
 	ID, Name, Provider, Model, Host, TestStatus string
@@ -40,8 +45,9 @@ type Connection struct {
 type Hooks struct {
 	// Complete sends one system + user turn through connectionID (""
 	// means the site's writing settings) with at most maxTokens of reply
-	// and returns the reply text.
-	Complete func(ctx context.Context, d *kernel.Deps, connectionID, model, system, input string, maxTokens int) (string, error)
+	// and returns the reply text. It must refuse with ErrDestinationChanged
+	// when the destination no longer matches expectFingerprint.
+	Complete func(ctx context.Context, d *kernel.Deps, connectionID, model, system, input string, maxTokens int, expectFingerprint string) (string, error)
 	// Ready reports that the connection's configuration and credential are
 	// readable, without sending a request.
 	Ready func(ctx context.Context, d *kernel.Deps, connectionID, model string) bool

@@ -33,7 +33,7 @@
 {{if .Brief.Connection}}<div><dt class="text-muted">{{t "identityai.test_status"}}</dt><dd>{{if .Connection.TestStatus}}{{.Connection.TestStatus}}{{else}}{{t "identityai.untested"}}{{end}}</dd></div>{{end}}
 </dl>
 <div><h3 class="text-sm font-medium">{{t "identityai.estimated_cost"}}</h3>
-{{if .Estimate.Known}}<p class="text-sm"><strong data-identityai-cost>{{.Estimate.Text}}</strong> · {{t "identityai.cost_detail" .Estimate.InputTokens .Estimate.OutputTokens .Estimate.PerMillionInput .Estimate.PerMillionOutput .Estimate.AsOf}}</p>{{else}}<p class="text-sm" data-identityai-cost>{{t "identityai.cost_unknown" .Estimate.AsOf}}</p>{{end}}</div>
+{{if .Estimate.Known}}<p class="text-sm"><strong data-identityai-cost>{{.Estimate.Text}}</strong> · {{t "identityai.cost_detail" .Estimate.InputTokens .Estimate.OutputTokens .Estimate.PerMillionInput .Estimate.PerMillionOutput .Estimate.AsOf}} <a class="underline" href="{{.Estimate.Source}}" target="_blank" rel="noopener">{{t "identityai.cost_source"}}</a></p>{{else}}<p class="text-sm" data-identityai-cost>{{t "identityai.cost_unknown" .Estimate.AsOf}}</p>{{end}}</div>
 <details open><summary class="text-sm font-medium">{{t "identityai.prompt"}} <code>{{.Hash}}</code></summary>
 <pre class="text-xs whitespace-pre-wrap border border-line rounded p-2 mt-2" dir="ltr">{{.System}}</pre>
 <pre class="text-xs whitespace-pre-wrap border border-line rounded p-2 mt-2" dir="auto">{{.Input}}</pre></details>

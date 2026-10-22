@@ -41,7 +41,7 @@ type fakeProvider struct {
 
 func (f *fakeProvider) hooks() Hooks {
 	return Hooks{
-		Complete: func(_ context.Context, _ *kernel.Deps, _, model, system, input string, maxTokens int) (string, error) {
+		Complete: func(_ context.Context, _ *kernel.Deps, _, model, system, input string, maxTokens int, _ string) (string, error) {
 			f.calls++
 			f.lastSystem, f.lastInput, f.lastModel, f.lastMaxTokens = system, input, model, maxTokens
 			return f.reply, f.err
@@ -324,17 +324,17 @@ func TestEstimateCostKnownAndUnknownModels(t *testing.T) {
 // status is visible, unsupported themes are refused, and every provider
 // call is audited with its outcome.
 func TestPricingMatchesExactOrDatedModelsOnly(t *testing.T) {
-	if e := EstimateCost("openai", "o3", 1000, 1000); !e.Known {
-		t.Fatal("exact o3 unknown")
+	if e := EstimateCost("openai", "gpt-4o", 1000, 1000); !e.Known {
+		t.Fatal("exact gpt-4o unknown")
 	}
-	if e := EstimateCost("openai", "o3-pro", 1000, 1000); e.Known {
-		t.Fatalf("o3-pro must not inherit o3's price: %+v", e)
+	if e := EstimateCost("openai", "gpt-4o-realtime", 1000, 1000); e.Known {
+		t.Fatalf("gpt-4o-realtime must not inherit gpt-4o's price: %+v", e)
 	}
 	if e := EstimateCost("anthropic", "claude-sonnet-4-5-20250929", 1000, 1000); !e.Known {
 		t.Fatal("dated sonnet id unknown")
 	}
-	if e := EstimateCost("openai", "gpt-5-nano", 1000, 1000); !e.Known || e.PerMillionInput >= EstimateCost("openai", "gpt-5", 1, 1).PerMillionInput {
-		t.Fatalf("gpt-5-nano must have its own, lower price: %+v", e)
+	if e := EstimateCost("openai", "gpt-4.1-nano", 1000, 1000); !e.Known || e.PerMillionInput >= EstimateCost("openai", "gpt-4.1", 1, 1).PerMillionInput {
+		t.Fatalf("gpt-4.1-nano must have its own, lower price: %+v", e)
 	}
 }
 
@@ -454,6 +454,43 @@ func TestGenerateRefusedWhenThemeChangedSincePreview(t *testing.T) {
 	for _, slug := range []string{"default", "business"} {
 		if _, ok := themeSvc(e).IdentityDraft(adminCtx(), slug); ok {
 			t.Fatalf("%s draft written", slug)
+		}
+	}
+}
+
+// A review token belongs to the admin who previewed: another admin cannot
+// spend it.
+func TestReviewTokenBoundToOwner(t *testing.T) {
+	fp := &fakeProvider{ready: true, reply: goodReply, fingerprint: "v1", connections: []Connection{{ID: "c1", Name: "P", Provider: "openai", Model: "gpt-4o", Host: "api.openai.com"}}}
+	e := boot(t, true, fp)
+	_, page := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "connection": {"c1"}, "sector": {"x"}})
+	review := regexp.MustCompile(`name="review" value="([^"]+)"`).FindStringSubmatch(page)[1]
+	svc, _ := kernel.Get[auth.Service](e.app.Deps, kernel.ServiceAuth)
+	if _, err := svc.Create(context.Background(), "second@example.com", "Second", "correct horse battery", "admin"); err != nil {
+		t.Fatal(err)
+	}
+	jar, _ := cookiejar.New(nil)
+	other := &env{t: t, app: e.app, srv: e.srv, c: &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, fp: fp}
+	_, login := other.get("/admin/login")
+	other.post("/admin/login", url.Values{"_csrf": {csrfFrom(t, login)}, "email": {"second@example.com"}, "password": {"correct horse battery"}})
+	resp, _ := other.post(testPage, url.Values{"_csrf": {other.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+	if resp.StatusCode != http.StatusConflict || fp.calls != 0 {
+		t.Fatalf("another admin spent the token: %d calls=%d", resp.StatusCode, fp.calls)
+	}
+	// The owner can still use it.
+	resp, _ = e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+	if resp.StatusCode != 200 || fp.calls != 1 {
+		t.Fatalf("owner refused: %d calls=%d", resp.StatusCode, fp.calls)
+	}
+}
+
+func TestPricingCitesSourceAndSkipsReasoningModels(t *testing.T) {
+	if e := EstimateCost("anthropic", "claude-sonnet-5-5", 1000, 1000); !e.Known || e.Source == "" || e.PerMillionInput != 2 {
+		t.Fatalf("sonnet 5.5 = %+v", e)
+	}
+	for _, m := range []string{"gpt-5", "gpt-5-mini", "o3", "o4-mini"} {
+		if e := EstimateCost("openai", m, 1, 1); e.Known {
+			t.Fatalf("%s must be unpriced (client sends max_tokens, which reasoning models reject)", m)
 		}
 	}
 }

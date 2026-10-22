@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/auth"
@@ -98,7 +99,13 @@ func InsertAfter(mods []kernel.Module, after string, extra ...kernel.Module) []k
 // identityai module without the admin package importing it.
 func identityAIHooks() identityai.Hooks {
 	return identityai.Hooks{
-		Complete:    admin.CompleteWorkAgentBounded,
+		Complete: func(ctx context.Context, d *kernel.Deps, connectionID, model, system, input string, maxTokens int, expect string) (string, error) {
+			out, err := admin.CompleteWorkAgentBounded(ctx, d, connectionID, model, system, input, maxTokens, expect)
+			if errors.Is(err, admin.ErrAIDestinationChanged) {
+				return "", identityai.ErrDestinationChanged
+			}
+			return out, err
+		},
 		Ready:       admin.WorkAgentProviderReady,
 		Fingerprint: admin.AIDestinationFingerprint,
 		Writing: func(ctx context.Context, d *kernel.Deps) (identityai.Connection, bool) {
