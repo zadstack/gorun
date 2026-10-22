@@ -2,6 +2,7 @@ package membership
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"errors"
 	"github.com/go-chi/chi/v5"
@@ -23,6 +24,14 @@ func New() *Module                { return &Module{} }
 func (*Module) Name() string      { return "membership" }
 func (*Module) Migrations() fs.FS { return migrations }
 func (*Module) Catalogs() fs.FS   { return migrations }
+
+// Enabled implements kernel.OptionalModule (addons.membership in the config
+// or the addons.membership.enabled setting; on by default). Grants, plans and
+// submissions are kept while the module is off.
+func (*Module) Enabled(ctx context.Context, d *sql.DB) (bool, error) {
+	return kernel.AddonEnabled(ctx, d, "membership")
+}
+
 func (m *Module) Register(d *kernel.Deps) error {
 	m.Service = NewService(d.DB)
 	m.Service.Audit = d.Audit

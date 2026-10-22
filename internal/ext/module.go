@@ -103,6 +103,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	}
 	d.Services.Set(ServiceName, Service(s))
 	d.Hooks.Filter(admin.HealthCheckFilter, 100, s.healthCheck)
+	d.Hooks.Filter(admin.ModuleCatalogFilter, 100, s.catalogEntries)
 	if err := registerAdmin(d, s); err != nil {
 		return err
 	}
@@ -155,4 +156,58 @@ func (s *service) healthCheck(ctx context.Context, v any) (any, error) {
 	}
 	*checks = append(*checks, c)
 	return checks, nil
+}
+
+// catalogEntries adds one System → Modules entry per installed extension:
+// what the manifest says it does, its version (compatibility is not
+// verified), the permissions its key carries, the hooks it subscribes to,
+// and whether it declares settings (needs configuration) or is in error.
+func (s *service) catalogEntries(ctx context.Context, v any) (any, error) {
+	list, ok := v.(*[]admin.CatalogEntry)
+	if !ok || list == nil {
+		return v, nil
+	}
+	items, err := s.list(ctx, ``)
+	if err != nil {
+		return v, err
+	}
+	for _, x := range items {
+		hooks := make([]string, 0, len(x.Manifest.Hooks))
+		for _, h := range x.Manifest.Hooks {
+			hooks = append(hooks, h.Name)
+		}
+		name := map[string]string{"en": x.DisplayName("en"), "ar": x.DisplayName("ar")}
+		summary := map[string]string{"en": x.Manifest.Description["en"], "ar": x.Manifest.Description["ar"]}
+		for _, loc := range []string{"en", "ar"} {
+			if summary[loc] == "" {
+				summary[loc] = s.i18n.T(loc, "ext.catalog.no_description")
+			}
+		}
+		e := admin.CatalogEntry{ID: "ext:" + x.Slug, Kind: admin.CatalogKindExtension, Source: admin.CatalogSourceExternal, Name: name, Summary: summary,
+			Version: x.Version, Compatibility: admin.CompatManifestUnverified, Owner: "ext",
+			Dependencies: []string{"ext"}, OptionalDependencies: []string{}, Dependents: []string{}, Permissions: append([]string{}, x.Manifest.Permissions...),
+			Registered: &kernel.ModuleRegistration{HookSubscriptions: hooks, Permissions: append([]string{}, x.Manifest.Permissions...), APIOperations: []string{}, MCPTools: []string{}, JobKinds: []string{}, Crons: []string{}, Nav: []string{}, Widgets: []string{}, ThemeFuncs: []string{}, ThemeKinds: []string{}, ServicesPublished: []string{}, ServicesConsumed: []string{}},
+			Jobs:       admin.CatalogJobs{Kinds: []string{}}, Messages: []admin.CatalogMessage{},
+			Links: map[string]string{"extension": "/admin/extensions/" + x.Slug},
+			State: admin.CatalogState{Available: true, Optional: true, Switchable: false, Status: x.Status, Enabled: x.Status == StatusActive}}
+		if x.Status == StatusActive {
+			e.Jobs.Kinds = []string{DeliverJobKind}
+		}
+		if len(x.Manifest.Settings) > 0 {
+			e.Configuration = admin.CatalogConfiguration{Status: "configured", Reason: "settings_declared", Remediation: "Review the extension's settings on its page."}
+			for _, f := range x.Manifest.Settings {
+				if s.settings.GetString(ctx, "ext."+x.Slug+".settings."+f.Key, "") == "" {
+					e.Configuration = admin.CatalogConfiguration{Status: "incomplete", Reason: "setting_empty:" + f.Key, Remediation: "Fill in the extension's settings on its page."}
+					break
+				}
+			}
+		} else {
+			e.Configuration = admin.CatalogConfiguration{Status: "not_required", Reason: "no_settings_declared"}
+		}
+		if x.Status == StatusError {
+			e.Messages = append(e.Messages, admin.CatalogMessage{Level: "warning", Text: map[string]string{"en": s.i18n.T("en", "ext.catalog.error", x.LastError), "ar": s.i18n.T("ar", "ext.catalog.error", x.LastError)}})
+		}
+		*list = append(*list, e)
+	}
+	return list, nil
 }
