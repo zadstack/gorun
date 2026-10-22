@@ -4,11 +4,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"net/url"
 	"strings"
 
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/mailer"
 )
 
 // AIConnectionSummary describes an AI destination for display in other
@@ -56,27 +58,86 @@ func WritingAIDestination(ctx context.Context, d *kernel.Deps) (AIConnectionSumm
 	return AIConnectionSummary{Provider: c.Provider, Model: c.Model, Host: host}, true
 }
 
-// aiFingerprintParts are the stored values that decide where a request goes
-// and with which credential. Secrets enter only in their encrypted stored
-// form; the plaintext key is never part of the input.
-func aiFingerprintParts(ctx context.Context, d *kernel.Deps, connectionID string) ([]string, bool) {
-	h := &handlers{d: d}
-	if connectionID == "" {
-		snap, err := aiSnapshot(ctx, d.DB)
-		if err != nil || snap["ai.provider"] == "" {
-			return nil, false
-		}
-		return []string{"writing", snap["ai.provider"], snap["ai.base_url"], snap["ai.model"], snap["ai.api_key"]}, true
-	}
-	c, err := h.loadConnection(ctx, connectionID)
-	if err != nil || c.Kind != "ai" {
-		return nil, false
-	}
-	return []string{"connection", c.ID, c.Version, c.Provider, c.Endpoint, c.Model, c.Secret}, true
+// aiDestination is one destination as read in a single pass: the config a
+// request is built from and the fingerprint of the very same stored values,
+// so no settings change can slip between the check and the send.
+type aiDestination struct {
+	config aiConfig
+	parts  []string // the stored values the fingerprint hashes (secrets in their encrypted form only)
 }
 
-func fingerprintOf(parts []string) string {
-	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
+// afterAIDestinationLoad is a test seam called after the single read and
+// before the request is built; nil in production.
+var afterAIDestinationLoad func()
+
+// loadAIDestination reads the destination once. connectionID "" reads the
+// ai.* rows in one statement (aiSnapshot) and builds the config from that
+// snapshot; a saved connection is read once and both the config and the
+// fingerprint come from that record. model overrides the model when set.
+func loadAIDestination(ctx context.Context, d *kernel.Deps, connectionID, model string) (aiDestination, error) {
+	h := &handlers{d: d}
+	var dest aiDestination
+	if connectionID == "" {
+		snap, err := aiSnapshot(ctx, d.DB)
+		if err != nil {
+			return dest, err
+		}
+		get := func(k string) string {
+			var v string
+			_ = json.Unmarshal([]byte(snap[k]), &v)
+			return v
+		}
+		c := aiConfig{Provider: get("ai.provider"), BaseURL: get("ai.base_url"), Model: get("ai.model")}
+		if c.Provider != AIProviderOpenAI && c.Provider != AIProviderAnthropic {
+			return dest, errAINotConfigured
+		}
+		if enc := get("ai.api_key"); enc != "" {
+			key, err := mailer.DecryptSecret(d.Config.SecretKey, enc)
+			if err != nil {
+				return dest, errAINotConfigured
+			}
+			c.APIKey = key
+		}
+		if c.Provider == AIProviderOpenAI {
+			base, ok := normalizeAIBaseURL(c.BaseURL)
+			if !ok {
+				return dest, errAINotConfigured
+			}
+			c.BaseURL = base
+		}
+		if c.Provider == AIProviderAnthropic && c.Model == "" {
+			c.Model = defaultAnthropicModel
+		}
+		dest = aiDestination{config: c, parts: []string{"writing", snap["ai.provider"], snap["ai.base_url"], snap["ai.model"], snap["ai.api_key"]}}
+	} else {
+		c, err := h.loadConnection(ctx, connectionID)
+		if err != nil || c.Kind != "ai" || validateConnection(c) != nil {
+			return dest, errors.New("AI connection unavailable")
+		}
+		secret, err := h.connectionSecrets(c)
+		if err != nil {
+			return dest, errors.New("AI credential unavailable")
+		}
+		dest = aiDestination{config: aiConfig{Provider: c.Provider, BaseURL: c.Endpoint, Model: c.Model, APIKey: secret.Token, NamedConnection: true},
+			parts: []string{"connection", c.ID, c.Version, c.Provider, c.Endpoint, c.Model, c.Secret}}
+	}
+	if model != "" {
+		if !aiModelRe.MatchString(model) {
+			return dest, errors.New("invalid AI model")
+		}
+		dest.config.Model = model
+	}
+	if dest.config.Model == "" {
+		return dest, errAINotConfigured
+	}
+	if afterAIDestinationLoad != nil {
+		afterAIDestinationLoad()
+	}
+	return dest, nil
+}
+
+func (a aiDestination) fingerprint() string {
+	sum := sha256.Sum256([]byte(strings.Join(a.parts, "\x00")))
 	return hex.EncodeToString(sum[:])
 }
 
@@ -86,29 +147,26 @@ func fingerprintOf(parts []string) string {
 // for the writing settings (connectionID "") the ai.* rows including the
 // encrypted key. ok is false when the destination cannot be resolved.
 func AIDestinationFingerprint(ctx context.Context, d *kernel.Deps, connectionID string) (string, bool) {
-	parts, ok := aiFingerprintParts(ctx, d, connectionID)
-	if !ok {
+	dest, err := loadAIDestination(ctx, d, connectionID, "")
+	if err != nil {
 		return "", false
 	}
-	return fingerprintOf(parts), true
+	return dest.fingerprint(), true
 }
 
-// CompleteWorkAgentBounded is CompleteWorkAgent with a cap on the reply
-// tokens and, when expectFingerprint is not empty, a check that the
-// destination still matches what was reviewed, taken from the same read
-// that builds the request (no window between the check and the send).
+// CompleteWorkAgentBounded sends one bounded request to the destination
+// read in a single pass. When expectFingerprint is not empty, the
+// fingerprint of that same read must match it, so the request that goes
+// out is built from exactly the values that were reviewed.
 func CompleteWorkAgentBounded(ctx context.Context, d *kernel.Deps, connectionID, model, system, input string, maxTokens int, expectFingerprint string) (string, error) {
-	c, err := loadWorkAgentConfig(ctx, d, connectionID, model)
+	dest, err := loadAIDestination(ctx, d, connectionID, model)
 	if err != nil {
 		return "", err
 	}
-	if expectFingerprint != "" {
-		parts, ok := aiFingerprintParts(ctx, d, connectionID)
-		if !ok || fingerprintOf(parts) != expectFingerprint {
-			return "", ErrAIDestinationChanged
-		}
+	if expectFingerprint != "" && dest.fingerprint() != expectFingerprint {
+		return "", ErrAIDestinationChanged
 	}
-	return aiCompleteBounded(ctx, c, system, input, maxTokens)
+	return aiCompleteBounded(ctx, dest.config, system, input, maxTokens)
 }
 
 func hostOf(raw string) string {

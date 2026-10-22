@@ -35,8 +35,8 @@ func TestAIDestinationFingerprintTracksConnectionAndWritingSettings(t *testing.T
 	if !ok || base == "" {
 		t.Fatal("no fingerprint for a valid connection")
 	}
-	parts, _ := aiFingerprintParts(ctx, h.d, c.ID)
-	if strings.Contains(strings.Join(parts, ""), "hidden-provider-key") {
+	dest, _ := loadAIDestination(ctx, h.d, c.ID, "")
+	if strings.Contains(strings.Join(dest.parts, ""), "hidden-provider-key") {
 		t.Fatal("plaintext secret in the fingerprint input")
 	}
 	newSecret, _ := h.encryptConnectionSecrets(connectionSecrets{Token: "another-key"})
@@ -82,13 +82,13 @@ func TestAIDestinationFingerprintTracksConnectionAndWritingSettings(t *testing.T
 	if !ok {
 		t.Fatal("no fingerprint for writing settings")
 	}
-	wparts, _ := aiFingerprintParts(ctx, h.d, "")
-	if strings.Contains(strings.Join(wparts, ""), "writing-plain-key") {
+	wdest, _ := loadAIDestination(ctx, h.d, "", "")
+	if strings.Contains(strings.Join(wdest.parts, ""), "writing-plain-key") {
 		t.Fatal("plaintext writing key in the fingerprint input")
 	}
-	dest, ok := WritingAIDestination(ctx, h.d)
-	if !ok || dest.Provider != "openai" || dest.Model != "gpt-4o-mini" || dest.Host != "writing.example" {
-		t.Fatalf("writing destination = %+v ok=%v", dest, ok)
+	wd, ok := WritingAIDestination(ctx, h.d)
+	if !ok || wd.Provider != "openai" || wd.Model != "gpt-4o-mini" || wd.Host != "writing.example" {
+		t.Fatalf("writing destination = %+v ok=%v", wd, ok)
 	}
 	enc2, _ := mailer.EncryptSecret(h.d.Config.SecretKey, "writing-plain-key-2")
 	for k, v := range map[string]any{"ai.provider": "anthropic", "ai.base_url": "https://writing2.example/v1", "ai.model": "gpt-4o", "ai.api_key": enc2} {
@@ -146,5 +146,46 @@ func TestCompleteWorkAgentBoundedCapsAndChecksFingerprint(t *testing.T) {
 	}
 	if seen != nil {
 		t.Fatal("request sent despite a changed destination")
+	}
+}
+
+// The fingerprint and the request come from one read: a settings change
+// after that read cannot make an unreviewed configuration pass the check.
+func TestCompleteWorkAgentBoundedFingerprintAndRequestShareOneRead(t *testing.T) {
+	h, ctx, _, _ := canvasOperationFixture(t)
+	var sentModels []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		raw, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(raw, &body)
+		sentModels = append(sentModels, body["model"].(string))
+		_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": map[string]string{"content": "{}"}}}})
+	}))
+	defer srv.Close()
+	enc, _ := mailer.EncryptSecret(h.d.Config.SecretKey, "writing-plain-key")
+	set := func(model string) {
+		for k, v := range map[string]any{"ai.provider": "openai", "ai.base_url": srv.URL, "ai.model": model, "ai.api_key": enc} {
+			if err := h.d.Settings.Set(ctx, k, v); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	set("gpt-4o-mini") // configuration A, reviewed
+	approved, _ := AIDestinationFingerprint(ctx, h.d, "")
+	defer func() { afterAIDestinationLoad = nil }()
+
+	// Stale read: the call reads B (changed after the review); restoring A
+	// between the read and the send must not rescue it, because the check
+	// uses the values the request would be built from.
+	set("gpt-4o")
+	afterAIDestinationLoad = func() { set("gpt-4o-mini") }
+	if _, err := CompleteWorkAgentBounded(ctx, h.d, "", "", "sys", "user", 100, approved); err != ErrAIDestinationChanged || len(sentModels) != 0 {
+		t.Fatalf("stale configuration sent: err=%v sent=%v", err, sentModels)
+	}
+
+	// Change after the read: the request that goes out is the reviewed one.
+	afterAIDestinationLoad = func() { set("gpt-4o") }
+	if _, err := CompleteWorkAgentBounded(ctx, h.d, "", "", "sys", "user", 100, approved); err != nil || len(sentModels) != 1 || sentModels[0] != "gpt-4o-mini" {
+		t.Fatalf("request not built from the reviewed read: err=%v sent=%v", err, sentModels)
 	}
 }
