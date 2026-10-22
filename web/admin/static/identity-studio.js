@@ -17,7 +17,7 @@
  const updateContrast=()=>{if(!badge)return;const text=form.elements.namedItem('identity_text')?.value||badge.dataset.text,back=form.elements.namedItem('identity_background')?.value||badge.dataset.back;const ratio=contrast(text||'',back||'');const r=badge.querySelector('[data-contrast-ratio]'),v=badge.querySelector('[data-contrast-verdict]');if(!ratio||!r||!v)return;r.textContent=ratio.toFixed(1)+':1';v.dataset.pass=String(ratio>=4.5);badge.classList.toggle('identity-contrast-fail',ratio<4.5);};
  // Draft autosave: debounce edits, store the draft, refresh the preview.
  let timer=null,saving=false;
- const saveDraft=async()=>{if(saving)return;saving=true;try{const body=new URLSearchParams(new FormData(form));body.set('action','draft');const resp=await fetch(form.action,{method:'POST',body,credentials:'same-origin',headers:{'X-Requested-With':'fetch','Accept':'text/html'}});if(resp.status===204)reload();}catch(_){/* keep the manual buttons */}finally{saving=false;}};
+ const saveDraft=async()=>{if(saving)return;saving=true;try{const body=new URLSearchParams(new FormData(form));body.set('action','draft');const resp=await fetch(form.getAttribute('action'),{method:'POST',body,credentials:'same-origin',headers:{'X-Requested-With':'fetch','Accept':'text/html'}});if(resp.status===204)reload();}catch(_){/* keep the manual buttons */}finally{saving=false;}};
  const schedule=()=>{updateContrast();clearTimeout(timer);timer=setTimeout(saveDraft,500);};
  for(const event of ['input','change'])form.addEventListener(event,schedule);
  window.addEventListener('media:selected',()=>setTimeout(schedule,0));
