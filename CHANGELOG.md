@@ -5,6 +5,20 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Improved
+
+- Integrations keeps saved results updating while checks are pending, with bounded background
+  refresh, offline/hidden pause, preserved form drafts and compact bilingual resource tables.
+  HTML inventories use 100-row pages and saved-data search; API snapshots remain complete.
+- Worker identity reports reuse one configuration snapshot instead of rereading settings per
+  identity. Local large-inventory benchmarks and their limits are recorded under `docs/reports/`.
+
+### Fixed
+
+- Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
+  or Worker identity checks. Configuration changes during these operations return conflict.
+  Failed local reads and malformed saved results appear as unavailable rather than empty success.
+
 ### Changed
 
 - Commerce, saas and membership are optional modules behind the existing `kernel.OptionalModule`

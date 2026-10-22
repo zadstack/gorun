@@ -219,7 +219,7 @@ func (h *handlers) cloudflareValues(ctx context.Context, in cloudflareInput, sna
 // observation; an account the token has not listed keeps an empty label.
 func (h *handlers) cloudflareAccountName(ctx context.Context, id string) string {
 	o, err := h.observe.Get(ctx, kindCFAccounts, cfObservationKey)
-	if err != nil || o.Saved == nil {
+	if err != nil || !currentCFObservation(o, cfScopesFreshness) {
 		return ""
 	}
 	var data cfAccountsResult
@@ -772,8 +772,20 @@ func workerAssociation(worker, origin string) string {
 // workerDiscovered reports whether name is in the saved Workers inventory
 // of the selected account; identity is only recorded for discovered Workers.
 func (h *handlers) workerDiscovered(ctx context.Context, name string) bool {
-	o, err := h.observe.Get(ctx, kindCFInventory, "workers")
-	if err != nil || o.Saved == nil {
+	return h.cloudflareResourceDiscovered(ctx, "workers", name)
+}
+
+func (h *handlers) cloudflareResourceDiscovered(ctx context.Context, kind, name string) bool {
+	snapshot, err := h.cloudflareSnapshot(ctx)
+	if err != nil {
+		return false
+	}
+	return h.cloudflareResourceDiscoveredFor(ctx, snapshot, kind, name)
+}
+
+func (h *handlers) cloudflareResourceDiscoveredFor(ctx context.Context, snapshot cfSnapshot, kind, name string) bool {
+	o, err := h.observe.Get(ctx, kindCFInventory, kind)
+	if err != nil || !currentCFObservation(o, cfInventoryFresh) || o.Saved.Revision != snapshot.revision(true) {
 		return false
 	}
 	var data cfInventoryResult
@@ -798,12 +810,19 @@ func (h *handlers) cfEdgeRevision(ctx context.Context, key string) (string, erro
 	if err != nil {
 		return "", err
 	}
+	return cfEdgeRevisionFor(snapshot, key), nil
+}
+
+func cfEdgeRevisionFor(snapshot cfSnapshot, key string) string {
+	if !cfNamePattern.MatchString(key) {
+		return ""
+	}
 	rev := snapshot.revision(true)
 	if rev == "" {
-		return "", nil
+		return ""
 	}
 	sum := sha256.Sum256([]byte(rev + "\x00" + key))
-	return hex.EncodeToString(sum[:8]), nil
+	return hex.EncodeToString(sum[:8])
 }
 
 // identifyWorker runs the manager identity contract against origin with
@@ -813,14 +832,15 @@ func (h *handlers) identifyWorker(ctx context.Context, client *http.Client, work
 	if !cfNamePattern.MatchString(worker) {
 		return cfEdgeIdentity{}, errConnectionInvalid
 	}
-	rev, err := h.cfEdgeRevision(ctx, worker)
+	snapshot, err := h.cloudflareSnapshot(ctx)
 	if err != nil {
 		return cfEdgeIdentity{}, err
 	}
+	rev := cfEdgeRevisionFor(snapshot, worker)
 	if rev == "" {
 		return cfEdgeIdentity{}, errCFNoAccount
 	}
-	if !h.workerDiscovered(ctx, worker) {
+	if !h.cloudflareResourceDiscoveredFor(ctx, snapshot, "workers", worker) {
 		return cfEdgeIdentity{}, errConnectionInvalid
 	}
 	normalized, err := validateEdgeOrigin(origin)
@@ -837,6 +857,13 @@ func (h *handlers) identifyWorker(ctx context.Context, client *http.Client, work
 	var runErr error
 	if err != nil {
 		runErr = errors.New("manager identity check failed: the origin did not answer the manager contract for this key")
+	}
+	current, cerr := h.cloudflareSnapshot(ctx)
+	if cerr != nil {
+		return cfEdgeIdentity{}, cerr
+	}
+	if current.revision(true) != snapshot.revision(true) {
+		return cfEdgeIdentity{}, errConnectionConflict
 	}
 	if rerr := h.observe.Record(ctx, kindCFEdge, worker, rev, observe.Result{Scope: "identity", Data: identity}, runErr, time.Since(started)); rerr != nil {
 		return cfEdgeIdentity{}, rerr
