@@ -80,13 +80,13 @@ func TestOwnershipNoSecretsAndInactiveAccount(t *testing.T) {
 	}
 	req := httptest.NewRequest("GET", "/saas", nil).WithContext(a)
 	w := httptest.NewRecorder()
-	(&handlers{s}).page(false)(w, req)
+	(&handlers{s}).page(false, nil)(w, req)
 	if w.Code != 200 || !strings.Contains(w.Body.String(), "Private app") || strings.Contains(w.Body.String(), "secret_ciphertext") {
 		t.Fatal("page private contract")
 	}
 	w = httptest.NewRecorder()
-	(&handlers{s}).page(false)(w, httptest.NewRequest("GET", "/saas", nil))
-	if w.Code != 303 {
+	(&handlers{s}).page(false, nil)(w, httptest.NewRequest("GET", "/saas", nil))
+	if w.Code != 503 {
 		t.Fatal(w.Code)
 	}
 }

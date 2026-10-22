@@ -38,7 +38,7 @@ func handlerRouter(s *Service, u *auth.User) http.Handler {
 	r.Post("/subs/{id}/consume", h.consume)
 	r.Patch("/subs/{id}", h.update)
 	r.Get("/new", h.managementForm)
-	r.Get("/manage-page", h.page(true))
+	r.Get("/manage-page", h.page(true, nil))
 	r.Post("/form/apps", h.appForm)
 	r.Post("/form/apps/{id}", h.appUpdateForm)
 	r.Post("/form/subs", h.subscriptionForm)

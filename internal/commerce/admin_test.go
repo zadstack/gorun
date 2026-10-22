@@ -259,15 +259,15 @@ func TestAdminEntitlementActionsAndSettings(t *testing.T) {
 	// Settings: currency + encrypted secrets with set/clear.
 	_, page = e.do("GET", "/admin/commerce/settings", nil)
 	mustContain(t, page, "http://shop.test/webhooks/stripe", `name="stripe_secret_key"`)
-	if r, _ := e.adminPost("/admin/commerce/settings", url.Values{"currency": {"usd"}, "stripe_secret_key": {"sk_test_admin"}, "stripe_webhook_secret": {"whsec_admin"}}); r.StatusCode != http.StatusSeeOther {
+	if r, _ := e.adminPost("/admin/commerce/settings", url.Values{"currency": {"usd"}, "stripe_secret_key": {"sk_live_admin"}, "stripe_webhook_secret": {"whsec_admin"}}); r.StatusCode != http.StatusSeeOther {
 		t.Fatalf("settings: %d", r.StatusCode)
 	}
 	ctx := context.Background()
-	if e.svc.currency(ctx) != "USD" || e.svc.stripeSecretKey(ctx) != "sk_test_admin" || e.svc.webhookSecret(ctx) != "whsec_admin" {
+	if e.svc.currency(ctx) != "USD" || e.svc.stripeSecretKey(ctx) != "sk_live_admin" || e.svc.webhookSecret(ctx) != "whsec_admin" {
 		t.Fatal("settings not applied")
 	}
 	_, page = e.do("GET", "/admin/commerce/settings", nil)
-	mustNotContain(t, page, "sk_test_admin", "whsec_admin")
+	mustNotContain(t, page, "sk_live_admin", "whsec_admin")
 	e.adminPost("/admin/commerce/settings", url.Values{"currency": {"USD"}, "clear_stripe_secret_key": {"1"}})
 	if e.svc.stripeSecretKey(ctx) != "sk_test_config" { // falls back to the config value
 		t.Fatalf("after clear = %s", e.svc.stripeSecretKey(ctx))

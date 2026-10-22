@@ -30,6 +30,7 @@ var catalogs embed.FS
 // Module is the commerce kernel.Module.
 type Module struct {
 	checkout checkoutCreator // nil: real Stripe
+	verifier keyVerifier     // nil: read-only Stripe balance call
 	sendMail mailFunc        // nil: the mailer service
 	svc      *service
 }
@@ -63,6 +64,9 @@ func (m *Module) Register(d *kernel.Deps) error {
 	d.Perms.Declare(PermViewOrders, map[string]string{"en": "View orders", "ar": "عرض الطلبات"})
 
 	s := newService(d, m.checkout, m.sendMail)
+	if m.verifier != nil {
+		s.verifier = m.verifier
+	}
 	m.svc = s
 	d.Services.Set(kernel.ServiceCommerce, Service(s))
 
@@ -120,6 +124,9 @@ func (m *Module) Register(d *kernel.Deps) error {
 	d.Hooks.Filter(admin.ModuleRequirementFilter, 50, s.requirements)
 	if err := seedAccountRedirect(context.Background(), d); err != nil {
 		d.Log.Warn("commerce: default /my-account redirect not created", "err", err)
+	}
+	if err := bootstrapStripeMode(context.Background(), s); err != nil {
+		return err
 	}
 	if err := seedExampleProducts(context.Background(), s); err != nil {
 		return fmt.Errorf("commerce: example products: %w", err)
