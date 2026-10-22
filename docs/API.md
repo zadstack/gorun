@@ -370,7 +370,7 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **177 operations** in 24 tags.
+Generated from the current locally booted OpenAPI document: **179 operations** in 24 tags.
 
 ### builder
 
@@ -581,6 +581,7 @@ Generated from the current locally booted OpenAPI document: **177 operations** i
 |---|---|---|---|
 | GET | `/api/v1/audit` | List audit log entries | `system.health` |
 | GET | `/api/v1/jobs` | List jobs | `system.health` |
+| GET | `/api/v1/system/backups/schedule` | Read the saved backup schedule and separate local/upload outcomes; no external calls | `system.backup` |
 | GET | `/api/v1/system/health` | System health report | `system.health` |
 | GET | `/api/v1/system/observations/{kind}/{key}` | One saved observation; status never is a key that was never refreshed | `system.health` |
 | GET | `/api/v1/system/observations` | Saved background observations of expensive or external checks, with age and attempt state (no external calls) | `system.health` |
@@ -590,6 +591,7 @@ Generated from the current locally booted OpenAPI document: **177 operations** i
 | POST | `/api/v1/jobs/{id}/retry` | Retry a failed or dead job | `system.health` |
 | POST | `/api/v1/system/observations/{kind}/{key}/refresh` | Queue a background refresh and return its task reference at once; concurrent requests share one job | `settings.manage` |
 | POST | `/api/v1/system/update` | Start a staged update operation; returns 202 with the pending operation, never a completed update | `system.update` |
+| PUT | `/api/v1/system/backups/schedule` | Replace the backup schedule; remote uploads require explicit selection of the active backup destination | `system.backup` |
 
 ### taxonomies
 
@@ -791,3 +793,33 @@ which callers should inspect rather than assuming every image has every size.
 `PATCH /api/v1/media/{id}` changes metadata only: omitted/null fields are retained,
 while an explicit empty string clears the corresponding field. MCP `get_media`
 exposes the same media object; `update_media` uses the approval pipeline.
+
+## Backup schedule
+
+`GET /api/v1/system/backups/schedule` and `PUT` on the same path require
+`system.backup`. GET reads local saved state only; neither request uploads files.
+PUT replaces the whole policy (all three fields are required and non-null):
+
+```json
+{"hours":24,"retain":7,"remote_destination":""}
+```
+
+`hours`: 0 disables scheduling, otherwise 1–168. `retain`: 0 disables local
+cleanup, otherwise 1–100 verified pairs. Empty `remote_destination` disables
+scheduled uploads. To opt in, use the ID of the currently active backup-purpose
+destination from Settings → Storage (also returned as
+`active_remote_destination` by GET). Invalid/changed destinations return 422
+`validation_failed` without partially changing the policy. Unknown fields,
+trailing JSON and bodies over 4096 bytes return 400 `bad_request`.
+
+The response uses the standard envelope and includes `hours`, `retain`,
+`remote_destination`, `active_remote_destination`, `last_local`, `last_attempt`,
+`last_upload`, and `last_acknowledged_upload`. Empty evidence timestamps mean
+not recorded, not success. Upload acknowledgement is not remote read-back or
+restore evidence. `last_upload.status` can be `paused` when the pinned
+destination changed, or `uploaded_unrecorded` when both files were acknowledged
+but the local receipt could not be saved. `last_attempt` stays a warning after
+remote/receipt/lease trouble without erasing `last_local`. Configured local
+retention still applies, protecting the current pair. No credentials are
+returned. Policy changes are audited as
+`system.backup_schedule`; the scheduler runs them later in job `backup.scheduled`.

@@ -83,3 +83,25 @@ func TestPruneInvalidStampRejected(t *testing.T) {
 		t.Fatalf("want error, got n=%d err=%v", n, err)
 	}
 }
+
+func TestPruneVerifiedProtectsCurrentPairAfterClockRollback(t *testing.T) {
+	dir, path := backupSource(t)
+	later, err := Create(dir, path, time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	current, err := Create(dir, path, time.Date(2026, 10, 22, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = PruneVerifiedKeeping(dir, 1, current.Stamp); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := List(dir)
+	if err != nil || len(entries) != 1 || entries[0].Stamp != current.Stamp {
+		t.Fatal("newly created pair was displaced by future timestamp", entries, err)
+	}
+	if _, err = os.Stat(later.DB); !os.IsNotExist(err) {
+		t.Fatal("older run with future clock survived retain-one", err)
+	}
+}

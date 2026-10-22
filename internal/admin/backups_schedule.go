@@ -13,16 +13,18 @@ import (
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/media"
 	"github.com/zadstack/gorun/internal/update"
 )
 
 // Local backup schedule / retention settings (System → Backups).
 const (
-	SettingBackupScheduleHours = "backup.schedule_hours"
-	SettingBackupRetain        = "backup.retain"
-	SettingBackupScheduleLast  = "backup.schedule.last"
-	SettingBackupScheduleState = "backup.schedule.state"
-	SettingBackupLastSuccess   = "backup.local.last_success"
+	SettingBackupScheduleHours  = "backup.schedule_hours"
+	SettingBackupRetain         = "backup.retain"
+	SettingBackupScheduleLast   = "backup.schedule.last"
+	SettingBackupScheduleState  = "backup.schedule.state"
+	SettingBackupLastSuccess    = "backup.local.last_success"
+	SettingBackupRemoteSchedule = "backup.schedule.remote_destination"
 )
 
 const (
@@ -32,12 +34,13 @@ const (
 
 // backupSchedulePolicy is the schedule form state on the backups page.
 type backupSchedulePolicy struct {
-	Hours    int
-	Retain   int
-	Last     string
-	NextHint string
-	Enabled  bool
-	State    backupScheduleState
+	Hours             int
+	Retain            int
+	Last              string
+	NextHint          string
+	Enabled           bool
+	State             backupScheduleState
+	RemoteDestination string
 }
 
 func backupScheduleHours(ctx context.Context, d *kernel.Deps) int {
@@ -86,6 +89,7 @@ func (h *handlers) backupScheduleView(ctx context.Context, page *backupsPage) {
 		}
 	}
 	_ = h.d.Settings.Get(ctx, SettingBackupScheduleState, &p.State)
+	p.RemoteDestination = h.d.Settings.GetString(ctx, SettingBackupRemoteSchedule, "")
 	page.Schedule = p
 	_ = h.d.Settings.Get(ctx, SettingBackupLastSuccess, &page.LastSuccess)
 }
@@ -105,19 +109,14 @@ func (h *handlers) backupScheduleSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	backupMu.Lock()
-	err := db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
-		if err := h.d.Settings.SetTx(ctx, tx, SettingBackupScheduleHours, hours); err != nil {
-			return err
-		}
-		if err := h.d.Settings.SetTx(ctx, tx, SettingBackupRetain, retain); err != nil {
-			return err
-		}
-		h.d.Audit.RecordTx(ctx, tx, "system.backup_schedule", "backup", "policy", map[string]any{"schedule_hours": hours, "retain": retain})
-		return nil
-	})
-	backupMu.Unlock()
+	remoteID := r.FormValue("remote_destination")
+	err := saveBackupSchedule(ctx, h.d, backupPolicy{Hours: hours, Retain: retain, RemoteDestination: remoteID})
 	if err != nil {
+		if errors.Is(err, errScheduledDestination) {
+			httpx.SetFlash(w, "error", "remotebackup.invalid_destination")
+			http.Redirect(w, r, "/admin/system/backups", http.StatusSeeOther)
+			return
+		}
 		h.serverError(w, r, err)
 		return
 	}
@@ -125,22 +124,17 @@ func (h *handlers) backupScheduleSave(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/admin/system/backups", http.StatusSeeOther)
 }
 
-// backupScheduleTick is the hourly backup.schedule cron body.
-func (h *handlers) backupScheduleTick(ctx context.Context) error {
-	return backupScheduleAt(ctx, h.d, time.Now().UTC())
-}
-
 // backupScheduleAt runs one scheduled local backup when due (injected clock for tests).
 func backupScheduleAt(ctx context.Context, d *kernel.Deps, now time.Time) error {
+	return backupScheduleWithClient(ctx, d, now, media.SafeStorageClient())
+}
+
+func backupScheduleWithClient(ctx context.Context, d *kernel.Deps, now time.Time, client *http.Client) error {
 	now = now.UTC()
-	hours := backupScheduleHours(ctx, d)
-	if hours < 1 {
+	if !backupScheduleDue(ctx, d, now) {
 		return nil
 	}
-	last := backupScheduleLast(ctx, d)
-	if !last.IsZero() && now.Before(last.Add(time.Duration(hours)*time.Hour)) {
-		return nil
-	}
+	renewLease := func() error { return nil }
 	if svc, ok := kernel.Get[*update.Service](d, update.ServiceName); ok {
 		owner := update.HolderBackup + ":schedule:" + update.NewOwnerToken()
 		if err := svc.Lease().Acquire(ctx, update.HolderBackup, owner, ""); err != nil {
@@ -152,18 +146,12 @@ func backupScheduleAt(ctx context.Context, d *kernel.Deps, now time.Time) error 
 			return err
 		}
 		defer svc.Lease().Release(context.WithoutCancel(ctx), owner)
+		renewLease = func() error { return svc.Lease().Renew(ctx, owner) }
 	}
 	backupMu.Lock()
 	defer backupMu.Unlock()
-	// Re-check policy and last success under the shared lock: an operator may
-	// have disabled the schedule while this tick waited for another backup.
-	hours = backupScheduleHours(ctx, d)
-	if hours < 1 {
-		return nil
-	}
-	// A concurrent tick must not double-create.
-	last = backupScheduleLast(ctx, d)
-	if !last.IsZero() && now.Before(last.Add(time.Duration(hours)*time.Hour)) {
+	// Recheck after acquiring the lock so a queued job respects an operator opt-out.
+	if !backupScheduleDue(ctx, d, now) {
 		return nil
 	}
 	state := backupScheduleState{AttemptAt: now.Format(time.RFC3339), Status: "running", Stage: "create"}
@@ -186,6 +174,9 @@ func backupScheduleAt(ctx context.Context, d *kernel.Deps, now time.Time) error 
 	if err != nil {
 		return fail("verify", err)
 	}
+	if err := renewLease(); err != nil {
+		return fail("record", err)
+	}
 	state.Status, state.Stage = "success", "verified"
 	err = db.InTx(ctx, d.DB, func(tx *sql.Tx) error {
 		if err := d.Settings.SetTx(ctx, tx, SettingBackupLastSuccess, success); err != nil {
@@ -199,19 +190,34 @@ func backupScheduleAt(ctx context.Context, d *kernel.Deps, now time.Time) error 
 	if err != nil {
 		return fail("record", err)
 	}
+	d.Audit.Record(ctx, "system.backup_scheduled", "backup", res.Stamp, map[string]any{"files": res.Count, "verified": true})
+	var remoteErr error
+	if remoteID := d.Settings.GetString(ctx, SettingBackupRemoteSchedule, ""); remoteID != "" {
+		remoteErr = scheduledRemoteUpload(ctx, d, res, remoteID, client)
+		if remoteErr != nil {
+			state.Status, state.Stage = "warning", "remote"
+		}
+	}
+	if err := renewLease(); err != nil {
+		state.Status, state.Stage = "warning", "lease"
+		return saveScheduledWarning(ctx, d, state, errors.Join(remoteErr, err))
+	}
 	pruned := 0
 	if keep := backupRetain(ctx, d); keep > 0 {
-		pruned, err = backup.PruneVerified(d.Config.DataDir, keep)
+		pruned, err = backup.PruneVerifiedKeeping(d.Config.DataDir, keep, res.Stamp)
 		if err != nil {
 			state.Status, state.Stage = "warning", "prune"
-			stateErr := d.Settings.Set(ctx, SettingBackupScheduleState, state)
-			err = errors.Join(err, stateErr)
 			d.Audit.Record(ctx, "system.backup_retention_failed", "backup", res.Stamp, map[string]string{"stage": "prune"})
 			d.Log.Error("backup.schedule: retention failed", "err", err)
 		}
 	}
-	d.Audit.Record(ctx, "system.backup_scheduled", "backup", res.Stamp, map[string]any{"files": res.Count, "pruned": pruned, "retain": backupRetain(ctx, d), "verified": true})
+	if pruned > 0 {
+		d.Audit.Record(ctx, "system.backup_retention", "backup", res.Stamp, map[string]any{"pruned": pruned, "retain": backupRetain(ctx, d)})
+	}
 	d.Log.Info("backup.schedule: verified", "stamp", res.Stamp, "pruned", pruned)
+	if state.Status == "warning" {
+		return saveScheduledWarning(ctx, d, state, errors.Join(remoteErr, err))
+	}
 	return err
 }
 
@@ -240,4 +246,24 @@ func verifiedBackup(res backup.Result, now time.Time) (backupSuccess, error) {
 		return backupSuccess{}, err
 	}
 	return backupSuccess{At: now.UTC().Format(time.RFC3339), Stamp: res.Stamp, Bytes: manifest.Database.Size + manifest.Archive.Size}, nil
+}
+
+func backupScheduleDue(ctx context.Context, d *kernel.Deps, now time.Time) bool {
+	hours := backupScheduleHours(ctx, d)
+	if hours < 1 {
+		return false
+	}
+	last := backupScheduleLast(ctx, d)
+	return last.IsZero() || !now.Before(last.Add(time.Duration(hours)*time.Hour))
+}
+
+func (state backupScheduleState) WarningKey() string {
+	switch state.Stage {
+	case "remote":
+		return "remotebackup.warning"
+	case "lease":
+		return "remotebackup.lease_warning"
+	default:
+		return "admin.backups.alert_retention"
+	}
 }
