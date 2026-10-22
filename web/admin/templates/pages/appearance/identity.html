@@ -53,7 +53,7 @@
 <span class="identity-toggle"><button type="button" data-preview-locale="ar" aria-pressed="{{if eq .Locale "ar"}}true{{else}}false{{end}}">{{t "theme.identity.preview_locale_ar"}}</button><button type="button" data-preview-locale="en" aria-pressed="{{if eq .Locale "ar"}}false{{else}}true{{end}}">{{t "theme.identity.preview_locale_en"}}</button></span>
 <a href="{{.PreviewURL}}?view=home" target="_blank" rel="noopener" class="underline text-xs" data-preview-open>{{t "theme.identity.preview_reload"}}</a>
 </div>
-<div class="identity-frame" data-identity-frame-wrap><iframe data-identity-preview-frame src="{{.PreviewURL}}?view=home&amp;locale={{.Locale}}" title="{{t "theme.identity.preview"}}" loading="lazy" sandbox="allow-same-origin"></iframe></div>
+<div class="identity-frame" data-identity-frame-wrap><iframe data-identity-preview-frame src="{{.PreviewURL}}?view=home&amp;locale={{.Locale}}" title="{{t "theme.identity.preview"}}" sandbox="allow-same-origin"></iframe></div>
 </aside>
 </form>
 {{if .CanImport}}<form method="post" action="/admin/appearance/identity" class="identity-import border border-line p-4 rounded mt-6"><input type="hidden" name="_csrf" value="{{csrf}}"><h3 class="font-medium">{{t "theme.identity.import"}}</h3><p class="text-sm text-muted my-2">{{t "theme.identity.import_help"}}</p><button type="submit" name="action" value="import" class="border border-line bg-panel px-4 py-2 rounded">{{t "theme.identity.import"}}</button></form>{{end}}
