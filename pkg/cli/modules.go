@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/auth"
@@ -9,6 +10,7 @@ import (
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/ext"
+	"github.com/zadstack/gorun/internal/identityai"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/launch"
 	"github.com/zadstack/gorun/internal/mcp"
@@ -52,6 +54,7 @@ func CoreModules() []kernel.Module {
 		membership.New(),
 		launch.New(),
 		workagents.New(admin.CompleteWorkAgent),
+		identityai.New(identityAIHooks()),
 		wpmigrate.New(),
 		mcp.New(),
 		ext.New(),
@@ -89,4 +92,24 @@ func InsertAfter(mods []kernel.Module, after string, extra ...kernel.Module) []k
 		out = append(out, extra...)
 	}
 	return out
+}
+
+// identityAIHooks adapts the admin-owned AI bridge to the optional
+// identityai module without the admin package importing it.
+func identityAIHooks() identityai.Hooks {
+	return identityai.Hooks{
+		Complete: admin.CompleteWorkAgent,
+		Ready:    admin.WorkAgentProviderReady,
+		Connections: func(ctx context.Context, d *kernel.Deps) ([]identityai.Connection, error) {
+			rows, err := admin.ListAIConnections(ctx, d)
+			if err != nil {
+				return nil, err
+			}
+			out := make([]identityai.Connection, 0, len(rows))
+			for _, r := range rows {
+				out = append(out, identityai.Connection{ID: r.ID, Name: r.Name, Provider: r.Provider, Model: r.Model, Host: r.Host, TestStatus: r.TestStatus})
+			}
+			return out, nil
+		},
+	}
 }

@@ -2,6 +2,7 @@ package theme
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -47,3 +48,28 @@ var logoKeys = map[string]bool{"site.logo": true, "site.logo_light": true, "site
 
 // Get returns the theme identity value for key ("" when absent).
 func (s IdentitySnapshot) Get(key string) string { return s.Values[key] }
+
+// IdentityFontLabel returns the display name of an identity font value from
+// either font list, or the value itself when unknown ("" for "").
+func IdentityFontLabel(value string) string {
+	if value == "" {
+		return ""
+	}
+	if f, ok := findFontIn(identityFonts, value); ok {
+		return f.Label
+	}
+	if f, ok := findFontIn(latinFonts, value); ok {
+		return f.Label
+	}
+	return value
+}
+
+// ContrastRatio formats the WCAG contrast between two hex colours ("" when
+// either is not a colour).
+func ContrastRatio(a, b string) string {
+	r := contrast(a, b)
+	if r == 0 {
+		return ""
+	}
+	return strconv.FormatFloat(r, 'f', 1, 64) + ":1"
+}

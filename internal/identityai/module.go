@@ -1,0 +1,116 @@
+// Package identityai is an optional module that asks a configured text AI
+// connection for identity suggestions (palette, fonts, taglines, a logo
+// brief) and writes them to the Appearance → Identity draft, never live.
+// It produces text only: no image, vector or GIF is ever generated or
+// claimed.
+package identityai
+
+import (
+	"context"
+	"database/sql"
+	"embed"
+	"encoding/json"
+	"errors"
+	"io/fs"
+	"net/http"
+	"strings"
+
+	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/theme"
+)
+
+//go:embed admin/templates/pages/identityai/*.html catalog/*.json
+var files embed.FS
+
+const (
+	// SettingEnabled turns the module on; missing means off (kernel.OptionalModule).
+	SettingEnabled = "addons.identityai.enabled"
+	// PermGenerate is the permission the page requires (the same as the identity page).
+	PermGenerate = "settings.manage"
+	pagePath     = "/appearance/identity/ai"
+)
+
+// Connection describes an AI connection profile for display: never a secret.
+type Connection struct {
+	ID, Name, Provider, Model, Host, TestStatus string
+}
+
+// Hooks are the admin-owned AI functions the module depends on, injected
+// at boot (like workagents), so this package never reads credentials.
+type Hooks struct {
+	// Complete sends one system + user turn through connectionID (""
+	// means the site's writing settings) and returns the reply text.
+	Complete func(ctx context.Context, d *kernel.Deps, connectionID, model, system, input string) (string, error)
+	// Ready reports that the connection's configuration and credential are
+	// readable, without sending a request.
+	Ready func(ctx context.Context, d *kernel.Deps, connectionID, model string) bool
+	// Connections lists the saved AI connection profiles.
+	Connections func(ctx context.Context, d *kernel.Deps) ([]Connection, error)
+}
+
+// IdentityStore is what the module needs from the theme service.
+type IdentityStore interface {
+	Active(ctx context.Context) theme.Info
+	LiveIdentity(ctx context.Context, slug string) theme.IdentitySnapshot
+	IdentityDraft(ctx context.Context, slug string) (theme.IdentityDraft, bool)
+	SaveIdentityDraft(ctx context.Context, snap theme.IdentitySnapshot) error
+}
+
+// Module is the identityai kernel.Module.
+type Module struct{ hooks Hooks }
+
+// New returns the module with its AI hooks.
+func New(h Hooks) *Module { return &Module{hooks: h} }
+
+func (*Module) Name() string      { return "identityai" }
+func (*Module) Migrations() fs.FS { return nil }
+func (*Module) Catalogs() fs.FS   { return files }
+
+// Enabled implements kernel.OptionalModule: on only when the setting is
+// true. Nothing is read beyond that one row.
+func (*Module) Enabled(ctx context.Context, d *sql.DB) (bool, error) {
+	var raw string
+	err := d.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = ?`, SettingEnabled).Scan(&raw)
+	if errors.Is(err, sql.ErrNoRows) || (err != nil && strings.Contains(err.Error(), "no such table")) {
+		return false, nil // an empty database is valid: nothing is enabled yet
+	}
+	if err != nil {
+		return false, err
+	}
+	var on bool
+	if json.Unmarshal([]byte(raw), &on) != nil {
+		return false, nil
+	}
+	return on, nil
+}
+
+// Register mounts the page and its navigation entry.
+func (m *Module) Register(d *kernel.Deps) error {
+	tpl, ok := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates)
+	if !ok {
+		return errors.New("identityai: admin templates unavailable")
+	}
+	if err := tpl.RegisterExtension(files); err != nil {
+		return err
+	}
+	s := newService(d, m.hooks)
+	h := &handlers{s: s, tpl: tpl}
+	d.Admin.AddNav(kernel.NavItem{ID: "appearance.identity_ai", LabelKey: "identityai.nav", Icon: "sparkles", Href: "/admin" + pagePath, Permission: PermGenerate, Group: "appearance", Position: 2})
+	r := d.Router.Admin.With(auth.RequirePerm(PermGenerate))
+	r.Get(pagePath, h.page)
+	r.Post(pagePath, h.submit)
+	return nil
+}
+
+var _ kernel.OptionalModule = (*Module)(nil)
+
+type handlers struct {
+	s   *service
+	tpl *httpx.Templates
+}
+
+func (h *handlers) page(w http.ResponseWriter, r *http.Request) {
+	h.render(w, r, http.StatusOK, h.s.pageData(r.Context(), Brief{}, nil, ""))
+}

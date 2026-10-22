@@ -220,7 +220,8 @@ func TestDoctorDisabledAddonDoesNotRequireMigrations(t *testing.T) {
 	if !report.OK {
 		t.Fatalf("disabled addon reported pending migrations: %+v", report)
 	}
-	if len(report.Checks) != 2 || !strings.Contains(report.Checks[0].Message, "1 disabled") {
+	// identityai ships off by default, so the fixture's disabled module makes two.
+	if len(report.Checks) != 2 || !strings.Contains(report.Checks[0].Message, "2 disabled") {
 		t.Fatalf("activation not reported: %+v", report)
 	}
 	mods[len(mods)-1] = doctorOptionalModule{activationErr: errors.New("bad configuration with private data")}

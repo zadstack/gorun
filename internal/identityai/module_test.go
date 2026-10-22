@@ -1,0 +1,283 @@
+package identityai
+
+import (
+	"context"
+	"errors"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/cookiejar"
+	"net/http/httptest"
+	"net/url"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+
+	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/config"
+	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/settings/settingsmod"
+	"github.com/zadstack/gorun/internal/theme"
+)
+
+const testPage = "/admin/appearance/identity/ai"
+
+type fakeProvider struct {
+	connections []Connection
+	ready       bool
+	reply       string
+	err         error
+	calls       int
+	lastSystem  string
+	lastInput   string
+}
+
+func (f *fakeProvider) hooks() Hooks {
+	return Hooks{
+		Complete: func(_ context.Context, _ *kernel.Deps, _, _, system, input string) (string, error) {
+			f.calls++
+			f.lastSystem, f.lastInput = system, input
+			return f.reply, f.err
+		},
+		Ready:       func(context.Context, *kernel.Deps, string, string) bool { return f.ready },
+		Connections: func(context.Context, *kernel.Deps) ([]Connection, error) { return f.connections, nil },
+	}
+}
+
+type env struct {
+	t   *testing.T
+	app *kernel.App
+	srv *httptest.Server
+	c   *http.Client
+	fp  *fakeProvider
+}
+
+func boot(t *testing.T, enabled bool, fp *fakeProvider) *env {
+	t.Helper()
+	root, _ := filepath.Abs("../../themes")
+	cfg := config.Config{Env: "dev", DataDir: t.TempDir(), Addr: ":0", SecretKey: make([]byte, 32), BaseURL: "http://example.test", Theme: "default"}
+	pre, err := kernel.Boot(context.Background(), cfg, []kernel.Module{settingsmod.New()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if enabled {
+		if err := pre.Deps.Settings.Set(context.Background(), SettingEnabled, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	pre.Close()
+	app, err := kernel.Boot(context.Background(), cfg, []kernel.Module{settingsmod.New(), auth.New(), theme.New(theme.WithThemesDir(root), theme.WithLogger(slog.New(slog.NewTextHandler(io.Discard, nil)))), New(fp.hooks())})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(app.Close)
+	srv := httptest.NewServer(app.Handler)
+	t.Cleanup(srv.Close)
+	jar, _ := cookiejar.New(nil)
+	e := &env{t: t, app: app, srv: srv, c: &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, fp: fp}
+	svc, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
+	if _, err := svc.Create(context.Background(), "admin@example.com", "Admin", "correct horse battery", "admin"); err != nil {
+		t.Fatal(err)
+	}
+	_, page := e.get("/admin/login")
+	e.post("/admin/login", url.Values{"_csrf": {csrfFrom(t, page)}, "email": {"admin@example.com"}, "password": {"correct horse battery"}})
+	return e
+}
+
+func csrfFrom(t *testing.T, html string) string {
+	t.Helper()
+	m := regexp.MustCompile(`name="_csrf" value="([^"]+)"`).FindStringSubmatch(html)
+	if m == nil {
+		m = regexp.MustCompile(`name="csrf-token" content="([^"]+)"`).FindStringSubmatch(html)
+	}
+	if m == nil {
+		t.Fatal("no csrf token")
+	}
+	return m[1]
+}
+
+func (e *env) get(path string, hdr ...string) (*http.Response, string) {
+	e.t.Helper()
+	req, _ := http.NewRequest("GET", e.srv.URL+path, nil)
+	for i := 0; i+1 < len(hdr); i += 2 {
+		req.Header.Set(hdr[i], hdr[i+1])
+	}
+	resp, err := e.c.Do(req)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	return resp, string(b)
+}
+
+func (e *env) post(path string, form url.Values) (*http.Response, string) {
+	e.t.Helper()
+	req, _ := http.NewRequest("POST", e.srv.URL+path, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept-Language", "en")
+	resp, err := e.c.Do(req)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	b, _ := io.ReadAll(resp.Body)
+	return resp, string(b)
+}
+
+func (e *env) csrf() string {
+	e.t.Helper()
+	_, page := e.get(testPage)
+	return csrfFrom(e.t, page)
+}
+
+func adminCtx() context.Context {
+	return auth.WithUser(context.Background(), &auth.User{ID: "u1", Role: "admin", Status: auth.StatusActive})
+}
+
+const goodReply = `{"accent":"#c2410c","background":"#fffdf8","text":"#1b1b1f","heading_font":"readex","body_font":"ibm-plex-arabic","latin_font":"inter","radius":"soft","tagline_ar":"متجر للقهوة المختصة","tagline_en":"Specialty coffee, roasted weekly","logo_brief":"A wordmark in a warm serif with a small bean mark; keep it flat and single-colour."}`
+
+func TestModuleDisabledByDefaultHidesPageAndNav(t *testing.T) {
+	e := boot(t, false, &fakeProvider{})
+	if resp, _ := e.get(testPage); resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("disabled module page: %d", resp.StatusCode)
+	}
+	if _, settings := e.get("/admin/appearance/theme-settings"); strings.Contains(settings, `data-nav-id="appearance.identity_ai"`) {
+		t.Fatal("disabled module registered navigation")
+	}
+}
+
+func TestModuleEnabledShowsPageWithHonestScope(t *testing.T) {
+	e := boot(t, true, &fakeProvider{ready: true, connections: []Connection{{ID: "c1", Name: "Anthropic main", Provider: "anthropic", Model: "claude-sonnet-4-5", Host: "api.anthropic.com"}}})
+	resp, page := e.get(testPage, "Accept-Language", "en")
+	if resp.StatusCode != 200 {
+		t.Fatalf("page: %d", resp.StatusCode)
+	}
+	for _, want := range []string{"No images, vectors or GIFs are generated", `name="connection"`, "Anthropic main", `name="action" value="preview"`, "/admin/appearance/identity"} {
+		if !strings.Contains(page, want) {
+			t.Errorf("page missing %q", want)
+		}
+	}
+	if !strings.Contains(page, `data-nav-id="appearance.identity_ai"`) {
+		t.Fatal("enabled module missing from navigation")
+	}
+	_, ar := e.get(testPage, "Accept-Language", "ar")
+	if !strings.Contains(ar, "لا يُنتج") {
+		t.Error("arabic scope statement missing")
+	}
+}
+
+func TestPreviewWithoutProviderExplainsAndMakesNoCall(t *testing.T) {
+	fp := &fakeProvider{ready: false, reply: goodReply}
+	e := boot(t, true, fp)
+	resp, page := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "sector": {"coffee"}, "tone": {"warm"}})
+	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(page, "No AI connection is ready") {
+		t.Fatalf("preview without provider: %d", resp.StatusCode)
+	}
+	if fp.calls != 0 {
+		t.Fatal("provider was called")
+	}
+	if _, ok := themeSvc(e).IdentityDraft(adminCtx(), "default"); ok {
+		t.Fatal("draft created")
+	}
+}
+
+func themeSvc(e *env) IdentityStore {
+	s, _ := kernel.Get[IdentityStore](e.app.Deps, kernel.ServiceTheme)
+	return s
+}
+
+func TestPreviewShowsPromptCostAndRequiresApproval(t *testing.T) {
+	fp := &fakeProvider{ready: true, reply: goodReply, connections: []Connection{{ID: "c1", Name: "OpenAI", Provider: "openai", Model: "gpt-4o-mini", Host: "api.openai.com"}}}
+	e := boot(t, true, fp)
+	resp, page := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "connection": {"c1"}, "sector": {"specialty coffee"}, "tone": {"warm"}})
+	if resp.StatusCode != 200 {
+		t.Fatalf("preview: %d", resp.StatusCode)
+	}
+	for _, want := range []string{"gpt-4o-mini", "api.openai.com", "specialty coffee", `name="review"`, "Estimated cost", "$", `name="approved"`, `name="action" value="generate"`, "price list"} {
+		if !strings.Contains(page, want) {
+			t.Errorf("preview missing %q", want)
+		}
+	}
+	if fp.calls != 0 {
+		t.Fatal("preview called the provider")
+	}
+	review := regexp.MustCompile(`name="review" value="([^"]+)"`).FindStringSubmatch(page)[1]
+	// Generate without the approval box: refused, no call.
+	resp, _ = e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}})
+	if resp.StatusCode != http.StatusUnprocessableEntity || fp.calls != 0 {
+		t.Fatalf("unapproved generate: %d calls=%d", resp.StatusCode, fp.calls)
+	}
+	// Approved: one call, result written to the identity draft only.
+	resp, page = e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+	if resp.StatusCode != 200 || fp.calls != 1 {
+		t.Fatalf("generate: %d calls=%d", resp.StatusCode, fp.calls)
+	}
+	for _, want := range []string{"#c2410c", "Readex Pro", "Specialty coffee, roasted weekly", "متجر للقهوة المختصة", "wordmark", "saved as a draft"} {
+		if !strings.Contains(page, want) {
+			t.Errorf("result missing %q", want)
+		}
+	}
+	if !strings.Contains(fp.lastInput, "specialty coffee") || !strings.Contains(fp.lastSystem, "JSON") {
+		t.Errorf("prompt not built from the brief: %q", fp.lastInput)
+	}
+	d, ok := themeSvc(e).IdentityDraft(adminCtx(), "default")
+	if !ok || d.Snapshot.Values["identity_accent"] != "#c2410c" || d.Snapshot.Values["identity_latin_font"] != "inter" || d.Snapshot.Site["site.tagline"] != "متجر للقهوة المختصة" {
+		t.Fatalf("draft = %+v ok=%v", d.Snapshot, ok)
+	}
+	if got := e.app.Deps.Settings.GetString(adminCtx(), "theme.default.identity_accent", ""); got != "" {
+		t.Fatal("result applied live")
+	}
+	var n int
+	_ = e.app.Deps.DB.QueryRow(`SELECT count(*) FROM audit_log WHERE action = 'identityai.generate'`).Scan(&n)
+	if n != 1 {
+		t.Fatalf("audit rows = %d", n)
+	}
+	// The review token is single-use.
+	resp, _ = e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+	if resp.StatusCode != http.StatusConflict || fp.calls != 1 {
+		t.Fatalf("reused token: %d calls=%d", resp.StatusCode, fp.calls)
+	}
+}
+
+func TestGenerateFailuresLeaveDraftUntouched(t *testing.T) {
+	for name, fp := range map[string]*fakeProvider{
+		"upstream":  {ready: true, err: errors.New("boom")},
+		"not json":  {ready: true, reply: "Here is a palette: orange and cream."},
+		"bad color": {ready: true, reply: `{"accent":"orange","background":"#fff","text":"#111","tagline_en":"x"}`},
+		"bad font":  {ready: true, reply: `{"accent":"#c2410c","background":"#ffffff","text":"#111111","heading_font":"comic","tagline_en":"x"}`},
+	} {
+		t.Run(name, func(t *testing.T) {
+			fp.connections = []Connection{{ID: "c1", Name: "P", Provider: "openai", Model: "gpt-4o", Host: "api.openai.com"}}
+			e := boot(t, true, fp)
+			if err := themeSvc(e).SaveIdentityDraft(adminCtx(), theme.IdentitySnapshot{Theme: "default", Values: map[string]string{"identity_accent": "#123456"}, Site: map[string]string{"site.title": "Keep"}}); err != nil {
+				t.Fatal(err)
+			}
+			_, page := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "connection": {"c1"}, "sector": {"x"}})
+			review := regexp.MustCompile(`name="review" value="([^"]+)"`).FindStringSubmatch(page)[1]
+			resp, page := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+			if resp.StatusCode != http.StatusBadGateway && resp.StatusCode != http.StatusUnprocessableEntity {
+				t.Fatalf("status %d", resp.StatusCode)
+			}
+			if !strings.Contains(page, "data-identityai-error") || strings.Contains(page, "boom") {
+				t.Fatalf("error not shown safely: %d", resp.StatusCode)
+			}
+			d, ok := themeSvc(e).IdentityDraft(adminCtx(), "default")
+			if !ok || d.Snapshot.Values["identity_accent"] != "#123456" {
+				t.Fatalf("draft changed: %+v ok=%v", d.Snapshot, ok)
+			}
+		})
+	}
+}
+
+func TestEstimateCostKnownAndUnknownModels(t *testing.T) {
+	known := EstimateCost("anthropic", "claude-sonnet-4-5", 1200, 1500)
+	if !known.Known || known.USD <= 0 || known.AsOf == "" {
+		t.Fatalf("known model estimate = %+v", known)
+	}
+	unknown := EstimateCost("openai", "my-custom-model", 1200, 1500)
+	if unknown.Known || unknown.USD != 0 {
+		t.Fatalf("unknown model estimate = %+v", unknown)
+	}
+}
