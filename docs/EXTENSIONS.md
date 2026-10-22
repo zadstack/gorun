@@ -18,6 +18,9 @@ Internal modules register on the very same `hooks` registry (`hooks.Action`,
 an internal module can observe or filter by hook name, an extension can too.
 
 - Code: `internal/ext` (admin: **System → Extensions**, permission `extensions.manage`)
+- Installed extensions also appear in **System → Modules** next to the built-in modules and core
+  services, with their manifest version, hooks, permissions and configuration state
+  ([MODULES.md](MODULES.md))
 - Example: `examples/extensions/hello-http` (Go, standard library only)
 
 ## Package layout

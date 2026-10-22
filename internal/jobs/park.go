@@ -89,6 +89,26 @@ func (q *Queue) Unregistered(ctx context.Context) (ParkedCounts, error) {
 	return out, rows.Err()
 }
 
+// QueuedByKind counts queued, unparked jobs by kind (whatever their handler
+// state), so a module page can show the work waiting for it.
+func (q *Queue) QueuedByKind(ctx context.Context) (ParkedCounts, error) {
+	rows, err := q.db.QueryContext(ctx, `SELECT kind, count(*) FROM jobs WHERE status = 'queued' AND parked_reason = '' GROUP BY kind`)
+	if err != nil {
+		return nil, fmt.Errorf("jobs: queued by kind: %w", err)
+	}
+	defer rows.Close()
+	out := ParkedCounts{}
+	for rows.Next() {
+		var kind string
+		var n int
+		if err := rows.Scan(&kind, &n); err != nil {
+			return nil, err
+		}
+		out[kind] = n
+	}
+	return out, rows.Err()
+}
+
 // Kinds returns the registered handler kinds, sorted.
 func (q *Queue) Kinds() []string {
 	q.mu.RLock()

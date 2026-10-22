@@ -133,7 +133,9 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Jobs.Cron("canvas.schedule", time.Minute, h.canvasTick)
 	d.Jobs.Register("studio.generate", h.studioGenerateJob, 1)
 	d.Jobs.Cron("studio.recover", time.Minute, h.studioRecover)
+	h.modulesRoutes()
 	h.apiOperations()
+	h.moduleCatalogAPIOperations()
 	h.capabilityAPIOperations()
 	h.capabilityTestAPIOperations()
 	h.integrationAPIOperations()
@@ -182,6 +184,7 @@ func addNav(d *kernel.Deps) {
 		{ID: "settings.edge", LabelKey: "admin.settings.edge.nav", Icon: "cloud", Href: "/admin/settings/edge", Permission: PermSettings, Group: "settings", Position: 704},
 		{ID: "system.updates", LabelKey: "admin.updates.title", Icon: "download", Href: "/admin/system/updates", Permission: PermUpdate, Group: "system", Position: 905},
 		{ID: "system.health", LabelKey: "admin.nav.health", Icon: "activity", Href: "/admin/system/health", Permission: PermHealth, Group: "system", Position: 900},
+		{ID: "system.modules", LabelKey: "admin.modules.title", Icon: "package", Href: "/admin/system/modules", Permission: PermHealth, Group: "system", Position: 902},
 		{ID: "system.jobs", LabelKey: "admin.nav.jobs", Icon: "list-checks", Href: "/admin/system/jobs", Permission: PermHealth, Group: "system", Position: 910},
 		{ID: "system.backups", LabelKey: "admin.nav.backups", Icon: "archive", Href: "/admin/system/backups", Permission: PermBackup, Group: "system", Position: 920},
 	} {

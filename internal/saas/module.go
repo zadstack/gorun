@@ -2,6 +2,7 @@ package saas
 
 import (
 	"context"
+	"database/sql"
 	"embed"
 	"errors"
 	"html/template"
@@ -30,6 +31,15 @@ func New() *Module                { return &Module{} }
 func (*Module) Name() string      { return "saas" }
 func (*Module) Migrations() fs.FS { return migrations }
 func (*Module) Catalogs() fs.FS   { return catalogs }
+
+// Enabled implements kernel.OptionalModule (addons.saas in the config or the
+// addons.saas.enabled setting; on by default). Subscription sync arrives
+// through commerce hooks, so with commerce disabled the local grants still
+// work but nothing is synced from Stripe.
+func (*Module) Enabled(ctx context.Context, d *sql.DB) (bool, error) {
+	return kernel.AddonEnabled(ctx, d, "saas")
+}
+
 func (m *Module) Register(d *kernel.Deps) error {
 	d.Perms.Declare("saas.read", map[string]string{"en": "Read owned SaaS subscriptions", "ar": "عرض اشتراكات SaaS المملوكة"})
 	d.Perms.Declare("saas.use", map[string]string{"en": "Use owned SaaS subscriptions", "ar": "استخدام اشتراكات SaaS المملوكة"})

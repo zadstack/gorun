@@ -240,9 +240,12 @@ Example connection evidence fragment:
 
 Module activation reuses `kernel.OptionalModule`, before catalogs, migrations, routes and job handlers
 are registered. Disabled modules retain their tables/settings and re-enable through their existing
-activation configuration and a restart. Core modules that do not implement that gate stay enabled;
-`GORUN_ADDONS` alone is not a universal switch for arbitrary modules. The report captures boot state,
-so editing desired configuration does not pretend that the running process has restarted.
+activation configuration and a restart. The built-in optional modules are commerce, saas and
+membership (enabled by default; `addons.<name>.enabled` setting or `GORUN_ADDONS` mode `disabled`,
+see [ARCHITECTURE.md](ARCHITECTURE.md#optional-modules)). Core modules that do not implement that
+gate stay enabled; `GORUN_ADDONS` alone is not a universal switch for arbitrary modules. The report
+captures boot state, so editing desired configuration does not pretend that the running process has
+restarted.
 
 Coverage is explicit: this is module inventory and managed connection evidence, not a complete report
 of every business workflow, legacy mail/storage configuration, or caller's operation permissions.
@@ -382,7 +385,7 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **187 operations** in 24 tags.
+Generated from the current locally booted OpenAPI document: **189 operations** in 24 tags.
 
 ### builder
 
@@ -603,6 +606,7 @@ Generated from the current locally booted OpenAPI document: **187 operations** i
 | GET | `/api/v1/jobs` | List jobs | `system.health` |
 | GET | `/api/v1/system/backups/schedule` | Read the saved backup schedule and separate local/upload outcomes; no external calls | `system.backup` |
 | GET | `/api/v1/system/health` | System health report | `system.health` |
+| GET | `/api/v1/system/modules` | Module catalog: built-in modules, core services and external extensions with function, source, version, dependencies, permissions, observed registrations, activation and configuration state | `system.health` |
 | GET | `/api/v1/system/observations/{kind}/{key}` | One saved observation; status never is a key that was never refreshed | `system.health` |
 | GET | `/api/v1/system/observations` | Saved background observations of expensive or external checks, with age and attempt state (no external calls) | `system.health` |
 | GET | `/api/v1/system/update/operations/{id}` | One staged update operation with every phase, its timing, result and remediation | `system.update` |
@@ -612,6 +616,7 @@ Generated from the current locally booted OpenAPI document: **187 operations** i
 | POST | `/api/v1/system/observations/{kind}/{key}/refresh` | Queue a background refresh and return its task reference at once; concurrent requests share one job | `settings.manage` |
 | POST | `/api/v1/system/update` | Start a staged update operation; returns 202 with the pending operation, never a completed update | `system.update` |
 | PUT | `/api/v1/system/backups/schedule` | Replace the backup schedule; remote uploads require explicit selection of the active backup destination | `system.backup` |
+| PUT | `/api/v1/system/modules/{name}/activation` | Set whether an optional module boots next time (data is kept either way; a restart applies it) | `settings.manage` |
 
 ### taxonomies
 
