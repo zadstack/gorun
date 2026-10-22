@@ -10,6 +10,15 @@
   <h1 class="text-[22px] font-bold mt-1" dir="auto">{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{t "content.editor.edit" .TypeName}}{{end}}</h1>
 </div>
 {{if and (not .IsNew) (eq .Type.Slug "page")}}<p class="content-page-path border border-line p-3 mb-3">{{t "content.ux.page_paths"}}</p><a href="/admin/builder/{{.Item.ID}}" class="inline-flex border border-line px-3 py-2 mb-4 text-blue">{{t "builder.open"}}</a>{{end}}
+{{if and (not .IsNew) (eq .Type.Slug "page") .CanRequestReview}}
+<link rel="stylesheet" href="{{asset "design-reviews.css"}}"><script defer src="{{asset "design-reviews.js"}}"></script>
+<details data-review-sidebar data-page-id="{{.Item.ID}}" data-csrf="{{csrf}}" data-unavailable="{{t "workagents.review.setup"}}" data-failed="{{t "workagents.review.failure"}}" data-queued="{{t "workagents.review.queued"}}" class="border border-line bg-panel p-3 mb-4"><summary class="cursor-pointer font-medium">{{if eq locale "ar"}}اطلب مراجعة{{else}}Request review{{end}}</summary>
+<aside aria-label="{{t "workagents.review.title"}}" class="mt-3 space-y-3"><p class="text-sm text-muted">{{t "workagents.review.readonly"}}</p>
+<label class="grid gap-1">{{t "workagents.review.orchestrator"}}<select class="border border-line p-2 bg-panel"><option value="">{{t "workagents.review.select"}}</option></select></label>
+<button type="button" data-review-preview class="border border-line px-3 py-2">{{t "workagents.review.preview"}}</button>
+<div data-review-approval hidden class="space-y-3"><p>{{t "workagents.review.destination"}}: <span data-review-destination dir="auto"></span></p><pre data-review-context class="border border-line p-3 whitespace-pre-wrap text-sm" dir="auto"></pre><label class="flex gap-2"><input type="checkbox" data-review-consent required> <span>{{t "workagents.review.consent"}}</span></label><button type="button" data-review-enqueue class="bg-green text-white px-3 py-2">{{t "workagents.review.enqueue"}}</button></div>
+<p role="status" aria-live="polite" data-review-status></p><a href="/admin/workagents/design-reviews?page_id={{.Item.ID}}" target="_blank" rel="noopener" class="text-blue">{{t "workagents.review.history"}}</a><noscript><a href="/admin/workagents/design-reviews?page_id={{.Item.ID}}">{{t "workagents.review.preview"}}</a></noscript></aside></details>
+{{end}}
 {{with .FormError}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
 <form method="post" action="{{.Action}}" data-content-editor data-was-published="{{if eq .Item.Status "published"}}true{{else}}false{{end}}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">

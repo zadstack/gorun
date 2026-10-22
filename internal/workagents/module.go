@@ -69,6 +69,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 		w.Write(b)
 	})
 	h.api(d)
+	h.registerDesignReviews(d)
 	if err := seedExampleOrchestratorAgents(context.Background(), d, func() string { return db.FormatTime(time.Now()) }); err != nil {
 		return err
 	}
@@ -207,6 +208,12 @@ func (h *handlers) failure(w http.ResponseWriter, e error) {
 		code = 409
 		message = e.Error()
 	case errors.Is(e, errUnavailable):
+		code = 409
+		message = e.Error()
+	case errors.Is(e, errReviewForbidden):
+		httpx.Error(w, http.StatusForbidden, "forbidden", e.Error(), nil)
+		return
+	case errors.Is(e, errReviewApproval):
 		code = 409
 		message = e.Error()
 	case errors.Is(e, errConflict):

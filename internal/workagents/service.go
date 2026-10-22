@@ -72,10 +72,11 @@ type Workflow struct {
 }
 
 type service struct {
-	d            *kernel.Deps
-	complete     Completion
-	now          func() time.Time
-	githubClient *http.Client
+	d              *kernel.Deps
+	complete       Completion
+	reviewComplete func(context.Context, *kernel.Deps, admin.ReviewCompletionRequest) (string, error)
+	now            func() time.Time
+	githubClient   *http.Client
 }
 
 func manager(ctx context.Context) bool { return auth.Can(ctx, "workagents.manage") }

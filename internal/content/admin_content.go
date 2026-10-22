@@ -231,7 +231,8 @@ type editorView struct {
 	PublishAtLocal        string
 	CanPublish            bool
 	CanDelete             bool
-	CanPickMedia          bool              // media module present and media.upload held
+	CanPickMedia          bool // media module present and media.upload held
+	CanRequestReview      bool
 	Translations          []translationView // one per supported locale; empty for new or trashed items
 	CanUnlink             bool              // the item is linked and content.edit is held
 	Locales               []string          // supported content locales for the new-item picker
@@ -297,6 +298,8 @@ func (h *adminHandlers) renderEditor(w http.ResponseWriter, r *http.Request, sta
 	v := editorView{Type: t, TypeName: localized(t.Singular, locale, localized(t.Name, locale, t.Slug)), Item: it, IsNew: isNew, ListURL: base,
 		Errors: errs, CanPublish: canPublish(ctx), CanDelete: auth.Can(ctx, "content.delete"), FormError: formErr,
 		Locales: i18n.Supported, Supports: map[string]bool{}, PublishAtLocal: localDatetime(it.PublishAt), BodyDir: "auto"}
+	_, reviewAvailable := kernel.Get[any](h.d, "workagents")
+	v.CanRequestReview = reviewAvailable && auth.Can(ctx, "workagents.run") && auth.Can(ctx, "content.view")
 	if v.Errors == nil {
 		v.Errors = FieldErrors{}
 	}

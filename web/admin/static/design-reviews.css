@@ -1,0 +1,4 @@
+[data-review-sidebar][open]{position:fixed;inset-block-start:5rem;inset-inline-end:1rem;width:min(42rem,calc(100vw - 2rem));z-index:45;max-height:calc(100dvh - 6rem);overflow:auto;box-shadow:0 8px 24px rgb(30 45 38 / .16)}
+[data-review-sidebar] summary:focus-visible{outline:2px solid currentColor;outline-offset:4px}
+[data-design-reviews] pre{overflow-wrap:anywhere}
+@media(max-width:600px){[data-review-sidebar][open]{inset-block-start:1rem;max-height:calc(100dvh - 2rem)}}

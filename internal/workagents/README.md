@@ -110,3 +110,13 @@ audio generation, scheduled source triggers and automatic source-ID mapping
 are unsupported. Unknown JSON fields are rejected. Existing imported graphs
 remain disabled until an operator explicitly maps and verifies equivalent
 contracts; removing source conditions merely to activate a plan is invalid.
+
+## Read-only page review tasks
+
+The admin task screen and saved-page editor sidebar provide a separate,
+read-only review workflow through the same jobs, authentication, provider and
+audit services. A preview and explicit destination-bound approval are required
+before sending any selected-page context. Review output cannot create drafts,
+apply edits or publish. See [Agent tasks](../../docs/AGENT_TASKS.md) for API,
+setup, cancellation, retry and verification details, including the copy-only
+scope and unsupported Reason Network product integration.
