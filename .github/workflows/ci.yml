@@ -65,6 +65,13 @@ jobs:
         working-directory: e2e
         env:
           STRIPE_SECRET_KEY: ''
+      - name: module activation from an explicitly cold-disabled fixture
+        run: npx playwright test global.setup.ts modules-acceptance.spec.ts --project=setup --project=chromium --no-deps
+        working-directory: e2e
+        env:
+          E2E_MODULES_COLD_START: membership
+          E2E_SKIP_BUILD: '1'
+          STRIPE_SECRET_KEY: ''
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:

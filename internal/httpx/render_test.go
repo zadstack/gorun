@@ -165,3 +165,34 @@ func TestGroupLabelFallsBackOnlyForMissingKeys(t *testing.T) {
 		}
 	}
 }
+
+// A cached page must evaluate permissions against each request, including
+// a reader rendered after a privileged request; an unwired callback denies.
+func TestCachedTemplatePermissionsFollowRequestAndDefaultToDenied(t *testing.T) {
+	type permissionContextKey struct{}
+	tpl := newTestTemplates(t, false)
+	render := func(allowed bool) string {
+		t.Helper()
+		req := httptest.NewRequest("GET", "/admin/permissions", nil)
+		req = req.WithContext(context.WithValue(req.Context(), permissionContextKey{}, allowed))
+		rec := httptest.NewRecorder()
+		tpl.Render(rec, req, "pages/permissions.html", nil)
+		if rec.Code != 200 {
+			t.Fatalf("render status: %d: %s", rec.Code, rec.Body.String())
+		}
+		return rec.Body.String()
+	}
+	if body := render(true); !strings.Contains(body, "read-only") || strings.Contains(body, "edit-settings") {
+		t.Fatalf("nil callback did not deny: %s", body)
+	}
+	tpl.funcs.Can = func(ctx context.Context, permission string) bool {
+		allowed, _ := ctx.Value(permissionContextKey{}).(bool)
+		return allowed && permission == "settings.manage"
+	}
+	for _, allowed := range []bool{true, false, true, false} {
+		body := render(allowed)
+		if strings.Contains(body, "edit-settings") != allowed || strings.Contains(body, "read-only") == allowed {
+			t.Fatalf("request permission=%v leaked through cached template: %s", allowed, body)
+		}
+	}
+}
