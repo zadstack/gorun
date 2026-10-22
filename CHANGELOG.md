@@ -7,6 +7,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Design variants are declared per theme in `theme.json` `supports` as `<slot>:<value>` and resolved
+  by the new `{{variant "<slot>" .}}` template func with a `native` fallback for undeclared, unknown or
+  hand-edited values; Theme settings offers only declared options. New `single_style` (`wide`,
+  `centered`) and `archive_style` (`grid`, `compact`) settings for the default, business, magazine and
+  portfolio themes, implemented by the shared `variants.css`, `list-grid`, `list-rows` and
+  `list-variant` components; `archive_style` applies to post archives, taxonomy pages and search
+  results alike. Upgrade note: a custom child theme that rendered `header_style`/`footer_style`
+  through the inherited catalog parts without declaring `header:*`/`footer:*` in its own
+  `supports` now renders `native` until it declares the variants it implements.
 - `pkg/cli/theme_switch_test.go`: switching through every bundled theme keeps content, media,
   menus, site identity, custom CSS and per-theme settings, and renders both locales, inner pages,
   search and the 404 page with the site's logo, title and menu; every bundled theme renders
@@ -46,17 +55,6 @@ All notable changes to GoRun are recorded here. The format follows
   public routes, API operations, job kinds, crons, admin pages, theme kinds and hooks are absent
   and its tables are kept; re-enabling reads the same data back.
 
-### Themes
-
-- Design variants are declared per theme in `theme.json` `supports` as `<slot>:<value>` and resolved
-  by the new `{{variant "<slot>" .}}` template func with a `native` fallback for undeclared, unknown or
-  hand-edited values; Theme settings offers only declared options. New `single_style` (`wide`,
-  `centered`) and `archive_style` (`grid`, `compact`) settings for the default, business, magazine and
-  portfolio themes, implemented by the shared `variants.css`, `list-grid`, `list-rows` and
-  `list-variant` components; `archive_style` applies to post archives, taxonomy pages and search
-  results alike. Upgrade note: a custom child theme that rendered `header_style`/`footer_style`
-  through the inherited catalog parts without declaring `header:*`/`footer:*` in its own
-  `supports` now renders `native` until it declares the variants it implements.
 ### Improved
 
 - Integrations keeps saved results updating while checks are pending, with bounded background
@@ -80,6 +78,7 @@ All notable changes to GoRun are recorded here. The format follows
 - Default theme store pages (cart, checkout, account, product quantity) use translation keys
   (`store.*` in `themes/default/lang`) instead of Arabic-only copy, so an English store reads in
   English; the account page no longer hard-links optional modules' pages (`/agents`, `/saas`).
+
 
 ## [0.15.1] - 2026-10-22
 

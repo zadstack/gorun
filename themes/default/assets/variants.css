@@ -8,6 +8,8 @@
    [data-variant-single="wide"] .prose-gp { max-width: 70ch }. */
 html[data-theme] [data-variant-single="wide"] { max-width: var(--gp-width, 1280px); }
 html[data-theme] [data-variant-single="wide"] .prose-gp { max-width: none; }
+/* business sets a width (not a max-width) on its article; widen it to the site width while keeping its gutters */
+html[data-theme="business"] .sb-article[data-variant-single="wide"] { width: min(calc(100% - 4rem), var(--gp-width, 1280px)); }
 html[data-theme] [data-variant-single="wide"] > figure:first-of-type { margin-inline: 0; width: 100%; max-width: 100%; }
 html[data-theme] [data-variant-single="wide"] > figure:first-of-type img { width: 100%; max-height: 70vh; object-fit: cover; }
 html[data-theme] [data-variant-single="centered"] > header { text-align: center; margin-inline: auto; max-width: 48rem; }

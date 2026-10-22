@@ -7,11 +7,8 @@
 // theme and clears the variant settings at the end.
 import { test, expect, type Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { MARKER_500, db, setContentLocale } from '../lib/helpers.ts';
 
-const OUT = resolve('../../../outputs/theme-variants');
 const WIDTHS = [1280, 375];
 // What each theme declares in theme.json (supports); "native" is implicit.
 const DECLARED: Record<string, { single: string[]; archive: string[] }> = {
@@ -79,7 +76,7 @@ async function uploadWide(page: Page): Promise<string> {
   return row.id as string;
 }
 
-async function checkPage(page: Page, path: string, attr: string, want: string, width: number, shot: string): Promise<void> {
+async function checkPage(page: Page, path: string, attr: string, want: string, width: number, shot: string): Promise<number> {
   await page.setViewportSize({ width, height: width < 700 ? 844 : 900 });
   const resp = await page.goto(path);
   expect(resp?.status(), path).toBe(200);
@@ -92,7 +89,9 @@ async function checkPage(page: Page, path: string, attr: string, want: string, w
     expect(await img.getAttribute('src'), 'img src').toBeTruthy();
     expect(await img.getAttribute('alt'), 'img alt').not.toBeNull();
   }
-  await page.screenshot({ path: resolve(OUT, shot + '.png'), fullPage: true });
+  await page.screenshot({ path: test.info().outputPath(shot + '.png'), fullPage: true });
+  const box = await page.locator(`[${attr}]`).first().boundingBox();
+  return box ? box.width : 0;
 }
 
 // keyboardReaches tabs through the page until focus lands inside sel.
@@ -111,7 +110,6 @@ test.describe.serial('design variants', () => {
   let mediaID = '';
 
   test('fixtures: long posts with and without a wide image', async ({ page }) => {
-    mkdirSync(OUT, { recursive: true });
     mediaID = await uploadWide(page);
     for (const locale of ['ar', 'en'] as const) {
       const tag = randomUUID().slice(0, 6);
@@ -126,6 +124,7 @@ test.describe.serial('design variants', () => {
     test(`${theme}: every declared single and archive variant`, async ({ page }) => {
       test.setTimeout(240_000);
       await activate(page, theme);
+      const articleWidth: Record<string, number> = {};
       for (const variant of [...declared.single, 'bogus']) {
         setSetting(`theme.${theme}.single_style`, variant);
         const want = declared.single.includes(variant) ? variant : 'native';
@@ -133,10 +132,17 @@ test.describe.serial('design variants', () => {
           const prefix = locale === 'en' ? '/en' : '';
           for (const width of WIDTHS) {
             for (const kind of ['plain', 'image'] as const) {
-              await checkPage(page, `${prefix}/post/${slugs[locale][kind]}`, 'data-variant-single', want, width, `${theme}-single-${variant}-${kind}-${locale}-${width}`);
+              const w = await checkPage(page, `${prefix}/post/${slugs[locale][kind]}`, 'data-variant-single', want, width, `${theme}-single-${variant}-${kind}-${locale}-${width}`);
               await expect(page.locator('h1').first()).toContainText(LONG_TITLE[locale].slice(0, 20));
+              articleWidth[`${want}-${locale}-${width}-${kind}`] = w;
             }
           }
+        }
+      }
+      // "wide" is a real layout change on desktop: the article is measurably wider than native.
+      if (declared.single.includes('wide')) {
+        for (const locale of ['ar', 'en'] as const) {
+          expect(articleWidth[`wide-${locale}-1280-plain`], `${theme} wide ${locale}`).toBeGreaterThan(articleWidth[`native-${locale}-1280-plain`] + 40);
         }
       }
       setSetting(`theme.${theme}.single_style`, null);

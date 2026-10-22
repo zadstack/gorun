@@ -10,6 +10,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/taxonomy"
 )
 
 // Realistic fixtures: a long post with a long title and no featured image,
@@ -146,4 +147,53 @@ func TestDocsThemeFallsBackToNativeVariants(t *testing.T) {
 		t.Fatal(err, rec.Code)
 	}
 	mustContain(t, rec.Body.String(), `data-variant-single="native"`)
+}
+
+// archive_style governs taxonomy pages and search results too, and an
+// empty result keeps the theme's own empty state under every variant.
+func TestArchiveVariantAppliesToTaxonomySearchAndEmptyLists(t *testing.T) {
+	root, _ := filepath.Abs("../../themes")
+	for _, slug := range []string{"default", "business", "magazine", "portfolio"} {
+		t.Run(slug, func(t *testing.T) {
+			e := bootRealTheme(t, root)
+			if err := e.svc.Activate(context.Background(), slug); err != nil {
+				t.Fatal(err)
+			}
+			info := e.svc.Active(context.Background())
+			term := &taxonomy.Term{ID: "category:news", Taxonomy: "category", Slug: "news", Name: "News"}
+			for _, v := range DeclaredVariants(info, "archive")[1:] {
+				e.setting(SettingKey(slug, "archive_style"), v)
+				for _, kind := range []struct {
+					req kernel.KindRequest
+					tc  func() *Context
+				}{
+					{kernel.KindRequest{Kind: KindTaxonomy, Taxonomy: "category", Term: "news"}, func() *Context { return &Context{Locale: "en", Term: term, Items: archiveItems("en")} }},
+					{kernel.KindRequest{Kind: KindSearch}, func() *Context {
+						return &Context{Locale: "en", Items: archiveItems("en"), Query: map[string]string{"q": "Archive"}}
+					}},
+				} {
+					rec, err := e.render(kind.req, kind.tc())
+					if err != nil || rec.Code != 200 {
+						t.Fatalf("%s %s=%s: %v %d", slug, kind.req.Kind, v, err, rec.Code)
+					}
+					mustContain(t, rec.Body.String(), `data-variant-archive="`+v+`"`, "Archive item 11", "variants.css")
+					if v == "grid" {
+						mustContain(t, rec.Body.String(), "gr-card-grid")
+					}
+					// Empty results: the theme's own empty state, no grid or rows.
+					empty := kind.tc()
+					empty.Items = nil
+					rec, err = e.render(kind.req, empty)
+					if err != nil || rec.Code != 200 {
+						t.Fatalf("%s empty %s=%s: %v %d", slug, kind.req.Kind, v, err, rec.Code)
+					}
+					mustNotContain(t, rec.Body.String(), "gr-card-grid", "gr-list-compact")
+					body := rec.Body.String()
+					if !strings.Contains(body, "Nothing published yet") && !strings.Contains(body, "Nothing found") && !strings.Contains(body, "Published articles will appear here") {
+						t.Errorf("%s empty %s=%s: no empty state in body", slug, kind.req.Kind, v)
+					}
+				}
+			}
+		})
+	}
 }

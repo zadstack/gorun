@@ -128,7 +128,11 @@ func (a *admin) settingViews(ctx context.Context, schema []content.Field, values
 					if o.Value == v.Value && v.Value != "" {
 						// Keep the stored value selected (it renders as native) so a
 						// save does not silently replace it.
-						v.Options = append(v.Options, settingChoice{Value: o.Value, Label: label + " — " + a.s.d.I18n.T(locale, "theme.settings.variant_not_offered"), Selected: true})
+						note := "not offered"
+						if a.s.d.I18n != nil {
+							note = a.s.d.I18n.T(locale, "theme.settings.variant_not_offered")
+						}
+						v.Options = append(v.Options, settingChoice{Value: o.Value, Label: label + " — " + note, Selected: true})
 					}
 					continue
 				}

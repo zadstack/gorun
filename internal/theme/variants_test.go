@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/zadstack/gorun/internal/config"
-	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/kernel"
 )
 
@@ -85,6 +84,8 @@ func TestThemeSettingsVariantOptionsFollowDeclarations(t *testing.T) {
 	e.login(c, "admin@example.com", "admin")
 	_, page := c.do("GET", "/admin/appearance/theme-settings", nil, "Accept-Language", "en")
 	mustContain(t, page, `value="rail"`, `value="native"`, "Not offered by this theme: Framed")
+	_, ar := c.do("GET", "/admin/appearance/theme-settings", nil, "Accept-Language", "ar")
+	mustContain(t, ar, "غير متاح في هذا القالب: Framed")
 	if strings.Contains(page, `<option value="framed"`) {
 		t.Fatal("undeclared variant offered as an option")
 	}
@@ -104,5 +105,4 @@ func TestThemeSettingsVariantOptionsFollowDeclarations(t *testing.T) {
 			t.Fatalf("stored undeclared value must stay selected and labelled: %+v", v.Options)
 		}
 	}
-	_ = content.Field{}
 }
