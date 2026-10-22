@@ -494,3 +494,22 @@ func TestPricingCitesSourceAndSkipsReasoningModels(t *testing.T) {
 		}
 	}
 }
+
+// Models the shared client cannot drive (OpenAI reasoning models need
+// max_completion_tokens) are refused at preview, before any approval.
+func TestPreviewRefusesModelsTheClientCannotDrive(t *testing.T) {
+	fp := &fakeProvider{ready: true, reply: goodReply, fingerprint: "v1", writing: Connection{Provider: "openai", Model: "o3", Host: "api.openai.com"},
+		connections: []Connection{{ID: "c1", Name: "Reasoning", Provider: "openai", Model: "gpt-5-mini", Host: "api.openai.com"}}}
+	e := boot(t, true, fp)
+	_, page := e.get(testPage, "Accept-Language", "en")
+	mustContain(t, page, "gpt-5-mini · not supported here")
+	for _, conn := range []string{"c1", ""} {
+		resp, body := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "connection": {conn}, "sector": {"x"}})
+		if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(body, "cannot be used from here") || strings.Contains(body, `name="review"`) {
+			t.Fatalf("connection %q: %d", conn, resp.StatusCode)
+		}
+	}
+	if fp.calls != 0 {
+		t.Fatal("provider called")
+	}
+}

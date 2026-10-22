@@ -51,5 +51,7 @@
   "error_theme_unsupported": "The active theme does not accept identity settings (its theme.json does not declare \"identity\"), so colours and fonts would never be shown. Switch to a theme that supports identity first.",
   "error_failed": "The suggestion could not be stored. Nothing was changed; try again.",
   "error_changed": "The AI connection, its key or the active theme changed since the preview, so the approval no longer covers the request. Nothing was sent. Preview again to review the current destination and cost.",
-  "cost_source": "Price source"
+  "cost_source": "Price source",
+  "model_unsupported": "not supported here",
+  "error_model_unsupported": "This model cannot be used from here: OpenAI reasoning models need a request format the site's AI client does not send yet. Choose a gpt-4o or gpt-4.1 model, or an Anthropic model."
 }

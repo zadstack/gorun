@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/zadstack/gorun/internal/db"
@@ -187,5 +189,84 @@ func TestCompleteWorkAgentBoundedFingerprintAndRequestShareOneRead(t *testing.T)
 	afterAIDestinationLoad = func() { set("gpt-4o") }
 	if _, err := CompleteWorkAgentBounded(ctx, h.d, "", "", "sys", "user", 100, approved); err != nil || len(sentModels) != 1 || sentModels[0] != "gpt-4o-mini" {
 		t.Fatalf("request not built from the reviewed read: err=%v sent=%v", err, sentModels)
+	}
+}
+
+// Shaped after the reviewer's reproduction: with ai.model flipping between
+// the approved value and another one concurrently, no request may ever
+// carry the unapproved model; calls that read the other value are refused.
+func TestCompleteWorkAgentBoundedNeverSendsUnapprovedModelUnderConcurrentChange(t *testing.T) {
+	h, ctx, _, _ := canvasOperationFixture(t)
+	var wrong, sent atomic.Int64
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		sent.Add(1)
+		if body["model"] != "gpt-4o-mini" {
+			wrong.Add(1)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": map[string]string{"content": "{}"}}}})
+	}))
+	defer srv.Close()
+	enc, _ := mailer.EncryptSecret(h.d.Config.SecretKey, "fixture-key")
+	for k, v := range map[string]any{"ai.provider": "openai", "ai.base_url": srv.URL, "ai.model": "gpt-4o-mini", "ai.api_key": enc} {
+		if err := h.d.Settings.Set(ctx, k, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	approved, _ := AIDestinationFingerprint(ctx, h.d, "")
+	stop := make(chan struct{})
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-stop:
+				return
+			default:
+			}
+			_ = h.d.Settings.Set(ctx, "ai.model", "gpt-4o")
+			_ = h.d.Settings.Set(ctx, "ai.model", "gpt-4o-mini")
+		}
+	}()
+	refused := 0
+	for i := 0; i < 300; i++ {
+		if _, err := CompleteWorkAgentBounded(ctx, h.d, "", "", "system", "input", 100, approved); err == ErrAIDestinationChanged {
+			refused++
+		} else if err != nil {
+			t.Fatal(err)
+		}
+	}
+	close(stop)
+	wg.Wait()
+	if wrong.Load() != 0 {
+		t.Fatalf("%d requests carried the unapproved model (sent=%d refused=%d)", wrong.Load(), sent.Load(), refused)
+	}
+	t.Logf("sent=%d refused=%d, none with the unapproved model", sent.Load(), refused)
+}
+
+// An approval covers the stored model: a different model override is
+// refused without a request.
+func TestCompleteWorkAgentBoundedRefusesModelOverrideOutsideApproval(t *testing.T) {
+	h, ctx, _, _ := canvasOperationFixture(t)
+	var seen map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&seen)
+		_ = json.NewEncoder(w).Encode(map[string]any{"choices": []map[string]any{{"message": map[string]string{"content": "{}"}}}})
+	}))
+	defer srv.Close()
+	enc, _ := mailer.EncryptSecret(h.d.Config.SecretKey, "fixture-key")
+	for k, v := range map[string]any{"ai.provider": "openai", "ai.base_url": srv.URL, "ai.model": "gpt-4o-mini", "ai.api_key": enc} {
+		if err := h.d.Settings.Set(ctx, k, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	fp, _ := AIDestinationFingerprint(ctx, h.d, "")
+	if _, err := CompleteWorkAgentBounded(ctx, h.d, "", "gpt-4o", "system", "input", 100, fp); err != ErrAIDestinationChanged || seen != nil {
+		t.Fatalf("override accepted: err=%v seen=%v", err, seen)
+	}
+	if _, err := CompleteWorkAgentBounded(ctx, h.d, "", "gpt-4o-mini", "system", "input", 100, fp); err != nil || seen["model"] != "gpt-4o-mini" {
+		t.Fatalf("matching override refused: err=%v seen=%v", err, seen)
 	}
 }

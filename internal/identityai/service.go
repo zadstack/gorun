@@ -69,7 +69,7 @@ type review struct {
 // Hash is a short fingerprint of the previewed request shown next to the
 // token so the operator can match what they approved.
 func (r review) Hash() string {
-	sum := sha256.Sum256([]byte(r.System + "\n" + r.Input))
+	sum := sha256.Sum256([]byte(PromptVersion + "\n" + r.System + "\n" + r.Input))
 	return hex.EncodeToString(sum[:4])
 }
 
@@ -112,14 +112,15 @@ type rawSuggestion struct {
 }
 
 var (
-	errNotReady    = errors.New("identityai: no ready AI connection")
-	errReview      = errors.New("identityai: review required")
-	errUpstream    = errors.New("identityai: provider failed")
-	errBadReply    = errors.New("identityai: reply is not usable")
-	errNoApproval  = errors.New("identityai: approval missing")
-	errUnsupported = errors.New("identityai: theme does not accept identity settings")
-	errChanged     = errors.New("identityai: destination or theme changed since the preview")
-	hexRe          = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+	errNotReady         = errors.New("identityai: no ready AI connection")
+	errReview           = errors.New("identityai: review required")
+	errUpstream         = errors.New("identityai: provider failed")
+	errBadReply         = errors.New("identityai: reply is not usable")
+	errNoApproval       = errors.New("identityai: approval missing")
+	errUnsupported      = errors.New("identityai: theme does not accept identity settings")
+	errChanged          = errors.New("identityai: destination or theme changed since the preview")
+	errUnsupportedModel = errors.New("identityai: the shared client cannot drive this model")
+	hexRe               = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 )
 
 const systemPrompt = `You are a brand designer helping a small website owner choose a visual identity for a bilingual Arabic/English site built with GoRun.
@@ -148,6 +149,27 @@ func userPrompt(b Brief, site theme.IdentitySnapshot, themeName string) string {
 		sb.WriteString("Current accent: " + a + "\n")
 	}
 	return sb.String()
+}
+
+// PromptVersion identifies the system prompt wording; it is part of the
+// request fingerprint and of every audit row, so a changed prompt is a
+// different request.
+const PromptVersion = "identityai-prompt-v1"
+
+// ClientCannotDrive reports a model the shared AI client cannot call:
+// OpenAI reasoning models require max_completion_tokens on
+// chat/completions, which the client does not send.
+func ClientCannotDrive(provider, model string) bool {
+	if strings.ToLower(provider) != "openai" {
+		return false
+	}
+	m := strings.ToLower(model)
+	for _, prefix := range []string{"gpt-5", "o1", "o3", "o4"} {
+		if strings.HasPrefix(m, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // destination resolves the chosen connection for display; "" means the
@@ -198,6 +220,9 @@ func (s *service) Preview(ctx context.Context, b Brief) (review, error) {
 	conn, ready := s.destination(ctx, b.Connection)
 	if !ready {
 		return review{}, errNotReady
+	}
+	if ClientCannotDrive(conn.Provider, conn.Model) {
+		return review{}, errUnsupportedModel
 	}
 	st, ok := s.store()
 	if !ok {
@@ -276,7 +301,7 @@ func (s *service) Generate(ctx context.Context, token string, approved bool) (Su
 	}
 	audit := func(outcome string) {
 		if s.d.Audit != nil {
-			s.d.Audit.Record(ctx, "identityai.generate", "theme", info.Slug, map[string]any{"provider": r.Connection.Provider, "model": r.Connection.Model, "connection": r.Brief.Connection, "request": r.Hash(), "outcome": outcome})
+			s.d.Audit.Record(ctx, "identityai.generate", "theme", info.Slug, map[string]any{"provider": r.Connection.Provider, "model": r.Connection.Model, "connection": r.Brief.Connection, "request": r.Hash(), "prompt_version": PromptVersion, "outcome": outcome})
 		}
 	}
 	reply, err := s.hooks.Complete(ctx, s.d, r.Brief.Connection, r.Connection.Model, r.System, r.Input, maxOutputTokens, r.Fingerprint)
@@ -393,6 +418,9 @@ func clipRunes(s string, n int) string {
 
 // page data and handlers
 
+// Unsupported reports a connection whose model the client cannot drive.
+func (c Connection) Unsupported() bool { return ClientCannotDrive(c.Provider, c.Model) }
+
 type pageView struct {
 	Connections []Connection
 	Brief       Brief
@@ -469,6 +497,10 @@ func (h *handlers) submit(w http.ResponseWriter, r *http.Request) {
 		rv, err := h.s.Preview(ctx, b)
 		if errors.Is(err, errUnsupported) {
 			h.render(w, r, http.StatusUnprocessableEntity, h.s.pageData(ctx, b, nil, t("identityai.error_theme_unsupported")))
+			return
+		}
+		if errors.Is(err, errUnsupportedModel) {
+			h.render(w, r, http.StatusUnprocessableEntity, h.s.pageData(ctx, b, nil, t("identityai.error_model_unsupported")))
 			return
 		}
 		if err != nil {

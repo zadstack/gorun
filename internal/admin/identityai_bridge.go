@@ -159,12 +159,21 @@ func AIDestinationFingerprint(ctx context.Context, d *kernel.Deps, connectionID 
 // fingerprint of that same read must match it, so the request that goes
 // out is built from exactly the values that were reviewed.
 func CompleteWorkAgentBounded(ctx context.Context, d *kernel.Deps, connectionID, model, system, input string, maxTokens int, expectFingerprint string) (string, error) {
-	dest, err := loadAIDestination(ctx, d, connectionID, model)
+	dest, err := loadAIDestination(ctx, d, connectionID, "")
 	if err != nil {
 		return "", err
 	}
-	if expectFingerprint != "" && dest.fingerprint() != expectFingerprint {
-		return "", ErrAIDestinationChanged
+	if expectFingerprint != "" {
+		// The approval covers the stored values only: a different model
+		// override is outside what was reviewed.
+		if dest.fingerprint() != expectFingerprint || (model != "" && model != dest.config.Model) {
+			return "", ErrAIDestinationChanged
+		}
+	} else if model != "" {
+		if !aiModelRe.MatchString(model) {
+			return "", errors.New("invalid AI model")
+		}
+		dest.config.Model = model
 	}
 	return aiCompleteBounded(ctx, dest.config, system, input, maxTokens)
 }
