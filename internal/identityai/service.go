@@ -54,14 +54,16 @@ func (b Brief) normalize() Brief {
 
 // review is one previewed request, approved and consumed at most once.
 type review struct {
-	Token      string
-	Owner      string
-	Expires    time.Time
-	Brief      Brief
-	Connection Connection
-	System     string
-	Input      string
-	Estimate   Estimate
+	Token       string
+	Owner       string
+	Expires     time.Time
+	Brief       Brief
+	Connection  Connection
+	Fingerprint string // destination fingerprint at preview time
+	Theme       string // active theme at preview time
+	System      string
+	Input       string
+	Estimate    Estimate
 }
 
 // Hash is a short fingerprint of the previewed request shown next to the
@@ -116,6 +118,7 @@ var (
 	errBadReply    = errors.New("identityai: reply is not usable")
 	errNoApproval  = errors.New("identityai: approval missing")
 	errUnsupported = errors.New("identityai: theme does not accept identity settings")
+	errChanged     = errors.New("identityai: destination or theme changed since the preview")
 	hexRe          = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 )
 
@@ -204,9 +207,13 @@ func (s *service) Preview(ctx context.Context, b Brief) (review, error) {
 	if !theme.SupportsIdentity(info) {
 		return review{}, errUnsupported
 	}
+	fingerprint, ok := s.fingerprint(ctx, b.Connection)
+	if !ok {
+		return review{}, errNotReady
+	}
 	input := userPrompt(b, s.current(ctx, st, info.Slug), info.Name)
-	r := review{Token: db.NewID(), Owner: s.owner(ctx), Expires: time.Now().Add(reviewTTL), Brief: b, Connection: conn, System: systemPrompt, Input: input,
-		Estimate: EstimateCost(conn.Provider, conn.Model, estimateTokens(systemPrompt+input), maxOutputTokens)}
+	r := review{Token: db.NewID(), Owner: s.owner(ctx), Expires: time.Now().Add(reviewTTL), Brief: b, Connection: conn, Fingerprint: fingerprint, Theme: info.Slug,
+		System: systemPrompt, Input: input, Estimate: EstimateCost(conn.Provider, conn.Model, estimateTokens(systemPrompt+input), maxOutputTokens)}
 	s.mu.Lock()
 	s.open[r.Owner] = r
 	s.mu.Unlock()
@@ -222,6 +229,14 @@ func (s *service) peek(ctx context.Context, token string) (review, bool) {
 		return review{}, false
 	}
 	return r, true
+}
+
+// fingerprint is the current destination fingerprint for connectionID.
+func (s *service) fingerprint(ctx context.Context, connectionID string) (string, bool) {
+	if s.hooks.Fingerprint == nil {
+		return "", false
+	}
+	return s.hooks.Fingerprint(ctx, s.d, connectionID)
 }
 
 // take consumes the owner's review when token matches and it is fresh.
@@ -252,6 +267,13 @@ func (s *service) Generate(ctx context.Context, token string, approved bool) (Su
 		return Suggestion{}, errNotReady
 	}
 	info := st.Active(ctx)
+	// The consent covers exactly what was shown: the same destination
+	// (configuration and credential) and the same theme. Anything else was
+	// never reviewed, so nothing is sent and nothing is recorded against
+	// the destination that was approved.
+	if now, ok := s.fingerprint(ctx, r.Brief.Connection); !ok || now != r.Fingerprint || info.Slug != r.Theme {
+		return Suggestion{}, errChanged
+	}
 	audit := func(outcome string) {
 		if s.d.Audit != nil {
 			s.d.Audit.Record(ctx, "identityai.generate", "theme", info.Slug, map[string]any{"provider": r.Connection.Provider, "model": r.Connection.Model, "connection": r.Brief.Connection, "request": r.Hash(), "outcome": outcome})
@@ -424,6 +446,8 @@ func (h *handlers) submit(w http.ResponseWriter, r *http.Request) {
 			h.render(w, r, http.StatusUnprocessableEntity, h.s.pageData(ctx, b, rp, t("identityai.error_approval")))
 		case errors.Is(err, errReview):
 			h.render(w, r, http.StatusConflict, h.s.pageData(ctx, b, nil, t("identityai.error_review")))
+		case errors.Is(err, errChanged):
+			h.render(w, r, http.StatusConflict, h.s.pageData(ctx, b, nil, t("identityai.error_changed")))
 		case errors.Is(err, errUpstream):
 			h.render(w, r, http.StatusBadGateway, h.s.pageData(ctx, b, nil, t("identityai.error_upstream")))
 		case errors.Is(err, errBadReply):

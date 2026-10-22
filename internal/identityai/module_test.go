@@ -36,6 +36,7 @@ type fakeProvider struct {
 	lastInput     string
 	lastModel     string
 	lastMaxTokens int
+	fingerprint   string // changes when the destination's config or key changes
 }
 
 func (f *fakeProvider) hooks() Hooks {
@@ -49,6 +50,9 @@ func (f *fakeProvider) hooks() Hooks {
 		Connections: func(context.Context, *kernel.Deps) ([]Connection, error) { return f.connections, nil },
 		Writing: func(context.Context, *kernel.Deps) (Connection, bool) {
 			return f.writing, f.ready && f.writing.Provider != ""
+		},
+		Fingerprint: func(_ context.Context, _ *kernel.Deps, id string) (string, bool) {
+			return id + ":" + f.fingerprint, f.ready
 		},
 	}
 }
@@ -396,6 +400,62 @@ func mustContain(t *testing.T, body string, want ...string) {
 	for _, w := range want {
 		if !strings.Contains(body, w) {
 			t.Errorf("missing %q", w)
+		}
+	}
+}
+
+// The approval binds to the exact destination reviewed: when the saved
+// connection (endpoint, provider, model or key) or the writing settings
+// change after Preview, or the active theme changes, Generate refuses
+// without a provider call, a draft write or an audit row.
+func TestGenerateRefusedWhenDestinationChangedSincePreview(t *testing.T) {
+	for _, path := range []string{"connection", "writing"} {
+		t.Run(path, func(t *testing.T) {
+			fp := &fakeProvider{ready: true, reply: goodReply, fingerprint: "v1", writing: Connection{Provider: "openai", Model: "gpt-4o-mini", Host: "api.openai.com"},
+				connections: []Connection{{ID: "c1", Name: "P", Provider: "openai", Model: "gpt-4o", Host: "api.openai.com"}}}
+			e := boot(t, true, fp)
+			form := url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "sector": {"x"}}
+			if path == "connection" {
+				form.Set("connection", "c1")
+			}
+			_, page := e.post(testPage, form)
+			review := regexp.MustCompile(`name="review" value="([^"]+)"`).FindStringSubmatch(page)[1]
+			fp.fingerprint = "v2" // endpoint, model or key edited after the preview
+			resp, body := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+			if resp.StatusCode != http.StatusConflict || !strings.Contains(body, "changed since the preview") || fp.calls != 0 {
+				t.Fatalf("changed destination: %d calls=%d", resp.StatusCode, fp.calls)
+			}
+			if _, ok := themeSvc(e).IdentityDraft(adminCtx(), "default"); ok {
+				t.Fatal("draft written")
+			}
+			var n int
+			_ = e.app.Deps.DB.QueryRow(`SELECT count(*) FROM audit_log WHERE action LIKE 'identityai.%'`).Scan(&n)
+			if n != 0 {
+				t.Fatalf("audit rows = %d", n)
+			}
+			// The stale review is gone: a second attempt is a plain review_required.
+			if resp, _ := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}}); resp.StatusCode != http.StatusConflict || fp.calls != 0 {
+				t.Fatalf("stale review reused: %d", resp.StatusCode)
+			}
+		})
+	}
+}
+
+func TestGenerateRefusedWhenThemeChangedSincePreview(t *testing.T) {
+	fp := &fakeProvider{ready: true, reply: goodReply, fingerprint: "v1", connections: []Connection{{ID: "c1", Name: "P", Provider: "openai", Model: "gpt-4o", Host: "api.openai.com"}}}
+	e := boot(t, true, fp)
+	_, page := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "connection": {"c1"}, "sector": {"x"}})
+	review := regexp.MustCompile(`name="review" value="([^"]+)"`).FindStringSubmatch(page)[1]
+	if err := e.app.Deps.Settings.Set(context.Background(), "site.theme", "business"); err != nil {
+		t.Fatal(err)
+	}
+	resp, _ := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+	if resp.StatusCode != http.StatusConflict || fp.calls != 0 {
+		t.Fatalf("changed theme: %d calls=%d", resp.StatusCode, fp.calls)
+	}
+	for _, slug := range []string{"default", "business"} {
+		if _, ok := themeSvc(e).IdentityDraft(adminCtx(), slug); ok {
+			t.Fatalf("%s draft written", slug)
 		}
 	}
 }

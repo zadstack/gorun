@@ -52,6 +52,12 @@ type Hooks struct {
 	// Writing describes the site's writing settings as a destination
 	// (provider, model, host); false when not configured.
 	Writing func(ctx context.Context, d *kernel.Deps) (Connection, bool)
+	// Fingerprint identifies the exact destination a request would go to
+	// right now: provider, endpoint, model, connection version and the
+	// stored credential (hashed, never exposed). connectionID "" is the
+	// writing settings. The approval given at preview is valid only while
+	// the fingerprint is unchanged.
+	Fingerprint func(ctx context.Context, d *kernel.Deps, connectionID string) (string, bool)
 }
 
 // IdentityStore is what the module needs from the theme service.

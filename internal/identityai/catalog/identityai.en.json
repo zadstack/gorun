@@ -49,5 +49,6 @@
   "test_status": "Connection test",
   "not_saved": "not saved, copy it if needed",
   "error_theme_unsupported": "The active theme does not accept identity settings (its theme.json does not declare \"identity\"), so colours and fonts would never be shown. Switch to a theme that supports identity first.",
-  "error_failed": "The suggestion could not be stored. Nothing was changed; try again."
+  "error_failed": "The suggestion could not be stored. Nothing was changed; try again.",
+  "error_changed": "The AI connection, its key or the active theme changed since the preview, so the approval no longer covers the request. Nothing was sent. Preview again to review the current destination and cost."
 }

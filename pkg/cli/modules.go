@@ -98,8 +98,9 @@ func InsertAfter(mods []kernel.Module, after string, extra ...kernel.Module) []k
 // identityai module without the admin package importing it.
 func identityAIHooks() identityai.Hooks {
 	return identityai.Hooks{
-		Complete: admin.CompleteWorkAgentBounded,
-		Ready:    admin.WorkAgentProviderReady,
+		Complete:    admin.CompleteWorkAgentBounded,
+		Ready:       admin.WorkAgentProviderReady,
+		Fingerprint: admin.AIDestinationFingerprint,
 		Writing: func(ctx context.Context, d *kernel.Deps) (identityai.Connection, bool) {
 			w, ok := admin.WritingAIDestination(ctx, d)
 			return identityai.Connection{Provider: w.Provider, Model: w.Model, Host: w.Host}, ok

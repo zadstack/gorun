@@ -2,7 +2,10 @@ package admin
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/url"
+	"strings"
 
 	"github.com/zadstack/gorun/internal/kernel"
 )
@@ -56,6 +59,32 @@ func CompleteWorkAgentBounded(ctx context.Context, d *kernel.Deps, connectionID,
 		return "", err
 	}
 	return aiCompleteBounded(ctx, c, system, input, maxTokens)
+}
+
+// AIDestinationFingerprint hashes everything that decides where an AI
+// request goes and with which credential: for a saved connection its
+// provider, endpoint, model, version and the encrypted secret as stored;
+// for the writing settings (connectionID "") the ai.* rows including the
+// encrypted key. No secret leaves this package; ok is false when the
+// destination cannot be resolved.
+func AIDestinationFingerprint(ctx context.Context, d *kernel.Deps, connectionID string) (string, bool) {
+	h := &handlers{d: d}
+	var parts []string
+	if connectionID == "" {
+		snap, err := aiSnapshot(ctx, d.DB)
+		if err != nil || snap["ai.provider"] == "" {
+			return "", false
+		}
+		parts = []string{"writing", snap["ai.provider"], snap["ai.base_url"], snap["ai.model"], snap["ai.api_key"]}
+	} else {
+		c, err := h.loadConnection(ctx, connectionID)
+		if err != nil || c.Kind != "ai" {
+			return "", false
+		}
+		parts = []string{"connection", c.ID, c.Version, c.Provider, c.Endpoint, c.Model, c.Secret}
+	}
+	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
+	return hex.EncodeToString(sum[:]), true
 }
 
 func hostOf(raw string) string {
