@@ -4,7 +4,9 @@
 <link rel="stylesheet" href="{{asset "connection-setup.css"}}">
 <link rel="stylesheet" href="{{asset "integrations.css"}}">
 <script src="{{asset "integrations.js"}}" defer></script>
-<div class="integrations space-y-6">
+<div class="integrations space-y-6" data-integrations-live>
+<p data-live-message role="status" aria-live="polite" class="text-xs text-muted" hidden data-paused="{{t "admin.integrations.live.paused"}}" data-failed="{{t "admin.integrations.live.failed"}}"></p>
+<div data-live-region="issues">{{range .Issues}}<p role="alert" class="integrations-issue">{{t (printf "admin.integrations.section.%s" .Section)}}: {{t "admin.integrations.section_unavailable"}}</p>{{end}}</div>
 <h1 class="text-[22px] font-bold mb-3">{{t "admin.settings.title"}}</h1>
 {{template "partials/settings_tabs" "integrations"}}
 <p class="max-w-3xl text-sm text-muted">{{t "admin.integrations.intro"}}</p>
@@ -15,7 +17,7 @@
 <header><h2 id="cf-heading" class="text-base font-bold">{{t "admin.integrations.cloudflare.title"}}</h2><p class="text-sm text-muted mt-1">{{t "admin.integrations.cloudflare.intro"}}</p></header>
 {{with index .Fields "cloudflare"}}<p role="alert" class="field-error border border-red p-3 text-red">{{t .}}</p>{{end}}
 <div class="grid gap-4 md:grid-cols-2">
-<form method="post" action="/admin/settings/integrations/cloudflare" class="space-y-3" novalidate>
+<form method="post" action="/admin/settings/integrations/cloudflare" class="space-y-3" novalidate><fieldset class="integrations-form-fields" data-section-fieldset="cloudflare" {{if not (.SectionAvailable "cloudflare")}}disabled{{end}}>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <div>
     <label for="cf-token" class="block font-medium mb-1">{{t "admin.integrations.cloudflare.token"}}</label>
@@ -23,9 +25,9 @@
     {{template "partials/field_errors" (index .Fields "token")}}
     <p class="mt-1 text-xs text-muted">{{t "admin.integrations.cloudflare.token.help"}}{{if .Cloudflare.TokenHint}} {{t "admin.integrations.cloudflare.token.set"}} <span dir="ltr">••••{{.Cloudflare.TokenHint}}</span>{{end}}</p>
   </div>
-  <div>
+  <div data-live-region="account-selector" data-refresh-pending="{{or (eq .Cloudflare.AccountsMeta.Status "waiting") (eq .Cloudflare.AccountsMeta.Status "running")}}">
     <label for="cf-account" class="block font-medium mb-1">{{t "admin.integrations.cloudflare.account"}}</label>
-    {{if .Cloudflare.Accounts}}
+    {{if and .Cloudflare.Accounts .Cloudflare.AccountsCurrent}}
     <select id="cf-account" name="account_id" class="h-11 w-full rounded border border-line bg-panel px-2" dir="ltr">
       <option value="">{{t "admin.integrations.cloudflare.account.choose"}}</option>
       {{range .Cloudflare.Accounts}}<option value="{{.ID}}" {{if eq .ID $.Cloudflare.AccountID}}selected{{end}}>{{.Name}} · {{.ID}}</option>{{end}}
@@ -38,12 +40,13 @@
     <p class="mt-1 text-xs text-muted">{{t "admin.integrations.cloudflare.account.help"}}{{if .Cloudflare.AccountID}} {{t "admin.integrations.cloudflare.account.current"}} <span dir="ltr">{{if .Cloudflare.AccountName}}{{.Cloudflare.AccountName}} · {{end}}{{.Cloudflare.AccountID}}</span>{{end}}</p>
   </div>
   <div class="flex flex-wrap gap-2"><button class="admin-primary-button">{{t "admin.integrations.cloudflare.save"}}</button></div>
-</form>
+</fieldset></form>
 <div class="space-y-3">
   <h3 class="font-medium">{{t "admin.integrations.cloudflare.scopes.minimum"}}</h3>
   <ul class="list-disc ps-5 text-sm">{{range .Cloudflare.MinimumScopes}}<li dir="ltr">{{.}}</li>{{end}}</ul>
   <p class="text-xs text-muted">{{t "admin.integrations.cloudflare.scopes.dedicated"}}</p>
   <p class="text-xs text-muted">{{t "admin.integrations.cloudflare.scopes.not_s3"}}</p>
+  <div data-live-region="accounts" data-refresh-pending="{{or (eq .Cloudflare.AccountsMeta.Status "waiting") (eq .Cloudflare.AccountsMeta.Status "running")}}"><p class="text-xs text-muted">{{t "admin.integrations.cloudflare.account.observation"}}: {{template "integrations/meta" .Cloudflare.AccountsMeta}}</p></div>
   {{if .Cloudflare.Configured}}
   <div class="flex flex-wrap gap-2">
   <form method="post" action="/admin/settings/integrations/cloudflare/check"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="admin-secondary-button">{{t "admin.integrations.cloudflare.check"}}</button></form>
@@ -53,7 +56,7 @@
 </div>
 </div>
 {{if .Cloudflare.Configured}}
-<div>
+<div data-live-region="scopes" data-refresh-pending="{{or (eq .Cloudflare.ScopesMeta.Status "waiting") (eq .Cloudflare.ScopesMeta.Status "running")}}">
   <h3 class="font-medium mb-1">{{t "admin.integrations.cloudflare.scopes.title"}}</h3>
   <p class="text-xs text-muted mb-2">{{template "integrations/meta" .Cloudflare.ScopesMeta}}</p>
   <div class="connections-table-scroll" role="region" tabindex="0"><table class="integrations-table"><caption class="sr-only">{{t "admin.integrations.cloudflare.scopes.title"}}</caption>
@@ -63,7 +66,7 @@
     <td><span class="integrations-lamp integrations-lamp-{{.Status}}">{{t (printf "admin.integrations.lamp.%s" .Status)}}</span></td>
     <td dir="ltr" class="text-xs">{{if .Error}}<span class="text-red">{{.Error}}</span>{{else}}{{.Evidence}}{{end}}</td>
     <td>{{with .CheckedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
-    <td class="text-xs">{{if ne .Status "passed"}}{{.Repair}}{{else}}—{{end}}</td>
+    <td class="text-xs">{{if ne .Status "passed"}}{{t .RepairKey}}{{else}}—{{end}}</td>
   </tr>{{end}}</tbody></table></div>
   <p class="text-xs text-muted mt-2">{{t "admin.integrations.cloudflare.scopes.note"}}</p>
 </div>
@@ -78,18 +81,20 @@
 {{else}}
 {{range .Inventory}}
 {{$kind := .Kind}}
-<div class="space-y-2" data-resource-table data-kind="{{.Kind}}">
+{{$actionable := .Actionable}}
+<div class="space-y-2" id="inventory-{{.Kind}}" data-resource-table data-kind="{{.Kind}}" data-config-revision="{{.ConfigRevision}}" data-live-region="inventory-{{.Kind}}" data-refresh-pending="{{or (eq .Meta.Status "waiting") (eq .Meta.Status "running")}}">
+{{if and .Items (not .Actionable)}}<p class="integrations-issue text-xs">{{t "admin.integrations.discovery.snapshot_only"}}</p>{{end}}
   <header class="flex flex-wrap items-end justify-between gap-2">
     <div><h3 class="font-medium">{{t (printf "admin.integrations.discovery.%s" .Kind)}} <span class="text-muted">({{.Count}})</span>{{if and (ne .Meta.Status "never") (not .Complete)}} <span class="integrations-lamp integrations-lamp-incomplete">{{t "admin.integrations.discovery.incomplete"}}</span>{{end}}</h3>
     <p class="text-xs text-muted">{{template "integrations/meta" .Meta}}</p></div>
     <form method="post" action="/admin/settings/integrations/cloudflare/inventory/{{.Kind}}/refresh"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="admin-secondary-button">{{t "admin.integrations.refresh"}}</button></form>
   </header>
-  {{if .Items}}
-  <div class="integrations-tools">
-    <label>{{t "admin.integrations.search"}} <input type="search" data-resource-search placeholder="{{t "admin.integrations.search_hint"}}"></label>
+  <form method="get" action="/admin/settings/integrations#inventory-{{.Kind}}" class="integrations-tools">
+    <label>{{t "admin.integrations.search"}} <input type="search" name="inv_q_{{.Kind}}" value="{{.Search}}" data-resource-search placeholder="{{t "admin.integrations.search_hint"}}"></label>
     <label>{{t "admin.integrations.filter"}} <select data-resource-filter><option value="">{{t "admin.integrations.filter.all"}}</option><option value="bound">{{t "admin.integrations.filter.bound"}}</option><option value="candidate">{{t "admin.integrations.filter.candidate"}}</option>{{if eq .Kind "workers"}}<option value="identified">{{t "admin.integrations.filter.identified"}}</option>{{end}}</select></label>
-    <span role="status" aria-live="polite" class="text-xs text-muted"><span data-resource-count>{{len .Items}}</span> / {{len .Items}}</span>
-  </div>
+    <button class="admin-secondary-button">{{t "admin.integrations.search_all"}}</button><span role="status" aria-live="polite" class="text-xs text-muted"><span data-resource-count>{{len .Items}}</span> / {{len .Items}}</span>
+  </form>
+  {{if .Items}}
   <div class="connections-table-scroll" role="region" tabindex="0"><table class="integrations-table"><caption class="sr-only">{{t (printf "admin.integrations.discovery.%s" .Kind)}}</caption>
   <thead><tr><th scope="col">{{t "admin.integrations.name"}}</th>
   {{if eq .Kind "r2"}}<th scope="col">{{t "admin.integrations.location"}}</th><th scope="col">{{t "admin.integrations.created"}}</th><th scope="col">{{t "admin.integrations.binding"}}</th><th scope="col">{{t "admin.integrations.actions"}}</th>
@@ -101,7 +106,7 @@
     {{if eq $kind "r2"}}
     <td dir="ltr">{{.Location}}{{with .Class}} · {{.}}{{end}}</td><td>{{with .CreatedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
     <td>{{if .Bound}}{{range .Bound}}<span class="integrations-lamp integrations-lamp-passed">{{t (printf "admin.integrations.purpose.%s" .)}}</span> {{end}}{{else}}<span class="text-muted">{{t "admin.integrations.candidate"}}</span>{{end}}</td>
-    <td><button type="button" class="admin-secondary-button" data-use-bucket="{{.Name}}">{{t "admin.integrations.storage.use"}}</button></td>
+    <td><button type="button" class="admin-secondary-button" data-use-bucket="{{.Name}}" {{if not $actionable}}disabled{{end}}>{{t "admin.integrations.storage.use"}}</button></td>
     {{else if eq $kind "d1"}}
     <td dir="ltr" class="font-mono text-xs">{{.ID}}</td><td>{{.Tables}}</td><td dir="ltr">{{.SizeBytes}}</td><td>{{with .CreatedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
     {{else}}
@@ -116,12 +121,13 @@
         <label class="block text-xs">{{t "admin.integrations.workers.key"}}<input name="manager_key" type="password" dir="ltr" maxlength="43" autocomplete="off" class="block w-full h-10 rounded border border-line bg-panel px-2 font-mono text-xs mt-1"></label>
         {{if eq (index $.Fields "worker") .Name}}{{template "partials/field_errors" (index $.Fields "identify")}}{{template "partials/field_errors" (index $.Fields "identify_worker")}}{{end}}
         <p class="text-xs text-muted">{{t "admin.integrations.workers.key.help"}}</p>
-        <button class="admin-secondary-button">{{t "admin.integrations.workers.run"}}</button>
+        <button class="admin-secondary-button" {{if not $actionable}}disabled{{end}}>{{t "admin.integrations.workers.run"}}</button>
       </form></details></td>
     {{end}}
   </tr>{{end}}
   <tr data-resource-empty hidden><td colspan="5" class="text-muted">{{t "admin.integrations.no_matches"}}</td></tr>
   </tbody></table></div>
+  {{if gt .Pages 1}}<nav class="integrations-tools" aria-label="{{t "admin.integrations.pages"}}">{{if .PrevURL}}<a class="admin-secondary-button" href="{{.PrevURL}}">{{t "admin.integrations.previous"}}</a>{{end}}<span>{{t "admin.integrations.pages"}} {{.Page}} / {{.Pages}} · {{.TotalItems}}</span>{{if .NextURL}}<a class="admin-secondary-button" href="{{.NextURL}}">{{t "admin.integrations.next"}}</a>{{end}}</nav>{{end}}
   {{else if eq .Meta.Status "never"}}<p class="text-sm text-muted">{{t "admin.integrations.discovery.never"}}</p>
   {{else if eq .Meta.Status "failed"}}<p class="text-sm text-red">{{t "admin.integrations.discovery.failed"}} <span dir="ltr">{{.Meta.Error}}</span></p><p class="text-xs text-muted">{{.Meta.Remediation}}</p>
   {{else if or (eq .Meta.Status "waiting") (eq .Meta.Status "running")}}<p class="text-sm text-muted">{{t "admin.integrations.discovery.running"}}</p>
@@ -152,7 +158,7 @@
 </tr>{{end}}</tbody></table></div>
 <p class="text-xs text-muted">{{t "admin.integrations.storage.probe.help"}}</p>
 <div class="grid gap-4 md:grid-cols-2">
-<form id="storage-bind" method="post" action="/admin/settings/integrations/storage/bind" class="space-y-3" novalidate data-r2-endpoint="{{.Cloudflare.R2Endpoint}}">
+<form id="storage-bind" method="post" action="/admin/settings/integrations/storage/bind" class="space-y-3" novalidate data-r2-endpoint="{{.Cloudflare.R2Endpoint}}"><fieldset class="integrations-form-fields" data-section-fieldset="storage" {{if not (.SectionAvailable "storage")}}disabled{{end}}>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <h3 class="font-medium">{{t "admin.integrations.storage.bind"}}</h3>
   <fieldset><legend class="text-sm font-medium">{{t "admin.integrations.storage.source"}}</legend>
@@ -182,7 +188,7 @@
     {{template "partials/field_errors" (index .Fields "confirm_both")}}
   </fieldset>
   <button class="admin-primary-button">{{t "admin.integrations.storage.bind.save"}}</button>
-</form>
+</fieldset></form>
 <div class="space-y-2 text-sm">
   <h3 class="font-medium">{{t "admin.integrations.backup.title"}}</h3>
   <dl class="integrations-dl">
@@ -211,7 +217,7 @@
   <dt>{{t "admin.integrations.mail.evidence"}}</dt><dd>{{with .Mail.Operation}}<span class="integrations-lamp integrations-lamp-{{if eq .Status "passed"}}passed{{else if eq .Status "failed"}}incomplete{{else}}not_checked{{end}}">{{.Status}}</span> {{with .CheckedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{end}} <span class="text-xs text-muted" dir="ltr">{{.Reason}}</span>{{else}}<span class="text-muted">{{t "admin.integrations.lamp.not_checked"}}</span>{{end}}</dd>
 </dl>
 <details class="integrations-editor" {{if or (index .Fields "mail_host") (index .Fields "mail_from") (index .Fields "mail_port") (index .Fields "mail_tls") (index .Fields "mail_reply_to") (index .Fields "mail_provider") (index .Fields "mail_password") (index .Fields "mail_resend_api_key")}}open{{end}}><summary>{{t "admin.integrations.mail.edit"}}</summary>
-<form method="post" action="/admin/settings/integrations/mail" class="space-y-3 mt-3" novalidate x-data="{ provider: $el.dataset.provider }" data-provider="{{.MailForm.Provider}}">
+<form method="post" action="/admin/settings/integrations/mail" class="space-y-3 mt-3" novalidate x-data="{ provider: $el.dataset.provider }" data-provider="{{.MailForm.Provider}}"><fieldset class="integrations-form-fields" data-section-fieldset="mail" {{if not (.SectionAvailable "mail")}}disabled{{end}}>
   <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="edit_token" value="{{.MailForm.EditToken}}">
   <div><label for="im-provider" class="block text-sm">{{t "admin.mail.provider"}}</label><select id="im-provider" name="provider" x-model="provider" class="h-10 w-full rounded border border-line bg-panel px-2"><option value="smtp" {{if eq .MailForm.Provider "smtp"}}selected{{end}}>SMTP</option><option value="resend" {{if eq .MailForm.Provider "resend"}}selected{{end}}>Resend</option></select>{{template "partials/field_errors" (index .Fields "mail_provider")}}</div>
   <fieldset x-show="provider === 'smtp'" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_6rem_9rem]">
@@ -229,7 +235,7 @@
     <div><label class="block text-sm">{{t "admin.mail.reply_to"}}<input name="reply_to" type="email" value="{{.MailForm.ReplyTo}}" dir="ltr" class="block w-full h-10 rounded border {{if index .Fields "mail_reply_to"}}border-red{{else}}border-line{{end}} bg-panel px-2 mt-1"></label>{{template "partials/field_errors" (index .Fields "mail_reply_to")}}</div>
   </div>
   <button class="admin-primary-button">{{t "core.action.save"}}</button>
-</form>
+</fieldset></form>
 </details>
 <div class="space-y-2">
   <h3 class="font-medium">{{t "admin.mail.test_title"}}</h3>
@@ -251,4 +257,4 @@
 </div>
 {{end}}
 
-{{define "integrations/meta"}}{{if eq .Status "never"}}{{t "admin.integrations.meta.never"}}{{else}}{{t (printf "admin.integrations.meta.%s" .Status)}}{{with .CheckedAt}} · <time datetime="{{.}}" dir="ltr">{{.}}</time>{{end}}{{if .Age}} · {{t "admin.integrations.meta.age"}} <span dir="ltr">{{.Age}}</span>{{end}}{{if .Error}} · <span class="text-red" dir="ltr">{{.Error}}</span>{{end}}{{end}}{{end}}
+{{define "integrations/meta"}}{{if eq .Status "never"}}{{t "admin.integrations.meta.never"}}{{else}}{{t (printf "admin.integrations.meta.%s" .Status)}}{{with .CheckedAt}} · <time datetime="{{.}}" dir="ltr">{{.}}</time>{{end}}{{if .Age}} · {{t "admin.integrations.meta.age"}} <span dir="ltr">{{.Age}}</span>{{end}}{{if .ErrorKey}} · <span class="text-red">{{t .ErrorKey}} {{t "admin.integrations.observation.retry"}}</span>{{else if .Error}} · <span class="text-red" dir="ltr">{{.Error}}</span>{{end}}{{end}}{{end}}
