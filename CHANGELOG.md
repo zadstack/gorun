@@ -72,49 +72,6 @@ All notable changes to GoRun are recorded here. The format follows
 - Add bilingual backup controls, remote failure warnings in System Health, and
   documented `GET/PUT /api/v1/system/backups/schedule` operations.
 
-### Staged update lifecycle
-
-- Replace the single deploy request with a persisted operation whose phases — compatibility,
-  release verification, backup, activation, health and links, final acceptance — are recorded
-  independently with status, timing, result, retryability and remediation. A requested or queued
-  deployment is never reported as a completed update: activation passes only when the serving
-  process reports the expected identity, and acceptance only after every required check passes.
-- Add a durable data-directory lease shared by updates, backups and restores (`409` with the
-  owning operation), a resumable lifecycle job with heartbeat fencing, and boot/cron reconciliation
-  that continues an activation whose identity now serves and marks anything else `interrupted`.
-- Add a trusted release-index source (`GORUN_UPDATE_SOURCE_URL`, digest-verified) and a deployment
-  adapter contract with Coolify (existing operator configuration) and manual activation. On a health
-  failure after activation, a compatible prior artifact is re-activated on the current data when no
-  migration was applied; a database or media snapshot is never restored automatically.
-- Document `GET/POST /api/v1/system/update` and `/api/v1/system/update/operations[/{id}]` in OpenAPI.
-
-### Capability evidence
-
-- `GET /api/v1/site/capabilities` now separates available, enabled, configured, connected and
-  operation-tested, with each piece of evidence bound to the configuration revision and expiring
-  after 7 days (`stale` / `expired` keep the recorded result). Modules publish configuration
-  verdicts with a reason and repair step (`system.capabilities.modules`); the mail service is listed.
-- Add explicit, permissioned operation tests that run as isolated background jobs: S3 write/read/
-  delete of one probe object, one tiny AI completion, one mail to the requesting operator
-  (`system.capability_test`). Connectivity checks can be queued through the API and run on a
-  12-hour schedule; MCP has no operation test by design. The storage new uploads use (managed
-  destination, configured bucket or local disk) has its own operation test, and the media module
-  reports its configuration from that storage.
-
-### Background observations
-
-- Add durable, revision-fenced observations for expensive or external checks: pages and read-only
-  APIs serve the last saved result with its age and state; refreshes are bounded background jobs
-  (timeout, limited retries, atomic deduplication, per-kind concurrency cap); results for edited or
-  removed configuration are discarded; a failed attempt keeps the last success visible. The release
-  index and billing-server reachability now use this path, so System Health never calls a server.
-- Job workers only claim kinds with a registered handler; work of a disabled or missing module waits
-  unchanged (`parked`) and is released when the handler returns. Health reports parked counts.
-- Document `/api/v1/system/observations` in OpenAPI.
-
-Existing installations keep data, settings, themes and saved checks; the new tables are additive.
-Publishing this release does not upgrade a running site process.
-
 ### Integrations hub
 
 - Add Settings → Integrations: an encrypted Cloudflare API token with account selection and
