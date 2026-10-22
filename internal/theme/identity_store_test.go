@@ -250,3 +250,27 @@ func TestIdentityLengthsCountCharacters(t *testing.T) {
 		t.Fatal("201-character title accepted")
 	}
 }
+
+// Every field the identity page edits, header links included, is restored
+// by revert because the revision snapshot carries them.
+func TestIdentityRevertRestoresHeaderLinks(t *testing.T) {
+	e, ctx := identityEnv(t)
+	a := snap("default", map[string]string{idAccent: "#111111"}, nil)
+	a.Links = map[string]string{"cta_label": "Call", "cta_url": "/call"}
+	first, err := e.svc.ApplyIdentity(ctx, a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := snap("default", map[string]string{idAccent: "#222222"}, nil)
+	b.Links = map[string]string{"cta_label": "Book", "cta_url": "/book"}
+	if _, err := e.svc.ApplyIdentity(ctx, b); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.RevertIdentity(ctx, "default", first.ID); err != nil {
+		t.Fatal(err)
+	}
+	get := func(k string) string { return e.app.Deps.Settings.GetString(ctx, k, "") }
+	if get("theme.default.cta_label") != "Call" || get("theme.default.cta_url") != "/call" || get("theme.default.identity_accent") != "#111111" {
+		t.Fatalf("revert did not restore links: %q %q %q", get("theme.default.cta_label"), get("theme.default.cta_url"), get("theme.default.identity_accent"))
+	}
+}
