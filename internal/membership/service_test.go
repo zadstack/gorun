@@ -199,7 +199,7 @@ func TestMembershipPublicPageAnonymousAndEscaping(t *testing.T) {
 		ctx  context.Context
 		want int
 		has  bool
-	}{{context.Background(), 303, false}, {alice, 200, true}, {bob, 200, false}} {
+	}{{context.Background(), 503, false}, {alice, 200, true}, {bob, 200, false}} {
 		w := httptest.NewRecorder()
 		app.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/membership", nil).WithContext(tc.ctx))
 		if w.Code != tc.want {

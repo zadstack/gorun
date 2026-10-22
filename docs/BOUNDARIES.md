@@ -71,7 +71,7 @@ asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.
 | `internal/webhooks` | core | `audit` `auth` `db` `httpx` `i18n` `jobs` `kernel` |
 | `internal/commerce` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `redirects` `seo` `settings` `theme` |
 | `internal/saas` | feature | `admin` `api` `audit` `auth` `commerce` `db` `httpx` `kernel` |
-| `internal/membership` | feature | `api` `audit` `auth` `content` `db` `kernel` |
+| `internal/membership` | feature | `api` `audit` `auth` `content` `db` `httpx` `kernel` |
 | `internal/launch` | feature | `auth` `httpx` `i18n` `kernel` |
 | `internal/workagents` | feature | `admin` `auth` `content` `db` `httpx` `jobs` `kernel` |
 | `internal/identityai` | feature | `auth` `db` `httpx` `i18n` `kernel` `theme` |
