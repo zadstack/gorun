@@ -119,3 +119,52 @@ func (s *ManagedStorage) URL(key string) string {
 	}
 	return s.fallback.URL(key)
 }
+
+// ServiceStorage is the kernel service name of the active media storage.
+const ServiceStorage = "media.storage"
+
+// StorageInfo describes which backend new uploads go to and whether it is
+// fully configured. Configured is local validation only; a passed
+// operation test (write/read/delete of a probe object) is the evidence that
+// it works.
+type StorageInfo struct {
+	Kind        string `json:"kind" enum:"local,s3"`
+	Source      string `json:"source" doc:"settings:storage.active.media, config:s3 or local"`
+	Configured  bool   `json:"configured"`
+	Reason      string `json:"reason"`
+	Remediation string `json:"remediation"`
+}
+
+// ActiveStorage is the storage new uploads use, with key mapping and a
+// description, published for capability checks.
+type ActiveStorage interface {
+	Storage
+	UploadKey(ctx context.Context, key string) (string, error)
+	Describe(ctx context.Context) StorageInfo
+}
+
+// Describe reports the active backend: a managed destination from settings
+// when selected, else the config-level S3 bucket, else local disk.
+func (s *ManagedStorage) Describe(ctx context.Context) StorageInfo {
+	var id string
+	err := s.settings.Get(ctx, "storage.active.media", &id)
+	if err == nil && id != "" {
+		info := StorageInfo{Kind: "s3", Source: "settings:storage.active.media", Configured: true, Reason: "configured_not_verified", Remediation: "Run the storage operation test to verify write, read and delete on the active destination."}
+		d, err := LoadDestination(ctx, s.settings, id)
+		if err != nil || d.Purpose != "media" {
+			info.Configured, info.Reason, info.Remediation = false, "destination_unreadable", "Re-select the media destination under Settings → Storage."
+			return info
+		}
+		if _, err := DestinationConfig(d, s.secret); err != nil {
+			info.Configured, info.Reason, info.Remediation = false, "destination_credentials_unreadable", "Re-enter the destination credentials with the current site secret key."
+		}
+		return info
+	}
+	if err != nil && !errors.Is(err, settings.ErrNotFound) {
+		return StorageInfo{Kind: "local", Source: "settings:storage.active.media", Reason: "settings_read_failed", Remediation: "Check the database; the active storage setting could not be read."}
+	}
+	if _, ok := s.fallback.(*S3Storage); ok {
+		return StorageInfo{Kind: "s3", Source: "config:s3", Configured: true, Reason: "configured_not_verified", Remediation: "Run the storage operation test to verify write, read and delete on the configured bucket."}
+	}
+	return StorageInfo{Kind: "local", Source: "local", Configured: true, Reason: "local_disk", Remediation: "Files are stored under the data directory; no external configuration is required."}
+}

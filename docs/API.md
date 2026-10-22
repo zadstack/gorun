@@ -205,6 +205,13 @@ with a task reference (see Background observations):
 | `POST /api/v1/site/capabilities/connections/{id}/check` | `settings.manage` | Read-only connectivity/discovery (list models, discover tools, probe the bucket). Also scheduled every 12 hours per profile. |
 | `POST /api/v1/site/capabilities/connections/{id}/operation` | `system.capability_test` | S3: write, read back and delete one `YYYY/MM/gorun-capability-probe-<id>.txt` object (always deleted, even after a failed read). AI: one chat completion of a fixed prompt capped at 16 output tokens. `409 operation_unsupported` for MCP. |
 | `POST /api/v1/site/capabilities/services/mail/operation` | `system.capability_test` | One test message to the requesting operator's own address; `409 capability_disabled` until SMTP is configured. |
+| `POST /api/v1/site/capabilities/services/storage/operation` | `system.capability_test` | Write, read back and delete one probe object through the storage new uploads actually use: the managed destination selected under Settings → Storage, else the `[s3]` bucket from config/env, else local disk. `services.storage` reports which one (`source`) and whether it is configured. |
+
+MCP profiles have **no operation test** on purpose: invoking a tool executes an action on the
+remote server, and a server's own read-only annotation is a claim, not a guarantee. The MCP
+connectivity check performs `initialize` + `tools/list` only; `tested` stays `false` for MCP.
+Modules that publish no requirements report `configuration_status: unknown` with
+`module_publishes_no_requirements`; the media module's configuration comes from its active storage.
 
 The admin "test" buttons (connections, mail) still run synchronously and record the same evidence.
 Modules publish their configuration verdict through the `system.capabilities.modules` filter
@@ -363,7 +370,7 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **176 operations** in 24 tags.
+Generated from the current locally booted OpenAPI document: **177 operations** in 24 tags.
 
 ### builder
 
@@ -566,6 +573,7 @@ Generated from the current locally booted OpenAPI document: **176 operations** i
 | POST | `/api/v1/site/capabilities/connections/{id}/check` | Queue a read-only connectivity/discovery check of a connection profile; answers 202 with the task reference | `settings.manage` |
 | POST | `/api/v1/site/capabilities/connections/{id}/operation` | Queue an isolated operation test (S3: write/read/delete one probe object; AI: one tiny completion); answers 202 | `system.capability_test` |
 | POST | `/api/v1/site/capabilities/services/mail/operation` | Queue one test message to the requesting operator's own address; answers 202 | `system.capability_test` |
+| POST | `/api/v1/site/capabilities/services/storage/operation` | Queue one write/read/delete probe on the storage new uploads use (managed destination, configured bucket or local disk); answers 202 | `system.capability_test` |
 
 ### system
 

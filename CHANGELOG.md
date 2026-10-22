@@ -42,7 +42,9 @@ All notable changes to GoRun are recorded here. The format follows
 - Add explicit, permissioned operation tests that run as isolated background jobs: S3 write/read/
   delete of one probe object, one tiny AI completion, one mail to the requesting operator
   (`system.capability_test`). Connectivity checks can be queued through the API and run on a
-  12-hour schedule; MCP has no operation test by design.
+  12-hour schedule; MCP has no operation test by design. The storage new uploads use (managed
+  destination, configured bucket or local disk) has its own operation test, and the media module
+  reports its configuration from that storage.
 
 ### Background observations
 

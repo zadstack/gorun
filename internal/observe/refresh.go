@@ -114,15 +114,23 @@ func sanitizeError(err error, ctx context.Context) string {
 // every key whose saved result is missing, stale or for another revision,
 // up to MaxInFlight per kind. Disabled kinds are skipped entirely.
 func (s *Service) Tick(ctx context.Context) error {
-	s.once.Do(func() {
-		for _, kind := range s.Kinds() {
-			if n, err := s.queue.Unpark(ctx, JobKindPrefix+kind); err != nil {
+	// Registered kinds: a capability disabled at runtime has its queued
+	// refreshes parked while the workers keep running; enabling it again
+	// releases them unchanged. This runs every tick, not only at boot.
+	for _, kind := range s.Kinds() {
+		spec, _ := s.spec(kind)
+		if spec.enabled(ctx) {
+			if n, err := s.queue.Unpark(ctx, spec.jobKind()); err != nil {
 				s.log.Warn("observe: unpark", "kind", kind, "err", err)
 			} else if n > 0 {
 				s.log.Info("observe: released parked refreshes", "kind", kind, "count", n)
 			}
+		} else if n, err := s.queue.Park(ctx, spec.jobKind(), "capability disabled"); err != nil {
+			s.log.Warn("observe: park", "kind", kind, "err", err)
+		} else if n > 0 {
+			s.log.Info("observe: parked refreshes of a disabled capability", "kind", kind, "count", n)
 		}
-	})
+	}
 	waiting, err := s.queue.Unregistered(ctx)
 	if err != nil {
 		return err

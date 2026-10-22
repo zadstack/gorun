@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -15,6 +17,7 @@ import (
 	"github.com/zadstack/gorun/internal/api/apitest"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/media"
 )
 
 func capabilityReport(t *testing.T, client *apitest.Client) admin.CapabilityReport {
@@ -215,9 +218,17 @@ func TestCapabilityMailServiceEvidence(t *testing.T) {
 	app := apitest.Boot(t, admin.New())
 	ctx := context.Background()
 	tester := apitest.NewClient(t, app, "system.health", admin.PermCapabilityTest)
-	report := capabilityReport(t, tester)
-	if len(report.Services) != 1 || report.Services[0].ID != "mail" || *report.Services[0].Configured || report.Services[0].Tested {
-		t.Fatalf("%+v", report.Services)
+	mailService := func() admin.CapabilityState {
+		for _, s := range capabilityReport(t, tester).Services {
+			if s.ID == "mail" {
+				return s
+			}
+		}
+		t.Fatal("mail service missing")
+		return admin.CapabilityState{}
+	}
+	if svc := mailService(); *svc.Configured || svc.Tested {
+		t.Fatalf("%+v", svc)
 	}
 	if w := tester.Do("POST", "/site/capabilities/services/mail/operation", nil, nil); w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "capability_disabled") {
 		t.Fatalf("unconfigured mail accepted a test: %d %s", w.Code, w.Body.String())
@@ -238,7 +249,7 @@ func TestCapabilityMailServiceEvidence(t *testing.T) {
 	if time.Since(start) > 25*time.Second {
 		t.Fatal("mail test did not respect its timeout")
 	}
-	svc := capabilityReport(t, tester).Services[0]
+	svc := mailService()
 	if !*svc.Configured || svc.Tested || svc.Operation == nil || svc.Operation.Status != "failed" || svc.Operation.Result != "failed" || strings.Contains(svc.Operation.Reason, "127.0.0.1") {
 		t.Fatalf("%+v op=%+v", svc, svc.Operation)
 	}
@@ -264,4 +275,63 @@ func TestCapabilityModulesReportPublishedRequirements(t *testing.T) {
 		}
 	}
 	t.Fatal("admin module missing")
+}
+
+// The storage operation test exercises the storage new uploads actually use
+// (here: local disk under the data directory) with one probe object that
+// is written, read back and deleted; the media module reports as configured.
+func TestCapabilityStorageServiceOperationUsesActiveStorage(t *testing.T) {
+	app := apitest.Boot(t, media.New(), admin.New())
+	tester := apitest.NewClient(t, app, "system.health", admin.PermCapabilityTest)
+	report := capabilityReport(t, tester)
+	var storage admin.CapabilityState
+	for _, s := range report.Services {
+		if s.ID == "storage" {
+			storage = s
+		}
+	}
+	if !storage.Available || storage.Configured == nil || !*storage.Configured || storage.Source != "local" || storage.Tested || storage.Operation != nil {
+		t.Fatalf("%+v", storage)
+	}
+	for _, m := range report.Modules {
+		if m.ID == "media" && (m.Configured == nil || !*m.Configured || m.ConfigurationStatus != "configured") {
+			t.Fatalf("media module: %+v", m)
+		}
+		if m.ID == "auth" && m.Reason != "module_publishes_no_requirements" {
+			t.Fatalf("unpublished module must say so: %+v", m)
+		}
+	}
+	if w := apitest.NewClient(t, app, "system.health").Do("POST", "/site/capabilities/services/storage/operation", nil, nil); w.Code != http.StatusForbidden {
+		t.Fatal(w.Code)
+	}
+	w := tester.Do("POST", "/site/capabilities/services/storage/operation", nil, nil)
+	if w.Code != http.StatusAccepted {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+	drain(t, app)
+	report = capabilityReport(t, tester)
+	for _, s := range report.Services {
+		if s.ID == "storage" {
+			storage = s
+		}
+	}
+	if !storage.Tested || storage.Operation == nil || storage.Operation.Status != "passed" || storage.Operation.Scope != "operation:write_read_delete" {
+		t.Fatalf("%+v op=%+v", storage, storage.Operation)
+	}
+	entries, _ := os.ReadDir(filepath.Join(app.Deps.Config.DataDir, "media"))
+	var leftover []string
+	filepath.WalkDir(filepath.Join(app.Deps.Config.DataDir, "media"), func(p string, d os.DirEntry, err error) error {
+		if err == nil && !d.IsDir() && strings.Contains(p, "gorun-capability-probe-") {
+			leftover = append(leftover, p)
+		}
+		return nil
+	})
+	if len(leftover) != 0 {
+		t.Fatalf("probe object not cleaned: %v (%d entries)", leftover, len(entries))
+	}
+	// Without the media module the service is unavailable and refuses the test.
+	bare := apitest.Boot(t, admin.New())
+	if w := apitest.NewClient(t, bare, admin.PermCapabilityTest).Do("POST", "/site/capabilities/services/storage/operation", nil, nil); w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "capability_disabled") {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
 }
