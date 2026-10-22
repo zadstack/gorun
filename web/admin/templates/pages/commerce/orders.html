@@ -25,6 +25,7 @@
       <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.product"}}</th>
       <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.total"}}</th>
       <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.status"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.mode"}}</th>
       <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.created"}}</th>
     </tr></thead>
     <tbody>
@@ -35,6 +36,7 @@
         <td class="px-3 py-2">{{.ProductName}}</td>
         <td class="px-3 py-2 text-end font-mono" dir="ltr">{{.Total}}</td>
         <td class="px-3 py-2"><span class="inline-flex rounded-chip border px-1.5 py-0.5 text-xs {{if or (eq .Status "active") (eq .Status "paid")}}border-green bg-green-soft text-green{{else if or (eq .Status "failed") (eq .Status "refunded")}}border-red bg-red-soft text-red{{else if or (eq .Status "suspended") (eq .Status "expired")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}}">{{t (print "commerce.order.status." .Status)}}</span></td>
+        <td class="px-3 py-2">{{template "partials/commerce_order_mode" .StripeMode}}</td>
         <td class="px-3 py-2 font-mono text-xs">{{date .CreatedAt}}</td>
       </tr>
       {{end}}

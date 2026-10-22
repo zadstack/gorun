@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	orderColumns     = `id, number, customer_id, email, status, currency, total_minor, product_id, product_snapshot_json, stripe_session_id, stripe_payment_intent, paid_at, created_at, updated_at, request_status, fulfillment_note, COALESCE((SELECT status FROM commerce_request_receipts WHERE order_id=orders.id),''), COALESCE((SELECT last_error FROM commerce_request_receipts WHERE order_id=orders.id),''), COALESCE((SELECT sent_at FROM commerce_request_receipts WHERE order_id=orders.id),'')`
+	orderColumns     = `id, number, customer_id, email, status, currency, total_minor, product_id, product_snapshot_json, stripe_session_id, stripe_payment_intent, stripe_mode, paid_at, created_at, updated_at, request_status, fulfillment_note, COALESCE((SELECT status FROM commerce_request_receipts WHERE order_id=orders.id),''), COALESCE((SELECT last_error FROM commerce_request_receipts WHERE order_id=orders.id),''), COALESCE((SELECT sent_at FROM commerce_request_receipts WHERE order_id=orders.id),'')`
 	firstOrderNumber = 1000
 )
 
@@ -49,7 +49,7 @@ func scanOrder(row interface{ Scan(...any) error }) (*Order, error) {
 	var o Order
 	var snap string
 	if err := row.Scan(&o.ID, &o.Number, &o.CustomerID, &o.Email, &o.Status, &o.Currency, &o.TotalMinor, &o.ProductID, &snap,
-		&o.StripeSessionID, &o.StripePaymentIntent, &o.PaidAt, &o.CreatedAt, &o.UpdatedAt, &o.RequestStatus, &o.FulfillmentNote, &o.ReceiptStatus, &o.ReceiptError, &o.ReceiptSentAt); err != nil {
+		&o.StripeSessionID, &o.StripePaymentIntent, &o.StripeMode, &o.PaidAt, &o.CreatedAt, &o.UpdatedAt, &o.RequestStatus, &o.FulfillmentNote, &o.ReceiptStatus, &o.ReceiptError, &o.ReceiptSentAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}

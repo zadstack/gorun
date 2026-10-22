@@ -5,7 +5,7 @@ test('three site starters prepare private drafts, activate usable sites and appl
  test.setTimeout(180_000);
  const designs={company:{theme:'business',pages:5,background:'rgb(250, 251, 252)',accent:'#0f766e',font:'zad'},portfolio:{theme:'portfolio',pages:5,background:'rgb(241, 239, 233)',accent:'#3f5d4a',font:'zad'},magazine:{theme:'magazine',pages:4,background:'rgb(244, 245, 247)',accent:'#1e3a5f',font:'serif'}};
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
- const keys=['site.title','site.tagline','site.locale','site.front_page','site.theme','site.logo','builder.identity'];
+ const keys=['site.title','site.tagline','site.locale','site.front_page','site.theme','site.logo','site.logo_light','site.logo_dark','site.icon','builder.identity','theme.magazine.identity_accent','theme.magazine.identity_background','theme.magazine.identity_text','theme.magazine.identity_radius','theme.magazine.identity_draft','theme.magazine.identity_history'];
  const database=db();
  const saved=keys.map(key=>({key,value:(database.prepare('SELECT value_json FROM settings WHERE key=?').get(key) as any)?.value_json}));
  const menus=database.prepare("SELECT id,location FROM menus WHERE location='primary'").all() as any[];
@@ -129,15 +129,15 @@ test('three site starters prepare private drafts, activate usable sites and appl
    }
   }
   await page.goto('/admin/appearance/identity');
-  await page.fill('input[name="title"]','Updated identity');
-  await page.locator('input[name="accent"]').fill('#1d4ed8');
-  await page.locator('input[name="background"]').fill('#ffffff');
-  await page.locator('input[name="text"]').fill('#111827');
-  await page.locator('select[name="font"]').selectOption('serif');await page.locator('select[name="width"]').selectOption('wide');
-  await page.locator('#main form button[type="submit"]').click();await expect(page.locator('#main [role="status"]:visible')).toContainText(/حفظ|saved/);
+  await page.fill('input[name="site.title"]','Updated identity');
+  await page.locator('input[name="identity_accent"]').fill('#1d4ed8');
+  await page.locator('input[name="identity_background"]').fill('#ffffff');
+  await page.locator('input[name="identity_text"]').fill('#111827');
+  await page.locator('select[name="identity_radius"]').selectOption('round');
+  await page.locator('[data-identity-form] button[name="action"][value="apply"]').click();await expect(page.locator('#main [role="status"]:visible')).toContainText(/طُبّقت|applied/);
   await publicPage.goto('/');await expect(publicPage.locator('body')).toHaveCSS('background-color','rgb(255, 255, 255)');
-  expect(await publicPage.locator('html').evaluate(node=>getComputedStyle(node).getPropertyValue('--gp-width').trim())).toBe('1280px');
-  await page.locator('input[name="text"]').fill('#ffffff');await page.locator('#main form button[type="submit"]').click();await expect(page.locator('[role="alert"]')).toContainText(/تباين|contrast/);
+  expect(await publicPage.locator('html').evaluate(node=>getComputedStyle(node).getPropertyValue('--radius').trim())).toBe('16px');
+  await page.locator('input[name="identity_text"]').fill('#ffffff');await page.locator('[data-identity-form] button[name="action"][value="apply"]').click();await expect(page.locator('[data-design-error]')).toBeVisible();await expect(page.locator('#main')).toContainText(/تباين|contrast/);
   await publicPage.goto('/');await expect(publicPage.locator('body')).toHaveCSS('color','rgb(17, 24, 39)');
   expect((database.prepare('SELECT count(*) AS n FROM content').get() as any).n).toBeGreaterThan(oldItems.n);
   await publicPage.screenshot({path:testInfo.outputPath('starter-magazine-identity-edited.png'),fullPage:true});

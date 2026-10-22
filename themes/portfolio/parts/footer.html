@@ -1,6 +1,5 @@
 </main>
-{{$shellFooter := setting (printf "theme.%s.footer_style" .Theme.Slug)}}
-{{if not (or (eq $shellFooter "signature") (eq $shellFooter "columns") (eq $shellFooter "minimal"))}}{{$shellFooter = "native"}}{{end}}
+{{$shellFooter := variant "footer" .}}
 <footer data-shell-footer="{{$shellFooter}}" class="studio-footer"><div class="studio-shell">
  <a class="studio-footer-title" href="{{url "/"}}">{{.Site.Title}} <span class="gr-ext-arrow" aria-hidden="true">↗</span></a>
  {{with .Site.Tagline}}<p>{{.}}</p>{{end}}

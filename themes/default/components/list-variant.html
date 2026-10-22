@@ -1,0 +1,7 @@
+{{/* Usage: {{component "list-variant" .}} — the theme's list in the layout chosen by archive_style
+     (native: the theme's own list; grid: cards; compact: dense rows). Post archives, taxonomy
+     pages and search results all go through it, so the setting means the same everywhere. */}}
+{{$archive := variant "archive" .}}
+<div data-variant-archive="{{$archive}}">
+{{if not .Items}}{{component "list" .}}{{else if eq $archive "grid"}}{{component "list-grid" .}}{{else if eq $archive "compact"}}{{component "list-rows" .}}{{else}}{{component "list" .}}{{end}}
+</div>

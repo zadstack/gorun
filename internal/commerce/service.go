@@ -90,6 +90,7 @@ type service struct {
 	checkout    checkoutCreator
 	portal      portalCreator
 	refunds     refundCreator
+	verifier    keyVerifier
 	sendMail    mailFunc
 	sendReceipt mailFunc
 	now         func() time.Time
@@ -106,6 +107,9 @@ func newService(d *kernel.Deps, checkout checkoutCreator, send mailFunc) *servic
 	}
 	if s.refunds == nil {
 		s.refunds = stripeRefunds{}
+	}
+	if s.verifier == nil {
+		s.verifier = stripeVerifier{}
 	}
 	if s.sendMail == nil {
 		s.sendMail = func(ctx context.Context, to, subject, html, text string) error {
