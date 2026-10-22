@@ -140,9 +140,12 @@ html[data-theme="default"] .dt-footer-base { margin-inline: auto; display: flex;
 html[data-theme="default"] .dt-footer-base p { margin: 0; }
 
 @media (max-width: 767px) {
-  html[data-theme="default"] .dt-bar { gap: .375rem; min-height: 56px; }
-  html[data-theme="default"] .dt-mobile-menu { width: auto; order: 0; }
+  html[data-theme="default"] .dt-bar { gap: .375rem .75rem; min-height: 56px; flex-wrap: wrap; }
+  /* Tools take a full second row instead of stacking beside the brand: CTA and language first, the menu toggle at the end. */
+  html[data-theme="default"] .dt-tools { flex: 1 1 100%; margin-inline-start: 0; justify-content: flex-start; }
+  html[data-theme="default"] .dt-mobile-menu { width: auto; order: 2; margin-inline-start: auto; }
   html[data-theme="default"] .dt-cta.gr-btn { order: 0; }
+  html[data-theme="default"] .dt-lang { order: 1; }
   html[data-theme="default"] #main .gr-hero h1 { max-width: none; font-size: clamp(1.95rem, 9vw, 2.65rem); }
   html[data-theme="default"] .dt-featured { grid-template-columns: 1fr; gap: 1rem; }
   html[data-theme="default"] .dt-featured-media,
