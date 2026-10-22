@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-10-22
+
 ### Staged update lifecycle
 
 - Replace the single deploy request with a persisted operation whose phases — compatibility,
@@ -58,7 +60,20 @@ All notable changes to GoRun are recorded here. The format follows
   unchanged (`parked`) and is released when the handler returns. Health reports parked counts.
 - Document `/api/v1/system/observations` in OpenAPI.
 
-Existing installations keep data, settings, themes and saved checks; the new tables are additive.
+### Known limits in this release
+
+- MCP profiles have no operation test: invoking a tool executes a remote action, so `tested` stays
+  `false` for MCP and only `initialize` + `tools/list` connectivity is recorded.
+- Modules other than commerce, media and mail do not publish module-level configuration requirements
+  yet; the capability report says `module_publishes_no_requirements` rather than guessing.
+- Staged updates through Coolify work for Docker-image resources only (pinned tag); git-built
+  resources are refused. Schema/theme preflight against the target needs the release index to publish
+  `migrations`/`themes`; otherwise it records `release_data: unknown`.
+- Appearance reports declared and effective tokens with provenance; it never claims browser-computed
+  CSS, and custom CSS makes effective values unavailable while the declared layer stays.
+
+Existing installations keep data, settings, themes and saved checks; all schema changes are additive
+(`jobs.parked_reason`, `observations`, `update_operations`, `update_phases`, `ops_leases`).
 Publishing this release does not upgrade a running site process.
 
 ## [0.14.1] - 2026-10-21
