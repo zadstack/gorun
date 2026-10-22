@@ -75,6 +75,12 @@
       <label for="m-from-name" class="block font-medium mb-1">{{t "admin.mail.from_name"}}</label>
       <input id="m-from-name" name="from_name" value="{{.Form.FromName}}" class="h-11 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
     </div>
+    <div>
+      <label for="m-reply-to" class="block font-medium mb-1">{{t "admin.mail.reply_to"}}</label>
+      <input id="m-reply-to" name="reply_to" type="email" value="{{.Form.ReplyTo}}" dir="ltr" class="h-11 w-full rounded border {{if index .Fields "reply_to"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      {{template "partials/field_errors" (index .Fields "reply_to")}}
+      <p class="mt-1 text-xs text-muted">{{t "admin.mail.reply_to_help"}}</p>
+    </div>
   </div>
   <div><button type="submit" class="h-11 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
 </form>

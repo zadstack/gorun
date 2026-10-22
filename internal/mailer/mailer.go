@@ -51,6 +51,9 @@ type Config struct {
 	Host, Username, Password, From, FromName, TLS string
 	Port                                          int
 	Provider, ResendAPIKey                        string
+	// ReplyTo is the default Reply-To address (mail.reply_to); a message's
+	// own ReplyTo takes precedence.
+	ReplyTo string
 }
 
 // Mailer sends email. It is safe for concurrent use.
@@ -114,7 +117,7 @@ func (m *Mailer) Config(ctx context.Context) (Config, error) {
 		return strings.TrimSpace(value)
 	}
 	c := Config{Host: str("mail.host"), Username: str("mail.username"), From: str("mail.from"),
-		FromName: str("mail.from_name"), TLS: str("mail.tls"), Port: m.port(ctx)}
+		FromName: str("mail.from_name"), TLS: str("mail.tls"), Port: m.port(ctx), ReplyTo: str("mail.reply_to")}
 	if c.TLS == "" {
 		c.TLS = TLSStartTLS
 	}
@@ -211,6 +214,9 @@ func (m *Mailer) sendMessage(ctx context.Context, msg Message, required bool) er
 	c, err := m.Config(ctx)
 	if err != nil {
 		return err
+	}
+	if strings.TrimSpace(msg.ReplyTo) == "" {
+		msg.ReplyTo = c.ReplyTo
 	}
 	if c.Provider == "resend" {
 		return m.sendResend(ctx, c, msg)

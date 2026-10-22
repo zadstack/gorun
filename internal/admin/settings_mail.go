@@ -16,7 +16,7 @@ import (
 	"github.com/zadstack/gorun/internal/observe"
 )
 
-var mailKeys = []string{"mail.provider", "mail.resend_api_key", "mail.password", "mail.host", "mail.port", "mail.username", "mail.from", "mail.from_name", "mail.tls"}
+var mailKeys = []string{"mail.provider", "mail.resend_api_key", "mail.password", "mail.host", "mail.port", "mail.username", "mail.from", "mail.from_name", "mail.tls", "mail.reply_to"}
 var tlsModes = []string{mailer.TLSStartTLS, mailer.TLSImplicit, mailer.TLSNone}
 
 // mailInput is the Settings → Mail form. A blank Password keeps the stored
@@ -33,6 +33,7 @@ type mailInput struct {
 	ClearPassword     bool   `form:"clear_password"`
 	From              string `form:"from"`
 	FromName          string `form:"from_name"`
+	ReplyTo           string `form:"reply_to"`
 	TLS               string `form:"tls"`
 }
 
@@ -214,6 +215,13 @@ func (h *handlers) validateMail(in mailInput) (map[string]any, map[string]string
 		}
 	}
 	vals["mail.from"] = from
+	replyTo := strings.TrimSpace(in.ReplyTo)
+	if replyTo != "" {
+		if a, err := mail.ParseAddress(replyTo); err != nil || a.Address != replyTo {
+			fields["reply_to"] = "auth.error.email_invalid"
+		}
+	}
+	vals["mail.reply_to"] = replyTo
 	vals["mail.from_name"] = strings.TrimSpace(strings.NewReplacer("\r", "", "\n", "").Replace(in.FromName))
 	if slices.Contains(tlsModes, in.TLS) {
 		vals["mail.tls"] = in.TLS

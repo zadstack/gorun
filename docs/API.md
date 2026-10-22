@@ -289,6 +289,18 @@ bodies are not stored.
  "saved":{"at":"2026-10-22T09:00:00Z","age_seconds":3900,"revision":"4f1c…","revision_match":true,"duration_ms":212,"scope":"connectivity","data":{"plans":3}}}
 ```
 
+### Integrations hub
+
+`/api/v1/site/integrations` (`settings.manage`) reads the saved Cloudflare connection (token hint
+only, never the token), the per-scope permission lamps, the R2/D1/Workers inventory with an
+explicit `complete` flag, the resolved media/backup destinations with their source (settings,
+config/env, local) and the mail settings. Writes store the encrypted token, select the account,
+bind an existing bucket to a purpose, confirm a Worker as a GoRun Edge instance through its
+manager contract, or send one explicit test message (`system.capability_test`). Checks and
+inventory refreshes queue background observations (`integrations.cloudflare.*`) and answer `202`.
+Contracts, error codes, what the fakes verified and the remaining live-test requirement are in
+[INTEGRATIONS.md](INTEGRATIONS.md).
+
 ### Staged updates
 
 `GET /api/v1/system/update` (`system.update`) reports the serving identity (`running_version`,
@@ -370,7 +382,7 @@ The command boots a fresh temporary fixture without job workers or a network lis
 `/api` mount prefix and `x-scopes`. Every GET also answers HEAD.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **177 operations** in 24 tags.
+Generated from the current locally booted OpenAPI document: **185 operations** in 24 tags.
 
 ### builder
 
@@ -568,12 +580,20 @@ Generated from the current locally booted OpenAPI document: **177 operations** i
 | GET | `/api/v1/me` | Current principal and effective scopes | any key or session |
 | GET | `/api/v1/site/capabilities` | Saved capability evidence (availability, activation, configuration, connectivity, operation tests) with no external checks | `system.health` |
 | GET | `/api/v1/site/info` | Public site identity, running build, languages and theme appearance with provenance | public |
+| GET | `/api/v1/site/integrations/cloudflare/inventory/{kind}` | Saved inventory of one kind with age and an explicit complete flag | `settings.manage` |
+| GET | `/api/v1/site/integrations` | Integrations snapshot: Cloudflare connection and scope lamps, R2/D1/Workers inventory, storage bindings with sources, mail settings; no external calls | `settings.manage` |
 | GET | `/api/v1/site/runtime` | Protected running process information; no credentials or deployment paths | `settings.manage` |
 | GET | `/api/v1/site` | Site structure: content types, taxonomies, menus, theme, templates | `content.view` |
 | POST | `/api/v1/site/capabilities/connections/{id}/check` | Queue a read-only connectivity/discovery check of a connection profile; answers 202 with the task reference | `settings.manage` |
 | POST | `/api/v1/site/capabilities/connections/{id}/operation` | Queue an isolated operation test (S3: write/read/delete one probe object; AI: one tiny completion); answers 202 | `system.capability_test` |
 | POST | `/api/v1/site/capabilities/services/mail/operation` | Queue one test message to the requesting operator's own address; answers 202 | `system.capability_test` |
 | POST | `/api/v1/site/capabilities/services/storage/operation` | Queue one write/read/delete probe on the storage new uploads use (managed destination, configured bucket or local disk); answers 202 | `system.capability_test` |
+| POST | `/api/v1/site/integrations/cloudflare/check` | Queue the token verification, account listing and per-service read permission checks; answers 202 with the task references | `settings.manage` |
+| POST | `/api/v1/site/integrations/cloudflare/inventory/{kind}/refresh` | Queue a full re-read of one inventory kind (paginated, bounded); answers 202; concurrent requests share one job | `settings.manage` |
+| POST | `/api/v1/site/integrations/cloudflare/workers/{name}/identify` | Confirm a Worker as a GoRun Edge instance through its manager contract with a pasted manager key (never stored); records identity evidence | `settings.manage` |
+| POST | `/api/v1/site/integrations/mail/test` | Send one test message to the caller's own address or a chosen address; reports provider acceptance, never inbox delivery | `system.capability_test` |
+| POST | `/api/v1/site/integrations/storage/bind` | Bind an existing bucket (discovered R2 or any S3 endpoint) as the media and/or backup destination with its own S3 keys; queues the read-only check | `settings.manage` |
+| PUT | `/api/v1/site/integrations/cloudflare` | Store the Cloudflare API token (encrypted, never returned) and/or select the account; queues the read-only checks | `settings.manage` |
 
 ### system
 

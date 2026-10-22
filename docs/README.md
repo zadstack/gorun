@@ -46,6 +46,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | [CONTENT_STUDIO.md](CONTENT_STUDIO.md) | Reviewable AI text/media candidates |
 | [MIGRATION.md](MIGRATION.md) | WordPress REST / WXR import |
 | [STORAGE.md](STORAGE.md) | Data directory layout and media |
+| [INTEGRATIONS.md](INTEGRATIONS.md) | Integrations hub: Cloudflare token and discovery, bucket binding, mail test |
 | [LOGIN-SECURITY.md](LOGIN-SECURITY.md) | Trusted proxies and login IP restrictions |
 
 ## Architecture and extension / البنية والتوسيع

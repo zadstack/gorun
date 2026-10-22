@@ -71,6 +71,7 @@ type SettingsDTO struct {
 	MailFrom            string `json:"mail.from"`
 	MailFromName        string `json:"mail.from_name"`
 	MailTLS             string `json:"mail.tls"`
+	MailReplyTo         string `json:"mail.reply_to"`
 	MailPasswordSet     bool   `json:"mail.password_set"`
 }
 
@@ -101,6 +102,7 @@ type SettingsPatchDTO struct {
 	MailFrom         *string `json:"mail.from,omitempty"`
 	MailFromName     *string `json:"mail.from_name,omitempty"`
 	MailTLS          *string `json:"mail.tls,omitempty"`
+	MailReplyTo      *string `json:"mail.reply_to,omitempty"`
 }
 
 // opResult is the response of action endpoints (job retry, user delete).
@@ -186,7 +188,7 @@ func (h *handlers) apiSettingsGet(w http.ResponseWriter, r *http.Request) {
 		SiteLogo: g.Logo, SiteLogoDark: g.LogoDark, SiteLogoLight: g.LogoLight, SiteIcon: g.Icon, ContactEmail: g.ContactEmail, PostsPerPage: h.postsPerPage(r),
 		MailProvider: m.Provider, MailResendAPIKeySet: h.d.Settings.GetString(r.Context(), "mail.resend_api_key", "") != "",
 		MailHost: m.Host, MailPort: port, MailUsername: m.Username, MailFrom: m.From,
-		MailFromName: m.FromName, MailTLS: m.TLS, MailPasswordSet: pwSet,
+		MailFromName: m.FromName, MailTLS: m.TLS, MailReplyTo: m.ReplyTo, MailPasswordSet: pwSet,
 	}, nil)
 }
 
@@ -217,7 +219,7 @@ func (h *handlers) apiSettingsPatch(w http.ResponseWriter, r *http.Request) {
 		"site.base_url": &g.BaseURL, "site.theme": &g.Theme, "site.front_page": &g.FrontPage,
 		"site.logo": &g.Logo, "site.logo_dark": &g.LogoDark, "site.logo_light": &g.LogoLight, "site.icon": &g.Icon, "contact.email": &g.ContactEmail, "site.posts_per_page": &g.PostsPerPage}
 	mailF := map[string]*string{"mail.provider": &m.Provider, "mail.resend_api_key": &m.ResendAPIKey, "mail.host": &m.Host, "mail.port": &m.Port, "mail.username": &m.Username, "mail.password": &m.Password,
-		"mail.from": &m.From, "mail.from_name": &m.FromName, "mail.tls": &m.TLS}
+		"mail.from": &m.From, "mail.from_name": &m.FromName, "mail.tls": &m.TLS, "mail.reply_to": &m.ReplyTo}
 	touchedGeneral, touchedMail := false, false
 	fields := map[string]string{}
 	for k, raw := range body {

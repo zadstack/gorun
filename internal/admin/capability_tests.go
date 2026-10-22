@@ -125,7 +125,7 @@ func (h *handlers) mailRevision(ctx context.Context, key string) (string, error)
 		return "", nil
 	}
 	parts := []string{}
-	for _, k := range []string{"mail.host", "mail.port", "mail.username", "mail.from", "mail.from_name", "mail.tls"} {
+	for _, k := range []string{"mail.provider", "mail.host", "mail.port", "mail.username", "mail.from", "mail.from_name", "mail.tls", "mail.reply_to"} {
 		parts = append(parts, h.d.Settings.GetString(ctx, k, ""))
 	}
 	parts = append(parts, u.Email)
