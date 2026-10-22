@@ -9,6 +9,8 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -24,38 +26,45 @@ import (
 const testPage = "/admin/appearance/identity/ai"
 
 type fakeProvider struct {
-	connections []Connection
-	ready       bool
-	reply       string
-	err         error
-	calls       int
-	lastSystem  string
-	lastInput   string
+	connections   []Connection
+	writing       Connection
+	ready         bool
+	reply         string
+	err           error
+	calls         int
+	lastSystem    string
+	lastInput     string
+	lastModel     string
+	lastMaxTokens int
 }
 
 func (f *fakeProvider) hooks() Hooks {
 	return Hooks{
-		Complete: func(_ context.Context, _ *kernel.Deps, _, _, system, input string) (string, error) {
+		Complete: func(_ context.Context, _ *kernel.Deps, _, model, system, input string, maxTokens int) (string, error) {
 			f.calls++
-			f.lastSystem, f.lastInput = system, input
+			f.lastSystem, f.lastInput, f.lastModel, f.lastMaxTokens = system, input, model, maxTokens
 			return f.reply, f.err
 		},
 		Ready:       func(context.Context, *kernel.Deps, string, string) bool { return f.ready },
 		Connections: func(context.Context, *kernel.Deps) ([]Connection, error) { return f.connections, nil },
+		Writing: func(context.Context, *kernel.Deps) (Connection, bool) {
+			return f.writing, f.ready && f.writing.Provider != ""
+		},
 	}
 }
 
 type env struct {
-	t   *testing.T
-	app *kernel.App
-	srv *httptest.Server
-	c   *http.Client
-	fp  *fakeProvider
+	t      *testing.T
+	app    *kernel.App
+	srv    *httptest.Server
+	c      *http.Client
+	fp     *fakeProvider
+	themes string
 }
 
 func boot(t *testing.T, enabled bool, fp *fakeProvider) *env {
 	t.Helper()
-	root, _ := filepath.Abs("../../themes")
+	root := copyThemes(t)
 	cfg := config.Config{Env: "dev", DataDir: t.TempDir(), Addr: ":0", SecretKey: make([]byte, 32), BaseURL: "http://example.test", Theme: "default"}
 	pre, err := kernel.Boot(context.Background(), cfg, []kernel.Module{settingsmod.New()})
 	if err != nil {
@@ -75,7 +84,7 @@ func boot(t *testing.T, enabled bool, fp *fakeProvider) *env {
 	srv := httptest.NewServer(app.Handler)
 	t.Cleanup(srv.Close)
 	jar, _ := cookiejar.New(nil)
-	e := &env{t: t, app: app, srv: srv, c: &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, fp: fp}
+	e := &env{t: t, app: app, srv: srv, c: &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, fp: fp, themes: root}
 	svc, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
 	if _, err := svc.Create(context.Background(), "admin@example.com", "Admin", "correct horse battery", "admin"); err != nil {
 		t.Fatal(err)
@@ -83,6 +92,32 @@ func boot(t *testing.T, enabled bool, fp *fakeProvider) *env {
 	_, page := e.get("/admin/login")
 	e.post("/admin/login", url.Values{"_csrf": {csrfFrom(t, page)}, "email": {"admin@example.com"}, "password": {"correct horse battery"}})
 	return e
+}
+
+// useTheme activates a child theme that declares no identity support.
+func (e *env) useTheme(t *testing.T, slug string) {
+	t.Helper()
+	dir := filepath.Join(e.themes, slug)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "theme.json"), []byte(`{"name":"Plain child","version":"1.0.0","parent":"default","locations":["primary"],"supports":["rtl"]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := e.app.Deps.Settings.Set(context.Background(), "site.theme", slug); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// copyThemes copies the catalog themes to a temp dir (tests add themes).
+func copyThemes(t *testing.T) string {
+	t.Helper()
+	src, _ := filepath.Abs("../../themes")
+	dst := t.TempDir()
+	if out, err := exec.Command("cp", "-R", src+"/.", dst).CombinedOutput(); err != nil {
+		t.Fatal(err, string(out))
+	}
+	return dst
 }
 
 func csrfFrom(t *testing.T, html string) string {
@@ -279,5 +314,88 @@ func TestEstimateCostKnownAndUnknownModels(t *testing.T) {
 	unknown := EstimateCost("openai", "my-custom-model", 1200, 1500)
 	if unknown.Known || unknown.USD != 0 {
 		t.Fatalf("unknown model estimate = %+v", unknown)
+	}
+}
+
+// Review fixes: the destination shown is the one called, output is capped
+// to the estimate, prices match exact or dated model ids only, the test
+// status is visible, unsupported themes are refused, and every provider
+// call is audited with its outcome.
+func TestPricingMatchesExactOrDatedModelsOnly(t *testing.T) {
+	if e := EstimateCost("openai", "o3", 1000, 1000); !e.Known {
+		t.Fatal("exact o3 unknown")
+	}
+	if e := EstimateCost("openai", "o3-pro", 1000, 1000); e.Known {
+		t.Fatalf("o3-pro must not inherit o3's price: %+v", e)
+	}
+	if e := EstimateCost("anthropic", "claude-sonnet-4-5-20250929", 1000, 1000); !e.Known {
+		t.Fatal("dated sonnet id unknown")
+	}
+	if e := EstimateCost("openai", "gpt-5-nano", 1000, 1000); !e.Known || e.PerMillionInput >= EstimateCost("openai", "gpt-5", 1, 1).PerMillionInput {
+		t.Fatalf("gpt-5-nano must have its own, lower price: %+v", e)
+	}
+}
+
+func TestPreviewShowsWritingSettingsDestinationAndTestStatus(t *testing.T) {
+	fp := &fakeProvider{ready: true, reply: goodReply, writing: Connection{Provider: "openai", Model: "gpt-4o-mini", Host: "api.openai.com"},
+		connections: []Connection{{ID: "c1", Name: "Proxy", Provider: "anthropic", Model: "claude-sonnet-4-5", Host: "proxy.example.com", TestStatus: "pass"}}}
+	e := boot(t, true, fp)
+	_, page := e.get(testPage, "Accept-Language", "en")
+	mustContain(t, page, "Proxy · anthropic · claude-sonnet-4-5 · pass")
+	_, page = e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "sector": {"x"}})
+	mustContain(t, page, "gpt-4o-mini", "api.openai.com", "Estimated cost", "$")
+	review := regexp.MustCompile(`name="review" value="([^"]+)"`).FindStringSubmatch(page)[1]
+	e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+	if fp.lastModel != "gpt-4o-mini" || fp.lastMaxTokens != maxOutputTokens {
+		t.Fatalf("call used model %q max %d", fp.lastModel, fp.lastMaxTokens)
+	}
+}
+
+func TestGenerateRefusedForThemeWithoutIdentitySupport(t *testing.T) {
+	fp := &fakeProvider{ready: true, reply: goodReply, connections: []Connection{{ID: "c1", Name: "P", Provider: "openai", Model: "gpt-4o", Host: "api.openai.com"}}}
+	e := boot(t, true, fp)
+	e.useTheme(t, "plainchild")
+	resp, page := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "connection": {"c1"}, "sector": {"x"}})
+	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(page, "does not accept identity settings") || fp.calls != 0 {
+		t.Fatalf("unsupported theme: %d calls=%d", resp.StatusCode, fp.calls)
+	}
+}
+
+func TestEveryProviderCallIsAuditedAndStrayBracesParse(t *testing.T) {
+	fp := &fakeProvider{ready: true, reply: goodReply + " Note: replace {brand} later.", connections: []Connection{{ID: "c1", Name: "P", Provider: "openai", Model: "gpt-4o", Host: "api.openai.com"}}}
+	e := boot(t, true, fp)
+	_, page := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "connection": {"c1"}, "sector": {"x"}, "languages": {"en"}})
+	review := regexp.MustCompile(`name="review" value="([^"]+)"`).FindStringSubmatch(page)[1]
+	resp, page := e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+	if resp.StatusCode != 200 {
+		t.Fatalf("stray braces after the object broke parsing: %d", resp.StatusCode)
+	}
+	mustContain(t, page, "not saved", "Specialty coffee, roasted weekly")
+	d, _ := themeSvc(e).IdentityDraft(adminCtx(), "default")
+	if d.Snapshot.Site["site.tagline"] != "Specialty coffee, roasted weekly" {
+		t.Fatalf("english choice not honoured: %q", d.Snapshot.Site["site.tagline"])
+	}
+	fp.reply = "not json at all"
+	_, page = e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"preview"}, "connection": {"c1"}, "sector": {"x"}})
+	review = regexp.MustCompile(`name="review" value="([^"]+)"`).FindStringSubmatch(page)[1]
+	e.post(testPage, url.Values{"_csrf": {e.csrf()}, "action": {"generate"}, "review": {review}, "approved": {"1"}})
+	var n int
+	_ = e.app.Deps.DB.QueryRow(`SELECT count(*) FROM audit_log WHERE action = 'identityai.generate'`).Scan(&n)
+	if n != 2 {
+		t.Fatalf("audit rows = %d, want one per provider call", n)
+	}
+	var meta string
+	_ = e.app.Deps.DB.QueryRow(`SELECT meta_json FROM audit_log WHERE action = 'identityai.generate' ORDER BY rowid DESC LIMIT 1`).Scan(&meta)
+	if !strings.Contains(meta, `"outcome":"bad_reply"`) {
+		t.Fatalf("last audit meta = %s", meta)
+	}
+}
+
+func mustContain(t *testing.T, body string, want ...string) {
+	t.Helper()
+	for _, w := range want {
+		if !strings.Contains(body, w) {
+			t.Errorf("missing %q", w)
+		}
 	}
 }

@@ -10,8 +10,8 @@ All notable changes to GoRun are recorded here. The format follows
 - New optional module `identityai` (off until `addons.identityai.enabled` is true): Appearance →
   Identity AI asks a saved text AI connection for colours, fonts, taglines and a written logo brief
   after the operator previews the exact request and approves its estimated cost; results go to the
-  identity draft only. Text only: no image, vector or GIF is produced or claimed. See
-  `docs/IDENTITY-AI.md`.
+  identity draft only. This stage is text only: no image, vector or animation is produced or
+  claimed; logo generation with the same gating is follow-up work. See `docs/IDENTITY-AI.md`.
 
 ### Identity
 

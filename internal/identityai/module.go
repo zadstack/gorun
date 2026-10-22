@@ -41,13 +41,17 @@ type Connection struct {
 // at boot (like workagents), so this package never reads credentials.
 type Hooks struct {
 	// Complete sends one system + user turn through connectionID (""
-	// means the site's writing settings) and returns the reply text.
-	Complete func(ctx context.Context, d *kernel.Deps, connectionID, model, system, input string) (string, error)
+	// means the site's writing settings) with at most maxTokens of reply
+	// and returns the reply text.
+	Complete func(ctx context.Context, d *kernel.Deps, connectionID, model, system, input string, maxTokens int) (string, error)
 	// Ready reports that the connection's configuration and credential are
 	// readable, without sending a request.
 	Ready func(ctx context.Context, d *kernel.Deps, connectionID, model string) bool
 	// Connections lists the saved AI connection profiles.
 	Connections func(ctx context.Context, d *kernel.Deps) ([]Connection, error)
+	// Writing describes the site's writing settings as a destination
+	// (provider, model, host); false when not configured.
+	Writing func(ctx context.Context, d *kernel.Deps) (Connection, bool)
 }
 
 // IdentityStore is what the module needs from the theme service.

@@ -44,5 +44,10 @@
   "error_approval": "Tick the approval box to generate.",
   "error_review": "The reviewed request expired or was already used. Preview it again.",
   "error_upstream": "The provider did not answer successfully. Nothing was changed; preview and try again.",
-  "error_reply": "The provider's answer could not be used as an identity (invalid colours, fonts or contrast). Nothing was changed."
+  "error_reply": "The provider's answer could not be used as an identity (invalid colours, fonts or contrast). Nothing was changed.",
+  "untested": "untested",
+  "test_status": "Connection test",
+  "not_saved": "not saved, copy it if needed",
+  "error_theme_unsupported": "The active theme does not accept identity settings (its theme.json does not declare \"identity\"), so colours and fonts would never be shown. Switch to a theme that supports identity first.",
+  "error_failed": "The suggestion could not be stored. Nothing was changed; try again."
 }

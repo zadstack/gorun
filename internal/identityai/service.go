@@ -91,6 +91,7 @@ type Suggestion struct {
 	HeadingFontLabel, BodyFontLabel  string
 	LatinFontLabel                   string
 	ContrastRatio                    string
+	SavedAR, SavedEN                 bool // which tagline went into the draft
 	Values                           map[string]string
 }
 
@@ -109,13 +110,13 @@ type rawSuggestion struct {
 }
 
 var (
-	errNotReady   = errors.New("identityai: no ready AI connection")
-	errReview     = errors.New("identityai: review required")
-	errUpstream   = errors.New("identityai: provider failed")
-	errBadReply   = errors.New("identityai: reply is not usable")
-	errNoApproval = errors.New("identityai: approval missing")
-	jsonObjectRe  = regexp.MustCompile(`(?s)\{.*\}`)
-	hexRe         = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
+	errNotReady    = errors.New("identityai: no ready AI connection")
+	errReview      = errors.New("identityai: review required")
+	errUpstream    = errors.New("identityai: provider failed")
+	errBadReply    = errors.New("identityai: reply is not usable")
+	errNoApproval  = errors.New("identityai: approval missing")
+	errUnsupported = errors.New("identityai: theme does not accept identity settings")
+	hexRe          = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 )
 
 const systemPrompt = `You are a brand designer helping a small website owner choose a visual identity for a bilingual Arabic/English site built with GoRun.
@@ -124,7 +125,7 @@ Answer with ONE JSON object and nothing else, no markdown fences, with exactly t
 "heading_font" and "body_font" (one of: zad, ibm-plex-arabic, noto-naskh, noto-kufi, readex, tajawal, cairo, amiri),
 "latin_font" (one of: inter, source-serif, ibm-plex-sans, manrope),
 "radius" (one of: square, soft, round), "spacing" (one of: compact, normal, relaxed),
-"tagline_ar" (Arabic, at most 80 characters), "tagline_en" (English, at most 80 characters),
+"tagline_ar" (Arabic, at most 80 characters; empty string when the brief says English only), "tagline_en" (English, at most 80 characters; empty string when the brief says Arabic only),
 "logo_brief" (plain-text guidance for a human designer, at most 400 characters; describe shape, mark and colour use; you cannot draw).
 Do not invent a company name. Do not output images, SVG or URLs.`
 
@@ -150,7 +151,11 @@ func userPrompt(b Brief, site theme.IdentitySnapshot, themeName string) string {
 // writing settings.
 func (s *service) destination(ctx context.Context, id string) (Connection, bool) {
 	if id == "" {
-		return Connection{Name: "writing settings"}, s.hooks.Ready(ctx, s.d, "", "")
+		if s.hooks.Writing == nil {
+			return Connection{}, false
+		}
+		w, ok := s.hooks.Writing(ctx, s.d)
+		return w, ok && s.hooks.Ready(ctx, s.d, "", "")
 	}
 	list, err := s.hooks.Connections(ctx, s.d)
 	if err != nil {
@@ -196,6 +201,9 @@ func (s *service) Preview(ctx context.Context, b Brief) (review, error) {
 		return review{}, errNotReady
 	}
 	info := st.Active(ctx)
+	if !theme.SupportsIdentity(info) {
+		return review{}, errUnsupported
+	}
 	input := userPrompt(b, s.current(ctx, st, info.Slug), info.Name)
 	r := review{Token: db.NewID(), Owner: s.owner(ctx), Expires: time.Now().Add(reviewTTL), Brief: b, Connection: conn, System: systemPrompt, Input: input,
 		Estimate: EstimateCost(conn.Provider, conn.Model, estimateTokens(systemPrompt+input), maxOutputTokens)}
@@ -203,6 +211,17 @@ func (s *service) Preview(ctx context.Context, b Brief) (review, error) {
 	s.open[r.Owner] = r
 	s.mu.Unlock()
 	return r, nil
+}
+
+// peek returns the owner's review when token matches, without consuming it.
+func (s *service) peek(ctx context.Context, token string) (review, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	r, ok := s.open[s.owner(ctx)]
+	if !ok || token == "" || r.Token != token || time.Now().After(r.Expires) {
+		return review{}, false
+	}
+	return r, true
 }
 
 // take consumes the owner's review when token matches and it is fresh.
@@ -228,20 +247,27 @@ func (s *service) Generate(ctx context.Context, token string, approved bool) (Su
 	if !ok {
 		return Suggestion{}, errReview
 	}
-	reply, err := s.hooks.Complete(ctx, s.d, r.Brief.Connection, r.Connection.Model, r.System, r.Input)
-	if err != nil {
-		s.d.Log.Warn("identityai: generation failed", "provider", r.Connection.Provider)
-		return Suggestion{}, errUpstream
-	}
-	sug, err := parseSuggestion(reply)
-	if err != nil {
-		return Suggestion{}, err
-	}
 	st, ok := s.store()
 	if !ok {
 		return Suggestion{}, errNotReady
 	}
 	info := st.Active(ctx)
+	audit := func(outcome string) {
+		if s.d.Audit != nil {
+			s.d.Audit.Record(ctx, "identityai.generate", "theme", info.Slug, map[string]any{"provider": r.Connection.Provider, "model": r.Connection.Model, "connection": r.Brief.Connection, "request": r.Hash(), "outcome": outcome})
+		}
+	}
+	reply, err := s.hooks.Complete(ctx, s.d, r.Brief.Connection, r.Connection.Model, r.System, r.Input, maxOutputTokens)
+	if err != nil {
+		s.d.Log.Warn("identityai: generation failed", "provider", r.Connection.Provider)
+		audit("upstream")
+		return Suggestion{}, errUpstream
+	}
+	sug, err := parseSuggestion(reply)
+	if err != nil {
+		audit("bad_reply")
+		return Suggestion{}, err
+	}
 	snap := s.current(ctx, st, info.Slug)
 	snap.Theme = info.Slug
 	if snap.Values == nil {
@@ -256,20 +282,34 @@ func (s *service) Generate(ctx context.Context, token string, approved bool) (Su
 	if snap.Site["site.title"] == "" {
 		snap.Site["site.title"] = s.d.Settings.GetString(ctx, "site.title", "GoRun")
 	}
-	switch {
-	case r.Brief.Languages == "en" && sug.TaglineEN != "":
-		snap.Site["site.tagline"] = sug.TaglineEN
-	case sug.TaglineAR != "":
-		snap.Site["site.tagline"] = sug.TaglineAR
-	case sug.TaglineEN != "":
-		snap.Site["site.tagline"] = sug.TaglineEN
+	// One tagline fits site.tagline; the operator's language choice decides
+	// which, and the other is shown as not saved.
+	switch r.Brief.Languages {
+	case "en":
+		if sug.TaglineEN != "" {
+			snap.Site["site.tagline"], sug.SavedEN = sug.TaglineEN, true
+		}
+	case "ar":
+		if sug.TaglineAR != "" {
+			snap.Site["site.tagline"], sug.SavedAR = sug.TaglineAR, true
+		}
+	default:
+		if sug.TaglineAR != "" {
+			snap.Site["site.tagline"], sug.SavedAR = sug.TaglineAR, true
+		} else if sug.TaglineEN != "" {
+			snap.Site["site.tagline"], sug.SavedEN = sug.TaglineEN, true
+		}
 	}
 	if err := st.SaveIdentityDraft(ctx, snap); err != nil {
-		return Suggestion{}, errBadReply
+		var ve *theme.IdentityValidationError
+		if errors.As(err, &ve) {
+			audit("invalid")
+			return Suggestion{}, errBadReply
+		}
+		audit("store_failed")
+		return Suggestion{}, err
 	}
-	if s.d.Audit != nil {
-		s.d.Audit.Record(ctx, "identityai.generate", "theme", info.Slug, map[string]any{"provider": r.Connection.Provider, "model": r.Connection.Model, "connection": r.Brief.Connection})
-	}
+	audit("ok")
 	return sug, nil
 }
 
@@ -277,12 +317,12 @@ func parseSuggestion(reply string) (Suggestion, error) {
 	if len(reply) > maxReply {
 		return Suggestion{}, errBadReply
 	}
-	m := jsonObjectRe.FindString(reply)
-	if m == "" {
+	start := strings.Index(reply, "{")
+	if start < 0 {
 		return Suggestion{}, errBadReply
 	}
 	var raw rawSuggestion
-	if err := json.Unmarshal([]byte(m), &raw); err != nil {
+	if err := json.NewDecoder(strings.NewReader(reply[start:])).Decode(&raw); err != nil {
 		return Suggestion{}, errBadReply
 	}
 	sug := Suggestion{Accent: strings.ToLower(raw.Accent), Background: strings.ToLower(raw.Background), Text: strings.ToLower(raw.Text),
@@ -371,16 +411,26 @@ func (h *handlers) submit(w http.ResponseWriter, r *http.Request) {
 	b := briefFromForm(r)
 	switch r.PostForm.Get("action") {
 	case "generate":
-		sug, err := h.s.Generate(ctx, r.PostForm.Get("review"), r.PostForm.Get("approved") == "1")
+		token := r.PostForm.Get("review")
+		sug, err := h.s.Generate(ctx, token, r.PostForm.Get("approved") == "1")
 		switch {
 		case errors.Is(err, errNoApproval):
-			h.render(w, r, http.StatusUnprocessableEntity, h.s.pageData(ctx, b, nil, t("identityai.error_approval")))
+			// The review is still valid: show it again so one tick suffices.
+			rv, ok := h.s.peek(ctx, token)
+			var rp *review
+			if ok {
+				rp = &rv
+			}
+			h.render(w, r, http.StatusUnprocessableEntity, h.s.pageData(ctx, b, rp, t("identityai.error_approval")))
 		case errors.Is(err, errReview):
 			h.render(w, r, http.StatusConflict, h.s.pageData(ctx, b, nil, t("identityai.error_review")))
 		case errors.Is(err, errUpstream):
 			h.render(w, r, http.StatusBadGateway, h.s.pageData(ctx, b, nil, t("identityai.error_upstream")))
-		case err != nil:
+		case errors.Is(err, errBadReply):
 			h.render(w, r, http.StatusUnprocessableEntity, h.s.pageData(ctx, b, nil, t("identityai.error_reply")))
+		case err != nil:
+			h.s.d.Log.Error("identityai: generate failed", "err", err)
+			h.render(w, r, http.StatusInternalServerError, h.s.pageData(ctx, b, nil, t("identityai.error_failed")))
 		default:
 			v := h.s.pageData(ctx, b, nil, "")
 			v.Result = &sug
@@ -388,6 +438,10 @@ func (h *handlers) submit(w http.ResponseWriter, r *http.Request) {
 		}
 	default: // preview
 		rv, err := h.s.Preview(ctx, b)
+		if errors.Is(err, errUnsupported) {
+			h.render(w, r, http.StatusUnprocessableEntity, h.s.pageData(ctx, b, nil, t("identityai.error_theme_unsupported")))
+			return
+		}
 		if err != nil {
 			h.render(w, r, http.StatusUnprocessableEntity, h.s.pageData(ctx, b, nil, t("identityai.error_not_ready")))
 			return
