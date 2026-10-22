@@ -85,6 +85,16 @@ stops a boot; it changes behaviour, and the catalog says how on the dependent's 
 | commerce | theme | Store pages (`/shop`, `/cart`, `/account`) are not served; themes render with empty product lists. |
 | wpmigrate | mcp | The migration tools are not offered to agents. |
 
+### Effects of switching feature modules off
+
+| Off | Consequence after restart |
+|---|---|
+| launch | The `/start` onboarding and sign-in routes are unavailable. |
+| workagents | Agent routes and admin pages are unavailable; its crons and job handlers are absent. Previously registered queued jobs are parked while workers run, then released on re-enable. Membership hides its Agents link. |
+| wpmigrate | Migration routes, workers and watchdog are absent; MCP migration tools disappear. CLI import and preview refuse a disabled migrator. Existing sources and import data are retained. |
+| mcp | Module-owned MCP routes and tools are absent; the stdio entry point refuses to start without the booted MCP service. Shared core AI clients are unaffected. |
+| ext | System → Extensions and the extension bridge are unavailable. Installed extensions receive no new hook deliveries while the module is off; previously queued delivery jobs are parked while workers run. Extension files and records are retained. Hook events emitted while off are not replayed on re-enable. |
+
 A hard dependency that is off shows "Depends on X, which is off".
 
 Membership and SaaS each serve their own stylesheet (`/membership/assets.css` and
