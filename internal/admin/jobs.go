@@ -23,7 +23,7 @@ const payloadPreviewMax = 2000
 // jobStatuses are the filters of the jobs page. They match jobs.Stats:
 // "queued" = never attempted, "retrying" = queued after a failure (counted
 // as Failed by Stats; "failed" is accepted as an alias).
-var jobStatuses = []string{"queued", "retrying", "running", "dead", "done"}
+var jobStatuses = []string{"queued", "retrying", "running", "parked", "dead", "done"}
 
 // normalizeJobStatus maps the "failed" alias and rejects unknown values.
 func normalizeJobStatus(s string) (string, bool) {
@@ -38,15 +38,17 @@ func jobsWhere(status string) (string, []any) {
 	case "":
 		return "1=1", nil
 	case "queued":
-		return "status = 'queued' AND attempts = 0", nil
+		return "status = 'queued' AND attempts = 0 AND parked_reason = ''", nil
 	case "retrying":
-		return "status = 'queued' AND attempts > 0", nil
+		return "status = 'queued' AND attempts > 0 AND parked_reason = ''", nil
+	case "parked":
+		return "status = 'queued' AND parked_reason <> ''", nil
 	default:
 		return "status = ?", []any{status}
 	}
 }
 
-const jobColumns = `id, kind, payload_json, status, run_at, attempts, max_attempts, last_error, locked_by, locked_at, created_at, updated_at, idempotency_key`
+const jobColumns = `id, kind, payload_json, status, run_at, attempts, max_attempts, last_error, locked_by, locked_at, created_at, updated_at, idempotency_key, parked_reason`
 
 // listJobs pages the jobs table (jobs.Queue.List has no offset).
 func listJobs(ctx context.Context, d *sql.DB, status string, page, perPage int) ([]jobs.Job, int, error) {
@@ -78,7 +80,7 @@ func queryJobs(ctx context.Context, d *sql.DB, q string, args ...any) ([]jobs.Jo
 		var payload string
 		var lockedBy, lockedAt, key sql.NullString
 		if err := rows.Scan(&j.ID, &j.Kind, &payload, &j.Status, &j.RunAt, &j.Attempts, &j.MaxAttempts,
-			&j.LastError, &lockedBy, &lockedAt, &j.CreatedAt, &j.UpdatedAt, &key); err != nil {
+			&j.LastError, &lockedBy, &lockedAt, &j.CreatedAt, &j.UpdatedAt, &key, &j.ParkedReason); err != nil {
 			return nil, fmt.Errorf("admin: scan job: %w", err)
 		}
 		j.Payload = json.RawMessage(payload)
@@ -99,7 +101,10 @@ type jobView struct {
 func viewJobs(list []jobs.Job) []jobView {
 	out := make([]jobView, len(list))
 	for i, j := range list {
-		out[i] = jobView{Job: j, LabelKey: operatorJobLabel(j.Kind), Preview: prettyJSON(j.Payload, payloadPreviewMax), Retryable: j.Status == "dead" || (j.Status == "queued" && j.Attempts > 0)}
+		out[i] = jobView{Job: j, LabelKey: operatorJobLabel(j.Kind), Preview: prettyJSON(j.Payload, payloadPreviewMax), Retryable: j.Status == "dead" || (j.Status == "queued" && j.Attempts > 0 && j.ParkedReason == "")}
+		if j.ParkedReason != "" {
+			out[i].Status = "parked"
+		}
 	}
 	return out
 }

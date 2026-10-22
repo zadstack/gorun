@@ -16,6 +16,7 @@ import (
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/jobs"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/observe"
 )
 
 // HealthCheckFilter is the hooks filter other modules use to contribute
@@ -73,6 +74,11 @@ type healthReport struct {
 	DataDir       string        `json:"data_dir"`
 	AllowPrivate  bool          `json:"allow_private_net"`
 	Checks        []HealthCheck `json:"checks"`
+	// Observations are saved results of expensive or external checks read
+	// from the database; nothing here is fetched during the request.
+	Observations     []observe.Observation `json:"observations"`
+	ParkedJobs       jobs.ParkedCounts     `json:"parked_jobs" doc:"Queued jobs held for a disabled or missing handler, by kind"`
+	UnregisteredJobs jobs.ParkedCounts     `json:"unregistered_jobs" doc:"Queued jobs whose kind has no handler in this process, by kind"`
 }
 
 // healthReport gathers runtime, database, disk, jobs and module state.
@@ -103,6 +109,15 @@ func (h *handlers) healthReport(ctx context.Context) (*healthReport, error) {
 		return nil, err
 	}
 	if rep.FailedJobs, err = failedJobs(ctx, h.d.DB, failedJobsShown); err != nil {
+		return nil, err
+	}
+	if rep.ParkedJobs, err = h.d.Jobs.Parked(ctx); err != nil {
+		return nil, err
+	}
+	if rep.UnregisteredJobs, err = h.d.Jobs.Unregistered(ctx); err != nil {
+		return nil, err
+	}
+	if rep.Observations, err = h.observe.All(ctx); err != nil {
 		return nil, err
 	}
 	if rep.Modules, rep.LastMigration, err = h.modules(ctx); err != nil {
@@ -172,6 +187,10 @@ func (h *handlers) checks(ctx context.Context, rep *healthReport, free, total ui
 	jc := HealthCheck{Name: "jobs", Status: CheckOK, Detail: tr("admin.health.detail_jobs", rep.Jobs.Queued, rep.Jobs.Running, rep.Jobs.Failed, rep.Jobs.Dead)}
 	if rep.Jobs.Dead > 0 || rep.Jobs.Failed > 0 {
 		jc.Status = CheckWarn
+	}
+	if rep.Jobs.Parked > 0 || len(rep.UnregisteredJobs) > 0 {
+		jc.Status = CheckWarn
+		jc.Detail += " · " + tr("admin.health.detail_jobs_parked", rep.Jobs.Parked, len(rep.UnregisteredJobs))
 	}
 	list = append(list, jc)
 	switch {

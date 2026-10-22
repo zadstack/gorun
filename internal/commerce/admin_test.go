@@ -154,7 +154,14 @@ func TestServerTestConnection(t *testing.T) {
 		t.Fatal("server actions not audited")
 	}
 
-	// Health checks: Stripe + webhook + this server (failing, then cached).
+	// Health checks: Stripe + webhook + this server. Reachability is a saved
+	// background observation: run the refresh the failed test queued, then
+	// the page reports the failure without contacting the server itself.
+	for i := 0; i < 5; i++ {
+		if ran, _ := e.app.Deps.Jobs.RunOne(ctx); !ran {
+			break
+		}
+	}
 	checks := &[]admin.HealthCheck{}
 	if _, err := e.app.Deps.Hooks.Apply(i18n.WithLocale(ctx, "en"), admin.HealthCheckFilter, checks); err != nil {
 		t.Fatal(err)

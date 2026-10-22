@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestMain points the data dir at a temp dir so dev-mode secret generation
@@ -174,5 +175,38 @@ func TestOperatorUpdateEnvironment(t *testing.T) {
 	}
 	if cfg.UpdateURL != "https://coolify.example" || cfg.UpdateToken != "synthetic-test-token" || cfg.UpdateResource != "site_123" {
 		t.Fatal("update environment was not loaded")
+	}
+}
+
+func TestStagedUpdateConfigurationFromEnvironmentAndFile(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("GORUN_DATA", dir)
+	t.Setenv("GORUN_ENV", "dev")
+	if err := os.WriteFile(filepath.Join(dir, "gorun.toml"), []byte("[update]\nsource_url = \"https://releases.example/index.json\"\nartifact = \"linux-amd64\"\nhealth_links = [\"https://cms.example/\"]\nallow_downgrade = true\nactivation_timeout = \"20m\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Load(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Update.SourceURL != "https://releases.example/index.json" || cfg.Update.Artifact != "linux-amd64" || len(cfg.Update.HealthLinks) != 1 || !cfg.Update.AllowDowngrade || cfg.Update.ActivationTimeout != 20*time.Minute || cfg.Update.AllowMissingDigest {
+		t.Fatalf("file config not loaded: %+v", cfg.Update)
+	}
+	t.Setenv("GORUN_UPDATE_SOURCE_URL", "https://other.example/index.json")
+	t.Setenv("GORUN_UPDATE_SOURCE_TOKEN", "synthetic-token")
+	t.Setenv("GORUN_UPDATE_HEALTH_LINKS", "https://a.example/, https://b.example/media/x.png")
+	t.Setenv("GORUN_UPDATE_ALLOW_DOWNGRADE", "false")
+	t.Setenv("GORUN_UPDATE_ALLOW_MISSING_DIGEST", "true")
+	t.Setenv("GORUN_UPDATE_ACTIVATION_TIMEOUT", "5m")
+	cfg, err = Load(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Update.SourceURL != "https://other.example/index.json" || cfg.Update.SourceToken != "synthetic-token" || len(cfg.Update.HealthLinks) != 2 || cfg.Update.AllowDowngrade || !cfg.Update.AllowMissingDigest || cfg.Update.ActivationTimeout != 5*time.Minute {
+		t.Fatalf("environment did not override the file: %+v", cfg.Update)
+	}
+	t.Setenv("GORUN_UPDATE_ACTIVATION_TIMEOUT", "soon")
+	if _, err := Load(nil); err == nil {
+		t.Fatal("invalid activation timeout accepted")
 	}
 }

@@ -1,11 +1,11 @@
 # GoRun: upgrade and rollback runbook
 
 Operator checklist for moving a live site from one **release tag** to another.
-There is **no complete in-app core update lifecycle**: operators replace the
-binary or container image, keep the same data directory and secret key, let
-migrations run, and smoke-test. The optional admin deployment action creates a
-verified backup and requests a configured Coolify deployment; acceptance means
-the deployment was queued, not that the new release is running or healthy.
+Operators replace the binary or container image, keep the same data directory
+and secret key, let migrations run, and smoke-test. The optional in-app staged
+update ([§7](#7-staged-updates-in-app)) records the same steps as independent
+phases — compatibility, release verification, backup, activation, health and
+links, acceptance — and never reports a queued deployment as a completed update.
 
 If activation fails, prefer a **compatible previous artifact on the current
 data**. Restoring a pre-upgrade backup is a separate disaster-recovery decision
@@ -267,7 +267,100 @@ docker run --rm -v gorun-data:/data -v /var/lib/gorun-rolled-back:/restore \
 
 ---
 
-## 7. Path cheat sheet
+## 7. Staged updates (in-app)
+
+**System → System updates** runs a persisted, phase-by-phase lifecycle instead
+of a single deploy request. It is optional: without a trusted release source the
+page only shows the running version, and the manual procedures above still apply.
+
+### Configuration (server side only)
+
+| Setting | Env / `gorun.toml` | Meaning |
+| --- | --- | --- |
+| Release source | `GORUN_UPDATE_SOURCE_URL` / `[update] source_url` | HTTPS JSON index (plain HTTP only on the loopback address, e.g. a local supervisor). Required for requests. |
+| Source token | `GORUN_UPDATE_SOURCE_TOKEN` / `source_token` | Optional bearer sent to the index. Never shown in pages or APIs. |
+| Artifact selector | `GORUN_UPDATE_ARTIFACT` / `artifact` | Which artifact of a release to activate (exact id or substring, e.g. `linux-amd64`). A release with one artifact needs none. |
+| Health links | `GORUN_UPDATE_HEALTH_LINKS` / `health_links` | Absolute public or media URLs that must answer 2xx on the new process before acceptance. |
+| Downgrade | `GORUN_UPDATE_ALLOW_DOWNGRADE` / `allow_downgrade` | Lets compatibility pass for a lower target after you reviewed schema, feature and security constraints. Recorded on the operation. |
+| Missing digest | `GORUN_UPDATE_ALLOW_MISSING_DIGEST` / `allow_missing_digest` | Accepts releases whose index publishes no `sha256:` digest. Off by default. |
+| Activation timeout | `GORUN_UPDATE_ACTIVATION_TIMEOUT` / `activation_timeout` | How long activation may wait for the provider or operator (default `15m`). |
+| Coolify adapter | `GORUN_UPDATE_COOLIFY_URL/TOKEN/RESOURCE` | Existing operator configuration. The resource must be a **Docker image** application: verification reads it (`GET /api/v1/applications/{uuid}`), activation pins `docker_registry_image_name/tag` to the verified artifact (`PATCH`), confirms the pin, then posts `/api/v1/deploy` and polls `/api/v1/deployments/{id}`. A resource that builds from a repository cannot be pinned and the update is **refused at verification**, before any backup. Otherwise the **manual** adapter is used. |
+
+Release index format (publish it from CI or a local supervisor):
+
+```json
+{"latest":"0.15.0",
+ "releases":[{"version":"0.15.0",
+              "artifacts":[{"id":"ghcr.io/zadstack/gorun:0.15.0","digest":"sha256:…"},
+                           {"id":"gorun-0.15.0-linux-amd64.tar.gz","digest":"sha256:…"}],
+              "migrations":["content/0001_content.sql","…"],
+              "themes":["default","business","portfolio","magazine","docs"]}]}
+```
+
+`migrations` (every migration the release knows) and `themes` (slugs it ships or supports)
+are optional compatibility data. When present, the compatibility phase refuses a target that does
+not know a migration already applied to this data, or that does not support the active theme.
+When absent the phase records `release_data: unknown` instead of guessing.
+
+“Latest” is a background observation of this index (System Health → Background
+observations, `GET /api/v1/system/update` → `latest`) with its observed time and
+age. It is reported `unknown` when no source is configured, the running build is
+not a release tag (`dev`, `git describe` output), or the observation is missing.
+
+### Phases and evidence
+
+| Phase | Passes when | Fails safely when |
+| --- | --- | --- |
+| Compatibility | Running build is a release tag; target is newer (or downgrade allowed); schema is not ahead of the binary; modules and active theme recorded. | Development build, same version, unreviewed downgrade, schema ahead. Nothing was touched. |
+| Release verification | Trusted source resolves an immutable artifact id and `sha256:` digest; optional `expected_digest` matches. | Unknown version, missing digest, digest mismatch. No backup, no deployment. |
+| Backup | Existing backup machinery writes and inspects a manifest (stamp recorded). | Disk or verification failure blocks activation. |
+| Activation | Adapter accepted the request (`deployment_ref` recorded once, before polling) **and** the serving process reports the target identity. | Provider reports failure, timeout after acceptance, or “active” without the identity changing. |
+| Health and links | New process reports the expected identity, `readyz`, no failing protected check, every configured link 2xx; migration state recorded. | Any failure → rollback decision. |
+| Final acceptance | All of the above; `accepted_version` is written and the lease released. | — |
+
+A queued or accepted deployment is **never** success. The old process stops
+when the provider restarts it; on boot the new process reconciles: an activation
+whose identity now serves passes on that evidence and the lifecycle continues
+(health → acceptance) in the new process. Any other phase interrupted by a
+restart is marked `interrupted` with a remediation; a new request is accepted
+afterwards and first checks whether the provider still reports the earlier
+deployment in progress (`409`).
+
+**Manual adapter.** When no Coolify configuration exists, the activation phase
+records `manual:<version>` and waits (up to the activation timeout) for you to
+stop the process and start the verified artifact on the same data directory.
+The new process confirms activation on boot. Follow §2/§3 for the swap itself.
+
+### Conflicts and ownership
+
+One durable lease per data directory covers updates, rollbacks, scheduled and
+manual backups and restores. A conflicting action is refused with the owning
+operation (`409 operation_in_progress`, or the “busy” notice on the Backups
+page). The runner renews the lease on a heartbeat; a runner that loses it stops
+at once. The `gorun.lock` process lock is unchanged.
+
+### Rollback semantics
+
+If health fails after activation and the source can resolve the prior release,
+the lifecycle re-activates that **prior artifact on the current data** — only
+when activation applied no migration (`migration_state: unchanged`). If
+migrations were applied, compatibility is uncertain: the operation ends
+`rollback_failed`, the current data is kept, and you repair forward or recover
+into a separate directory (§6 B). A database or media snapshot is never restored
+automatically, and the backup taken in the Backup phase is retained for your
+explicit recovery decision.
+
+### Limits in this release
+
+- The Coolify adapter only updates Docker image resources (pinned tag). Git-built
+  resources are refused rather than deployed as a "version". Rollback re-pins the
+  prior image resolved from the index.
+- Compatibility uses the release index's `migrations`/`themes` when published;
+  without them it can only refuse a database already ahead of the running binary
+  and records `release_data: unknown`.
+- No in-app downgrade of security-sensitive migrations; see §6 A.
+
+## 8. Path cheat sheet
 
 | Path | Artifact | Data | Lock | Docs |
 | --- | --- | --- | --- | --- |

@@ -13,6 +13,7 @@ import (
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/backup"
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/update"
 )
 
 // backupInspectPage shows a read-only preflight for one local backup pair.
@@ -74,6 +75,17 @@ func (h *handlers) backupRestore(w http.ResponseWriter, r *http.Request) {
 		h.tpl.RenderError(w, r, http.StatusNotFound)
 		return
 	}
+	release, err := h.holdDataLease(r.Context(), update.HolderRestore)
+	if err != nil {
+		if leaseHeld(err) {
+			httpx.SetFlash(w, "error", "admin.backups.busy")
+			http.Redirect(w, r, inspectPath, http.StatusSeeOther)
+			return
+		}
+		h.serverError(w, r, err)
+		return
+	}
+	defer release()
 	backupMu.Lock()
 	defer backupMu.Unlock()
 	if _, err := os.Stat(dest); err == nil {

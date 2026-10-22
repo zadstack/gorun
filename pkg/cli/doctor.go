@@ -21,7 +21,9 @@ import (
 	"github.com/zadstack/gorun/internal/diagnostics"
 	"github.com/zadstack/gorun/internal/jobs"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/observe"
 	"github.com/zadstack/gorun/internal/theme"
+	"github.com/zadstack/gorun/internal/update"
 	"github.com/zadstack/gorun/pkg/themekit"
 )
 
@@ -201,8 +203,9 @@ func doctorPort(cfg config.Config, report *siteDoctorReport) {
 // Read the recorded migrations directly: the existing schema inspector may
 // initialize legacy metadata, which a diagnostic must not do.
 func doctorSchema(ctx context.Context, d *sql.DB, mods []kernel.Module, report *siteDoctorReport) {
-	known := map[string]fs.FS{"audit": audit.Migrations(), "jobs": jobs.Migrations(), "diagnostics": diagnostics.Migrations()}
-	enabled := map[string]bool{"audit": true, "jobs": true, "diagnostics": true}
+	known := map[string]fs.FS{"audit": audit.Migrations(), "jobs": jobs.Migrations(), "diagnostics": diagnostics.Migrations(),
+		"observe": observe.Migrations(), "update": update.Migrations()}
+	enabled := map[string]bool{"audit": true, "jobs": true, "diagnostics": true, "observe": true, "update": true}
 	enabledCount, disabledCount := 0, 0
 	for _, m := range mods {
 		known[m.Name()] = m.Migrations()

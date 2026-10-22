@@ -19,6 +19,7 @@ import (
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/mailer"
 	"github.com/zadstack/gorun/internal/media"
+	"github.com/zadstack/gorun/internal/observe"
 )
 
 // Errors returned by the service.
@@ -92,11 +93,11 @@ type service struct {
 	sendMail    mailFunc
 	sendReceipt mailFunc
 	now         func() time.Time
-	health      *healthCache
+	observe     *observe.Service // nil when the admin module did not publish it
 }
 
 func newService(d *kernel.Deps, checkout checkoutCreator, send mailFunc) *service {
-	s := &service{d: d, db: d.DB, log: d.Log, audit: d.Audit, checkout: checkout, sendMail: send, now: time.Now, health: newHealthCache()}
+	s := &service{d: d, db: d.DB, log: d.Log, audit: d.Audit, checkout: checkout, sendMail: send, now: time.Now}
 	if s.checkout == nil {
 		s.checkout = stripeCheckout{}
 	}

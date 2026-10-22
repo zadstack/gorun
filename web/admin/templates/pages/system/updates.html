@@ -1,23 +1,114 @@
+{{/* Data: updatesPage */}}
 {{define "title"}}{{t "admin.updates.title"}}{{end}}
+{{define "updates_status_chip"}}<span class="inline-flex rounded-chip border px-1.5 py-0.5 text-[11px] font-mono uppercase {{if or (eq . "passed") (eq . "succeeded") (eq . "fresh")}}border-green bg-green-soft text-green{{else if or (eq . "failed") (eq . "rollback_failed") (eq . "interrupted")}}border-red bg-red-soft text-red{{else if or (eq . "running") (eq . "pending") (eq . "waiting") (eq . "rolled_back") (eq . "stale")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2 text-muted{{end}}">{{t (print "admin.updates.status_" .)}}</span>{{end}}
 {{define "content"}}
 <h1 class="text-[22px] font-bold mb-4">{{t "admin.updates.title"}}</h1>
-<p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.updates_steps"}}</p>
-<section class="rounded border border-line bg-panel p-4 space-y-4" data-system-updates>
-  <p>{{t "admin.updates.current"}}: <span dir="ltr" class="font-mono">{{.Version}}</span></p>
-  <p class="text-muted">{{t "admin.updates.help"}}</p>
+<p class="mb-4 max-w-3xl text-sm text-muted">{{t "admin.updates.help"}}</p>
+<section class="rounded border border-line bg-panel p-4 space-y-4" data-system-updates data-configured="{{.Status.Configured}}">
+  <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+    <dt class="text-muted">{{t "admin.updates.current"}}</dt><dd dir="ltr" class="font-mono" data-stat="running-version">{{.Status.RunningVersion}}</dd>
+    <dt class="text-muted">{{t "admin.updates.accepted_version"}}</dt><dd dir="ltr" class="font-mono" data-stat="accepted-version">{{if .Status.AcceptedVersion}}{{.Status.AcceptedVersion}}{{else}}{{t "admin.updates.none"}}{{end}}</dd>
+    <dt class="text-muted">{{t "admin.updates.latest"}}</dt>
+    <dd dir="ltr" class="font-mono" data-stat="latest-version" data-latest-status="{{.Status.Latest.Status}}">
+      {{if .Status.Latest.Version}}{{.Status.Latest.Version}} <span class="text-muted">· {{t "admin.updates.observed" (age .Status.Latest.AgeSeconds)}}</span>{{else}}{{t "admin.updates.latest_unknown"}}{{end}}
+      {{if ne .Status.Latest.Status "unknown"}}{{template "updates_status_chip" .Status.Latest.Status}}{{end}}
+      {{if .Status.Latest.Error}}<span class="block text-xs text-red">{{.Status.Latest.Error}}</span>{{end}}
+    </dd>
+    <dt class="text-muted">{{t "admin.updates.source"}}</dt><dd class="font-mono text-xs">{{or .Status.Source "—"}}</dd>
+    <dt class="text-muted">{{t "admin.updates.adapter"}}</dt><dd class="font-mono text-xs">{{.Status.Adapter}}</dd>
+  </dl>
+  {{if not .Status.IsRelease}}<p role="status" class="text-sm text-amber-text">{{t "admin.updates.not_release"}}</p>
+  {{else if .Status.UpdateAvailable}}<p role="status" class="text-sm">{{if deref .Status.UpdateAvailable}}{{t "admin.updates.available"}}{{else}}{{t "admin.updates.up_to_date"}}{{end}}</p>{{end}}
   <p><a href="https://github.com/zadstack/gorun/releases" target="_blank" rel="noopener noreferrer" class="text-green underline">{{t "admin.health.releases_link"}}</a></p>
-  {{if .Attempt}}<p>{{t "admin.updates.last"}}: <time dir="ltr">{{.Attempt}}</time></p>{{end}}
-  {{if .Configured}}
-  <form method="post" action="/admin/system/updates" class="space-y-4">
+  {{if .Status.Configured}}
+  <form method="post" action="/admin/system/updates/refresh" class="inline">
     <input type="hidden" name="_csrf" value="{{csrf}}">
-    <label class="flex gap-2 items-start"><input type="checkbox" name="confirm" value="yes" required><span>{{t "admin.updates.confirm"}}</span></label>
-    <button type="submit" class="h-9 px-3 rounded bg-green text-white font-medium">{{t "admin.updates.deploy"}}</button>
+    <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "admin.updates.refresh_latest"}}</button>
   </form>
+  {{if .CanRequest}}
+  <form method="post" action="/admin/system/updates" class="space-y-3 max-w-xl">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <label class="block text-sm"><span class="text-muted">{{t "admin.updates.version_label"}}</span>
+      <input type="text" name="version" dir="ltr" value="{{.Prefill}}" required pattern="v?\d+\.\d+\.\d+.*" class="mt-1 h-9 w-full rounded border border-line bg-bg px-2 font-mono"></label>
+    <label class="block text-sm"><span class="text-muted">{{t "admin.updates.digest_label"}}</span>
+      <input type="text" name="expected_digest" dir="ltr" class="mt-1 h-9 w-full rounded border border-line bg-bg px-2 font-mono text-xs"></label>
+    <label class="flex gap-2 items-start text-sm"><input type="checkbox" name="confirm" value="yes" required><span>{{t "admin.updates.confirm"}}</span></label>
+    <button type="submit" class="h-9 px-3 rounded bg-green text-white font-medium">{{t "admin.updates.request"}}</button>
+  </form>
+  {{end}}
+  {{if eq .Status.Adapter "manual"}}<p class="text-sm text-muted">{{t "admin.updates.manual_hint"}}</p>{{end}}
   {{else}}
-  <p role="status">{{t "admin.updates.setup"}} <a href="https://github.com/zadstack/gorun/blob/main/deploy/coolify.md" class="underline">{{t "operator.updates_guide"}}</a></p>
-  <button type="button" disabled class="h-9 px-3 rounded border border-line opacity-50">{{t "admin.updates.deploy"}}</button>
+  <p role="status">{{t "admin.updates.setup"}} {{t "admin.updates.source_missing"}} <a href="https://github.com/zadstack/gorun/blob/main/docs/UPGRADE.md" class="underline">{{t "operator.updates_guide"}}</a></p>
+  <button type="button" disabled class="h-9 px-3 rounded border border-line opacity-50">{{t "admin.updates.request"}}</button>
   {{end}}
   <p class="text-sm text-muted">{{t "admin.updates.verify"}}</p>
+  <p class="text-sm text-muted">{{t "admin.updates.rollback_note"}}</p>
   <a href="/admin/system/health" class="text-green underline">{{t "admin.health.title"}}</a>
+</section>
+
+{{with .Status.Active}}{{template "updates_operation" .}}{{else}}{{with .Status.Last}}{{template "updates_operation" .}}{{end}}{{end}}
+
+<section class="mt-4 rounded border border-line bg-panel p-4" aria-labelledby="h-ops">
+  <h2 id="h-ops" class="text-base font-bold mb-3">{{t "admin.updates.operations"}}</h2>
+  {{if .Operations}}
+  <table class="w-full text-sm">
+    <thead class="border-b border-line"><tr>
+      <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase text-muted">{{t "admin.updates.op_requested"}}</th>
+      <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase text-muted">{{t "admin.updates.phase_status"}}</th>
+      <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase text-muted">{{t "admin.updates.op_accepted"}}</th>
+      <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase text-muted">{{t "admin.updates.phase_detail"}}</th>
+    </tr></thead>
+    <tbody class="divide-y divide-line">
+      {{range .Operations}}
+      <tr data-operation="{{.ID}}" data-status="{{.Status}}">
+        <td class="px-2 py-1.5 font-mono text-xs" dir="ltr">{{.RequestedVersion}} <span class="text-muted">← {{.RunningVersion}}</span></td>
+        <td class="px-2 py-1.5">{{template "updates_status_chip" .Status}}</td>
+        <td class="px-2 py-1.5 font-mono text-xs" dir="ltr">{{if .AcceptedVersion}}{{.AcceptedVersion}}{{else}}—{{end}}</td>
+        <td class="px-2 py-1.5 text-xs text-muted">{{date .CreatedAt}}{{if .Error}} · <span class="text-red">{{.Error}}</span>{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="text-muted">{{t "admin.updates.no_operations"}}</p>{{end}}
+</section>
+{{end}}
+
+{{define "updates_operation"}}
+<section class="mt-4 rounded border border-line bg-panel p-4" aria-labelledby="h-active" data-operation-detail="{{.ID}}" data-status="{{.Status}}">
+  <div class="flex flex-wrap items-center gap-3 mb-3">
+    <h2 id="h-active" class="text-base font-bold">{{t "admin.updates.active"}}</h2>
+    {{template "updates_status_chip" .Status}}
+    <span class="font-mono text-xs text-muted" dir="ltr">{{.ID}}</span>
+  </div>
+  <dl class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 text-sm">
+    <div><dt class="text-muted text-xs">{{t "admin.updates.op_requested"}}</dt><dd class="font-mono" dir="ltr">{{.RequestedVersion}}</dd></div>
+    <div><dt class="text-muted text-xs">{{t "admin.updates.op_running"}}</dt><dd class="font-mono" dir="ltr">{{.RunningVersion}}</dd></div>
+    <div><dt class="text-muted text-xs">{{t "admin.updates.op_activated"}}</dt><dd class="font-mono" dir="ltr">{{if .ActivatedVersion}}{{.ActivatedVersion}}{{else}}—{{end}}</dd></div>
+    <div><dt class="text-muted text-xs">{{t "admin.updates.op_accepted"}}</dt><dd class="font-mono" dir="ltr">{{if .AcceptedVersion}}{{.AcceptedVersion}}{{else}}—{{end}}</dd></div>
+    <div><dt class="text-muted text-xs">{{t "admin.updates.migration_state"}}</dt><dd class="font-mono text-xs">{{.MigrationState}}</dd></div>
+    <div><dt class="text-muted text-xs">{{t "admin.updates.backup_stamp"}}</dt><dd class="font-mono text-xs" dir="ltr">{{or .BackupStamp "—"}}</dd></div>
+    <div><dt class="text-muted text-xs">{{t "admin.updates.deployment_ref"}}</dt><dd class="font-mono text-xs" dir="ltr">{{or .DeploymentRef "—"}}</dd></div>
+    <div><dt class="text-muted text-xs">{{t "admin.updates.adapter"}}</dt><dd class="font-mono text-xs">{{.Adapter}}</dd></div>
+  </dl>
+  {{if .Error}}<p class="text-sm text-red mb-2">{{.Error}}</p>{{end}}
+  {{if .Remediation}}<p class="text-sm text-muted mb-3">{{.Remediation}}</p>{{end}}
+  <table class="w-full text-sm">
+    <thead class="border-b border-line"><tr>
+      <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase text-muted">{{t "admin.updates.phase"}}</th>
+      <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase text-muted">{{t "admin.updates.phase_status"}}</th>
+      <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase text-muted">{{t "admin.updates.phase_duration"}}</th>
+      <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase text-muted">{{t "admin.updates.phase_detail"}}</th>
+    </tr></thead>
+    <tbody class="divide-y divide-line">
+      {{range .Phases}}
+      <tr data-phase="{{.Name}}" data-status="{{.Status}}">
+        <td class="px-2 py-1.5">{{t (print "admin.updates.phase_" .Name)}}</td>
+        <td class="px-2 py-1.5">{{template "updates_status_chip" .Status}}</td>
+        <td class="px-2 py-1.5 font-mono text-xs" dir="ltr">{{if .DurationMS}}{{deref .DurationMS}} ms{{else if .Progress}}{{printf "%.0f%%" (pct (deref .Progress))}}{{else}}—{{end}}</td>
+        <td class="px-2 py-1.5 text-xs text-muted">{{if .Error}}<span class="text-red">{{.Error}}</span> {{end}}{{.Remediation}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
 </section>
 {{end}}

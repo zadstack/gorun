@@ -9,10 +9,12 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/zadstack/gorun/internal/admin"
+	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/kernel"
@@ -35,8 +37,21 @@ type site struct {
 
 func boot(t *testing.T, extra ...kernel.Module) *site {
 	t.Helper()
+	return bootWith(t, nil, extra...)
+}
+
+// bootWith boots with the default config after tweak adjusted it (a shared
+// data directory, operator update settings, …).
+func bootWith(t *testing.T, tweak func(*config.Config), extra ...kernel.Module) *site {
+	t.Helper()
 	cfg := config.Config{Env: "dev", DataDir: t.TempDir(), Addr: ":0", SecretKey: make([]byte, 32), BaseURL: "http://localhost"}
+	if tweak != nil {
+		tweak(&cfg)
+	}
 	mods := append([]kernel.Module{settingsmod.New(), auth.New()}, extra...)
+	if !slices.ContainsFunc(mods, func(m kernel.Module) bool { return m.Name() == "api" }) {
+		mods = append(mods, api.New())
+	}
 	mods = append(mods, admin.New())
 	app, err := kernel.Boot(context.Background(), cfg, mods)
 	if err != nil {

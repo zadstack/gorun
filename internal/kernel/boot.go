@@ -25,7 +25,9 @@ import (
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/jobs"
 	"github.com/zadstack/gorun/internal/metrics"
+	"github.com/zadstack/gorun/internal/observe"
 	"github.com/zadstack/gorun/internal/settings"
+	"github.com/zadstack/gorun/internal/update"
 )
 
 const (
@@ -34,10 +36,10 @@ const (
 )
 
 // reservedNames are kernel-owned migration namespaces no module may use.
-var reservedNames = []string{"db", "i18n", "audit", "jobs", "diagnostics"}
+var reservedNames = []string{"db", "i18n", "audit", "jobs", "diagnostics", "observe", "update"}
 
 // MigrateAll validates the module list like Boot, then applies kernel
-// infrastructure migrations (audit, jobs, diagnostics) and every module's migrations, in
+// infrastructure migrations (audit, jobs, diagnostics, observe, update) and every module's migrations, in
 // order. Used by `gorun migrate`.
 func MigrateAll(ctx context.Context, d *sql.DB, mods []Module) error {
 	if err := validateModules(mods); err != nil {
@@ -73,7 +75,8 @@ func infraMigrations() []struct {
 	return []struct {
 		name  string
 		files fs.FS
-	}{{"audit", audit.Migrations()}, {"jobs", jobs.Migrations()}, {"diagnostics", diagnostics.Migrations()}}
+	}{{"audit", audit.Migrations()}, {"jobs", jobs.Migrations()}, {"diagnostics", diagnostics.Migrations()},
+		{"observe", observe.Migrations()}, {"update", update.Migrations()}}
 }
 
 func migrateInfra(ctx context.Context, d *sql.DB) ([]db.MigrateReport, error) {

@@ -94,6 +94,7 @@ type Job struct {
 	CreatedAt      string          `json:"created_at"`
 	UpdatedAt      string          `json:"updated_at"`
 	IdempotencyKey string          `json:"idempotency_key"`
+	ParkedReason   string          `json:"parked_reason" doc:"Non-empty while the job is held for a disabled or missing handler"`
 }
 
 // Stats counts jobs by status. Queued excludes jobs awaiting retry, which
@@ -104,6 +105,7 @@ type Stats struct {
 	Failed  int `json:"failed"`
 	Dead    int `json:"dead"`
 	Done    int `json:"done"`
+	Parked  int `json:"parked" doc:"Queued jobs held for a disabled or missing handler; counted in neither queued nor failed"`
 }
 
 // New returns a queue on d. The jobs migrations must already be applied.
@@ -209,12 +211,13 @@ func (q *Queue) maxAttempts(kind string) int {
 func (q *Queue) Stats(ctx context.Context) (Stats, error) {
 	var s Stats
 	err := q.db.QueryRowContext(ctx, `SELECT
-		count(*) FILTER (WHERE status = 'queued' AND attempts = 0),
+		count(*) FILTER (WHERE status = 'queued' AND attempts = 0 AND parked_reason = ''),
 		count(*) FILTER (WHERE status = 'running'),
-		count(*) FILTER (WHERE status = 'queued' AND attempts > 0),
+		count(*) FILTER (WHERE status = 'queued' AND attempts > 0 AND parked_reason = ''),
 		count(*) FILTER (WHERE status = 'dead'),
-		count(*) FILTER (WHERE status = 'done')
-		FROM jobs`).Scan(&s.Queued, &s.Running, &s.Failed, &s.Dead, &s.Done)
+		count(*) FILTER (WHERE status = 'done'),
+		count(*) FILTER (WHERE status = 'queued' AND parked_reason <> '')
+		FROM jobs`).Scan(&s.Queued, &s.Running, &s.Failed, &s.Dead, &s.Done, &s.Parked)
 	if err != nil {
 		return Stats{}, fmt.Errorf("jobs: stats: %w", err)
 	}
@@ -236,6 +239,32 @@ func (q *Queue) Retry(ctx context.Context, id string) error {
 	return nil
 }
 
+// Get returns the job with id, or ErrNotFound.
+func (q *Queue) Get(ctx context.Context, id string) (Job, error) {
+	list, err := q.list(ctx, "id = ?", []any{id}, 1)
+	if err != nil {
+		return Job{}, err
+	}
+	if len(list) == 0 {
+		return Job{}, ErrNotFound
+	}
+	return list[0], nil
+}
+
+// InFlight reports whether the job with idempotency key is still queued or
+// running, returning its id when so. Done and dead jobs are not in flight.
+func (q *Queue) InFlight(ctx context.Context, key string) (string, bool, error) {
+	var id string
+	err := q.db.QueryRowContext(ctx, `SELECT id FROM jobs WHERE idempotency_key = ? AND status IN ('queued', 'running')`, key).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, fmt.Errorf("jobs: in flight: %w", err)
+	}
+	return id, true, nil
+}
+
 // List returns up to limit jobs, newest first. status "" means all;
 // "failed" means queued jobs awaiting retry; "queued" includes those too.
 func (q *Queue) List(ctx context.Context, status string, limit int) ([]Job, error) {
@@ -250,8 +279,12 @@ func (q *Queue) List(ctx context.Context, status string, limit int) ([]Job, erro
 	default:
 		where, args = "status = ?", append(args, status)
 	}
+	return q.list(ctx, where, args, limit)
+}
+
+func (q *Queue) list(ctx context.Context, where string, args []any, limit int) ([]Job, error) {
 	rows, err := q.db.QueryContext(ctx, `SELECT id, kind, payload_json, status, run_at, attempts, max_attempts,
-		last_error, locked_by, locked_at, created_at, updated_at, idempotency_key
+		last_error, locked_by, locked_at, created_at, updated_at, idempotency_key, parked_reason
 		FROM jobs WHERE `+where+` ORDER BY id DESC LIMIT ?`, append(args, limit)...)
 	if err != nil {
 		return nil, fmt.Errorf("jobs: list: %w", err)
@@ -263,7 +296,7 @@ func (q *Queue) List(ctx context.Context, status string, limit int) ([]Job, erro
 		var payload string
 		var lockedBy, lockedAt, key sql.NullString
 		if err := rows.Scan(&j.ID, &j.Kind, &payload, &j.Status, &j.RunAt, &j.Attempts, &j.MaxAttempts,
-			&j.LastError, &lockedBy, &lockedAt, &j.CreatedAt, &j.UpdatedAt, &key); err != nil {
+			&j.LastError, &lockedBy, &lockedAt, &j.CreatedAt, &j.UpdatedAt, &key, &j.ParkedReason); err != nil {
 			return nil, fmt.Errorf("jobs: scan: %w", err)
 		}
 		j.Payload = json.RawMessage(payload)
