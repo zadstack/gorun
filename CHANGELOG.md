@@ -7,6 +7,22 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Section library pilot (`themes/default/assets/sections.css`, shared by every catalog theme):
+  hero variants (`gp-s-hero-split`, `gp-s-hero-centered`, `gp-s-facts`), feature cards with
+  CSS-drawn icon tiles and a featured card, steps on a connector track, a `gp-s-flow` diagram,
+  a `gp-s-compare` table with a highlighted column, FAQ with plus/minus markers, a
+  `gp-s-preview` window frame (real screenshot or drawn interface) and a `gp-s-cta-panel`.
+  Everything is static CSS and data-URI SVG masks coloured from the theme tokens; motion stops
+  under `prefers-reduced-motion`; RTL and 375 px covered by `e2e/tests/sections-pilot.spec.ts`.
+  The stylesheet is now a used asset: the new `{{sections .}}` head func links it only on pages
+  whose content carries a `gp-s-` class (it was loaded on every page before), so pages without
+  sections load less CSS than on 0.15.1.
+- Section backgrounds as identity tokens: `identity_pattern` (dots, fine grid, geometric
+  lines, concentric circles, waves, paper, solid), `identity_pattern_density` and
+  `identity_pattern_color` under Appearance → Theme settings → Design. `/site/identity.css`
+  carries only variables; the drawings live in `sections.css` and a section's own
+  `gp-s-bg-<name>` modifier still wins. Validation record and screenshots in
+  `docs/validation/sections-pilot/`; Basecoat evaluated there and not added.
 - `pkg/cli/theme_switch_test.go`: switching through every bundled theme keeps content, media,
   menus, site identity, custom CSS and per-theme settings, and renders both locales, inner pages,
   search and the 404 page with the site's logo, title and menu; every bundled theme renders
@@ -57,6 +73,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- Existing `gp-s-*` blocks look different: pages already written with the section library
+  (the starter About page, any page built from `docs/THEMES.md` → "Section library") get the
+  pilot's eyebrow dot, card shadow and hover lift, numbered step badges on a track, FAQ
+  plus/minus markers and drawn check marks without any markup change. Colours, fonts and
+  corners still come from the theme tokens; nothing moves or changes size except the hero
+  eyebrow spacing and the step badge.
 - Commerce, saas and membership are optional modules behind the existing `kernel.OptionalModule`
   gate, **enabled by default** so existing installs boot the same set of modules. They answer with
   the new `kernel.AddonEnabled`, which reads the site setting `addons.<name>.enabled` (JSON

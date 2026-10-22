@@ -57,7 +57,7 @@ Ship-with themes share one contract in `pkg/themekit` (`CatalogOptions` / `Valid
 - `supports` includes `rtl` and `identity`
 - Own `lang/en.json` and `lang/ar.json` (not only inherited keys)
 - Required templates resolve via inheritance (`index`, `page`, `single`, `archive`, `taxonomy`, `search`, `404`, `500`, `page-builder`, `page-contact`, `form-result`, plus `front-page` or `home`)
-- `screenshot.png`; head (own or inherited) loads `sections.css`, `builderIdentity`, and `identity`
+- `screenshot.png`; head (own or inherited) calls `sections`, `builderIdentity`, and `identity`
 - Primary stylesheet declares tokens under `:where(html[data-theme="<slug>"])`
 - No third-party script CDN hosts in theme HTML/CSS/JS
 
@@ -146,6 +146,7 @@ Every template receives a `*theme.Context`: `Site`, `Request`, `Kind`, `Content`
 | `content id`, `field . "k"`, `terms . "tax"` | single item, custom field, resolved terms |
 | `media id`, `img m "variant" "class"` | media item; responsive `<img>` with srcset, alt and size |
 | `comments .` | for an item whose type supports `comments`: `{Open, ContentID, Action, Back, Count, Items}` (approved comments, one reply level, never an email), or nil; the form posts `content_id`, `name`, `email`, `body`, `_back`, `website` (honeypot) and `_csrf` to `.Action`, and the page then shows `.Extra.comment_flash` (pending, approved, invalid, closed, limited). `default` and `business` ship a `comments` component |
+| `sections .` | the `<link>` to `sections.css` (resolved through the theme chain), printed only when the page's content, a listed item's body, or a string in `.Extra` carries a `gp-s-` class, or a module set `.Extra.sections` to true (the commerce product page does, for a description using the blocks); pages without sections load nothing. A theme or pattern whose **own templates** use `gp-s-*` keeps a plain `<link rel="stylesheet" href="{{asset "sections.css"}}">` instead, which the contract also accepts (see [Section library](#section-library)) |
 | `identity .` | the site identity `<style>` (and font links) from Appearance → Theme settings, only for a theme whose own `theme.json` `supports` lists `identity`; print it last in `<head>` (see [Site identity](#site-identity)) |
 | `seo .` | head meta (title, description, canonical, OG) and the `hreflang` alternates |
 | `part "name" .`, `component "name" data` | include a part or component |
@@ -210,6 +211,9 @@ The capability is **not inherited**: a child theme gets it only when its own `th
 | `identity_scheme` | `light`, `dark` | `dark` applies a matching dark palette (explicit colors still win) |
 | `identity_radius` | `square`, `soft`, `round` | `--radius` 0 / 8px / 16px |
 | `identity_spacing` | `compact`, `normal`, `relaxed` | Scales the shared `--space-1`…`--space-7` tokens (4…48px) by 0.85 / 1 / 1.2; `normal` and empty keep the theme values |
+| `identity_pattern` | `none`, `dots`, `grid`, `lines`, `circles`, `waves`, `paper`, `solid` | Site-wide background for sections carrying `gp-s-bg` (see [Section library](#section-library)). The stylesheet only points `.gp-s-bg` (at (0,1,0), so a section's own `gp-s-bg-<name>` modifier still wins) at the `--gp-pat-<name>` drawing that `sections.css` defines; it never carries CSS drawings itself. |
+| `identity_pattern_density` | `sparse`, `normal`, `dense` | `--gp-pattern-scale` .72 / 1 / 1.4 (pattern tile size) |
+| `identity_pattern_color` | hex | `--gp-pattern-ink`, the pattern's color (default: the accent) |
 | `custom_css` | ≤ 20000 chars, no HTML, `@import`, `expression()` or `javascript:` | Appended after the theme's styles and kept across theme updates |
 
 Themes print them with `{{identity .}}` as the last thing before `</head>` (after their stylesheets and `head-extra`). The output is optional Google Fonts `<link>`s plus a cached `<link rel="stylesheet" href="/site/identity.css?v=…" data-gorun-identity>` whose tokens use `:root:root[data-theme]`, which outranks the catalog themes' `:where(html[data-theme="…"])` tokens without `!important`. Values are validated on save and again at render, so a hand-edited setting cannot inject markup. Use identity settings and custom CSS instead of overriding `parts.head*.html` to restyle a site.
@@ -242,29 +246,41 @@ Declare tokens inside `:where(html[data-theme="<slug>"])` (zero specificity) and
 
 ## Section library
 
-The content sanitizer keeps only `class` values that start with `gp-` (plus editor classes), so page bodies written as HTML use the `gp-s-*` blocks from `themes/default/assets/sections.css`. Every catalog theme loads it. Its base selectors have zero specificity (`:where()`) and use the theme tokens, so the blocks follow the theme, the identity settings and custom CSS. Page bodies render inside `.prose-gp`, whose rules (link color and underline, list markers, `h2`/`h3` sizes, sibling margins) reach (0,2,2) specificity in the catalog themes; a short block at the end of `sections.css` re-applies exactly those properties under `:root .prose-gp` (0,3,0). To restyle a block inside a page body, use the same prefix (`:root .prose-gp .gp-s-btn{…}`) or custom CSS, which loads later. (The page builder owns `gp-section`, `gp-grid`, `gp-entry` and friends.)
+The content sanitizer keeps only `class` values that start with `gp-` (plus editor classes), so page bodies written as HTML use the `gp-s-*` blocks from `themes/default/assets/sections.css`. Every catalog head calls `{{sections .}}`, which links the file only on pages whose content (or a listed item's body) uses a `gp-s-` class, so pages without sections pay nothing for it. Its base selectors have zero specificity (`:where()`) and use the theme tokens, so the blocks follow the theme, the identity settings and custom CSS. Page bodies render inside `.prose-gp`, whose rules (link color and underline, list markers, `h2`/`h3` sizes, sibling margins) reach (0,2,2) specificity in the catalog themes; a short block at the end of `sections.css` re-applies exactly those properties under `:root .prose-gp` (0,3,0). To restyle a block inside a page body, use the same prefix (`:root .prose-gp .gp-s-btn{…}`) or custom CSS, which loads later. (The page builder owns `gp-section`, `gp-grid`, `gp-entry` and friends.)
 
 | Class | Use |
 |---|---|
-| `gp-s-hero` with `gp-s-eyebrow`, `h1`, `gp-s-lead`, `gp-s-actions` | Page opening |
+| `gp-s-hero` with `gp-s-eyebrow`, `h1`, `gp-s-lead`, `gp-s-actions` | Page opening. Variants: `gp-s-hero-split` (two children: copy, then `gp-s-media`), `gp-s-hero-centered` (`gp-s-media` below the copy). `gp-s-facts` (`dl` of `div > dt + dd`) lists key figures. |
 | `gp-s-btn`, `gp-s-btn gp-s-btn-ghost` | Primary / secondary links |
 | `gp-s-band` | A titled section (`h2`, `p`, then any block) |
-| `gp-s-grid` of `gp-s-card` (`h3`, `p`, trailing `a`), `gp-s-price` | Services, features, plans |
-| `gp-s-steps` (`ol` of `li`) | Numbered process |
+| `gp-s-grid` of `gp-s-card` (`h3`, `p`, trailing `a`), `gp-s-price` | Services, features, plans. `gp-s-card-featured` marks the recommended card; an empty `<span class="gp-s-icon gp-s-icon-bolt">` (also `shield`, `chart`, `globe`, `clock`, `check`, `layers`) draws an icon tile. |
+| `gp-s-steps` (`ol` of `li`) | Numbered process on a connector track (stacks on phones) |
+| `gp-s-flow` (`ol` of `li`, `small` for a note) | Node → node → node diagram; arrows are drawn by the stylesheet and flip in RTL |
 | `gp-s-checks` (`ul`) | Checklist |
-| `gp-s-faq` with `details`/`summary` | Questions |
-| `gp-s-cta` | Closing call to action |
+| `gp-s-compare-wrap` > `table.gp-s-compare` | Comparison table: column 2 is highlighted (`gp-s-compare-plain` turns it off); `td.gp-s-yes` / `td.gp-s-no` draw check and cross marks before the cell text (`gp-s-sr` hides text visually) |
+| `gp-s-faq` with `details`/`summary` | Questions with a plus/minus marker; `gp-s-faq-cols` lays them out in two columns |
+| `figure.gp-s-preview` | Product preview: a window frame around an `img` (plus optional `figcaption`). `div.gp-s-preview-ui` with empty `span`s `gp-s-ui-side`, `gp-s-ui-stat`, `gp-s-ui-chart`, `gp-s-ui-rows` draws a clearly illustrative interface when no screenshot exists. |
+| `gp-s-cta`, `gp-s-cta gp-s-cta-panel` | Closing call to action (plain, or in a bordered panel) |
+| `gp-s-bg` (+ `gp-s-bg-dots`, `-grid`, `-lines`, `-circles`, `-waves`, `-paper`, `-solid`, `-none`; `gp-s-bg-fade`, `gp-s-bg-sparse`, `gp-s-bg-dense`) | Background pattern behind any section. `gp-s-bg` alone takes the site default from `identity_pattern`; a modifier picks its own. Color and density follow `identity_pattern_color` / `identity_pattern_density`. |
+| `gp-s-bleed` | Lets a section span the viewport inside a page body (content stays on the site width). It assumes a centred body column: default, business, magazine and portfolio; in `docs` (article beside a sidebar) the band is shifted and clipped, so leave it off there. |
 
 ```html
-<section class="gp-s-hero"><span class="gp-s-eyebrow">Services</span><h1>What you do, for whom.</h1>
-  <p class="gp-s-lead">One or two sentences on what a customer gets.</p>
-  <p class="gp-s-actions"><a class="gp-s-btn" href="/contact">Contact us</a></p></section>
+<section class="gp-s-hero gp-s-hero-split gp-s-bg gp-s-bg-dots gp-s-bleed">
+  <div><span class="gp-s-eyebrow">Services</span><h1>What you do, for whom.</h1>
+    <p class="gp-s-lead">One or two sentences on what a customer gets.</p>
+    <p class="gp-s-actions"><a class="gp-s-btn" href="/contact">Contact us</a></p></div>
+  <div class="gp-s-media"><figure class="gp-s-preview"><img src="/media/app.png" alt="The dashboard"></figure></div></section>
 <section class="gp-s-band"><h2>What we offer</h2><div class="gp-s-grid">
-  <article class="gp-s-card"><h3>Service</h3><p>What it includes.</p><p class="gp-s-price">49 AED</p><a href="/shop">Details</a></article>
+  <article class="gp-s-card"><span class="gp-s-icon gp-s-icon-bolt"></span><h3>Service</h3><p>What it includes.</p><p class="gp-s-price">49 AED</p><a href="/shop">Details</a></article>
 </div></section>
+<div class="gp-s-compare-wrap"><table class="gp-s-compare">
+  <thead><tr><th>Capability</th><th>Plan A</th><th>Plan B</th></tr></thead>
+  <tbody><tr><th>Support</th><td class="gp-s-yes">Yes</td><td class="gp-s-no">No</td></tr></tbody></table></div>
 ```
 
-The starter content's About page (`gorun starter`) is built from these blocks as an editable example.
+Every drawing in the library is CSS (gradients, or small data-URI SVGs used as masks and filled from the tokens): the sanitizer strips inline `<svg>`, `style` and `aria-*`, so decorative spans stay empty. Hover lifts and the FAQ marker rotation stop under `prefers-reduced-motion`. The default theme loads the Tailwind preflight after `sections.css`; a block of `:root .gp-s-…` rules at the end of the file restores the borders, margins and `summary` display the preflight resets.
+
+The starter content's About page (`gorun starter`) is built from these blocks as an editable example; `internal/theme/testdata/sections-pilot.{en,ar}.html` is the full demonstration page the Go tests and `e2e/tests/sections-pilot.spec.ts` render in the default and business themes.
 
 ## Reparenting a child theme
 
