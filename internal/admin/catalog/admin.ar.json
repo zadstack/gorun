@@ -883,5 +883,8 @@
   "integrations.mail.delivery": "الوصول إلى الصندوق",
   "integrations.mail.delivery.not_verified": "غير متحقق منه: راجع صندوق المستلم أو سجل نشاط المزود.",
   "mail.reply_to": "الرد إلى",
-  "mail.reply_to_help": "عنوان الرد الافتراضي الاختياري للبريد الصادر."
+  "mail.reply_to_help": "عنوان الرد الافتراضي الاختياري للبريد الصادر.",
+  "integrations.workers.association.workers_dev_host": "الأصل هو مضيف workers.dev الخاص بهذا الـWorker.",
+  "integrations.workers.association.operator_asserted": "تأكدت هوية الأصل كـGoRun Edge؛ أما ربطه بهذا الـWorker فأكده المشغّل (نطاق مخصص).",
+  "integrations.mail.rate_limited": "رسائل اختبار كثيرة: الحد 5 رسائل لكل مشغّل كل 10 دقائق."
 }

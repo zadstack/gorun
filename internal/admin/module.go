@@ -72,6 +72,8 @@ type handlers struct {
 
 	canvasAIOnce        sync.Once
 	canvasAISuggestions *canvasAICache
+
+	mailTests mailTestLimiter // Integrations → Mail test sends, per operator
 }
 
 // Register declares permissions, publishes the mailer, adds nav items,

@@ -27,6 +27,7 @@ var integrationErrors = []kernel.APIErrorResponse{
 	{Status: 409, Code: "capability_disabled", Description: "Mail is not configured"},
 	{Status: 422, Code: "validation_failed", Description: "Invalid input (fields)"},
 	{Status: 422, Code: "edge_identity_failed", Description: "The origin did not answer the GoRun Edge manager contract for the pasted key"},
+	{Status: 429, Code: "rate_limited", Description: "At most 5 test messages per operator per 10 minutes"},
 }
 
 func (h *handlers) integrationAPIOperations() {
@@ -54,9 +55,9 @@ func (h *handlers) integrationAPIOperations() {
 	bind := api.Op("POST", "/site/integrations/storage/bind", "Bind an existing bucket (discovered R2 or any S3 endpoint) as the media and/or backup destination with its own S3 keys; queues the read-only check",
 		[]string{"site"}, []string{PermSettings}, storageBindInput{}, storageBindResult{}, h.apiStorageBind)
 	bind.Contract = &kernel.APIContract{Errors: []kernel.APIErrorResponse{integrationErrors[1], integrationErrors[5]}}
-	mailTest := api.Op("POST", "/site/integrations/mail/test", "Send one test message to the caller's own address or a chosen address; reports provider acceptance, never inbox delivery",
+	mailTest := api.Op("POST", "/site/integrations/mail/test", "Send one test message to the caller's own address or a chosen address (full recipient audited, 5 per operator per 10 minutes); reports provider acceptance, never inbox delivery",
 		[]string{"site"}, []string{PermCapabilityTest}, mailTestInput{}, mailTestOutcome{}, h.apiMailTest)
-	mailTest.Contract = &kernel.APIContract{Errors: []kernel.APIErrorResponse{integrationErrors[4], integrationErrors[5]}}
+	mailTest.Contract = &kernel.APIContract{Errors: []kernel.APIErrorResponse{integrationErrors[4], integrationErrors[5], integrationErrors[7]}}
 	for _, op := range []kernel.APIOperation{get, cf, check, inv, refresh, identify, bind, mailTest} {
 		h.d.API.Add(op)
 	}
@@ -238,6 +239,8 @@ func (h *handlers) apiMailTest(w http.ResponseWriter, r *http.Request) {
 		api.WriteError(w, http.StatusUnprocessableEntity, api.CodeValidation, "validation failed", map[string]string{"to": "auth.error.email_invalid"})
 	case errors.Is(err, observe.ErrDisabled):
 		api.WriteError(w, http.StatusConflict, "capability_disabled", "mail is not configured", nil)
+	case errors.Is(err, errMailRateLimit):
+		api.WriteError(w, http.StatusTooManyRequests, api.CodeRateLimited, "too many test messages from this operator; wait before sending another", nil)
 	case err != nil:
 		api.Fail(w, r, err)
 	default:

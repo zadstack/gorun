@@ -262,14 +262,29 @@ func TestIntegrationsStorageBindUsesExistingDestinations(t *testing.T) {
 	// The existing Settings → Storage page shows the same bindings.
 	_, storage := s.do("GET", "/admin/settings/storage", nil)
 	mustContain(t, storage, "Shared")
-	// Re-binding the same location reuses the profile instead of adding one.
-	form.Set("purposes", "media")
-	form.Del("confirm_both")
-	if resp, page = s.post("/admin/settings/integrations/storage/bind", form); resp.StatusCode != http.StatusSeeOther {
+	// Re-binding the same location with the same keys and a blank name reuses
+	// the profile unchanged: no duplicate, no rename, no version bump.
+	var before string
+	for _, raw := range profiles {
+		before = string(raw)
+	}
+	rebind := url.Values{"source": {"s3"}, "endpoint": {"https://s3.eu-central-1.amazonaws.com"}, "bucket": {"shared-bucket"}, "region": {"eu-central-1"},
+		"access_key": {"AKIATESTONLY"}, "secret_key": {"SECRETTESTONLY"}, "purposes": {"media"}}
+	if resp, page = s.post("/admin/settings/integrations/storage/bind", rebind); resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("rebind: %d\n%s", resp.StatusCode, page)
 	}
-	if profiles, _ = s.app.Deps.Settings.All(ctx, "connections.profile."); len(profiles) != 1 {
+	profiles, _ = s.app.Deps.Settings.All(ctx, "connections.profile.")
+	if len(profiles) != 1 {
 		t.Fatalf("rebind added a profile: %d", len(profiles))
+	}
+	for _, raw := range profiles {
+		if string(raw) != before {
+			t.Fatalf("pure re-bind rewrote the profile:\n%s\n%s", before, raw)
+		}
+	}
+	// Unknown inventory kinds are 404, not a misleading flash.
+	if resp, _ = s.post("/admin/settings/integrations/cloudflare/inventory/queues/refresh", url.Values{}); resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("unknown kind: %d", resp.StatusCode)
 	}
 	// Probe needs the capability-test permission and only queues work.
 	resp, _ = s.post("/admin/settings/integrations/storage/backup/probe", url.Values{})
@@ -336,8 +351,9 @@ func TestIntegrationsMailTestReportsAcceptanceNotDelivery(t *testing.T) {
 	if resp, page = s.post("/admin/settings/integrations/mail/test", url.Values{"to": {"not an address"}}); resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Fatalf("bad recipient: %d\n%s", resp.StatusCode, page)
 	}
+	// The admin audit log keeps the full recipient of a third-party test send.
 	var meta string
-	if err := s.app.Deps.DB.QueryRow(`SELECT meta_json FROM audit_log WHERE action = 'mail.test_sent' ORDER BY id DESC LIMIT 1`).Scan(&meta); err != nil || strings.Contains(meta, "qa-inbox") || !strings.Contains(meta, `"accepted":true`) {
+	if err := s.app.Deps.DB.QueryRow(`SELECT meta_json FROM audit_log WHERE action = 'mail.test_sent' ORDER BY id DESC LIMIT 1`).Scan(&meta); err != nil || !strings.Contains(meta, "qa-inbox@example.com") || !strings.Contains(meta, `"accepted":true`) || !strings.Contains(meta, `"own_address":false`) {
 		t.Fatalf("audit: %q %v", meta, err)
 	}
 	// Evidence is recorded for the requesting operator.
@@ -361,6 +377,19 @@ func TestIntegrationsMailTestReportsAcceptanceNotDelivery(t *testing.T) {
 		t.Fatalf("rejected test: %d", resp.StatusCode)
 	}
 	mustContain(t, page, "did not accept the message")
+	// At most five test sends per operator per window; the sixth is refused.
+	sent := 0
+	for i := 0; i < 6; i++ {
+		resp, _ = s.post("/admin/settings/integrations/mail/test", url.Values{})
+		if resp.StatusCode == http.StatusOK {
+			sent++
+		} else if resp.StatusCode != http.StatusTooManyRequests {
+			t.Fatalf("send %d: %d", i, resp.StatusCode)
+		}
+	}
+	if sent != 3 { // two sends above plus three more fit in the burst of five
+		t.Fatalf("rate limit let %d extra sends through", sent)
+	}
 	// Without the capability-test permission the test route is forbidden.
 	s.login("integrations-viewer@example.com", "editor", "en")
 	if resp, _ = s.post("/admin/settings/integrations/mail/test", url.Values{}); resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusSeeOther {
@@ -454,6 +483,10 @@ func TestIntegrationsAPIContractsAndScopes(t *testing.T) {
 	var jobs int
 	if err := app.Deps.DB.QueryRow(`SELECT count(*) FROM jobs WHERE kind = 'observe.integrations.cloudflare.inventory' AND payload_json LIKE '%"key":"r2"%'`).Scan(&jobs); err != nil || jobs != 1 {
 		t.Fatalf("inventory jobs: %d %v", jobs, err)
+	}
+	// A refresh of the manual identity kind is refused by the generic observations API.
+	if status, body := settingsClient.Post("/system/observations/integrations.cloudflare.edge_identity/edge-worker/refresh", nil); status != http.StatusConflict || apitest.ErrorCode(body) != "manual_only" {
+		t.Fatalf("identity refresh: %d %+v", status, body)
 	}
 	// Worker identity without a discovered account/worker name is a validation error, never a network call.
 	status, body = settingsClient.Post("/site/integrations/cloudflare/workers/bad%20name/identify", map[string]any{"origin": "https://edge.example", "manager_key": strings.Repeat("a", 43)})

@@ -591,7 +591,7 @@ Generated from the current locally booted OpenAPI document: **185 operations** i
 | POST | `/api/v1/site/integrations/cloudflare/check` | Queue the token verification, account listing and per-service read permission checks; answers 202 with the task references | `settings.manage` |
 | POST | `/api/v1/site/integrations/cloudflare/inventory/{kind}/refresh` | Queue a full re-read of one inventory kind (paginated, bounded); answers 202; concurrent requests share one job | `settings.manage` |
 | POST | `/api/v1/site/integrations/cloudflare/workers/{name}/identify` | Confirm a Worker as a GoRun Edge instance through its manager contract with a pasted manager key (never stored); records identity evidence | `settings.manage` |
-| POST | `/api/v1/site/integrations/mail/test` | Send one test message to the caller's own address or a chosen address; reports provider acceptance, never inbox delivery | `system.capability_test` |
+| POST | `/api/v1/site/integrations/mail/test` | Send one test message to the caller's own address or a chosen address (full recipient audited, 5 per operator per 10 minutes); reports provider acceptance, never inbox delivery | `system.capability_test` |
 | POST | `/api/v1/site/integrations/storage/bind` | Bind an existing bucket (discovered R2 or any S3 endpoint) as the media and/or backup destination with its own S3 keys; queues the read-only check | `settings.manage` |
 | PUT | `/api/v1/site/integrations/cloudflare` | Store the Cloudflare API token (encrypted, never returned) and/or select the account; queues the read-only checks | `settings.manage` |
 

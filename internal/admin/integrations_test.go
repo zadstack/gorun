@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -222,7 +223,7 @@ func TestCloudflareScopesAndInventoryWithFake(t *testing.T) {
 	if !cf.Configured || cf.TokenHint != "ghij" || cf.AccountID != fakeCFAccount {
 		t.Fatalf("connection view: %+v", cf)
 	}
-	if len(cf.Accounts) != 2 || !cf.AccountsFull || cf.Accounts[1].Name != "Second baccount/b" {
+	if len(cf.Accounts) != 2 || !cf.AccountsFull || cf.Accounts[1].Name != "Second <b>account</b>" {
 		t.Fatalf("accounts: %+v", cf.Accounts)
 	}
 	for _, s := range cf.Scopes {
@@ -412,8 +413,17 @@ func TestWorkerIdentityNeedsManagerContract(t *testing.T) {
 		}
 		return jsonResponse(200, `{"ok":true,"data":{"site_id":"demo","manager_id":"manager-1","label":"Demo manager","primary":true}}`), nil
 	})}
-	// A Worker named like GoRun is not identified by its name.
-	if _, err := h.identifyWorker(ctx, edge, "gorun-edge", "https://ordinary.example", key); err == nil {
+	// Only a discovered Worker can be identified: an arbitrary name is refused
+	// before any network call, even one that looks like GoRun.
+	if _, err := h.identifyWorker(ctx, edge, "gorun-edge", "https://edge.example", key); err != errConnectionInvalid {
+		t.Fatalf("undiscovered worker accepted: %v", err)
+	}
+	if _, err := h.observe.Refresh(ctx, kindCFInventory, "workers"); err != nil {
+		t.Fatal(err)
+	}
+	runObserveJobs(t, app)
+	// A discovered Worker pointed at an ordinary origin is not identified by its name.
+	if _, err := h.identifyWorker(ctx, edge, "other-worker", "https://ordinary.example", key); err == nil {
 		t.Fatal("ordinary origin identified as GoRun Edge")
 	}
 	if _, err := h.identifyWorker(ctx, edge, "edge-worker", "https://10.0.0.5", key); err != errEdgeOrigin {
@@ -423,12 +433,24 @@ func TestWorkerIdentityNeedsManagerContract(t *testing.T) {
 		t.Fatalf("malformed key accepted: %v", err)
 	}
 	id, err := h.identifyWorker(ctx, edge, "edge-worker", "https://edge.example", key)
-	if err != nil || id.SiteID != "demo" || id.ManagerID != "manager-1" {
+	if err != nil || id.SiteID != "demo" || id.ManagerID != "manager-1" || id.Association != "operator_asserted" {
 		t.Fatalf("identity: %+v %v", id, err)
 	}
+	if id, err := h.identifyWorker(ctx, edge, "edge-worker", "https://edge-worker.demo.workers.dev", key); err != nil || id.Association != "workers_dev_host" {
+		t.Fatalf("workers.dev association: %+v %v", id, err)
+	}
 	o, err := h.observe.Get(ctx, kindCFEdge, "edge-worker")
-	if err != nil || o.Saved == nil || o.Saved.Scope != "identity" {
+	if err != nil || o.Saved == nil || o.Saved.Scope != "identity" || o.Status != "fresh" {
 		t.Fatalf("identity not recorded: %+v %v", o, err)
+	}
+	// Identity is manual-only: a generic refresh is refused and cannot
+	// record a failed attempt over the saved identity.
+	if _, err := h.observe.Refresh(ctx, kindCFEdge, "edge-worker"); !errors.Is(err, observe.ErrManual) {
+		t.Fatalf("refresh of identity kind: %v", err)
+	}
+	runObserveJobs(t, app)
+	if o, _ := h.observe.Get(ctx, kindCFEdge, "edge-worker"); o.Status != "fresh" || o.Attempt == nil || o.Attempt.Status != "succeeded" {
+		t.Fatalf("identity changed by a refresh attempt: %+v", o)
 	}
 	if strings.Contains(string(o.Saved.Data), key) {
 		t.Fatal("manager key stored")
@@ -438,13 +460,9 @@ func TestWorkerIdentityNeedsManagerContract(t *testing.T) {
 		t.Fatalf("audit: %q %v", meta, err)
 	}
 	// Bound once the Edge settings point at the identified origin.
-	if err := h.d.Settings.Set(ctx, settingEdgeOrigin, "https://edge.example"); err != nil {
+	if err := h.d.Settings.Set(ctx, settingEdgeOrigin, "https://edge-worker.demo.workers.dev"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h.observe.Refresh(ctx, kindCFInventory, "workers"); err != nil {
-		t.Fatal(err)
-	}
-	runObserveJobs(t, app)
 	report, _ := h.integrationsReport(ctx)
 	for _, iv := range report.Inventory {
 		if iv.Kind != "workers" {
@@ -453,11 +471,12 @@ func TestWorkerIdentityNeedsManagerContract(t *testing.T) {
 		for _, item := range iv.Items {
 			switch item.Name {
 			case "edge-worker":
-				if item.Checked != "passed" || item.Identity == nil || len(item.Bound) != 1 || item.Bound[0] != "edge" {
+				if item.Checked != "passed" || item.Identity == nil || len(item.Bound) != 1 || item.Bound[0] != "edge" || item.Identity.Association != "workers_dev_host" {
 					t.Fatalf("identified worker: %+v", item)
 				}
 			default:
-				if item.Checked != "none" || len(item.Bound) != 0 {
+				// other-worker had a failed check above: reported failed, never bound.
+				if item.Checked != "failed" || item.Identity != nil || len(item.Bound) != 0 {
 					t.Fatalf("ordinary worker promoted: %+v", item)
 				}
 			}
@@ -474,4 +493,54 @@ func TestWorkerIdentityNeedsManagerContract(t *testing.T) {
 
 func jsonResponse(status int, body string) *http.Response {
 	return &http.Response{StatusCode: status, Header: http.Header{"Content-Type": []string{"application/json"}}, Body: io.NopCloser(strings.NewReader(body))}
+}
+
+func TestCloudflareInventoryStopsOnRepeatedUnpaginatedPage(t *testing.T) {
+	f := newFakeCloudflare(t)
+	h, app := integrationsHandlers(t)
+	ctx := context.Background()
+	storeCloudflare(t, h, fakeCFToken, fakeCFAccount)
+	// The Workers list ignores paging and returns exactly one full page.
+	f.worker = nil
+	for i := 0; i < cfPerPage; i++ {
+		f.worker = append(f.worker, fmt.Sprintf("worker-%03d", i))
+	}
+	if _, err := h.observe.Refresh(ctx, kindCFInventory, "workers"); err != nil {
+		t.Fatal(err)
+	}
+	runObserveJobs(t, app)
+	report, _ := h.integrationsReport(ctx)
+	for _, iv := range report.Inventory {
+		if iv.Kind == "workers" && (iv.Count != cfPerPage || !iv.Complete) {
+			t.Fatalf("repeated page duplicated or marked incomplete: count=%d complete=%v", iv.Count, iv.Complete)
+		}
+	}
+	if n := f.seen("/workers/scripts"); n != 2 {
+		t.Fatalf("read the unpaginated list %d times", n)
+	}
+}
+
+func TestCloudflareScopeLampsAgedVersusOtherRevision(t *testing.T) {
+	newFakeCloudflare(t)
+	h, app := integrationsHandlers(t)
+	ctx := context.Background()
+	storeCloudflare(t, h, fakeCFToken, fakeCFAccount)
+	h.queueCloudflareChecks(ctx)
+	runObserveJobs(t, app)
+	// Age the saved result past the freshness window: still passed, with a note.
+	if _, err := h.d.DB.Exec(`UPDATE observations SET success_at = '2026-01-01T00:00:00Z' WHERE kind = ?`, kindCFScopes); err != nil {
+		t.Fatal(err)
+	}
+	report, _ := h.integrationsReport(ctx)
+	if report.Cloudflare.ScopesMeta.Status != "stale" || report.Cloudflare.Scopes[0].Status != "passed" || !strings.Contains(report.Cloudflare.Scopes[0].Evidence, "older than the refresh window") {
+		t.Fatalf("aged lamps: %+v %+v", report.Cloudflare.ScopesMeta, report.Cloudflare.Scopes[0])
+	}
+	// Another account: the lamps are for a different configuration.
+	if err := h.d.Settings.Set(ctx, settingCFAccount, fakeCFOther); err != nil {
+		t.Fatal(err)
+	}
+	report, _ = h.integrationsReport(ctx)
+	if report.Cloudflare.Scopes[2].Status != "not_checked" || report.Cloudflare.Scopes[2].Evidence != "saved for an earlier configuration" {
+		t.Fatalf("other-revision lamps: %+v", report.Cloudflare.Scopes[2])
+	}
 }

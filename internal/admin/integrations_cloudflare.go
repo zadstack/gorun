@@ -422,17 +422,21 @@ func (h *handlers) runCloudflareAccounts(ctx context.Context, _, _ string) (obse
 		return observe.Result{}, err
 	}
 	var out cfAccountsResult
+	seen := map[string]bool{}
 	complete, err := cfPaged(ctx, cfNewClient(), token, "/accounts", nil, func(raw json.RawMessage) (int, error) {
 		var list []cfAccount
 		if err := json.Unmarshal(raw, &list); err != nil {
 			return 0, errors.New("invalid accounts list")
 		}
+		added := 0
 		for _, a := range list {
-			if cfAccountPattern.MatchString(a.ID) {
+			if cfAccountPattern.MatchString(a.ID) && !seen[a.ID] {
+				seen[a.ID] = true
 				out.Accounts = append(out.Accounts, cfAccount{ID: a.ID, Name: cfLabel(a.Name)})
+				added++
 			}
 		}
-		return len(list), nil
+		return added, nil
 	})
 	if err != nil {
 		return observe.Result{}, err
@@ -444,9 +448,12 @@ func (h *handlers) runCloudflareAccounts(ctx context.Context, _, _ string) (obse
 	return observe.Result{Scope: "discovery", Data: out}, nil
 }
 
+// cfLabel keeps provider labels printable: control characters are
+// dropped and the length bounded. Markup is left alone; html/template and
+// encoding/json escape it where it is rendered.
 func cfLabel(s string) string {
 	s = strings.TrimSpace(strings.Map(func(r rune) rune {
-		if r < 0x20 || r == 0x7f || r == '<' || r == '>' {
+		if r < 0x20 || r == 0x7f {
 			return -1
 		}
 		return r
@@ -458,9 +465,12 @@ func cfLabel(s string) string {
 }
 
 // cfPaged walks a page-numbered or cursor-based listing. page receives
-// each page's result and returns how many items it held. It returns
-// whether the listing was read in full: a page cap or a total_count beyond
-// what was read makes the inventory incomplete rather than guessed.
+// each page's result and returns how many items it added that were not
+// seen before (callers deduplicate by id), so an endpoint that ignores
+// paging and repeats the same full page stops after the first repeat
+// instead of being re-read until the cap. It returns whether the listing
+// was read in full: a page cap or a total_count beyond what was read
+// makes the inventory incomplete rather than guessed.
 func cfPaged(ctx context.Context, client *http.Client, token, path string, base url.Values, page func(json.RawMessage) (int, error)) (bool, error) {
 	cursor := ""
 	read := 0
@@ -485,18 +495,22 @@ func cfPaged(ctx context.Context, client *http.Client, token, path string, base 
 		}
 		read += count
 		info := resp.ResultInfo
+		if count == 0 {
+			// Nothing new: either the end, or an endpoint repeating its page.
+			return true, nil
+		}
 		switch {
 		case info != nil && info.Cursor != "":
 			cursor = info.Cursor
 			continue
-		case info != nil && info.TotalCount > 0 && read < info.TotalCount && count > 0:
+		case info != nil && info.TotalCount > 0 && read < info.TotalCount:
 			cursor = ""
 			continue
-		case info != nil && info.TotalPages > n && count > 0:
+		case info != nil && info.TotalPages > n:
 			cursor = ""
 			continue
 		case info == nil && count == cfPerPage:
-			// No paging metadata: a full page may hide more.
+			// No paging metadata: a full page may hide more; a repeat stops above.
 			cursor = ""
 			continue
 		}
@@ -639,6 +653,15 @@ func (h *handlers) runCloudflareInventory(ctx context.Context, key, _ string) (o
 	}
 	acct := "/accounts/" + snapshot.AccountID
 	out := cfInventoryResult{Kind: key, Items: []cfResource{}}
+	seen := map[string]bool{}
+	add := func(r cfResource) int {
+		if r.ID == "" || seen[r.ID] {
+			return 0
+		}
+		seen[r.ID] = true
+		out.Items = append(out.Items, r)
+		return 1
+	}
 	var path string
 	var parse func(json.RawMessage) (int, error)
 	switch key {
@@ -656,12 +679,13 @@ func (h *handlers) runCloudflareInventory(ctx context.Context, key, _ string) (o
 			if err := json.Unmarshal(raw, &page); err != nil {
 				return 0, errors.New("invalid bucket list")
 			}
+			added := 0
 			for _, b := range page.Buckets {
 				if cfNamePattern.MatchString(b.Name) {
-					out.Items = append(out.Items, cfResource{ID: b.Name, Name: b.Name, CreatedAt: cfLabel(b.CreationDate), Location: cfLabel(b.Location), Class: cfLabel(b.StorageClass)})
+					added += add(cfResource{ID: b.Name, Name: b.Name, CreatedAt: cfLabel(b.CreationDate), Location: cfLabel(b.Location), Class: cfLabel(b.StorageClass)})
 				}
 			}
-			return len(page.Buckets), nil
+			return added, nil
 		}
 	case "d1":
 		path = acct + "/d1/database"
@@ -677,10 +701,11 @@ func (h *handlers) runCloudflareInventory(ctx context.Context, key, _ string) (o
 			if err := json.Unmarshal(raw, &list); err != nil {
 				return 0, errors.New("invalid database list")
 			}
+			added := 0
 			for _, d := range list {
-				out.Items = append(out.Items, cfResource{ID: cfLabel(d.UUID), Name: cfLabel(d.Name), CreatedAt: cfLabel(d.CreatedAt), Version: cfLabel(d.Version), Tables: d.NumTables, SizeBytes: int64(d.FileSize)})
+				added += add(cfResource{ID: cfLabel(d.UUID), Name: cfLabel(d.Name), CreatedAt: cfLabel(d.CreatedAt), Version: cfLabel(d.Version), Tables: d.NumTables, SizeBytes: int64(d.FileSize)})
 			}
-			return len(list), nil
+			return added, nil
 		}
 	case "workers":
 		path = acct + "/workers/scripts"
@@ -693,12 +718,13 @@ func (h *handlers) runCloudflareInventory(ctx context.Context, key, _ string) (o
 			if err := json.Unmarshal(raw, &list); err != nil {
 				return 0, errors.New("invalid worker list")
 			}
+			added := 0
 			for _, w := range list {
 				if cfNamePattern.MatchString(w.ID) {
-					out.Items = append(out.Items, cfResource{ID: w.ID, Name: w.ID, CreatedAt: cfLabel(w.CreatedOn), ModifiedAt: cfLabel(w.ModifiedOn)})
+					added += add(cfResource{ID: w.ID, Name: w.ID, CreatedAt: cfLabel(w.CreatedOn), ModifiedAt: cfLabel(w.ModifiedOn)})
 				}
 			}
-			return len(list), nil
+			return added, nil
 		}
 	default:
 		return observe.Result{}, errors.New("unknown inventory kind")
@@ -723,6 +749,43 @@ type cfEdgeIdentity struct {
 	SiteID    string `json:"site_id"`
 	ManagerID string `json:"manager_id"`
 	Label     string `json:"label"`
+	// Association says how the origin was tied to the Worker name. The
+	// manager contract proves the origin is a GoRun Edge instance; it
+	// cannot prove which Cloudflare script serves that origin. A
+	// workers.dev host carrying the script name is "workers_dev_host";
+	// anything else (a custom domain) is "operator_asserted".
+	Association string `json:"association" enum:"workers_dev_host,operator_asserted"`
+}
+
+// workerAssociation classifies how origin relates to the Worker name.
+func workerAssociation(worker, origin string) string {
+	host := ""
+	if u, err := url.Parse(origin); err == nil {
+		host = strings.ToLower(u.Hostname())
+	}
+	if strings.HasPrefix(host, strings.ToLower(worker)+".") && strings.HasSuffix(host, ".workers.dev") {
+		return "workers_dev_host"
+	}
+	return "operator_asserted"
+}
+
+// workerDiscovered reports whether name is in the saved Workers inventory
+// of the selected account; identity is only recorded for discovered Workers.
+func (h *handlers) workerDiscovered(ctx context.Context, name string) bool {
+	o, err := h.observe.Get(ctx, kindCFInventory, "workers")
+	if err != nil || o.Saved == nil {
+		return false
+	}
+	var data cfInventoryResult
+	if json.Unmarshal(o.Saved.Data, &data) != nil {
+		return false
+	}
+	for _, item := range data.Items {
+		if item.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 // cfEdgeRevision binds identity evidence to the account the Worker was
@@ -757,6 +820,9 @@ func (h *handlers) identifyWorker(ctx context.Context, client *http.Client, work
 	if rev == "" {
 		return cfEdgeIdentity{}, errCFNoAccount
 	}
+	if !h.workerDiscovered(ctx, worker) {
+		return cfEdgeIdentity{}, errConnectionInvalid
+	}
 	normalized, err := validateEdgeOrigin(origin)
 	if err != nil {
 		return cfEdgeIdentity{}, errEdgeOrigin
@@ -767,7 +833,7 @@ func (h *handlers) identifyWorker(ctx context.Context, client *http.Client, work
 	}
 	started := time.Now()
 	info, err := edgeWhoami(ctx, client, normalized, key)
-	identity := cfEdgeIdentity{Worker: worker, Origin: normalized, SiteID: info.SiteID, ManagerID: info.ManagerID, Label: info.Label}
+	identity := cfEdgeIdentity{Worker: worker, Origin: normalized, SiteID: info.SiteID, ManagerID: info.ManagerID, Label: info.Label, Association: workerAssociation(worker, normalized)}
 	var runErr error
 	if err != nil {
 		runErr = errors.New("manager identity check failed: the origin did not answer the manager contract for this key")
@@ -775,7 +841,7 @@ func (h *handlers) identifyWorker(ctx context.Context, client *http.Client, work
 	if rerr := h.observe.Record(ctx, kindCFEdge, worker, rev, observe.Result{Scope: "identity", Data: identity}, runErr, time.Since(started)); rerr != nil {
 		return cfEdgeIdentity{}, rerr
 	}
-	h.d.Audit.Record(ctx, "integrations.worker_identify", "integrations", worker, map[string]any{"origin": normalized, "ok": err == nil})
+	h.d.Audit.Record(ctx, "integrations.worker_identify", "integrations", worker, map[string]any{"origin": normalized, "ok": err == nil, "association": identity.Association})
 	if err != nil {
 		return cfEdgeIdentity{}, errEdgeCheck
 	}
@@ -825,10 +891,13 @@ func (h *handlers) registerIntegrationObservations() {
 		Keys: func(context.Context) ([]string, error) { return slices.Clone(cfInventoryKinds), nil }, Enabled: enabled,
 		Revision: h.cloudflareInventoryRevision, Run: h.runCloudflareInventory,
 		Remediation: "Grant the token the read permission for this service on the selected account, then refresh the inventory."})
-	h.observe.Register(observe.Spec{Kind: kindCFEdge, Freshness: 0, Timeout: 15 * time.Second, MaxAttempts: 1, Enabled: enabled,
+	// Identity evidence is recorded only by the explicit check with a
+	// pasted key (Manual): no refresh can fail it, and it counts for as
+	// long as other capability evidence.
+	h.observe.Register(observe.Spec{Kind: kindCFEdge, Manual: true, Freshness: evidenceTTL, Timeout: 15 * time.Second, MaxAttempts: 1, Enabled: enabled,
 		Revision: h.cfEdgeRevision,
 		Run: func(context.Context, string, string) (observe.Result, error) {
-			return observe.Result{}, errors.New("identity checks run only from an explicit request with a pasted manager key")
+			return observe.Result{}, observe.ErrManual
 		},
 		Remediation: "Paste the GoRun Edge manager key of this Worker and run the identity check again."})
 }

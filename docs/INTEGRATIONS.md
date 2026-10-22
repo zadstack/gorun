@@ -65,9 +65,10 @@ never as the new account's.
 
 `integrations.cloudflare.inventory` keeps one observation per kind (`r2`, `d1`, `workers`) for the
 selected account, refreshed hourly (one in flight per kind) and on **Refresh**. Listing follows
-page-numbered and cursor-based pagination in full, up to 20 pages of 100; beyond that cap, or when
-the provider's `total_count` exceeds what was read, the inventory is saved with `complete: false`
-and shown as **Inventory incomplete** instead of guessed. Only list metadata is kept: bucket name,
+page-numbered and cursor-based pagination in full, up to 20 pages of 100, deduplicating by id and
+stopping when a page adds nothing new (an endpoint that ignores paging is read once more, not
+twenty times); beyond the cap, or when the provider's `total_count` exceeds what was read, the
+inventory is saved with `complete: false` and shown as **Inventory incomplete** instead of guessed. Only list metadata is kept: bucket name,
 location and class; database id, name, table count and size; Worker name and dates. No D1 rows,
 bucket objects or Worker code are read, and nothing is created or modified.
 
@@ -84,9 +85,17 @@ public https origin and a GoRun Edge manager key pasted for the check; GoRun cal
 `GET <origin>/api/v1/manager` with that key through the same public-host-only client as
 Settings → Edge (`edgeWhoami`), and saves the answer (site id, manager id, label) as
 `integrations.cloudflare.edge_identity` evidence keyed by the Worker name and fenced on the account
-revision. The key is not stored. A failed check records a failed attempt and keeps any earlier
-identity visible as history. Discovery grants no application access: the Cloudflare token and the
-Edge manager key stay separate.
+revision. Only a Worker present in the saved inventory can be identified. The key is not stored.
+
+What the contract proves is that **the origin** is a GoRun Edge instance; it cannot prove which
+Cloudflare script serves that origin. The evidence therefore carries an `association`:
+`workers_dev_host` when the origin is `<worker-name>.<subdomain>.workers.dev`, otherwise
+`operator_asserted` (a custom domain the operator tied to this Worker). The kind is manual-only:
+`POST /system/observations/integrations.cloudflare.edge_identity/{name}/refresh` answers
+`409 manual_only`, so no refresh can overwrite a saved identity with a failed attempt; the evidence
+expires after 7 days like other capability evidence. A failed explicit check records a failed
+attempt and keeps the earlier identity visible as history. Discovery grants no application access:
+the Cloudflare token and the Edge manager key stay separate.
 
 ## Storage and backup buckets
 
@@ -110,7 +119,9 @@ overlap even in one bucket:
 | media | `sites/<site-id>/uploads/` (generated media under `sites/<site-id>/content/`) |
 | backups | `backups/<site-id>/` (encrypted `.gorb` objects) |
 
-Binding queues the **read-only check** (signed `HEAD` on the bucket, kind `connection`). The
+The profile and the destinations commit in one transaction; a re-bind of the same location with
+the same keys reuses the profile unchanged (name, version and saved check evidence kept), while new
+keys rotate the credentials and clear the evidence. Binding queues the **read-only check** (signed `HEAD` on the bucket, kind `connection`). The
 **write/read/delete probe** is a separate explicit action behind `system.capability_test` and only
 queues the existing operation tests: `operation.storage` for the active media storage,
 `operation.s3` on the bound profile for backups. It writes one uniquely named probe object, reads it
@@ -128,8 +139,14 @@ also on Settings → Mail and in the settings API.
 **Send test** (permission `system.capability_test`) sends the standard test template once to the
 operator's own address or to a chosen address. The outcome reports **provider acceptance** (the
 SMTP server or Resend accepted the message) separately from **inbox delivery**, which is never
-verified. The send is audited with a masked recipient and recorded as `operation.mail` evidence for
+verified. Unlike `POST /site/capabilities/services/mail/operation`, which only ever sends to the
+caller's own address, this action can address a third party: the admin audit log keeps the full
+recipient (pages and API answers show it masked), and each operator may send at most 5 test
+messages per 10 minutes (`429 rate_limited`). The send is recorded as `operation.mail` evidence for
 the requesting operator (`recipient: requesting_operator | chosen_address`).
+
+Upgrade note: the mail evidence revision now also covers `mail.provider` and `mail.reply_to`, so
+mail operation evidence saved before this change is reported `stale` until the next test send.
 
 ## API
 

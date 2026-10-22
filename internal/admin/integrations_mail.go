@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/mail"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/zadstack/gorun/internal/auth"
@@ -66,7 +67,43 @@ type mailTestOutcome struct {
 	At        string `json:"at"`
 }
 
-var errMailRecipient = errors.New("integrations: invalid test recipient")
+var (
+	errMailRecipient = errors.New("integrations: invalid test recipient")
+	errMailRateLimit = errors.New("integrations: too many test messages")
+)
+
+// Test sends to arbitrary addresses are bounded per operator: the admin
+// audit log keeps the full recipient, and at most mailTestBurst messages
+// per mailTestWindow leave the site from one operator.
+const (
+	mailTestBurst  = 5
+	mailTestWindow = 10 * time.Minute
+)
+
+type mailTestLimiter struct {
+	mu   sync.Mutex
+	sent map[string][]time.Time
+}
+
+func (l *mailTestLimiter) allow(user string, now time.Time) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.sent == nil {
+		l.sent = map[string][]time.Time{}
+	}
+	var keep []time.Time
+	for _, t := range l.sent[user] {
+		if now.Sub(t) < mailTestWindow {
+			keep = append(keep, t)
+		}
+	}
+	if len(keep) >= mailTestBurst {
+		l.sent[user] = keep
+		return false
+	}
+	l.sent[user] = append(keep, now)
+	return true
+}
 
 func maskEmail(addr string) string {
 	at := strings.LastIndex(addr, "@")
@@ -100,6 +137,9 @@ func (h *handlers) sendIntegrationsTestMail(ctx context.Context, u *auth.User, i
 	if !h.mail.Configured(ctx) {
 		return mailTestOutcome{}, observe.ErrDisabled
 	}
+	if !h.mailTests.allow(u.ID, time.Now()) {
+		return mailTestOutcome{}, errMailRateLimit
+	}
 	provider := h.d.Settings.GetString(ctx, "mail.provider", "smtp")
 	if provider == "" {
 		provider = "smtp"
@@ -122,7 +162,10 @@ func (h *handlers) sendIntegrationsTestMail(ctx context.Context, u *auth.User, i
 		runErr = errors.New(out.Error)
 		h.d.Log.Warn("integrations: test mail", "provider", provider, "err", sendErr)
 	}
-	h.d.Audit.Record(ctx, "mail.test_sent", "user", u.ID, map[string]any{"integrations": true, "recipient": out.Recipient, "own_address": own, "accepted": out.Accepted})
+	// The audit log is admin-only and keeps the full recipient so a test
+	// send to a third-party address is attributable; pages and API answers
+	// show the masked form.
+	h.d.Audit.Record(ctx, "mail.test_sent", "user", u.ID, map[string]any{"integrations": true, "recipient": to, "own_address": own, "accepted": out.Accepted})
 	key := mailOperationKey(u)
 	if rev, rerr := h.mailRevision(ctx, key); rerr == nil && rev != "" {
 		recipient := "requesting_operator"

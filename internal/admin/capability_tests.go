@@ -277,6 +277,8 @@ func (h *handlers) capabilityRefresh(w http.ResponseWriter, r *http.Request, kin
 		api.NotFound(w)
 	case errors.Is(err, observe.ErrDisabled):
 		api.WriteError(w, http.StatusConflict, "capability_disabled", "the capability is not configured or disabled", nil)
+	case errors.Is(err, observe.ErrManual):
+		api.WriteError(w, http.StatusConflict, "manual_only", "results of this kind are recorded by an explicit action, not a refresh", nil)
 	default:
 		api.Fail(w, r, err)
 	}

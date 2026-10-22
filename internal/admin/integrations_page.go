@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -154,10 +155,13 @@ func (h *handlers) cloudflareView(ctx context.Context, snapshot cfSnapshot) clou
 			// A failed newer attempt means the token itself could not be
 			// verified: the saved lamps describe an older revision at best.
 			if o.Status == "failed" && o.Attempt != nil {
-				lamps["token"] = cfScopeState{ID: "token", Status: cfClassify(errors.New(o.Attempt.Error)), Error: o.Attempt.Error, CheckedAt: v.ScopesMeta.AttemptAt}
+				// The stored error is text; an auth status or an inactive
+				// token means the token itself is the problem.
+				status := "could_not_verify"
 				if strings.Contains(o.Attempt.Error, "HTTP 401") || strings.Contains(o.Attempt.Error, "HTTP 403") || strings.Contains(o.Attempt.Error, "not active") {
-					lamps["token"] = cfScopeState{ID: "token", Status: "incomplete", Error: o.Attempt.Error, CheckedAt: v.ScopesMeta.AttemptAt}
+					status = "incomplete"
 				}
+				lamps["token"] = cfScopeState{ID: "token", Status: status, Error: o.Attempt.Error, CheckedAt: v.ScopesMeta.AttemptAt}
 			}
 		}
 	}
@@ -166,9 +170,13 @@ func (h *handlers) cloudflareView(ctx context.Context, snapshot cfSnapshot) clou
 		if !ok {
 			s = cfScopeState{ID: d.ID, Status: "not_checked"}
 		}
-		if v.ScopesMeta.Status == "stale" && s.Status == "passed" {
-			s.Status = "not_checked"
-			s.Evidence = "saved for an earlier configuration"
+		if s.Status == "passed" && v.ScopesMeta.Status == "stale" {
+			if v.ScopesMeta.RevisionMatch != nil && !*v.ScopesMeta.RevisionMatch {
+				// Saved for another token or account: it says nothing about this one.
+				s.Status, s.Evidence = "not_checked", "saved for an earlier configuration"
+			} else {
+				s.Evidence += " (older than the refresh window; a refresh is due)"
+			}
 		}
 		v.Scopes = append(v.Scopes, cfScopeView{cfScopeState: s, Permission: d.Permission, Repair: cfScopeRepair[d.ID]})
 	}
@@ -178,6 +186,12 @@ func (h *handlers) cloudflareView(ctx context.Context, snapshot cfSnapshot) clou
 func (h *handlers) inventoryViews(ctx context.Context, snapshot cfSnapshot, bindings []storageBinding) []inventoryView {
 	edgeOrigin := strings.ToLower(h.d.Settings.GetString(ctx, settingEdgeOrigin, ""))
 	edgeManager := h.d.Settings.GetString(ctx, settingEdgeManager, "")
+	identities := map[string]observe.Observation{}
+	if list, err := h.observe.List(ctx, kindCFEdge); err == nil {
+		for _, o := range list {
+			identities[o.Key] = o
+		}
+	}
 	var out []inventoryView
 	for _, kind := range cfInventoryKinds {
 		iv := inventoryView{Kind: kind, Items: []cfResourceView{}}
@@ -206,7 +220,7 @@ func (h *handlers) inventoryViews(ctx context.Context, snapshot cfSnapshot, bind
 						}
 					case "workers":
 						rv.Checked = "none"
-						if io, err := h.observe.Get(ctx, kindCFEdge, item.Name); err == nil && (io.Saved != nil || io.Attempt != nil) {
+						if io, ok := identities[item.Name]; ok && (io.Saved != nil || io.Attempt != nil) {
 							switch {
 							case io.Attempt != nil && io.Attempt.Status == "failed" && (io.Saved == nil || io.Attempt.FinishedAt == nil || *io.Attempt.FinishedAt >= io.Saved.At):
 								rv.Checked = "failed"
@@ -366,12 +380,18 @@ func (h *handlers) integrationsCloudflareCheck(w http.ResponseWriter, r *http.Re
 
 func (h *handlers) integrationsInventoryRefresh(w http.ResponseWriter, r *http.Request) {
 	kind := chi.URLParam(r, "kind")
+	if !slices.Contains(cfInventoryKinds, kind) {
+		h.tpl.RenderError(w, r, http.StatusNotFound)
+		return
+	}
 	_, err := h.observe.Refresh(r.Context(), kindCFInventory, kind)
 	switch {
 	case err == nil:
 		h.d.Audit.Record(r.Context(), "integrations.inventory_refresh", "integrations", kind, nil)
 		httpx.SetFlash(w, "success", "admin.integrations.queued")
-	case errors.Is(err, observe.ErrNotFound), errors.Is(err, observe.ErrDisabled):
+	case errors.Is(err, observe.ErrDisabled):
+		httpx.SetFlash(w, "error", "admin.integrations.cloudflare.error.token")
+	case errors.Is(err, observe.ErrNotFound):
 		httpx.SetFlash(w, "error", "admin.integrations.cloudflare.error.account")
 	default:
 		h.serverError(w, r, err)
@@ -492,6 +512,9 @@ func (h *handlers) integrationsMailTest(w http.ResponseWriter, r *http.Request) 
 		return
 	case errors.Is(err, observe.ErrDisabled):
 		h.renderIntegrations(w, r, http.StatusUnprocessableEntity, map[string]string{"mail_test": "admin.mail.not_configured"}, nil, nil)
+		return
+	case errors.Is(err, errMailRateLimit):
+		h.renderIntegrations(w, r, http.StatusTooManyRequests, map[string]string{"mail_test": "admin.integrations.mail.rate_limited"}, map[string]string{"to": in.To}, nil)
 		return
 	case err != nil:
 		h.serverError(w, r, err)

@@ -883,5 +883,8 @@
   "integrations.mail.delivery": "Inbox delivery",
   "integrations.mail.delivery.not_verified": "Not verified: check the recipient's inbox or the provider's activity log.",
   "mail.reply_to": "Reply-To",
-  "mail.reply_to_help": "Optional default Reply-To address for outgoing mail."
+  "mail.reply_to_help": "Optional default Reply-To address for outgoing mail.",
+  "integrations.workers.association.workers_dev_host": "Origin is this Worker's workers.dev host.",
+  "integrations.workers.association.operator_asserted": "Origin identified as GoRun Edge; its association with this Worker was asserted by the operator (custom domain).",
+  "integrations.mail.rate_limited": "Too many test messages: at most 5 per operator every 10 minutes."
 }

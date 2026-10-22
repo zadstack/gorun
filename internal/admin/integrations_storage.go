@@ -155,19 +155,28 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 		}
 	}
 	expected := ""
+	rewrite := true
 	if previous.ID != "" {
 		c.ID, expected = previous.ID, previous.Version
-		if c.Name == "" {
-			c.Name = previous.Name
+		if strings.TrimSpace(in.Name) == "" {
+			c.Name = previous.Name // a blank name never renames an existing profile
+		}
+		// Only the binding changed: keep the profile, its version and its
+		// saved check evidence instead of rewriting and clearing them.
+		if prev, err := h.connectionSecrets(previous); err == nil && prev == secrets && c.Name == previous.Name {
+			rewrite = false
+			c = previous
 		}
 	} else {
 		c.ID = db.NewID()
 	}
-	var err error
-	if c.Secret, err = h.encryptConnectionSecrets(secrets); err != nil {
-		return res, nil, err
+	if rewrite {
+		var err error
+		if c.Secret, err = h.encryptConnectionSecrets(secrets); err != nil {
+			return res, nil, err
+		}
+		c = changedConnection(c)
 	}
-	c = changedConnection(c)
 	cfg := media.S3Config{Endpoint: c.Endpoint, Region: c.Region, Bucket: c.Bucket, AccessKey: secrets.AccessKey, SecretKey: secrets.SecretKey}
 	dests := map[string]media.Destination{}
 	for p := range purposes {
@@ -178,11 +187,14 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 		}
 		dests[p] = d
 	}
-	if err := h.writeConnection(ctx, c, expected, "connections.save", false); err != nil {
-		return res, nil, err
-	}
 	res.ConnectionID, res.Destinations = c.ID, map[string]string{}
-	err = db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
+	// Profile and destinations commit together: a failure leaves neither.
+	err := db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
+		if rewrite {
+			if err := h.writeConnectionTx(ctx, tx, c, expected, "connections.save", false); err != nil {
+				return err
+			}
+		}
 		for p, d := range dests {
 			if err := media.SaveDestinationTx(ctx, tx, h.d.Settings, d); err != nil {
 				return err
