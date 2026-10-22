@@ -10,7 +10,7 @@ type themeSettingsGroup struct {
 
 func isIdentityResetKey(key string) bool {
 	switch key {
-	case idAccent, idBackground, idText, idHeading, idBody, idScheme, idRadius, idCustomCSS:
+	case idAccent, idBackground, idText, idHeading, idBody, idScheme, idRadius, idCustomCSS, idPattern, idPatternDensity, idPatternColor:
 		return true
 	}
 	return false

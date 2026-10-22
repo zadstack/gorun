@@ -5,6 +5,22 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Section library pilot (`themes/default/assets/sections.css`, shared by every catalog theme):
+  hero variants (`gp-s-hero-split`, `gp-s-hero-centered`, `gp-s-facts`), feature cards with
+  CSS-drawn icon tiles and a featured card, steps on a connector track, a `gp-s-flow` diagram,
+  a `gp-s-compare` table with a highlighted column, FAQ with plus/minus markers, a
+  `gp-s-preview` window frame (real screenshot or drawn interface) and a `gp-s-cta-panel`.
+  Everything is static CSS and data-URI SVG masks coloured from the theme tokens; motion stops
+  under `prefers-reduced-motion`; RTL and 375 px covered by `e2e/tests/sections-pilot.spec.ts`.
+- Section backgrounds as identity tokens: `identity_pattern` (dots, fine grid, geometric
+  lines, concentric circles, waves, paper, solid), `identity_pattern_density` and
+  `identity_pattern_color` under Appearance → Theme settings → Design. `/site/identity.css`
+  carries only variables; the drawings live in `sections.css` and a section's own
+  `gp-s-bg-<name>` modifier still wins. Validation record and screenshots in
+  `docs/validation/sections-pilot/`; Basecoat evaluated there and not added.
+
 ## [0.15.1] - 2026-10-22
 
 ### Fixed

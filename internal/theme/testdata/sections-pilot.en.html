@@ -1,0 +1,75 @@
+<p class="gp-example-note"><strong>Demonstration page.</strong> Every block below is built from the section library (<code>gp-s-*</code> classes) and rendered by the active theme. The copy describes GoRun itself; nothing here is a customer claim.</p>
+<section class="gp-s-hero gp-s-hero-split gp-s-bg gp-s-bg-dots gp-s-bg-fade gp-s-bleed">
+  <div class="gp-s-copy">
+    <span class="gp-s-eyebrow">Section library pilot</span>
+    <h1>Pages with structure, not only paragraphs.</h1>
+    <p class="gp-s-lead">Compose a page from heroes, feature cards, steps, comparisons and questions. The theme supplies colour, type and corners; the identity settings choose the background pattern.</p>
+    <p class="gp-s-actions"><a class="gp-s-btn" href="/blog">Read the notes</a><a class="gp-s-btn gp-s-btn-ghost" href="#gp-faq">Common questions</a></p>
+    <dl class="gp-s-facts">
+      <div><dt>Bundled themes</dt><dd>5</dd></div>
+      <div><dt>Builder blocks</dt><dd>12</dd></div>
+      <div><dt>Runtime JavaScript</dt><dd>0 kB</dd></div>
+    </dl>
+  </div>
+  <div class="gp-s-media">
+    <figure class="gp-s-preview">
+      <div class="gp-s-preview-ui"><span class="gp-s-ui-side"></span><span class="gp-s-ui-stat"></span><span class="gp-s-ui-stat"></span><span class="gp-s-ui-chart"></span><span class="gp-s-ui-rows"></span></div>
+      <figcaption>Illustrative interface, drawn in CSS. Replace it with a real screenshot when you have one.</figcaption>
+    </figure>
+  </div>
+</section>
+<section class="gp-s-band gp-s-bleed">
+  <h2>What a section can carry</h2>
+  <p>Each card has an icon tile, a title and one or two sentences. The highlighted card marks the recommended option.</p>
+  <div class="gp-s-grid">
+    <article class="gp-s-card"><span class="gp-s-icon gp-s-icon-bolt"></span><h3>Static by default</h3><p>Sections are HTML and CSS. No script loads unless a block needs one.</p><a href="/blog">How rendering works</a></article>
+    <article class="gp-s-card gp-s-card-featured"><span class="gp-s-icon gp-s-icon-layers"></span><h3>Follows the theme</h3><p>Colours, corner radius and fonts come from the theme tokens and the identity settings.</p><a href="/blog">Identity settings</a></article>
+    <article class="gp-s-card"><span class="gp-s-icon gp-s-icon-globe"></span><h3>Arabic and English</h3><p>Logical properties keep connectors, icons and tables correct in both directions.</p><a href="/blog">Language setup</a></article>
+  </div>
+</section>
+<section class="gp-s-band gp-s-bg gp-s-bg-grid gp-s-bleed">
+  <h2>From draft to published page</h2>
+  <p>Three steps, numbered on a track that stacks on phones.</p>
+  <ol class="gp-s-steps">
+    <li><h3>Write the sections</h3><p>Paste the markup into the HTML editor of any page.</p></li>
+    <li><h3>Pick a background</h3><p>Appearance → Theme settings → Design chooses the site-wide pattern.</p></li>
+    <li><h3>Publish and review</h3><p>Check the page at phone width and in the second language.</p></li>
+  </ol>
+</section>
+<section class="gp-s-band gp-s-bleed">
+  <h2>How a page is served</h2>
+  <p>A flow diagram built from a list: each item is a node, the arrows are drawn by the stylesheet.</p>
+  <ol class="gp-s-flow">
+    <li>Editor<small>Sanitized HTML</small></li>
+    <li>Theme<small>Templates and tokens</small></li>
+    <li>Identity<small>/site/identity.css</small></li>
+    <li>Visitor<small>Static page</small></li>
+  </ol>
+</section>
+<section class="gp-s-band gp-s-bleed">
+  <h2>Three ways to lay out a page</h2>
+  <p>The second column is the highlighted plan. Cells use check and cross marks with readable text behind them.</p>
+  <div class="gp-s-compare-wrap">
+    <table class="gp-s-compare">
+      <thead><tr><th>Capability</th><th>Section library</th><th>Page builder</th><th>Plain prose</th></tr></thead>
+      <tbody>
+        <tr><th>Edited as HTML</th><td class="gp-s-yes">Yes</td><td class="gp-s-no">No, structured form</td><td class="gp-s-yes">Yes</td></tr>
+        <tr><th>Follows identity tokens</th><td class="gp-s-yes">Yes</td><td class="gp-s-yes">Yes</td><td class="gp-s-yes">Yes</td></tr>
+        <tr><th>Background patterns</th><td class="gp-s-yes">Yes</td><td class="gp-s-no">Not yet</td><td class="gp-s-no">No</td></tr>
+        <tr><th>Comparison tables</th><td class="gp-s-yes">Yes</td><td class="gp-s-no">No</td><td class="gp-s-no">Unstyled</td></tr>
+        <tr><th>Needs JavaScript</th><td class="gp-s-no">No</td><td class="gp-s-no">Only hero scenes</td><td class="gp-s-no">No</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<section class="gp-s-band gp-s-faq gp-s-faq-cols gp-s-bleed" id="gp-faq">
+  <h2>Before you use this page</h2>
+  <details><summary>Is any of this real customer data?</summary><p>No. The page describes GoRun's own section library. Replace every sentence with your own before publishing.</p></details>
+  <details><summary>Where do the background patterns come from?</summary><p>From the identity settings of the active theme. A section with the gp-s-bg class uses the site default; a modifier such as gp-s-bg-grid picks its own.</p></details>
+  <details><summary>Does it work without JavaScript?</summary><p>Yes. Every block here is CSS only, including the icons, the arrows and the drawn interface.</p></details>
+  <details><summary>What about reduced motion?</summary><p>Hover lifts and the FAQ marker rotation are disabled when the visitor prefers reduced motion.</p></details>
+</section>
+<section class="gp-s-cta gp-s-cta-panel gp-s-bg gp-s-bg-waves">
+  <h2>Start from one section and grow the page.</h2>
+  <p class="gp-s-actions"><a class="gp-s-btn" href="/blog">Open the notes</a><a class="gp-s-btn gp-s-btn-ghost" href="/search?q=sections">Search the site</a></p>
+</section>

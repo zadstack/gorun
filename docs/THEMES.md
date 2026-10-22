@@ -202,6 +202,9 @@ The capability is **not inherited**: a child theme gets it only when its own `th
 | `identity_heading_font`, `identity_body_font` | `zad`, `ibm-plex-arabic`, `noto-naskh`, `noto-kufi`, `readex`, `tajawal`, `cairo`, `amiri` | `--font-heading` (h1–h4), `--font`/`--font-ui`. All support Arabic; Zad is bundled, the others load from Google Fonts. |
 | `identity_scheme` | `light`, `dark` | `dark` applies a matching dark palette (explicit colors still win) |
 | `identity_radius` | `square`, `soft`, `round` | `--radius` 0 / 8px / 16px |
+| `identity_pattern` | `none`, `dots`, `grid`, `lines`, `circles`, `waves`, `paper`, `solid` | Site-wide background for sections carrying `gp-s-bg` (see [Section library](#section-library)). The stylesheet only points `.gp-s-bg` (at (0,1,0), so a section's own `gp-s-bg-<name>` modifier still wins) at the `--gp-pat-<name>` drawing that `sections.css` defines; it never carries CSS drawings itself. |
+| `identity_pattern_density` | `sparse`, `normal`, `dense` | `--gp-pattern-scale` .72 / 1 / 1.4 (pattern tile size) |
+| `identity_pattern_color` | hex | `--gp-pattern-ink`, the pattern's color (default: the accent) |
 | `custom_css` | ≤ 20000 chars, no HTML, `@import`, `expression()` or `javascript:` | Appended after the theme's styles and kept across theme updates |
 
 Themes print them with `{{identity .}}` as the last thing before `</head>` (after their stylesheets and `head-extra`). The output is optional Google Fonts `<link>`s plus a cached `<link rel="stylesheet" href="/site/identity.css?v=…" data-gorun-identity>` whose tokens use `:root:root[data-theme]`, which outranks the catalog themes' `:where(html[data-theme="…"])` tokens without `!important`. Values are validated on save and again at render, so a hand-edited setting cannot inject markup. Use identity settings and custom CSS instead of overriding `parts.head*.html` to restyle a site.
@@ -225,25 +228,37 @@ The content sanitizer keeps only `class` values that start with `gp-` (plus edit
 
 | Class | Use |
 |---|---|
-| `gp-s-hero` with `gp-s-eyebrow`, `h1`, `gp-s-lead`, `gp-s-actions` | Page opening |
+| `gp-s-hero` with `gp-s-eyebrow`, `h1`, `gp-s-lead`, `gp-s-actions` | Page opening. Variants: `gp-s-hero-split` (two children: copy, then `gp-s-media`), `gp-s-hero-centered` (`gp-s-media` below the copy). `gp-s-facts` (`dl` of `div > dt + dd`) lists key figures. |
 | `gp-s-btn`, `gp-s-btn gp-s-btn-ghost` | Primary / secondary links |
 | `gp-s-band` | A titled section (`h2`, `p`, then any block) |
-| `gp-s-grid` of `gp-s-card` (`h3`, `p`, trailing `a`), `gp-s-price` | Services, features, plans |
-| `gp-s-steps` (`ol` of `li`) | Numbered process |
+| `gp-s-grid` of `gp-s-card` (`h3`, `p`, trailing `a`), `gp-s-price` | Services, features, plans. `gp-s-card-featured` marks the recommended card; an empty `<span class="gp-s-icon gp-s-icon-bolt">` (also `shield`, `chart`, `globe`, `clock`, `check`, `layers`) draws an icon tile. |
+| `gp-s-steps` (`ol` of `li`) | Numbered process on a connector track (stacks on phones) |
+| `gp-s-flow` (`ol` of `li`, `small` for a note) | Node → node → node diagram; arrows are drawn by the stylesheet and flip in RTL |
 | `gp-s-checks` (`ul`) | Checklist |
-| `gp-s-faq` with `details`/`summary` | Questions |
-| `gp-s-cta` | Closing call to action |
+| `gp-s-compare-wrap` > `table.gp-s-compare` | Comparison table: column 2 is highlighted (`gp-s-compare-plain` turns it off); `td.gp-s-yes` / `td.gp-s-no` draw check and cross marks before the cell text (`gp-s-sr` hides text visually) |
+| `gp-s-faq` with `details`/`summary` | Questions with a plus/minus marker; `gp-s-faq-cols` lays them out in two columns |
+| `figure.gp-s-preview` | Product preview: a window frame around an `img` (plus optional `figcaption`). `div.gp-s-preview-ui` with empty `span`s `gp-s-ui-side`, `gp-s-ui-stat`, `gp-s-ui-chart`, `gp-s-ui-rows` draws a clearly illustrative interface when no screenshot exists. |
+| `gp-s-cta`, `gp-s-cta gp-s-cta-panel` | Closing call to action (plain, or in a bordered panel) |
+| `gp-s-bg` (+ `gp-s-bg-dots`, `-grid`, `-lines`, `-circles`, `-waves`, `-paper`, `-solid`, `-none`; `gp-s-bg-fade`, `gp-s-bg-sparse`, `gp-s-bg-dense`) | Background pattern behind any section. `gp-s-bg` alone takes the site default from `identity_pattern`; a modifier picks its own. Color and density follow `identity_pattern_color` / `identity_pattern_density`. |
+| `gp-s-bleed` | Lets a section span the viewport inside a page body (content stays on the site width) |
 
 ```html
-<section class="gp-s-hero"><span class="gp-s-eyebrow">Services</span><h1>What you do, for whom.</h1>
-  <p class="gp-s-lead">One or two sentences on what a customer gets.</p>
-  <p class="gp-s-actions"><a class="gp-s-btn" href="/contact">Contact us</a></p></section>
+<section class="gp-s-hero gp-s-hero-split gp-s-bg gp-s-bg-dots gp-s-bleed">
+  <div><span class="gp-s-eyebrow">Services</span><h1>What you do, for whom.</h1>
+    <p class="gp-s-lead">One or two sentences on what a customer gets.</p>
+    <p class="gp-s-actions"><a class="gp-s-btn" href="/contact">Contact us</a></p></div>
+  <div class="gp-s-media"><figure class="gp-s-preview"><img src="/media/app.png" alt="The dashboard"></figure></div></section>
 <section class="gp-s-band"><h2>What we offer</h2><div class="gp-s-grid">
-  <article class="gp-s-card"><h3>Service</h3><p>What it includes.</p><p class="gp-s-price">49 AED</p><a href="/shop">Details</a></article>
+  <article class="gp-s-card"><span class="gp-s-icon gp-s-icon-bolt"></span><h3>Service</h3><p>What it includes.</p><p class="gp-s-price">49 AED</p><a href="/shop">Details</a></article>
 </div></section>
+<div class="gp-s-compare-wrap"><table class="gp-s-compare">
+  <thead><tr><th>Capability</th><th>Plan A</th><th>Plan B</th></tr></thead>
+  <tbody><tr><th>Support</th><td class="gp-s-yes">Yes</td><td class="gp-s-no">No</td></tr></tbody></table></div>
 ```
 
-The starter content's About page (`gorun starter`) is built from these blocks as an editable example.
+Every drawing in the library is CSS (gradients, or small data-URI SVGs used as masks and filled from the tokens): the sanitizer strips inline `<svg>`, `style` and `aria-*`, so decorative spans stay empty. Hover lifts and the FAQ marker rotation stop under `prefers-reduced-motion`. The default theme loads the Tailwind preflight after `sections.css`; a block of `:root .gp-s-…` rules at the end of the file restores the borders, margins and `summary` display the preflight resets.
+
+The starter content's About page (`gorun starter`) is built from these blocks as an editable example; `internal/theme/testdata/sections-pilot.{en,ar}.html` is the full demonstration page the Go tests and `e2e/tests/sections-pilot.spec.ts` render in the default and business themes.
 
 ## Reparenting a child theme
 
