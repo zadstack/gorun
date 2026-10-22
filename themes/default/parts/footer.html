@@ -1,7 +1,6 @@
 {{/* Closes the document opened by parts/header.html. */}}
 </main>
-{{$shellFooter := setting (printf "theme.%s.footer_style" .Theme.Slug)}}
-{{if not (or (eq $shellFooter "signature") (eq $shellFooter "columns") (eq $shellFooter "minimal"))}}{{$shellFooter = "native"}}{{end}}
+{{$shellFooter := variant "footer" .}}
 {{$footerMenu := menu "footer"}}{{if not $footerMenu}}{{$footerMenu = menu "primary"}}{{end}}
 {{if eq .Theme.Slug "default"}}
 {{/* Closing band is on home via default-home; other pages get a compact band. */}}

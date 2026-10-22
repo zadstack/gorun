@@ -1,0 +1,29 @@
+/* Design variants shared by the catalog themes. A template prints the
+   resolved value with {{variant "single" .}} / {{variant "archive" .}} as a
+   data attribute; these rules change measure, alignment and list shape
+   only, so every theme keeps its own type, colour and chrome. Selectors
+   are (0,2,1): above the themes' :where() tokens and their own component
+   rules, so a declared variant always takes effect. Custom CSS that wants
+   to restyle a variant targets the same attribute, e.g.
+   [data-variant-single="wide"] .prose-gp { max-width: 70ch }. */
+html[data-theme] [data-variant-single="wide"] { max-width: var(--gp-width, 1280px); }
+html[data-theme] [data-variant-single="wide"] .prose-gp { max-width: none; }
+/* business sets a width (not a max-width) on its article; widen it to the site width while keeping its gutters */
+html[data-theme="business"] .sb-article[data-variant-single="wide"] { width: min(calc(100% - 4rem), var(--gp-width, 1280px)); }
+html[data-theme] [data-variant-single="wide"] > figure:first-of-type { margin-inline: 0; width: 100%; max-width: 100%; }
+html[data-theme] [data-variant-single="wide"] > figure:first-of-type img { width: 100%; max-height: 70vh; object-fit: cover; }
+html[data-theme] [data-variant-single="centered"] > header { text-align: center; margin-inline: auto; max-width: 48rem; }
+html[data-theme] [data-variant-single="centered"] > header :is(.gr-list-meta, time, .ed-eyebrow, .sb-eyebrow, .studio-kicker) { justify-content: center; }
+html[data-theme] [data-variant-single="centered"] .prose-gp { margin-inline: auto; }
+
+html[data-theme] .gr-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr)); gap: var(--space-5, 24px); align-items: stretch; }
+html[data-theme] .gr-card-grid > * { min-width: 0; }
+html[data-theme] .gr-list-compact { border-top: 1px solid var(--line); }
+html[data-theme] .gr-list-row-compact { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2, 8px) var(--space-4, 16px); align-items: baseline; padding-block: var(--space-2, 8px); border-bottom: 1px solid var(--line); }
+html[data-theme] .gr-list-row-compact .gr-list-title { margin: 0; font-size: 1rem; line-height: 1.4; min-width: 0; }
+html[data-theme] .gr-list-row-compact .title { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; text-decoration: none; color: var(--head, var(--ink)); overflow-wrap: anywhere; }
+html[data-theme] .gr-list-row-compact .title:hover, html[data-theme] .gr-list-row-compact .title:focus-visible { text-decoration: underline; text-underline-offset: .25em; }
+html[data-theme] .gr-list-row-compact .gr-list-meta { color: var(--muted); font-size: .8rem; }
+@media (forced-colors: active) {
+  html[data-theme] .gr-list-row-compact { border-bottom-color: CanvasText; }
+}

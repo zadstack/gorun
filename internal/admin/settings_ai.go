@@ -20,6 +20,8 @@ const (
 
 	exampleAIBaseURL      = "https://api.openai.com/v1"
 	defaultAnthropicModel = "claude-sonnet-5-5"
+	// DefaultAnthropicModel is defaultAnthropicModel for other packages (pricing tests).
+	DefaultAnthropicModel = defaultAnthropicModel
 	maxAIBaseURLLen       = 300
 	aiSettingAPIKey       = "ai.api_key" // encrypted (mailer.EncryptSecret), write-only
 )

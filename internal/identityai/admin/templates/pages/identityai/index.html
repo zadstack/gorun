@@ -1,0 +1,66 @@
+{{/* Data: identityai.pageView — optional AI identity suggestions (text only, drafts only). */}}
+{{define "title"}}{{t "identityai.title"}}{{end}}
+{{define "content"}}
+<div class="max-w-3xl space-y-6" data-identityai>
+<div><h1 class="text-[22px] font-bold">{{t "identityai.title"}}</h1>
+<p class="text-muted mt-1">{{t "identityai.intro"}}</p>
+<p class="border border-line rounded p-3 mt-3 text-sm" role="note" data-identityai-scope>{{t "identityai.scope"}}</p></div>
+{{with .Error}}<p role="alert" data-identityai-error tabindex="-1" class="border border-red text-red p-3">{{.}}</p>{{end}}
+{{with .Result}}
+<section class="border border-line rounded p-4 space-y-3" aria-labelledby="identityai-result" data-identityai-result>
+<h2 id="identityai-result" class="font-bold">{{t "identityai.result"}}</h2>
+<p class="text-sm">{{t "identityai.result_help"}} <a class="underline" href="{{$.IdentityURL}}">{{t "identityai.open_identity"}}</a></p>
+<div class="flex flex-wrap gap-3 items-center">{{with .Accent}}<span class="inline-flex items-center gap-2 text-sm"><i class="inline-block w-6 h-6 rounded border border-line" style="background-color:{{.}}" aria-hidden="true"></i><code>{{.}}</code></span>{{end}}{{with .Background}}<span class="inline-flex items-center gap-2 text-sm"><i class="inline-block w-6 h-6 rounded border border-line" style="background-color:{{.}}" aria-hidden="true"></i><code>{{.}}</code></span>{{end}}{{with .Text}}<span class="inline-flex items-center gap-2 text-sm"><i class="inline-block w-6 h-6 rounded border border-line" style="background-color:{{.}}" aria-hidden="true"></i><code>{{.}}</code></span>{{end}}{{with .ContrastRatio}}<span class="text-sm text-muted">{{t "identityai.contrast"}}: {{.}}</span>{{end}}</div>
+<dl class="grid gap-2 sm:grid-cols-2 text-sm">
+{{with .HeadingFontLabel}}<div><dt class="text-muted">{{t "identityai.heading_font"}}</dt><dd>{{.}}</dd></div>{{end}}
+{{with .BodyFontLabel}}<div><dt class="text-muted">{{t "identityai.body_font"}}</dt><dd>{{.}}</dd></div>{{end}}
+{{with .LatinFontLabel}}<div><dt class="text-muted">{{t "identityai.latin_font"}}</dt><dd>{{.}}</dd></div>{{end}}
+{{with .Radius}}<div><dt class="text-muted">{{t "identityai.radius"}}</dt><dd>{{.}}</dd></div>{{end}}
+{{with .Spacing}}<div><dt class="text-muted">{{t "identityai.spacing"}}</dt><dd>{{.}}</dd></div>{{end}}
+{{with .TaglineAR}}<div><dt class="text-muted">{{t "identityai.tagline_ar"}}{{if not $.Result.SavedAR}} · {{t "identityai.not_saved"}}{{end}}</dt><dd lang="ar" dir="rtl">{{.}}</dd></div>{{end}}
+{{with .TaglineEN}}<div><dt class="text-muted">{{t "identityai.tagline_en"}}{{if not $.Result.SavedEN}} · {{t "identityai.not_saved"}}{{end}}</dt><dd lang="en" dir="ltr">{{.}}</dd></div>{{end}}
+</dl>
+{{with .LogoBrief}}<div class="text-sm"><h3 class="font-medium">{{t "identityai.logo_brief"}} · {{t "identityai.not_saved"}}</h3><p class="text-muted text-xs mb-1">{{t "identityai.logo_brief_help"}}</p><p dir="auto">{{.}}</p></div>{{end}}
+</section>
+{{end}}
+{{with .Review}}
+<section class="border border-line rounded p-4 space-y-3" aria-labelledby="identityai-review" data-identityai-review>
+<h2 id="identityai-review" class="font-bold">{{t "identityai.review"}}</h2>
+<dl class="grid gap-2 sm:grid-cols-3 text-sm">
+<div><dt class="text-muted">{{t "identityai.provider"}}</dt><dd>{{if .Connection.Provider}}{{.Connection.Provider}}{{else}}{{t "identityai.writing_settings"}}{{end}}</dd></div>
+<div><dt class="text-muted">{{t "identityai.model"}}</dt><dd><code>{{.Connection.Model}}</code></dd></div>
+<div><dt class="text-muted">{{t "identityai.host"}}</dt><dd><code>{{.Connection.Host}}</code></dd></div>
+{{if .Brief.Connection}}<div><dt class="text-muted">{{t "identityai.test_status"}}</dt><dd>{{if .Connection.TestStatus}}{{.Connection.TestStatus}}{{else}}{{t "identityai.untested"}}{{end}}</dd></div>{{end}}
+</dl>
+<div><h3 class="text-sm font-medium">{{t "identityai.estimated_cost"}}</h3>
+{{if .Estimate.Known}}<p class="text-sm"><strong data-identityai-cost>{{.Estimate.Text}}</strong> · {{t "identityai.cost_detail" .Estimate.InputTokens .Estimate.OutputTokens .Estimate.PerMillionInput .Estimate.PerMillionOutput .Estimate.AsOf}} <a class="underline" href="{{.Estimate.Source}}" target="_blank" rel="noopener">{{t "identityai.cost_source"}}</a></p>{{else}}<p class="text-sm" data-identityai-cost>{{t "identityai.cost_unknown" .Estimate.AsOf}}</p>{{end}}</div>
+<details open><summary class="text-sm font-medium">{{t "identityai.prompt"}} <code>{{.Hash}}</code></summary>
+<pre class="text-xs whitespace-pre-wrap border border-line rounded p-2 mt-2" dir="ltr">{{.System}}</pre>
+<pre class="text-xs whitespace-pre-wrap border border-line rounded p-2 mt-2" dir="auto">{{.Input}}</pre></details>
+<form method="post" action="/admin/appearance/identity/ai" class="space-y-3">
+<input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="review" value="{{.Token}}">
+<input type="hidden" name="connection" value="{{.Brief.Connection}}"><input type="hidden" name="sector" value="{{.Brief.Sector}}"><input type="hidden" name="audience" value="{{.Brief.Audience}}"><input type="hidden" name="tone" value="{{.Brief.Tone}}"><input type="hidden" name="keep" value="{{.Brief.Keep}}"><input type="hidden" name="languages" value="{{.Brief.Languages}}">
+<label class="flex items-start gap-2 text-sm"><input type="checkbox" name="approved" value="1" class="mt-1" required><span>{{t "identityai.approve"}}</span></label>
+<button type="submit" name="action" value="generate" class="h-10 px-4 rounded bg-green text-white font-medium">{{t "identityai.generate"}}</button>
+</form>
+</section>
+{{end}}
+<form method="post" action="/admin/appearance/identity/ai" class="border border-line rounded p-4 space-y-4" data-identityai-brief>
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<h2 class="font-bold">{{t "identityai.brief"}}</h2>
+<label class="block text-sm">{{t "identityai.connection"}}<select name="connection" class="block w-full h-9 rounded border border-line bg-panel px-3 mt-1"><option value="" {{if eq .Brief.Connection ""}}selected{{end}}>{{t "identityai.writing_settings"}}</option>{{range .Connections}}<option value="{{.ID}}" {{if eq $.Brief.Connection .ID}}selected{{end}}>{{.Name}} · {{.Provider}} · {{.Model}}{{if .Unsupported}} · {{t "identityai.model_unsupported"}}{{end}} · {{if .TestStatus}}{{.TestStatus}}{{else}}{{t "identityai.untested"}}{{end}}</option>{{end}}</select><span class="block text-xs text-muted mt-1">{{t "identityai.connection_help"}}</span></label>
+<div class="grid gap-4 sm:grid-cols-2">
+<label class="block text-sm">{{t "identityai.sector"}}<input name="sector" maxlength="300" value="{{.Brief.Sector}}" dir="auto" class="block w-full h-9 rounded border border-line bg-panel px-3 mt-1"></label>
+<label class="block text-sm">{{t "identityai.audience"}}<input name="audience" maxlength="300" value="{{.Brief.Audience}}" dir="auto" class="block w-full h-9 rounded border border-line bg-panel px-3 mt-1"></label>
+<label class="block text-sm">{{t "identityai.tone"}}<input name="tone" maxlength="300" value="{{.Brief.Tone}}" dir="auto" class="block w-full h-9 rounded border border-line bg-panel px-3 mt-1"></label>
+<label class="block text-sm">{{t "identityai.keep"}}<input name="keep" maxlength="300" value="{{.Brief.Keep}}" dir="auto" class="block w-full h-9 rounded border border-line bg-panel px-3 mt-1"></label>
+</div>
+<fieldset class="text-sm"><legend class="mb-1">{{t "identityai.languages"}}</legend>
+<label class="me-4"><input type="radio" name="languages" value="both" {{if ne .Brief.Languages "ar"}}{{if ne .Brief.Languages "en"}}checked{{end}}{{end}}> {{t "identityai.languages_both"}}</label>
+<label class="me-4"><input type="radio" name="languages" value="ar" {{if eq .Brief.Languages "ar"}}checked{{end}}> {{t "identityai.languages_ar"}}</label>
+<label><input type="radio" name="languages" value="en" {{if eq .Brief.Languages "en"}}checked{{end}}> {{t "identityai.languages_en"}}</label></fieldset>
+<p class="text-xs text-muted">{{t "identityai.preview_help"}}</p>
+<button type="submit" name="action" value="preview" class="h-10 px-4 rounded border border-line bg-panel font-medium">{{t "identityai.preview"}}</button>
+</form>
+</div>
+{{end}}

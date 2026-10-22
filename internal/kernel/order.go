@@ -8,7 +8,7 @@ import "slices"
 // and the kernel infrastructure (db, settings, i18n, audit, jobs) are
 // importable by every module but never import domain modules. A downstream
 // build adds its own modules with ExtendBootOrder.
-var BootOrder = []string{"db", "settings", "i18n", "auth", "audit", "jobs", "content", "taxonomy", "media", "menus", "redirects", "seo", "theme", "pattern", "builder", "site", "api", "admin", "webhooks", "commerce", "saas", "membership", "launch", "workagents", "wpmigrate", "mcp", "ext"}
+var BootOrder = []string{"db", "settings", "i18n", "auth", "audit", "jobs", "content", "taxonomy", "media", "menus", "redirects", "seo", "theme", "pattern", "builder", "site", "api", "admin", "webhooks", "commerce", "saas", "membership", "launch", "workagents", "identityai", "wpmigrate", "mcp", "ext"}
 
 // ExtendBootOrder inserts names into BootOrder right after the module named
 // after (at the end when after is empty or unknown), keeping their order.

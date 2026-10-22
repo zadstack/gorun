@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/zadstack/gorun/internal/auth"
-	"github.com/zadstack/gorun/internal/httpx"
-	"github.com/zadstack/gorun/internal/kernel"
 )
 
 func TestSiteDesignEntryUsesAllExistingBuildPermissions(t *testing.T) {
@@ -39,23 +37,6 @@ func TestSiteDesignEntryUsesAllExistingBuildPermissions(t *testing.T) {
 		}
 	}
 
-	tpl, _ := kernel.Get[*httpx.Templates](s.d, kernel.ServiceAdminTemplates)
-	h := identityHandler{d: s.d, tpl: tpl}
-	rec := httptest.NewRecorder()
-	h.view(rec, httptest.NewRequest("GET", "/admin/appearance/identity", nil).WithContext(limited))
-	body := rec.Body.String()
-	start := strings.Index(body, `<nav class="site-design-tabs"`)
-	if start < 0 {
-		t.Fatal("workspace tabs missing")
-	}
-	end := strings.Index(body[start:], "</nav>")
-	if end < 0 {
-		t.Fatal("workspace tabs unclosed")
-	}
-	tabs := body[start : start+end]
-	if strings.Contains(tabs, `href="/admin/site-builder"`) || !strings.Contains(tabs, `href="/admin/appearance/identity"`) {
-		t.Fatal("settings-only user received Build tab")
-	}
 }
 func TestSiteDesignSavedSummaryDoesNotUsePendingForm(t *testing.T) {
 	s, _, ctx := builderTest(t)

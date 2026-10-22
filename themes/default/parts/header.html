@@ -1,8 +1,7 @@
 {{if eq .Theme.Slug "default"}}
 {{/* Opens the document; every template calls {{part "header" .}} first. */}}
 {{part "head" .}}
-{{$shellHeader := setting (printf "theme.%s.header_style" .Theme.Slug)}}
-{{if not (or (eq $shellHeader "rail") (eq $shellHeader "framed") (eq $shellHeader "editorial"))}}{{$shellHeader = "native"}}{{end}}
+{{$shellHeader := variant "header" .}}
 {{part "shell" .}}
 <link rel="stylesheet" href="{{asset "default-layout.css"}}">
 {{$path := ""}}{{with .Request}}{{$path = .URL.Path}}{{end}}
