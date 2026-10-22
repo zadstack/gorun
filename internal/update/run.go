@@ -306,11 +306,26 @@ func (s *Service) phaseCompatibility(ctx context.Context, op *Operation) phaseOu
 	default:
 		data["comparison"] = "upgrade"
 	}
+	var applied []string
 	if s.cfg.Schema != nil {
-		if applied, err := s.cfg.Schema(ctx); err == nil {
+		if list, err := s.cfg.Schema(ctx); err == nil {
+			applied = list
 			data["migrations_before"] = applied
 		} else {
 			data["migrations_before"] = nil
+		}
+	}
+	// Preflight against trusted release data when the source publishes it:
+	// the target must know every applied migration (data never ahead of the
+	// new binary) and must support the active theme. Absent data is "unknown".
+	data["release_data"] = "unknown"
+	if a, err := s.cfg.Source.Resolve(ctx, op.RequestedVersion); err == nil {
+		if a.Migrations != nil {
+			data["release_data"] = "checked"
+			if unknown := diff(applied, a.Migrations); len(unknown) > 0 {
+				data["migrations_unknown_to_target"] = unknown
+				return fail("the data holds migrations the target release does not know", "The target cannot run this data safely. Choose a release that includes these migrations or repair forward.", false, data)
+			}
 		}
 	}
 	if s.cfg.Compatibility == nil {
@@ -326,6 +341,13 @@ func (s *Service) phaseCompatibility(ctx context.Context, op *Operation) phaseOu
 	}
 	if !rep.OK {
 		return fail(rep.Reason, rep.Remediation, rep.Retryable, data)
+	}
+	if a, err := s.cfg.Source.Resolve(ctx, op.RequestedVersion); err == nil && a.Themes != nil {
+		data["release_data"] = "checked"
+		if theme, _ := data["theme"].(string); theme != "" && !slices.Contains(a.Themes, theme) {
+			data["theme_supported_by_target"] = false
+			return fail("the active theme is not supported by the target release", "Switch to a theme the release ships or supports before updating.", false, data)
+		}
 	}
 	return pass(data)
 }
@@ -345,6 +367,16 @@ func (s *Service) phaseVerification(ctx context.Context, op *Operation) phaseOut
 	if op.ExpectedDigest != "" && a.Digest != op.ExpectedDigest {
 		data["expected_digest"] = op.ExpectedDigest
 		return fail("artifact digest does not match the expected digest", "Confirm the release source and the digest you expect; do not activate an unverified artifact.", false, data)
+	}
+	if v, ok := s.cfg.Adapter.(TargetVerifier); ok {
+		if err := v.CanActivate(ctx, a); err != nil {
+			data["target_pinnable"] = false
+			if errors.Is(err, ErrUnpinnable) {
+				return fail("the deployment adapter cannot guarantee this artifact is what gets activated: "+short(err.Error()), "Point the resource at a Docker image (so its tag can be pinned) or activate the artifact manually; a branch deployment is not a version-directed update.", false, data)
+			}
+			return fail("the deployment adapter could not be consulted: "+short(err.Error()), "Check the deployment integration, then start a new update. No backup was taken and nothing was deployed.", true, data)
+		}
+		data["target_pinnable"] = true
 	}
 	raw, _ := json.Marshal(a)
 	previous := "null"

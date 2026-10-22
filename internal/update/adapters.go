@@ -20,6 +20,10 @@ type Artifact struct {
 	ID      string `json:"id" doc:"Immutable artifact identity, e.g. an image reference or archive name"`
 	Digest  string `json:"digest" doc:"sha256:… from the release source; empty when the source publishes none"`
 	Source  string `json:"source"`
+	// Migrations and Themes are compatibility data the release source may
+	// publish; nil means the source did not say.
+	Migrations []string `json:"migrations,omitempty"`
+	Themes     []string `json:"themes,omitempty"`
 }
 
 // Source resolves release identities and digests from an operator-trusted
@@ -61,6 +65,18 @@ type Adapter interface {
 
 // ErrNotConfigured means no trusted release source is configured.
 var ErrNotConfigured = errors.New("update: release source not configured")
+
+// ErrUnpinnable means the adapter cannot guarantee that activation targets
+// the requested artifact (for example a Coolify resource that builds from a
+// git branch). The lifecycle refuses such an update instead of presenting
+// a branch deployment as a version-directed update.
+var ErrUnpinnable = errors.New("update: adapter cannot pin the requested artifact")
+
+// TargetVerifier is implemented by adapters that can say, before any
+// backup or deployment, whether they can activate exactly artifact.
+type TargetVerifier interface {
+	CanActivate(ctx context.Context, artifact Artifact) error
+}
 
 // --- Manual adapter --------------------------------------------------------
 
@@ -143,9 +159,67 @@ func (c *CoolifyAdapter) do(ctx context.Context, method, path string, body any, 
 	return resp.StatusCode, nil
 }
 
-// Activate posts the deploy request and requires the provider to echo the
-// configured resource with a deployment id; anything else is not accepted.
-func (c *CoolifyAdapter) Activate(ctx context.Context, _ Artifact) (string, error) {
+type coolifyApplication struct {
+	BuildPack string `json:"build_pack"`
+	ImageName string `json:"docker_registry_image_name"`
+	ImageTag  string `json:"docker_registry_image_tag"`
+}
+
+func (c *CoolifyAdapter) application(ctx context.Context) (coolifyApplication, error) {
+	var app coolifyApplication
+	_, err := c.do(ctx, http.MethodGet, "/api/v1/applications/"+c.resource, nil, &app)
+	return app, err
+}
+
+// splitImage splits "registry/name:tag" into name and tag.
+func splitImage(id string) (string, string, bool) {
+	i := strings.LastIndex(id, ":")
+	if i <= 0 || i == len(id)-1 || strings.Contains(id[i+1:], "/") {
+		return "", "", false
+	}
+	return id[:i], id[i+1:], true
+}
+
+// CanActivate reports whether the resource is a Docker image application,
+// the only Coolify build pack whose target can be pinned to an artifact.
+// Resources that build from a repository deploy whatever the branch holds,
+// so they are refused rather than reported as a version-directed update.
+func (c *CoolifyAdapter) CanActivate(ctx context.Context, a Artifact) error {
+	app, err := c.application(ctx)
+	if err != nil {
+		return err
+	}
+	if !strings.EqualFold(app.BuildPack, "dockerimage") {
+		return fmt.Errorf("%w: resource build pack %q deploys its configured source; only a Docker image resource can be pinned", ErrUnpinnable, app.BuildPack)
+	}
+	name, _, ok := splitImage(a.ID)
+	if !ok {
+		return fmt.Errorf("%w: artifact id %q is not an image reference", ErrUnpinnable, a.ID)
+	}
+	if app.ImageName != "" && app.ImageName != name {
+		return fmt.Errorf("%w: resource image %q differs from the release artifact image", ErrUnpinnable, app.ImageName)
+	}
+	return nil
+}
+
+// Activate pins the resource's image tag to the artifact (Docker image
+// resources only), then posts the deploy request and requires the provider
+// to echo the configured resource with a deployment id.
+func (c *CoolifyAdapter) Activate(ctx context.Context, a Artifact) (string, error) {
+	if err := c.CanActivate(ctx, a); err != nil {
+		return "", err
+	}
+	name, tag, _ := splitImage(a.ID)
+	if _, err := c.do(ctx, http.MethodPatch, "/api/v1/applications/"+c.resource, map[string]string{"docker_registry_image_name": name, "docker_registry_image_tag": tag}, nil); err != nil {
+		return "", fmt.Errorf("pinning the image tag failed: %w", err)
+	}
+	app, err := c.application(ctx)
+	if err != nil {
+		return "", err
+	}
+	if app.ImageName != name || app.ImageTag != tag {
+		return "", errors.New("provider did not record the pinned image tag; nothing was deployed")
+	}
 	var body struct {
 		Deployments []struct {
 			Resource string `json:"resource_uuid"`
@@ -226,6 +300,11 @@ type releaseDoc struct {
 			ID     string `json:"id"`
 			Digest string `json:"digest"`
 		} `json:"artifacts"`
+		// Optional compatibility data published with the release: every
+		// migration ("module/NNNN_name.sql") the release knows and the theme
+		// slugs it ships or supports. Absent lists mean "unknown".
+		Migrations []string `json:"migrations"`
+		Themes     []string `json:"themes"`
 	} `json:"releases"`
 }
 
@@ -274,7 +353,7 @@ func (r *ReleaseIndex) Resolve(ctx context.Context, ver string) (Artifact, error
 				if chosen != nil && r.artifact == "" {
 					return Artifact{}, errors.New("release lists several artifacts; configure which one to use")
 				}
-				c := Artifact{Version: want, ID: a.ID, Digest: strings.ToLower(strings.TrimSpace(a.Digest)), Source: r.Name()}
+				c := Artifact{Version: want, ID: a.ID, Digest: strings.ToLower(strings.TrimSpace(a.Digest)), Source: r.Name(), Migrations: rel.Migrations, Themes: rel.Themes}
 				chosen = &c
 				if r.artifact != "" && a.ID == r.artifact {
 					break
