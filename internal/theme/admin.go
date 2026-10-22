@@ -51,6 +51,7 @@ func registerAdmin(d *kernel.Deps, s *service) {
 	r.Get(adminTemplatesPath, a.templates)
 	r.Get(adminEditPath, a.edit)
 	r.Post(adminEditPath, a.save)
+	registerIdentityAdmin(d, a)
 }
 
 type themeCard struct {

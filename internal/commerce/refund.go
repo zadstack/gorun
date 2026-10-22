@@ -18,7 +18,7 @@ func (s *service) RefundOrder(ctx context.Context, orderID string) error {
 	if o.StripePaymentIntent == "" || o.Status == OrderRefunded || o.Status == OrderPending || o.Status == OrderCancelled {
 		return &ValidationError{Fields: map[string]string{"order": "commerce.error.refund_failed"}}
 	}
-	key := s.stripeSecretKey(ctx)
+	key := s.stripeKeyForOrder(ctx, o)
 	if key == "" {
 		return ErrStripeNotConfigured
 	}
