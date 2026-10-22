@@ -100,7 +100,7 @@ func TestSettingsSchemaAddsIdentityOnce(t *testing.T) {
 	if n != 1 {
 		t.Fatalf("identity_accent appears %d times", n)
 	}
-	for _, k := range []string{idBackground, idText, idHeading, idBody, idScheme, idRadius, idCustomCSS} {
+	for _, k := range []string{idBackground, idText, idHeading, idBody, idLatinFont, idScheme, idRadius, idSpacing, idCustomCSS} {
 		found := false
 		for _, f := range schema {
 			found = found || f.Key == k
@@ -139,5 +139,46 @@ func TestIdentityDerivesReadableOnAccent(t *testing.T) {
 	}
 	if css := string(identityCSS(identityGetter(map[string]string{idScheme: "dark"}), "n")); strings.Contains(css, "--on-accent") {
 		t.Error("without an accent the theme's own on-accent color stays")
+	}
+}
+
+func TestIdentityLatinFontScopedToLatinContent(t *testing.T) {
+	parts := buildIdentity(identityGetter(map[string]string{idLatinFont: "inter"}))
+	for _, want := range []string{"--font-latin:Inter,", `:root:root[data-theme] :where(body,h1,h2,h3,h4,p,li,a,button,input):lang(en){font-family:var(--font-latin)}`} {
+		if !strings.Contains(parts.CSS, want) {
+			t.Errorf("latin font CSS missing %q in:\n%s", want, parts.CSS)
+		}
+	}
+	if len(parts.Google) != 1 || parts.Google[0] != "Inter:wght@400;500;600;700" {
+		t.Errorf("google fonts = %v", parts.Google)
+	}
+	if got := buildIdentity(identityGetter(map[string]string{idLatinFont: "bogus"})); got.CSS != "" || len(got.Google) != 0 {
+		t.Errorf("unknown latin font must add nothing, got %+v", got)
+	}
+}
+
+func TestIdentitySpacingScalesSpaceTokens(t *testing.T) {
+	css := IdentityStylesheet(identityGetter(map[string]string{idSpacing: "relaxed"}))
+	for _, want := range []string{"--space-1:4.8px;", "--space-4:19.2px;", "--space-7:57.6px;"} {
+		if !strings.Contains(css, want) {
+			t.Errorf("spacing CSS missing %q in:\n%s", want, css)
+		}
+	}
+	for _, v := range []string{"normal", "bogus"} {
+		if css := IdentityStylesheet(identityGetter(map[string]string{idSpacing: v})); strings.Contains(css, "--space-") {
+			t.Errorf("spacing %q must not emit space tokens: %s", v, css)
+		}
+	}
+}
+
+func TestValidateIdentityRejectsUnknownOptions(t *testing.T) {
+	for _, tc := range []struct{ key, value string }{{idHeading, "comic"}, {idBody, "comic"}, {idLatinFont, "zad"}, {idScheme, "sepia"}, {idRadius, "pill"}, {idSpacing, "huge"}} {
+		errs := validateIdentity(map[string]any{tc.key: tc.value})
+		if errs[tc.key] != "theme.identity.error_option" {
+			t.Errorf("%s=%q: errs = %v", tc.key, tc.value, errs)
+		}
+	}
+	if errs := validateIdentity(map[string]any{idHeading: "readex", idLatinFont: "inter", idScheme: "dark", idRadius: "soft", idSpacing: "compact", idBody: ""}); len(errs) != 0 {
+		t.Errorf("valid options rejected: %v", errs)
 	}
 }

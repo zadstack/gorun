@@ -1,7 +1,7 @@
 {{/* A single item of a non-page content type (e.g. a post). */}}
 {{part "header" .}}
 {{with .Content}}
-<article class="reading-article mx-auto">
+<article class="reading-article mx-auto" data-variant-single="{{variant "single" $}}">
   <header class="mb-6">
     <h1>{{.Title}}</h1>
     {{with .PublishedAt}}<p class="mt-2 text-sm text-muted"><time datetime="{{.}}"><bdi>{{date .}}</bdi></time></p>{{end}}

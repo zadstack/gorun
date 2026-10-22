@@ -89,12 +89,18 @@ test.describe.serial('commerce with the fake billing server', () => {
       await expect(page.locator('[role="alert"]')).toBeVisible();
       expect(db().prepare('SELECT count(*) AS n FROM orders').get()!.n).toBe(0); // nothing created
 
-      // a dummy test key: the order and customer are created by the app, then
-      // Stripe refuses the key and the app cancels the order
+      // a dummy test key in the test slot (the live slot refuses sk_test_…),
+      // with the store switched to test mode and the test webhook secret set
+      // to the suite's secret so /webhooks/stripe keeps verifying: the order
+      // and customer are created by the app, then Stripe refuses the key and
+      // the app cancels the order
       await page.goto('/admin/commerce/settings');
-      await page.fill('#c-stripe', 'sk_test_e2e_dummy_key_not_valid');
+      await page.selectOption('#c-mode', 'test');
+      await page.fill('#c-test-key', 'sk_test_e2e_dummy_key_not_valid');
+      await page.fill('#c-test-webhook', env('E2E_WEBHOOK_SECRET'));
       await page.locator('form[action="/admin/commerce/settings"] button[type="submit"]').click();
       await expect(page.locator('[role="status"]').first()).toBeVisible();
+      await expect(page.locator('[data-stripe-mode="test"]').first()).toBeVisible();
       const r2 = await page.request.post(`/checkout/${SLUG}`, {
         form: { _csrf: await csrfOf(page, `/product/${SLUG}`), email: CUSTOMER, website: '' },
         maxRedirects: 0,
@@ -116,7 +122,7 @@ test.describe.serial('commerce with the fake billing server', () => {
       sessionID = `cs_test_e2e_${Date.now()}`;
       // and drop the dummy key again
       await page.goto('/admin/commerce/settings');
-      await page.check('input[name="clear_stripe_secret_key"]');
+      await page.check('input[name="clear_stripe_test_secret_key"]');
       await page.locator('form[action="/admin/commerce/settings"] button[type="submit"]').click();
     }
   });

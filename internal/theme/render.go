@@ -223,6 +223,12 @@ func (s *service) siteInfo(ctx context.Context) SiteInfo {
 // execute clones the master for name, binds request funcs and renders it
 // into a buffer.
 func (s *service) execute(ctx context.Context, set *compiled, name string, tc *Context) (*bytes.Buffer, error) {
+	return s.executeWith(ctx, set, name, tc, nil)
+}
+
+// executeWith is execute with a hook that adjusts the request state before
+// the funcs are bound (previews inject overrides there).
+func (s *service) executeWith(ctx context.Context, set *compiled, name string, tc *Context, adjust func(*reqState)) (*bytes.Buffer, error) {
 	if err := set.errs[name]; err != nil {
 		return nil, err
 	}
@@ -237,6 +243,9 @@ func (s *service) execute(ctx context.Context, set *compiled, name string, tc *C
 		return nil, fmt.Errorf("theme: clone %s: %w", name, err)
 	}
 	st := &reqState{ctx: ctx, tc: tc, set: set, tmpl: t}
+	if adjust != nil {
+		adjust(st)
+	}
 	t.Funcs(s.funcMap(st))
 	var buf bytes.Buffer
 	if err := t.ExecuteTemplate(&buf, name, tc); err != nil {
