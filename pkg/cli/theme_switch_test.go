@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"image"
 	"image/color"
 	"image/png"
@@ -257,11 +256,52 @@ func TestBundledThemesRenderWithoutOptionalModules(t *testing.T) {
 			}
 		}
 	}
-	var info struct {
-		Data struct {
-			Theme string `json:"theme"`
-		} `json:"data"`
+}
+
+// Themes whose header already has a search control render no fallback
+// "Search" button when no CTA is configured; the default theme (no search
+// field in its header) keeps the fallback; a configured CTA renders in
+// every theme with the shared anatomy button.
+func TestHeaderCTAFallbackOnlyWhereNoSearchControl(t *testing.T) {
+	app, _ := bootFull(t)
+	ctx := context.Background()
+	seedSite(t, app)
+	ts, _ := kernel.Get[theme.Service](app.Deps, kernel.ServiceTheme)
+	searchButton := regexp.MustCompile(`<a class="[^"]*gr-btn[^"]*" href="[^"]*/search">`)
+	for _, slug := range bundledThemes {
+		if err := ts.Activate(ctx, slug); err != nil {
+			t.Fatal(err)
+		}
+		for _, key := range []string{"cta_label", "cta_url"} {
+			if err := app.Deps.Settings.Delete(ctx, theme.SettingKey(slug, key)); err != nil {
+				t.Fatal(err)
+			}
+		}
+		status, body := getHTML(t, app.Handler, "/en/")
+		if status != 200 {
+			t.Fatalf("%s: %d", slug, status)
+		}
+		header := body[:strings.Index(body, "</header>")+9]
+		hasFallback := searchButton.MatchString(header)
+		hasSearchControl := strings.Contains(header, `role="search"`) || strings.Contains(header, `/search">`)
+		if slug == "default" && !hasFallback {
+			t.Errorf("default: fallback Search button missing (its header has no search field)")
+		}
+		if slug != "default" && hasFallback {
+			t.Errorf("%s: fallback Search button rendered beside an existing search control", slug)
+		}
+		if !hasSearchControl && !hasFallback {
+			t.Errorf("%s: header offers no way to search", slug)
+		}
+		for k, v := range map[string]string{"cta_label": "Book a call", "cta_url": "/contact"} {
+			if err := app.Deps.Settings.Set(ctx, theme.SettingKey(slug, k), v); err != nil {
+				t.Fatal(err)
+			}
+		}
+		_, body = getHTML(t, app.Handler, "/en/")
+		header = body[:strings.Index(body, "</header>")+9]
+		if !strings.Contains(header, "Book a call") || !strings.Contains(header, "gr-btn") {
+			t.Errorf("%s: configured CTA not rendered with the anatomy button", slug)
+		}
 	}
-	_, body := getHTML(t, app.Handler, "/api/v1/site/info")
-	_ = json.Unmarshal([]byte(body), &info)
 }
