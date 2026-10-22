@@ -1,0 +1,72 @@
+{{/* Data: theme.identityPage — Appearance → Identity (draft → preview → apply → revert). */}}
+{{define "title"}}{{t "sitedesign.title"}} · {{t "theme.identity.title"}}{{end}}
+{{define "content"}}
+{{template "partials/site-design.html" .Design}}
+<link rel="stylesheet" href="{{asset "identity-studio.css"}}">
+<script defer src="{{asset "identity-studio.js"}}"></script>
+<div class="site-design-body site-design-identity identity-studio" data-identity-studio data-preview-url="{{.PreviewURL}}">
+<h2 class="site-design-page-title">{{t "theme.identity.title"}}</h2>
+<p class="text-muted mt-2 mb-4">{{t "theme.identity.intro"}}</p>
+{{with .Notice}}<p role="status" class="border border-green p-3 my-4">{{t (printf "theme.identity.notice_%s" .)}}</p>{{end}}
+{{with .Error}}<p role="alert" data-design-error tabindex="-1" class="border border-red text-red p-3 mb-4">{{.}}</p>{{end}}
+{{if not .Supports}}<p class="identity-note border border-line p-3 mb-4" data-identity-unsupported>{{t "theme.identity.unsupported" .Theme.Name}}</p>{{end}}
+{{with .Draft}}<p class="identity-note identity-draft border border-line p-3 mb-4" data-identity-draft>{{t "theme.identity.draft_pending" .SavedAt}}</p>{{end}}
+<form data-identity-form method="post" action="/admin/appearance/identity" class="identity-layout" novalidate>
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<div class="identity-fields space-y-6">
+<fieldset class="border border-line p-4"><legend class="px-2">{{t "theme.identity.name"}}</legend>
+<label class="block">{{t "theme.identity.name"}}<input name="site.title" required maxlength="200" value="{{.Title}}" dir="auto" class="block w-full border border-line bg-panel p-2 mt-1 rounded" {{if index .Errors "site.title"}}aria-invalid="true"{{end}}></label>
+{{template "partials/field_errors" (index .Errors "site.title")}}
+<label class="block mt-3">{{t "theme.identity.tagline"}}<input name="site.tagline" maxlength="500" value="{{.Tagline}}" dir="auto" class="block w-full border border-line bg-panel p-2 mt-1 rounded"></label>
+{{template "partials/field_errors" (index .Errors "site.tagline")}}
+{{range .CTA}}<div class="mt-3">{{template "fields/field" .}}</div>{{end}}
+</fieldset>
+<fieldset class="border border-line p-4"><legend class="px-2">{{t "theme.identity.logos"}}</legend>
+<div class="grid gap-4 sm:grid-cols-2">{{range .Logos}}<div data-identity-logo="{{.Key}}"><span class="block font-medium mb-1">{{.Label}}</span>{{template "media_picker_slot" .}}<p class="mt-1 text-xs text-muted">{{.Help}}</p>{{template "partials/field_errors" .Error}}</div>{{end}}</div>
+</fieldset>
+<fieldset class="border border-line p-4" {{if not .Supports}}disabled{{end}}><legend class="px-2">{{t "theme.identity.colors"}}</legend>
+<div class="grid gap-4 sm:grid-cols-3">{{range .Fields}}{{if or (eq .Key "identity_accent") (eq .Key "identity_background") (eq .Key "identity_text")}}<div data-identity-color="{{.Key}}">{{template "fields/field" .}}</div>{{end}}{{end}}</div>
+<p class="mt-3 text-sm" data-identity-contrast data-text="{{.Contrast.Text}}" data-back="{{.Contrast.Back}}">{{t "theme.identity.contrast"}}: {{if .Contrast.Shown}}<strong data-contrast-ratio>{{.Contrast.Ratio}}:1</strong> <span data-contrast-verdict>{{if .Contrast.Pass}}{{t "theme.identity.contrast_pass"}}{{else}}{{t "theme.identity.contrast_fail"}}{{end}}</span>{{else}}<span data-contrast-verdict>{{t "theme.identity.contrast_none"}}</span>{{end}}</p>
+{{with .Contrast.OnAccent}}<p class="text-sm text-muted" data-identity-on-accent>{{t "theme.identity.on_accent"}}: <code>{{.}}</code></p>{{end}}
+</fieldset>
+<fieldset class="border border-line p-4" {{if not .Supports}}disabled{{end}}><legend class="px-2">{{t "theme.identity.fonts"}}</legend>
+<div class="grid gap-4 sm:grid-cols-3">{{range .Fields}}{{if or (eq .Key "identity_heading_font") (eq .Key "identity_body_font") (eq .Key "identity_latin_font")}}<div>{{template "fields/field" .}}</div>{{end}}{{end}}</div>
+</fieldset>
+<fieldset class="border border-line p-4" {{if not .Supports}}disabled{{end}}><legend class="px-2">{{t "theme.identity.shape"}}</legend>
+<div class="grid gap-4 sm:grid-cols-3">{{range .Fields}}{{if or (eq .Key "identity_scheme") (eq .Key "identity_radius") (eq .Key "identity_spacing")}}<div>{{template "fields/field" .}}</div>{{end}}{{end}}</div>
+</fieldset>
+<details class="border border-line p-4 rounded" {{if index .Errors "custom_css"}}open{{end}}><summary class="font-medium">{{t "theme.identity.custom"}}</summary>
+<div class="mt-3">{{range .Fields}}{{if eq .Key "custom_css"}}{{template "fields/field" .}}{{end}}{{end}}</div></details>
+<div class="identity-actions flex flex-wrap gap-3 items-center">
+<button type="submit" name="action" value="apply" class="identity-primary px-4 py-2 rounded">{{t "theme.identity.apply"}}</button>
+<button type="submit" name="action" value="draft" class="border border-line bg-panel px-4 py-2 rounded">{{t "theme.identity.save_draft"}}</button>
+{{if .Draft}}<button type="submit" name="action" value="discard" class="border border-line bg-panel px-4 py-2 rounded text-red">{{t "theme.identity.discard"}}</button>{{end}}
+<a href="/" target="_blank" rel="noopener" class="underline">{{t "theme.identity.view_site"}}</a>
+</div>
+</div>
+<aside class="identity-preview">
+<p class="site-design-preview-label">{{t "theme.identity.preview"}}</p>
+<p class="text-xs text-muted mb-2">{{t "theme.identity.preview_help"}}</p>
+<div class="identity-preview-toolbar" role="group" aria-label="{{t "theme.identity.preview"}}">
+<span class="identity-toggle"><button type="button" data-preview-view="home" aria-pressed="true">{{t "theme.identity.preview_home"}}</button><button type="button" data-preview-view="single" aria-pressed="false">{{t "theme.identity.preview_single"}}</button></span>
+<span class="identity-toggle"><button type="button" data-preview-width="desktop" aria-pressed="true">{{t "theme.identity.preview_desktop"}}</button><button type="button" data-preview-width="mobile" aria-pressed="false">{{t "theme.identity.preview_mobile"}}</button></span>
+<span class="identity-toggle"><button type="button" data-preview-locale="ar" aria-pressed="{{if eq .Locale "ar"}}true{{else}}false{{end}}">{{t "theme.identity.preview_locale_ar"}}</button><button type="button" data-preview-locale="en" aria-pressed="{{if eq .Locale "ar"}}false{{else}}true{{end}}">{{t "theme.identity.preview_locale_en"}}</button></span>
+<a href="{{.PreviewURL}}?view=home" target="_blank" rel="noopener" class="underline text-xs" data-preview-open>{{t "theme.identity.preview_reload"}}</a>
+</div>
+<div class="identity-frame" data-identity-frame-wrap><iframe data-identity-preview-frame src="{{.PreviewURL}}?view=home&amp;locale={{.Locale}}" title="{{t "theme.identity.preview"}}" loading="lazy" sandbox="allow-same-origin"></iframe></div>
+</aside>
+</form>
+{{if .CanImport}}<form method="post" action="/admin/appearance/identity" class="identity-import border border-line p-4 rounded mt-6"><input type="hidden" name="_csrf" value="{{csrf}}"><h3 class="font-medium">{{t "theme.identity.import"}}</h3><p class="text-sm text-muted my-2">{{t "theme.identity.import_help"}}</p><button type="submit" name="action" value="import" class="border border-line bg-panel px-4 py-2 rounded">{{t "theme.identity.import"}}</button></form>{{end}}
+<section class="identity-history mt-8" aria-labelledby="identity-history-title">
+<h3 id="identity-history-title" class="font-medium">{{t "theme.identity.history"}}</h3>
+<p class="text-sm text-muted my-2">{{t "theme.identity.history_help" 10}}</p>
+{{if not .HistoryValid}}<p class="border border-line p-3 text-sm" role="note">{{t "theme.identity.history_invalid"}}</p>{{end}}
+{{if .History}}<ol class="identity-revisions">{{range .History}}<li class="flex flex-wrap items-center gap-3 border-b border-line py-2">
+<i class="identity-swatch" style="background-color:{{if .Accent}}{{.Accent}}{{else}}transparent{{end}}" aria-hidden="true"></i>
+<span class="text-sm"><strong>{{t (printf "theme.identity.kind_%s" .Kind)}}</strong> · <time datetime="{{.At}}">{{.At}}</time>{{with .Title}} · <bdi>{{.}}</bdi>{{end}}</span>
+{{if .Current}}<span class="text-xs rounded-chip border border-line px-2">{{t "theme.identity.current"}}</span>{{else}}<form method="post" action="/admin/appearance/identity" class="ms-auto"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="revision" value="{{.ID}}"><button type="submit" name="action" value="revert" class="border border-line bg-panel px-3 py-1 rounded text-sm">{{t "theme.identity.revert"}}</button></form>{{end}}
+</li>{{end}}</ol>{{else}}<p class="text-sm text-muted">{{t "theme.identity.history_none"}}</p>{{end}}
+</section>
+{{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}
+</div>
+{{end}}

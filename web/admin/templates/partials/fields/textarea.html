@@ -1,7 +1,7 @@
 {{define "fields/textarea"}}
 <div class="gp-field" data-field-type="textarea" data-field-key="{{.Key}}">
   {{template "fields/label" .}}
-  <textarea id="{{.ID}}" name="{{.Name}}" rows="4" dir="auto" {{if .Required}}required{{end}} {{if .Error}}aria-invalid="true"{{end}} {{if .Help}}aria-describedby="{{.ID}}-help"{{end}}
+  <textarea id="{{.ID}}" name="{{.Name}}" rows="4" dir="auto" {{if .Required}}required{{end}} {{if .Disabled}}disabled{{end}} {{if .Error}}aria-invalid="true"{{end}} {{if .Help}}aria-describedby="{{.ID}}-help"{{end}}
             class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Value}}</textarea>
   {{template "fields/help" .}}
 </div>

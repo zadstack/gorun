@@ -39,6 +39,7 @@ type settingView struct {
 	Min, Max, Step, Mime             string
 	Error                            string
 	CanPick                          bool
+	Disabled                         bool
 }
 
 type settingChoice struct {

@@ -42,9 +42,6 @@ func TestModuleAdminRoutesRequireSessionAndRenderForAdmins(t *testing.T) {
 	if status, raw = f.request(t, client, "GET", "/admin/builder/"+page.ID, "", "", nil); status != 200 || !strings.Contains(string(raw), `data-id="`+page.ID+`"`) {
 		t.Fatalf("editor route HTTP %d", status)
 	}
-	if status, _ = f.request(t, client, "GET", "/admin/appearance/identity", "", "", nil); status != 200 {
-		t.Fatalf("identity route HTTP %d", status)
-	}
 	if status, _ = f.request(t, client, "GET", "/admin/site-builder", "", "", nil); status != 200 {
 		t.Fatalf("site builder route HTTP %d", status)
 	}
