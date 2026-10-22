@@ -77,6 +77,7 @@
 {{else if not .Cloudflare.AccountID}}<p class="text-sm text-muted">{{t "admin.integrations.discovery.needs_account"}}</p>
 {{else}}
 {{range .Inventory}}
+{{$kind := .Kind}}
 <div class="space-y-2" data-resource-table data-kind="{{.Kind}}">
   <header class="flex flex-wrap items-end justify-between gap-2">
     <div><h3 class="font-medium">{{t (printf "admin.integrations.discovery.%s" .Kind)}} <span class="text-muted">({{.Count}})</span>{{if and (ne .Meta.Status "never") (not .Complete)}} <span class="integrations-lamp integrations-lamp-incomplete">{{t "admin.integrations.discovery.incomplete"}}</span>{{end}}</h3>
@@ -97,11 +98,11 @@
   </tr></thead><tbody>
   {{range .Items}}<tr data-search="{{.Name}} {{.ID}} {{.Location}} {{.Class}}{{with .Identity}} {{.SiteID}} {{.ManagerID}} {{.Label}}{{end}}" data-bound="{{if .Bound}}bound{{else}}candidate{{end}}" data-identity="{{.Checked}}">
     <th scope="row" dir="ltr">{{.Name}}</th>
-    {{if eq $.Kind "r2"}}
+    {{if eq $kind "r2"}}
     <td dir="ltr">{{.Location}}{{with .Class}} · {{.}}{{end}}</td><td>{{with .CreatedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
     <td>{{if .Bound}}{{range .Bound}}<span class="integrations-lamp integrations-lamp-passed">{{t (printf "admin.integrations.purpose.%s" .)}}</span> {{end}}{{else}}<span class="text-muted">{{t "admin.integrations.candidate"}}</span>{{end}}</td>
     <td><button type="button" class="admin-secondary-button" data-use-bucket="{{.Name}}">{{t "admin.integrations.storage.use"}}</button></td>
-    {{else if eq $.Kind "d1"}}
+    {{else if eq $kind "d1"}}
     <td dir="ltr" class="font-mono text-xs">{{.ID}}</td><td>{{.Tables}}</td><td dir="ltr">{{.SizeBytes}}</td><td>{{with .CreatedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
     {{else}}
     <td>{{with .ModifiedAt}}<time datetime="{{.}}" dir="ltr">{{.}}</time>{{else}}—{{end}}</td>
