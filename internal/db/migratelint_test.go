@@ -77,7 +77,9 @@ func TestMigrationsAreAdditive(t *testing.T) {
 		}
 		if e.IsDir() {
 			switch e.Name() {
-			case ".git", "e2e", "node_modules":
+			case ".git", ".claude", "e2e", "node_modules":
+				// .claude holds other sessions' worktrees: their branches are
+				// linted when they are checked out, not from this tree.
 				return filepath.SkipDir
 			}
 			return nil
