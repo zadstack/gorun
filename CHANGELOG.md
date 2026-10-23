@@ -7,11 +7,6 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
-- Optional Identity logo workflow: explicitly bind an encrypted AI profile to a compatible PNG
-  image protocol and operator estimate, review the exact request before generation, preview a
-  private ephemeral candidate, then import a local logo/icon derivative into one identity draft
-  slot. Imported media is public by URL; live identity changes still require Apply.
-
 - Section library pilot (`themes/default/assets/sections.css`, shared by every catalog theme):
   hero variants (`gp-s-hero-split`, `gp-s-hero-centered`, `gp-s-facts`), feature cards with
   CSS-drawn icon tiles and a featured card, steps on a connector track, a `gp-s-flow` diagram,
@@ -109,6 +104,13 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Builder previews inherit the selected theme's linked styles in their public cascade order
+  instead of adding unused builder styles or inventing an unsaved builder identity; Docs
+  sections stay within the viewport on narrow screens.
+- Appearance → Identity keeps the history Revert action reachable on mobile above the fixed
+  Agents dock. Browser acceptance covers Save draft, Apply and Revert across bundled themes,
+  Arabic/English and mobile/desktop viewports.
+
 - Standalone Membership and SaaS pages keep their styles and service-aware navigation when
   optional account add-ons are off. The module catalog explains Commerce-dependent customer
   sign-in availability; its 503 response follows the request locale for title and direction.
@@ -139,6 +141,11 @@ All notable changes to GoRun are recorded here. The format follows
   stays a fallback layer and can be imported into the draft; its separate identity form is removed.
 
 ### Optional modules
+
+- Optional Identity logo workflow: explicitly bind an encrypted AI profile to a compatible PNG
+  image protocol and operator estimate, review the exact request before generation, preview a
+  private ephemeral candidate, then import a local logo/icon derivative into one identity draft
+  slot. Imported media is public by URL; live identity changes still require Apply.
 
 - New optional module `identityai` (switchable in System → Modules via `addons.identityai.enabled`): Appearance →
   Identity AI asks a saved text AI connection for colours, fonts, taglines and a written logo brief

@@ -87,7 +87,6 @@ stops a boot; it changes behaviour, and the catalog says how on the dependent's 
 | commerce | theme | Store pages (`/shop`, `/cart`, `/account`) are not served; themes render with empty product lists. |
 | wpmigrate | mcp | The migration tools are not offered to agents. |
 | workagents | membership | The Agents navigation link and `/agents` route are unavailable; membership data are preserved. |
-| identitylogo | Identity logo workflow | Navigation, request approvals and private candidates are unavailable. Persisted adapter bindings, identity drafts and imported media remain; in-memory staging is discarded on restart. Re-enabling never sends a provider request automatically. |
 
 ### Effects of switching feature modules off
 
@@ -166,6 +165,12 @@ under **Admin → API keys** when immediate REST access removal is required.
 ### Identity logo
 
 `identitylogo` is a separate optional feature from the text-only `identityai` module.
+Disabling it removes its navigation, request approvals and access to private candidates.
+Persisted adapter bindings, identity drafts and imported media remain; in-memory staging is
+discarded on restart. Re-enabling never sends a provider request automatically. No built-in
+module depends on `identitylogo`, so this is an off-state consequence rather than a catalog
+dependency warning.
+
 Appearance → Identity logo uses an existing encrypted AI profile and an explicitly configured
 OpenAI-compatible PNG image protocol/model binding. Native Anthropic image generation and private
 network provider endpoints are unsupported. The operator supplies a dated estimate and its source;
