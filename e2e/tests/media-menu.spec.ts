@@ -2,7 +2,7 @@
 // featured image of a published post → a primary menu with 2 items built in
 // the native menu editor (explicit drop zone and keyboard reorder) → the public header shows it.
 import { test, expect } from '@playwright/test';
-import { db, expectNoServerError, submitAndLand } from '../lib/helpers.ts';
+import { db, expectNoServerError, setContentLocale, submitAndLand } from '../lib/helpers.ts';
 import { tinyPNG } from '../fixtures/wp-fixture-server.ts';
 
 const FILE = 'e2e-featured.png';
@@ -27,6 +27,9 @@ test.describe.serial('media and menus', () => {
 
   test('the upload is in the picker and becomes the featured image of a published post', async ({ page }) => {
     await page.goto('/admin/content/post/new');
+    // New content takes the admin UI locale, which an earlier spec may have
+    // left in English; /post/<slug> serves the Arabic (default) site.
+    await setContentLocale(page, 'ar');
     await page.fill('#title', POST_TITLE);
     await page.fill('#slug', POST_SLUG);
     await page.locator('button[data-media-open][data-target="featured-media"]').click();

@@ -1,14 +1,18 @@
 import {test,expect} from '@playwright/test';
 import {createHash,randomUUID} from 'node:crypto';
-import {csrf,db,setLocale} from '../lib/helpers.ts';
+import {csrf,db,setLocale,submitAndLand} from '../lib/helpers.ts';
 
 // Protocol execution is covered by TestManagedToolsActualProtocolApprovalAndPrivateResult.
 // This fixture seeds only a paused proposal to exercise the real browser/session
 // review boundary without weakening SSRF rules or contacting an external server.
+// The fixture connections get a fresh connectivity observation first: otherwise
+// the scheduled probe (observe.tick) may test them mid-run, and its write to the
+// profile advances the tool authority epoch, so the pending review would answer
+// tool_review_changed.
 test('managed tool review shows exact destination and arguments, requires consent, rejects safely, and survives late responses',async({page},testInfo)=>{
  await page.goto('/admin/agents/keys');await setLocale(page,'en');
  const name='Reviewed tool agent '+randomUUID();await page.locator('.audit-key-create > summary').click();await page.locator('[data-key-permissions] > summary').click();
-  await page.locator('#k-name').fill(name);await page.locator('input[name=all]').check();await page.locator('form[action="/admin/agents/keys"] button[type=submit]').click();
+  await page.locator('#k-name').fill(name);await page.locator('input[name=all]').check();await submitAndLand(page,page.locator('form[action="/admin/agents/keys"] button[type=submit]'),'/admin/agents/keys',201);
  const database=db(),key=(database.prepare('SELECT id,user_id FROM api_keys WHERE name=?').get(name) as any);
  const ids=['01J00000000000000000000101','01J00000000000000000000102','01J00000000000000000000103','01J00000000000000000000104','01J00000000000000000000105','01J00000000000000000000106'];
  const schema={type:'object',properties:{query:{type:'string'}},required:['query'],additionalProperties:false};
@@ -16,7 +20,9 @@ test('managed tool review shows exact destination and arguments, requires consen
  tool.alias='gorun_'+createHash('sha256').update([tool.connection_id,tool.connection_version,tool.name,tool.catalog_hash].join('\0')).digest('hex').slice(0,32);
  const settings:any={['connections.profile.'+ids[0]]:{id:ids[0],version:ids[1],kind:'ai',name:'Reviewed model',endpoint:'https://model.example/v1',provider:'openai',model:'reviewed-model'},['connections.profile.'+ids[2]]:{id:ids[2],version:ids[3],kind:'mcp',name:'Editorial archive',endpoint:'https://archive.example/mcp'},['agents.model.'+key.id]:{mode:'managed',connection_id:ids[0],connection_version:ids[1],model:'reviewed-model',version:ids[4]},['agents.bundle.'+key.id]:{owner_id:key.user_id,version:ids[5],skills:[],mcp:[{id:ids[2],version:ids[3]}],tools:{enabled:true,model_version:ids[4],allow:[tool]}}};
  const stamp=()=>new Date().toISOString();let boardPath='';
+ const checked=new Date().toISOString().replace(/\.\d+Z$/,'Z'),connections=[[ids[0],ids[1]],[ids[2],ids[3]]];
  try {
+  for(const[id,version]of connections)database.prepare(`INSERT OR REPLACE INTO observations(kind,key,success_at,success_revision,success_scope,result_json,updated_at) VALUES('connection',?,?,?,'connectivity','{"count":1}',?)`).run(id,checked,version,checked);
   for(const[k,v]of Object.entries(settings))database.prepare('INSERT INTO settings(key,value_json,updated_at) VALUES(?,?,?)').run(k,JSON.stringify(v),stamp());
   await page.goto('/admin/agents/keys/'+key.id+'/tools');await expect(page.locator('[data-managed-tools]')).toContainText('Selected tools enabled');await expect(page.locator('[data-managed-tools]')).toContainText('lookup');
   await page.goto('/admin/canvases');await page.locator('#new-canvas-title').fill('Review an archive lookup');await page.locator('form[action="/admin/canvases"] [type=submit]').click();boardPath=new URL(page.url()).pathname;
@@ -52,8 +58,11 @@ test('managed tool review shows exact destination and arguments, requires consen
 
   await page.goto('/admin/agents/keys/'+key.id+'/tools');await setLocale(page,'ar');await page.setViewportSize({width:390,height:844});await expect(page.locator('h1')).toContainText('أدوات MCP');expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);await page.screenshot({path:testInfo.outputPath('managed-tools-ar-mobile.png'),animations:'disabled'});
  } finally {
+  // A failure above must not leave the admin (and new content) in English for later specs.
+  await setLocale(page,'ar').catch(()=>{});
   if(boardPath)database.prepare('DELETE FROM admin_canvases WHERE id=?').run(boardPath.split('/').pop()!);
   for(const k of Object.keys(settings))database.prepare('DELETE FROM settings WHERE key=?').run(k);
+  for(const[id]of connections)database.prepare(`DELETE FROM observations WHERE kind='connection' AND key=?`).run(id);
   database.prepare('DELETE FROM api_keys WHERE id=?').run(key.id);database.close();
  }
 });
