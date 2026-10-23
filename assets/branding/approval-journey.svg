@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 668" width="1000" height="668" role="img" aria-labelledby="title desc" lang="en">
+<title id="title">How an agent action gets approved</title><desc id="desc">An AI agent calls an MCP tool. GoRun checks the key's scopes and the arguments. A tool that is not sensitive runs at once. A sensitive tool is parked as pending and expires after 24 hours. A person reviews it under Canvas &amp; agents, Approvals. Approval runs it once as the requesting key; denial or expiry runs nothing. The agent reads the outcome with check_approval, and every step is written to the audit log.</desc>
+<style>text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#1748ed" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x=".5" y=".5" width="999" height="667" rx="14" fill="#f7f9fc" stroke="#dce2e8"/>
+<text x="32" y="46" font-size="24" font-weight="700" fill="#080e14" text-anchor="start">How an agent action gets approved</text>
+<text x="32" y="74" font-size="14.5" font-weight="400" fill="#545e69" text-anchor="start">Sensitive MCP tools wait for a person. Nothing runs twice, and every step is audited.</text>
+<rect x="32" y="104" width="210" height="104" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="137.0" y="128" font-size="11" font-weight="700" fill="#545e69" text-anchor="middle">01 · AGENT</text>
+<text x="137.0" y="152" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Calls an MCP tool</text>
+<text x="137.0" y="174" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">With an AI agent key</text>
+<text x="137.0" y="192" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Scopes stay within owner's role</text>
+<rect x="272" y="104" width="210" height="104" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="377.0" y="128" font-size="11" font-weight="700" fill="#545e69" text-anchor="middle">02 · GORUN</text>
+<text x="377.0" y="152" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Checks the call</text>
+<text x="377.0" y="174" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Key scopes cover the tool</text>
+<text x="377.0" y="192" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Arguments match the schema</text>
+<rect x="512" y="104" width="210" height="104" rx="10" fill="#eef3ff" stroke="#1748ed" stroke-width="1"/>
+<text x="617.0" y="128" font-size="11" font-weight="700" fill="#1748ed" text-anchor="middle">03 · RULE</text>
+<text x="617.0" y="152" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Sensitive tool?</text>
+<text x="617.0" y="174" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Publish, delete, live edits,</text>
+<text x="617.0" y="192" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">themes, settings</text>
+<rect x="752" y="104" width="216" height="104" rx="10" fill="#edf7f1" stroke="#167252" stroke-width="1"/>
+<text x="860.0" y="128" font-size="11" font-weight="700" fill="#167252" text-anchor="middle">RESULT</text>
+<text x="860.0" y="152" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Runs now</text>
+<text x="860.0" y="174" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Result goes to the agent</text>
+<text x="860.0" y="192" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Also with mcp.approve_self</text>
+<path d="M244 156 L268 156" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M484 156 L508 156" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M724 156 L748 156" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="736" y="146" font-size="12" font-weight="700" fill="#1748ed" text-anchor="middle">No</text>
+<path d="M617 210 L617 258" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="633" y="240" font-size="12" font-weight="700" fill="#1748ed" text-anchor="middle">Yes</text>
+<rect x="512" y="262" width="210" height="104" rx="10" fill="#fff6e5" stroke="#8a5a00" stroke-width="1"/>
+<text x="617.0" y="286" font-size="11" font-weight="700" fill="#8a5a00" text-anchor="middle">04 · WAITS</text>
+<text x="617.0" y="310" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Parked for review</text>
+<text x="617.0" y="332" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Returns pending_approval</text>
+<text x="617.0" y="350" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Expires after 24 hours</text>
+<rect x="752" y="262" width="216" height="104" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="860.0" y="286" font-size="11" font-weight="700" fill="#545e69" text-anchor="middle">05 · A PERSON</text>
+<text x="860.0" y="310" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Reviews and decides</text>
+<text x="860.0" y="332" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Canvas &amp; agents → Approvals</text>
+<text x="860.0" y="350" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Tool, arguments, key, requester</text>
+<path d="M724 314 L748 314" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="32" y="262" width="450" height="104" rx="10" fill="#fff" stroke="#aebed7" stroke-width="1" stroke-dasharray="6 5"/>
+<text x="52" y="292" font-size="15" font-weight="650" fill="#080e14" text-anchor="start">Who may decide</text>
+<text x="52" y="316" font-size="13" font-weight="400" fill="#545e69" text-anchor="start">A key never decides its own call.</text>
+<text x="52" y="335" font-size="13" font-weight="400" fill="#545e69" text-anchor="start">Over REST, other keys of the same owner</text>
+<text x="52" y="354" font-size="13" font-weight="400" fill="#545e69" text-anchor="start">cannot decide either, unless the site opts in.</text>
+<path d="M860 368 L860 392 L377 392 L377 416" fill="none" stroke="#aebed7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M377 392 L377 416" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M617 392 L617 416" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M860 392 L860 416" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="32" y="420" width="210" height="96" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="137.0" y="444" font-size="11" font-weight="700" fill="#1748ed" text-anchor="middle">06 · AGENT</text>
+<text x="137.0" y="468" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Reads the outcome</text>
+<text x="137.0" y="490" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">check_approval returns</text>
+<text x="137.0" y="508" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">the status and result</text>
+<rect x="272" y="420" width="210" height="96" rx="10" fill="#edf7f1" stroke="#167252" stroke-width="1"/>
+<text x="377.0" y="444" font-size="11" font-weight="700" fill="#167252" text-anchor="middle">APPROVE</text>
+<text x="377.0" y="468" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Runs once</text>
+<text x="377.0" y="490" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">As the requesting key, if it</text>
+<text x="377.0" y="508" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">is still active and in scope</text>
+<rect x="512" y="420" width="210" height="96" rx="10" fill="#fdf0ef" stroke="#b42318" stroke-width="1"/>
+<text x="617.0" y="444" font-size="11" font-weight="700" fill="#b42318" text-anchor="middle">DENY</text>
+<text x="617.0" y="468" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Nothing runs</text>
+<text x="617.0" y="490" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Status: denied</text>
+<rect x="752" y="420" width="216" height="96" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="860.0" y="444" font-size="11" font-weight="700" fill="#545e69" text-anchor="middle">NO DECISION</text>
+<text x="860.0" y="468" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle">Expires</text>
+<text x="860.0" y="490" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">After 24 hours</text>
+<text x="860.0" y="508" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle">Status: expired</text>
+<path d="M377 516 L377 540" fill="none" stroke="#aebed7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M617 516 L617 540" fill="none" stroke="#aebed7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M860 516 L860 540 L137 540 L137 520" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="32" y="566" width="936" height="80" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="52" y="596" font-size="15" font-weight="700" fill="#080e14" text-anchor="start">Audit log</text>
+<text x="52" y="620" font-size="13" font-weight="400" fill="#545e69" text-anchor="start">Every call: mcp.call with a SHA-256 of the arguments, never the arguments themselves.</text>
+<text x="52" y="638" font-size="13" font-weight="400" fill="#545e69" text-anchor="start">Every decision: mcp.approval.approve or deny. Approved runs record who approved them.</text>
+</svg>

@@ -66,19 +66,22 @@ module.
 | 7 | redirects | `internal/redirects` | URL redirects (public middleware; reserved prefixes such as `/admin`, `/api`, `/media`, `/checkout`, `/account` can never be redirected) |
 | 8 | seo | `internal/seo` | meta tags, sitemap.xml, robots.txt, SEO settings |
 | 9 | theme | `internal/theme` | theme loading (`./themes`, `/app/themes` or `$GORUN_THEMES`), template hierarchy, overrides |
-| 10 | builder | `internal/builder` | starter site drafts/activation, structured page layouts, identity, REST/MCP, independent draft and published JSON snapshots |
-| 11 | site | `internal/site` | public front controller (URL → template kind); contact form: stores every submission in `form_submissions` (optional private attachment in `<data>/form-uploads/<id>`) before mailing it; System → Form submissions (`settings.manage`): inbox / unread / spam, detail, download, resend, delete, CSV export and the form settings (`forms.notify`, `forms.recipients`, `contact.attachments`, `contact.attachment_max_mb`) |
-| 12 | api | `internal/api` | REST layer: mounts every registered operation, OpenAPI |
-| 13 | admin | `internal/admin` | dashboard, users, settings, health, jobs, API keys, audit viewer, admin search, mailer |
-| 14 | webhooks | `internal/webhooks` | outgoing webhooks: subscriptions, signed deliveries, retries |
-| 15 | commerce | `internal/commerce` | **optional, on by default**: products, Stripe Checkout, orders, entitlements, billing servers (mcp-billing/v1) |
-| 16 | saas | `internal/saas` | **optional, on by default**: SaaS plans and tenants on top of commerce |
-| 17 | membership | `internal/membership` | **optional, on by default**: member-only content and access rules |
-| 18 | workagents | `internal/workagents` | work agents and their workflows |
-| 19 | identityai | `internal/identityai` | optional (`addons.identityai.enabled`): text-only AI identity suggestions written to the identity draft after a reviewed, approved request ([IDENTITY-AI.md](IDENTITY-AI.md)) |
-| 20 | wpmigrate | `internal/wpmigrate` | WordPress/WooCommerce migrator: REST/WXR sources, 7-step wizard, job pipeline, validation report, `gorun import-wxr`; imports WooCommerce products through commerce (`wpmigrate.product_importer` adapter) |
-| 21 | mcp | `internal/mcp` | Model Context Protocol server (`/mcp`, `gorun mcp`), human approvals |
-| 22 | ext | `internal/ext` | extensions: manifests, HTTP hook bridge, scoped API keys |
+| 10 | pattern | `internal/pattern` | site-layout patterns layered above the active theme, selectable independently of it ([PATTERN-PLUGINS.md](PATTERN-PLUGINS.md)) |
+| 11 | builder | `internal/builder` | starter site drafts/activation, structured page layouts, identity, REST/MCP, independent draft and published JSON snapshots |
+| 12 | site | `internal/site` | public front controller (URL → template kind); contact form: stores every submission in `form_submissions` (optional private attachment in `<data>/form-uploads/<id>`) before mailing it; System → Form submissions (`settings.manage`): inbox / unread / spam, detail, download, resend, delete, CSV export and the form settings (`forms.notify`, `forms.recipients`, `contact.attachments`, `contact.attachment_max_mb`) |
+| 13 | api | `internal/api` | REST layer: mounts every registered operation, OpenAPI |
+| 14 | admin | `internal/admin` | dashboard, users, settings, health, jobs, API keys, audit viewer, admin search, mailer |
+| 15 | webhooks | `internal/webhooks` | outgoing webhooks: subscriptions, signed deliveries, retries |
+| 16 | commerce | `internal/commerce` | **optional, on by default**: products, Stripe Checkout, orders, entitlements, billing servers (mcp-billing/v1) |
+| 17 | saas | `internal/saas` | **optional, on by default**: SaaS plans and tenants on top of commerce |
+| 18 | membership | `internal/membership` | **optional, on by default**: member-only content and access rules |
+| 19 | launch | `internal/launch` | **optional, on by default**: the public `/start` customer onboarding journey |
+| 20 | workagents | `internal/workagents` | work agents and their workflows |
+| 21 | identityai | `internal/identityai` | optional (`addons.identityai.enabled`): text-only AI identity suggestions written to the identity draft after a reviewed, approved request ([IDENTITY-AI.md](IDENTITY-AI.md)) |
+| 22 | identitylogo | `internal/identitylogo/admin` | **optional, on by default**: static logo proposals for the site identity, generated only after a reviewed, approved request |
+| 23 | wpmigrate | `internal/wpmigrate` | WordPress/WooCommerce migrator: REST/WXR sources, 7-step wizard, job pipeline, validation report, `gorun import-wxr`; imports WooCommerce products through commerce (`wpmigrate.product_importer` adapter) |
+| 24 | mcp | `internal/mcp` | Model Context Protocol server (`/mcp`, `gorun mcp`), human approvals |
+| 25 | ext | `internal/ext` | extensions: manifests, HTTP hook bridge, scoped API keys |
 
 `db`, `i18n`, `audit` and `jobs` appear in `BootOrder` for ordering, but they are kernel
 infrastructure, not modules you list in `Modules()`.
@@ -88,7 +91,7 @@ infrastructure, not modules you list in `Modules()`.
 A module that implements `kernel.OptionalModule` (`Enabled(ctx, db) (bool, error)`) is evaluated
 before any catalog, migration, route, job or hook registration. Disabled, it registers nothing and
 its tables, settings and queued jobs are left untouched; enabled again, it reads them back.
-Built-in optional modules (commerce, saas, membership) answer with `kernel.AddonEnabled`, which
+Built-in optional modules (commerce, saas, membership, launch, workagents, identityai, identitylogo, wpmigrate, mcp, ext) answer with `kernel.AddonEnabled`, which
 reads the site setting `addons.<name>.enabled` (a JSON boolean; missing means **enabled**, so
 existing installs change nothing). The operator config (`[addons]` in the site config or
 `GORUN_ADDONS='{"commerce":"disabled"}'`) can only restrict: mode `disabled` turns an optional

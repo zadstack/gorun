@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"io/fs"
 	"log/slog"
+	"path"
 	"slices"
 	"strings"
 
@@ -28,6 +29,28 @@ func knownMigrations(mods []Module) map[string]fs.FS {
 		known[m.Name()] = m.Migrations()
 	}
 	return known
+}
+
+// KnownMigrationNames lists every migration this binary ships for mods plus
+// the kernel infrastructure, as sorted "module/NNNN_name.sql" keys: the form
+// schema_migrations records and a release index publishes, so an update
+// preflight can refuse a target that does not know the live data.
+func KnownMigrationNames(mods []Module) ([]string, error) {
+	out := []string{}
+	for module, files := range knownMigrations(mods) {
+		if files == nil {
+			continue
+		}
+		names, err := fs.Glob(files, "migrations/*.sql")
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range names {
+			out = append(out, module+"/"+path.Base(n))
+		}
+	}
+	slices.Sort(out)
+	return out, nil
 }
 
 // InspectSchema reports applied migrations unknown to this binary (the

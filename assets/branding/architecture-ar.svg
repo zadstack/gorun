@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600" role="img" aria-labelledby="title desc" lang="ar" direction="rtl">
+<title id="title">كيف تترابط أجزاء GoRun</title><desc id="desc">يصل الزوار والفريق والتكاملات ووكلاء الذكاء الاصطناعي والمزودون إلى عملية gorun واحدة عبر الموقع العام ولوحة الإدارة وREST وMCP والويب هوك. في الداخل تُقلع الوحدات بترتيب ثابت فوق خدمات نواة مشتركة: الخطافات وطابور المهام وسجل التدقيق والإعدادات والترجمة. تُحفظ البيانات في قاعدة SQLite واحدة ومجلد بيانات، وتُحمَّل القوالب والأنماط والإضافات من مجلدات، والمزودون الخارجيون اختياريون.</desc>
+<style>text { font-family: Tahoma, "Segoe UI", Arial, sans-serif; }</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#1748ed" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x=".5" y=".5" width="999" height="599" rx="14" fill="#f7f9fc" stroke="#dce2e8"/>
+<text x="968" y="46" font-size="24" font-weight="700" fill="#080e14" text-anchor="start" direction="rtl">كيف تترابط أجزاء GoRun</text>
+<text x="968" y="74" font-size="14.5" font-weight="400" fill="#545e69" text-anchor="start" direction="rtl">ملف Go تنفيذي واحد وقاعدة SQLite واحدة. تُقلع الوحدات بترتيب ثابت فوق خدمات نواة مشتركة.</text>
+<text x="968" y="108" font-size="11" font-weight="700" fill="#545e69" text-anchor="start" direction="rtl">من يتصل</text>
+<text x="738" y="108" font-size="11" font-weight="700" fill="#1748ed" text-anchor="start" direction="rtl">عملية gorun واحدة</text>
+<text x="212" y="108" font-size="11" font-weight="700" fill="#545e69" text-anchor="start" direction="rtl">البيانات والخارج</text>
+<rect x="262" y="116" width="476" height="392" rx="10" fill="#fff" stroke="#1748ed" stroke-width="1.5"/>
+<rect x="788" y="124" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="878" y="150" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">الزوار</text>
+<text x="878" y="170" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الموقع العام والقوالب</text>
+<path d="M786 154 L726 154" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="606" y="124" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="664" y="151" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">/</text>
+<text x="664" y="170" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الموقع العام</text>
+<rect x="788" y="200" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="878" y="226" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">الفريق</text>
+<text x="878" y="246" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">لوحة إدارة عربية وإنجليزية</text>
+<path d="M786 230 L726 230" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="606" y="200" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="664" y="227" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">/admin</text>
+<text x="664" y="246" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الإدارة</text>
+<rect x="788" y="276" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="878" y="302" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">التكاملات</text>
+<text x="878" y="322" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">REST بمفاتيح API</text>
+<path d="M786 306 L726 306" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="606" y="276" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="664" y="303" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">/api/v1</text>
+<text x="664" y="322" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">REST وOpenAPI</text>
+<rect x="788" y="352" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="878" y="378" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">وكلاء الذكاء</text>
+<text x="878" y="398" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">MCP بمفاتيح وكلاء</text>
+<path d="M786 382 L726 382" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="606" y="352" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="664" y="379" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">/mcp</text>
+<text x="664" y="398" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">MCP والموافقات</text>
+<rect x="788" y="428" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="878" y="454" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">المزودون</text>
+<text x="878" y="474" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">ويب هوك موقّع وارد</text>
+<path d="M786 458 L726 458" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="606" y="428" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="664" y="455" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">/webhooks</text>
+<text x="664" y="474" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الويب هوك</text>
+<text x="586" y="140" font-size="11" font-weight="700" fill="#545e69" text-anchor="start" direction="rtl">الوحدات · ترتيب إقلاع ثابت</text>
+<rect x="278" y="150" width="312" height="60" rx="10" fill="#f7f9fc" stroke="#dce2e8" stroke-width="1"/>
+<text x="576" y="169" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start" direction="rtl">المحتوى</text>
+<text x="434" y="188" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">settings · auth · content · taxonomy</text>
+<text x="434" y="205" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">media · menus · redirects · seo</text>
+<rect x="278" y="216" width="312" height="43" rx="10" fill="#f7f9fc" stroke="#dce2e8" stroke-width="1"/>
+<text x="576" y="235" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start" direction="rtl">الموقع</text>
+<text x="434" y="254" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">theme · pattern · builder · site</text>
+<rect x="278" y="265" width="312" height="43" rx="10" fill="#f7f9fc" stroke="#dce2e8" stroke-width="1"/>
+<text x="576" y="284" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start" direction="rtl">الواجهات</text>
+<text x="434" y="303" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">api · admin · webhooks · mcp · ext</text>
+<rect x="278" y="314" width="312" height="77" rx="10" fill="#fff" stroke="#aebed7" stroke-width="1" stroke-dasharray="6 5"/>
+<text x="576" y="333" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start" direction="rtl">الإضافات</text>
+<text x="434" y="352" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">commerce · saas · membership · launch</text>
+<text x="434" y="369" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">workagents · identityai · identitylogo</text>
+<text x="434" y="386" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">wpmigrate</text>
+<rect x="278" y="408" width="312" height="88" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="576" y="428" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start" direction="rtl">النواة</text>
+<text x="434" y="449" font-size="12.5" font-weight="400" fill="#080e14" text-anchor="middle" direction="rtl">خدمات وخطافات وطابور مهام دائم وجدولة</text>
+<text x="434" y="467" font-size="12.5" font-weight="400" fill="#080e14" text-anchor="middle" direction="rtl">سجل تدقيق وإعدادات وعربية وإنجليزية وRTL</text>
+<text x="434" y="485" font-size="12.5" font-weight="400" fill="#080e14" text-anchor="middle" direction="rtl">قراءات في الخلفية وتحديثات مرحلية</text>
+<rect x="32" y="124" width="180" height="80" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="122" y="149" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle" direction="ltr">SQLite (WAL)</text>
+<text x="122" y="169" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">المحتوى والمستخدمون والإعدادات</text>
+<text x="122" y="186" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">وسجل التدقيق والمهام</text>
+<path d="M260 164.0 L216 164.0" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="32" y="214" width="180" height="80" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="122" y="239" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">مجلد البيانات</text>
+<text x="122" y="259" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الوسائط والمرفقات</text>
+<text x="122" y="276" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">والنسخ الاحتياطية</text>
+<path d="M260 254.0 L216 254.0" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="32" y="304" width="180" height="54" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="122" y="329" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">القوالب والأنماط</text>
+<text x="122" y="349" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">مجلدات تُحمَّل عند الإقلاع</text>
+<path d="M260 331.0 L216 331.0" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="32" y="368" width="180" height="54" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="122" y="393" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">الإضافات</text>
+<text x="122" y="413" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">ملفات تعريف وخطافات HTTP</text>
+<path d="M260 395.0 L216 395.0" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="32" y="432" width="180" height="80" rx="10" fill="#fff" stroke="#aebed7" stroke-width="1" stroke-dasharray="6 5"/>
+<text x="122" y="457" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">مزودون اختياريون</text>
+<text x="122" y="477" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">ذكاء اصطناعي وStripe وبريد SMTP</text>
+<text x="122" y="494" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">وCloudflare Edge</text>
+<path d="M260 472.0 L216 472.0" fill="none" stroke="#aebed7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="968" y="548" font-size="13" font-weight="400" fill="#545e69" text-anchor="start" direction="rtl">الحدود المتقطعة: اختياري. تُشغَّل الإضافات وmcp وext أو تُوقف من تشغيل النظام ← الوحدات، وتبقى بياناتها.</text>
+<text x="968" y="572" font-size="12" font-weight="400" fill="#aebed7" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" direction="ltr">github.com/zadstack/gorun · docs/ARCHITECTURE.md</text>
+</svg>

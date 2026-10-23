@@ -85,6 +85,8 @@ commands:
 `
 
 const usageTail = `  api-docs      generate current OpenAPI operation tables (--check FILE | --update FILE)
+  release-index print this binary's release index for staged updates (JSON):
+                --artifact ID=sha256:DIGEST (repeatable); lists every migration it ships
   version       print the version
 `
 
@@ -196,6 +198,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return importWXR(args[1:], out)
 	case "api-docs":
 		return apiDocsCmd(args[1:], out)
+	case "release-index":
+		return releaseIndexCmd(args[1:], out)
 	case "version":
 		fmt.Fprintf(out, "GoRun %s\n", version)
 		return nil

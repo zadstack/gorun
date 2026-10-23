@@ -5,6 +5,25 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Releases publish `release-index.json` for staged updates. It lists the container image with its
+  pushed digest, the four binary archives with their `SHA256SUMS` digests, and every migration the
+  release ships. Point `GORUN_UPDATE_SOURCE_URL` at it and the update preflight checks migrations
+  instead of reporting `release_data: unknown`. Themes are left out on purpose: a site may run its
+  own theme, so that check stays unknown. `gorun release-index --artifact ID=sha256:DIGEST` prints
+  the same document for a custom build. Releases up to 0.17.0 have no index.
+- README diagrams in English and Arabic: how an agent action gets approved, and how GoRun fits
+  together. One script generates all four SVG files, and CI fails when they drift from it.
+
+### Changed
+
+- The documentation index links every guide (35 were missing), and CI checks that it stays that way
+  and that README and index links resolve.
+- READMEs: corrected stale facts (seven role templates, the recipe shipping since 0.11.0, Edge
+  without MCP, version-neutral Docker and archive commands in Arabic) and described staged core
+  updates instead of saying no updater exists. The architecture guide lists all 25 core modules.
+
 ## [0.17.0] - 2026-10-23
 
 ### Added

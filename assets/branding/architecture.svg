@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600" role="img" aria-labelledby="title desc" lang="en">
+<title id="title">How GoRun fits together</title><desc id="desc">Visitors, staff, integrations, AI agents and providers reach one gorun process through the public site, the admin, REST, MCP and webhooks. Inside, modules boot in a fixed order on shared kernel services: hooks, a durable jobs queue, the audit log, settings and translations. Data lives in one SQLite database and a data directory; themes, patterns and extensions load from folders; external providers are optional.</desc>
+<style>text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#1748ed" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x=".5" y=".5" width="999" height="599" rx="14" fill="#f7f9fc" stroke="#dce2e8"/>
+<text x="32" y="46" font-size="24" font-weight="700" fill="#080e14" text-anchor="start">How GoRun fits together</text>
+<text x="32" y="74" font-size="14.5" font-weight="400" fill="#545e69" text-anchor="start">One Go binary and one SQLite database. Modules boot in a fixed order on shared kernel services.</text>
+<text x="32" y="108" font-size="11" font-weight="700" fill="#545e69" text-anchor="start">WHO CONNECTS</text>
+<text x="262" y="108" font-size="11" font-weight="700" fill="#1748ed" text-anchor="start">ONE GORUN PROCESS</text>
+<text x="788" y="108" font-size="11" font-weight="700" fill="#545e69" text-anchor="start">DATA AND OUTSIDE</text>
+<rect x="262" y="116" width="476" height="392" rx="10" fill="#fff" stroke="#1748ed" stroke-width="1.5"/>
+<rect x="32" y="124" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="122" y="150" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle">Visitors</text>
+<text x="122" y="170" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">Public site, themes</text>
+<path d="M214 154 L274 154" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="278" y="124" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="336" y="151" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">/</text>
+<text x="336" y="170" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle">Public</text>
+<rect x="32" y="200" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="122" y="226" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle">Staff</text>
+<text x="122" y="246" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">Admin in Arabic/English</text>
+<path d="M214 230 L274 230" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="278" y="200" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="336" y="227" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">/admin</text>
+<text x="336" y="246" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle">Admin</text>
+<rect x="32" y="276" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="122" y="302" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle">Integrations</text>
+<text x="122" y="322" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">REST with API keys</text>
+<path d="M214 306 L274 306" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="278" y="276" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="336" y="303" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">/api/v1</text>
+<text x="336" y="322" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle">REST + OpenAPI</text>
+<rect x="32" y="352" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="122" y="378" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle">AI agents</text>
+<text x="122" y="398" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">MCP with agent keys</text>
+<path d="M214 382 L274 382" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="278" y="352" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="336" y="379" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">/mcp</text>
+<text x="336" y="398" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle">MCP + approvals</text>
+<rect x="32" y="428" width="180" height="60" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="122" y="454" font-size="15" font-weight="650" fill="#080e14" text-anchor="middle">Providers</text>
+<text x="122" y="474" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">Signed webhooks in</text>
+<path d="M214 458 L274 458" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="278" y="428" width="116" height="60" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="336" y="455" font-size="14" font-weight="700" fill="#1748ed" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">/webhooks</text>
+<text x="336" y="474" font-size="11.5" font-weight="400" fill="#545e69" text-anchor="middle">Webhooks</text>
+<text x="414" y="140" font-size="11" font-weight="700" fill="#545e69" text-anchor="start">MODULES · FIXED BOOT ORDER</text>
+<rect x="410" y="150" width="312" height="60" rx="10" fill="#f7f9fc" stroke="#dce2e8" stroke-width="1"/>
+<text x="424" y="169" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start">CONTENT</text>
+<text x="566" y="188" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">settings · auth · content · taxonomy</text>
+<text x="566" y="205" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">media · menus · redirects · seo</text>
+<rect x="410" y="216" width="312" height="43" rx="10" fill="#f7f9fc" stroke="#dce2e8" stroke-width="1"/>
+<text x="424" y="235" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start">SITE</text>
+<text x="566" y="254" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">theme · pattern · builder · site</text>
+<rect x="410" y="265" width="312" height="43" rx="10" fill="#f7f9fc" stroke="#dce2e8" stroke-width="1"/>
+<text x="424" y="284" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start">INTERFACES</text>
+<text x="566" y="303" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">api · admin · webhooks · mcp · ext</text>
+<rect x="410" y="314" width="312" height="77" rx="10" fill="#fff" stroke="#aebed7" stroke-width="1" stroke-dasharray="6 5"/>
+<text x="424" y="333" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start">ADD-ONS</text>
+<text x="566" y="352" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">commerce · saas · membership · launch</text>
+<text x="566" y="369" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">workagents · identityai · identitylogo</text>
+<text x="566" y="386" font-size="12" font-weight="400" fill="#080e14" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">wpmigrate</text>
+<rect x="410" y="408" width="312" height="88" rx="10" fill="#eef3ff" stroke="#eef3ff" stroke-width="1"/>
+<text x="424" y="428" font-size="10.5" font-weight="700" fill="#1748ed" text-anchor="start">KERNEL</text>
+<text x="566" y="449" font-size="12.5" font-weight="400" fill="#080e14" text-anchor="middle">Services, hooks, durable jobs and cron</text>
+<text x="566" y="467" font-size="12.5" font-weight="400" fill="#080e14" text-anchor="middle">Audit log, settings, Arabic/English, RTL</text>
+<text x="566" y="485" font-size="12.5" font-weight="400" fill="#080e14" text-anchor="middle">Background reads, staged updates</text>
+<rect x="788" y="124" width="180" height="80" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="878" y="149" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle">SQLite (WAL)</text>
+<text x="878" y="169" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">Content, users, settings,</text>
+<text x="878" y="186" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">audit log and jobs</text>
+<path d="M740 164.0 L784 164.0" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="788" y="214" width="180" height="80" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="878" y="239" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle">Data directory</text>
+<text x="878" y="259" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">Media, form uploads</text>
+<text x="878" y="276" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">and backups</text>
+<path d="M740 254.0 L784 254.0" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="788" y="304" width="180" height="54" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="878" y="329" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle">Themes, patterns</text>
+<text x="878" y="349" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">Folders loaded at boot</text>
+<path d="M740 331.0 L784 331.0" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="788" y="368" width="180" height="54" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="878" y="393" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle">Extensions</text>
+<text x="878" y="413" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">Manifests, HTTP hooks</text>
+<path d="M740 395.0 L784 395.0" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="788" y="432" width="180" height="80" rx="10" fill="#fff" stroke="#aebed7" stroke-width="1" stroke-dasharray="6 5"/>
+<text x="878" y="457" font-size="14.5" font-weight="650" fill="#080e14" text-anchor="middle">Optional providers</text>
+<text x="878" y="477" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">AI, Stripe, SMTP mail,</text>
+<text x="878" y="494" font-size="12" font-weight="400" fill="#545e69" text-anchor="middle">Cloudflare Edge</text>
+<path d="M740 472.0 L784 472.0" fill="none" stroke="#aebed7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="32" y="548" font-size="13" font-weight="400" fill="#545e69" text-anchor="start">Dashed: optional. Add-on modules, mcp and ext switch on or off in Operations → Modules; their data stays.</text>
+<text x="32" y="572" font-size="12" font-weight="400" fill="#aebed7" text-anchor="start" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">github.com/zadstack/gorun · docs/ARCHITECTURE.md</text>
+</svg>

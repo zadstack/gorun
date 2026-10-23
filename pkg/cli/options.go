@@ -108,7 +108,7 @@ func WithSitePolicyDirectory(dir string) Option {
 	return func(*settings) { site.SetPolicyDirectory(dir) }
 }
 
-var coreCommands = []string{"doctor", "start", "serve", "migrate", "user", "healthcheck", "reindex", "mcp", "backup-preview", "backup-inspect", "backup-restore", "backup-decrypt", "backup", "staging", "settings", "ai", "info", "starter", "content", "theme", "key", "webhook", "import-wxr", "api-docs", "version", "help", "-h", "--help"}
+var coreCommands = []string{"doctor", "start", "serve", "migrate", "user", "healthcheck", "reindex", "mcp", "backup-preview", "backup-inspect", "backup-restore", "backup-decrypt", "backup", "staging", "settings", "ai", "info", "starter", "content", "theme", "key", "webhook", "import-wxr", "api-docs", "release-index", "version", "help", "-h", "--help"}
 
 func coreCommand(name string) bool { return slices.Contains(coreCommands, name) }
 

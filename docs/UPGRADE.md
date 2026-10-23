@@ -302,6 +302,23 @@ are optional compatibility data. When present, the compatibility phase refuses a
 not know a migration already applied to this data, or that does not support the active theme.
 When absent the phase records `release_data: unknown` instead of guessing.
 
+**Official index.** Starting with the release after 0.17.0, every GitHub release publishes
+`release-index.json` beside its archives. It lists the container image (with its pushed
+manifest digest), the four binary archives (with the same digests as the `SHA256SUMS` file) and
+every migration the release ships. It does not list themes, because a site may run its own theme,
+so the theme check stays `unknown`. To use it:
+
+```sh
+GORUN_UPDATE_SOURCE_URL=https://github.com/zadstack/gorun/releases/latest/download/release-index.json
+GORUN_UPDATE_ARTIFACT=ghcr.io/zadstack/gorun   # Coolify image pinning; or linux-amd64 for an archive
+```
+
+The `latest/download` address always names the newest stable release, so only that version can be
+requested. To target a specific release, point the source at
+`https://github.com/zadstack/gorun/releases/download/vX.Y.Z/release-index.json`. Releases up to
+0.17.0 do not have the file. A custom build prints its own index with
+`gorun release-index --artifact ID=sha256:DIGEST` (repeatable).
+
 “Latest” is a background observation of this index (System Health → Background
 observations, `GET /api/v1/system/update` → `latest`) with its observed time and
 age. It is reported `unknown` when no source is configured, the running build is
