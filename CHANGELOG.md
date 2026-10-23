@@ -7,6 +7,13 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Guide series: a `series` taxonomy and an indexed `series_order` field on posts (additive
+  migrations, only when absent). `{{series .}}` returns the series' published parts in the
+  article's language, in series order, with the article's position and its previous and next part.
+  Drafts, private parts and other languages are never listed or counted. The series archive lists
+  the whole series in that order, and the default article shows a series navigation. No read
+  progress is shown or stored.
+
 - Filterable libraries: type and term archives filter by the type's taxonomies and indexed select
   fields from the query string (`/blog?category=guides&level=advanced`), over published public items
   in the page language. `{{libraryFilters .}}` returns groups with facet counts, active filters and

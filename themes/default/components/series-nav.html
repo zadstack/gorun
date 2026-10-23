@@ -1,0 +1,15 @@
+{{/* Usage: {{component "series-nav" (series .Content)}}. The article's guide series: its name (linking to the
+     series archive), "Part N of M", the ordered parts with the current one marked, and the previous and next
+     part in series order (not by date). Nothing when the article is in no series or is its only published
+     part. No read progress is shown or stored. */}}
+{{with .}}
+<nav class="gp-series" aria-labelledby="gp-series-title">
+  <p class="gp-series-head"><a id="gp-series-title" class="gp-series-name" href="{{url .Term}}">{{.Term.Name}}</a>
+    <span class="gp-series-position">{{printf (t "series_part") .Index .Count}}</span></p>
+  <ol class="gp-series-list">{{$cur := .Index}}{{range $i, $p := .Parts}}<li class="gp-series-item">{{if eq (add $i 1) $cur}}<span class="gp-series-current" aria-current="page">{{$p.Title}}</span>{{else}}<a class="gp-series-link" href="{{url $p}}">{{$p.Title}}</a>{{end}}</li>{{end}}</ol>
+  {{if or .Prev .Next}}<p class="gp-series-steps">
+    {{with .Prev}}<a class="gp-series-step gp-series-prev" href="{{url .}}" rel="prev"><span class="gp-adjacent-label">{{t "series_prev"}}</span> {{.Title}}</a>{{end}}
+    {{with .Next}}<a class="gp-series-step gp-series-next" href="{{url .}}" rel="next"><span class="gp-adjacent-label">{{t "series_next"}}</span> {{.Title}}</a>{{end}}
+  </p>{{end}}
+</nav>
+{{end}}

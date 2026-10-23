@@ -204,3 +204,61 @@ func regexpAll(pattern, s string) []string {
 	}
 	return out
 }
+
+// series orders a guide's published parts in the item's locale by
+// series_order (unnumbered parts last, oldest first), skips drafts and
+// other-locale parts, and gives series neighbours; an item in no series, or
+// the only published part, has none.
+func TestSeriesOrdersPublishedPartsInLocale(t *testing.T) {
+	e, cs := compositionEnv(t, `{{with .Content}}{{with series .}}{{.Term.Slug}} {{.Index}}/{{.Count}}:{{range .Parts}}{{.Slug}} {{end}}|{{with .Prev}}{{.Slug}}{{end}}<{{with .Next}}{{.Slug}}{{end}}{{else}}none{{end}}{{end}}`)
+	ctx := context.Background()
+	tax, _ := kernel.Get[taxonomy.Service](e.app.Deps, kernel.ServiceTaxonomy)
+	for _, s := range []string{"setup", "solo"} {
+		if _, err := tax.SaveTerm(ctx, taxonomy.Term{Taxonomy: SeriesTaxonomy, Slug: s, Name: s}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	part := func(slug, series, locale, status string, order any) *content.Item {
+		fields := map[string]any{}
+		if order != nil {
+			fields[SeriesOrderField] = order
+		}
+		return mustItem(t, cs, content.Input{Type: "post", Title: slug, Slug: slug, Locale: locale, Status: content.Status(status),
+			Terms: map[string][]string{SeriesTaxonomy: {series}}, Fields: fields})
+	}
+	third := part("third", "setup", "ar", "published", 3)
+	first := part("first", "setup", "ar", "published", 1)
+	part("unnumbered", "setup", "ar", "published", nil)
+	part("draft-two", "setup", "ar", "draft", 2)
+	part("english-two", "setup", "en", "published", 2)
+	alone := part("alone", "solo", "ar", "published", 1)
+	plain := mustItem(t, cs, content.Input{Type: "post", Title: "plain", Slug: "plain", Locale: "ar", Status: "published"})
+
+	if got := renderIn(t, e, "ar", &Context{Content: third}); got != "setup 2/3:first third unnumbered |first&lt;unnumbered" {
+		t.Fatalf("third: %q", got)
+	}
+	if got := renderIn(t, e, "ar", &Context{Content: first}); got != "setup 1/3:first third unnumbered |&lt;third" {
+		t.Fatalf("first: %q", got)
+	}
+	for name, it := range map[string]*content.Item{"only part": alone, "no series": plain} {
+		if got := renderIn(t, e, "ar", &Context{Content: it}); got != "none" {
+			t.Fatalf("%s: %q", name, got)
+		}
+	}
+}
+
+// Sharing only a series does not make posts related: the series has its own
+// navigation.
+func TestRelatedIgnoresSeriesMembership(t *testing.T) {
+	e, cs := compositionEnv(t, `{{with .Content}}R:{{range related . 5}}{{.Slug}} {{end}}{{end}}`)
+	ctx := context.Background()
+	tax, _ := kernel.Get[taxonomy.Service](e.app.Deps, kernel.ServiceTaxonomy)
+	if _, err := tax.SaveTerm(ctx, taxonomy.Term{Taxonomy: SeriesTaxonomy, Slug: "s", Name: "s"}); err != nil {
+		t.Fatal(err)
+	}
+	one := mustItem(t, cs, content.Input{Type: "post", Title: "one", Slug: "one", Locale: "ar", Status: "published", Terms: map[string][]string{SeriesTaxonomy: {"s"}}})
+	mustItem(t, cs, content.Input{Type: "post", Title: "two", Slug: "two", Locale: "ar", Status: "published", Terms: map[string][]string{SeriesTaxonomy: {"s"}}})
+	if got := renderIn(t, e, "ar", &Context{Content: one}); got != "R:" {
+		t.Fatalf("series-only siblings must not be related: %q", got)
+	}
+}

@@ -92,5 +92,8 @@
   "results_count": "%d results",
   "remove_filter": "Remove filter: %s",
   "clear_filters": "Clear filters",
-  "no_results_filters": "No published items match these filters."
+  "no_results_filters": "No published items match these filters.",
+  "series_part": "Part %d of %d",
+  "series_prev": "Previous in this series",
+  "series_next": "Next in this series"
 }

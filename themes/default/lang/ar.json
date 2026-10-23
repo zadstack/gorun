@@ -92,5 +92,8 @@
   "results_count": "%d نتيجة",
   "remove_filter": "إزالة التصفية: %s",
   "clear_filters": "مسح التصفية",
-  "no_results_filters": "لا توجد عناصر منشورة تطابق هذه التصفية."
+  "no_results_filters": "لا توجد عناصر منشورة تطابق هذه التصفية.",
+  "series_part": "الجزء %d من %d",
+  "series_prev": "السابق في السلسلة",
+  "series_next": "التالي في السلسلة"
 }

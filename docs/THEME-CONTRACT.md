@@ -93,6 +93,19 @@ pagination components use them. Default components: `library-filters` (no-JS lin
 removable chips, clear link) and `library-empty` (shown instead of the list when active filters match
 nothing). Reading time is an estimate and says so ("About N min read").
 
+**Guide series.** A post joins a series through the `series` taxonomy (taxonomy migration 0002,
+public, non-hierarchical) and takes its place from the indexed number field `series_order` (content
+migration 0008). Both are added only when absent.
+
+| Func | Returns |
+|---|---|
+| `{{series .}}` | `{Term, Parts, Index, Count, Prev, Next}` or nil. Parts are the series' published public posts in the item's type and locale, in series order: numbered parts by number, then the unnumbered oldest first, then id. Draft, private, deleted and other-locale parts are never listed or counted. `Prev` and `Next` follow series order, unlike `{{adjacent}}` (publication date). Nil when the item is in no series, is not published, or is the only published part. With several series terms, the first by slug is used. No read progress is shown or stored. |
+
+The series archive (`/series/<slug>`) lists the whole series on one page in the same order (at most
+200 parts). `{{related}}` ignores series membership. Default component: `series-nav` (series name
+linking to its archive, "Part N of M", the ordered parts with the current one marked, previous and
+next in the series); the default article shows it and then omits the date-based neighbours.
+
 **Page purpose.** The page type has a `purpose` select field (content migration 0007, added only
 when the type has none). The page template order is `page-<slug>`, `page-<template>`,
 `page-<purpose>`, `page`, `single`, `index`, so a builder page keeps `page-builder.html`. Only the four

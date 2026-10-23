@@ -200,6 +200,15 @@ func (h *handlers) termItems(r *http.Request, tc *theme.Context, tax *taxonomy.T
 			tc.Extra["library"] = lib
 		}
 		q.Type = types[0]
+		if tax.Slug == theme.SeriesTaxonomy {
+			// A series archive is the whole series, in series order.
+			q.PerPage, q.Order = theme.SeriesMaxParts, []content.Order{{By: "published_at", Dir: "asc"}}
+			if err := h.list(ctx, r, tc, q); err != nil {
+				return err
+			}
+			theme.SortSeries(tc.Items)
+			return nil
+		}
 		return h.list(ctx, r, tc, q)
 	}
 	if err := h.list(ctx, r, tc, q); err != nil {

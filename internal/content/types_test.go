@@ -22,8 +22,12 @@ func TestSystemTypesSeeded(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !post.System || !post.Public || !post.HasArchive || post.Hierarchical ||
-		!slices.Equal(post.Taxonomies, []string{"category", "tag"}) || post.Name["ar"] == "" {
+		!slices.Equal(post.Taxonomies, []string{"category", "tag", "series"}) || post.Name["ar"] == "" {
 		t.Fatalf("post: %+v", post)
+	}
+	// Migration 0008 gives posts an indexed series_order number field.
+	if !slices.ContainsFunc(post.Fields, func(f Field) bool { return f.Key == "series_order" && f.Type == FieldNumber && f.Indexed }) {
+		t.Fatalf("post fields: %+v", post.Fields)
 	}
 	page, _ := s.GetType(ctx, "page")
 	if !page.System || !page.Hierarchical || page.HasArchive || !slices.Contains(page.Supports, "parent") {

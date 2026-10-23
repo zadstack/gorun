@@ -182,7 +182,10 @@ func (h *handlers) list(ctx context.Context, r *http.Request, tc *theme.Context,
 	if !ok {
 		return nil
 	}
-	q.Status, q.Page, q.PerPage, q.PublicLocale = "published", pageParam(r), h.perPage(ctx), i18n.Locale(ctx)
+	q.Status, q.Page, q.PublicLocale = "published", pageParam(r), i18n.Locale(ctx)
+	if q.PerPage == 0 {
+		q.PerPage = h.perPage(ctx)
+	}
 	q.PublicOnly = true
 	if len(q.Order) == 0 {
 		q.Order = []content.Order{{By: "published_at", Dir: "desc"}}
