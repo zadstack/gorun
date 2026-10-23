@@ -44,6 +44,20 @@ func AddonSettingKey(name string) string { return "addons." + name + ".enabled" 
 // JSON boolean is an activation error, which stops the boot with a message
 // instead of guessing.
 func AddonEnabled(ctx context.Context, d *sql.DB, name string) (bool, error) {
+	return addonEnabled(ctx, d, name)
+}
+
+// AddonEnabledTx reads activation from the caller's transaction, without a
+// second pool connection. It uses exactly the same defaults and boolean parser.
+func AddonEnabledTx(ctx context.Context, tx *sql.Tx, name string) (bool, error) {
+	return addonEnabled(ctx, tx, name)
+}
+
+type addonReader interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func addonEnabled(ctx context.Context, d addonReader, name string) (bool, error) {
 	var tables int
 	if err := d.QueryRowContext(ctx, `SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'settings'`).Scan(&tables); err != nil {
 		return false, fmt.Errorf("kernel: addon %s: inspect schema: %w", name, err)
