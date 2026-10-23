@@ -22,6 +22,8 @@ The recent-content table shows the most recently updated items in public content
 
 Integration setup status reads local configuration only: opening the dashboard does not test any provider connection.
 
+The [setup checklist and independent Edge manager](EDGE-MANAGER.md) extend the saved setup summary. New default layouts place setup first and collapse diagnostics; saved personal order remains unchanged.
+
 ## Pin tools to the dashboard
 
 Use **Add to quick access** beside an authorized contextual page tab (with touch, mouse or keyboard). The item becomes a personal dashboard panel and a main-sidebar **Quick access** shortcut immediately; its contextual page tab is hidden on the next page navigation or reload. Use **Remove from quick access** beside the sidebar shortcut, or **Return to navigation** on its dashboard panel, to unpin it. The sidebar and an on-page dashboard widget refresh immediately; the contextual tab returns on the next page navigation or reload. Pins and their order survive reload and are private to your account. Quick access rechecks current permissions and workspace visibility; hidden or unavailable destinations are not exposed. An old `builder.identity` pin projects to the authorized `site-builder` entry and duplicates are combined without rewriting saved preferences. Pinning never changes roles, calls a provider or publishes content, and panels recheck your current permissions.

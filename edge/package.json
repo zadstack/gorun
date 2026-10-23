@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test test/*.test.mjs",
+    "test": "npm run build && node --test test/*.test.mjs && node tools/build-manager.mjs --check",
     "dev": "wrangler dev --local",
     "db:migrate": "wrangler d1 migrations apply DB --local",
     "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
@@ -19,7 +19,9 @@
     "smoke:local": "node test/local-smoke.mjs",
     "owner": "node tools/owner.mjs",
     "browser:local": "node test/owner-browser-smoke.mjs",
-    "browser:remote": "node test/admin-browser.mjs"
+    "browser:remote": "node test/admin-browser.mjs",
+    "manager:build": "npm run build && node tools/build-manager.mjs",
+    "manager:check": "npm run build && node tools/build-manager.mjs --check"
   },
   "cloudflare": {
     "bindings": {

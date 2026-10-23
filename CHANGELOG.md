@@ -7,6 +7,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Dashboard setup checklist with permission-aware configuration and saved evidence, contextual actions, and collapsed diagnostics while preserving saved personal layouts.
+- Independent experimental Edge instance registry and explicit Cloudflare creation plans: separate Worker/D1/private R2 resources, encrypted per-instance manager keys, pinned embedded runtime, durable checkpoints, and identity verification before acceptance. No Full content cloning or automatic provider retry/deletion.
 - Page composition contract for themes:
   - `{{destination "contact"}}` resolves an about, service, methodology or contact page in the
     current language, through translations, and marks a page in another language as a fallback
