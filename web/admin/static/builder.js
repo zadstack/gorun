@@ -88,14 +88,14 @@
   }
   const imageTargets = new Map(), advancedSections = new Set();
  window.addEventListener("media:selected",event=>{const input=imageTargets.get(event.detail?.target);if(!input?.isConnected||typeof event.detail.url!=="string")return;input.value=event.detail.url;input.dispatchEvent(new Event("input",{bubbles:true}));});
- function field(target, key, parent, sectionID, entryIndex) {
-    const wrap = el("label", "block text-sm space-y-1", text(key));
+ function field(target, key, parent, sectionID, entryIndex, labelKey = key) {
+    const wrap = el("label", "block text-sm space-y-1", text(labelKey));
     const input = el(
       key === "text" ? "textarea" : "input",
       "w-full bg-panel border border-line p-2",
     );
     input.value = target[key] || "";
-    input.maxLength = key === "link" || key === "image" ? 2048 : 12000;
+    input.maxLength = key === "link" || key === "image" || key === "secondary_link" ? 2048 : ["label", "value", "column"].includes(labelKey) ? 300 : 12000;
     input.dir = "auto";
     input.dataset.field = key;
     input.dataset.section = sectionID;
@@ -105,11 +105,120 @@
     input.addEventListener("input", () => {
       remember();
       target[key] = input.value;
+      refreshNativeEligibility(sectionID);
       changed();
     });
     wrap.append(input);
  if(key==="image"&&root.dataset.canPickMedia==="true") {const id=`builder-image-${sectionID}-${entryIndex??"section"}`;imageTargets.set(id,input);const choose=button("choose_image",()=>window.dispatchEvent(new CustomEvent("media:open",{detail:{target:id}})));wrap.append(choose);}
  parent.append(wrap);
+  }
+  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview"];
+  const nativeOnlyKinds = ["steps", "comparison", "product_preview"];
+  function nativeSwitchBlocked(section) {
+    if (section.hero_scene || section.feed) return true;
+    if (section.link && !section.link_label?.trim()) return true;
+    if (section.kind === "faq" && (section.items || []).some(entry => !entry.title?.trim())) return true;
+    if (section.kind === "features" && (section.items || []).some(entry => entry.link && !entry.title?.trim())) return true;
+    if (!["hero", "product_preview"].includes(section.kind) && (section.image || section.image_alt)) return true;
+    if (["hero", "comparison", "product_preview"].includes(section.kind) && section.items?.length) return true;
+    if (section.kind !== "hero" && section.variant && section.variant !== "default" && !(section.kind === "faq" && section.variant === "split")) return true;
+    return (section.items || []).some(entry => entry.price || (section.kind !== "features" && (entry.image || entry.image_alt || entry.link)));
+  }
+  // Field edits do not re-render the editor, preserving focus and selection.
+  // Recompute the native option from the current section instead of leaving a
+  // disabled option stale after an incompatible field has been cleared.
+  function refreshNativeEligibility(sectionID) {
+    const section = doc.sections.find((entry) => entry.id === sectionID);
+    const parent = [...list.children].find((entry) => entry.dataset.sectionId === sectionID);
+    if (!section || !parent) return;
+    const option = parent.querySelector('select[data-field="library"] option[value="sections"]');
+    if (!option) return;
+    const blocked = !section.library && nativeSwitchBlocked(section);
+    option.disabled = blocked;
+    const help = parent.querySelector("[data-native-eligibility]");
+    if (help) help.hidden = !blocked;
+  }
+  function libraryControl(section, parent) {
+    if (!nativeKinds.includes(section.kind)) return;
+    const label = el("label", "block text-sm", text("library"));
+    const select = el("select", "bg-panel border border-line p-2");
+    select.dataset.field = "library";
+    for (const value of ["", "sections"]) {
+      const option = el("option", "", text(value ? "library_native" : "library_legacy"));
+      option.value = value;
+      option.disabled = value ? !section.library && nativeSwitchBlocked(section) : nativeOnlyKinds.includes(section.kind);
+      select.append(option);
+    }
+    select.value = section.library || "";
+    select.addEventListener("change", () => {
+      if (!select.value && !confirm(text("confirm_library_change"))) { select.value = section.library || ""; return; }
+      mutate(() => {
+        section.library = select.value;
+        if (section.library) section.native = section.native || {};
+        else { delete section.native; for (const entry of section.items || []) { delete entry.icon; delete entry.featured; } }
+      });
+    });
+    label.append(select); parent.append(label);
+    const help = el("p", "text-muted text-sm", text("library_blocked"));
+    help.dataset.nativeEligibility = "true";
+    help.hidden = !!section.library || !nativeSwitchBlocked(section);
+    parent.append(help);
+  }
+  function selectField(target, key, values, parent) {
+    const label = el("label", "block text-sm", text(key));
+    const select = el("select", "bg-panel border border-line p-2");
+    select.dataset.field = key;
+    for (const value of values) { const option = el("option", "", value || text("none")); option.value = value; select.append(option); }
+    select.value = target[key] || "";
+    select.addEventListener("change", () => mutate(() => target[key] = select.value));
+    label.append(select); parent.append(label);
+  }
+  function checkbox(target, key, parent) {
+    const label = el("label", "flex items-center gap-2", text(key)), input = el("input");
+    input.type = "checkbox"; input.dataset.field = key; input.checked = !!target[key];
+    input.addEventListener("change", () => mutate(() => target[key] = input.checked));
+    label.prepend(input); parent.append(label);
+  }
+  function nativeFields(section, parent) {
+    const options = section.native || (section.native = {});
+    const group = el("fieldset", "border border-line p-3 space-y-2");
+    group.append(el("legend", "font-medium", text("library_native")));
+    selectField(options, "background", ["", "inherit", "none", "dots", "grid", "lines", "circles", "waves", "paper", "solid"], group);
+    if (section.kind === "hero") {
+      for (const key of ["eyebrow", "secondary_link", "secondary_label"]) field(options, key, group, section.id);
+      (options.facts || []).forEach((fact, index) => {
+        const row = el("fieldset", "border border-line p-2"); row.append(el("legend", "", text("fact")));
+        field(fact, "label", row, section.id, index); field(fact, "value", row, section.id, index);
+        row.append(button("remove_item", () => mutate(() => options.facts.splice(index, 1)))); group.append(row);
+      });
+      group.append(button("add_fact", () => mutate(() => { options.facts = options.facts || []; options.facts.push({label: text("fact"), value: "0"}); }), (options.facts || []).length >= 8));
+    }
+    if (["hero", "product_preview"].includes(section.kind)) {
+      field(options, "caption", group, section.id);
+      checkbox(options, "illustration", group);
+      group.append(el("p", "text-muted text-sm", text("illustration_help")));
+    }
+    if (section.kind === "comparison") comparisonFields(section, options, group);
+    parent.append(group);
+  }
+  function comparisonFields(section, options, parent) {
+    (options.columns || []).forEach((column, index) => {
+      const group = el("div", "border border-line p-2");
+      field(options.columns, index, group, section.id, undefined, "column");
+      if (index > 0) group.append(button("remove_column", () => mutate(() => { options.columns.splice(index, 1); for (const row of options.rows || []) row.cells.splice(index - 1, 1); }), options.columns.length <= 2));
+      parent.append(group);
+    });
+    parent.append(button("add_column", () => mutate(() => { options.columns.push(text("column")); for (const row of options.rows || []) row.cells.push({text: "", status: ""}); }), (options.columns || []).length >= 6));
+    (options.rows || []).forEach((row, index) => {
+      const group = el("fieldset", "border border-line p-2 space-y-2"); group.append(el("legend", "", text("comparison_row")));
+      field(row, "label", group, section.id, index);
+      row.cells.forEach((cell, cellIndex) => {
+        const cellGroup = el("fieldset", "border border-line p-2"); cellGroup.append(el("legend", "", options.columns[cellIndex + 1]));
+        field(cell, "text", cellGroup, section.id, index); selectField(cell, "status", ["", "yes", "no"], cellGroup); group.append(cellGroup);
+      });
+      group.append(button("remove_item", () => mutate(() => options.rows.splice(index, 1)))); parent.append(group);
+    });
+    parent.append(button("add_row", () => mutate(() => { options.rows = options.rows || []; options.rows.push({label: text("comparison_row"), cells: options.columns.slice(1).map(() => ({text: "", status: ""}))}); }), (options.rows || []).length >= 24));
   }
   function render() {
     imageTargets.clear();
@@ -171,10 +280,12 @@
       );
       heading.append(actions);
       article.append(heading);
+      libraryControl(section, article);
+      const native = section.library === "sections";
       const advanced=el("details","border border-line p-3 space-y-2");advanced.append(el("summary","cursor-pointer font-medium",text("advanced")));advanced.open=advancedSections.has(section.id);advanced.addEventListener("toggle",()=>{if(!advanced.isConnected)return;if(advanced.open)advancedSections.add(section.id);else advancedSections.delete(section.id);});
  const variantLabel = el("label", "block text-sm", text("variant")),
         variant = el("select", "bg-panel border border-line p-2");
-      ["default", "split", "centered"].forEach((value) => {
+      (native && section.kind !== "hero" ? section.kind === "faq" ? ["default", "split"] : ["default"] : ["default", "split", "centered"]).forEach((value) => {
         const option = el("option", "", text("layout_" + value));
         option.value = value;
         variant.append(option);
@@ -186,7 +297,7 @@
       );
       variantLabel.append(variant);
       advanced.append(variantLabel);
-      if (section.kind === "hero") {
+      if (section.kind === "hero" && !native) {
         const label = el("label", "block text-sm", text("hero_scene"));
         const select = el("select", "bg-panel border border-line p-2");
         select.dataset.field = "hero_scene";
@@ -201,7 +312,7 @@
         advanced.append(label);
         advanced.append(el("p", "text-xs", text("scene_help")));
       }
-      if (section.kind === "text" || section.kind === "projects") {
+      if (!native && (section.kind === "text" || section.kind === "projects")) {
         const sourceLabel = el("label", "block text-sm", text("source"));
         const source = el("select", "bg-panel border border-line p-2");
         source.dataset.field = "feed";
@@ -224,9 +335,10 @@
         }
       }
 
-      ["title", "text", "image", "image_alt", "link", "link_label"].forEach(
+      ["title", "text", ...(!native || ["hero", "product_preview"].includes(section.kind) ? ["image", "image_alt"] : []), "link", "link_label"].forEach(
         (key) => field(section, key, article, section.id),
       );
+      if (native) nativeFields(section, article);
       article.append(advanced);
  const hideLabel = el("label", "flex items-center gap-2", text("hidden")),
         hide = el("input");
@@ -238,12 +350,17 @@
       );
       hideLabel.prepend(hide);
       article.append(hideLabel);
+      if (!native || ["features", "steps", "faq"].includes(section.kind)) {
       (section.items || []).forEach((entry, itemIndex) => {
         const group = el("fieldset", "border border-line p-3 space-y-2");
         group.append(el("legend", "", `${text("item")} ${itemIndex + 1}`));
-        ["title", "text", "image", "image_alt", "link", "price"].forEach(
+        (native ? section.kind === "features" ? ["title", "text", "image", "image_alt", "link"] : ["title", "text"] : ["title", "text", "image", "image_alt", "link", "price"]).forEach(
           (key) => field(entry, key, group, section.id, itemIndex),
         );
+        if (native && section.kind === "features") {
+          selectField(entry, "icon", ["", "bolt", "shield", "chart", "globe", "clock", "check", "layers"], group);
+          checkbox(entry, "featured", group);
+        }
         group.append(
           button(
             "remove_item",
@@ -256,7 +373,7 @@
         mutate(() => {
           section.items = section.items || [];
           section.items.push({
-            title: "",
+            title: native && section.kind === "faq" ? text("question_default") : "",
             text: "",
             image: "",
             image_alt: "",
@@ -264,6 +381,7 @@
             price: "",
           });
         }), (section.items || []).length >= 24));
+      }
       list.append(article);
     });
     buttons();

@@ -19,3 +19,26 @@ func TestBuilderMarkupSurvivesSanitizingWithoutActiveHTML(t *testing.T) {
 		}
 	}
 }
+
+func TestNativeComparisonFocusAttributesAreBounded(t *testing.T) {
+	input := `<div class="gp-s-compare-wrap" tabindex="0" role="region" aria-label="مقارنة الخيارات"><table class="gp-s-compare"><thead><tr><th scope="col">Capability</th></tr></thead><tbody><tr><th scope="row">Feature</th></tr></tbody></table></div>`
+	cleaned := Sanitize(input)
+	for _, attribute := range []string{`tabindex="0"`, `role="region"`, `aria-label="مقارنة الخيارات"`, `scope="col"`, `scope="row"`} {
+		if !strings.Contains(cleaned, attribute) {
+			t.Errorf("native keyboard semantics lost %s in %s", attribute, cleaned)
+		}
+	}
+	for _, value := range []string{"-1", "1", "999", "00", "invalid"} {
+		cleaned := Sanitize(`<div tabindex="` + value + `" role="button">Text</div>`)
+		if strings.Contains(cleaned, "tabindex=") || strings.Contains(cleaned, `role="button"`) {
+			t.Fatalf("unbounded focus/role retained: %s", cleaned)
+		}
+	}
+	longLabel := strings.Repeat("x", 301)
+	if strings.Contains(Sanitize(`<div aria-label="`+longLabel+`">Text</div>`), "aria-label=") {
+		t.Fatal("oversized accessible label retained")
+	}
+	if strings.Contains(Sanitize(`<span tabindex="0">Text</span>`), "tabindex=") {
+		t.Fatal("focus attribute allowed outside bounded div surface")
+	}
+}

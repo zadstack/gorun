@@ -365,3 +365,8 @@
 @media (max-width: 760px) {
   :root .prose-gp .gp-s-steps > li { padding-inline-start: 52px; }
 }
+
+/* Native builder bodies also render outside .prose-gp. Keep button labels
+   above later anchor resets (including Tailwind preflight's color: inherit). */
+:root .gp-s-btn, :root .gp-s-btn:hover { color: var(--on-accent, #fff); text-decoration: none; }
+:root .gp-s-btn-ghost, :root .gp-s-btn-ghost:hover { color: var(--ink, #111); }

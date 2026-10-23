@@ -22,6 +22,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Page builder native section opt-in (`library: "sections"`): editable hero, feature cards,
+  steps, comparison, FAQ and product previews use the existing theme section stylesheet.
+  Version-1 legacy documents keep their rendered HTML; mixed layouts preserve one page h1.
+  Native fields are bounded and escaped, comparisons keep a labeled keyboard scroll region,
+  and CSS interface illustrations are explicitly labeled. Saving remains draft-only until publish.
+
 - Section library pilot (`themes/default/assets/sections.css`, shared by every catalog theme):
   hero variants (`gp-s-hero-split`, `gp-s-hero-centered`, `gp-s-facts`), feature cards with
   CSS-drawn icon tiles and a featured card, steps on a connector track, a `gp-s-flow` diagram,
@@ -132,6 +138,11 @@ All notable changes to GoRun are recorded here. The format follows
 - Standalone Membership and SaaS pages keep their styles and service-aware navigation when
   optional account add-ons are off. The module catalog explains Commerce-dependent customer
   sign-in availability; its 503 response follows the request locale for title and direction.
+
+- Native section buttons outside prose containers keep their on-accent text colour,
+  including hover, above later anchor resets; ghost buttons keep the theme ink colour.
+  The native-builder browser contrast regression measures computed colours instead of
+  relying on stylesheet order or a changed fixture palette.
 
 - Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
   or Worker identity checks. Configuration changes during these operations return conflict.

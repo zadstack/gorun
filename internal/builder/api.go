@@ -91,7 +91,7 @@ func layoutPermission(ctx context.Context, publish bool) error {
 
 func registerLayoutAPI(d *kernel.Deps, svc *service) {
 	a := &layoutAPI{svc: svc, d: d}
-	contract := &kernel.APIContract{MaxBodyBytes: 1 << 20, Limits: map[string]any{"builder_sections": maxSections, "builder_repeated_entries": maxRepeatedEntries}, Errors: []kernel.APIErrorResponse{
+	contract := &kernel.APIContract{MaxBodyBytes: 1 << 20, Limits: map[string]any{"builder_sections": maxSections, "builder_repeated_entries": maxRepeatedEntries, "builder_native_facts": maxNativeFacts, "builder_comparison_columns": maxComparisonColumns, "builder_comparison_rows": maxRepeatedEntries, "builder_native_label_bytes": maxNativeLabelBytes, "builder_native_text_bytes": maxNativeTextBytes}, Errors: []kernel.APIErrorResponse{
 		{Status: 409, Code: "conflict", Description: "The page or draft changed; reload and review before retrying."},
 		{Status: 413, Code: "payload_too_large", Description: "JSON body exceeds 1 MiB."},
 	}}
