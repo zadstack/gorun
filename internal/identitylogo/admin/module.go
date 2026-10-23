@@ -91,7 +91,23 @@ func bridgeHooks(d *kernel.Deps) identitylogo.Hooks {
 			if d.Audit == nil {
 				return
 			}
-			d.Audit.Record(ctx, "identitylogo."+e.Action, "theme", e.Theme, map[string]any{"outcome": e.Outcome, "owner": e.Owner, "connection": e.ConnectionID, "model": e.Model, "payload_hash": e.PayloadHash, "prompt_version": e.PromptVersion, "estimate_micros": e.EstimateMicros, "currency": e.Currency, "candidate_hash": e.CandidateHash})
+			d.Audit.Record(ctx, "identitylogo."+e.Action, "theme", e.Theme, map[string]any{
+				"outcome":                 e.Outcome,
+				"owner":                   e.Owner,
+				"connection":              e.ConnectionID,
+				"model":                   e.Model,
+				"payload_hash":            e.PayloadHash,
+				"approval_hash":           e.ApprovalHash,
+				"destination_fingerprint": e.DestinationFingerprint,
+				"capability_fingerprint":  e.CapabilityFingerprint,
+				"quote_hash":              e.QuoteHash,
+				"quote_version":           e.QuoteVersion,
+				"draft_revision_hash":     e.DraftRevisionHash,
+				"prompt_version":          e.PromptVersion,
+				"estimate_micros":         e.EstimateMicros,
+				"currency":                e.Currency,
+				"candidate_hash":          e.CandidateHash,
+			})
 		},
 	}
 }

@@ -76,17 +76,23 @@ type Prepared struct {
 }
 
 type AuditEvent struct {
-	Action         string `json:"action"`
-	Outcome        string `json:"outcome"`
-	Owner          string `json:"owner"`
-	Theme          string `json:"theme"`
-	ConnectionID   string `json:"connection_id"`
-	Model          string `json:"model"`
-	PayloadHash    string `json:"payload_hash"`
-	PromptVersion  string `json:"prompt_version"`
-	EstimateMicros int64  `json:"estimate_micros"`
-	Currency       string `json:"currency"`
-	CandidateHash  string `json:"candidate_hash,omitempty"`
+	Action                 string `json:"action"`
+	Outcome                string `json:"outcome"`
+	Owner                  string `json:"owner"`
+	Theme                  string `json:"theme"`
+	ConnectionID           string `json:"connection_id"`
+	Model                  string `json:"model"`
+	PayloadHash            string `json:"payload_hash"`
+	ApprovalHash           string `json:"approval_hash"`
+	DestinationFingerprint string `json:"destination_fingerprint"`
+	CapabilityFingerprint  string `json:"capability_fingerprint"`
+	QuoteHash              string `json:"quote_hash"`
+	QuoteVersion           string `json:"quote_version"`
+	DraftRevisionHash      string `json:"draft_revision_hash"`
+	PromptVersion          string `json:"prompt_version"`
+	EstimateMicros         int64  `json:"estimate_micros"`
+	Currency               string `json:"currency"`
+	CandidateHash          string `json:"candidate_hash,omitempty"`
 }
 
 type Hooks struct {
@@ -117,11 +123,14 @@ type Options struct {
 }
 
 type Review struct {
-	Token       string    `json:"token"`
-	Expires     time.Time `json:"expires"`
-	Revision    string    `json:"revision"`
-	PayloadHash string    `json:"payload_hash"`
-	Prepared    Prepared  `json:"prepared"`
+	// ApprovalHash binds the owner, draft revision and complete reviewed contract.
+	// It excludes the one-use token and expiry and never contains raw credentials.
+	ApprovalHash string    `json:"approval_hash"`
+	Token        string    `json:"token"`
+	Expires      time.Time `json:"expires"`
+	Revision     string    `json:"revision"`
+	PayloadHash  string    `json:"payload_hash"`
+	Prepared     Prepared  `json:"prepared"`
 }
 
 type Candidate struct {

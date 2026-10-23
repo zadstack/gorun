@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"image"
 	"image/color"
@@ -388,5 +389,89 @@ func TestExpiryDuringLocalRevalidationSendsNothing(t *testing.T) {
 	}
 	if _, err := s.Generate(context.Background(), "owner", r.Token, true); !errors.Is(err, ErrApproval) || calls.Load() != 0 {
 		t.Fatalf("expired review sent: err=%v calls=%d", err, calls.Load())
+	}
+}
+
+func TestApprovalHashBindsFullContractBeyondIdenticalPayload(t *testing.T) {
+	s, d, _ := newTestService(t)
+	current := prepared(input())
+	s.hooks.Prepare = func(context.Context, Input) (Prepared, error) { return current, nil }
+	base := preview(t, s, "owner")
+	repeat := preview(t, s, "owner")
+	if len(base.ApprovalHash) != 64 || base.ApprovalHash != repeat.ApprovalHash || base.Token == repeat.Token {
+		t.Fatal("contract hash must be stable and independent of nonce")
+	}
+	for name, change := range map[string]func(*Prepared){
+		"credential fingerprint": func(p *Prepared) { p.Destination.Fingerprint = "rotated-credential-fingerprint" },
+		"capability":             func(p *Prepared) { p.Capability.Fingerprint = "other-adapter" },
+		"quote amount":           func(p *Prepared) { p.Quote.AmountMicros++ },
+		"quote version":          func(p *Prepared) { p.Quote.Version = "new-quote" },
+		"quote basis":            func(p *Prepared) { p.Quote.Basis = "other assumptions" },
+	} {
+		t.Run(name, func(t *testing.T) {
+			current = prepared(input())
+			change(&current)
+			next := preview(t, s, "owner")
+			if next.PayloadHash != base.PayloadHash || next.ApprovalHash == base.ApprovalHash {
+				t.Fatal("identical outbound payload hid a changed approval contract")
+			}
+		})
+	}
+	current = prepared(input())
+	otherOwner := preview(t, s, "other-owner")
+	d.revision = "concurrent-draft-revision"
+	otherRevision := preview(t, s, "owner")
+	for _, next := range []Review{otherOwner, otherRevision} {
+		if next.PayloadHash != base.PayloadHash || next.ApprovalHash == base.ApprovalHash {
+			t.Fatal("owner or revision missing from approval contract")
+		}
+	}
+	d.revision = base.Revision
+	current.Payload = append([]byte("\n"), current.Payload...)
+	otherBytes := preview(t, s, "owner")
+	if otherBytes.ApprovalHash == base.ApprovalHash {
+		t.Fatal("approval must bind exact outbound payload bytes")
+	}
+}
+
+func TestAuditPreservesImmutableApprovalAndRecordsRejectedCaller(t *testing.T) {
+	s, _, calls := newTestService(t)
+	var events []AuditEvent
+	s.hooks.Record = func(_ context.Context, event AuditEvent) { events = append(events, event) }
+	r := preview(t, s, "original-owner")
+	original := events[0]
+	if _, err := s.Generate(context.Background(), "rejected-caller", r.Token, true); !errors.Is(err, ErrApproval) {
+		t.Fatal(err)
+	}
+	if len(events) != 2 || events[1].Owner != "rejected-caller" || events[1].ApprovalHash != original.ApprovalHash || calls.Load() != 0 {
+		t.Fatalf("rejected caller lost correlation: %+v", events)
+	}
+	approvalToken := r.Token
+	r.ApprovalHash, r.PayloadHash, r.Revision = "mutated-hash", "mutated-payload-hash", "mutated-revision"
+	r.Prepared.Quote.Version, r.Prepared.Destination.Fingerprint, r.Prepared.Capability.Fingerprint = "mutated-quote", "mutated-destination", "mutated-capability"
+	r.Prepared.Payload[0] = '!'
+	candidate, err := s.Generate(context.Background(), "original-owner", approvalToken, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Select(context.Background(), "original-owner", candidate.ID, "site.icon", candidate.Revision); err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 4 {
+		t.Fatal(events)
+	}
+	for _, event := range events {
+		if event.ApprovalHash != original.ApprovalHash || event.PayloadHash != original.PayloadHash || event.DestinationFingerprint != original.DestinationFingerprint || event.CapabilityFingerprint != original.CapabilityFingerprint || event.QuoteHash != original.QuoteHash || event.QuoteVersion != original.QuoteVersion || event.DraftRevisionHash != original.DraftRevisionHash || len(event.QuoteHash) != 64 || len(event.DraftRevisionHash) != 64 {
+			t.Fatalf("audit contract mutated: %+v", event)
+		}
+	}
+	encoded, err := json.Marshal(events)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, forbidden := range []string{input().Prompt, string(prepared(input()).Payload), approvalToken, candidate.ID, r.Revision, "mutated-hash", "mutated-quote", "live+draft-v1"} {
+		if bytes.Contains(encoded, []byte(forbidden)) {
+			t.Fatalf("audit contains private or mutable value %q", forbidden)
+		}
 	}
 }
