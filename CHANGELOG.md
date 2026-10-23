@@ -157,6 +157,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 - AI identity suggestions (`identityai`) and logo drafts (`identitylogo`) were tested against fake
   providers only; no live AI or image provider was called. Animated or vector logos are not produced.
+- A generated logo candidate can only be selected while the whole identity is unchanged: any other
+  identity draft or live edit made after review makes Select fail and asks for a new review, even
+  though the paid candidate is still viewable for 30 minutes. Select it before editing the identity.
+- When a builder preview is opened without a proposed identity, a saved `builder.identity` is not
+  applied to the preview, although the published page uses it.
 - Module activation changes apply at the next boot; the Modules page shows "pending restart" until then.
 - Only commerce, media and mail publish module configuration requirements; other modules report
   `module_publishes_no_requirements` instead of a configured verdict.
