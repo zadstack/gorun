@@ -103,6 +103,7 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 			}
 			return identityCSS(get, httpx.Nonce(st.ctx))
 		},
+		"sections":    func(...any) template.HTML { return f.sectionsCSS(st.tc) },
 		"builderBody": f.builderBody,
 		"addonBody": func(name, body string) template.HTML {
 			if render, ok := fm[name].(func(string) template.HTML); ok {
@@ -782,4 +783,43 @@ func (f *funcs) favicon() template.HTML {
 		attrs += ` type="` + template.HTMLEscapeString(mime) + `"`
 	}
 	return template.HTML(`<link rel="icon"` + attrs + `>`)
+}
+
+// sectionsCSS links the section library (sections.css, resolved through the
+// theme chain) only when the page prints content that uses its gp-s- blocks:
+// the item being rendered or any listed item (index templates print full
+// bodies). Pages without sections load nothing.
+func (f *funcs) sectionsCSS(tc *Context) template.HTML {
+	if !usesSections(tc) {
+		return ""
+	}
+	return template.HTML(`<link rel="stylesheet" href="` + template.HTMLEscapeString(f.asset("sections.css")) + `">`)
+}
+
+// usesSections reports whether any body the page may print carries a gp-s-
+// class (the sanitizer keeps only gp-* classes, so the prefix is reliable):
+// the item being rendered, any listed item, any string in Extra, or a module
+// that renders its own sanitized HTML and sets Extra["sections"] = true (the
+// commerce product page does this for a description using the blocks).
+func usesSections(tc *Context) bool {
+	if tc == nil {
+		return false
+	}
+	if tc.Content != nil && strings.Contains(tc.Content.Body, "gp-s-") {
+		return true
+	}
+	for i := range tc.Items {
+		if strings.Contains(tc.Items[i].Body, "gp-s-") {
+			return true
+		}
+	}
+	if on, _ := tc.Extra["sections"].(bool); on {
+		return true
+	}
+	for _, v := range tc.Extra {
+		if x, ok := v.(string); ok && strings.Contains(x, "gp-s-") {
+			return true
+		}
+	}
+	return false
 }

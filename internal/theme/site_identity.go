@@ -38,6 +38,11 @@ const (
 	idSpacing    = "identity_spacing"
 	idCustomCSS  = "custom_css"
 
+	// Section backgrounds (sections.css draws them; see identityPatterns).
+	idPattern        = "identity_pattern"
+	idPatternDensity = "identity_pattern_density"
+	idPatternColor   = "identity_pattern_color"
+
 	// maxCustomCSS bounds the custom stylesheet stored in settings.
 	maxCustomCSS = 20000
 )
@@ -90,6 +95,28 @@ var identitySpacing = map[string]float64{"compact": 0.85, "normal": 1, "relaxed"
 // spaceBase are the --space-1..7 pixel values of themes/_base/tokens.css.
 var spaceBase = []float64{4, 8, 12, 16, 24, 32, 48}
 
+// identityPatterns are the section background drawings sections.css defines
+// as --gp-pat-<name> variables; the identity stylesheet only points the
+// site default (.gp-s-bg) at one of them. "none" is an explicit off switch.
+var identityPatterns = []string{"none", "dots", "grid", "lines", "circles", "waves", "paper", "solid"}
+
+// identityPatternScale maps the density setting to the --gp-pattern-scale
+// factor the drawings multiply their tile size by.
+var identityPatternScale = map[string]string{"sparse": ".72", "normal": "1", "dense": "1.4"}
+
+func identityPatternOptions() []content.Option {
+	labels := map[string][2]string{
+		"none": {"بدون", "None"}, "dots": {"نقاط", "Dots"}, "grid": {"شبكة دقيقة", "Fine grid"},
+		"lines": {"خطوط هندسية", "Geometric lines"}, "circles": {"دوائر متحدة المركز", "Concentric circles"},
+		"waves": {"موجات خفيفة", "Subtle waves"}, "paper": {"ملمس ورقي", "Paper texture"}, "solid": {"لون ثابت", "Solid"},
+	}
+	out := []content.Option{{Value: "", Label: lbl("حسب القالب", "Theme default")}}
+	for _, p := range identityPatterns {
+		out = append(out, content.Option{Value: p, Label: lbl(labels[p][0], labels[p][1])})
+	}
+	return out
+}
+
 func lbl(ar, en string) map[string]string { return map[string]string{"ar": ar, "en": en} }
 
 func identityFontOptions() []content.Option { return fontOptions(identityFonts) }
@@ -132,6 +159,15 @@ func identityFields() []content.Field {
 			{Value: "normal", Label: lbl("عادي", "Normal")},
 			{Value: "relaxed", Label: lbl("مريح", "Relaxed")},
 		}, Help: lbl("يغيّر مقياس المسافات بين العناصر في كل القالب.", "Scales the gaps between elements across the whole theme.")},
+		{Key: idPattern, Type: "select", Label: lbl("خلفية الأقسام", "Section background"), Options: identityPatternOptions(),
+			Help: lbl("نمط خلفية الأقسام التي تحمل الصنف gp-s-bg. يمكن لكل قسم اختيار نمطه (gp-s-bg-dots وغيرها).", "Pattern behind sections that carry the gp-s-bg class. A section can pick its own (gp-s-bg-dots and friends).")},
+		{Key: idPatternDensity, Type: "select", Label: lbl("كثافة النمط", "Pattern density"), Options: []content.Option{
+			{Value: "", Label: lbl("حسب القالب", "Theme default")},
+			{Value: "sparse", Label: lbl("متباعدة", "Sparse")},
+			{Value: "normal", Label: lbl("عادية", "Normal")},
+			{Value: "dense", Label: lbl("كثيفة", "Dense")},
+		}},
+		{Key: idPatternColor, Type: "text", Label: lbl("لون النمط", "Pattern color"), Help: lbl("لون بصيغة hex. اتركه فارغًا لاستخدام اللون الأساسي.", "A hex color. Leave empty to use the accent color.")},
 		{Key: idCustomCSS, Type: "textarea", Label: lbl("CSS مخصص", "Custom CSS"),
 			Help: lbl("يُضاف بعد أنماط القالب ويبقى بعد تحديثه. بلا @import ولا وسوم HTML؛ بحد أقصى 20000 حرف.", "Added after the theme styles and kept across theme updates. No @import or HTML tags; up to 20000 characters.")},
 	}
@@ -151,7 +187,7 @@ func withIdentity(schema []content.Field) []content.Field {
 // express; it returns an i18n error key per invalid field.
 func validateIdentity(vals map[string]any) map[string]string {
 	errs := map[string]string{}
-	for _, k := range []string{idAccent, idBackground, idText} {
+	for _, k := range []string{idAccent, idBackground, idText, idPatternColor} {
 		if v := displayValue(vals[k]); v != "" && !hexColor.MatchString(v) {
 			errs[k] = "theme.identity.error_color"
 		}
@@ -276,6 +312,17 @@ func buildIdentity(get func(key string) string) identityParts {
 	}
 	if r, ok := identityRadii[get(idRadius)]; ok {
 		vars = append(vars, [2]string{"--radius", r}, [2]string{"--gp-radius", r})
+	}
+	// Section backgrounds: tokens only; the drawings live in sections.css.
+	color(idPatternColor, "--gp-pattern-ink")
+	if sc, ok := identityPatternScale[get(idPatternDensity)]; ok {
+		vars = append(vars, [2]string{"--gp-pattern-scale", sc})
+	}
+	if p := get(idPattern); slices.Contains(identityPatterns, p) {
+		// sections.css defines --gp-pat-<name> (mask drawing) and
+		// --gp-pat-<name>-size (tile size, already density-scaled) on .gp-s-bg.
+		// (0,1,0): a section's own gp-s-bg-<name> modifier (0,2,0) still wins.
+		rules = append(rules, `:where(:root[data-theme]) .gp-s-bg{--gp-pattern-image:var(--gp-pat-`+p+`);--gp-pattern-size:var(--gp-pat-`+p+`-size)}`)
 	}
 	if k, ok := identitySpacing[get(idSpacing)]; ok && k != 1 {
 		for i, base := range spaceBase {

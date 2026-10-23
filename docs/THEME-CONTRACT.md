@@ -32,7 +32,7 @@ fail the process by themselves.
 | Locales | Own `lang/en.json` and `lang/ar.json` (flat string maps, ≥1 key each) — inheritance alone is not enough for ship-with |
 | Templates | Resolve via own files or parents: `index`, `page`, `single`, `archive`, `taxonomy`, `search`, `404`, `500`, `page-builder`, `page-contact`, `form-result`, plus `front-page` **or** `home` |
 | Screenshot | `screenshot.png` at theme root |
-| Head | Own or inherited `parts/head.html` / `head-extra.html` load `sections.css`, call `builderIdentity` (or `builderStyle`) and `identity` |
+| Head | Own or inherited `parts/head.html` / `head-extra.html` call `sections` (links `sections.css` only on pages whose content uses `gp-s-` blocks; a plain `sections.css` link is still accepted), `builderIdentity` (or `builderStyle`) and `identity` |
 | Tokens | Primary stylesheet (`assets/site.css`, `theme.css`, or `style.css`) declares `:where(html[data-theme="<slug>"])` (default may use bare `html[data-theme="default"]`) |
 | CSP | Theme HTML/CSS/JS must not reference known third-party script CDN hosts |
 

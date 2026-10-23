@@ -151,7 +151,9 @@ func slashless(w http.ResponseWriter, r *http.Request) {
 // renderProduct renders the product page, optionally with a checkout error
 // (an i18n key) and the email the visitor typed.
 func (h *publicHandlers) renderProduct(w http.ResponseWriter, r *http.Request, p *Product, status int, errKey, email string) {
-	extra := map[string]any{"product": p, "title": p.Name, "checkout_action": "/checkout/" + p.Slug, "email": strings.TrimSpace(email)}
+	// A description written with the section library needs its stylesheet
+	// (theme.Context.Extra["sections"]; usesSections cannot see *Product).
+	extra := map[string]any{"product": p, "title": p.Name, "checkout_action": "/checkout/" + p.Slug, "email": strings.TrimSpace(email), "sections": strings.Contains(p.Description, "gp-s-")}
 	if errKey != "" {
 		extra["checkout_error"] = errKey
 	}

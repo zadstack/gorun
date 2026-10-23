@@ -404,6 +404,43 @@ func TestMembershipNavigationTracksWorkAgentsAcrossDisableAndReenable(t *testing
 	app.Close()
 	app = bootData(t, data, `{"workagents":"disabled"}`)
 	assertMembershipAgentsLink(t, app, user, false)
+	key := adminKey(t, app, "api")
+	status, body := serveStatus(app.Handler, "GET", "/api/v1/system/modules", http.Header{"Authorization": {"Bearer " + key}})
+	if status != 200 {
+		t.Fatalf("catalog HTTP %d: %s", status, body)
+	}
+	var envelope struct {
+		Data admin.ModuleCatalog `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(body), &envelope); err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, entry := range envelope.Data.Entries {
+		if entry.ID != "membership" {
+			continue
+		}
+		found = true
+		for _, dependency := range []string{"commerce", "saas", "workagents"} {
+			if !slices.Contains(entry.OptionalDependencies, dependency) {
+				t.Errorf("membership lacks optional %s", dependency)
+			}
+		}
+		for locale, consequence := range map[string]string{"en": "Agents link and /agents route are unavailable", "ar": "رابط الوكلاء ومسار /agents غير متاحين"} {
+			matched := false
+			for _, message := range entry.Messages {
+				if strings.Contains(message.Text[locale], consequence) {
+					matched = true
+				}
+			}
+			if !matched {
+				t.Errorf("missing %s WorkAgents consequence: %+v", locale, entry.Messages)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("membership catalog row missing")
+	}
 	if status, _ := serveStatus(app.Handler, "GET", "/agents", nil); status != 404 {
 		t.Fatalf("disabled agents HTTP %d", status)
 	}
