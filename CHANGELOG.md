@@ -109,6 +109,9 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Builder theme previews inline saved builder identity tokens when no explicit override is supplied,
+  while public pages keep their cached identity stylesheet URL.
+
 - Standalone Membership and SaaS pages keep their styles and service-aware navigation when
   optional account add-ons are off. The module catalog explains Commerce-dependent customer
   sign-in availability; its 503 response follows the request locale for title and direction.

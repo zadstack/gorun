@@ -45,7 +45,7 @@ func (s *service) RenderBuilderThemePreview(ctx context.Context, it *content.Ite
 	if err != nil {
 		return "", err
 	}
-	st := &reqState{ctx: ctx, tc: tc, set: set, previewMenu: options.Menu}
+	st := &reqState{ctx: ctx, tc: tc, set: set, previewMenu: options.Menu, builderPreview: true}
 	if options.Identity != (brand.Identity{}) {
 		st.previewIdentity = &options.Identity
 	}
