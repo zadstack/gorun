@@ -132,7 +132,7 @@ var moduleCatalogTable = map[string]builtin{
 	"webhooks":   {kind: CatalogKindCore, dependencies: []string{"auth"}},
 	"commerce":   {kind: CatalogKindFeature, dependencies: []string{"admin", "api", "theme", "media", "redirects", "content"}},
 	"saas":       {kind: CatalogKindFeature, dependencies: []string{"admin", "api", "auth"}, optional: []string{"commerce"}},
-	"membership": {kind: CatalogKindFeature, dependencies: []string{"api", "auth", "content"}},
+	"membership": {kind: CatalogKindFeature, dependencies: []string{"api", "auth", "content"}, optional: []string{"commerce", "saas", "workagents"}},
 	"launch":     {kind: CatalogKindFeature, dependencies: []string{"auth"}},
 	"workagents": {kind: CatalogKindFeature, dependencies: []string{"admin", "auth", "content"}},
 	"identityai": {kind: CatalogKindFeature, dependencies: []string{"admin", "auth", "theme"}},
@@ -144,7 +144,7 @@ var moduleCatalogTable = map[string]builtin{
 // dependencyNotes are the consequences of a dependency being off, shown on
 // the dependent (key modules.dep.<dependency>.<dependent>, both locales).
 var dependencyNotes = map[[2]string]bool{
-	{"commerce", "saas"}: true, {"commerce", "wpmigrate"}: true, {"commerce", "mcp"}: true, {"commerce", "theme"}: true, {"wpmigrate", "mcp"}: true,
+	{"workagents", "membership"}: true, {"commerce", "saas"}: true, {"commerce", "wpmigrate"}: true, {"commerce", "mcp"}: true, {"commerce", "theme"}: true, {"wpmigrate", "mcp"}: true,
 }
 
 // coreServices are general services that are features of core modules, not

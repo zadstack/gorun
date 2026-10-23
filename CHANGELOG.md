@@ -73,6 +73,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- Launch, WorkAgents, WordPress Migrator, MCP and Extensions now implement the optional-module
+  gate and remain enabled by default. Their activation configuration, previously ignored for
+  these always-on modules, now controls the next boot without deleting data. WXR import and
+  dry-run refuse a disabled migrator; Membership hides its Agents link when WorkAgents is off.
+
 - Existing `gp-s-*` blocks look different: pages already written with the section library
   (the starter About page, any page built from `docs/THEMES.md` → "Section library") get the
   pilot's eyebrow dot, card shadow and hover lift, numbered step badges on a track, FAQ

@@ -3,6 +3,8 @@
 package launch
 
 import (
+	"context"
+	"database/sql"
 	"embed"
 	"html/template"
 	"io/fs"
@@ -27,6 +29,10 @@ func New() *Module { return &Module{} }
 func (*Module) Name() string      { return "launch" }
 func (*Module) Migrations() fs.FS { return nil }
 func (*Module) Catalogs() fs.FS   { return files }
+
+func (*Module) Enabled(ctx context.Context, database *sql.DB) (bool, error) {
+	return kernel.AddonEnabled(ctx, database, "launch")
+}
 
 // Register mounts /start, /start/login and /start/verify.
 func (*Module) Register(d *kernel.Deps) error {

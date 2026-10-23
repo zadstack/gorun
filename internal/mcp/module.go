@@ -8,6 +8,8 @@
 package mcp
 
 import (
+	"context"
+	"database/sql"
 	"embed"
 	"errors"
 	"io/fs"
@@ -58,6 +60,10 @@ func (*Module) Migrations() fs.FS { return migrations }
 
 // Catalogs implements kernel.CatalogProvider.
 func (*Module) Catalogs() fs.FS { return catalogs }
+
+func (*Module) Enabled(ctx context.Context, database *sql.DB) (bool, error) {
+	return kernel.AddonEnabled(ctx, database, "mcp")
+}
 
 // Register declares the permissions, registers the core tools into
 // Deps.MCP, mounts /mcp, the approvals admin page and API operations, the
