@@ -76,6 +76,23 @@ part.
 | `{{adjacent .}}` | `{Prev, Next}` | `Prev` is older and `Next` newer, same type and locale, published and public, by publication date then id; looks at the newest 1000 items. |
 | `{{termsOf "category" "post"}}` | `[{Term, Count}]` | Terms with published public items of that content type in the page locale, with that count; at most 50 terms. Link them with `{{url .Term}}`. |
 
+**Filterable libraries.** A content type archive, and a term archive of a single type, is a
+library. Its filters are the type's taxonomies and its indexed `select` fields (at most six groups),
+read from the query string as `?<taxonomy>=<term-slug>` and `?<field>=<option>`. They combine with AND
+over published public items in the page locale. An unknown key or an invalid value is ignored and
+never echoed; filter and page links carry only the filters and the search query. A term archive keeps
+its term fixed and offers the type's other filters. Editorial fields such as a level or a duration
+exist only when a site adds them as indexed select fields: nothing is invented.
+
+| Func | Returns |
+|---|---|
+| `{{libraryFilters .}}` | `{Groups:[{Key, Label, Options:[{Value, Label, URL, Count, Active}]}], Active:[{Key, Value, Label, RemoveURL}], ClearURL, Total}`. Counts are facet counts under the other active filters; zero-count options are dropped; a group appears with two or more options or an active one; at most 50 options per group. |
+
+`.Pagination.PrevURL` and `.NextURL` keep the active filters and the search query; the catalog
+pagination components use them. Default components: `library-filters` (no-JS link groups, result count,
+removable chips, clear link) and `library-empty` (shown instead of the list when active filters match
+nothing). Reading time is an estimate and says so ("About N min read").
+
 **Page purpose.** The page type has a `purpose` select field (content migration 0007, added only
 when the type has none). The page template order is `page-<slug>`, `page-<template>`,
 `page-<purpose>`, `page`, `single`, `index`, so a builder page keeps `page-builder.html`. Only the four

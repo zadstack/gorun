@@ -1,0 +1,18 @@
+{{/* Usage: {{component "library-filters" .}} with the page context of a type or term archive.
+     Filter groups with facet counts from {{libraryFilters .}}: real archive links, no JS needed. A group
+     appears only with two or more options (or an active one). Prints the result count and, with active
+     filters, chips that remove one filter and a link that clears them all. */}}
+{{$lib := libraryFilters .}}
+{{if or $lib.Groups $lib.Active}}
+<div class="gp-library-filters">
+  {{range $lib.Groups}}{{$key := .Key}}
+  <nav class="gp-archive-filter" aria-label="{{.Label}}">
+    <p class="gp-filter-group-label">{{.Label}}</p>
+    <ul class="gp-archive-filter-list">{{range .Options}}<li class="gp-filter-item"><a class="gp-filter-link" href="{{.URL}}"{{if .Active}} aria-current="true"{{end}}>{{.Label}} <span class="gp-filter-count">{{.Count}}</span></a></li>{{end}}</ul>
+  </nav>
+  {{end}}
+  <p class="gp-library-summary" role="status">{{printf (t "results_count") $lib.Total}}
+  {{range $lib.Active}} <a class="gp-filter-chip" href="{{.RemoveURL}}" aria-label="{{printf (t "remove_filter") .Label}}">{{.Label}} <span aria-hidden="true">×</span></a>{{end}}
+  {{with $lib.ClearURL}} <a class="gp-filter-clear" href="{{.}}">{{t "clear_filters"}}</a>{{end}}</p>
+</div>
+{{end}}

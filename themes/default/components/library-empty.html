@@ -1,0 +1,8 @@
+{{/* Usage: {{component "library-empty" .}} when a filtered archive has no results: says so and links to the
+     unfiltered archive. The theme's own empty state stays for an archive with no items at all. */}}
+{{with (libraryFilters .).ClearURL}}
+<div class="gp-library-empty" role="status">
+  <p>{{t "no_results_filters"}}</p>
+  <p><a class="gp-filter-clear" href="{{.}}">{{t "clear_filters"}}</a></p>
+</div>
+{{end}}

@@ -6,6 +6,6 @@
   {{with .Description}}<p class="mt-2 text-muted">{{.}}</p>{{end}}
 </header>
 {{end}}
-{{with .Term}}{{$tax := .Taxonomy}}{{with $.Items}}{{component "archive-filter" (dict "Terms" (termsOf $tax (index . 0).Type) "Current" $.Term)}}{{end}}{{end}}
-{{component "list-variant" .}}
+{{component "library-filters" .}}
+{{if and (not .Items) (libraryFilters .).Active}}{{component "library-empty" .}}{{else}}{{component "list-variant" .}}{{end}}
 {{part "footer" .}}

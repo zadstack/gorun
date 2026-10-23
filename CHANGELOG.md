@@ -7,6 +7,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Filterable libraries: type and term archives filter by the type's taxonomies and indexed select
+  fields from the query string (`/blog?category=guides&level=advanced`), over published public items
+  in the page language. `{{libraryFilters .}}` returns groups with facet counts, active filters and
+  remove/clear links; unknown keys and values are ignored and never echoed. Page links keep the
+  filters. The default theme shows filter groups, the result count and a filtered empty state.
+
 - Purpose pages: Content → Pages → "New page from a purpose", `POST /api/v1/builder/pages` and the
   MCP tool `create_purpose_page` create a private builder draft for an about, service, methodology
   or contact page. The hero takes the author's title; every other section starts empty and hidden
