@@ -1,0 +1,8 @@
+{{/* Usage: {{component "archive-filter" (dict "Terms" (termsOf "category" "post") "Current" .Term)}}.
+     Links to the real term archives that have published items here; nothing below two terms. */}}
+{{if ge (len .Terms) 2}}
+{{$cur := ""}}{{with .Current}}{{$cur = .Slug}}{{end}}
+<nav class="gp-archive-filter" aria-label="{{t "filter_by_category"}}">
+  <ul class="gp-archive-filter-list">{{range .Terms}}<li class="gp-filter-item"><a class="gp-filter-link" href="{{url .Term}}"{{if eq .Term.Slug $cur}} aria-current="page"{{end}}>{{.Term.Name}} <span class="gp-filter-count">{{.Count}}</span></a></li>{{end}}</ul>
+</nav>
+{{end}}

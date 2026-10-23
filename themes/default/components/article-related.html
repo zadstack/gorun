@@ -1,0 +1,8 @@
+{{/* Usage: {{component "article-related" (related .Content 3)}}. Published items of the same type and
+     locale that share a term with the article; nothing when there are none. */}}
+{{with .}}
+<section class="gp-article-related" aria-labelledby="gp-article-related-title">
+  <h2 id="gp-article-related-title" class="gp-article-related-title">{{t "related_posts"}}</h2>
+  <ul class="gp-article-related-list">{{range .}}<li class="gp-related-item"><a class="gp-related-link" href="{{url .}}">{{.Title}}</a>{{with .PublishedAt}} <time class="gp-related-date" datetime="{{.}}"><bdi>{{date .}}</bdi></time>{{end}}</li>{{end}}</ul>
+</section>
+{{end}}

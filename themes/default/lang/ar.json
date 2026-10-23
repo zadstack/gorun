@@ -82,5 +82,11 @@
   "store.account.orders": "طلباتي",
   "store.account.fulfillment": "حالة التنفيذ",
   "store.account.download": "تنزيل الملف",
-  "store.account.no_orders": "لا توجد طلبات مسجلة."
+  "store.account.no_orders": "لا توجد طلبات مسجلة.",
+  "on_this_page": "في هذه الصفحة",
+  "related_posts": "مقالات ذات صلة",
+  "previous_post": "السابق",
+  "next_post": "التالي",
+  "more_articles": "مقالات أخرى",
+  "filter_by_category": "تصفية حسب التصنيف"
 }

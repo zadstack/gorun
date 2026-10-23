@@ -82,5 +82,11 @@
   "store.account.orders": "My orders",
   "store.account.fulfillment": "Fulfillment",
   "store.account.download": "Download the file",
-  "store.account.no_orders": "No orders recorded yet."
+  "store.account.no_orders": "No orders recorded yet.",
+  "on_this_page": "On this page",
+  "related_posts": "Related articles",
+  "previous_post": "Previous",
+  "next_post": "Next",
+  "more_articles": "More articles",
+  "filter_by_category": "Filter by category"
 }

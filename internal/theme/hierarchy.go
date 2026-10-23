@@ -49,6 +49,9 @@ func candidates(req kernel.KindRequest, reg *kernel.ThemeRegistry) []string {
 	case KindPage:
 		add("page", req.Slug)
 		add("page", pageTemplateName(req.Template))
+		if slices.Contains(PagePurposes, req.Purpose) {
+			add("page", req.Purpose)
+		}
 		c = append(c, "page.html", "single.html", indexTemplate)
 	case KindHome:
 		c = append(c, "front-page.html", "home.html", indexTemplate)

@@ -152,7 +152,9 @@ func (a *AdminRegistry) Widgets() []Widget {
 
 // KindRequest describes what the theme should render; candidate functions
 // map it to an ordered list of template names (most specific first).
-type KindRequest struct{ Kind, Type, Slug, Template, Taxonomy, Term string }
+// KindRequest asks the theme for a template. Purpose is a page's validated
+// purpose (theme.PagePurposes), tried after its template.
+type KindRequest struct{ Kind, Type, Slug, Template, Purpose, Taxonomy, Term string }
 
 // ThemeRegistry collects template funcs and template-hierarchy kinds.
 type ThemeRegistry struct {

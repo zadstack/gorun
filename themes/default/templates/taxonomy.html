@@ -6,5 +6,6 @@
   {{with .Description}}<p class="mt-2 text-muted">{{.}}</p>{{end}}
 </header>
 {{end}}
+{{with .Term}}{{$tax := .Taxonomy}}{{with $.Items}}{{component "archive-filter" (dict "Terms" (termsOf $tax (index . 0).Type) "Current" $.Term)}}{{end}}{{end}}
 {{component "list-variant" .}}
 {{part "footer" .}}
