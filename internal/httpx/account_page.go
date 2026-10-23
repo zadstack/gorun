@@ -14,14 +14,13 @@ const AccountPageCSS = `body{margin:0;background:#f7f8fa;color:#172b26;font:16px
 // AccountSignInUnavailable explains why no public account sign-in is offered.
 // Staff authentication remains separate and must not accept customer accounts.
 func AccountSignInUnavailable(w http.ResponseWriter, r *http.Request) {
-	locale := i18n.Locale(r.Context())
-	if _, resolved := i18n.RequestLocale(r.Context()); !resolved {
-		locale = i18n.LocaleFromRequest(r, "")
-	}
+	contextLocale, _ := i18n.RequestLocale(r.Context())
+	locale := i18n.LocaleFromRequest(r, contextLocale)
 	direction, title := "rtl", "الدخول غير متاح"
 	if locale == "en" {
 		direction, title = "ltr", "Sign-in unavailable"
 	}
+	w.Header().Add("Vary", "Accept-Language")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusServiceUnavailable)
 	_ = accountSignInUnavailableTemplate.Execute(w, struct{ Locale, Direction, Title string }{locale, direction, title})
