@@ -9,11 +9,6 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
-- Optional Identity logo workflow: explicitly bind an encrypted AI profile to a compatible PNG
-  image protocol and operator estimate, review the exact request before generation, preview a
-  private ephemeral candidate, then import a local logo/icon derivative into one identity draft
-  slot. Imported media is public by URL; live identity changes still require Apply.
-
 - Section library pilot (`themes/default/assets/sections.css`, shared by every catalog theme):
   hero variants (`gp-s-hero-split`, `gp-s-hero-centered`, `gp-s-facts`), feature cards with
   CSS-drawn icon tiles and a featured card, steps on a connector track, a `gp-s-flow` diagram,
@@ -111,6 +106,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Builder previews inherit the selected theme's linked styles in their public cascade order
+  instead of adding unused builder styles or inventing an unsaved builder identity; Docs
+  sections stay within the viewport on narrow screens.
+- Appearance → Identity keeps the history Revert action reachable on mobile above the fixed
+  Agents dock. Browser acceptance covers Save draft, Apply and Revert across bundled themes,
+  Arabic/English and mobile/desktop viewports.
 - Builder preview of a page never published through the builder keeps the builder stylesheet on
   the Default, Magazine, Portfolio and Docs themes, matching the published page.
 - Logo image requests wait for the provider's response headers for the whole 90-second request
@@ -146,11 +147,16 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Optional modules
 
+- Optional Identity logo workflow: explicitly bind an encrypted AI profile to a compatible PNG
+  image protocol and operator estimate, review the exact request before generation, preview a
+  private ephemeral candidate, then import a local logo/icon derivative into one identity draft
+  slot. Imported media is public by URL; live identity changes still require Apply.
+
 - New optional module `identityai` (switchable in System → Modules via `addons.identityai.enabled`): Appearance →
   Identity AI asks a saved text AI connection for colours, fonts, taglines and a written logo brief
   after the operator previews the exact request and approves its estimated cost; results go to the
   identity draft only. This stage is text only: no image, vector or animation is produced or
-  claimed here; static logo images come from the separate Identity logo workflow (see Added).
+  claimed here; static logo images come from the separate Identity logo workflow above.
   See `docs/IDENTITY-AI.md`.
 
 ### Known limits in this release
