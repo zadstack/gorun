@@ -21,7 +21,7 @@ External connections verify an origin and its identity. They cannot assert a Clo
 1. Save the Cloudflare API token and select an account under the existing Integrations screen.
 2. Open Independent Edge instances and enter a label, Worker prefix, new site ID, title and language. The selected saved account is displayed; change it through Cloudflare settings.
 3. **Preview resource plan** checks the account and complete bounded resource inventories without creating provider resources. The server assigns distinct names and pins the embedded Worker artifact. Read access does not prove write permission. The plan lists the required Cloudflare permissions and its expiry.
-4. Review the account, Worker, D1 and private R2 resources. Explicitly approve that exact plan. This queues one durable operation; queued is not deployed.
+4. Review the account, Worker, D1 and private R2 resources. Review the account pricing and quotas: creating and using resources may incur Cloudflare charges, and this screen does not verify a cost estimate. Explicitly approve that exact plan and its billing implications. This queues one durable operation; queued is not deployed.
 5. Refresh recorded progress. Success is recorded only after provisioning and a manager identity response matching the planned site and generated manager IDs. The instance is then added to the current registry without replacing independent edits to other instances.
 
 Creation requires Account Settings Read, Workers Scripts Write, D1 Write and Workers R2 Storage Write in the selected account. Provider policies, enabled services and quotas can still reject execution. GoRun does not widen the token's permissions.
