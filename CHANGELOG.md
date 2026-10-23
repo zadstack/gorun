@@ -5,6 +5,14 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Generated logo proposals remain selectable after unrelated identity draft/live edits. Selection
+  compares only the chosen logo slot and active theme, merges into the latest draft atomically,
+  and rechecks module activation inside that transaction. Full generation approval and the
+  candidate's original selection token remain strict; conflicting target changes retain the
+  private proposal instead of requiring another paid generation.
+
 ## [0.16.0] - 2026-10-23
 
 ### Added
@@ -74,12 +82,6 @@ All notable changes to GoRun are recorded here. The format follows
   `supports` now renders `native` until it declares the variants it implements.
 
 ### Changed
-
-- Generated logo proposals remain selectable after unrelated identity draft/live edits. Selection
-  compares only the chosen logo slot and active theme, merges into the latest draft atomically,
-  and rechecks module activation inside that transaction. Full generation approval and the
-  candidate's original selection token remain strict; conflicting target changes retain the
-  private proposal instead of requiring another paid generation.
 
 - Launch, WorkAgents, WordPress Migrator, MCP and Extensions now implement the optional-module
   gate and remain enabled by default. Their activation configuration, previously ignored for
