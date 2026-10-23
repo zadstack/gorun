@@ -88,6 +88,17 @@ stops a boot; it changes behaviour, and the catalog says how on the dependent's 
 | wpmigrate | mcp | The migration tools are not offered to agents. |
 | workagents | membership | The Agents navigation link and `/agents` route are unavailable; membership data are preserved. |
 
+### Effects of switching feature modules off
+
+| Off | Consequence after restart |
+|---|---|
+| launch | `/start`, `/start/login` and `/start/verify` are unavailable; admin sign-in is unaffected. |
+| workagents | Agent routes and admin pages are unavailable; its crons and job handlers are absent. Previously registered queued jobs are parked while workers run, then released on re-enable. Membership hides its Agents link. |
+| wpmigrate | Migration routes, workers and watchdog are absent; MCP migration tools disappear. CLI import and preview refuse a disabled migrator. Existing sources and import data are retained. |
+| identityai | The Identity AI page and text-suggestion workflow are unavailable. Saved identity drafts and core AI connection profiles are retained; no request runs automatically on re-enable. |
+| mcp | Module-owned MCP routes and tools are absent; the stdio entry point refuses to serve without the booted MCP service. Shared core AI clients are unaffected. |
+| ext | System → Extensions and the extension bridge are unavailable. Installed extensions receive no new hook deliveries while the module is off; previously queued extension delivery jobs are parked while workers run. Extension files and records are retained. Events whose dispatch completes while the module is off reach no extension and are not replayed just because it is re-enabled; core `hooks.event` jobs still queued or awaiting retry at restart can reach active extension subscribers after re-enable. Parked `ext.deliver` jobs resume separately. |
+
 A hard dependency that is off shows "Depends on X, which is off".
 
 Membership and SaaS each serve their own stylesheet (`/membership/assets.css` and
