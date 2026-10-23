@@ -111,6 +111,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Builder preview of a page never published through the builder keeps the builder stylesheet on
+  the Default, Magazine, Portfolio and Docs themes, matching the published page.
+- Logo image requests wait for the provider's response headers for the whole 90-second request
+  instead of 20 seconds, so a slow, non-streaming generation is no longer abandoned mid-billing.
 - Standalone Membership and SaaS pages keep their styles and service-aware navigation when
   optional account add-ons are off. The module catalog explains Commerce-dependent customer
   sign-in availability; its 503 response follows the request locale for title and direction.
