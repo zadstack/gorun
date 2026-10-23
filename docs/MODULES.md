@@ -80,7 +80,8 @@ stops a boot; it changes behaviour, and the catalog says how on the dependent's 
 
 | Off | Dependent | Consequence shown |
 |---|---|---|
-| commerce | saas | Subscription sync from Stripe stops; local SaaS grants keep working. |
+| commerce | saas | Customer sign-in is unavailable and subscription sync from Stripe stops; local SaaS grants remain usable by authenticated users. |
+| commerce | membership | Customer sign-in is unavailable; memberships, quotas and submission data are preserved and remain usable by authenticated users. |
 | commerce | wpmigrate | WooCommerce products are skipped during imports; posts, pages and media still import. |
 | commerce | mcp | The `list_products` tool is not offered to agents. |
 | commerce | theme | Store pages (`/shop`, `/cart`, `/account`) are not served; themes render with empty product lists. |

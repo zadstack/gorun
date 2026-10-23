@@ -1,6 +1,11 @@
 package httpx
 
-import "net/http"
+import (
+	"html/template"
+	"net/http"
+
+	"github.com/zadstack/gorun/internal/i18n"
+)
 
 // AccountPageCSS is shared presentation for standalone account add-on pages.
 // Each enabled add-on serves it from its own route to avoid activation coupling.
@@ -8,8 +13,17 @@ const AccountPageCSS = `body{margin:0;background:#f7f8fa;color:#172b26;font:16px
 
 // AccountSignInUnavailable explains why no public account sign-in is offered.
 // Staff authentication remains separate and must not accept customer accounts.
-func AccountSignInUnavailable(w http.ResponseWriter) {
+func AccountSignInUnavailable(w http.ResponseWriter, r *http.Request) {
+	contextLocale, _ := i18n.RequestLocale(r.Context())
+	locale := i18n.LocaleFromRequest(r, contextLocale)
+	direction, title := "rtl", "الدخول غير متاح"
+	if locale == "en" {
+		direction, title = "ltr", "Sign-in unavailable"
+	}
+	w.Header().Add("Vary", "Accept-Language")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusServiceUnavailable)
-	_, _ = w.Write([]byte(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>الدخول غير متاح · Sign-in unavailable</title></head><body><main><h1>الدخول إلى حساب العميل غير متاح</h1><p>تواصل مع مسؤول الموقع لتفعيل إضافة الحسابات Commerce. بيانات العضويات والاشتراكات محفوظة.</p><p lang="en" dir="ltr">Customer sign-in is unavailable. Contact the site operator to enable Commerce account sign-in. Membership and subscription data are preserved.</p><p><a href="/">الموقع · Home</a> · <a href="/admin/login">دخول الموظفين · Staff sign-in</a></p><p><code>account_sign_in_unavailable</code></p></main></body></html>`))
+	_ = accountSignInUnavailableTemplate.Execute(w, struct{ Locale, Direction, Title string }{locale, direction, title})
 }
+
+var accountSignInUnavailableTemplate = template.Must(template.New("account-sign-in-unavailable").Parse(`<!doctype html><html lang="{{.Locale}}" dir="{{.Direction}}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{.Title}}</title></head><body><main><h1 lang="ar" dir="rtl">الدخول إلى حساب العميل غير متاح</h1><p lang="ar" dir="rtl">تواصل مع مسؤول الموقع لتفعيل إضافة الحسابات Commerce. بيانات العضويات والاشتراكات محفوظة.</p><p lang="en" dir="ltr">Customer sign-in is unavailable. Contact the site operator to enable Commerce account sign-in. Membership and subscription data are preserved.</p><p><a href="/">الموقع · Home</a> · <a href="/admin/login">دخول الموظفين · Staff sign-in</a></p><p><code>account_sign_in_unavailable</code></p></main></body></html>`))

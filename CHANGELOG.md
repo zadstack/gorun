@@ -109,6 +109,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Standalone Membership and SaaS pages keep their styles and service-aware navigation when
+  optional account add-ons are off. The module catalog explains Commerce-dependent customer
+  sign-in availability; its 503 response follows the request locale for title and direction.
+
 - Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
   or Worker identity checks. Configuration changes during these operations return conflict.
   Failed local reads and malformed saved results appear as unavailable rather than empty success.

@@ -426,7 +426,7 @@ func TestMembershipNavigationTracksWorkAgentsAcrossDisableAndReenable(t *testing
 				t.Errorf("membership lacks optional %s", dependency)
 			}
 		}
-		for locale, consequence := range map[string]string{"en": "Agents link and /agents route are unavailable", "ar": "رابط الإيجنتس ومسار /agents غير متاحين"} {
+		for locale, consequence := range map[string]string{"en": "Agents link and /agents route are unavailable", "ar": "رابط الوكلاء ومسار /agents غير متاحين"} {
 			matched := false
 			for _, message := range entry.Messages {
 				if strings.Contains(message.Text[locale], consequence) {
