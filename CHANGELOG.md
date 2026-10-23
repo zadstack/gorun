@@ -7,6 +7,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Optional Identity logo workflow: explicitly bind an encrypted AI profile to a compatible PNG
+  image protocol and operator estimate, review the exact request before generation, preview a
+  private ephemeral candidate, then import a local logo/icon derivative into one identity draft
+  slot. Imported media is public by URL; live identity changes still require Apply.
+
 - Page builder native section opt-in (`library: "sections"`): editable hero, feature cards,
   steps, comparison, FAQ and product previews use the existing theme section stylesheet.
   Version-1 legacy documents keep their rendered HTML; mixed layouts preserve one page h1.
@@ -79,6 +84,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- Launch, WorkAgents, WordPress Migrator, MCP and Extensions now implement the optional-module
+  gate and remain enabled by default. Their activation configuration, previously ignored for
+  these always-on modules, now controls the next boot without deleting data. WXR import and
+  dry-run refuse a disabled migrator; Membership hides its Agents link when WorkAgents is off.
+
 - Existing `gp-s-*` blocks look different: pages already written with the section library
   (the starter About page, any page built from `docs/THEMES.md` → "Section library") get the
   pilot's eyebrow dot, card shadow and hover lift, numbered step badges on a track, FAQ
@@ -104,6 +114,10 @@ All notable changes to GoRun are recorded here. The format follows
   identity. Local large-inventory benchmarks and their limits are recorded under `docs/reports/`.
 
 ### Fixed
+
+- Standalone Membership and SaaS pages keep their styles and service-aware navigation when
+  optional account add-ons are off. The module catalog explains Commerce-dependent customer
+  sign-in availability; its 503 response follows the request locale for title and direction.
 
 - Native section buttons outside prose containers keep their on-accent text colour,
   including hover, above later anchor resets; ghost buttons keep the theme ink colour.

@@ -4,7 +4,7 @@
 > `GET /api/v1/system/modules` تعرضان كل ما يشغّله هذا الإصدار: الوحدات المدمجة (النواة والميزات)، الخدمات
 > الأساسية (النماذج والتخزين والنسخ الاحتياطي والبريد) والإضافات الخارجية، ولكلٍّ: وظيفتها، مصدرها، إصدارها،
 > توافقها، ما تعتمد عليه، صلاحياتها، ما سجّلته فعلًا في هذه العملية، حالتها، وهل تحتاج إعدادًا. الوحدات
-> الاختيارية (المتجر وSaaS والعضوية) تُوقَف وتُفعَّل من الصفحة أو عبر
+> الاختيارية (commerce وsaas وmembership وlaunch وworkagents وwpmigrate وmcp وext وidentityai وidentitylogo) تُوقَف وتُفعَّل من الصفحة أو عبر
 > `PUT /system/modules/{name}/activation`؛ يُطبَّق التغيير بعد إعادة التشغيل، ولا تُحذف بيانات، وتُوقَف مهام
 > الوحدة المعطّلة في الطابور (parked) حتى تفعيلها. كل ما لم يُرصد يُعرض «غير معروف» ولا يُفترض.
 
@@ -14,7 +14,7 @@ are called:
 | Kind | What it is | Where it lives | Switch |
 |---|---|---|---|
 | **Core module** | A domain every install boots (settings, auth, content, taxonomy, media, menus, redirects, seo, theme, pattern, builder, site, api, admin, webhooks). | `internal/<name>`, `kernel.BootOrder` up to `webhooks` | always on |
-| **Built-in feature module** | A feature compiled into the binary that owns its routes, workers, admin pages, migrations and permissions (commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext). | `internal/<name>`, after `webhooks` | **commerce, saas, membership** implement `kernel.OptionalModule`; the others are always on in this release |
+| **Built-in feature module** | A feature compiled into the binary that owns its routes, workers, admin pages, migrations and permissions (commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext, identityai, identitylogo). | `internal/<name>`, after `webhooks` | All ten implement `kernel.OptionalModule` using `kernel.AddonEnabled` |
 | **Core service** | A general service that is a feature of a core module and is configured by settings: forms (site), storage (media), backups (admin), mail (admin). | the owning module | never switched; configured |
 | **External extension** | A separate program described by `manifest.json`, receiving hooks over signed HTTP and calling the REST API with a scoped key ([EXTENSIONS.md](EXTENSIONS.md)). | `<data>/extensions/<slug>` | activate / deactivate / uninstall on its own page |
 
@@ -67,6 +67,8 @@ What happens at the next boot of a module that is **off**:
 
 What happens when it is **on** again: the same tables and settings are read, parked jobs of its
 kinds are released unchanged (payload, attempts, idempotency key) and run, routes and pages return.
+`Unpark` resets `run_at` to the current time, including jobs previously scheduled in the future;
+the registered handler may then complete, fail or retry them.
 `TestDisabledModuleParksQueuedJobsWhileWorkersRunAndResumesOnEnable` (kernel) and
 `TestModuleCatalogListsBuildAndSwitchesOptionalModules` (`pkg/cli`, with the real commerce module)
 exercise this with workers running.
@@ -78,14 +80,35 @@ stops a boot; it changes behaviour, and the catalog says how on the dependent's 
 
 | Off | Dependent | Consequence shown |
 |---|---|---|
-| commerce | saas | Subscription sync from Stripe stops; local SaaS grants keep working. |
+| commerce | saas | Customer sign-in is unavailable and subscription sync from Stripe stops; local SaaS grants remain usable by authenticated users. |
+| commerce | membership | Customer sign-in is unavailable; memberships, quotas and submission data are preserved and remain usable by authenticated users. |
 | commerce | wpmigrate | WooCommerce products are skipped during imports; posts, pages and media still import. |
 | commerce | mcp | The `list_products` tool is not offered to agents. |
 | commerce | theme | Store pages (`/shop`, `/cart`, `/account`) are not served; themes render with empty product lists. |
 | wpmigrate | mcp | The migration tools are not offered to agents. |
+| workagents | membership | The Agents navigation link and `/agents` route are unavailable; membership data are preserved. |
+| identitylogo | Identity logo workflow | Navigation, request approvals and private candidates are unavailable. Persisted adapter bindings, identity drafts and imported media remain; in-memory staging is discarded on restart. Re-enabling never sends a provider request automatically. |
 
-A hard dependency that is off (none can be today, since only the three store modules are optional
-and nothing hard-depends on them) shows "Depends on X, which is off".
+### Effects of switching feature modules off
+
+| Off | Consequence after restart |
+|---|---|
+| launch | `/start`, `/start/login` and `/start/verify` are unavailable; admin sign-in is unaffected. |
+| workagents | Agent routes and admin pages are unavailable; its crons and job handlers are absent. Previously registered queued jobs are parked while workers run, then released on re-enable. Membership hides its Agents link. |
+| wpmigrate | Migration routes, workers and watchdog are absent; MCP migration tools disappear. CLI import and preview refuse a disabled migrator. Existing sources and import data are retained. |
+| identityai | The Identity AI page and text-suggestion workflow are unavailable. Saved identity drafts and core AI connection profiles are retained; no request runs automatically on re-enable. |
+| mcp | Module-owned MCP routes and tools are absent; the stdio entry point refuses to serve without the booted MCP service. Shared core AI clients are unaffected. |
+| ext | System → Extensions and the extension bridge are unavailable. Installed extensions receive no new hook deliveries while the module is off; previously queued extension delivery jobs are parked while workers run. Extension files and records are retained. Events whose dispatch completes while the module is off reach no extension and are not replayed just because it is re-enabled; core `hooks.event` jobs still queued or awaiting retry at restart can reach active extension subscribers after re-enable. Parked `ext.deliver` jobs resume separately. |
+
+A hard dependency that is off shows "Depends on X, which is off".
+
+Membership and SaaS each serve their own stylesheet (`/membership/assets.css` and
+`/saas/assets.css`). Their account navigation follows the services actually registered at boot;
+Membership also hides `/agents` when WorkAgents is off. With Commerce off, anonymous visitors
+receive an actionable sign-in-unavailable response (503); authenticated users can still use
+the standalone pages. The independent-addon boot/browser tests cover Commerce/SaaS/Membership
+combinations, and `TestMembershipNavigationTracksWorkAgentsAcrossDisableAndReenable` covers
+the Agents link and preserved membership data.
 
 ### Orphan jobs
 
@@ -131,3 +154,29 @@ Nothing new is required: the kernel observes what `Register` does. To be describ
   `not_required` with a real verdict;
 - declare your own permissions in `Register` (even when the auth base catalog already names them
   for default roles): the inventory attributes a permission to every module that declares it.
+
+### Extension module activation and API keys
+
+Disabling the `ext` module removes its Extensions UI, routes, hook subscriptions and delivery
+worker. It does not revoke existing `ext:<slug>` API keys: scoped REST access remains available
+through the core API. Deactivating an individual extension stops its hook delivery but also keeps
+its API key. Uninstalling the extension revokes its key; operators can explicitly revoke a key
+under **Admin → API keys** when immediate REST access removal is required.
+
+### Identity logo
+
+`identitylogo` is a separate optional feature from the text-only `identityai` module.
+Appearance → Identity logo uses an existing encrypted AI profile and an explicitly configured
+OpenAI-compatible PNG image protocol/model binding. Native Anthropic image generation and private
+network provider endpoints are unsupported. The operator supplies a dated estimate and its source;
+this estimate and the local ceiling are not a provider-enforced maximum charge. Unknown estimates
+block generation. The exact payload and destination require explicit approval for each request.
+
+Candidates remain in authenticated, owner-scoped memory for up to 30 minutes or until restart;
+unused request approvals expire after 10 minutes. Selection imports
+a local PNG derivative (512 px logo or 64 px icon, preserving alpha), then changes only the chosen
+identity draft slot. Imported media is publicly readable by URL before Apply; a rare post-import
+revision conflict retains and reports the media ID without changing the draft or deleting media.
+Live identity, content and menus are unchanged. Page access requires `settings.manage`; every
+mutation and candidate byte request also requires `media.upload`. No real provider request is
+needed by the test suite.

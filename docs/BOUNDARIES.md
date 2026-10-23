@@ -24,7 +24,7 @@ verified by hand. The same test file enforces the import policy below.
 |---|---|---|
 | **Kernel and infrastructure** | `internal/kernel` and the packages it constructs or that sit under every module: `config`, `db`, `hooks`, `httpx`, `settings`, `i18n`, `audit`, `jobs`, `diagnostics`, `observe`, `update`, `metrics`, `backup`, `mailer`, `brand`, `starter`. | Never imports a domain module. Knows module *vocabulary* (service names, nav groups) but no module behaviour. |
 | **Core module** | `kernel.BootOrder` from `settings` to `webhooks`: settings, auth, content, taxonomy, media, menus, redirects, seo, theme, pattern, builder, site, api, admin, webhooks. | Boots in every install. Imports only earlier core modules or infrastructure. Never imports a feature module. |
-| **Built-in feature module** | `BootOrder` after `webhooks`: commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext. | Owns its routes, workers, admin UI, migrations and permissions. Reaches other modules through `kernel.Get`, hooks or an adapter published in `Deps.Services`; imports another feature module only through a declared edge (`featureEdges` in the test). |
+| **Built-in feature module** | `BootOrder` after `webhooks`: commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext, identityai, identitylogo. | Owns its routes, workers, admin UI, migrations and permissions. Reaches other modules through `kernel.Get`, hooks or an adapter published in `Deps.Services`; imports another feature module only through a declared edge (`featureEdges` in the test). |
 | **Theme / pattern** | `themes/<slug>` (templates, parts, components, `lang/`, `assets/`, `theme.json`) and `patterns/<slug>`. Public contract: `pkg/themekit`, `pkg/patternkit`, [THEME-CONTRACT.md](THEME-CONTRACT.md). | Consumes declared display data (`theme.Context`, template funcs) and nothing else. No Go code, no business logic, no hard dependency on an optional module: a func an optional module provides must have a core fallback. |
 | **External extension** | A program described by a manifest (`internal/ext`): signed hook deliveries over HTTP and a scoped API key. [EXTENSIONS.md](EXTENSIONS.md). | Sees GoRun only through hooks and the REST API. GoRun never loads extension code. |
 | **Composition root** | `pkg/cli` (`CoreModules()`, `Modules(cfg)`, commands) and `cmd/gorun`. | Imports everything by design; downstream binaries extend it with `cli.WithModules`. |
@@ -75,6 +75,7 @@ asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.
 | `internal/launch` | feature | `auth` `httpx` `i18n` `kernel` |
 | `internal/workagents` | feature | `admin` `auth` `content` `db` `httpx` `jobs` `kernel` |
 | `internal/identityai` | feature | `auth` `db` `httpx` `i18n` `kernel` `theme` |
+| `internal/identitylogo` | feature | `admin` `auth` `db` `httpx` `kernel` `media` `theme` |
 | `internal/wpmigrate` | feature | `admin` `api` `audit` `auth` `commerce` `config` `content` `db` `hooks` `httpx` `i18n` `jobs` `kernel` `media` `menus` `redirects` `seo` `settings` `taxonomy` `theme` |
 | `internal/mcp` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `seo` `taxonomy` `theme` |
 | `internal/ext` | feature | `admin` `api` `audit` `auth` `config` `content` `db` `hooks` `httpx` `i18n` `jobs` `kernel` `settings` |
@@ -82,7 +83,7 @@ asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.
 | `pkg/patternkit` | contract | — |
 | `pkg/themekit` | contract | — |
 | `cmd/gorun` | binary | `pkg/cli` |
-| `pkg/cli` | binary | `admin` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `i18n` `identityai` `jobs` `kernel` `launch` `mcp` `media` `membership` `menus` `observe` `pattern` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
+| `pkg/cli` | binary | `admin` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `i18n` `identityai` `identitylogo` `jobs` `kernel` `launch` `mcp` `media` `membership` `menus` `observe` `pattern` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
 <!-- END GENERATED IMPORT GRAPH -->
 
 Reading the graph:
@@ -170,7 +171,7 @@ Public paths are mounted at `/`, admin paths under `/admin`, API operations unde
 | webhooks | — | `/webhooks/*` | 1 | — | `webhooks.manage` |
 | **commerce** | `/shop`, `/product/{slug}`, `/cart*`, `/checkout*`, `/account*`; `/webhooks/stripe{,/test,/live}` | `/commerce/*` (products, orders, entitlements, servers, settings, setup) | 14 | `list_products` (registered by mcp when the service exists) | `commerce.manage`, `commerce.view_orders` |
 | **saas** | `/saas`, `/saas/assets.css` | `/saas`, `/saas/new`, `/saas/apps/*`, `/saas/subscriptions/*` | 8 | — | `saas.read`, `saas.use`, `saas.manage` |
-| **membership** | `/membership`, `/membership/submissions` | `/membership`, `/membership/grants` | 7 | — | `membership.manage`, `membership.read`, `membership.unlimited`, `membership.submit` |
+| **membership** | `/membership`, `/membership/assets.css`, `/membership/submissions` | `/membership`, `/membership/grants` | 7 | — | `membership.manage`, `membership.read`, `membership.unlimited`, `membership.submit` |
 | launch | `/start`, `/start/login`, `/start/verify` | — | — | — | — |
 | workagents | `/agents`, `/agents/*`, `/static/workagents.css` | `/workagents`, `/workspace` | `/v1/workagents/*` | — | `workagents.manage`, `workagents.read`, `workagents.run` |
 | wpmigrate | — | `/migrations/*` | 1 | `get_migration_status`, `run_migration_preview` | `migrations.run` |
@@ -243,10 +244,13 @@ optional registrations behind the existing `kernel.OptionalModule` gate?
    tables; the test disables, reboots, re-enables and reads the same product and plan rows back.
 
 **Decision.** They become optional registrations, enabled by default. `CoreModules()` keeps its
-name and order (downstream binaries call it); the modules themselves implement `Enabled`. launch,
-workagents, wpmigrate, mcp and ext are feature modules by the same definition and are candidates
-for the same gate; they are left unchanged in this PR to keep the diff reviewable, and the
-catalog PR will list them with their state.
+name and order (downstream binaries call it); commerce, saas, membership, launch, workagents,
+wpmigrate, mcp, ext, identityai and identitylogo implement `Enabled` through `kernel.AddonEnabled`. Each is enabled by
+default and can be disabled independently. MCP omits migration tools while wpmigrate is off.
+WXR CLI import and preview reject an explicitly disabled wpmigrate addon; MCP stdio requires mcp
+to be booted. Disabled modules do not register routes, jobs, navigation or hook subscribers.
+Their stored rows remain intact. A server boot with job workers parks queued jobs by their
+last observed kinds until re-enabled. System → Modules derives their optional/switchable state from this boot inventory.
 
 **How to switch.** Operator: `GORUN_ADDONS='{"commerce":"disabled"}'` or `[addons]` in the site
 config, then restart. Site setting: `addons.commerce.enabled = false` (JSON boolean; written by

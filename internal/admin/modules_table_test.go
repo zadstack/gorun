@@ -9,7 +9,7 @@ import (
 
 // Every domain module in kernel.BootOrder has a catalog row (kind and
 // dependencies), every row names a real module, dependencies point at
-// earlier modules, and the consequence notes refer to declared edges.
+// earlier modules unless resolved at request time, and consequence notes name declared edges.
 func TestBuiltinCatalogCoversBootOrder(t *testing.T) {
 	infra := map[string]bool{"db": true, "i18n": true, "audit": true, "jobs": true}
 	for _, name := range kernel.BootOrder {
@@ -30,6 +30,11 @@ func TestBuiltinCatalogCoversBootOrder(t *testing.T) {
 			if dp < 0 {
 				t.Errorf("%s depends on unknown module %q", name, dep)
 			} else if dp > pos && b.kind != CatalogKindCore {
+				// Membership checks this optional service when rendering navigation,
+				// after boot; the real HTTP disable/re-enable test covers the edge.
+				if name == "membership" && dep == "workagents" && slices.Contains(b.optional, dep) {
+					continue
+				}
 				t.Errorf("%s depends on later module %q", name, dep)
 			}
 		}
