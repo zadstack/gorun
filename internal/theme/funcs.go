@@ -39,6 +39,7 @@ type reqState struct {
 	front, tz       *string
 	settings        map[string]string // memo for setting() within one render
 	menus           map[string]*menus.Menu
+	builderPreview  bool // Inline stored builder tokens inside the inert preview.
 	previewIdentity *brand.Identity
 	previewMenu     *menus.Menu
 	previewSettings map[string]string
