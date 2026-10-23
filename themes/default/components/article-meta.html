@@ -1,0 +1,9 @@
+{{/* Usage: {{component "article-meta" .Content}}. The publication date and the reading time,
+     each only when known. No "updated" date: edits and autosaves change it without meaning. */}}
+{{$min := readingTime .}}
+{{if or .PublishedAt (gt $min 0)}}
+<p class="gp-article-meta">
+  {{with .PublishedAt}}<time datetime="{{.}}"><bdi>{{date .}}</bdi></time>{{end}}
+  {{if gt $min 0}}{{if .PublishedAt}}<span aria-hidden="true"> · </span>{{end}}<span>{{printf (t "reading_time") $min}}</span>{{end}}
+</p>
+{{end}}

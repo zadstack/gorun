@@ -1,0 +1,8 @@
+{{/* Usage: {{component "article-adjacent" (adjacent .Content)}}. The previous (older) and next (newer)
+     published item of the same type and locale; nothing when the article has no neighbour. */}}
+{{if or .Prev .Next}}
+<nav class="gp-article-adjacent" aria-label="{{t "more_articles"}}">
+  {{with .Prev}}<a class="gp-adjacent-link gp-adjacent-prev" href="{{url .}}" rel="prev"><span class="gp-adjacent-label">{{t "previous_post"}}</span> {{.Title}}</a>{{end}}
+  {{with .Next}}<a class="gp-adjacent-link gp-adjacent-next" href="{{url .}}" rel="next"><span class="gp-adjacent-label">{{t "next_post"}}</span> {{.Title}}</a>{{end}}
+</nav>
+{{end}}

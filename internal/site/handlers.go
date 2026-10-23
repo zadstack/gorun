@@ -243,7 +243,7 @@ func (h *handlers) frontPage(ctx context.Context) *content.Item {
 func (h *handlers) renderItem(w http.ResponseWriter, r *http.Request, tc *theme.Context, it *content.Item) {
 	tc.Content = it
 	if it.Type == "page" {
-		h.render(w, r, kernel.KindRequest{Kind: theme.KindPage, Type: it.Type, Slug: it.Slug, Template: it.Template}, tc)
+		h.render(w, r, kernel.KindRequest{Kind: theme.KindPage, Type: it.Type, Slug: it.Slug, Template: it.Template, Purpose: theme.PagePurpose(it)}, tc)
 		return
 	}
 	h.render(w, r, kernel.KindRequest{Kind: theme.KindSingle, Type: it.Type, Slug: it.Slug, Template: it.Template}, tc)
