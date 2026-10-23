@@ -12,6 +12,7 @@ import (
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/ext"
 	"github.com/zadstack/gorun/internal/identityai"
+	identitylogoadmin "github.com/zadstack/gorun/internal/identitylogo/admin"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/launch"
 	"github.com/zadstack/gorun/internal/mcp"
@@ -56,6 +57,7 @@ func CoreModules() []kernel.Module {
 		launch.New(),
 		workagents.New(admin.CompleteWorkAgent),
 		identityai.New(identityAIHooks()),
+		identitylogoadmin.New(),
 		wpmigrate.New(),
 		mcp.New(),
 		ext.New(),
