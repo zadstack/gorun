@@ -786,15 +786,18 @@ func (f *funcs) favicon() template.HTML {
 	return template.HTML(`<link rel="icon"` + attrs + `>`)
 }
 
-// sectionsCSS links the section library (sections.css, resolved through the
-// theme chain) only when the page prints content that uses its gp-s- blocks:
-// the item being rendered or any listed item (index templates print full
-// bodies). Pages without sections load nothing.
+// sectionsCSS is what {{sections .}} prints in every theme head: the core
+// site stylesheet and, on commerce pages, the store stylesheet (see
+// coreStylesheets), then the section library (sections.css, resolved through
+// the theme chain) only when the page prints content that uses its gp-s-
+// blocks: the item being rendered or any listed item (index templates print
+// full bodies).
 func (f *funcs) sectionsCSS(tc *Context) template.HTML {
-	if !usesSections(tc) {
-		return ""
+	out := f.coreStylesheets(tc)
+	if usesSections(tc) {
+		out += `<link rel="stylesheet" href="` + template.HTMLEscapeString(f.asset("sections.css")) + `">`
 	}
-	return template.HTML(`<link rel="stylesheet" href="` + template.HTMLEscapeString(f.asset("sections.css")) + `">`)
+	return template.HTML(out)
 }
 
 // usesSections reports whether any body the page may print carries a gp-s-

@@ -1,4 +1,4 @@
-{{part "header" .}}
+{{part "header" .}}<div class="gp-core">
 <link rel="stylesheet" href="{{asset "private-intake.css"}}&amp;release=gorun-2">
 {{with .Extra.intake}}
 <section class="private-intake mx-auto max-w-2xl space-y-6">
@@ -20,4 +20,4 @@
 <p class="text-sm text-muted">{{t "site.intake.emergency"}}</p>
 <p class="text-sm text-muted">{{t "site.intake.privacy"}}</p>
 </section>{{end}}
-{{part "footer" .}}
+</div>{{part "footer" .}}

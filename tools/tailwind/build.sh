@@ -6,6 +6,10 @@
 #   tools/tailwind/build.sh          rebuild the committed CSS
 #   tools/tailwind/build.sh --check  fail if the committed CSS is stale (CI)
 #
+# It also builds web/site/core.css, the core site stylesheet every theme loads
+# (core.config.js + core.css: shared-template utilities scoped under .gp-core,
+# no reset, and zero-specificity element defaults).
+#
 # TAILWIND_CACHE overrides the cache directory; TAILWIND_BIN uses an existing,
 # already verified binary of the same version.
 set -euo pipefail
@@ -48,24 +52,30 @@ if [ -z "$bin" ]; then
   fi
 fi
 
-target=$out
-if [ "${1:-}" = "--check" ]; then
-  target=$(mktemp "${TMPDIR:-/tmp}/tailwind.XXXXXX.css")
-  trap 'rm -f "$target"' EXIT
-fi
-
-(cd "$here" && "$bin" -c tailwind.config.js -i input.css -o "$target" --minify 2>/dev/null) || {
-  (cd "$here" && "$bin" -c tailwind.config.js -i input.css -o "$target" --minify)
-  exit 1
+build() { # config input output
+  local config=$1 input=$2 out=$3 target=$3
+  if [ "$check" = 1 ]; then
+    target=$(mktemp "${TMPDIR:-/tmp}/tailwind.XXXXXX.css")
+  fi
+  (cd "$here" && "$bin" -c "$config" -i "$input" -o "$target" --minify 2>/dev/null) || {
+    (cd "$here" && "$bin" -c "$config" -i "$input" -o "$target" --minify)
+    exit 1
+  }
+  if [ "$check" = 1 ]; then
+    if ! cmp -s "$target" "$out"; then
+      rm -f "$target"
+      echo "tailwind: ${out#"$root"/} is out of date." >&2
+      echo "Run tools/tailwind/build.sh (or make css) and commit the result." >&2
+      exit 1
+    fi
+    rm -f "$target"
+    echo "tailwind: ${out#"$root"/} is up to date."
+  else
+    echo "tailwind: wrote ${out#"$root"/} ($(wc -c <"$out" | tr -d ' ') bytes)"
+  fi
 }
 
-if [ "${1:-}" = "--check" ]; then
-  if ! cmp -s "$target" "$out"; then
-    echo "tailwind: themes/default/assets/tailwind.css is out of date." >&2
-    echo "Run tools/tailwind/build.sh (or make css) and commit the result." >&2
-    exit 1
-  fi
-  echo "tailwind: themes/default/assets/tailwind.css is up to date."
-else
-  echo "tailwind: wrote ${out#"$root"/} ($(wc -c <"$out" | tr -d ' ') bytes)"
-fi
+check=0
+if [ "${1:-}" = "--check" ]; then check=1; fi
+build tailwind.config.js input.css "$out"
+build core.config.js core.css "$root/web/site/core.css"

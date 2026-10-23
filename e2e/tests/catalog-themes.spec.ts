@@ -175,6 +175,54 @@ async function bodyContrast(page: Page): Promise<number> {
   });
 }
 
+// controls checks the shared functional pages (store, cart, account,
+// product): every visible field inside <main> has a visible border and every
+// visible button's text keeps 4.5:1 against its own fill, or against the first
+// opaque ancestor when it has none. These templates come from the default
+// theme under every theme and rely on the core stylesheet for this.
+async function controls(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
+    const rgba = (css: string): number[] => {
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = '#000';
+      ctx.fillStyle = css;
+      ctx.fillRect(0, 0, 1, 1);
+      return Array.from(ctx.getImageData(0, 0, 1, 1).data);
+    };
+    const lum = ([r, g, b]: number[]) => {
+      const f = (c: number) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    const fill = (el: Element): number[] => {
+      for (let e: Element | null = el; e; e = e.parentElement) {
+        const v = rgba(getComputedStyle(e).backgroundColor);
+        if (v[3] > 230) return v.slice(0, 3);
+      }
+      return [255, 255, 255];
+    };
+    const visible = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 4 && r.height > 4 && getComputedStyle(el).visibility !== 'hidden';
+    };
+    const problems: string[] = [];
+    for (const el of document.querySelectorAll('main input:not([type=hidden]):not([type=checkbox]):not([type=radio]), main select, main textarea')) {
+      if (!visible(el) || el.closest('[aria-hidden=true]')) continue;
+      const s = getComputedStyle(el);
+      if (parseFloat(s.borderTopWidth) < 1 && parseFloat(s.borderBottomWidth) < 1 && s.boxShadow === 'none') {
+        problems.push(`field #${el.id || el.getAttribute('name')} has no visible border`);
+      }
+    }
+    for (const el of document.querySelectorAll('main button, main a.zad-button, main input[type=submit]')) {
+      if (!visible(el)) continue;
+      const [a, b] = [lum(rgba(getComputedStyle(el).color).slice(0, 3)), lum(fill(el))].sort((x, y) => y - x);
+      const ratio = (a + 0.05) / (b + 0.05);
+      if (ratio < 4.5) problems.push(`button "${(el.textContent || '').trim()}" contrast ${ratio.toFixed(2)}`);
+    }
+    return problems;
+  });
+}
+
 async function check(page: Page, kind: string, path: string, status: number, label: string): Promise<void> {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -190,6 +238,9 @@ async function check(page: Page, kind: string, path: string, status: number, lab
   expect(await bodyContrast(page), `${label} ${kind}: body text contrast`).toBeGreaterThanOrEqual(4.5);
   expect(errors, `${label} ${kind}: page errors`).toEqual([]);
   if (kind === 'page') await checkSections(page, `${label} ${kind}`);
+  if (['shop', 'cart', 'account', 'product'].includes(kind)) {
+    expect(await controls(page), `${label} ${kind}: fields and buttons`).toEqual([]);
+  }
   await page.screenshot({ path: test.info().outputPath(`${label}-${kind}.png`), fullPage: true });
 }
 

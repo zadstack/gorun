@@ -47,6 +47,19 @@ func (h *handlers) asset(w http.ResponseWriter, r *http.Request) {
 	http.ServeFileFS(w, r, fsys, clean)
 }
 
+// coreCSS serves the embedded core site stylesheet (theme.CoreCSSURL links it
+// with a content hash, so that URL is cached as immutable).
+func (h *handlers) coreCSS(w http.ResponseWriter, r *http.Request) {
+	b := theme.CoreCSS()
+	if len(b) == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/css; charset=utf-8")
+	w.Header().Set("Cache-Control", httpx.AssetCacheControl(r, "core.css"))
+	_, _ = w.Write(b)
+}
+
 // themeDir returns the directory of installed theme slug (one theme.json
 // read via theme.InfoLookup; listing every theme is the fallback).
 func themeDir(r *http.Request, svc theme.Service, slug string) (string, bool) {

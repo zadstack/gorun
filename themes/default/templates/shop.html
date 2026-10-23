@@ -1,5 +1,5 @@
 {{/* Commerce: /shop. .Extra.groups is []commerce.ProductGroup{Slug, Name, Products}. */}}
-{{part "header" .}}
+{{part "header" .}}<div class="gp-core">
 <section class="zad-shop mx-auto max-w-5xl">
   <h1 class="text-[22px] font-bold">{{t "commerce.shop.title"}}</h1>
   <p class="mt-1 text-muted">{{t "commerce.shop.intro"}}</p>
@@ -24,4 +24,4 @@
   <p class="mt-8 rounded border border-line bg-panel p-6 text-center text-muted">{{t "commerce.shop.empty"}}</p>
   {{end}}
 </section>
-{{part "footer" .}}
+</div>{{part "footer" .}}

@@ -15,6 +15,7 @@ import (
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/theme"
 )
 
 //go:embed catalog/*.json
@@ -70,6 +71,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	get(pub, "/themes/{slug}/assets/*", h.asset)
 	get(pub, "/site/identity.css", h.identityCSS)
 	get(pub, "/site/builder-identity.css", h.builderIdentityCSS)
+	get(pub, theme.CoreCSSPath, h.coreCSS)
 
 	// The site locale is unprefixed; another supported locale lives under /<locale>/.
 	// CSRF is attached per route (not on the group) so the contact form can

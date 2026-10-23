@@ -7,6 +7,14 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Core site stylesheet (`/static/site/core.css`), served from the binary with a content hash and
+  linked by `{{sections .}}` in every theme. It holds zero-specificity element defaults for forms,
+  tables, code, quotes, messages and long content, plus the utilities of the shared functional
+  templates scoped under `.gp-core` without a reset. Theme rules always win; the shipped themes'
+  own pages render with identical computed styles. Store buttons now take the theme and identity
+  colour tokens. The theme contract requires a head without `{{sections .}}` to link the core
+  stylesheet itself.
+
 - Releases publish `release-index.json` for staged updates. It lists the container image with its
   pushed digest, the four binary archives with their `SHA256SUMS` digests, and every migration the
   release ships. Point `GORUN_UPDATE_SOURCE_URL` at it and the update preflight checks migrations
@@ -23,6 +31,14 @@ All notable changes to GoRun are recorded here. The format follows
 - READMEs: corrected stale facts (seven role templates, the recipe shipping since 0.11.0, Edge
   without MCP, version-neutral Docker and archive commands in Arabic) and described staged core
   updates instead of saying no updater exists. The architecture guide lists all 25 core modules.
+
+### Fixed
+
+- Store, cart, checkout, account, product and intake pages are styled under every theme. They
+  come from the default theme's templates but relied on stylesheets only the default head linked,
+  so under business, portfolio and magazine they had unstyled forms, no side padding and, on the
+  cart, unreadable outline buttons. Even under default, the password sign-in and registration
+  forms had invisible fields and unstyled buttons.
 
 ## [0.17.0] - 2026-10-23
 

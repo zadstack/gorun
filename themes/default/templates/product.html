@@ -1,6 +1,6 @@
 {{/* Commerce: /product/{slug}. .Extra.product is *commerce.Product (Description is sanitized HTML);
      .Extra.checkout_action, .Extra.checkout_error (i18n key), .Extra.email, .Extra.image_url. */}}
-{{part "header" .}}
+{{part "header" .}}<div class="gp-core">
 {{$x := .Extra}}
 {{with .Extra.product}}
 <article class="mx-auto max-w-3xl">
@@ -35,4 +35,4 @@
   </div>
 </article>
 {{end}}
-{{part "footer" .}}
+</div>{{part "footer" .}}
