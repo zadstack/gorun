@@ -21,3 +21,6 @@
 .identity-studio [data-design-error]:focus{outline:2px solid #9b1c1c;outline-offset:3px}
 @media(max-width:900px){.identity-layout{grid-template-columns:1fr}.identity-preview{position:static}.identity-frame{height:60vh}}
 @media(forced-colors:active){.identity-toggle button[aria-pressed=true]{border:2px solid Highlight}}
+
+/* Keep the final history action reachable above the mobile floating launcher. */
+@media(max-width:767px){.identity-history{padding-block-end:calc(5rem + env(safe-area-inset-bottom,0px))}}
