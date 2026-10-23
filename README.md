@@ -65,8 +65,6 @@ GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/zadstack/gorun/tree/main/edge)
 
-![GoRun content editor and publishing controls](assets/branding/screenshots/editor-en.png)
-
 ## Why GoRun?
 
 - **Your content and infrastructure.** A Go executable and SQLite, hosted by you. No Node.js or PHP at runtime.
@@ -89,7 +87,12 @@ GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 
 
 Up to six primary sections keep related tools together, with contextual page tabs above the screen you are using. You see the tools your permissions allow; Store adds an optional seventh section when permitted commerce tools are available. Colored categories keep their text labels and selected borders. Personal visibility, navigation order and dashboard pins stay yours; pinned tools remain within reach under **Quick access** in the main sidebar.
 
-![GoRun content workspace with grouped sections, contextual page tabs and the opposite-side agents rail](assets/branding/screenshots/admin-navigation-en.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/admin-navigation-en.png"><img src="assets/branding/screenshots/admin-navigation-en.png" alt="GoRun content workspace with grouped sections, contextual page tabs and the agents rail" /></a><br /><sub>Grouped sections and page tabs</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/admin-navigation-ar.png"><img src="assets/branding/screenshots/admin-navigation-ar.png" alt="The same workspace in Arabic, mirrored right to left" /></a><br /><sub>The same workspace in Arabic, right to left</sub></td>
+  </tr>
+</table>
 
 The screenshots use an isolated demo site with fictional content. The layout mirrors for Arabic and stays usable on mobile. [Arabic mobile menu](assets/branding/screenshots/admin-navigation-ar-mobile.png) · [Workspace guide](docs/ADMIN_WORKSPACE.md).
 
@@ -103,7 +106,12 @@ Three repetitions on one disposable host; two logical server CPUs and a 2 GiB bu
 
 Manage posts, pages, custom content types, fields, media and navigation in one place. Give editors, authors and contributors the permissions they need, and review changes before publishing.
 
-![Arabic content management with native RTL](assets/branding/screenshots/content-list-ar.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/content-list-ar.png"><img src="assets/branding/screenshots/content-list-ar.png" alt="Arabic content list with published posts and drafts in Arabic and English" /></a><br /><sub>Content list in Arabic</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/editor-en.png"><img src="assets/branding/screenshots/editor-en.png" alt="Post editor with body, excerpt, featured image and publishing panel" /></a><br /><sub>Editor with scheduling and revisions</sub></td>
+  </tr>
+</table>
 
 [Editorial workflow](docs/README.md) · [WordPress migration](docs/MIGRATION.md)
 
@@ -132,11 +140,18 @@ Activating a theme does not create starter pages; use the site builder for that.
 
 **Website → Design → Site design** brings **Build site** and **Visual identity** into one workspace. Prepare pages as drafts, review activation separately, and preview colors and typography locally before explicitly saving identity. Existing site content and theme settings remain yours. [Site design guide](docs/SITE-DESIGN-WORKSPACE.md).
 
-![Unified Site design workspace with saved-site summary, visual identity controls and a local sample](assets/branding/screenshots/site-design-identity-en.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/site-design-identity-en.png"><img src="assets/branding/screenshots/site-design-identity-en.png" alt="Site design workspace with saved-site summary, visual identity controls and a local sample" /></a><br /><sub>Visual identity, previewed before saving</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/site-design-build-en.png"><img src="assets/branding/screenshots/site-design-build-en.png" alt="Build-site step with starter designs prepared as drafts" /></a><br /><sub>Build site: starters prepared as drafts</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/builder-ar.png"><img src="assets/branding/screenshots/builder-ar.png" alt="Page builder with an Arabic interface and live preview" /></a><br /><sub>Page builder in Arabic with live preview</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/theme-home-en.png"><img src="assets/branding/screenshots/theme-home-en.png" alt="Public home page of the default theme with fictional Atlas Studio content" /></a><br /><sub>The public site in the default theme</sub></td>
+  </tr>
+</table>
 
-[Build-site step](assets/branding/screenshots/site-design-build-en.png) · [Arabic mobile identity](assets/branding/screenshots/site-design-identity-ar-mobile.png).
-
-![Page builder with an Arabic interface and live preview](assets/branding/screenshots/builder-ar.png)
+[Arabic mobile identity](assets/branding/screenshots/site-design-identity-ar-mobile.png).
 
 [Site builder](docs/SITE_BUILDER.md) · [Theme development](docs/THEME-DEVELOPMENT.md) · [Theme reference](docs/THEMES.md)
 
@@ -156,6 +171,12 @@ Connect an MCP client with an **AI agent** key. Its scopes are bounded by its ow
 
 [How approvals work](docs/MCP.md#human-approval-for-sensitive-tools)
 
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agent-keys-en.png"><img src="assets/branding/screenshots/agent-keys-en.png" alt="API keys page with agent keys and a REST key, each with explicit scopes" /></a><br /><sub>Agent keys with explicit scopes</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/approvals-ar.png"><img src="assets/branding/screenshots/approvals-ar.png" alt="A pending publishing approval waiting for review, in Arabic" /></a><br /><sub>A pending approval waiting for a person</sub></td>
+  </tr>
+</table>
 
 Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish automatically. Agents need `canvas.read` plus an explicit board grant to list or read boards over MCP; REST keys use the matching canvas endpoints. Configure your provider or agent connection before running it.
 
@@ -163,7 +184,9 @@ Canvases bring selected content, instructions and agent results into one workspa
 
 With a configured AI provider, review the exact destination and site context before separately confirming a request for canvas suggestions. Suggestions create an unbound starting point; choose its executor and permissions yourself. [AI suggestion workflow](docs/CANVAS-AI-SUGGESTIONS.md).
 
-![GoRun showing three canvas suggestions after explicit review and confirmation](assets/branding/screenshots/canvas-ai-suggestions-en.png)
+<a href="assets/branding/screenshots/canvas-ai-suggestions-en.png"><img src="assets/branding/screenshots/canvas-ai-suggestions-en.png" alt="Three canvas suggestions after explicit review and confirmation" width="49%" /></a>
+
+<sub>Canvas suggestions after review and confirmation</sub>
 
 [Arabic suggestions on mobile](assets/branding/screenshots/canvas-ai-suggestions-ar-mobile.png). These documentation examples come from a scripted local HTTP provider, not a live model or evidence of provider availability.
 
@@ -173,7 +196,12 @@ Each agent or provider card shows its own ID and selected agent/provider identit
 
 The opposite-side agents rail opens your own canvas cards. Inspect **Integrations**, **Instructions** and **Defaults**, then open the original card to configure or review it. The drawer reads saved configuration; opening it does not run an agent. **Configured** does not mean online, and an external agent still needs its connected client.
 
-![Agent drawer showing a named external campaign assistant, configured status and read-only details](assets/branding/screenshots/agents-drawer-en.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agents-drawer-en.png"><img src="assets/branding/screenshots/agents-drawer-en.png" alt="Agent drawer showing a named external campaign assistant, configured status and read-only details" /></a><br /><sub>Agents drawer: saved configuration, read only</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agents-drawer-ar.png"><img src="assets/branding/screenshots/agents-drawer-ar.png" alt="The agents drawer in Arabic" /></a><br /><sub>The same drawer in Arabic</sub></td>
+  </tr>
+</table>
 
 [Arabic mobile drawer](assets/branding/screenshots/agents-drawer-ar-mobile.png). Skills and multiple MCP-server resources are not assembled or verified by this drawer.
 
@@ -181,15 +209,20 @@ The opposite-side agents rail opens your own canvas cards. Inspect **Integration
 
 **1. Make the recipe yours.** Open **Agent role templates → Build an Updates Researcher recipe**. Choose your saved agent, edit the instructions and supply the topic, source excerpts and dates. Inspect its existing model and MCP tool configuration; previewing or saving creates no execution or access grants. [Recipe setup](docs/AGENT-RECIPES.md).
 
-![Updates Researcher recipe with editable instructions and supplied evidence for Atlas Studio](assets/branding/screenshots/researcher-setup-en.png)
-
 **2. Review the actual request.** Save the private canvas, grant the agent the context it needs, then inspect the exact instructions and context in the run review. Confirm the run separately. Managed MCP tool calls retain their individual approvals; an external agent needs its running client.
-
-![Native run review showing the exact Updates Researcher instructions and supplied source before confirmation](assets/branding/screenshots/researcher-review-en.png)
 
 **3. Read the private result.** The returned brief becomes an attributed note alongside the original instructions and sources. Compact card types, separate connection points and a full-note reader make the work easier to inspect. Publishing remains a separate decision.
 
-![Updates Researcher result shown as an attributed private note beside its source and task cards](assets/branding/screenshots/researcher-result-en.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/researcher-setup-en.png"><img src="assets/branding/screenshots/researcher-setup-en.png" alt="Updates Researcher recipe with editable instructions and supplied evidence for Atlas Studio" /></a><br /><sub>1. Make the recipe yours</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/researcher-review-en.png"><img src="assets/branding/screenshots/researcher-review-en.png" alt="Run review showing the exact instructions and supplied source before confirmation" /></a><br /><sub>2. Review the exact request</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/researcher-result-en.png"><img src="assets/branding/screenshots/researcher-result-en.png" alt="Result shown as an attributed private note beside its source and task cards" /></a><br /><sub>3. Read the private result</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/researcher-result-ar.png"><img src="assets/branding/screenshots/researcher-result-ar.png" alt="The same result in Arabic" /></a><br /><sub>The same result in Arabic</sub></td>
+  </tr>
+</table>
 
 Switch between **Workflow**, **Grid** and **List** views without changing the saved content or connections. [Arabic mobile story: setup](assets/branding/screenshots/researcher-setup-ar-mobile.png) · [Review](assets/branding/screenshots/researcher-review-ar-mobile.png) · [Result](assets/branding/screenshots/researcher-result-ar-mobile.png).
 
@@ -199,7 +232,12 @@ Switch between **Workflow**, **Grid** and **List** views without changing the sa
 
 **Start from an inspectable role.** Seven compact bilingual examples combine five inline skills each. Inspect the instructions, then prepare an unsaved bundle for an owned agent. A role grants no permissions, chooses no provider and makes no tool call. [Role templates](docs/AGENT-ROLE-TEMPLATES.md).
 
-![Compact agent role catalog with labeled categories and expandable skill instructions](assets/branding/screenshots/agent-roles-en.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agent-roles-en.png"><img src="assets/branding/screenshots/agent-roles-en.png" alt="Agent role catalog with labeled categories and expandable skill instructions" /></a><br /><sub>Role templates</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agent-roles-ar.png"><img src="assets/branding/screenshots/agent-roles-ar.png" alt="The role catalog in Arabic" /></a><br /><sub>The same catalog in Arabic</sub></td>
+  </tr>
+</table>
 
 [Arabic mobile roles](assets/branding/screenshots/agent-roles-ar-mobile.png). The catalog shows example instructions; it is not a team of running agents.
 
@@ -211,7 +249,9 @@ Schedule daily or weekly local backups, track verified success and storage, and 
 
 Extension screens distinguish **Server directory**, **Uploaded ZIP** and **Legacy: method not recorded**. An installation method does not establish a package's origin or safety. [Installation-method guide](docs/EXTENSION-INSTALLATION-METHODS.md).
 
-![GoRun extension directory grouped by recorded installation method, including unknown legacy records](assets/branding/screenshots/extensions-methods-en.png)
+<a href="assets/branding/screenshots/extensions-methods-en.png"><img src="assets/branding/screenshots/extensions-methods-en.png" alt="Extension directory grouped by recorded installation method, including unknown legacy records" width="49%" /></a>
+
+<sub>Extensions grouped by installation method</sub>
 
 [Arabic extension methods on mobile](assets/branding/screenshots/extensions-methods-ar-mobile.png).
 

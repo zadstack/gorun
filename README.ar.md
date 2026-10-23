@@ -36,13 +36,20 @@
 
 تجمع القائمة الرئيسية الأدوات في ما يصل إلى ستة أقسام، وتظهر تبويبات الصفحات فوق الشاشة التي تستخدمها بحسب صلاحياتك. يضيف المتجر قسمًا سابعًا اختياريًا عند توفر أدوات تجارة مسموح بها. تحتفظ التصنيفات الملونة بأسمائها وحدود التحديد الواضحة. تبقى إعدادات الظهور والترتيب والتثبيت خاصة بحسابك؛ وتظل الأدوات المثبّتة متاحة ضمن «الوصول السريع» في القائمة الرئيسية، وتنعكس الواجهة للعربية.
 
-![أقسام GoRun المنظمة وتبويبات المحتوى وشريط الوكلاء المقابل بالعربية](assets/branding/screenshots/admin-navigation-ar.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/admin-navigation-ar.png"><img src="assets/branding/screenshots/admin-navigation-ar.png" alt="أقسام GoRun المنظمة وتبويبات المحتوى وشريط الوكلاء بالعربية" /></a><br /><sub>الأقسام وتبويبات الصفحات بالعربية</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/admin-navigation-en.png"><img src="assets/branding/screenshots/admin-navigation-en.png" alt="مساحة العمل نفسها بالإنجليزية" /></a><br /><sub>مساحة العمل نفسها بالإنجليزية</sub></td>
+  </tr>
+</table>
 
 الصور من موقع تجريبي معزول بمحتوى خيالي. [قائمة الأقسام على الموبايل بالعربية](assets/branding/screenshots/admin-navigation-ar-mobile.png) · [دليل مساحة العمل](docs/ADMIN_WORKSPACE.md).
 
 تميّز شاشة الإضافات بين **من مجلد الخادم** و**ملف ZIP مرفوع** و**الطريقة القديمة غير المسجلة**. طريقة التثبيت لا تثبت مؤلف الحزمة أو سلامتها. [دليل طرق التثبيت](docs/EXTENSION-INSTALLATION-METHODS.md).
 
-![الإضافات في GoRun مصنفة حسب طريقة التثبيت المسجلة مع إبقاء السجلات القديمة مجهولة الطريقة](assets/branding/screenshots/extensions-methods-en.png)
+<a href="assets/branding/screenshots/extensions-methods-en.png"><img src="assets/branding/screenshots/extensions-methods-en.png" alt="الإضافات مصنفة حسب طريقة التثبيت المسجلة مع إبقاء السجلات القديمة مجهولة الطريقة" width="49%" /></a>
+
+<sub>الإضافات مصنفة حسب طريقة التثبيت</sub>
 
 [طرق تثبيت الإضافات بالعربية على الموبايل](assets/branding/screenshots/extensions-methods-ar-mobile.png).
 
@@ -50,7 +57,12 @@
 
 من **الموقع ← التصميم ← تصميم الموقع** انتقل بين «ابنِ الموقع» و«الهوية البصرية». جهّز الصفحات كمسودات، وراجع التفعيل منفصلًا، وعاين الألوان والخطوط محليًا قبل حفظ الهوية صراحةً. [دليل المساحة](docs/SITE-DESIGN-WORKSPACE.md).
 
-![مساحة تصميم الموقع الموحدة بالعربية مع معاينة محلية لا تحفظ تلقائيًا](assets/branding/screenshots/site-design-identity-ar.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/site-design-identity-ar.png"><img src="assets/branding/screenshots/site-design-identity-ar.png" alt="مساحة تصميم الموقع الموحدة بالعربية مع معاينة محلية لا تحفظ تلقائيًا" /></a><br /><sub>الهوية البصرية بمعاينة قبل الحفظ</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/site-design-build-en.png"><img src="assets/branding/screenshots/site-design-build-en.png" alt="خطوة بناء الموقع: تصاميم بداية تُجهَّز كمسودات" /></a><br /><sub>بناء الموقع: تصاميم بداية كمسودات</sub></td>
+  </tr>
+</table>
 
 [هوية الموقع بالإنجليزية](assets/branding/screenshots/site-design-identity-en.png) · [الهوية بالعربية على الموبايل](assets/branding/screenshots/site-design-identity-ar-mobile.png) · [خطوة بناء الموقع](assets/branding/screenshots/site-design-build-en.png).
 
@@ -111,7 +123,12 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 سبعة أمثلة ثنائية اللغة، لكل منها خمس مهارات نصية، في كروت مختصرة يمكن توسيع تعليماتها. افحص الدور ثم جهّز مسودة إعداد لوكيل تملكه؛ اختيار الدور لا يمنح صلاحيات ولا يختار مزوّدًا ولا يستدعي أداة. [قوالب الأدوار](docs/AGENT-ROLE-TEMPLATES.md).
 
-![قوالب أدوار الوكلاء المختصرة بتصنيفات ملونة وتعليمات قابلة للتوسيع](assets/branding/screenshots/agent-roles-ar.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agent-roles-ar.png"><img src="assets/branding/screenshots/agent-roles-ar.png" alt="قوالب أدوار الوكلاء المختصرة بتصنيفات ملونة وتعليمات قابلة للتوسيع" /></a><br /><sub>قوالب الأدوار بالعربية</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agent-roles-en.png"><img src="assets/branding/screenshots/agent-roles-en.png" alt="قوالب الأدوار نفسها بالإنجليزية" /></a><br /><sub>القوالب نفسها بالإنجليزية</sub></td>
+  </tr>
+</table>
 
 [الأدوار بالعربية على الموبايل](assets/branding/screenshots/agent-roles-ar-mobile.png). هذه أمثلة تعليمات، وليست فريقًا من الوكلاء يعمل تلقائيًا.
 
@@ -133,7 +150,9 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 عند إعداد مزوّد ذكاء اصطناعي، راجع الوجهة والسياق الفعليين قبل تأكيد طلب اقتراحات للكانفس بصورة مستقلة. الاقتراح بداية غير مرتبطة بمنفّذ أو صلاحيات؛ تختارها أنت لاحقًا. [دليل الاقتراحات](docs/CANVAS-AI-SUGGESTIONS.md).
 
-![ثلاثة اقتراحات للكانفس في GoRun بعد مراجعة وتأكيد صريحين](assets/branding/screenshots/canvas-ai-suggestions-en.png)
+<a href="assets/branding/screenshots/canvas-ai-suggestions-en.png"><img src="assets/branding/screenshots/canvas-ai-suggestions-en.png" alt="ثلاثة اقتراحات للكانفس بعد مراجعة وتأكيد صريحين" width="49%" /></a>
+
+<sub>اقتراحات الكانفس بعد المراجعة والتأكيد</sub>
 
 [الاقتراحات بالعربية على الموبايل](assets/branding/screenshots/canvas-ai-suggestions-ar-mobile.png). هذه أمثلة توثيقية من مزوّد HTTP محلي مبرمج للاختبار، وليست ناتج نموذج فعلي أو دليلًا على توفر مزوّد خارجي.
 
@@ -141,7 +160,12 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 يفتح شريط الوكلاء المقابل بطاقات كانفسك الخاصة. راجع **التكاملات** و**التعليمات** و**الافتراضيات**، ثم افتح البطاقة الأصلية للضبط والمراجعة. الدرج يقرأ الإعدادات المحفوظة ولا يشغّل الوكيل عند فتحه. حالة **مُعَدّ** لا تعني اتصالًا حيًا؛ الوكيل الخارجي يحتاج عميله المتصل.
 
-![درج الوكلاء بالعربية يعرض مساعد الحملة الخارجي وهويته وحالته وحدود القراءة فقط](assets/branding/screenshots/agents-drawer-ar.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agents-drawer-ar.png"><img src="assets/branding/screenshots/agents-drawer-ar.png" alt="درج الوكلاء بالعربية يعرض مساعد الحملة الخارجي وهويته وحالته للقراءة فقط" /></a><br /><sub>درج الوكلاء: إعدادات محفوظة للقراءة فقط</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agents-drawer-en.png"><img src="assets/branding/screenshots/agents-drawer-en.png" alt="درج الوكلاء نفسه بالإنجليزية" /></a><br /><sub>الدرج نفسه بالإنجليزية</sub></td>
+  </tr>
+</table>
 
 [درج التعليمات بالعربية على الموبايل](assets/branding/screenshots/agents-drawer-ar-mobile.png). هذا الدرج لا يجمع Skills وخوادم MCP متعددة ولا يتحقق من جاهزيتها.
 
@@ -149,15 +173,20 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 **١. عدّل الوصفة حسب احتياجك.** افتح **قوالب أدوار الوكلاء ← بناء وصفة باحث المستجدات**. اختر وكيلك المحفوظ، وعدّل التعليمات وأضف الموضوع ومقتطفات المصادر وتواريخها. راجع إعداد النموذج وأدوات MCP الموجودة؛ المعاينة والحفظ لا يشغّلان الوكيل ولا يمنحانه وصولًا. [دليل الوصفة](docs/AGENT-RECIPES.md).
 
-![وصفة باحث المستجدات بتعليمات قابلة للتعديل ومصادر تجريبية لأطلس ستوديو](assets/branding/screenshots/researcher-setup-ar.png)
-
 **٢. راجع الطلب الفعلي.** احفظ الكانفس الخاص، وامنح الوكيل الوصول إلى السياق المطلوب، ثم افحص التعليمات والسياق الفعليين في شاشة مراجعة التشغيل. أكد التشغيل بصورة مستقلة. تحتفظ استدعاءات أدوات MCP المُدارة بموافقة كل استدعاء؛ والوكيل الخارجي يحتاج عميله المتصل.
-
-![مراجعة التعليمات والمصدر الفعليين قبل تأكيد تشغيل باحث المستجدات](assets/branding/screenshots/researcher-review-ar.png)
 
 **٣. اقرأ النتيجة الخاصة.** يصل الموجز كملاحظة تبين مصدرها بجوار التعليمات والمصادر الأصلية. تساعد أنواع الكروت الواضحة ونقاط الاتصال المنفصلة وقارئ الملاحظات الكاملة على مراجعة العمل. يظل النشر قرارًا مستقلًا.
 
-![نتيجة باحث المستجدات كملاحظة خاصة بجوار كروت المصدر والمهمة](assets/branding/screenshots/researcher-result-ar.png)
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/researcher-setup-ar.png"><img src="assets/branding/screenshots/researcher-setup-ar.png" alt="وصفة باحث المستجدات بتعليمات قابلة للتعديل ومصادر تجريبية لأطلس ستوديو" /></a><br /><sub>١. عدّل الوصفة</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/researcher-review-ar.png"><img src="assets/branding/screenshots/researcher-review-ar.png" alt="مراجعة التعليمات والمصدر الفعليين قبل تأكيد التشغيل" /></a><br /><sub>٢. راجع الطلب الفعلي</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/researcher-result-ar.png"><img src="assets/branding/screenshots/researcher-result-ar.png" alt="نتيجة باحث المستجدات كملاحظة خاصة بجوار كروت المصدر والمهمة" /></a><br /><sub>٣. اقرأ النتيجة الخاصة</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/researcher-result-en.png"><img src="assets/branding/screenshots/researcher-result-en.png" alt="النتيجة نفسها بالإنجليزية" /></a><br /><sub>النتيجة نفسها بالإنجليزية</sub></td>
+  </tr>
+</table>
 
 [القصة على الموبايل: الإعداد](assets/branding/screenshots/researcher-setup-ar-mobile.png) · [المراجعة](assets/branding/screenshots/researcher-review-ar-mobile.png) · [النتيجة](assets/branding/screenshots/researcher-result-ar-mobile.png).
 

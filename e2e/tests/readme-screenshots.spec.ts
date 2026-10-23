@@ -14,7 +14,8 @@ test('capture current README product screens with synthetic campaign data', asyn
   const output = resolve('..','assets','branding','screenshots');
   mkdirSync(output,{recursive:true});
   const captured=new Set<string>(),secrets:string[]=[];
-  const expectedImages=[...readdirSync(output).filter(name=>name.endsWith('.png')),'canvas-ai-suggestions-en.png','canvas-ai-suggestions-ar-mobile.png','extensions-methods-en.png','extensions-methods-ar-mobile.png'];
+  // researcher-*.png come from tests/agent-recipes.spec.ts (see the screenshots README).
+  const expectedImages=[...readdirSync(output).filter(name=>name.endsWith('.png')&&!name.startsWith('researcher-')),'canvas-ai-suggestions-en.png','canvas-ai-suggestions-ar-mobile.png','extensions-methods-en.png','extensions-methods-ar-mobile.png'];
   const database = db();
   database.prepare("UPDATE users SET name='Amira Hassan' WHERE email='admin@e2e.test'").run();
   database.prepare("INSERT INTO settings(key,value_json,updated_at) VALUES('site.title',?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json").run(JSON.stringify('Atlas Studio'),new Date().toISOString());
