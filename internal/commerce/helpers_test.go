@@ -128,6 +128,10 @@ func bootCfg(t *testing.T, tweak func(*config.Config)) *env {
 		t.Fatal(err)
 	}
 	stopWorkers()
+	// Cancelling only signals the workers; wait until they have exited so a
+	// worker that passed its shutdown check just before the cancel cannot
+	// claim a job the test enqueues next and drains itself.
+	app.Deps.Jobs.Wait()
 	billing := fakebilling.New(testClientID, testServerSecret)
 	srv := httptest.NewServer(app.Handler)
 	t.Cleanup(func() { srv.Close(); billing.Close(); app.Close() })
