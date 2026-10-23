@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -740,11 +741,13 @@ func (f *funcs) themeLogo(variant string) string {
 	return "/themes/" + info.Slug + "/assets/" + path
 }
 
-// brandImg renders the site mark for the primary logo m: the same <img>
-// as {{img}} when no distinct dark logo exists (so existing themes keep
-// their markup), otherwise a <picture> whose dark source is served to
-// browsers in dark mode. When the site identity scheme forces dark, the
-// dark logo becomes the default image and the primary serves light mode.
+// brandImg renders the site mark for the primary logo m. The mark follows
+// the page, not the visitor's system setting: the dark logo when the page
+// background is dark (the identity's dark scheme or background, else a dark
+// builder background), the primary logo otherwise. Without a distinct dark
+// logo it is the same <img> as {{img}}. Only a theme that declares
+// "color-scheme:auto" (a page that follows the system setting itself) gets a
+// <picture> whose dark source follows prefers-color-scheme.
 func (f *funcs) brandImg(m *media.Media, variant string, class ...string) template.HTML {
 	if m == nil {
 		return ""
@@ -753,18 +756,49 @@ func (f *funcs) brandImg(m *media.Media, variant string, class ...string) templa
 	if dark == nil || dark.ID == m.ID {
 		return f.img(m, variant, class...)
 	}
-	main, alt, query := m, dark, "(prefers-color-scheme: dark)"
-	if f.setting(SettingKey(f.s.Active(f.st.ctx).Slug, idScheme)) == "dark" {
-		main, alt, query = dark, m, "(prefers-color-scheme: light)"
+	if bg := f.pageBackground(); bg != "" {
+		if c, ok := parseColor(bg); ok && luminance(c) < 0.5 {
+			return f.img(dark, variant, class...)
+		}
+		return f.img(m, variant, class...)
 	}
-	src := alt.URL
-	if v, ok := alt.Variants[variant]; ok && v.URL != "" {
+	if !f.themeSupports("color-scheme:auto") {
+		return f.img(m, variant, class...)
+	}
+	src := dark.URL
+	if v, ok := dark.Variants[variant]; ok && v.URL != "" {
 		src = v.URL
 	}
 	if !safeURL(src) {
-		return f.img(main, variant, class...)
+		return f.img(m, variant, class...)
 	}
-	return template.HTML(`<picture><source srcset="` + template.HTMLEscapeString(src) + `" media="` + query + `">` + string(f.img(main, variant, class...)) + `</picture>`)
+	return template.HTML(`<picture><source srcset="` + template.HTMLEscapeString(src) + `" media="(prefers-color-scheme: dark)">` + string(f.img(m, variant, class...)) + `</picture>`)
+}
+
+// pageBackground is the page background the identity layers set: the site
+// identity's (its own colour or its dark scheme), else the builder
+// identity's, else "" (the theme's own, which is light for every shipped
+// theme).
+func (f *funcs) pageBackground() string {
+	if f.st.tc != nil && supportsIdentity(f.st.tc.Theme) {
+		slug := f.st.tc.Theme.Slug
+		if bg := identityBackground(func(k string) string { return f.setting(SettingKey(slug, k)) }); bg != "" {
+			return bg
+		}
+	}
+	if f.st.previewIdentity != nil {
+		return f.st.previewIdentity.Background
+	}
+	var b brand.Identity
+	if f.s.d.Settings != nil && f.s.d.Settings.Get(f.st.ctx, "builder.identity", &b) == nil && brand.Validate(b) == nil {
+		return b.Background
+	}
+	return ""
+}
+
+// themeSupports reports whether the active theme declares capability c.
+func (f *funcs) themeSupports(c string) bool {
+	return f.st.tc != nil && slices.Contains(f.st.tc.Theme.Supports, c)
 }
 
 // favicon renders the <link rel="icon"> for the site icon: the site.icon

@@ -227,6 +227,31 @@ Two settings can restyle the same tokens:
 
 Precedence, per token: **site identity › builder identity › the theme's own tokens**. A token the site identity leaves empty keeps the builder value, and one neither sets keeps the theme default. For example, a builder accent of `#167252` with a site identity accent of `#c2410c` gives `#c2410c`, and the builder's background and text colors stay. Every catalog head prints `{{builderIdentity}}` before `{{identity .}}`; `TestSiteIdentityOutranksBuilderIdentity` checks this. Custom CSS comes last in the identity stylesheet, so it can override both.
 
+### Rules that keep the layers readable
+
+The core applies these rules whatever the theme, so a combination of theme, builder identity and
+site identity cannot produce unreadable text:
+
+- **Dark scheme covers every token.** `identity_scheme = dark` redefines every surface and text
+  token the shared tokens declare: background, panels, text, headings, secondary and muted text,
+  lines, accent tints, link colours and the danger, success, warning and info colours. Only accent
+  fills and the text on them keep the theme's values. `TestDarkSchemeRedefinesEveryLiteralColourToken`
+  fails when a new literal colour token is added without a dark value.
+- **Accent text is readable.** The accent stays as chosen for fills (`--accent`, `--green`,
+  `--gp-accent`). Text in the accent colour (`--blue`, `--blue-hover`, `--link`, `--accent-ink`) is
+  the accent when it reaches 4.5:1 on the page background, else the accent mixed toward black or
+  white until it does. The page background is the identity background, else the dark scheme's,
+  else `#f3f5f2`, the darkest light background a shipped theme declares.
+- **The contrast check uses the rendered background.** Saving the identity, and the contrast shown
+  on the page, compare the text and background a visitor will see: a colour the identity leaves
+  empty falls back to the dark scheme's palette, then the builder identity, then the theme's
+  declaration.
+- **The logo follows the page.** `{{brandImg}}` shows the dark logo when the page background is dark
+  (the identity's dark scheme or background, else a dark builder background) and the primary logo
+  otherwise, whatever the visitor's system setting. Only a theme whose pages follow the system
+  setting themselves declares `color-scheme:auto` in `supports`; its header mark then gets a
+  `<picture>` with a `prefers-color-scheme: dark` source.
+
 ### Design variants
 
 A theme declares the layouts it really implements in `theme.json` `supports` as `<slot>:<value>`; the matching theme setting `<slot>_style` (a `select` in `settings`) chooses one, and templates print the resolved value with `{{variant "<slot>" .}}` as a data attribute. A stored value the theme does not declare, an unknown value, or a hand-edited setting resolves to `native` (the theme's own design), and **Appearance → Theme settings** offers only the declared options, naming the others as not offered by this theme. Declarations are not inherited from a parent theme, exactly like `identity`.

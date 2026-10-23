@@ -145,26 +145,15 @@ func (a *admin) identityDesign(ctx context.Context) identityDesignView {
 		Accent: accent, Background: background, Text: text}
 }
 
-// identityContrastFor computes the text/background ratio of snap with the
-// theme's declared colours as fallback, and the derived on-accent colour.
+// identityContrastFor computes the text/background ratio the visitor will
+// see for snap, and the derived on-accent colour. A colour the snapshot does
+// not set falls back to what actually renders beneath it: the dark scheme's
+// palette, then the builder identity, then the theme's declaration. Checking
+// against the theme's light declaration alone let dark text pass on the dark
+// scheme's background.
 func (a *admin) identityContrastFor(ctx context.Context, snap IdentitySnapshot) identityContrast {
-	rep := a.s.Appearance(ctx)
-	declared := func(role string) string {
-		if rep.Declared == nil {
-			return ""
-		}
-		if v := rep.Declared.Colors[role]; v.Available && v.Value != nil {
-			return *v.Value
-		}
-		return ""
-	}
-	c := identityContrast{Text: snap.Get(idText), Back: snap.Get(idBackground), Accent: snap.Get(idAccent)}
-	if c.Text == "" {
-		c.Text = declared("text")
-	}
-	if c.Back == "" {
-		c.Back = declared("background")
-	}
+	c := identityContrast{Accent: snap.Get(idAccent)}
+	c.Text, c.Back = a.s.renderedTextBackground(ctx, snap)
 	if ratio := contrast(c.Text, c.Back); ratio > 0 {
 		c.Shown, c.Ratio, c.Pass = true, strconv.FormatFloat(ratio, 'f', 1, 64), ratio >= minTextContrast
 	}

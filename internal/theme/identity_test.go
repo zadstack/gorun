@@ -2,6 +2,7 @@ package theme
 
 import (
 	"context"
+	"github.com/zadstack/gorun/internal/brand"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/media"
 	"github.com/zadstack/gorun/internal/theme/fake"
@@ -79,9 +80,9 @@ func TestThemeFonts(t *testing.T) {
 }
 
 // brandImg keeps the plain <img> markup when no distinct dark logo exists,
-// switches to a <picture> with a dark-mode source when one does, prefers
-// the dark mark when the site identity forces dark, and favicon follows the
-// site icon, then the theme manifest, then nothing.
+// and otherwise shows the mark that suits the page background (never the
+// visitor's system setting on a page that does not follow it); favicon
+// follows the site icon, then the theme manifest, then nothing.
 func TestBrandImgAndFaviconFollowLogoVariants(t *testing.T) {
 	root := t.TempDir()
 	writeTheme(t, root, "default", `{"name":"Brand","version":"1","supports":["identity"],"logos":{"icon":"icon.svg"}}`, map[string]string{
@@ -117,15 +118,33 @@ func TestBrandImgAndFaviconFollowLogoVariants(t *testing.T) {
 		t.Fatalf("primary only must keep the plain img: %s", got)
 	}
 	e.setting("site.logo_dark", dark.ID)
-	got = body()
-	if !strings.Contains(got, `<picture><source srcset="`+dark.Variants["thumbnail"].URL+`" media="(prefers-color-scheme: dark)"><img src="`+primary.Variants["thumbnail"].URL+`"`) {
-		t.Fatalf("dark variant: %s", got)
+	plain := func(m *media.Media) string { return `<img src="` + m.Variants["thumbnail"].URL + `"` }
+	// The page is light (no identity background, no builder identity), so the
+	// primary mark shows whatever the visitor's system setting is.
+	if got = body(); !strings.Contains(got, plain(primary)) || strings.Contains(got, "<picture") {
+		t.Fatalf("light page with a dark logo must show the primary mark only: %s", got)
 	}
+	// A dark page shows the dark mark: the dark scheme, a dark identity
+	// background, or a dark builder background.
 	e.setting(SettingKey("default", idScheme), "dark")
-	got = body()
-	if !strings.Contains(got, `<source srcset="`+primary.Variants["thumbnail"].URL+`" media="(prefers-color-scheme: light)"><img src="`+dark.Variants["thumbnail"].URL+`"`) {
-		t.Fatalf("forced dark scheme: %s", got)
+	if got = body(); !strings.Contains(got, plain(dark)) || strings.Contains(got, "<picture") {
+		t.Fatalf("dark scheme must show the dark mark: %s", got)
 	}
+	e.setting(SettingKey("default", idScheme), "light")
+	e.setting(SettingKey("default", idBackground), "#0f1720")
+	if got = body(); !strings.Contains(got, plain(dark)) {
+		t.Fatalf("dark identity background must show the dark mark: %s", got)
+	}
+	e.setting(SettingKey("default", idBackground), "#fbfbf8")
+	if got = body(); !strings.Contains(got, plain(primary)) {
+		t.Fatalf("light identity background must show the primary mark: %s", got)
+	}
+	e.setting(SettingKey("default", idBackground), "")
+	e.setting("builder.identity", brand.Identity{Accent: "#167252", Background: "#101010", Text: "#eeeeee", Font: "zad", Width: "standard"})
+	if got = body(); !strings.Contains(got, plain(dark)) {
+		t.Fatalf("dark builder background must show the dark mark: %s", got)
+	}
+	e.setting("builder.identity", nil)
 	e.setting("site.icon", icon.ID)
 	if got = body(); !strings.Contains(got, `<link rel="icon" href="`+icon.URL+`"`) || strings.Contains(got, "icon.svg") {
 		t.Fatalf("site icon must outrank the manifest: %s", got)
@@ -134,5 +153,32 @@ func TestBrandImgAndFaviconFollowLogoVariants(t *testing.T) {
 	e.setting("site.logo_dark", primary.ID)
 	if got = body(); strings.Contains(got, "<picture") {
 		t.Fatalf("identical dark logo rendered a picture: %s", got)
+	}
+}
+
+// A theme that declares "color-scheme:auto" follows the system setting
+// itself, so its header mark does too: a <picture> with a dark-mode source.
+func TestBrandImgFollowsTheSystemOnlyForAutoSchemeThemes(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", `{"name":"Auto","version":"1","supports":["identity","color-scheme:auto"]}`, map[string]string{
+		"templates/index.html": `{{with logo "primary"}}{{brandImg . "thumbnail" "mark"}}{{end}}`,
+	})
+	e := newEnv(t, root)
+	ms, _ := kernel.Get[media.Service](e.app.Deps, kernel.ServiceMedia)
+	store := ms.(*fake.Media)
+	for _, m := range []media.Media{
+		{ID: "01PRIMARY", Filename: "logo.png", URL: "/media/2026/10/logo.png", Mime: "image/png", Width: 64, Height: 64},
+		{ID: "01DARK", Filename: "logo-dark.png", URL: "/media/2026/10/logo-dark.png", Mime: "image/png", Width: 64, Height: 64},
+	} {
+		store.Add(m)
+	}
+	e.setting("site.logo", "01PRIMARY")
+	e.setting("site.logo_dark", "01DARK")
+	rec, err := e.render(kernel.KindRequest{Kind: "index"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := rec.Body.String(); !strings.Contains(got, `<picture><source srcset="/media/2026/10/logo-dark.png" media="(prefers-color-scheme: dark)"><img src="/media/2026/10/logo.png"`) {
+		t.Fatalf("auto-scheme theme: %s", got)
 	}
 }
