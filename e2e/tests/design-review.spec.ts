@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { csrf, db, setLocale } from '../lib/helpers.ts';
+import { csrf, db, setLocale, submitAndLand } from '../lib/helpers.ts';
 
 // This fixture is loopback-only. No site data or credentials leave the test host.
 test('review previews require approval, display untrusted findings and preserve the published page', async ({ page }, testInfo) => {
@@ -49,7 +49,10 @@ test('review previews require approval, display untrusted findings and preserve 
     await expect(page.locator('[name=approved]')).not.toBeChecked();
     await page.locator('[name=approved]').focus();
     await page.keyboard.press('Space');
-    await page.locator('form[action$="/enqueue"] button').click();
+    // Wait for the form POST to land before polling: reloading while the
+    // submission is still navigating detaches the page.
+    const enqueueForm = page.locator('form[action$="/enqueue"]');
+    await submitAndLand(page, enqueueForm.locator('button'), new URL((await enqueueForm.getAttribute('action'))!, page.url()).pathname, null);
     await expect.poll(async () => {
       await page.reload();
       return page.locator('[data-review-id]').first().innerText();
@@ -57,7 +60,8 @@ test('review previews require approval, display untrusted findings and preserve 
     const failedID = await page.locator('[data-review-id]').first().getAttribute('data-review-id');
     expect((await (await page.request.get('/api/v1/workagents/design-reviews/' + failedID)).json()).data.error_code).toBe('provider_output_invalid');
     expect(calls).toHaveLength(1);
-    await page.locator('form[action$="/retry"] button').click();
+    const retryForm = page.locator('form[action$="/retry"]').first();
+    await submitAndLand(page, retryForm.locator('button'), new URL((await retryForm.getAttribute('action'))!, page.url()).pathname, null);
     await expect.poll(async () => {
       await page.reload();
       return page.locator('[data-review-id]').first().textContent();
