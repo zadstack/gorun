@@ -152,3 +152,23 @@ func TestPreviewDoesNotInventIdentityOrUnlinkedBuilderStyles(t *testing.T) {
 		})
 	}
 }
+
+// A page never published through the builder has an empty Template, but its
+// preview must still show the builder layout the published page will have:
+// theme heads link builder.css only for Template "builder".
+func TestPreviewOfUnpublishedPageKeepsBuilderStylesheet(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", map[string]string{"templates/page-builder.html": `<!doctype html><html><head>{{with .Content}}{{if eq .Template "builder"}}<link rel="stylesheet" href="/static/builder/builder.css">{{end}}{{end}}</head><body>{{builderBody .Content}}</body></html>`})
+	e := newEnv(t, root)
+	item := &content.Item{Type: "page", Slug: "fresh", Locale: "en", Body: "<h1>Draft</h1>"}
+	rendered, err := e.svc.RenderBuilderThemePreview(t.Context(), item, BuilderPreviewOptions{Theme: "default", CSS: ".probe-builder{display:grid}"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(rendered, ".probe-builder") {
+		t.Fatalf("unpublished page preview lost the builder stylesheet:\n%s", rendered)
+	}
+	if item.Template != "" {
+		t.Fatal("preview mutated the caller's content item")
+	}
+}
