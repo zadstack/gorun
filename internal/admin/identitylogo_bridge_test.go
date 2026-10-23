@@ -179,3 +179,19 @@ func TestLogoTransportRejectsRemoteURLsAndSanitizesFailures(t *testing.T) {
 		}
 	}
 }
+
+// A non-streaming image request returns no headers until the image exists;
+// the transport must not give up on headers before the request budget.
+func TestLogoHTTPClientWaitsForHeadersAsLongAsTheRequest(t *testing.T) {
+	c := logoHTTPClient()
+	transport, ok := c.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("unexpected transport %T", c.Transport)
+	}
+	if c.Timeout != logoRequestTimeout || transport.ResponseHeaderTimeout < c.Timeout {
+		t.Fatalf("client timeout %s, response header timeout %s", c.Timeout, transport.ResponseHeaderTimeout)
+	}
+	if c.CheckRedirect == nil {
+		t.Fatal("redirects must stay refused")
+	}
+}

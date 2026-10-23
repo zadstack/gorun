@@ -33,7 +33,14 @@ func (s *service) RenderBuilderThemePreview(ctx context.Context, it *content.Ite
 		return "", err
 	}
 	request := kernel.KindRequest{Kind: KindPage, Type: "page", Slug: it.Slug, Template: "builder"}
-	tc := &Context{Content: it, Locale: it.Locale, Theme: set.chain[0], Extra: map[string]any{}, Query: map[string]string{}, Request: &http.Request{URL: &url.URL{Path: "/" + it.Slug}}}
+	// The preview renders the page as it will look once published through
+	// the builder. Theme heads link builder.css only for Template "builder",
+	// which a page gets on its first builder publish, so a never-published
+	// page must be rendered with that template too or its preview loses the
+	// builder layout the public page will have.
+	previewItem := *it
+	previewItem.Template = "builder"
+	tc := &Context{Content: &previewItem, Locale: it.Locale, Theme: set.chain[0], Extra: map[string]any{}, Query: map[string]string{}, Request: &http.Request{URL: &url.URL{Path: "/" + it.Slug}}}
 	tc = s.prepare(ctx, request, tc)
 	if options.Title != "" {
 		tc.Site.Title = options.Title
