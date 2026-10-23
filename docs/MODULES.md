@@ -173,7 +173,12 @@ this estimate and the local ceiling are not a provider-enforced maximum charge. 
 block generation. The exact payload and destination require explicit approval for each request.
 
 Candidates remain in authenticated, owner-scoped memory for up to 30 minutes or until restart;
-unused request approvals expire after 10 minutes. Selection imports
+unused request approvals expire after 10 minutes. Generation approval remains bound to the full
+identity snapshot. After generation, unrelated draft/live title, tagline, palette, CTA and other
+logo-slot edits do not invalidate a private candidate. Selection requires the same active theme,
+an enabled module and unchanged live/effective pending values for the chosen logo slot; it merges
+only that slot into the latest draft. A changed target slot or theme is refused while the private
+proposal remains available until expiry; no automatic regeneration is required. Selection imports
 a local PNG derivative (512 px logo or 64 px icon, preserving alpha), then changes only the chosen
 identity draft slot. Imported media is publicly readable by URL before Apply; a rare post-import
 revision conflict retains and reports the media ID without changing the draft or deleting media.

@@ -14,12 +14,12 @@ type selectionBoundary struct {
 	calls int
 }
 
-func (d *selectionBoundary) SelectPNG(ctx context.Context, theme, revision, slot string, data []byte) error {
+func (d *selectionBoundary) SelectPNG(ctx context.Context, theme, baseline, slot string, data []byte) error {
 	d.calls++
-	return d.memoryDraft.SelectPNG(ctx, theme, revision, slot, data)
+	return d.memoryDraft.SelectPNG(ctx, theme, baseline, slot, data)
 }
 
-func TestCandidateSelectionRequiresItsOriginalReviewedRevision(t *testing.T) {
+func TestCandidateSelectionRequiresOriginalClientBindingNotLatestDraftRevision(t *testing.T) {
 	for _, scenario := range []string{"missing", "different", "whitespace", "newer-current-draft"} {
 		t.Run(scenario, func(t *testing.T) {
 			s, d, _ := newTestService(t)
@@ -54,8 +54,8 @@ func TestCandidateSelectionRequiresItsOriginalReviewedRevision(t *testing.T) {
 			if err != nil || retained.Revision != candidate.Revision {
 				t.Fatalf("rejection changed private candidate: %+v %v", retained, err)
 			}
-			// A rejected client token must not consume an otherwise usable candidate.
-			d.revision = candidate.Revision
+			// Rejection must not consume the proposal. Its original client token stays
+			// usable even when an unrelated newer draft revision remains current.
 			if err := s.Select(ctx, "owner", candidate.ID, "site.logo", candidate.Revision); err != nil {
 				t.Fatal(err)
 			}

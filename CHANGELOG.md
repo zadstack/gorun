@@ -78,6 +78,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- Generated logo proposals remain selectable after unrelated identity draft/live edits. Selection
+  compares only the chosen logo slot and active theme, merges into the latest draft atomically,
+  and rechecks module activation inside that transaction. Full generation approval and the
+  candidate's original selection token remain strict; conflicting target changes retain the
+  private proposal instead of requiring another paid generation.
+
 - Launch, WorkAgents, WordPress Migrator, MCP and Extensions now implement the optional-module
   gate and remain enabled by default. Their activation configuration, previously ignored for
   these always-on modules, now controls the next boot without deleting data. WXR import and

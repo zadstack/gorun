@@ -49,12 +49,14 @@
   "open_connections": "Open Connections",
   "config_saved": "Adapter declaration saved locally; no provider was called.",
   "draft_saved": "Logo slot saved in the identity draft. Review and apply separately in Identity Studio.",
-  "import_conflict": "The PNG was imported into media, but the identity changed and the draft was not modified. The new media ID is retained for review; no shared media was deleted.",
+  "import_conflict": "The PNG was imported into media, but draft selection did not complete. The draft was not modified. The new media ID is retained for review; no shared media was deleted.",
   "open_media": "Open media library",
   "error_approval": "Approval was missing, expired or already consumed. Review the exact request again before approving.",
-  "error_changed": "The connection, estimate, capability, active theme or draft changed. Nothing was sent or overwritten; review again.",
+  "error_changed": "The selected logo slot or active theme changed. Your private proposal is retained; no draft was overwritten.",
   "error_provider": "Generation failed or its outcome is uncertain. There is no automatic retry. Check the provider before approving another request to avoid duplicate charges.",
   "error_candidate": "The private proposal is unavailable or belongs to another session owner.",
   "error_limit": "Private staging is full. Wait for proposals to expire before generating more.",
-  "error_unavailable": "No supported PNG adapter with a current known estimate is available, or the supplied fields are invalid. Check the saved profile, declaration, currency and estimate ceiling."
+  "error_unavailable": "No supported PNG adapter with a current known estimate is available, or the supplied fields are invalid. Check the saved profile, declaration, currency and estimate ceiling.",
+  "review_changed": "The connection, estimate, capability or full identity changed before generation. No request was sent. Review the request again before approving.",
+  "error_disabled": "Logo module is disabled. Draft selection is unavailable; any private proposal keeps its original expiry."
 }
