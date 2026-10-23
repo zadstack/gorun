@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/zadstack/gorun/internal/brand"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/menus"
 	"github.com/zadstack/gorun/internal/settings"
@@ -14,7 +13,7 @@ import (
 )
 
 func previewOptions(d *kernel.Deps, ctx context.Context, id string) (theme.BuilderPreviewOptions, bool, error) {
-	options := theme.BuilderPreviewOptions{Identity: brand.Default()}
+	options := theme.BuilderPreviewOptions{}
 	var raw string
 	err := d.DB.QueryRowContext(ctx, `SELECT s.value_json FROM settings s,json_each(s.value_json,'$.pages') p WHERE s.key LIKE 'builder.starter.%' AND COALESCE(json_extract(s.value_json,'$.active'),0)=0 AND p.value=? ORDER BY s.updated_at DESC LIMIT 1`, id).Scan(&raw)
 	if err == nil {
