@@ -40,6 +40,10 @@ jobs:
         run: test -z "$(gofmt -l cmd pkg internal examples tools web)"
       - name: default theme CSS is up to date
         run: tools/tailwind/build.sh --check
+      - name: documentation index and links
+        run: python3 tools/docs-check.py
+      - name: README diagrams match their generator
+        run: python3 tools/readme-diagrams/generate.py --check
 
   race:
     runs-on: ubuntu-latest

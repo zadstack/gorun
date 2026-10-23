@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 668" width="1000" height="668" role="img" aria-labelledby="title desc" lang="ar" direction="rtl">
+<title id="title">كيف يُعتمد إجراء الوكيل</title><desc id="desc">يستدعي وكيل ذكاء اصطناعي أداة MCP، فيتحقق GoRun من صلاحيات المفتاح والوسائط. تُنفَّذ الأداة غير الحساسة فورًا، وتُحفَظ الأداة الحساسة بانتظار المراجعة وتنتهي صلاحيتها بعد 24 ساعة. يراجعها شخص من الكانفس والوكلاء ← الموافقات. الموافقة تنفذها مرة واحدة بمفتاح الطالب، والرفض أو انتهاء المهلة لا ينفذ شيئًا. يقرأ الوكيل النتيجة بالأداة check_approval، وتُسجَّل كل خطوة في سجل التدقيق.</desc>
+<style>text { font-family: Tahoma, "Segoe UI", Arial, sans-serif; }</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#1748ed" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x=".5" y=".5" width="999" height="667" rx="14" fill="#f7f9fc" stroke="#dce2e8"/>
+<text x="968" y="46" font-size="24" font-weight="700" fill="#080e14" text-anchor="start" direction="rtl">كيف يُعتمد إجراء الوكيل</text>
+<text x="968" y="74" font-size="14.5" font-weight="400" fill="#545e69" text-anchor="start" direction="rtl">أدوات MCP الحساسة تنتظر قرار شخص. لا يُنفَّذ شيء مرتين، وتُسجَّل كل خطوة.</text>
+<rect x="758" y="104" width="210" height="104" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="863.0" y="128" font-size="11" font-weight="700" fill="#545e69" text-anchor="middle" direction="rtl">01 · الوكيل</text>
+<text x="863.0" y="152" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">يستدعي أداة MCP</text>
+<text x="863.0" y="174" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">بمفتاح وكيل ذكاء اصطناعي</text>
+<text x="863.0" y="192" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">صلاحياته ضمن دور مالكه</text>
+<rect x="518" y="104" width="210" height="104" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="623.0" y="128" font-size="11" font-weight="700" fill="#545e69" text-anchor="middle" direction="ltr">02 · GoRun</text>
+<text x="623.0" y="152" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">يتحقق من الاستدعاء</text>
+<text x="623.0" y="174" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">صلاحيات المفتاح تغطي الأداة</text>
+<text x="623.0" y="192" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الوسائط مطابقة للمخطط</text>
+<rect x="278" y="104" width="210" height="104" rx="10" fill="#eef3ff" stroke="#1748ed" stroke-width="1"/>
+<text x="383.0" y="128" font-size="11" font-weight="700" fill="#1748ed" text-anchor="middle" direction="rtl">03 · القاعدة</text>
+<text x="383.0" y="152" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">هل الأداة حساسة؟</text>
+<text x="383.0" y="174" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">النشر والحذف وتعديل المنشور</text>
+<text x="383.0" y="192" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">والقوالب والإعدادات</text>
+<rect x="32" y="104" width="216" height="104" rx="10" fill="#edf7f1" stroke="#167252" stroke-width="1"/>
+<text x="140.0" y="128" font-size="11" font-weight="700" fill="#167252" text-anchor="middle" direction="rtl">النتيجة</text>
+<text x="140.0" y="152" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">يُنفَّذ فورًا</text>
+<text x="140.0" y="174" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">تعود النتيجة إلى الوكيل</text>
+<text x="140.0" y="192" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">وكذلك مع mcp.approve_self</text>
+<path d="M756 156 L732 156" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M516 156 L492 156" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M276 156 L252 156" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="264" y="146" font-size="12" font-weight="700" fill="#1748ed" text-anchor="middle" direction="rtl">لا</text>
+<path d="M383 210 L383 258" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="399" y="240" font-size="12" font-weight="700" fill="#1748ed" text-anchor="middle" direction="rtl">نعم</text>
+<rect x="278" y="262" width="210" height="104" rx="10" fill="#fff6e5" stroke="#8a5a00" stroke-width="1"/>
+<text x="383.0" y="286" font-size="11" font-weight="700" fill="#8a5a00" text-anchor="middle" direction="rtl">04 · الانتظار</text>
+<text x="383.0" y="310" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">يُحفَظ للمراجعة</text>
+<text x="383.0" y="332" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">يُرجع pending_approval</text>
+<text x="383.0" y="350" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">تنتهي مهلته بعد 24 ساعة</text>
+<rect x="32" y="262" width="216" height="104" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="140.0" y="286" font-size="11" font-weight="700" fill="#545e69" text-anchor="middle" direction="rtl">05 · شخص</text>
+<text x="140.0" y="310" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">يراجع ويقرر</text>
+<text x="140.0" y="332" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الكانفس والوكلاء ← الموافقات</text>
+<text x="140.0" y="350" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الأداة والوسائط والمفتاح والطالب</text>
+<path d="M276 314 L252 314" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="518" y="262" width="450" height="104" rx="10" fill="#fff" stroke="#aebed7" stroke-width="1" stroke-dasharray="6 5"/>
+<text x="948" y="292" font-size="15" font-weight="650" fill="#080e14" text-anchor="start" direction="rtl">من يحق له القرار</text>
+<text x="948" y="316" font-size="13" font-weight="400" fill="#545e69" text-anchor="start" direction="rtl">لا يقرر أي مفتاح في استدعائه أبدًا.</text>
+<text x="948" y="335" font-size="13" font-weight="400" fill="#545e69" text-anchor="start" direction="rtl">وعبر REST لا تقرر مفاتيح المالك نفسه أيضًا،</text>
+<text x="948" y="354" font-size="13" font-weight="400" fill="#545e69" text-anchor="start" direction="rtl">إلا إذا فعّل الموقع ذلك صراحة.</text>
+<path d="M140 368 L140 392 L623 392 L623 416" fill="none" stroke="#aebed7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M623 392 L623 416" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M383 392 L383 416" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M140 392 L140 416" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="758" y="420" width="210" height="96" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="863.0" y="444" font-size="11" font-weight="700" fill="#1748ed" text-anchor="middle" direction="rtl">06 · الوكيل</text>
+<text x="863.0" y="468" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">يقرأ النتيجة</text>
+<text x="863.0" y="490" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الأداة check_approval تُرجع</text>
+<text x="863.0" y="508" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الحالة والنتيجة</text>
+<rect x="518" y="420" width="210" height="96" rx="10" fill="#edf7f1" stroke="#167252" stroke-width="1"/>
+<text x="623.0" y="444" font-size="11" font-weight="700" fill="#167252" text-anchor="middle" direction="rtl">موافقة</text>
+<text x="623.0" y="468" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">يُنفَّذ مرة واحدة</text>
+<text x="623.0" y="490" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">بمفتاح الطالب، إن ظل فعّالًا</text>
+<text x="623.0" y="508" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">وصلاحياته تغطي الأداة</text>
+<rect x="278" y="420" width="210" height="96" rx="10" fill="#fdf0ef" stroke="#b42318" stroke-width="1"/>
+<text x="383.0" y="444" font-size="11" font-weight="700" fill="#b42318" text-anchor="middle" direction="rtl">رفض</text>
+<text x="383.0" y="468" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">لا يُنفَّذ شيء</text>
+<text x="383.0" y="490" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الحالة: denied</text>
+<rect x="32" y="420" width="216" height="96" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="140.0" y="444" font-size="11" font-weight="700" fill="#545e69" text-anchor="middle" direction="rtl">بلا قرار</text>
+<text x="140.0" y="468" font-size="17" font-weight="650" fill="#080e14" text-anchor="middle" direction="rtl">تنتهي المهلة</text>
+<text x="140.0" y="490" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">بعد 24 ساعة</text>
+<text x="140.0" y="508" font-size="12.5" font-weight="400" fill="#545e69" text-anchor="middle" direction="rtl">الحالة: expired</text>
+<path d="M623 516 L623 540" fill="none" stroke="#aebed7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M383 516 L383 540" fill="none" stroke="#aebed7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M140 516 L140 540 L863 540 L863 520" fill="none" stroke="#1748ed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="32" y="566" width="936" height="80" rx="10" fill="#fff" stroke="#dce2e8" stroke-width="1"/>
+<text x="948" y="596" font-size="15" font-weight="700" fill="#080e14" text-anchor="start" direction="rtl">سجل التدقيق</text>
+<text x="948" y="620" font-size="13" font-weight="400" fill="#545e69" text-anchor="start" direction="rtl">كل استدعاء: mcp.call مع بصمة SHA-256 للوسائط، لا الوسائط نفسها.</text>
+<text x="948" y="638" font-size="13" font-weight="400" fill="#545e69" text-anchor="start" direction="rtl">كل قرار: mcp.approval.approve أو deny، ويُسجَّل اسم من وافق على كل تنفيذ معتمد.</text>
+</svg>

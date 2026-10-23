@@ -61,7 +61,7 @@ The instructions are tool-neutral. A chat-only assistant can explain the steps b
 
 ## Cloudflare Edge — in development
 
-GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 storage. The button below installs it on your Cloudflare account automatically: Cloudflare clones `edge/`, creates the D1 database and private R2 bucket, applies the Edge migrations, loads the synthetic preview, and deploys the Worker after you confirm the setup page. Leave `SITE_ID` as `demo`. The published address is the site: open `/admin` on that same origin and manage drafts, review and publication with the owner key. This does not install the Full GoRun binary. Both [public reading](docs/EDGE.md) and optional [owner administration](docs/EDGE-ADMIN.md) have passed actual Cloudflare HTTPS acceptance with isolated synthetic data; temporary test access was revoked. [Validation record](docs/validation/edge-cloudflare-2026-10-19.json). Create the primary manager key in the Edge admin and paste it into GoRun at Settings → Edge. GoRun stores the key encrypted and checks the Edge identity endpoint. That check does not edit Edge content. MCP and skills remain on the [roadmap](https://github.com/zadstack/gorun/issues/46). There is no measured benchmark result.
+GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 storage. The button below installs it on your Cloudflare account automatically: Cloudflare clones `edge/`, creates the D1 database and private R2 bucket, applies the Edge migrations, loads the synthetic preview, and deploys the Worker after you confirm the setup page. Leave `SITE_ID` as `demo`. The published address is the site: open `/admin` on that same origin and manage drafts, review and publication with the owner key. This does not install the Full GoRun binary. Both [public reading](docs/EDGE.md) and optional [owner administration](docs/EDGE-ADMIN.md) have passed actual Cloudflare HTTPS acceptance with isolated synthetic data; temporary test access was revoked. [Validation record](docs/validation/edge-cloudflare-2026-10-19.json). Create the primary manager key in the Edge admin and paste it into GoRun at Settings → Edge. GoRun stores the key encrypted and checks the Edge identity endpoint. That check does not edit Edge content. Edge has no MCP server or agent skills yet. There is no measured benchmark result.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/zadstack/gorun/tree/main/edge)
 
@@ -74,11 +74,22 @@ GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 
 - **A complete editorial workflow.** Structured content, drafts, reviews, scheduled publishing, revision history and explicit staff permissions.
 - **Agents with boundaries.** MCP tools, scoped agent keys, human approvals for sensitive changes and an audit trail. Separate REST keys serve other integrations. Canvas boards stay private; agents and REST keys read only what they are granted.
 
+## How GoRun works
+
+![How GoRun fits together: visitors, staff, integrations, AI agents and providers reach one gorun process through the public site, the admin, REST, MCP and webhooks. Modules boot in a fixed order on shared kernel services over one SQLite database.](assets/branding/architecture.svg)
+
+- **One process, one database.** The `gorun` binary serves the public site, the admin, REST and MCP. Content, users, settings, the audit log and the job queue live in one SQLite database inside your data directory.
+- **Features are modules.** Each module boots in a fixed order and may only use modules that boot before it. Optional modules, such as commerce or the WordPress importer, switch on or off in **Operations → Modules** at the next start. Their data stays.
+- **Slow work runs in the background.** Provider checks, heavy reads and webhook deliveries run as durable jobs with retries. Pages show the last saved result and its age instead of waiting.
+- **Outside services are optional.** AI providers, Stripe, SMTP mail and Cloudflare Edge connect only when you configure them.
+
+[Architecture reference](docs/ARCHITECTURE.md) · [Modules](docs/MODULES.md)
+
 ## A workspace that stays organized
 
 Up to six primary sections keep related tools together, with contextual page tabs above the screen you are using. You see the tools your permissions allow; Store adds an optional seventh section when permitted commerce tools are available. Colored categories keep their text labels and selected borders. Personal visibility, navigation order and dashboard pins stay yours; pinned tools remain within reach under **Quick access** in the main sidebar.
 
-![GoRun 0.10 content workspace with grouped sections, contextual page tabs and the opposite-side agents rail](assets/branding/screenshots/admin-navigation-en.png)
+![GoRun content workspace with grouped sections, contextual page tabs and the opposite-side agents rail](assets/branding/screenshots/admin-navigation-en.png)
 
 The screenshots use an isolated demo site with fictional content. The layout mirrors for Arabic and stays usable on mobile. [Arabic mobile menu](assets/branding/screenshots/admin-navigation-ar-mobile.png) · [Workspace guide](docs/ADMIN_WORKSPACE.md).
 
@@ -133,13 +144,26 @@ Activating a theme does not create starter pages; use the site builder for that.
 
 Connect an MCP client with an **AI agent** key. Its scopes are bounded by its owner's permissions; publishing, deleting and changing sensitive settings require human approval by default. REST integration keys are separate from agent keys.
 
+### How an agent action gets approved
+
+![How an agent action gets approved: the agent calls an MCP tool, GoRun checks scopes and arguments, a sensitive tool waits for a person under Canvas & agents → Approvals, approval runs it once, denial or 24 hours without a decision runs nothing, and every step is audited.](assets/branding/approval-journey.svg)
+
+1. The agent calls an MCP tool with its **AI agent** key. GoRun checks that the key's scopes cover the tool and that the arguments match the tool's schema.
+2. A tool that is not sensitive runs at once. A sensitive one, such as publishing, deleting, editing live content or changing settings, waits and the agent receives an approval ID.
+3. A person reviews the exact tool, arguments, key and requester under **Canvas & agents → Approvals**. A key never decides its own request.
+4. Approval runs the call once, as the requesting key, if that key is still active and its scopes still cover the tool. Denial runs nothing. An undecided request expires after 24 hours.
+5. The agent reads the outcome with `check_approval`. The audit log records every call and decision, with a hash of the arguments instead of the arguments.
+
+[How approvals work](docs/MCP.md#human-approval-for-sensitive-tools)
+
+
 Canvases bring selected content, instructions and agent results into one workspace. Results become private notes for review and do not publish automatically. Agents need `canvas.read` plus an explicit board grant to list or read boards over MCP; REST keys use the matching canvas endpoints. Configure your provider or agent connection before running it.
 
 ![Selected content and instructions go to a connected agent; its result becomes a private note for your review, with publication kept separate](assets/branding/reviewed-workflow.svg)
 
 With a configured AI provider, review the exact destination and site context before separately confirming a request for canvas suggestions. Suggestions create an unbound starting point; choose its executor and permissions yourself. [AI suggestion workflow](docs/CANVAS-AI-SUGGESTIONS.md).
 
-![GoRun 0.10 showing three canvas suggestions after explicit review and confirmation](assets/branding/screenshots/canvas-ai-suggestions-en.png)
+![GoRun showing three canvas suggestions after explicit review and confirmation](assets/branding/screenshots/canvas-ai-suggestions-en.png)
 
 [Arabic suggestions on mobile](assets/branding/screenshots/canvas-ai-suggestions-ar-mobile.png). These documentation examples come from a scripted local HTTP provider, not a live model or evidence of provider availability.
 
@@ -169,11 +193,11 @@ The opposite-side agents rail opens your own canvas cards. Inspect **Integration
 
 Switch between **Workflow**, **Grid** and **List** views without changing the saved content or connections. [Arabic mobile story: setup](assets/branding/screenshots/researcher-setup-ar-mobile.png) · [Review](assets/branding/screenshots/researcher-review-ar-mobile.png) · [Result](assets/branding/screenshots/researcher-result-ar-mobile.png).
 
-*These screenshots show the current source build with fictional Atlas Studio data; the recipe and updated cards are not included in the v0.10.0 download. A test client sends the reviewed request to a scripted local HTTP provider, then returns its response through the real MCP workflow. This demonstrates setup, consent and private delivery; it does not demonstrate live news retrieval or model quality. This recipe is manually run, with no daily polling.*
+*These screenshots use fictional Atlas Studio data. The recipe and its cards ship in releases since 0.11.0. A test client sends the reviewed request to a scripted local HTTP provider, then returns its response through the real MCP workflow. This demonstrates setup, consent and private delivery; it does not demonstrate live news retrieval or model quality. This recipe is manually run, with no daily polling.*
 
 **Agent bundles:** add bounded inline skill instructions and reference text to reviewed external-agent or managed-text requests, and attach version-pinned MCP connection profiles with saved discovery status. [Manage skills and MCP references](docs/AGENT-BUNDLES.md). External clients configure their own endpoints, credentials and tools. Named OpenAI-compatible managed text agents can use [explicitly selected MCP tools](docs/MANAGED-MCP-TOOLS.md), with owner review of every exact call and a private final note. This mode starts disabled and supports manual runs only.
 
-**Start from an inspectable role.** Six compact bilingual examples combine five inline skills each. Inspect the instructions, then prepare an unsaved bundle for an owned agent. A role grants no permissions, chooses no provider and makes no tool call. [Role templates](docs/AGENT-ROLE-TEMPLATES.md).
+**Start from an inspectable role.** Seven compact bilingual examples combine five inline skills each. Inspect the instructions, then prepare an unsaved bundle for an owned agent. A role grants no permissions, chooses no provider and makes no tool call. [Role templates](docs/AGENT-ROLE-TEMPLATES.md).
 
 ![Compact agent role catalog with labeled categories and expandable skill instructions](assets/branding/screenshots/agent-roles-en.png)
 
@@ -187,7 +211,7 @@ Schedule daily or weekly local backups, track verified success and storage, and 
 
 Extension screens distinguish **Server directory**, **Uploaded ZIP** and **Legacy: method not recorded**. An installation method does not establish a package's origin or safety. [Installation-method guide](docs/EXTENSION-INSTALLATION-METHODS.md).
 
-![GoRun 0.10 extension directory grouped by recorded installation method, including unknown legacy records](assets/branding/screenshots/extensions-methods-en.png)
+![GoRun extension directory grouped by recorded installation method, including unknown legacy records](assets/branding/screenshots/extensions-methods-en.png)
 
 [Arabic extension methods on mobile](assets/branding/screenshots/extensions-methods-ar-mobile.png).
 
@@ -208,7 +232,7 @@ Extension screens distinguish **Server directory**, **Uploaded ZIP** and **Legac
 
 GoRun is under active development. Use the [latest stable release](https://github.com/zadstack/gorun/releases/latest); the main branch may contain features awaiting release.
 
-Run one server process per SQLite data directory. Canvases are private to their owner with explicit agent access. Full-site generation from a single prompt and an automatic core updater are not available. Backups restore into a new directory; switching live traffic remains an operator action. Provider-backed generation and payments require valid credentials and deployment-specific checks.
+Run one server process per SQLite data directory. Canvases are private to their owner with explicit agent access. Full-site generation from a single prompt is not available. Core updates never run on their own: an operator starts a [staged update](docs/UPGRADE.md#7-staged-updates-in-app) under **Operations → System updates**, which checks compatibility, verifies the release, takes a backup, then activates and health-checks the new version. Backups restore into a new directory; switching live traffic remains an operator action. Provider-backed generation and payments require valid credentials and deployment-specific checks.
 
 Screenshots show an isolated local installation with fictional demonstration content. They do not show customer data or a connected provider.
 

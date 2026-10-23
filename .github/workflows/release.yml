@@ -32,6 +32,7 @@ jobs:
       packages: write
     outputs:
       version: ${{ steps.meta.outputs.version }}
+      digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -63,7 +64,8 @@ jobs:
             org.opencontainers.image.description=Self-hosted CMS in Go and SQLite: bilingual admin, page builder, canvases, REST and MCP.
             org.opencontainers.image.licenses=AGPL-3.0-only
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      - id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: deploy/Dockerfile
@@ -101,6 +103,27 @@ jobs:
           python3 tools/package-release.py --version "$version" --output dist \
             --target linux/amd64 --target linux/arm64 --target darwin/amd64 --target darwin/arm64
           ls -l dist
+      - name: release index for staged updates
+        # Lists every migration this commit ships so Operations → System updates
+        # can refuse a target that does not know the live data. A pull request
+        # builds a 0.0.0-pr.N pre-release only to prove the step works.
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then version="0.0.0-pr.${{ github.event.number }}"; fi
+          go build -trimpath -ldflags "-X main.version=$version" -o "$RUNNER_TEMP/gorun-index" ./cmd/gorun
+          set --
+          while read -r sum file; do
+            set -- "$@" --artifact "$file=sha256:$sum"
+          done < "$(ls dist/SHA256SUMS-*.txt)"
+          "$RUNNER_TEMP/gorun-index" release-index "$@" > dist/release-index.json
+          python3 - dist/release-index.json "$version" <<'PY'
+          import json, sys
+          doc = json.load(open(sys.argv[1]))
+          rel = doc["releases"][0]
+          assert doc["latest"] == rel["version"] == sys.argv[2], doc["latest"]
+          assert len(rel["artifacts"]) == 4 and rel["migrations"], rel
+          print(len(rel["migrations"]), "migrations,", len(rel["artifacts"]), "archives")
+          PY
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist
@@ -138,6 +161,17 @@ jobs:
             echo
             echo "Multi-arch (linux/amd64, linux/arm64). Binary archives below include the themes; verify them with the SHA256SUMS file."
           } >> notes.md
+      - name: add the pushed image to the release index
+        env:
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          case "$DIGEST" in sha256:????????????????????????????????????????????????????????????????) ;; *) echo "image digest missing: $DIGEST"; exit 1 ;; esac
+          jq --arg id "$IMAGE:$version" --arg digest "$DIGEST" \
+            '.releases[0].artifacts = [{id: $id, digest: $digest}] + .releases[0].artifacts' \
+            dist/release-index.json > release-index.json
+          mv release-index.json dist/release-index.json
+          jq -r '.releases[0].artifacts[].id' dist/release-index.json
       - name: create or update the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
