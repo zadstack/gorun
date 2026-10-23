@@ -17,6 +17,9 @@ type contractDraftStore struct{ writes int }
 func (d *contractDraftStore) Revision(context.Context, string) (string, error) {
 	return "independent-revision", nil
 }
+func (d *contractDraftStore) Review(context.Context, string) (string, map[string]string, error) {
+	return "independent-revision", map[string]string{"site.logo": "logo-v1", "site.logo_light": "light-v1", "site.logo_dark": "dark-v1", "site.icon": "icon-v1"}, nil
+}
 func (d *contractDraftStore) SelectPNG(context.Context, string, string, string, []byte) error {
 	d.writes++
 	return nil

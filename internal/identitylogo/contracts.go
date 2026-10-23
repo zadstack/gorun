@@ -108,13 +108,14 @@ type Hooks struct {
 	GenerateBounded func(context.Context, Prepared) ([]byte, error)
 }
 
-// DraftStore's revision must include effective live AND raw draft identity.
-// SelectPNG imports one new media asset only on explicit selection, then uses
-// an atomic transaction to compare revision and merge only the chosen logo slot.
+// DraftStore captures the full generation revision and all four selection
+// baselines atomically. Generation still checks the full revision; selection
+// compares only its captured target baseline and merges into the latest draft.
 // On conflict it must never overwrite concurrent edits or delete shared media.
 type DraftStore interface {
 	Revision(context.Context, string) (string, error)
-	SelectPNG(ctx context.Context, theme, revision, slot string, png []byte) error
+	Review(context.Context, string) (revision string, slotBaselines map[string]string, err error)
+	SelectPNG(ctx context.Context, theme, slotBaseline, slot string, png []byte) error
 }
 
 type Options struct {

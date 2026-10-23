@@ -52,7 +52,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	h := &handlers{d: d, tpl: tpl}
 	h.service = identitylogo.NewService(bridgeHooks(d), &draftStore{d}, identitylogo.Options{Enabled: func(ctx context.Context) bool {
 		on, e := kernel.AddonEnabled(ctx, d.DB, "identitylogo")
-		return e == nil && on
+		return e == nil && on && d.Config.Addons["identitylogo"] != kernel.AddonModeDisabled
 	}})
 	d.Services.Set("identitylogo", h.service)
 	d.Admin.AddNav(kernel.NavItem{ID: "appearance.identity_logo", LabelKey: "identitylogo.nav", Icon: "image", Href: "/admin" + pagePath, Permission: "settings.manage", Group: "appearance", Position: 3})
@@ -129,22 +129,42 @@ func (s *draftStore) Revision(ctx context.Context, slug string) (string, error) 
 	return st.IdentityLogoRevision(ctx, slug)
 }
 
-type importedConflict struct{ MediaID string }
+func (s *draftStore) selectionStore() (theme.IdentityLogoSelectionStore, error) {
+	st, ok := kernel.Get[theme.IdentityLogoSelectionStore](s.d, kernel.ServiceTheme)
+	if !ok {
+		return nil, identitylogo.ErrUnsupported
+	}
+	return st, nil
+}
+func (s *draftStore) Review(ctx context.Context, slug string) (string, map[string]string, error) {
+	st, err := s.selectionStore()
+	if err != nil {
+		return "", nil, err
+	}
+	return st.IdentityLogoReview(ctx, slug)
+}
+
+type importedConflict struct {
+	MediaID string
+	Cause   error
+}
 
 func (e *importedConflict) Error() string {
-	return "logo imported but identity changed; draft was not modified"
+	return "logo imported but draft selection did not complete; draft was not modified"
 }
-func (s *draftStore) SelectPNG(ctx context.Context, slug, revision, slot string, png []byte) error {
+func (e *importedConflict) Unwrap() error { return e.Cause }
+
+func (s *draftStore) SelectPNG(ctx context.Context, slug, baseline, slot string, png []byte) error {
 	if !auth.Can(ctx, "settings.manage") || !auth.Can(ctx, "media.upload") {
 		return identitylogo.ErrUnsupported
 	}
-	current, e := s.Revision(ctx, slug)
-	if e != nil || current != revision {
-		return identitylogo.ErrChanged
-	}
-	st, e := s.store()
+	st, e := s.selectionStore()
 	if e != nil {
 		return e
+	}
+	_, current, e := st.IdentityLogoReview(ctx, slug)
+	if e != nil || baseline == "" || current[slot] != baseline {
+		return identitylogo.ErrChanged
 	}
 	library, ok := kernel.Get[media.Service](s.d, kernel.ServiceMedia)
 	if !ok {
@@ -155,7 +175,7 @@ func (s *draftStore) SelectPNG(ctx context.Context, slug, revision, slot string,
 		return identitylogo.ErrImage
 	}
 	on, e := kernel.AddonEnabled(ctx, s.d.DB, "identitylogo")
-	if e != nil || !on {
+	if e != nil || !on || s.d.Config.Addons["identitylogo"] == kernel.AddonModeDisabled {
 		return identitylogo.ErrDisabled
 	}
 	asset, e := library.Upload(ctx, "identity-logo-"+db.NewID()+".png", bytes.NewReader(selected), media.UploadMeta{AuthorID: owner(ctx), Title: "Identity logo proposal"})
@@ -166,13 +186,20 @@ func (s *draftStore) SelectPNG(ctx context.Context, slug, revision, slot string,
 		sourceHash, derivedHash := sha256.Sum256(png), sha256.Sum256(selected)
 		s.d.Audit.Record(ctx, "identitylogo.import", "media", asset.ID, map[string]any{"theme": slug, "slot": slot, "candidate_sha256": hex.EncodeToString(sourceHash[:]), "derived_input_sha256": hex.EncodeToString(derivedHash[:]), "derived_sha256": asset.Checksum, "width": asset.Width, "height": asset.Height, "bytes": asset.Size})
 	}
-	if e = st.SaveIdentityLogo(ctx, slug, revision, slot, asset.ID); e != nil {
+	if e = st.SaveIdentityLogoSlot(ctx, slug, baseline, slot, asset.ID); e != nil {
 		// Once imported, media can acquire references independently. Never delete it
 		// on a draft conflict; report the new asset for explicit human review.
 		if s.d.Audit != nil {
 			s.d.Audit.Record(ctx, "identitylogo.import_unselected", "media", asset.ID, map[string]any{"theme": slug})
 		}
-		return &importedConflict{MediaID: asset.ID}
+		cause := e
+		if errors.Is(e, theme.ErrIdentityLogoConflict) {
+			cause = identitylogo.ErrChanged
+		}
+		if errors.Is(e, theme.ErrIdentityLogoDisabled) {
+			cause = identitylogo.ErrDisabled
+		}
+		return &importedConflict{MediaID: asset.ID, Cause: cause}
 	}
 	return nil
 }

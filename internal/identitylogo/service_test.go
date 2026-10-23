@@ -17,11 +17,12 @@ import (
 )
 
 type memoryDraft struct {
-	mu       sync.Mutex
-	revision string
-	writes   int
-	slot     string
-	data     []byte
+	mu        sync.Mutex
+	revision  string
+	baselines map[string]string
+	writes    int
+	slot      string
+	data      []byte
 }
 
 func (d *memoryDraft) Revision(context.Context, string) (string, error) {
@@ -29,15 +30,34 @@ func (d *memoryDraft) Revision(context.Context, string) (string, error) {
 	defer d.mu.Unlock()
 	return d.revision, nil
 }
-func (d *memoryDraft) SelectPNG(_ context.Context, _ string, rev, slot string, data []byte) error {
+func (d *memoryDraft) Review(context.Context, string) (string, map[string]string, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	if rev != d.revision {
+	baselines := map[string]string{}
+	for _, slot := range selectionSlots {
+		baselines[slot] = d.baseline(slot)
+	}
+	return d.revision, baselines, nil
+}
+func (d *memoryDraft) baseline(slot string) string {
+	if value := d.baselines[slot]; value != "" {
+		return value
+	}
+	return "original-" + slot
+}
+func (d *memoryDraft) SelectPNG(_ context.Context, _ string, baseline, slot string, data []byte) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if baseline != d.baseline(slot) {
 		return ErrChanged
 	}
 	d.writes++
 	d.slot = slot
 	d.data = append([]byte(nil), data...)
+	if d.baselines == nil {
+		d.baselines = map[string]string{}
+	}
+	d.baselines[slot] = "selected-" + slot
 	d.revision = "new"
 	return nil
 }
@@ -192,7 +212,7 @@ func TestPrivateCandidateAndAtomicSelectionContract(t *testing.T) {
 	}
 }
 
-func TestConcurrentDraftChangeKeepsCandidateRecoverable(t *testing.T) {
+func TestSelectedSlotChangeKeepsCandidateRecoverable(t *testing.T) {
 	s, d, _ := newTestService(t)
 	ctx := context.Background()
 	r := preview(t, s, "owner")
@@ -200,7 +220,7 @@ func TestConcurrentDraftChangeKeepsCandidateRecoverable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	d.revision = "human-edit"
+	d.baselines = map[string]string{"site.logo": "human-logo"}
 	if err := s.Select(ctx, "owner", c.ID, "site.logo", c.Revision); !errors.Is(err, ErrChanged) || d.writes != 0 {
 		t.Fatalf("err=%v writes=%d", err, d.writes)
 	}
@@ -473,5 +493,65 @@ func TestAuditPreservesImmutableApprovalAndRecordsRejectedCaller(t *testing.T) {
 		if bytes.Contains(encoded, []byte(forbidden)) {
 			t.Fatalf("audit contains private or mutable value %q", forbidden)
 		}
+	}
+}
+
+func TestUnrelatedDraftRevisionDoesNotInvalidateGeneratedCandidate(t *testing.T) {
+	s, d, calls := newTestService(t)
+	ctx := context.Background()
+	review := preview(t, s, "owner")
+	candidate, err := s.Generate(ctx, "owner", review.Token, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.revision = "latest-unrelated-human-edit"
+	if err := s.Select(ctx, "owner", candidate.ID, "site.logo", candidate.Revision); err != nil {
+		t.Fatal(err)
+	}
+	if calls.Load() != 1 || d.writes != 1 {
+		t.Fatalf("selection required regeneration or lost draft: calls=%d writes=%d", calls.Load(), d.writes)
+	}
+}
+
+type mutableBaselineDraft struct {
+	*memoryDraft
+	reviewBaselines map[string]string
+}
+
+func (d *mutableBaselineDraft) Review(ctx context.Context, theme string) (string, map[string]string, error) {
+	revision, err := d.Revision(ctx, theme)
+	return revision, d.reviewBaselines, err
+}
+
+func TestReviewSlotBaselinesRemainPrivateAndDefensivelyCopied(t *testing.T) {
+	s, d, _ := newTestService(t)
+	ctx := context.Background()
+	_, baselines, err := d.Review(ctx, "default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.drafts = &mutableBaselineDraft{memoryDraft: d, reviewBaselines: baselines}
+	review := preview(t, s, "owner")
+	privateBaseline := baselines["site.logo_light"]
+	for slot := range baselines {
+		baselines[slot] = "adapter-mutated-" + slot
+	}
+	candidate, err := s.Generate(ctx, "owner", review.Token, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	delete(baselines, "site.logo_light")
+	serialized, err := json.Marshal([]any{review, candidate})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(serialized, []byte(privateBaseline)) || bytes.Contains(serialized, []byte("slot_baselines")) {
+		t.Fatal("private target baselines exposed to client")
+	}
+	if err := s.Select(ctx, "owner", candidate.ID, "site.logo_light", candidate.Revision); err != nil {
+		t.Fatalf("adapter mutation changed captured target: %v", err)
+	}
+	if d.slot != "site.logo_light" || d.writes != 1 {
+		t.Fatal("selected a different target")
 	}
 }
