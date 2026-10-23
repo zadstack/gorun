@@ -37,7 +37,7 @@ export default defineConfig({
     {
       name: 'chromium',
       dependencies: ['setup'],
-      testIgnore: [/global\.setup\.ts/, /public-theme\.spec\.ts/, /visual\.spec\.ts/, /catalog-themes\.spec\.ts/, /theme-acceptance\.spec\.ts/, /theme-variants\.spec\.ts/, /sections-pilot\.spec\.ts/, /identity-draft-acceptance\.spec\.ts/],
+      testIgnore: [/global\.setup\.ts/, /public-theme\.spec\.ts/, /visual\.spec\.ts/, /catalog-themes\.spec\.ts/, /theme-acceptance\.spec\.ts/, /theme-variants\.spec\.ts/, /sections-pilot\.spec\.ts/, /identity-draft-acceptance\.spec\.ts/, /pilot-cross-theme\.spec\.ts/],
       use: { storageState: '.auth/admin.json' },
     },
     {
@@ -47,7 +47,7 @@ export default defineConfig({
       // section-component pilot pages (default + business, ar/en, 1280/375).
       name: 'catalog',
       dependencies: ['chromium'],
-      testMatch: /catalog-themes\.spec\.ts|theme-acceptance\.spec\.ts|theme-variants\.spec\.ts|sections-pilot\.spec\.ts|identity-draft-acceptance\.spec\.ts/,
+      testMatch: /catalog-themes\.spec\.ts|theme-acceptance\.spec\.ts|theme-variants\.spec\.ts|sections-pilot\.spec\.ts|identity-draft-acceptance\.spec\.ts|pilot-cross-theme\.spec\.ts/,
       use: { storageState: '.auth/admin.json' },
     },
     {

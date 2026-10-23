@@ -351,6 +351,9 @@ for (const theme of themes)
             })
             .locator("button[value=revert]");
           await revert.scrollIntoViewIfNeeded();
+          const dock = page.locator("[data-dock-open]");
+          await expect(dock).toBeVisible();
+          await expect(dock).toBeInViewport();
           const geometry = await revert.evaluate((el) => {
             const measure = () => {
               const r = el.getBoundingClientRect(),
@@ -404,6 +407,9 @@ for (const theme of themes)
             ),
             "geometry was measured at maximum scroll",
           ).toBeLessThanOrEqual(1);
+          expect(geometry.atScrollEnd.dock).not.toBeNull();
+          expect(geometry.atScrollEnd.dock!.width).toBeGreaterThan(0);
+          expect(geometry.atScrollEnd.dock!.height).toBeGreaterThan(0);
           expect(
             geometry.atScrollEnd.pointerReachable,
             "Revert remains reachable above fixed overlays at maximum scroll",
