@@ -22,6 +22,30 @@ function snapshot() {
     d.close();
   }
 }
+async function selectCandidate(page: Page, expectedStatus = 200) {
+  const [response] = await Promise.all([
+    page.waitForResponse((response) => {
+      const request = response.request();
+      return (
+        request.method() === "POST" &&
+        new URL(response.url()).pathname === route &&
+        new URLSearchParams(request.postData() ?? "").get("action") === "select"
+      );
+    }),
+    page.locator("[data-logo-candidate] button[type=submit]").click(),
+  ]);
+  expect(response.status()).toBe(expectedStatus);
+  expect(await response.finished()).toBeNull();
+  if (expectedStatus === 200) {
+    await expect(
+      page.getByRole("status").filter({
+        hasText: /Logo slot saved in the identity draft|حُفظت خانة الشعار في مسودة الهوية/,
+      }),
+    ).toBeVisible();
+  } else {
+    await expect(page.locator("[data-logo-error]")).toBeVisible();
+  }
+}
 async function login(page: Page, role = "admin") {
   await page.goto("/admin/login");
   await page.locator("[name=email]").fill(`${role}@logo-browser.test`);
@@ -196,7 +220,7 @@ for (const locale of ["ar", "en"] as const)
         await page
           .locator("[data-logo-candidate] select[name=slot]")
           .selectOption("site.logo");
-        await page.locator("[data-logo-candidate] button[type=submit]").click();
+        await selectCandidate(page);
         await expect(page.locator("[data-logo-error]")).toHaveCount(0);
         const after = snapshot();
         expect(after.content).toEqual(before.content);
@@ -357,7 +381,7 @@ for (const conflict of [false, true]) {
         await page
           .locator("[data-logo-candidate] select[name=slot]")
           .selectOption("site.logo");
-        await page.locator("[data-logo-candidate] button[type=submit]").click();
+        await selectCandidate(page, conflict ? 422 : 200);
         const after = snapshot();
         if (conflict) {
           await expect(page.locator("[data-logo-error]")).toBeVisible();
