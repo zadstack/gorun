@@ -5,12 +5,9 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
-### Added
+## [0.16.0] - 2026-10-23
 
-- Optional Identity logo workflow: explicitly bind an encrypted AI profile to a compatible PNG
-  image protocol and operator estimate, review the exact request before generation, preview a
-  private ephemeral candidate, then import a local logo/icon derivative into one identity draft
-  slot. Imported media is public by URL; live identity changes still require Apply.
+### Added
 
 - Section library pilot (`themes/default/assets/sections.css`, shared by every catalog theme):
   hero variants (`gp-s-hero-split`, `gp-s-hero-centered`, `gp-s-facts`), feature cards with
@@ -109,6 +106,16 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Builder previews inherit the selected theme's linked styles in their public cascade order
+  instead of adding unused builder styles or inventing an unsaved builder identity; Docs
+  sections stay within the viewport on narrow screens.
+- Appearance → Identity keeps the history Revert action reachable on mobile above the fixed
+  Agents dock. Browser acceptance covers Save draft, Apply and Revert across bundled themes,
+  Arabic/English and mobile/desktop viewports.
+- Builder preview of a page never published through the builder keeps the builder stylesheet on
+  the Default, Magazine, Portfolio and Docs themes, matching the published page.
+- Logo image requests wait for the provider's response headers for the whole 90-second request
+  instead of 20 seconds, so a slow, non-streaming generation is no longer abandoned mid-billing.
 - Standalone Membership and SaaS pages keep their styles and service-aware navigation when
   optional account add-ons are off. The module catalog explains Commerce-dependent customer
   sign-in availability; its 503 response follows the request locale for title and direction.
@@ -140,11 +147,39 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Optional modules
 
+- Optional Identity logo workflow: explicitly bind an encrypted AI profile to a compatible PNG
+  image protocol and operator estimate, review the exact request before generation, preview a
+  private ephemeral candidate, then import a local logo/icon derivative into one identity draft
+  slot. Imported media is public by URL; live identity changes still require Apply.
+
 - New optional module `identityai` (switchable in System → Modules via `addons.identityai.enabled`): Appearance →
   Identity AI asks a saved text AI connection for colours, fonts, taglines and a written logo brief
   after the operator previews the exact request and approves its estimated cost; results go to the
   identity draft only. This stage is text only: no image, vector or animation is produced or
-  claimed; logo generation with the same gating is follow-up work. See `docs/IDENTITY-AI.md`.
+  claimed here; static logo images come from the separate Identity logo workflow above.
+  See `docs/IDENTITY-AI.md`.
+
+### Known limits in this release
+
+- AI identity suggestions (`identityai`) and logo drafts (`identitylogo`) were tested against fake
+  providers only; no live AI or image provider was called. Animated or vector logos are not produced.
+- A generated logo candidate can only be selected while the whole identity is unchanged: any other
+  identity draft or live edit made after review makes Select fail and asks for a new review, even
+  though the paid candidate is still viewable for 30 minutes. Select it before editing the identity.
+- A site-starter preview run that carries no identity of its own does not apply a saved
+  `builder.identity`, although the published page uses it; ordinary builder previews are unaffected.
+- Module activation changes apply at the next boot; the Modules page shows "pending restart" until then.
+- Only commerce, media and mail publish module configuration requirements; other modules report
+  `module_publishes_no_requirements` instead of a configured verdict.
+- Integrations (Cloudflare API, R2/S3, SMTP), Stripe live mode and the Cloudflare Edge Worker were
+  verified with fakes and local workerd only; behaviour against the real providers is not proven here.
+- MCP connections still have no operation test: invoking a tool would execute a remote action.
+- Staged-update preflight against the target still reports `release_data: unknown`: the release
+  workflow does not yet publish migration and theme lists in a release index.
+- Appearance reports declared and effective tokens with provenance, not browser-computed CSS.
+
+Existing installations keep content, media, settings and themes. Schema changes are additive.
+Optional modules stay enabled by default. Publishing this release does not upgrade a running site.
 
 ## [0.15.1] - 2026-10-22
 
