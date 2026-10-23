@@ -5,20 +5,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
-### Changed
-
-- Generated logo proposals remain selectable after unrelated identity draft/live edits. Selection
-  compares only the chosen logo slot and active theme, merges into the latest draft atomically,
-  and rechecks module activation inside that transaction. Full generation approval and the
-  candidate's original selection token remain strict; conflicting target changes retain the
-  private proposal instead of requiring another paid generation.
-
-### Fixed
-
-- Builder theme previews inline saved builder identity tokens when no explicit override is supplied,
-  while public pages keep their cached identity stylesheet URL.
-
-## [0.16.0] - 2026-10-23
+## [0.17.0] - 2026-10-23
 
 ### Added
 
@@ -27,6 +14,57 @@ All notable changes to GoRun are recorded here. The format follows
   Version-1 legacy documents keep their rendered HTML; mixed layouts preserve one page h1.
   Native fields are bounded and escaped, comparisons keep a labeled keyboard scroll region,
   and CSS interface illustrations are explicitly labeled. Saving remains draft-only until publish.
+
+- Consent-bound, read-only page review tasks (WorkAgents): an operator previews the exact bounded
+  page copy and resolved provider destination, then approves one idempotent task; the task screen
+  and the page editor sidebar show its status and validated advisory findings. Approval pins the
+  owner, page snapshot, agent, destination and configuration revision; workers recheck access and
+  consent, use a bounded timeout and at most three explicit attempts, and never resend interrupted
+  work. Findings are untrusted plain text, validated and escaped. The task cannot edit content or
+  settings, create drafts, publish, or run tools or server commands.
+
+### Changed
+
+- Generated logo proposals remain selectable after unrelated identity draft/live edits. Selection
+  compares only the chosen logo slot and active theme, merges into the latest draft atomically,
+  and rechecks module activation inside that transaction. Full generation approval and the
+  candidate's original selection token remain strict; conflicting target changes retain the
+  private proposal instead of requiring another paid generation.
+
+- Logo generation audits record the full approved contract: a stable approval hash binds the owner,
+  identity draft revision, destination and capability fingerprints, quote version and exact payload
+  hash. Stored reviews stay immutable when a caller changes its returned copy, and a rejected
+  attempt by another user is audited with the original contract without consuming the owner's
+  consent. No credentials or raw prompts are stored.
+
+### Fixed
+
+- Builder theme previews inline saved builder identity tokens when no explicit override is supplied,
+  while public pages keep their cached identity stylesheet URL.
+- Native section buttons outside prose containers keep their on-accent text colour,
+  including hover, above later anchor resets; ghost buttons keep the theme ink colour.
+  The native-builder browser contrast regression measures computed colours instead of
+  relying on stylesheet order or a changed fixture palette.
+
+### Known limits in this release
+
+- Page review tasks read saved page copy and hierarchy plus locale, template and theme identifiers;
+  they do not inspect screenshots, rendered CSS or layout and do not prove visual quality.
+  Cancellation cannot recall bytes already sent to the provider.
+- Page reviews, AI identity suggestions and logo generation were tested against deterministic fake
+  providers only; no live AI or image provider was called for this release.
+- The remaining 0.16.0 limits still apply (provider integrations, Stripe live mode and the Edge
+  Worker verified with fakes and local workerd only; no MCP operation test; update preflight reports
+  `release_data: unknown`; module activation applies at next boot; appearance is not
+  browser-computed). Two 0.16.0 limits are resolved here: a generated logo stays selectable after
+  unrelated identity edits, and builder previews apply a saved builder identity.
+
+Existing installations keep content, media, settings and themes. Schema changes are additive.
+Publishing this release does not upgrade a running site.
+
+## [0.16.0] - 2026-10-23
+
+### Added
 
 - Section library pilot (`themes/default/assets/sections.css`, shared by every catalog theme):
   hero variants (`gp-s-hero-split`, `gp-s-hero-centered`, `gp-s-facts`), feature cards with
@@ -138,11 +176,6 @@ All notable changes to GoRun are recorded here. The format follows
 - Standalone Membership and SaaS pages keep their styles and service-aware navigation when
   optional account add-ons are off. The module catalog explains Commerce-dependent customer
   sign-in availability; its 503 response follows the request locale for title and direction.
-
-- Native section buttons outside prose containers keep their on-accent text colour,
-  including hover, above later anchor resets; ghost buttons keep the theme ink colour.
-  The native-builder browser contrast regression measures computed colours instead of
-  relying on stylesheet order or a changed fixture palette.
 
 - Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
   or Worker identity checks. Configuration changes during these operations return conflict.
