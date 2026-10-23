@@ -156,6 +156,16 @@ func (h *handlers) submit(w http.ResponseWriter, r *http.Request) {
 	}
 	if e != nil {
 		v.Error = errorKey(e)
+		if r.Form.Get("action") != "select" && v.Error == "identitylogo.error_changed" {
+			v.Error = "identitylogo.review_changed"
+		}
+		if r.Form.Get("action") == "select" {
+			// Retain the owner-checked proposal on a failed selection, so another
+			// unchanged slot can be chosen without another paid generation.
+			if candidate, _, err := h.service.Candidate(ctx, owner(ctx), r.Form.Get("candidate")); err == nil {
+				v.Candidate = &candidate
+			}
+		}
 		var imported *importedConflict
 		if errors.As(e, &imported) {
 			v.ImportedMedia = imported.MediaID
@@ -167,6 +177,8 @@ func (h *handlers) submit(w http.ResponseWriter, r *http.Request) {
 }
 func errorKey(e error) string {
 	switch {
+	case errors.Is(e, identitylogo.ErrDisabled), errors.Is(e, theme.ErrIdentityLogoDisabled):
+		return "identitylogo.error_disabled"
 	case errors.Is(e, identitylogo.ErrApproval):
 		return "identitylogo.error_approval"
 	case errors.Is(e, identitylogo.ErrChanged), errors.Is(e, coreadmin.ErrLogoChanged), errors.Is(e, theme.ErrIdentityLogoConflict):
