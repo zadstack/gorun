@@ -106,5 +106,19 @@
   "featured": "Highlight card",
   "status": "Cell status",
   "none": "None",
-  "question_default": "Write your question"
+  "question_default": "Write your question",
+  "preset_new": "New page from a purpose",
+  "preset_purpose": "Purpose",
+  "preset_title": "Page title",
+  "preset_locale": "Language",
+  "preset_locale_site": "Site language",
+  "preset_create": "Create draft and open the builder",
+  "preset_help": "Creates a private draft with the section structure for this purpose. The hero uses your title; the other sections start empty and hidden until you write them. Nothing is published.",
+  "preset_error": "The page could not be created. Check the purpose, title and language.",
+  "purpose_about": "About",
+  "purpose_service": "Service",
+  "purpose_methodology": "Methodology",
+  "purpose_contact": "Contact",
+  "locale_ar": "Arabic",
+  "locale_en": "English"
 }

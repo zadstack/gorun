@@ -36,6 +36,7 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	}
 	h := &adminHandlers{svc: svc, tpl: tpl, d: d}
 	r := d.Router.Admin.With(auth.RequirePerm("content.edit"))
+	r.With(auth.RequirePerm("content.create")).Post("/builder/new", h.createPurposePage)
 	r.Get("/builder/{id}", h.editor)
 	r.Post("/builder/{id}/save", h.save)
 	r.Post("/builder/{id}/preview", h.preview)
