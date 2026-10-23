@@ -184,7 +184,7 @@ func prepareWXR(ctx context.Context, deps *kernel.Deps, f WXRFile, opts Options)
 			}
 		}
 		if !enabled {
-			return nil, nil, nil, nil, false, errors.New("wpmigrate: addon disabled; enable it and restart before importing or previewing WXR")
+			return nil, nil, nil, nil, false, errors.New("wpmigrate: addon disabled; set addons.wpmigrate.enabled=true and remove wpmigrate=disabled from GORUN_ADDONS or [addons], then run the import or preview command again")
 		}
 		var err error
 		if svc, err = newService(deps); err != nil {

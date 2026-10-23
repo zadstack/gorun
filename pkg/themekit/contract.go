@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 )
@@ -168,8 +169,10 @@ func ValidateDir(dir string, roots []string, opts Options) Result {
 	if len(opts.ForbidScriptHosts) > 0 {
 		res.Issues = append(res.Issues, scanForbiddenHosts(dir, opts.ForbidScriptHosts)...)
 	}
-	if !headProvides(chain, "sections.css") {
-		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must load sections.css (own or inherited)", Path: "parts/head.html"})
+	// {{sections .}} links sections.css only on pages whose content uses it;
+	// a theme whose own templates use gp-s-* keeps a plain link instead.
+	if !headMatches(chain, sectionsCall) && !headProvides(chain, "sections.css") {
+		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call {{sections .}} or load sections.css (own or inherited)", Path: "parts/head.html"})
 	}
 	if !headProvides(chain, "builderIdentity") && !headProvides(chain, "builderStyle") {
 		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call builderIdentity or builderStyle (own or inherited)", Path: "parts/head.html"})
@@ -260,6 +263,21 @@ func resolves(chain []string, kind, name string) bool {
 	for _, dir := range chain {
 		if _, err := os.Stat(filepath.Join(dir, rel)); err == nil {
 			return true
+		}
+	}
+	return false
+}
+
+// sectionsCall matches the {{sections .}} head func, with any spacing.
+var sectionsCall = regexp.MustCompile(`\{\{-?\s*sections\b`)
+
+func headMatches(chain []string, re *regexp.Regexp) bool {
+	for _, dir := range chain {
+		for _, name := range []string{"parts/head.html", "parts/head-extra.html"} {
+			raw, err := os.ReadFile(filepath.Join(dir, name))
+			if err == nil && re.Match(raw) {
+				return true
+			}
 		}
 	}
 	return false

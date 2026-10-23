@@ -4,7 +4,7 @@
 > `GET /api/v1/system/modules` تعرضان كل ما يشغّله هذا الإصدار: الوحدات المدمجة (النواة والميزات)، الخدمات
 > الأساسية (النماذج والتخزين والنسخ الاحتياطي والبريد) والإضافات الخارجية، ولكلٍّ: وظيفتها، مصدرها، إصدارها،
 > توافقها، ما تعتمد عليه، صلاحياتها، ما سجّلته فعلًا في هذه العملية، حالتها، وهل تحتاج إعدادًا. الوحدات
-> الاختيارية (commerce وsaas وmembership وlaunch وworkagents وwpmigrate وmcp وext) تُوقَف وتُفعَّل من الصفحة أو عبر
+> الاختيارية (commerce وsaas وmembership وlaunch وworkagents وwpmigrate وmcp وext وidentityai) تُوقَف وتُفعَّل من الصفحة أو عبر
 > `PUT /system/modules/{name}/activation`؛ يُطبَّق التغيير بعد إعادة التشغيل، ولا تُحذف بيانات، وتُوقَف مهام
 > الوحدة المعطّلة في الطابور (parked) حتى تفعيلها. كل ما لم يُرصد يُعرض «غير معروف» ولا يُفترض.
 
@@ -14,7 +14,7 @@ are called:
 | Kind | What it is | Where it lives | Switch |
 |---|---|---|---|
 | **Core module** | A domain every install boots (settings, auth, content, taxonomy, media, menus, redirects, seo, theme, pattern, builder, site, api, admin, webhooks). | `internal/<name>`, `kernel.BootOrder` up to `webhooks` | always on |
-| **Built-in feature module** | A feature compiled into the binary that owns its routes, workers, admin pages, migrations and permissions (commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext). | `internal/<name>`, after `webhooks` | All eight implement `kernel.OptionalModule` using `kernel.AddonEnabled` |
+| **Built-in feature module** | A feature compiled into the binary that owns its routes, workers, admin pages, migrations and permissions (commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext, identityai). | `internal/<name>`, after `webhooks` | All nine implement `kernel.OptionalModule` using `kernel.AddonEnabled` |
 | **Core service** | A general service that is a feature of a core module and is configured by settings: forms (site), storage (media), backups (admin), mail (admin). | the owning module | never switched; configured |
 | **External extension** | A separate program described by `manifest.json`, receiving hooks over signed HTTP and calling the REST API with a scoped key ([EXTENSIONS.md](EXTENSIONS.md)). | `<data>/extensions/<slug>` | activate / deactivate / uninstall on its own page |
 
@@ -67,6 +67,8 @@ What happens at the next boot of a module that is **off**:
 
 What happens when it is **on** again: the same tables and settings are read, parked jobs of its
 kinds are released unchanged (payload, attempts, idempotency key) and run, routes and pages return.
+`Unpark` resets `run_at` to the current time, including jobs previously scheduled in the future;
+the registered handler may then complete, fail or retry them.
 `TestDisabledModuleParksQueuedJobsWhileWorkersRunAndResumesOnEnable` (kernel) and
 `TestModuleCatalogListsBuildAndSwitchesOptionalModules` (`pkg/cli`, with the real commerce module)
 exercise this with workers running.
@@ -84,6 +86,7 @@ stops a boot; it changes behaviour, and the catalog says how on the dependent's 
 | commerce | mcp | The `list_products` tool is not offered to agents. |
 | commerce | theme | Store pages (`/shop`, `/cart`, `/account`) are not served; themes render with empty product lists. |
 | wpmigrate | mcp | The migration tools are not offered to agents. |
+| workagents | membership | The Agents navigation link and `/agents` route are unavailable; membership data are preserved. |
 
 A hard dependency that is off shows "Depends on X, which is off".
 
@@ -139,3 +142,11 @@ Nothing new is required: the kernel observes what `Register` does. To be describ
   `not_required` with a real verdict;
 - declare your own permissions in `Register` (even when the auth base catalog already names them
   for default roles): the inventory attributes a permission to every module that declares it.
+
+### Extension module activation and API keys
+
+Disabling the `ext` module removes its Extensions UI, routes, hook subscriptions and delivery
+worker. It does not revoke existing `ext:<slug>` API keys: scoped REST access remains available
+through the core API. Deactivating an individual extension stops its hook delivery but also keeps
+its API key. Uninstalling the extension revokes its key; operators can explicitly revoke a key
+under **Admin → API keys** when immediate REST access removal is required.
