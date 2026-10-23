@@ -47,7 +47,7 @@ func (l *lockedBuffer) String() string {
 }
 
 type env struct {
-	t    *testing.T
+	t    testing.TB
 	app  *kernel.App
 	svc  *service
 	fake *fake.Module
@@ -57,7 +57,7 @@ type env struct {
 }
 
 // newEnv boots settings + auth + fake services + theme on root.
-func newEnv(t *testing.T, root string, mutate ...func(*config.Config)) *env {
+func newEnv(t testing.TB, root string, mutate ...func(*config.Config)) *env {
 	t.Helper()
 	cfg := config.Config{Env: "dev", DataDir: t.TempDir(), Addr: ":0", SecretKey: make([]byte, 32), BaseURL: "http://example.test", Theme: "default"}
 	for _, m := range mutate {
@@ -123,7 +123,7 @@ func writeTheme(t *testing.T, root, slug, themeJSON string, files map[string]str
 	}
 }
 
-func mustContain(t *testing.T, body string, want ...string) {
+func mustContain(t testing.TB, body string, want ...string) {
 	t.Helper()
 	for _, w := range want {
 		if !strings.Contains(body, w) {
@@ -132,7 +132,7 @@ func mustContain(t *testing.T, body string, want ...string) {
 	}
 }
 
-func mustNotContain(t *testing.T, body string, bad ...string) {
+func mustNotContain(t testing.TB, body string, bad ...string) {
 	t.Helper()
 	for _, b := range bad {
 		if strings.Contains(body, b) {
@@ -143,7 +143,7 @@ func mustNotContain(t *testing.T, body string, bad ...string) {
 
 // client is an HTTP client against the booted app with a cookie jar.
 type client struct {
-	t   *testing.T
+	t   testing.TB
 	srv *httptest.Server
 	c   *http.Client
 }
@@ -183,7 +183,7 @@ func (c *client) post(path string, form url.Values) (*http.Response, string) {
 
 var csrfRe = regexp.MustCompile(`name="_csrf" value="([^"]+)"`)
 
-func csrfFrom(t *testing.T, html string) string {
+func csrfFrom(t testing.TB, html string) string {
 	t.Helper()
 	m := csrfRe.FindStringSubmatch(html)
 	if m == nil {

@@ -5,107 +5,31 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"net/http"
-	"strings"
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/brand"
-	"github.com/zadstack/gorun/internal/content"
-	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
-	"github.com/zadstack/gorun/internal/media"
 )
 
-type identityForm struct {
-	Title, Tagline, Logo string
-	Identity             brand.Identity
-}
 type identityMedia struct {
 	Name, ID, Value, Label string
 	Multiple, CanPick      bool
 }
-type identityHandler struct {
-	d   *kernel.Deps
-	tpl *httpx.Templates
-}
 
+// registerIdentity keeps the Website → Design entry. The identity page
+// itself (/admin/appearance/identity) is owned by the theme module, which
+// renders the site identity contract; builder.identity remains a fallback
+// layer the page can import from.
 func registerIdentity(d *kernel.Deps) error {
-	tpl, ok := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates)
-	if !ok {
+	if _, ok := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates); !ok {
 		return errors.New("builder: admin templates unavailable")
 	}
-	h := &identityHandler{d: d, tpl: tpl}
-	r := d.Router.Admin.With(auth.RequirePerm("settings.manage"))
-	r.Get("/site-design", siteDesignHome)
-	r.Get("/appearance/identity", h.view)
-	r.Post("/appearance/identity", h.save)
+	d.Router.Admin.With(auth.RequirePerm("settings.manage")).Get("/site-design", siteDesignHome)
 	return nil
 }
-func (h *identityHandler) values(ctx context.Context) identityForm {
-	form := identityForm{Title: h.d.Settings.GetString(ctx, "site.title", "GoRun"), Tagline: h.d.Settings.GetString(ctx, "site.tagline", ""), Logo: h.d.Settings.GetString(ctx, "site.logo", ""), Identity: brand.Default()}
-	_ = h.d.Settings.Get(ctx, "builder.identity", &form.Identity)
-	return form
-}
-func (h *identityHandler) render(w http.ResponseWriter, r *http.Request, status int, form identityForm, message string) {
-	label := "Logo"
-	if i18n.Locale(r.Context()) == "ar" {
-		label = "الشعار"
-	}
-	h.tpl.RenderWith(w, r, status, "admin", "pages/builder/identity.html", struct {
-		Design siteDesignView
-		Form   identityForm
-		Error  string
-		Saved  bool
-		Logo   identityMedia
-	}{designView(h.d, r.Context(), false), form, message, r.Method == http.MethodGet && r.URL.Query().Get("saved") == "1", identityMedia{Name: "logo", ID: "identity-logo", Value: form.Logo, Label: label, CanPick: auth.Can(r.Context(), "media.upload")}})
-}
-func (h *identityHandler) view(w http.ResponseWriter, r *http.Request) {
-	h.render(w, r, 200, h.values(r.Context()), "")
-}
-func (h *identityHandler) store(ctx context.Context, form identityForm) error {
-	if !auth.Can(ctx, "settings.manage") {
-		return content.ErrForbidden
-	}
-	if strings.TrimSpace(form.Title) == "" || len(form.Title) > 200 || len(form.Tagline) > 500 {
-		return errors.New("identity: site name must be 1-200 characters")
-	}
-	if err := brand.Validate(form.Identity); err != nil {
-		return err
-	}
-	if form.Logo != "" {
-		ms, ok := kernel.Get[media.Service](h.d, kernel.ServiceMedia)
-		if !ok {
-			return errors.New("identity: media library unavailable")
-		}
-		if _, err := ms.Get(ctx, form.Logo); err != nil {
-			return errors.New("identity: not an existing logo in the media library")
-		}
-	}
-	return db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
-		for key, value := range map[string]any{"site.title": strings.TrimSpace(form.Title), "site.tagline": strings.TrimSpace(form.Tagline), "site.logo": form.Logo, "builder.identity": form.Identity} {
-			if err := h.d.Settings.SetTx(ctx, tx, key, value); err != nil {
-				return err
-			}
-		}
-		h.d.Audit.RecordTx(ctx, tx, "builder.identity", "settings", "", map[string]any{"keys": []string{"site.title", "site.tagline", "site.logo", "builder.identity"}})
-		return nil
-	})
-}
-func (h *identityHandler) save(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Invalid form", 400)
-		return
-	}
-	form := identityForm{Title: r.PostForm.Get("title"), Tagline: r.PostForm.Get("tagline"), Logo: r.PostForm.Get("logo"), Identity: brand.Identity{Accent: r.PostForm.Get("accent"), Background: r.PostForm.Get("background"), Text: r.PostForm.Get("text"), Font: r.PostForm.Get("font"), Width: r.PostForm.Get("width")}}
-	if err := h.store(r.Context(), form); err != nil {
-		h.render(w, r, 422, form, identityError(h.d, r.Context(), err))
-		return
-	}
-	http.Redirect(w, r, "/admin/appearance/identity?saved=1", http.StatusSeeOther)
-}
+
 func previewBrand(d *kernel.Deps, ctx context.Context, id string) string {
 	identity := brand.Default()
 	var raw string

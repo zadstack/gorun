@@ -31,8 +31,8 @@ html[dir=ltr] .admin-modules .mod-cell dt{text-transform:uppercase;letter-spacin
  .admin-modules .mod-actions{margin-inline-start:0;width:100%}
  .admin-modules .mod-actions button,.admin-modules .mod-actions a{min-height:44px}
 }
-/* An opened registration list takes the whole row; identifiers stay whole and wrap between items. */
+/* Open registrations use the whole row; long identifiers wrap only when needed. */
 .admin-modules .mod-cell:has(details[open]){grid-column:1/-1}
-.admin-modules .mod-reg .mod-code{white-space:nowrap;display:inline-block}
-.admin-modules .mod-reg dd{overflow-wrap:normal;word-break:normal}
+.admin-modules .mod-reg .mod-code{white-space:normal;overflow-wrap:anywhere;display:inline}
+.admin-modules .mod-reg dd{min-width:0;overflow-wrap:anywhere;word-break:normal}
 .admin-modules .mod-reg dt{white-space:nowrap}

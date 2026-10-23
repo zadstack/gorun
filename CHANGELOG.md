@@ -5,12 +5,50 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Generated logo proposals remain selectable after unrelated identity draft/live edits. Selection
+  compares only the chosen logo slot and active theme, merges into the latest draft atomically,
+  and rechecks module activation inside that transaction. Full generation approval and the
+  candidate's original selection token remain strict; conflicting target changes retain the
+  private proposal instead of requiring another paid generation.
+
+## [0.16.0] - 2026-10-23
+
 ### Added
 
+- Section library pilot (`themes/default/assets/sections.css`, shared by every catalog theme):
+  hero variants (`gp-s-hero-split`, `gp-s-hero-centered`, `gp-s-facts`), feature cards with
+  CSS-drawn icon tiles and a featured card, steps on a connector track, a `gp-s-flow` diagram,
+  a `gp-s-compare` table with a highlighted column, FAQ with plus/minus markers, a
+  `gp-s-preview` window frame (real screenshot or drawn interface) and a `gp-s-cta-panel`.
+  Everything is static CSS and data-URI SVG masks coloured from the theme tokens; motion stops
+  under `prefers-reduced-motion`; RTL and 375 px covered by `e2e/tests/sections-pilot.spec.ts`.
+  The stylesheet is now a used asset: the new `{{sections .}}` head func links it only on pages
+  whose content carries a `gp-s-` class (it was loaded on every page before), so pages without
+  sections load less CSS than on 0.15.1.
+- Section backgrounds as identity tokens: `identity_pattern` (dots, fine grid, geometric
+  lines, concentric circles, waves, paper, solid), `identity_pattern_density` and
+  `identity_pattern_color` under Appearance → Theme settings → Design. `/site/identity.css`
+  carries only variables; the drawings live in `sections.css` and a section's own
+  `gp-s-bg-<name>` modifier still wins. Validation record and screenshots in
+  `docs/validation/sections-pilot/`; Basecoat evaluated there and not added.
 - `pkg/cli/theme_switch_test.go`: switching through every bundled theme keeps content, media,
   menus, site identity, custom CSS and per-theme settings, and renders both locales, inner pages,
   search and the 404 page with the site's logo, title and menu; every bundled theme renders
   without the commerce, saas and membership modules and their routes are absent.
+- Store settings show the current Stripe mode as a badge and report each mode in three separate
+  states: configured, authenticated (a read-only **Verify key** call tied to the stored key) and
+  webhook delivery verified (signed events from Stripe only; the local test event never counts).
+  Switching to live now needs an explicit confirmation and server-side checks (live key present
+  and not test-prefixed, live webhook secret, Stripe reports a live key); a refused switch saves
+  nothing. Orders and Stripe events record the mode that created or verified them and Orders
+  shows it; a test order is never paid by a live-signed event and refunds use the order's own mode.
+  A key whose prefix contradicts its slot (live key in the test slot, test key in the live
+  slot) is refused on every save. Delivery evidence is bound to the credentials in place when it was verified, so rotating a
+  webhook secret or changing the account key starts again from "unverified". Fresh installs
+  (stamped `kernel.install_epoch` by the kernel when it creates the database) start in test mode;
+  upgraded sites keep their effective mode and historical orders are never relabelled.
 - `docs/BOUNDARIES.md`: the core / theme / built-in module / external extension boundary map with
   the import graph (generated and checked by `internal/kernel/boundaries_test.go`), runtime
   contracts (services, hooks, job kinds, crons, routes, API operations, MCP tools, permissions,
@@ -33,9 +71,29 @@ All notable changes to GoRun are recorded here. The format follows
   `module <name> disabled`, never run, failed or deleted; enabling the module releases them
   unchanged. Accessors `hooks.Registry.Subscriptions`, `jobs.Queue.CronNames`,
   `jobs.Queue.QueuedByKind`, `ThemeRegistry.Kinds`, `AdminRegistry.NavIDs`, `ServiceRegistry.Names`.
+- Design variants are declared per theme in `theme.json` `supports` as `<slot>:<value>` and resolved
+  by the new `{{variant "<slot>" .}}` template func with a `native` fallback for undeclared, unknown or
+  hand-edited values; Theme settings offers only declared options. New `single_style` (`wide`,
+  `centered`) and `archive_style` (`grid`, `compact`) settings for the default, business, magazine and
+  portfolio themes, implemented by the shared `variants.css`, `list-grid`, `list-rows` and
+  `list-variant` components; `archive_style` applies to post archives, taxonomy pages and search
+  results alike. Upgrade note: a custom child theme that rendered `header_style`/`footer_style`
+  through the inherited catalog parts without declaring `header:*`/`footer:*` in its own
+  `supports` now renders `native` until it declares the variants it implements.
 
 ### Changed
 
+- Launch, WorkAgents, WordPress Migrator, MCP and Extensions now implement the optional-module
+  gate and remain enabled by default. Their activation configuration, previously ignored for
+  these always-on modules, now controls the next boot without deleting data. WXR import and
+  dry-run refuse a disabled migrator; Membership hides its Agents link when WorkAgents is off.
+
+- Existing `gp-s-*` blocks look different: pages already written with the section library
+  (the starter About page, any page built from `docs/THEMES.md` → "Section library") get the
+  pilot's eyebrow dot, card shadow and hover lift, numbered step badges on a track, FAQ
+  plus/minus markers and drawn check marks without any markup change. Colours, fonts and
+  corners still come from the theme tokens; nothing moves or changes size except the hero
+  eyebrow spacing and the step badge.
 - Commerce, saas and membership are optional modules behind the existing `kernel.OptionalModule`
   gate, **enabled by default** so existing installs boot the same set of modules. They answer with
   the new `kernel.AddonEnabled`, which reads the site setting `addons.<name>.enabled` (JSON
@@ -56,10 +114,23 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Builder previews inherit the selected theme's linked styles in their public cascade order
+  instead of adding unused builder styles or inventing an unsaved builder identity; Docs
+  sections stay within the viewport on narrow screens.
+- Appearance → Identity keeps the history Revert action reachable on mobile above the fixed
+  Agents dock. Browser acceptance covers Save draft, Apply and Revert across bundled themes,
+  Arabic/English and mobile/desktop viewports.
+- Builder preview of a page never published through the builder keeps the builder stylesheet on
+  the Default, Magazine, Portfolio and Docs themes, matching the published page.
+- Logo image requests wait for the provider's response headers for the whole 90-second request
+  instead of 20 seconds, so a slow, non-streaming generation is no longer abandoned mid-billing.
+- Standalone Membership and SaaS pages keep their styles and service-aware navigation when
+  optional account add-ons are off. The module catalog explains Commerce-dependent customer
+  sign-in availability; its 503 response follows the request locale for title and direction.
+
 - Historical Cloudflare accounts, permissions and resources cannot authorize current R2 bindings
   or Worker identity checks. Configuration changes during these operations return conflict.
   Failed local reads and malformed saved results appear as unavailable rather than empty success.
-
 - Bundled themes: the header no longer shows a fallback "Search" button beside an existing search
   control (business, docs, portfolio on phones, magazine), so a configured CTA (`cta_label` +
   `cta_url`) is the only button there; Business keeps its search field usable at phone widths
@@ -69,6 +140,54 @@ All notable changes to GoRun are recorded here. The format follows
 - Default theme store pages (cart, checkout, account, product quantity) use translation keys
   (`store.*` in `themes/default/lang`) instead of Arabic-only copy, so an English store reads in
   English; the account page no longer hard-links optional modules' pages (`/agents`, `/saas`).
+
+### Identity
+
+- Appearance → Identity (`/admin/appearance/identity`) is now one page, owned by the theme module,
+  for the site identity contract: four logo slots (`site.logo*`), name and tagline, accent /
+  background / text with a WCAG contrast check, Arabic heading and body fonts plus a new Latin
+  font (`identity_latin_font`), scheme, corners and a new spacing scale (`identity_spacing`),
+  header link and custom CSS. Edits go to a per-theme draft rendered by a live preview of the real
+  site (home or post, desktop or mobile, Arabic or English); **Apply** writes the live
+  `theme.<slug>.identity_*` and site keys in one transaction and records a revision (last 10);
+  **Revert** restores an earlier identity without touching content. The builder's `builder.identity`
+  stays a fallback layer and can be imported into the draft; its separate identity form is removed.
+
+### Optional modules
+
+- Optional Identity logo workflow: explicitly bind an encrypted AI profile to a compatible PNG
+  image protocol and operator estimate, review the exact request before generation, preview a
+  private ephemeral candidate, then import a local logo/icon derivative into one identity draft
+  slot. Imported media is public by URL; live identity changes still require Apply.
+
+- New optional module `identityai` (switchable in System → Modules via `addons.identityai.enabled`): Appearance →
+  Identity AI asks a saved text AI connection for colours, fonts, taglines and a written logo brief
+  after the operator previews the exact request and approves its estimated cost; results go to the
+  identity draft only. This stage is text only: no image, vector or animation is produced or
+  claimed here; static logo images come from the separate Identity logo workflow above.
+  See `docs/IDENTITY-AI.md`.
+
+### Known limits in this release
+
+- AI identity suggestions (`identityai`) and logo drafts (`identitylogo`) were tested against fake
+  providers only; no live AI or image provider was called. Animated or vector logos are not produced.
+- A generated logo candidate can only be selected while the whole identity is unchanged: any other
+  identity draft or live edit made after review makes Select fail and asks for a new review, even
+  though the paid candidate is still viewable for 30 minutes. Select it before editing the identity.
+- A site-starter preview run that carries no identity of its own does not apply a saved
+  `builder.identity`, although the published page uses it; ordinary builder previews are unaffected.
+- Module activation changes apply at the next boot; the Modules page shows "pending restart" until then.
+- Only commerce, media and mail publish module configuration requirements; other modules report
+  `module_publishes_no_requirements` instead of a configured verdict.
+- Integrations (Cloudflare API, R2/S3, SMTP), Stripe live mode and the Cloudflare Edge Worker were
+  verified with fakes and local workerd only; behaviour against the real providers is not proven here.
+- MCP connections still have no operation test: invoking a tool would execute a remote action.
+- Staged-update preflight against the target still reports `release_data: unknown`: the release
+  workflow does not yet publish migration and theme lists in a release index.
+- Appearance reports declared and effective tokens with provenance, not browser-computed CSS.
+
+Existing installations keep content, media, settings and themes. Schema changes are additive.
+Optional modules stay enabled by default. Publishing this release does not upgrade a running site.
 
 ## [0.15.1] - 2026-10-22
 

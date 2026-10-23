@@ -39,8 +39,8 @@ func TestModuleKernelBootCatalogAPIAndHealth(t *testing.T) {
 	}
 	w = httptest.NewRecorder()
 	app.Handler.ServeHTTP(w, httptest.NewRequest("GET", "/saas", nil))
-	if w.Code != 303 {
-		t.Fatalf("public sign-in: %d", w.Code)
+	if w.Code != 503 {
+		t.Fatalf("public sign-in without commerce: %d", w.Code)
 	}
 	_, e := app.Deps.DB.Exec(`INSERT INTO saas_apps(id,public_id,name,slug,status,mode,created_at,updated_at) VALUES('import-app','pub','Imported','imported','active','external','','');INSERT INTO saas_key_versions(id,public_id,app_id,status,created_at,updated_at) VALUES('import-key','key-pub','import-app','active','','');INSERT INTO saas_entitlements(id,public_id,app_id,subject_type,external_id,plan_id,status,created_at,updated_at) VALUES('import-ent','ent-pub','import-app','user','unknown','pro','active','','');`)
 	if e != nil {

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/zadstack/gorun/internal/brand"
 	"github.com/zadstack/gorun/internal/theme"
 )
 
@@ -126,8 +127,23 @@ func TestInstalledCustomThemePreviewWithoutSavedIdentity(t *testing.T) {
 	if err := h.d.Settings.Delete(ctx, "builder.identity"); err != nil {
 		t.Fatal(err)
 	}
-	options, enabled, err := previewOptions(h.d, ctx, "unassigned-page")
-	if err != nil || !enabled || options.Theme != "custom-fixture" {
-		t.Fatalf("custom active preview missing: %v enabled=%v theme=%q", err, enabled, options.Theme)
+	for _, saved := range []bool{false, true} {
+		t.Run(map[bool]string{false: "absent identity inherits theme", true: "saved identity is preserved"}[saved], func(t *testing.T) {
+			expected := brand.Identity{}
+			if saved {
+				expected = brand.Default()
+				expected.Accent = "#174a6c"
+				if err := h.d.Settings.Set(ctx, "builder.identity", expected); err != nil {
+					t.Fatal(err)
+				}
+			}
+			options, enabled, err := previewOptions(h.d, ctx, "unassigned-page")
+			if err != nil || !enabled || options.Theme != "custom-fixture" {
+				t.Fatalf("custom active preview missing: %v enabled=%v theme=%q", err, enabled, options.Theme)
+			}
+			if options.Identity != expected {
+				t.Fatalf("preview invented or changed identity: got %+v want %+v", options.Identity, expected)
+			}
+		})
 	}
 }

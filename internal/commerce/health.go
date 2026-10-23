@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/zadstack/gorun/internal/admin"
+	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/observe"
 )
@@ -92,15 +93,33 @@ func (s *service) healthChecks(ctx context.Context, v any) (any, error) {
 	add := func(name, status, detail string) {
 		*checks = append(*checks, admin.HealthCheck{Name: name, Status: status, Detail: detail})
 	}
-	if s.stripeSecretKey(ctx) != "" {
-		add(t("commerce.health.stripe"), admin.CheckWarn, t("commerce.health.configured"))
-	} else {
-		add(t("commerce.health.stripe"), admin.CheckWarn, t("commerce.health.stripe_missing"))
+	mode := s.stripeMode(ctx)
+	st := s.stripeStatus(ctx, mode)
+	modeLabel := t("commerce.settings.mode_live")
+	if mode == "test" {
+		modeLabel = t("commerce.settings.mode_test")
 	}
-	if s.webhookSecret(ctx) != "" {
-		add(t("commerce.health.webhook"), admin.CheckWarn, t("commerce.health.webhook_set", s.baseURL(ctx)+"/webhooks/stripe"))
-	} else {
-		add(t("commerce.health.webhook"), admin.CheckWarn, t("commerce.health.webhook_missing"))
+	switch {
+	case !st.KeyConfigured:
+		add(t("commerce.health.stripe"), admin.CheckWarn, modeLabel+" · "+t("commerce.health.stripe_missing"))
+	case st.Auth.State == authAuthenticated:
+		add(t("commerce.health.stripe"), admin.CheckOK, modeLabel+" · "+t("commerce.health.authenticated", formatAge(ageSeconds(s.now(), st.Auth.CheckedAt))))
+	case st.Auth.State == authMismatch:
+		add(t("commerce.health.stripe"), admin.CheckFail, modeLabel+" · "+t("commerce.health.auth_mismatch"))
+	case st.Auth.State == authFailed:
+		add(t("commerce.health.stripe"), admin.CheckFail, modeLabel+" · "+t("commerce.health.auth_failed"))
+	case st.Auth.State == authStale:
+		add(t("commerce.health.stripe"), admin.CheckWarn, modeLabel+" · "+t("commerce.health.auth_stale", formatAge(ageSeconds(s.now(), st.Auth.CheckedAt))))
+	default:
+		add(t("commerce.health.stripe"), admin.CheckWarn, modeLabel+" · "+t("commerce.health.configured"))
+	}
+	switch {
+	case !st.WebhookConfigured:
+		add(t("commerce.health.webhook"), admin.CheckWarn, modeLabel+" · "+t("commerce.health.webhook_missing"))
+	case st.Delivery.Verified:
+		add(t("commerce.health.webhook"), admin.CheckOK, modeLabel+" · "+t("commerce.health.webhook_verified", formatAge(ageSeconds(s.now(), st.Delivery.LastAt))))
+	default:
+		add(t("commerce.health.webhook"), admin.CheckWarn, modeLabel+" · "+t("commerce.health.webhook_set", s.baseURL(ctx)+"/webhooks/stripe/"+mode))
 	}
 	servers, err := s.Servers(ctx)
 	if err != nil {
@@ -144,6 +163,15 @@ func (s *service) healthChecks(ctx context.Context, v any) (any, error) {
 	return checks, nil
 }
 
+// ageSeconds is how long ago the stored timestamp was (0 when unparsable).
+func ageSeconds(now time.Time, stored string) int64 {
+	ts, err := db.ParseTime(stored)
+	if err != nil || ts.IsZero() {
+		return 0
+	}
+	return max(int64(now.Sub(ts).Seconds()), 0)
+}
+
 func formatAge(seconds int64) string {
 	switch {
 	case seconds < 60:
@@ -170,20 +198,32 @@ func itoa(n int64) string {
 	return string(b[i:])
 }
 
-// requirements reports the store's configuration to the capability report:
-// a Stripe secret key and webhook secret are required for live checkout.
-// Presence is configuration only; delivery is never claimed here.
+// requirements reports the store's configuration to the capability report
+// for the active mode, as three separate states: configured (both secrets
+// present), authenticated (the key passed a read-only Stripe check) and
+// webhook delivery verified (a signed event from Stripe reached this mode's
+// endpoint). Key presence or prefix is never reported as verification.
 func (s *service) requirements(ctx context.Context, v any) (any, error) {
 	list, ok := v.(*[]admin.ModuleRequirement)
 	if !ok || list == nil {
 		return v, nil
 	}
-	req := admin.ModuleRequirement{Module: "commerce", Configured: true, Reason: "configured_not_verified", Remediation: "Checkout and webhook delivery are verified only by a real Stripe test-mode order; see docs/COMMERCE.md."}
+	mode := s.stripeMode(ctx)
+	st := s.stripeStatus(ctx, mode)
+	req := admin.ModuleRequirement{Module: "commerce", Configured: true}
 	switch {
-	case s.stripeSecretKey(ctx) == "":
-		req.Configured, req.Reason, req.Remediation = false, "stripe_secret_key_missing", "Set STRIPE_SECRET_KEY (or the Stripe key under Commerce → Launch store) before selling."
-	case s.webhookSecret(ctx) == "":
-		req.Configured, req.Reason, req.Remediation = false, "stripe_webhook_secret_missing", "Set STRIPE_WEBHOOK_SECRET and point the Stripe webhook at /webhooks/stripe."
+	case !st.KeyConfigured:
+		req.Configured, req.Reason, req.Remediation = false, "stripe_secret_key_missing", "Set the "+mode+" Stripe secret key under Commerce → Store settings (or STRIPE_SECRET_KEY for live) before selling."
+	case !st.WebhookConfigured:
+		req.Configured, req.Reason, req.Remediation = false, "stripe_webhook_secret_missing", "Set the "+mode+" webhook signing secret and point a Stripe endpoint at /webhooks/stripe/"+mode+"."
+	case st.Auth.State == authMismatch:
+		req.Configured, req.Reason, req.Remediation = false, "stripe_key_mode_mismatch", "The "+mode+" slot holds a key Stripe reports as the other mode; replace it under Commerce → Store settings."
+	case st.Auth.State != authAuthenticated:
+		req.Reason, req.Remediation = "configured_not_authenticated", "Run “Verify key” for "+mode+" under Commerce → Store settings; presence of a key proves nothing."
+	case !st.Delivery.Verified:
+		req.Reason, req.Remediation = "authenticated_delivery_unverified", "No signed event from Stripe has reached /webhooks/stripe/"+mode+" yet: send one from the Stripe Dashboard or complete a "+mode+" checkout."
+	default:
+		req.Reason, req.Remediation = "verified", "Key authenticated and webhook delivery observed for "+mode+" mode; checkout itself is proven only by a real order."
 	}
 	*list = append(*list, req)
 	return list, nil

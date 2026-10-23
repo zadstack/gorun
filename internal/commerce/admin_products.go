@@ -57,6 +57,7 @@ func registerAdmin(d *kernel.Deps, s *service, tpl *httpx.Templates) {
 	m.Get("/commerce/settings", h.settings)
 	m.Post("/commerce/settings", h.settingsSave)
 	m.Post("/commerce/settings/test-event", h.sendTestEvent)
+	m.Post("/commerce/settings/verify", h.verifyKey)
 	m.Post("/commerce/orders/{id}/refund", h.orderRefund)
 
 	nav := func(id, icon, href, perm string, pos int) {

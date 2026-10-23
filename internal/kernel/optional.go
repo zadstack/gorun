@@ -20,7 +20,7 @@ import (
 // off without calling Enabled; "enabled", "auto" or no entry leave the
 // decision to the module, so configuration alone never proves activation.
 // Modules that do not implement this interface are always booted; a mode
-// configured for them is reported in the module inventory and ignored.
+// configured for them is reported in the module inventory, warned about and ignored.
 type OptionalModule interface {
 	Enabled(context.Context, *sql.DB) (bool, error)
 }
@@ -44,6 +44,20 @@ func AddonSettingKey(name string) string { return "addons." + name + ".enabled" 
 // JSON boolean is an activation error, which stops the boot with a message
 // instead of guessing.
 func AddonEnabled(ctx context.Context, d *sql.DB, name string) (bool, error) {
+	return addonEnabled(ctx, d, name)
+}
+
+// AddonEnabledTx reads activation from the caller's transaction, without a
+// second pool connection. It uses exactly the same defaults and boolean parser.
+func AddonEnabledTx(ctx context.Context, tx *sql.Tx, name string) (bool, error) {
+	return addonEnabled(ctx, tx, name)
+}
+
+type addonReader interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func addonEnabled(ctx context.Context, d addonReader, name string) (bool, error) {
 	var tables int
 	if err := d.QueryRowContext(ctx, `SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'settings'`).Scan(&tables); err != nil {
 		return false, fmt.Errorf("kernel: addon %s: inspect schema: %w", name, err)
@@ -72,10 +86,10 @@ func AddonEnabled(ctx context.Context, d *sql.DB, name string) (bool, error) {
 func enabledModules(ctx context.Context, cfg config.Config, log *slog.Logger, d *sql.DB, mods []Module) ([]Module, error) {
 	selected := make([]Module, 0, len(mods))
 	for _, m := range mods {
-		mode := cfg.Addons[m.Name()]
+		mode, configured := cfg.Addons[m.Name()]
 		optional, ok := m.(OptionalModule)
 		if !ok {
-			if mode == AddonModeDisabled && log != nil {
+			if configured && log != nil {
 				log.Warn("kernel: addon mode ignored: module is not optional and stays enabled", "module", m.Name(), "mode", mode)
 			}
 			selected = append(selected, m)

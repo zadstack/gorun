@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"context"
+	"errors"
 	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/auth"
@@ -9,6 +11,8 @@ import (
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/ext"
+	"github.com/zadstack/gorun/internal/identityai"
+	identitylogoadmin "github.com/zadstack/gorun/internal/identitylogo/admin"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/launch"
 	"github.com/zadstack/gorun/internal/mcp"
@@ -52,6 +56,8 @@ func CoreModules() []kernel.Module {
 		membership.New(),
 		launch.New(),
 		workagents.New(admin.CompleteWorkAgent),
+		identityai.New(identityAIHooks()),
+		identitylogoadmin.New(),
 		wpmigrate.New(),
 		mcp.New(),
 		ext.New(),
@@ -89,4 +95,33 @@ func InsertAfter(mods []kernel.Module, after string, extra ...kernel.Module) []k
 		out = append(out, extra...)
 	}
 	return out
+}
+
+// identityAIHooks adapts the admin-owned AI bridge to the optional
+// identityai module without the admin package importing it.
+func identityAIHooks() identityai.Hooks {
+	return identityai.Hooks{
+		Complete: func(ctx context.Context, d *kernel.Deps, connectionID, model, system, input string, maxTokens int, expect string) (string, error) {
+			out, err := admin.CompleteWorkAgentBounded(ctx, d, connectionID, model, system, input, maxTokens, expect)
+			if errors.Is(err, admin.ErrAIDestinationChanged) {
+				return "", identityai.ErrDestinationChanged
+			}
+			return out, err
+		},
+		Destination: func(ctx context.Context, d *kernel.Deps, id string) (identityai.Connection, string, bool) {
+			s, fp, ok := admin.AIDestination(ctx, d, id)
+			return identityai.Connection{ID: s.ID, Name: s.Name, Provider: s.Provider, Model: s.Model, Host: s.Host, TestStatus: s.TestStatus}, fp, ok
+		},
+		Connections: func(ctx context.Context, d *kernel.Deps) ([]identityai.Connection, error) {
+			rows, err := admin.ListAIConnections(ctx, d)
+			if err != nil {
+				return nil, err
+			}
+			out := make([]identityai.Connection, 0, len(rows))
+			for _, r := range rows {
+				out = append(out, identityai.Connection{ID: r.ID, Name: r.Name, Provider: r.Provider, Model: r.Model, Host: r.Host, TestStatus: r.TestStatus})
+			}
+			return out, nil
+		},
+	}
 }

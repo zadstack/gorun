@@ -3,12 +3,15 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/commerce"
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/kernel"
@@ -224,5 +227,75 @@ func TestOptionalBuiltinsSettingGate(t *testing.T) {
 	// Unauthenticated /membership redirects to the account page: the route exists again.
 	if status, _ := serveStatus(app.Handler, "GET", "/membership", nil); status != 303 {
 		t.Fatalf("/membership after re-enable: %d, want 303", status)
+	}
+}
+
+// Mixed activation must not make an enabled add-on depend on disabled routes.
+func TestIndependentAddonPagesWithMixedActivation(t *testing.T) {
+	for mask := 0; mask < 8; mask++ {
+		t.Run(fmt.Sprintf("enabled-%03b", mask), func(t *testing.T) {
+			modes := map[string]string{}
+			for i, name := range optionalBuiltins {
+				if mask&(1<<i) == 0 {
+					modes[name] = "disabled"
+				}
+			}
+			raw, err := json.Marshal(modes)
+			if err != nil {
+				t.Fatal(err)
+			}
+			app := bootData(t, t.TempDir(), string(raw))
+			defer app.Close()
+			users, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
+			user, err := users.Create(context.Background(), "member@fixture.test", "Member", "fixture-password-12345", "author")
+			if err != nil {
+				t.Fatal(err)
+			}
+			commerceOn, saasOn := mask&1 != 0, mask&2 != 0
+			for i, path := range []string{"/saas", "/membership"} {
+				enabled := mask&(1<<(i+1)) != 0
+				req := httptest.NewRequest("GET", path, nil).WithContext(auth.WithUser(context.Background(), user))
+				w := httptest.NewRecorder()
+				app.Handler.ServeHTTP(w, req)
+				if !enabled {
+					if w.Code != 404 {
+						t.Fatalf("disabled %s: %d", path, w.Code)
+					}
+					continue
+				}
+				if w.Code != 200 {
+					t.Fatalf("enabled %s: %d %s", path, w.Code, w.Body.String())
+				}
+				body := w.Body.String()
+				assets := regexp.MustCompile(`<link rel="stylesheet" href="([^"]+)"`).FindAllStringSubmatch(body, -1)
+				if len(assets) == 0 {
+					t.Fatalf("%s has no stylesheet", path)
+				}
+				for _, asset := range assets {
+					status, css := serveStatus(app.Handler, "GET", asset[1], nil)
+					if status != 200 || !strings.Contains(css, "font:") {
+						t.Errorf("%s stylesheet %s: %d", path, asset[1], status)
+					}
+				}
+				for _, target := range []string{"/account", "/shop", "/saas"} {
+					allowed := commerceOn
+					if target == "/saas" {
+						allowed = saasOn
+					}
+					if !allowed && strings.Contains(body, `href="`+target+`"`) {
+						t.Errorf("%s links to disabled %s", path, target)
+					}
+				}
+				anonymous := httptest.NewRecorder()
+				app.Handler.ServeHTTP(anonymous, httptest.NewRequest("GET", path, nil))
+				if commerceOn {
+					if anonymous.Code != 303 || anonymous.Header().Get("Location") != "/account?next="+path {
+						t.Errorf("%s login: %d %s", path, anonymous.Code, anonymous.Header().Get("Location"))
+					}
+				} else if anonymous.Code != 503 || anonymous.Header().Get("Location") != "" || !strings.Contains(anonymous.Body.String(), "account_sign_in_unavailable") {
+					t.Errorf("%s without account provider: %d %s", path, anonymous.Code, anonymous.Body.String())
+				}
+			}
+		})
 	}
 }

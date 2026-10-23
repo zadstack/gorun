@@ -115,3 +115,60 @@ func TestEmbeddedZadFontPreview(t *testing.T) {
 		}
 	}
 }
+
+// A preview inherits the live cascade unless an identity was explicitly supplied.
+func TestPreviewDoesNotInventIdentityOrUnlinkedBuilderStyles(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		identity brand.Identity
+		invalid  bool
+	}{
+		{name: "inherit theme without saved identity"},
+		{name: "explicit proposed identity", identity: brand.Default()},
+		{name: "invalid explicit identity is rejected", identity: brand.Identity{Accent: "invalid"}, invalid: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeTheme(t, root, "default", "", map[string]string{"templates/page-builder.html": `<!doctype html><html><head><style>.native-theme{color:navy}</style>{{builderIdentity}}</head><body>{{builderBody .Content}}</body></html>`})
+			e := newEnv(t, root)
+			rendered, err := e.svc.RenderBuilderThemePreview(t.Context(), &content.Item{Type: "page", Slug: "preview", Locale: "en", Body: "<h1>Draft</h1>"}, BuilderPreviewOptions{Theme: "default", Identity: tc.identity, CSS: ".unlinked-builder-base{display:grid}"})
+			if tc.invalid {
+				if err == nil {
+					t.Fatal("invalid explicit identity accepted")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(rendered, ".unlinked-builder-base") {
+				t.Fatal("preview inserted CSS absent from public template")
+			}
+			hasIdentity := strings.Contains(rendered, "data-gorun-builder-identity")
+			if hasIdentity != (tc.identity != (brand.Identity{})) {
+				t.Fatalf("preview identity presence=%v does not match explicit identity", hasIdentity)
+			}
+			mustContain(t, rendered, ".native-theme", "Draft")
+		})
+	}
+}
+
+// A page never published through the builder has an empty Template, but its
+// preview must still show the builder layout the published page will have:
+// theme heads link builder.css only for Template "builder".
+func TestPreviewOfUnpublishedPageKeepsBuilderStylesheet(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", map[string]string{"templates/page-builder.html": `<!doctype html><html><head>{{with .Content}}{{if eq .Template "builder"}}<link rel="stylesheet" href="/static/builder/builder.css">{{end}}{{end}}</head><body>{{builderBody .Content}}</body></html>`})
+	e := newEnv(t, root)
+	item := &content.Item{Type: "page", Slug: "fresh", Locale: "en", Body: "<h1>Draft</h1>"}
+	rendered, err := e.svc.RenderBuilderThemePreview(t.Context(), item, BuilderPreviewOptions{Theme: "default", CSS: ".probe-builder{display:grid}"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(rendered, ".probe-builder") {
+		t.Fatalf("unpublished page preview lost the builder stylesheet:\n%s", rendered)
+	}
+	if item.Template != "" {
+		t.Fatal("preview mutated the caller's content item")
+	}
+}

@@ -18,20 +18,29 @@ import (
 
 type BuilderPreviewOptions struct {
 	Theme, Title, Tagline, CSS, Logo string
-	Identity                         brand.Identity
+	Identity                         brand.Identity // Zero means inherit the public theme without an identity override.
 	Menu                             *menus.Menu
 }
 
 func (s *service) RenderBuilderThemePreview(ctx context.Context, it *content.Item, options BuilderPreviewOptions) (string, error) {
-	if err := brand.Validate(options.Identity); err != nil {
-		return "", err
+	if options.Identity != (brand.Identity{}) {
+		if err := brand.Validate(options.Identity); err != nil {
+			return "", err
+		}
 	}
 	set, err := s.set(ctx, options.Theme, false)
 	if err != nil {
 		return "", err
 	}
 	request := kernel.KindRequest{Kind: KindPage, Type: "page", Slug: it.Slug, Template: "builder"}
-	tc := &Context{Content: it, Locale: it.Locale, Theme: set.chain[0], Extra: map[string]any{}, Query: map[string]string{}, Request: &http.Request{URL: &url.URL{Path: "/" + it.Slug}}}
+	// The preview renders the page as it will look once published through
+	// the builder. Theme heads link builder.css only for Template "builder",
+	// which a page gets on its first builder publish, so a never-published
+	// page must be rendered with that template too or its preview loses the
+	// builder layout the public page will have.
+	previewItem := *it
+	previewItem.Template = "builder"
+	tc := &Context{Content: &previewItem, Locale: it.Locale, Theme: set.chain[0], Extra: map[string]any{}, Query: map[string]string{}, Request: &http.Request{URL: &url.URL{Path: "/" + it.Slug}}}
 	tc = s.prepare(ctx, request, tc)
 	if options.Title != "" {
 		tc.Site.Title = options.Title
@@ -43,7 +52,10 @@ func (s *service) RenderBuilderThemePreview(ctx context.Context, it *content.Ite
 	if err != nil {
 		return "", err
 	}
-	st := &reqState{ctx: ctx, tc: tc, set: set, previewIdentity: &options.Identity, previewMenu: options.Menu}
+	st := &reqState{ctx: ctx, tc: tc, set: set, previewMenu: options.Menu}
+	if options.Identity != (brand.Identity{}) {
+		st.previewIdentity = &options.Identity
+	}
 	if options.Logo != "" {
 		st.previewSettings = map[string]string{"site.logo": options.Logo}
 	}
@@ -68,7 +80,6 @@ func (s *service) RenderBuilderThemePreview(ctx context.Context, it *content.Ite
 		return "", err
 	}
 	var head *html.Node
-	builderIncluded := false
 	var assetError error
 	assetBudget := 0
 	var clean func(*html.Node)
@@ -82,7 +93,6 @@ func (s *service) RenderBuilderThemePreview(ctx context.Context, it *content.Ite
 				style := previewInlineStyle(options.CSS)
 				node.InsertBefore(style, child)
 				node.RemoveChild(child)
-				builderIncluded = true
 				child = next
 				continue
 			}
@@ -119,11 +129,6 @@ func (s *service) RenderBuilderThemePreview(ctx context.Context, it *content.Ite
 	}
 	if head == nil {
 		return "", fmt.Errorf("theme: preview document head missing")
-	}
-	// Use the theme's real cascade order, including builderStyle at its normal
-	// position. A fallback base style precedes theme overrides, never follows.
-	if !builderIncluded && options.CSS != "" {
-		head.InsertBefore(previewInlineStyle(options.CSS), head.FirstChild)
 	}
 	head.AppendChild(&html.Node{Type: html.ElementNode, Data: "meta", DataAtom: atom.Meta, Attr: []html.Attribute{{Key: "http-equiv", Val: "Content-Security-Policy"}, {Key: "content", Val: "default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'; font-src data:; form-action 'none'; base-uri 'none'"}}})
 	output.Reset()

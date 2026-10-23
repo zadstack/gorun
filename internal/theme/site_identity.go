@@ -4,8 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"html/template"
+	"math"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/zadstack/gorun/internal/content"
@@ -32,7 +34,14 @@ const (
 	idBody       = "identity_body_font"
 	idScheme     = "identity_scheme"
 	idRadius     = "identity_radius"
+	idLatinFont  = "identity_latin_font"
+	idSpacing    = "identity_spacing"
 	idCustomCSS  = "custom_css"
+
+	// Section backgrounds (sections.css draws them; see identityPatterns).
+	idPattern        = "identity_pattern"
+	idPatternDensity = "identity_pattern_density"
+	idPatternColor   = "identity_pattern_color"
 
 	// maxCustomCSS bounds the custom stylesheet stored in settings.
 	maxCustomCSS = 20000
@@ -68,13 +77,53 @@ var identityFonts = []identityFont{
 	{"amiri", "Amiri", "Amiri,Georgia,serif", "Amiri:wght@400;700"},
 }
 
+// latinFonts are offered for Latin-script (English) text; the Arabic
+// families above keep rendering Arabic. All load from Google Fonts.
+var latinFonts = []identityFont{
+	{"inter", "Inter", "Inter,system-ui,sans-serif", "Inter:wght@400;500;600;700"},
+	{"source-serif", "Source Serif 4", "'Source Serif 4',Georgia,serif", "Source+Serif+4:wght@400;600;700"},
+	{"ibm-plex-sans", "IBM Plex Sans", "'IBM Plex Sans',system-ui,sans-serif", "IBM+Plex+Sans:wght@400;500;600;700"},
+	{"manrope", "Manrope", "Manrope,system-ui,sans-serif", "Manrope:wght@400;500;600;700"},
+}
+
 var identityRadii = map[string]string{"square": "0px", "soft": "8px", "round": "16px"}
+
+// identitySpacing scales the --space-N tokens shared by the catalog themes;
+// "normal" keeps the theme values.
+var identitySpacing = map[string]float64{"compact": 0.85, "normal": 1, "relaxed": 1.2}
+
+// spaceBase are the --space-1..7 pixel values of themes/_base/tokens.css.
+var spaceBase = []float64{4, 8, 12, 16, 24, 32, 48}
+
+// identityPatterns are the section background drawings sections.css defines
+// as --gp-pat-<name> variables; the identity stylesheet only points the
+// site default (.gp-s-bg) at one of them. "none" is an explicit off switch.
+var identityPatterns = []string{"none", "dots", "grid", "lines", "circles", "waves", "paper", "solid"}
+
+// identityPatternScale maps the density setting to the --gp-pattern-scale
+// factor the drawings multiply their tile size by.
+var identityPatternScale = map[string]string{"sparse": ".72", "normal": "1", "dense": "1.4"}
+
+func identityPatternOptions() []content.Option {
+	labels := map[string][2]string{
+		"none": {"بدون", "None"}, "dots": {"نقاط", "Dots"}, "grid": {"شبكة دقيقة", "Fine grid"},
+		"lines": {"خطوط هندسية", "Geometric lines"}, "circles": {"دوائر متحدة المركز", "Concentric circles"},
+		"waves": {"موجات خفيفة", "Subtle waves"}, "paper": {"ملمس ورقي", "Paper texture"}, "solid": {"لون ثابت", "Solid"},
+	}
+	out := []content.Option{{Value: "", Label: lbl("حسب القالب", "Theme default")}}
+	for _, p := range identityPatterns {
+		out = append(out, content.Option{Value: p, Label: lbl(labels[p][0], labels[p][1])})
+	}
+	return out
+}
 
 func lbl(ar, en string) map[string]string { return map[string]string{"ar": ar, "en": en} }
 
-func identityFontOptions() []content.Option {
+func identityFontOptions() []content.Option { return fontOptions(identityFonts) }
+
+func fontOptions(fonts []identityFont) []content.Option {
 	out := []content.Option{{Value: "", Label: lbl("خط القالب", "Theme font")}}
-	for _, f := range identityFonts {
+	for _, f := range fonts {
 		out = append(out, content.Option{Value: f.Value, Label: lbl(f.Label, f.Label)})
 	}
 	return out
@@ -91,6 +140,8 @@ func identityFields() []content.Field {
 		{Key: idText, Type: "text", Label: lbl("لون النص", "Text color"), Help: colorHelp},
 		{Key: idHeading, Type: "select", Label: lbl("خط العناوين", "Heading font"), Options: identityFontOptions(), Help: fontHelp},
 		{Key: idBody, Type: "select", Label: lbl("خط النص", "Body font"), Options: identityFontOptions(), Help: fontHelp},
+		{Key: idLatinFont, Type: "select", Label: lbl("الخط اللاتيني", "Latin font"), Options: fontOptions(latinFonts),
+			Help: lbl("يُستخدم للنص الإنجليزي فقط؛ خطوط العربية أعلاه تبقى للعربية.", "Used for English text only; the Arabic fonts above stay for Arabic.")},
 		{Key: idScheme, Type: "select", Label: lbl("الوضع", "Color scheme"), Options: []content.Option{
 			{Value: "", Label: lbl("حسب القالب", "Theme default")},
 			{Value: "light", Label: lbl("فاتح", "Light")},
@@ -102,6 +153,21 @@ func identityFields() []content.Field {
 			{Value: "soft", Label: lbl("ناعمة", "Soft")},
 			{Value: "round", Label: lbl("دائرية", "Round")},
 		}},
+		{Key: idSpacing, Type: "select", Label: lbl("المسافات", "Spacing"), Options: []content.Option{
+			{Value: "", Label: lbl("حسب القالب", "Theme default")},
+			{Value: "compact", Label: lbl("مضغوط", "Compact")},
+			{Value: "normal", Label: lbl("عادي", "Normal")},
+			{Value: "relaxed", Label: lbl("مريح", "Relaxed")},
+		}, Help: lbl("يغيّر مقياس المسافات بين العناصر في كل القالب.", "Scales the gaps between elements across the whole theme.")},
+		{Key: idPattern, Type: "select", Label: lbl("خلفية الأقسام", "Section background"), Options: identityPatternOptions(),
+			Help: lbl("نمط خلفية الأقسام التي تحمل الصنف gp-s-bg. يمكن لكل قسم اختيار نمطه (gp-s-bg-dots وغيرها).", "Pattern behind sections that carry the gp-s-bg class. A section can pick its own (gp-s-bg-dots and friends).")},
+		{Key: idPatternDensity, Type: "select", Label: lbl("كثافة النمط", "Pattern density"), Options: []content.Option{
+			{Value: "", Label: lbl("حسب القالب", "Theme default")},
+			{Value: "sparse", Label: lbl("متباعدة", "Sparse")},
+			{Value: "normal", Label: lbl("عادية", "Normal")},
+			{Value: "dense", Label: lbl("كثيفة", "Dense")},
+		}},
+		{Key: idPatternColor, Type: "text", Label: lbl("لون النمط", "Pattern color"), Help: lbl("لون بصيغة hex. اتركه فارغًا لاستخدام اللون الأساسي.", "A hex color. Leave empty to use the accent color.")},
 		{Key: idCustomCSS, Type: "textarea", Label: lbl("CSS مخصص", "Custom CSS"),
 			Help: lbl("يُضاف بعد أنماط القالب ويبقى بعد تحديثه. بلا @import ولا وسوم HTML؛ بحد أقصى 20000 حرف.", "Added after the theme styles and kept across theme updates. No @import or HTML tags; up to 20000 characters.")},
 	}
@@ -121,7 +187,7 @@ func withIdentity(schema []content.Field) []content.Field {
 // express; it returns an i18n error key per invalid field.
 func validateIdentity(vals map[string]any) map[string]string {
 	errs := map[string]string{}
-	for _, k := range []string{idAccent, idBackground, idText} {
+	for _, k := range []string{idAccent, idBackground, idText, idPatternColor} {
 		if v := displayValue(vals[k]); v != "" && !hexColor.MatchString(v) {
 			errs[k] = "theme.identity.error_color"
 		}
@@ -131,6 +197,20 @@ func validateIdentity(vals map[string]any) map[string]string {
 			errs[idCustomCSS] = err
 		}
 	}
+	known := func(key string, ok func(string) bool) {
+		if v := displayValue(vals[key]); v != "" && !ok(v) {
+			errs[key] = "theme.identity.error_option"
+		}
+	}
+	inFonts := func(fonts []identityFont) func(string) bool {
+		return func(v string) bool { _, ok := findFontIn(fonts, v); return ok }
+	}
+	known(idHeading, inFonts(identityFonts))
+	known(idBody, inFonts(identityFonts))
+	known(idLatinFont, inFonts(latinFonts))
+	known(idScheme, func(v string) bool { return v == "light" || v == "dark" })
+	known(idRadius, func(v string) bool { _, ok := identityRadii[v]; return ok })
+	known(idSpacing, func(v string) bool { _, ok := identitySpacing[v]; return ok })
 	return errs
 }
 
@@ -145,12 +225,14 @@ func checkCustomCSS(css string) string {
 	return ""
 }
 
-func findFont(v string) (identityFont, bool) {
-	i := slices.IndexFunc(identityFonts, func(f identityFont) bool { return f.Value == v })
+func findFont(v string) (identityFont, bool) { return findFontIn(identityFonts, v) }
+
+func findFontIn(fonts []identityFont, v string) (identityFont, bool) {
+	i := slices.IndexFunc(fonts, func(f identityFont) bool { return f.Value == v })
 	if i < 0 {
 		return identityFont{}, false
 	}
-	return identityFonts[i], true
+	return fonts[i], true
 }
 
 // identityOnAccent is the text color for an accent fill (buttons, CTA
@@ -221,8 +303,31 @@ func buildIdentity(get func(key string) string) identityParts {
 		}
 		rules = append(rules, `:root:root[data-theme] :where(h1,h2,h3,h4){font-family:var(--font-heading)}`)
 	}
+	if f, ok := findFontIn(latinFonts, get(idLatinFont)); ok {
+		vars = append(vars, [2]string{"--font-latin", f.Family})
+		if f.Google != "" && !slices.Contains(google, f.Google) {
+			google = append(google, f.Google)
+		}
+		rules = append(rules, `:root:root[data-theme] :where(body,h1,h2,h3,h4,p,li,a,button,input):lang(en){font-family:var(--font-latin)}`)
+	}
 	if r, ok := identityRadii[get(idRadius)]; ok {
 		vars = append(vars, [2]string{"--radius", r}, [2]string{"--gp-radius", r})
+	}
+	// Section backgrounds: tokens only; the drawings live in sections.css.
+	color(idPatternColor, "--gp-pattern-ink")
+	if sc, ok := identityPatternScale[get(idPatternDensity)]; ok {
+		vars = append(vars, [2]string{"--gp-pattern-scale", sc})
+	}
+	if p := get(idPattern); slices.Contains(identityPatterns, p) {
+		// sections.css defines --gp-pat-<name> (mask drawing) and
+		// --gp-pat-<name>-size (tile size, already density-scaled) on .gp-s-bg.
+		// (0,1,0): a section's own gp-s-bg-<name> modifier (0,2,0) still wins.
+		rules = append(rules, `:where(:root[data-theme]) .gp-s-bg{--gp-pattern-image:var(--gp-pat-`+p+`);--gp-pattern-size:var(--gp-pat-`+p+`-size)}`)
+	}
+	if k, ok := identitySpacing[get(idSpacing)]; ok && k != 1 {
+		for i, base := range spaceBase {
+			vars = append(vars, [2]string{"--space-" + strconv.Itoa(i+1), strconv.FormatFloat(math.Round(base*k*100)/100, 'f', -1, 64) + "px"})
+		}
 	}
 	custom := get(idCustomCSS)
 	if checkCustomCSS(custom) != "" {
@@ -280,6 +385,25 @@ func identityCSS(get func(key string) string, _ string) template.HTML {
 	}
 	if parts.CSS != "" {
 		b.WriteString(`<link rel="stylesheet" href="/site/identity.css?v=` + contentHash(parts.CSS) + `" data-gorun-identity>`)
+	}
+	return template.HTML(b.String())
+}
+
+// identityInlineCSS is identityCSS for request-scoped previews: the draft
+// is not stored, so the stylesheet is printed inline under the CSP nonce
+// instead of linking /site/identity.css.
+func identityInlineCSS(get func(key string) string, nonce string) template.HTML {
+	parts := buildIdentity(get)
+	if parts.CSS == "" && len(parts.Google) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	if len(parts.Google) > 0 {
+		q := "family=" + strings.Join(parts.Google, "&family=") + "&display=swap"
+		b.WriteString(`<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?` + template.HTMLEscapeString(q) + `">`)
+	}
+	if parts.CSS != "" {
+		b.WriteString(`<style nonce="` + template.HTMLEscapeString(nonce) + `" data-gorun-identity>` + parts.CSS + `</style>`)
 	}
 	return template.HTML(b.String())
 }

@@ -67,6 +67,8 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     ...inherited,
     ...(stripeKey.startsWith('sk_test_') ? { STRIPE_SECRET_KEY: stripeKey } : {}),
     GORUN_DATA: data,
+    // Explicit test-only fixture; never inherit a developer site activation config.
+    GORUN_ADDONS: process.env.E2E_ADDONS ?? "{}",
     GORUN_THEMES: resolve(repo, 'themes'),
     GORUN_PATTERNS: resolve(repo, 'patterns'),
     // Extra theme roots (GORUN_THEMES_EXTRA) only when a downstream suite asks.
@@ -78,6 +80,12 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     GORUN_ALLOW_PRIVATE_NET: '1',
     STRIPE_WEBHOOK_SECRET: webhookSecret,
   };
+  // Optional cold-start fixture: membership is off in persisted settings,
+  // rather than forced off by config, so its UI can request enable on next boot.
+  if (process.env.E2E_MODULES_COLD_START === 'membership') {
+    if (process.env.E2E_DATA_DIR) throw new Error('Cold-start module fixture requires a fresh temporary data directory');
+    execFileSync(bin, ['settings', 'set', 'addons.membership.enabled', 'false', '--data', data], { env, stdio: 'pipe' });
+  }
   const out = openSync(logPath, 'a');
   const child = spawn(bin, ['serve'], { cwd: here, env, stdio: ['ignore', out, out] });
   await waitHealthy(`${base}/healthz`, child, logPath);

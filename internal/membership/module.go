@@ -9,6 +9,7 @@ import (
 	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/content"
+	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 	"html/template"
 	"io/fs"
@@ -36,6 +37,10 @@ func (m *Module) Register(d *kernel.Deps) error {
 	m.Service = NewService(d.DB)
 	m.Service.Audit = d.Audit
 	s := m.Service
+	d.Router.Public.Get("/membership/assets.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		_, _ = w.Write([]byte(httpx.AccountPageCSS))
+	})
 	d.Services.Set("membership", s)
 	d.Admin.AddNav(kernel.NavItem{ID: "membership", LabelKey: "membership.nav", Icon: "badge-check", Href: "/admin/membership", Permission: PermManage, Group: "commerce", Position: 46})
 	d.Perms.Declare(PermManage, map[string]string{"ar": "إدارة العضويات", "en": "Manage memberships"})
@@ -101,7 +106,14 @@ func (m *Module) Register(d *kernel.Deps) error {
 	page := func(all bool) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Cache-Control", "private, no-store")
+			_, commerceOn := kernel.Get[any](d, kernel.ServiceCommerce)
+			_, saasOn := kernel.Get[any](d, "saas")
+			_, workAgentsOn := kernel.Get[any](d, "workagents")
 			if actor(r.Context()) == "" {
+				if !commerceOn {
+					httpx.AccountSignInUnavailable(w, r)
+					return
+				}
 				http.Redirect(w, r, "/account?next=/membership", 303)
 				return
 			}
@@ -122,7 +134,10 @@ func (m *Module) Register(d *kernel.Deps) error {
 				CSRF        string
 				Submissions []Submission
 				CanSubmit   bool
-			}{o, all, auth.CSRFToken(r.Context()), subs, auth.Can(r.Context(), "membership.submit")})
+				Commerce    bool
+				SaaS        bool
+				WorkAgents  bool
+			}{o, all, auth.CSRFToken(r.Context()), subs, auth.Can(r.Context(), "membership.submit"), commerceOn, saasOn, workAgentsOn})
 		}
 	}
 	d.Router.Public.Get("/membership", page(false))
@@ -161,4 +176,4 @@ func fail(w http.ResponseWriter, r *http.Request, e error) {
 	}
 }
 
-var pageTemplate = template.Must(template.New("membership").Parse(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>العضوية</title><link rel="stylesheet" href="/saas/assets.css"></head><body><main><nav><a href="/account">حسابي</a> · <a href="/agents">الإيجنتس</a> · <a href="/saas">تطبيقاتي</a> · <a href="/shop">المتجر</a>{{if .Manage}} · <a href="/admin">الإدارة</a>{{end}}</nav><h1>العضويات والحصص</h1><p>تظهر الحالة الفعلية حسب مدة العضوية وفترة السماح. لا يوجد تجديد أو خصم مالي تلقائي. الإلغاء يوقف التجديد؛ التعليق يوقف الوصول فورًا.</p>{{range .Data.Grants}}<article><h2>{{.PlanID}}</h2><p>الحالة: {{.EffectiveStatus}} · الحالة المسجلة: {{.Status}}</p><p>من {{.PeriodStart}} إلى {{.PeriodEnd}} · السماح حتى {{.GraceUntil}}</p>{{if .CancelAtPeriodEnd}}<p>التجديد ملغي في نهاية المدة.</p>{{end}}{{if $.Manage}}<details><summary>إدارة العضوية · {{.OwnerID}}</summary><form method="post" action="/admin/membership/grants"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="owner_id" value="{{.OwnerID}}"><input type="hidden" name="expected_version" value="{{.Version}}"><label>الخطة<input name="plan_id" value="{{.PlanID}}" required></label><label>الحالة<select name="status"><option value="{{.Status}}">{{.Status}}</option><option>active</option><option>pending-renewal</option><option>cancelled</option><option>expired</option><option>suspended</option></select></label><label>بداية المدة UTC<input name="period_start" value="{{.PeriodStart}}"></label><label>نهاية المدة UTC<input name="period_end" value="{{.PeriodEnd}}"></label><label>نهاية السماح UTC<input name="grace_until" value="{{.GraceUntil}}"></label><label><input type="checkbox" name="cancel_at_period_end" {{if .CancelAtPeriodEnd}}checked{{end}}>إيقاف التجديد</label><button>حفظ</button></form></details>{{end}}</article>{{else}}<p>لا توجد عضوية مدفوعة؛ تُطبّق حدود الحساب المجاني.</p>{{end}}{{if .CanSubmit}}<h2>إرسال محتوى للمراجعة</h2><form method="post" action="/membership/submissions"><input type="hidden" name="_csrf" value="{{.CSRF}}"><label>النوع<select name="type" required>{{range .Data.Quotas}}<option value="{{.Type}}">{{.Type}}</option>{{end}}</select></label><label>العنوان<input name="title" required maxlength="500"></label><label>التفاصيل<textarea name="body" rows="6" maxlength="131072" required></textarea></label><button>إرسال للمراجعة</button></form><p>يُحفظ بحسابك وحالة انتظار المراجعة؛ لا يُنشر تلقائيًا.</p>{{end}}<h2>مساهماتي</h2>{{range .Submissions}}<details id="submission-{{.ID}}"><summary><a href="#submission-{{.ID}}">{{.Title}}</a> · {{.Type}} · {{.Status}}</summary><pre>{{.Body}}</pre></details>{{else}}<p>لا توجد مساهمات لهذا الحساب.</p>{{end}}<h2>حصص حسابك</h2><table><thead><tr><th>نوع المحتوى</th><th>الاستخدام</th><th>الحد</th></tr></thead><tbody>{{range .Data.Quotas}}<tr><td>{{.Type}}</td><td>{{.Used}}</td><td>{{if .Unlimited}}غير محدود بصلاحية صريحة{{else}}{{.Limit}}{{end}}</td></tr>{{end}}</tbody></table><p>تشمل الحصة جميع الحالات ما عدا المحذوفات. يبقى تعديل المحتوى الموجود متاحًا عند بلوغ الحصة.</p></main></body></html>`))
+var pageTemplate = template.Must(template.New("membership").Parse(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>العضوية</title><link rel="stylesheet" href="/membership/assets.css"></head><body><main><nav><a href="/">الموقع</a>{{if .WorkAgents}} · <a href="/agents">الإيجنتس</a>{{end}}{{if .Commerce}} · <a href="/account">حسابي</a> · <a href="/shop">المتجر</a>{{end}}{{if .SaaS}} · <a href="/saas">تطبيقاتي</a>{{end}}{{if .Manage}} · <a href="/admin">الإدارة</a>{{end}}</nav><h1>العضويات والحصص</h1><p>تظهر الحالة الفعلية حسب مدة العضوية وفترة السماح. لا يوجد تجديد أو خصم مالي تلقائي. الإلغاء يوقف التجديد؛ التعليق يوقف الوصول فورًا.</p>{{range .Data.Grants}}<article><h2>{{.PlanID}}</h2><p>الحالة: {{.EffectiveStatus}} · الحالة المسجلة: {{.Status}}</p><p>من {{.PeriodStart}} إلى {{.PeriodEnd}} · السماح حتى {{.GraceUntil}}</p>{{if .CancelAtPeriodEnd}}<p>التجديد ملغي في نهاية المدة.</p>{{end}}{{if $.Manage}}<details><summary>إدارة العضوية · {{.OwnerID}}</summary><form method="post" action="/admin/membership/grants"><input type="hidden" name="_csrf" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="owner_id" value="{{.OwnerID}}"><input type="hidden" name="expected_version" value="{{.Version}}"><label>الخطة<input name="plan_id" value="{{.PlanID}}" required></label><label>الحالة<select name="status"><option value="{{.Status}}">{{.Status}}</option><option>active</option><option>pending-renewal</option><option>cancelled</option><option>expired</option><option>suspended</option></select></label><label>بداية المدة UTC<input name="period_start" value="{{.PeriodStart}}"></label><label>نهاية المدة UTC<input name="period_end" value="{{.PeriodEnd}}"></label><label>نهاية السماح UTC<input name="grace_until" value="{{.GraceUntil}}"></label><label><input type="checkbox" name="cancel_at_period_end" {{if .CancelAtPeriodEnd}}checked{{end}}>إيقاف التجديد</label><button>حفظ</button></form></details>{{end}}</article>{{else}}<p>لا توجد عضوية مدفوعة؛ تُطبّق حدود الحساب المجاني.</p>{{end}}{{if .CanSubmit}}<h2>إرسال محتوى للمراجعة</h2><form method="post" action="/membership/submissions"><input type="hidden" name="_csrf" value="{{.CSRF}}"><label>النوع<select name="type" required>{{range .Data.Quotas}}<option value="{{.Type}}">{{.Type}}</option>{{end}}</select></label><label>العنوان<input name="title" required maxlength="500"></label><label>التفاصيل<textarea name="body" rows="6" maxlength="131072" required></textarea></label><button>إرسال للمراجعة</button></form><p>يُحفظ بحسابك وحالة انتظار المراجعة؛ لا يُنشر تلقائيًا.</p>{{end}}<h2>مساهماتي</h2>{{range .Submissions}}<details id="submission-{{.ID}}"><summary><a href="#submission-{{.ID}}">{{.Title}}</a> · {{.Type}} · {{.Status}}</summary><pre>{{.Body}}</pre></details>{{else}}<p>لا توجد مساهمات لهذا الحساب.</p>{{end}}<h2>حصص حسابك</h2><table><thead><tr><th>نوع المحتوى</th><th>الاستخدام</th><th>الحد</th></tr></thead><tbody>{{range .Data.Quotas}}<tr><td>{{.Type}}</td><td>{{.Used}}</td><td>{{if .Unlimited}}غير محدود بصلاحية صريحة{{else}}{{.Limit}}{{end}}</td></tr>{{end}}</tbody></table><p>تشمل الحصة جميع الحالات ما عدا المحذوفات. يبقى تعديل المحتوى الموجود متاحًا عند بلوغ الحصة.</p></main></body></html>`))

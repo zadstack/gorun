@@ -14,7 +14,7 @@
 {{part "head-extra" .}}
 {{with .Content}}{{if eq .Template "builder"}}<link rel="stylesheet" href="/static/builder/builder.css">{{end}}{{end}}
 {{builderIdentity}}
-<link rel="stylesheet" href="{{asset "sections.css"}}">{{identity .}}
+{{sections .}}{{identity .}}
 {{/* Precompiled Tailwind (tools/tailwind/build.sh); last. No CDN/Play runtime in shipped themes. */}}
 <link rel="stylesheet" href="{{asset "tailwind.css"}}"></head>
 <body class="min-h-screen flex flex-col bg-bg text-ink font-sans leading-relaxed antialiased">

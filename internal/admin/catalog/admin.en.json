@@ -959,7 +959,9 @@
   "modules.msg.parked_jobs": "%d queued jobs are parked for this module and run after it is turned on again; nothing is lost.",
   "modules.msg.dependency_off": "Depends on %s, which is off: this module may not work until it is on.",
   "modules.msg.if_off_affects": "Turning this off also affects %s (see its row).",
-  "modules.dep.commerce.saas": "Commerce is off: subscription sync from Stripe stops; local SaaS grants keep working.",
+  "modules.dep.commerce.membership": "Commerce is off: customer sign-in is unavailable; memberships, quotas and submission data are preserved and remain available to authenticated users.",
+  "modules.dep.commerce.saas": "Commerce is off: customer sign-in is unavailable and subscription sync from Stripe stops; local SaaS grants keep working for authenticated users.",
+  "modules.dep.workagents.membership": "WorkAgents is off: the Agents link and /agents route are unavailable; membership data are preserved.",
   "modules.dep.commerce.wpmigrate": "Commerce is off: WooCommerce products are skipped during imports; posts, pages and media still import.",
   "modules.dep.commerce.mcp": "Commerce is off: the list_products tool is not offered to agents.",
   "modules.dep.commerce.theme": "Commerce is off: store pages (/shop, /cart, /account) are not served; themes render with empty product lists.",
@@ -1020,5 +1022,9 @@
   "modules.desc.mail": "SMTP delivery used by forms, the store and sign-in links. A core service published by the admin module.",
   "modules.compat.built_in": "compiled into this release",
   "modules.compat.manifest_unverified": "manifest version; compatibility with this build is not verified",
-  "modules.compat.not_in_build": "named in GORUN_ADDONS but not part of this build"
+  "modules.compat.not_in_build": "named in GORUN_ADDONS but not part of this build",
+  "modules.name.identityai": "Identity AI",
+  "modules.desc.identityai": "AI identity suggestions (text only) written to the identity draft after a reviewed, approved request.",
+  "modules.name.identitylogo": "Identity logo",
+  "modules.desc.identitylogo": "Reviewed static PNG generation with private staging and explicit identity draft selection."
 }

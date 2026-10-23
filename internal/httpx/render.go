@@ -63,8 +63,9 @@ type NavItem struct {
 type Funcs struct {
 	PinnedNav     func(ctx context.Context) []NavItem // authorized personal shortcuts, in saved order
 	NavGroupOrder func(ctx context.Context) []string
-	Nav           func(ctx context.Context) []NavItem // already permission-filtered and sorted
-	AllNav        func(ctx context.Context) []NavItem // authorized items before personal visibility preferences
+	Nav           func(ctx context.Context) []NavItem               // already permission-filtered and sorted
+	AllNav        func(ctx context.Context) []NavItem               // authorized items before personal visibility preferences
+	Can           func(ctx context.Context, permission string) bool // nil denies permission
 	User          func(ctx context.Context) any
 	CSRF          func(ctx context.Context) string
 	Setting       func(ctx context.Context, key string) string
@@ -406,6 +407,9 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 				return "ltr"
 			}
 			return t.i18n.Dir(locale)
+		},
+		"can": func(permission string) bool {
+			return t.funcs.Can != nil && t.funcs.Can(ctx, permission)
 		},
 		"csrf": func() string {
 			if t.funcs.CSRF == nil {

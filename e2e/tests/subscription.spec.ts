@@ -47,10 +47,13 @@ test.describe.serial('subscription billing', () => {
     await page.locator('form[action="/admin/commerce/products"] button[type="submit"]').last().click();
     await expect(page).toHaveURL(/\/admin\/commerce\/products(\/[0-9A-Z]{26})?$/);
 
+    // Test mode with a dummy key in the test slot (the live slot refuses
+    // sk_test_…); the suite's webhook secret in the test slot keeps
+    // /webhooks/stripe verifying the events posted below.
     await page.goto('/admin/commerce/settings');
-    await page.selectOption('#c-mode', 'live');
-    await page.fill('#c-stripe', 'sk_test_e2e_subscription_dummy');
-    await page.fill('#c-webhook', env('E2E_WEBHOOK_SECRET'));
+    await page.selectOption('#c-mode', 'test');
+    await page.fill('#c-test-key', 'sk_test_e2e_subscription_dummy');
+    await page.fill('#c-test-webhook', env('E2E_WEBHOOK_SECRET'));
     await page.locator('form[action="/admin/commerce/settings"] button[type="submit"]').click();
     await expect(page.locator('[role="status"]').first()).toBeVisible();
 
@@ -118,7 +121,7 @@ test.describe.serial('subscription billing', () => {
 
   test('clear the dummy test key', async ({ page }) => {
     await page.goto('/admin/commerce/settings');
-    await page.check('input[name="clear_stripe_secret_key"]');
+    await page.check('input[name="clear_stripe_test_secret_key"]');
     await page.locator('form[action="/admin/commerce/settings"] button[type="submit"]').click();
     await expect(page.locator('[role="status"]').first()).toBeVisible();
   });

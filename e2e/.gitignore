@@ -5,3 +5,5 @@ test-results/
 playwright-report/
 blob-report/
 screenshots/
+test-results-logo/
+playwright-report-logo/

@@ -959,7 +959,9 @@
   "modules.msg.parked_jobs": "%d مهمة في الطابور موقوفة لهذه الوحدة وتُنفَّذ بعد تفعيلها؛ لا يضيع شيء.",
   "modules.msg.dependency_off": "تعتمد على %s وهي متوقفة؛ قد لا تعمل هذه الوحدة حتى تفعيلها.",
   "modules.msg.if_off_affects": "إيقاف هذه الوحدة يؤثر أيضًا على %s (انظر صفها).",
-  "modules.dep.commerce.saas": "المتجر متوقف: تتوقف مزامنة الاشتراكات من Stripe؛ منح SaaS المحلية تعمل.",
+  "modules.dep.commerce.membership": "المتجر متوقف: دخول العملاء غير متاح؛ العضويات والحصص وبيانات المساهمات محفوظة وتبقى متاحة للمستخدمين المسجلين.",
+  "modules.dep.commerce.saas": "المتجر متوقف: دخول العملاء غير متاح وتتوقف مزامنة الاشتراكات من Stripe؛ منح SaaS المحلية تعمل للمستخدمين المسجلين.",
+  "modules.dep.workagents.membership": "وحدة WorkAgents متوقفة: رابط الوكلاء ومسار /agents غير متاحين؛ بيانات العضوية محفوظة.",
   "modules.dep.commerce.wpmigrate": "المتجر متوقف: تُتخطى منتجات WooCommerce أثناء الاستيراد؛ المقالات والصفحات والوسائط تُستورد.",
   "modules.dep.commerce.mcp": "المتجر متوقف: أداة list_products لا تُعرض للوكلاء.",
   "modules.dep.commerce.theme": "المتجر متوقف: صفحات المتجر (/shop و/cart و/account) لا تُقدَّم؛ القوالب تُعرض بقوائم منتجات فارغة.",
@@ -1020,5 +1022,9 @@
   "modules.desc.mail": "تسليم SMTP الذي تستخدمه النماذج والمتجر وروابط الدخول. خدمة أساسية تنشرها وحدة الإدارة.",
   "modules.compat.built_in": "مضمَّنة في هذا الإصدار",
   "modules.compat.manifest_unverified": "إصدار ملف البيان؛ التوافق مع هذا الإصدار غير متحقق منه",
-  "modules.compat.not_in_build": "مذكورة في GORUN_ADDONS لكنها ليست جزءًا من هذا الإصدار"
+  "modules.compat.not_in_build": "مذكورة في GORUN_ADDONS لكنها ليست جزءًا من هذا الإصدار",
+  "modules.name.identityai": "ذكاء الهوية",
+  "modules.desc.identityai": "اقتراحات هوية بالذكاء الاصطناعي (نص فقط) تُحفظ في مسودة الهوية بعد مراجعة الطلب والموافقة عليه.",
+  "modules.name.identitylogo": "شعار الهوية",
+  "modules.desc.identitylogo": "توليد صورة PNG ثابتة بعد مراجعة الطلب، مع معاينة خاصة واختيار صريح لمسودة الهوية."
 }

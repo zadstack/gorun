@@ -10,7 +10,7 @@ type themeSettingsGroup struct {
 
 func isIdentityResetKey(key string) bool {
 	switch key {
-	case idAccent, idBackground, idText, idHeading, idBody, idScheme, idRadius, idCustomCSS:
+	case idAccent, idBackground, idText, idHeading, idBody, idScheme, idRadius, idCustomCSS, idPattern, idPatternDensity, idPatternColor:
 		return true
 	}
 	return false
@@ -24,7 +24,7 @@ func themeSettingsGroups(fields []settingView) []themeSettingsGroup {
 			index = 0
 		case strings.HasPrefix(field.Key, "footer_"):
 			index = 1
-		case strings.HasPrefix(field.Key, "identity_"):
+		case strings.HasPrefix(field.Key, "identity_"), strings.HasPrefix(field.Key, "single_"), strings.HasPrefix(field.Key, "archive_"):
 			index = 2
 		}
 		groups[index].Fields = append(groups[index].Fields, field)

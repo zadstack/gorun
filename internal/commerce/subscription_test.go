@@ -19,10 +19,10 @@ func (f *fakePortal) Create(_ context.Context, _, customerID, _ string) (string,
 	return f.url, nil
 }
 
-type fakeRefunds struct{ intent, id string }
+type fakeRefunds struct{ intent, id, key string }
 
-func (f *fakeRefunds) Create(_ context.Context, _, paymentIntent string) (string, error) {
-	f.intent = paymentIntent
+func (f *fakeRefunds) Create(_ context.Context, key, paymentIntent string) (string, error) {
+	f.intent, f.key = paymentIntent, key
 	if f.id == "" {
 		f.id = "re_test"
 	}

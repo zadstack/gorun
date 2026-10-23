@@ -106,12 +106,18 @@ type env struct {
 // themes/) + site + api + admin + commerce, with Stripe and mail faked and
 // a fake billing server. Job workers are stopped right after boot so tests
 // run job handlers deterministically (drain).
-func boot(t *testing.T) *env {
+func boot(t *testing.T) *env { return bootCfg(t, nil) }
+
+// bootCfg is boot with a config tweak applied before the kernel starts.
+func bootCfg(t *testing.T, tweak func(*config.Config)) *env {
 	t.Helper()
 	cfg := config.Config{Env: "dev", DataDir: t.TempDir(), Addr: ":0", SecretKey: []byte("0123456789abcdef0123456789abcdef"),
 		BaseURL: "http://shop.test", Theme: "default", AllowPrivateNet: true}
 	cfg.Stripe.SecretKey = "sk_test_config"
 	cfg.Stripe.WebhookSecret = testWebhookSecret
+	if tweak != nil {
+		tweak(&cfg)
+	}
 	fs, mb := &fakeStripe{}, &mailbox{}
 	mod := New()
 	mod.checkout, mod.sendMail = fs, mb.send

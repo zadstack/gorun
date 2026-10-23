@@ -15,7 +15,7 @@
       {{template "modules_config" $e.Configuration}}
     </span>
     <div class="mod-actions">
-      {{if $e.State.Optional}}{{if $e.State.Switchable}}
+      {{if and $e.State.Optional (can "settings.manage")}}{{if $e.State.Switchable}}
       <form method="post" action="/admin/system/modules/{{$e.ID}}/activation">
         <input type="hidden" name="_csrf" value="{{csrf}}">
         {{if $e.State.Desired}}{{if deref $e.State.Desired}}<input type="hidden" name="enabled" value="false"><button type="submit" class="h-8 px-3 rounded border border-line bg-panel text-sm hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.modules.action.disable"}}</button>{{else}}<input type="hidden" name="enabled" value="true"><button type="submit" class="h-8 px-3 rounded bg-green text-white text-sm font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.modules.action.enable"}}</button>{{end}}{{end}}
@@ -70,7 +70,7 @@
 <div class="admin-contained admin-modules">
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <h1 class="text-[22px] font-bold">{{t "admin.modules.title"}}</h1>
-  <a href="/admin/extensions" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "puzzle"}}<span>{{t "admin.modules.extensions.manage"}}</span></a>
+  {{range .Catalog.Entries}}{{if and (eq .ID "ext") .State.Enabled (can "extensions.manage")}}<a href="/admin/extensions" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "puzzle"}}<span>{{t "admin.modules.extensions.manage"}}</span></a>{{end}}{{end}}
 </div>
 <p class="mb-4 max-w-3xl text-sm text-muted">{{t "admin.modules.intro"}}</p>
 {{with .Flash}}<p role="status" class="mb-4 rounded border border-green bg-green-soft px-3 py-2">{{t "admin.modules.saved" .}}</p>{{end}}
