@@ -51,7 +51,7 @@ func registerAPI(d *kernel.Deps, svc *service) {
 		Tags: tags, Scopes: []string{"media.upload"}, Response: []Media{}, Params: listParams, Handler: a.list})
 	d.API.Add(kernel.APIOperation{Method: http.MethodGet, Path: "/v1/media/{id}", Summary: "Get a media item",
 		Tags: tags, Scopes: []string{"media.upload"}, Response: Media{}, Params: []kernel.APIParam{idParam}, Handler: a.get})
-	d.API.Add(kernel.APIOperation{Method: http.MethodPatch, Path: "/v1/media/{id}", Summary: "Update alt, caption or title",
+	d.API.Add(kernel.APIOperation{Method: http.MethodPatch, Path: "/v1/media/{id}", Summary: "Update alt, caption, title or focal point",
 		Tags: tags, Scopes: []string{"media.upload"}, Request: Patch{}, Response: Media{}, Params: []kernel.APIParam{idParam}, Handler: a.patch})
 	d.API.Add(kernel.APIOperation{Method: http.MethodDelete, Path: "/v1/media/{id}", Summary: "Delete a media item",
 		Tags: tags, Scopes: []string{"media.delete"}, Response: DeleteResponse{}, Params: []kernel.APIParam{idParam}, Handler: a.remove})
@@ -75,6 +75,8 @@ func writeErr(w http.ResponseWriter, err error) {
 		httpx.Error(w, http.StatusRequestEntityTooLarge, "too_large", err.Error(), nil)
 	case errors.Is(err, ErrNotAllowed):
 		httpx.Error(w, http.StatusUnsupportedMediaType, "unsupported_media_type", err.Error(), nil)
+	case errors.Is(err, ErrFocal):
+		httpx.Error(w, http.StatusUnprocessableEntity, "validation_failed", err.Error(), map[string]string{"focal": "x and y between 0 and 1"})
 	case errors.Is(err, ErrEmpty):
 		httpx.Error(w, http.StatusUnprocessableEntity, "validation_failed", "empty file", map[string]string{"file": "required"})
 	default:

@@ -133,7 +133,7 @@ input struct and use snake_case property names.
 | `list_terms` | content.view | | Terms of a taxonomy |
 | `create_term` | taxonomy.manage | | New term |
 | `get_media` | content.view | | One media item by `id`, including dimensions and responsive image `variants` |
-| `update_media` | media.upload | **yes** | Patch `alt`, `caption`, `title` by `id`. Missing/null fields stay unchanged; `""` clears. At least one non-null field is required. |
+| `update_media` | media.upload | **yes** | Patch `alt`, `caption`, `title` by `id`, or set `focal` (`{x, y}`, each 0–1) or `clear_focal`. Missing/null fields stay unchanged; `""` clears. At least one change is required. |
 | `list_templates` | themes.manage | | Theme templates and saved overrides |
 | `get_template` | themes.manage | | Published `body`, `source`, and saved `draft` (null when absent); draft-only templates are readable |
 | `create_template_draft` | themes.manage | **yes** | Approval saves an override **as a draft only**. A human previews and publishes it in Appearance → Templates. Use the authenticated admin preview to render Go template instructions before publication. |

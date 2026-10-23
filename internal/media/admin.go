@@ -233,10 +233,11 @@ func (h *adminHandlers) saveOne(r *http.Request, fh *multipart.FileHeader) error
 }
 
 type editData struct {
-	Media     *Media
-	Item      gridItem
-	CanDelete bool
-	Variants  []namedVariant
+	Media          *Media
+	Item           gridItem
+	CanDelete      bool
+	Variants       []namedVariant
+	FocalX, FocalY string // focal point in percent for the form; "" when none
 }
 
 type namedVariant struct {
@@ -251,6 +252,9 @@ func (h *adminHandlers) edit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d := editData{Media: m, Item: toGridItem(h.svc, *m), CanDelete: auth.Can(r.Context(), "media.delete")}
+	if m.Focal != nil {
+		d.FocalX, d.FocalY = strconv.FormatFloat(m.Focal.X*100, 'f', 0, 64), strconv.FormatFloat(m.Focal.Y*100, 'f', 0, 64)
+	}
 	for _, spec := range variantSpecs {
 		if v, ok := m.Variants[spec.Name]; ok {
 			d.Variants = append(d.Variants, namedVariant{Name: spec.Name, Variant: v})
@@ -295,9 +299,32 @@ func (h *adminHandlers) thumb(w http.ResponseWriter, r *http.Request) {
 }
 
 type metaForm struct {
-	Alt     string `form:"alt"`
-	Caption string `form:"caption"`
-	Title   string `form:"title"`
+	Alt        string `form:"alt"`
+	Caption    string `form:"caption"`
+	Title      string `form:"title"`
+	FocalX     string `form:"focal_x"`
+	FocalY     string `form:"focal_y"`
+	ClearFocal string `form:"clear_focal"`
+}
+
+// focalPatch reads the focal point fields (percentages, 0..100): both set
+// sets it, the clear box removes it, anything else leaves it unchanged.
+func (f metaForm) focalPatch(p *Patch) error {
+	if f.ClearFocal != "" {
+		p.ClearFocal = true
+		return nil
+	}
+	x, y := strings.TrimSpace(f.FocalX), strings.TrimSpace(f.FocalY)
+	if x == "" && y == "" {
+		return nil
+	}
+	fx, errX := strconv.ParseFloat(x, 64)
+	fy, errY := strconv.ParseFloat(y, 64)
+	if errX != nil || errY != nil {
+		return ErrFocal
+	}
+	p.Focal = &Focal{X: fx / 100, Y: fy / 100}
+	return nil
 }
 
 func (h *adminHandlers) update(w http.ResponseWriter, r *http.Request) {
@@ -307,7 +334,17 @@ func (h *adminHandlers) update(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	if _, err := h.svc.Update(r.Context(), id, Patch{Alt: &f.Alt, Caption: &f.Caption, Title: &f.Title}); err != nil {
+	p := Patch{Alt: &f.Alt, Caption: &f.Caption, Title: &f.Title}
+	err := f.focalPatch(&p)
+	if err == nil {
+		_, err = h.svc.Update(r.Context(), id, p)
+	}
+	if errors.Is(err, ErrFocal) {
+		httpx.SetFlash(w, "error", "media.flash.focal_invalid")
+		redirect(w, r, "/admin/media/"+id)
+		return
+	}
+	if err != nil {
 		h.notFoundOr(w, r, err)
 		return
 	}

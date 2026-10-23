@@ -544,6 +544,11 @@ func (f *funcs) img(v any, variant string, class ...string) template.HTML {
 	if len(class) > 0 && class[0] != "" {
 		b.WriteString(` class="` + esc(class[0]) + `"`)
 	}
+	// A focal point keeps that part of the image in view when CSS crops it
+	// (object-fit: cover); without one the browser centres it as before.
+	if f := m.Focal; f != nil && f.Valid() {
+		b.WriteString(` style="object-position:` + strconv.FormatFloat(f.X*100, 'f', 1, 64) + `% ` + strconv.FormatFloat(f.Y*100, 'f', 1, 64) + `%"`)
+	}
 	b.WriteString(` loading="lazy" decoding="async">`)
 	return template.HTML(b.String())
 }

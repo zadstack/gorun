@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,18 +43,24 @@ type service struct {
 }
 
 const mediaColumns = `id, filename, storage_key, url, mime, size, width, height, alt, caption, title, author_id,
-	variants_json, COALESCE(source_url, ''), checksum, created_at`
+	variants_json, COALESCE(source_url, ''), checksum, created_at, focal_x, focal_y`
 
 func scanMedia(row interface{ Scan(...any) error }) (*Media, error) {
 	var m Media
 	var variants string
+	var fx, fy sql.NullFloat64
 	err := row.Scan(&m.ID, &m.Filename, &m.StorageKey, &m.URL, &m.Mime, &m.Size, &m.Width, &m.Height, &m.Alt,
-		&m.Caption, &m.Title, &m.AuthorID, &variants, &m.SourceURL, &m.Checksum, &m.CreatedAt)
+		&m.Caption, &m.Title, &m.AuthorID, &variants, &m.SourceURL, &m.Checksum, &m.CreatedAt, &fx, &fy)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("media: scan: %w", err)
+	}
+	if fx.Valid && fy.Valid {
+		if f := (Focal{X: fx.Float64, Y: fy.Float64}); f.Valid() {
+			m.Focal = &f
+		}
 	}
 	m.Variants = map[string]Variant{}
 	if err := json.Unmarshal([]byte(variants), &m.Variants); err != nil {
@@ -380,11 +387,26 @@ func (s *service) Update(ctx context.Context, id string, p Patch) (*Media, error
 	set(&m.Alt, p.Alt, "alt")
 	set(&m.Caption, p.Caption, "caption")
 	set(&m.Title, p.Title, "title")
+	switch {
+	case p.Focal != nil && !p.Focal.Valid():
+		return nil, ErrFocal
+	case p.Focal != nil && (m.Focal == nil || *m.Focal != *p.Focal):
+		f := *p.Focal
+		m.Focal = &f
+		changed["focal"] = strconv.FormatFloat(f.X, 'f', 3, 64) + "," + strconv.FormatFloat(f.Y, 'f', 3, 64)
+	case p.Focal == nil && p.ClearFocal && m.Focal != nil:
+		m.Focal = nil
+		changed["focal"] = ""
+	}
 	if len(changed) == 0 {
 		return m, nil
 	}
-	if _, err := s.db.ExecContext(ctx, `UPDATE media SET alt = ?, caption = ?, title = ? WHERE id = ?`,
-		m.Alt, m.Caption, m.Title, id); err != nil {
+	var fx, fy any
+	if m.Focal != nil {
+		fx, fy = m.Focal.X, m.Focal.Y
+	}
+	if _, err := s.db.ExecContext(ctx, `UPDATE media SET alt = ?, caption = ?, title = ?, focal_x = ?, focal_y = ? WHERE id = ?`,
+		m.Alt, m.Caption, m.Title, fx, fy, id); err != nil {
 		return nil, fmt.Errorf("media: update: %w", err)
 	}
 	s.audit.Record(ctx, "media.update", "media", id, changed)

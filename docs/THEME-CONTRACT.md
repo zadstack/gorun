@@ -126,6 +126,35 @@ templates includes the components where it wants them. Their base styles are in 
 stylesheet: one class per rule, so they beat an element reset, and a theme restyles them with its
 own scope (`html[data-theme="x"] .gp-article-toc`).
 
+## Shared media and role contract
+
+The core owns the meaning of content, images and behaviour; a theme owns the visual composition.
+These rules hold on home, article and archive templates alike, in Arabic and English, with or without
+JavaScript.
+
+**Images.** Print media with `{{img <media|id> "<variant>" "<class>"}}`:
+- `src`, and `srcset`/`sizes` when the media has variants; `width` and `height` whenever they are known,
+  so the page does not shift as images load.
+- `alt` is the media's alt text. An empty alt marks the image as decorative; editors write alt text in
+  the media library, never in a template.
+- A **focal point** set in the media library (each coordinate 0–1, stored with the media, also through
+  `PATCH /api/v1/media/{id}` and the MCP tool `update_media`) is printed as `object-position`, so a theme
+  that crops with `object-fit: cover` keeps that part in view. Without one, the browser centres it.
+- Missing or unsafe media renders nothing: a theme wraps optional images in `{{with media .ID}}` and
+  never shows a placeholder image or invents an asset.
+
+**Role tokens.** Themes style with the semantic tokens of `themes/default/assets/tokens.css`, the same
+on every page kind: `--bg` and `--panel*` for surfaces, `--ink`, `--head`, `--ink-2` and `--muted` for
+text, `--line*` for borders, `--accent`, `--accent-hover` and `--on-accent` for fills and the text on
+them, `--accent-ink`, `--blue` and `--link` for text in the accent colour, and the `--danger-*`,
+`--success-*`, `--warning-*` and `--info-*` pairs for messages. The site identity and its dark scheme set
+these tokens (see [THEMES.md](THEMES.md#rules-that-keep-the-layers-readable)), so a theme that uses them
+stays readable under any identity. No site brand, colour or asset is hard-coded in a shipped template.
+
+**Behaviour.** Core components work without JavaScript (links and forms, server-rendered). Script may
+enhance them, but not replace a link or a form. Every interactive part is reachable by keyboard and
+names its purpose (`aria-label`, `aria-current`).
+
 ## Package surface
 
 | API | Role |

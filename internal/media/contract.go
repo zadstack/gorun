@@ -2,6 +2,7 @@ package media
 
 import (
 	"context"
+	"errors"
 	"io"
 )
 
@@ -22,7 +23,20 @@ type Media struct {
 	SourceURL  string             `json:"source_url"`
 	Checksum   string             `json:"checksum"`
 	CreatedAt  string             `json:"created_at"`
+	// Focal is the part of the image to keep in view when a theme crops it
+	// to a frame; nil when none is set.
+	Focal *Focal `json:"focal,omitempty"`
 }
+
+// Focal is a focal point: X from 0 (left) to 1 (right), Y from 0 (top) to 1
+// (bottom).
+type Focal struct {
+	X float64 `json:"x" minimum:"0" maximum:"1"`
+	Y float64 `json:"y" minimum:"0" maximum:"1"`
+}
+
+// Valid reports whether both coordinates are within 0..1.
+func (f Focal) Valid() bool { return f.X >= 0 && f.X <= 1 && f.Y >= 0 && f.Y <= 1 }
 
 type Variant struct {
 	URL    string `json:"url"`
@@ -74,4 +88,10 @@ type Patch struct {
 	Alt     *string `json:"alt,omitempty"`
 	Caption *string `json:"caption,omitempty"`
 	Title   *string `json:"title,omitempty"`
+	// Focal sets the focal point; ClearFocal removes it.
+	Focal      *Focal `json:"focal,omitempty"`
+	ClearFocal bool   `json:"clear_focal,omitempty"`
 }
+
+// ErrFocal reports a focal point outside 0..1.
+var ErrFocal = errors.New("media: focal point coordinates must be between 0 and 1")

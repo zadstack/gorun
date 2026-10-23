@@ -46,5 +46,11 @@
   "picker.upload": "Upload new",
   "variant.thumbnail": "Thumbnail",
   "variant.medium": "Medium",
-  "variant.large": "Large"
+  "variant.large": "Large",
+  "field.focal": "Focal point",
+  "field.focal_help": "Where to keep the image in view when a theme crops it, in percent from the left and from the top. Leave both empty for the centre.",
+  "field.focal_x": "From left (%)",
+  "field.focal_y": "From top (%)",
+  "field.focal_clear": "Remove the focal point",
+  "flash.focal_invalid": "The focal point must be two numbers between 0 and 100."
 }

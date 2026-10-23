@@ -7,6 +7,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Image focal point: the media library, `PATCH /api/v1/media/{id}` and the MCP tool `update_media`
+  set an optional focal point per image (additive migration). `{{img}}` prints it as
+  `object-position`, so a theme that crops images keeps that part in view; it already prints width,
+  height and alt, and nothing for missing media. The theme contract documents the shared image,
+  role-token and no-JS behaviour rules for home, article and archive templates.
+
 - Guide series: a `series` taxonomy and an indexed `series_order` field on posts (additive
   migrations, only when absent). `{{series .}}` returns the series' published parts in the
   article's language, in series order, with the article's position and its previous and next part.

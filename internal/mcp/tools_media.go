@@ -42,6 +42,9 @@ type updateMediaInput struct {
 	Alt     *string `json:"alt,omitempty"`
 	Caption *string `json:"caption,omitempty"`
 	Title   *string `json:"title,omitempty"`
+	// Focal sets the focal point (x, y from 0 to 1); clear_focal removes it.
+	Focal      *media.Focal `json:"focal,omitempty"`
+	ClearFocal bool         `json:"clear_focal,omitempty"`
 }
 
 func mediaTools(svc media.Service, log *slog.Logger) []kernel.MCPTool {
@@ -50,12 +53,15 @@ func mediaTools(svc media.Service, log *slog.Logger) []kernel.MCPTool {
 			Description: "Read a media item, including dimensions and generated responsive image variants.",
 			Handler:     bind(func(ctx context.Context, in mediaIDInput) (any, error) { return svc.Get(ctx, in.ID) })},
 		{Name: "update_media", Sensitive: true, Scopes: []string{scopeUpload}, Input: updateMediaInput{},
-			Description: "Update alt text, caption or title. Omitted or null fields are preserved; an empty string clears a field. Requires approval because metadata may appear on public pages.",
+			Description: "Update alt text, caption, title or focal point (x, y from 0 to 1; clear_focal removes it). Omitted or null fields are preserved; an empty string clears a field. Requires approval because metadata may appear on public pages.",
 			Handler: bind(func(ctx context.Context, in updateMediaInput) (any, error) {
-				if in.Alt == nil && in.Caption == nil && in.Title == nil {
-					return nil, invalid("provide alt, caption or title", nil)
+				if in.Alt == nil && in.Caption == nil && in.Title == nil && in.Focal == nil && !in.ClearFocal {
+					return nil, invalid("provide alt, caption, title, focal or clear_focal", nil)
 				}
-				return svc.Update(ctx, in.ID, media.Patch{Alt: in.Alt, Caption: in.Caption, Title: in.Title})
+				if in.Focal != nil && !in.Focal.Valid() {
+					return nil, invalid("focal x and y must be between 0 and 1", nil)
+				}
+				return svc.Update(ctx, in.ID, media.Patch{Alt: in.Alt, Caption: in.Caption, Title: in.Title, Focal: in.Focal, ClearFocal: in.ClearFocal})
 			})},
 		{Name: "upload_media", Scopes: []string{scopeUpload}, Input: uploadMediaInput{},
 			Description: "Upload a file from base64 data (≤ 10 MB) or download it from a public URL (private addresses are refused).",
