@@ -105,6 +105,7 @@
     input.addEventListener("input", () => {
       remember();
       target[key] = input.value;
+      refreshNativeEligibility(sectionID);
       changed();
     });
     wrap.append(input);
@@ -122,6 +123,20 @@
     if (["hero", "comparison", "product_preview"].includes(section.kind) && section.items?.length) return true;
     if (section.kind !== "hero" && section.variant && section.variant !== "default" && !(section.kind === "faq" && section.variant === "split")) return true;
     return (section.items || []).some(entry => entry.price || (section.kind !== "features" && (entry.image || entry.image_alt || entry.link)));
+  }
+  // Field edits do not re-render the editor, preserving focus and selection.
+  // Recompute the native option from the current section instead of leaving a
+  // disabled option stale after an incompatible field has been cleared.
+  function refreshNativeEligibility(sectionID) {
+    const section = doc.sections.find((entry) => entry.id === sectionID);
+    const parent = [...list.children].find((entry) => entry.dataset.sectionId === sectionID);
+    if (!section || !parent) return;
+    const option = parent.querySelector('select[data-field="library"] option[value="sections"]');
+    if (!option) return;
+    const blocked = !section.library && nativeSwitchBlocked(section);
+    option.disabled = blocked;
+    const help = parent.querySelector("[data-native-eligibility]");
+    if (help) help.hidden = !blocked;
   }
   function libraryControl(section, parent) {
     if (!nativeKinds.includes(section.kind)) return;
@@ -144,7 +159,10 @@
       });
     });
     label.append(select); parent.append(label);
-    if (!section.library && nativeSwitchBlocked(section)) parent.append(el("p", "text-muted text-sm", text("library_blocked")));
+    const help = el("p", "text-muted text-sm", text("library_blocked"));
+    help.dataset.nativeEligibility = "true";
+    help.hidden = !!section.library || !nativeSwitchBlocked(section);
+    parent.append(help);
   }
   function selectField(target, key, values, parent) {
     const label = el("label", "block text-sm", text(key));
