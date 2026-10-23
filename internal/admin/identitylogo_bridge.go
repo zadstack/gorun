@@ -188,9 +188,18 @@ func PrepareIdentityLogo(ctx context.Context, d *kernel.Deps, in LogoImageInput,
 	return dst.prepared, e
 }
 func logoHTTPClient() *http.Client {
-	c := httpx.NewSafeClientOpts(httpx.SafeClientOptions{Timeout: 90 * time.Second, NoRedirects: true})
+	c := httpx.NewSafeClientOpts(httpx.SafeClientOptions{Timeout: logoRequestTimeout, NoRedirects: true})
+	// Image generation is non-streaming: the provider sends no headers until
+	// the image is ready. Keep the safe client's dialer and TLS budget but
+	// wait for headers as long as the whole request may take, as aiHTTPClient
+	// does; aborting earlier can abandon a generation the provider still bills.
+	if transport, ok := c.Transport.(*http.Transport); ok {
+		transport.ResponseHeaderTimeout = logoRequestTimeout
+	}
 	return c
 }
+
+const logoRequestTimeout = 90 * time.Second
 
 // afterLogoDestinationLoad is a same-read race test seam, never a runtime hook.
 var afterLogoDestinationLoad func()
