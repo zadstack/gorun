@@ -1,0 +1,9 @@
+{{/* Usage: {{$toc := toc .}} … {{component "article-toc" $toc}} … print {{$toc.Body}} as the body.
+     The list links to the ids toc added to that same body, so print $toc.Body, never .Body, next to it.
+     Renders nothing below three headings: a short article needs no outline. */}}
+{{if ge (len .Items) 3}}
+<nav class="gp-article-toc" aria-labelledby="gp-article-toc-title">
+  <h2 id="gp-article-toc-title" class="gp-article-toc-title">{{t "on_this_page"}}</h2>
+  <ol class="gp-article-toc-list">{{range .Items}}<li class="gp-toc-item gp-toc-l{{.Level}}"><a class="gp-toc-link" href="#{{.ID}}">{{.Text}}</a></li>{{end}}</ol>
+</nav>
+{{end}}

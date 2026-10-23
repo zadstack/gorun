@@ -4,10 +4,12 @@
 <article class="reading-article mx-auto" data-variant-single="{{variant "single" $}}">
   <header class="mb-6">
     <h1>{{.Title}}</h1>
-    {{with .PublishedAt}}<p class="mt-2 text-sm text-muted"><time datetime="{{.}}"><bdi>{{date .}}</bdi></time></p>{{end}}
+    {{component "article-meta" .}}
   </header>
   {{with media .FeaturedMediaID}}<figure class="mb-6">{{img . "large" "w-full rounded border border-line"}}{{with .Caption}}<figcaption class="mt-2 text-sm text-muted">{{.}}</figcaption>{{end}}</figure>{{end}}
-  <div class="prose-gp">{{safe .Body}}</div>
+  {{$toc := toc .}}
+  {{component "article-toc" $toc}}
+  <div class="prose-gp">{{$toc.Body}}</div>
   {{$cats := terms . "category"}}{{$tags := terms . "tag"}}
   {{if or $cats $tags}}
   <footer class="mt-8 border-t border-line pt-4 space-y-2 text-sm">
@@ -15,6 +17,8 @@
     {{with $tags}}<p class="flex flex-wrap gap-1"><span class="text-muted">{{t "tags"}}:</span> {{range .}}<a href="{{url .}}" class="gr-chip">{{.Name}}</a>{{end}}</p>{{end}}
   </footer>
   {{end}}
+  {{component "article-related" (related . 3)}}
+  {{component "article-adjacent" (adjacent .)}}
   {{component "comments" (dict "Item" . "Flash" $.Extra.comment_flash)}}
 </article>
 {{end}}

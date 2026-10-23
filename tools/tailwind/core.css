@@ -143,3 +143,55 @@
   border-radius: var(--radius, 8px);
   background: var(--success-bg, var(--panel-2, #f3f5f8));
 }
+
+/* Composition components (themes/default/components: article-meta, article-toc,
+   article-related, article-adjacent, archive-filter). Theme tokens only, so a
+   theme that includes them gets a readable default. Each rule is one class:
+   enough to beat an element reset (Tailwind's preflight clears list style,
+   heading size, margins and borders by element), and a theme restyles a part
+   with its own scope, e.g. html[data-theme="x"] .gp-article-toc. Outlines are
+   inset box-shadows, which no element reset touches. */
+.gp-article-meta { margin-top: .5rem; color: var(--muted, #5a665f); font-size: .9rem; }
+.gp-article-toc {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius, 8px);
+  background: var(--panel, #fff);
+  box-shadow: inset 0 0 0 1px var(--line, #dde3ea);
+}
+.gp-article-toc-title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 700; }
+.gp-article-toc-list { margin: 0; padding-inline-start: 1.25rem; list-style: decimal; }
+.gp-toc-item { margin: .25rem 0; }
+.gp-toc-l3 { margin-inline-start: 1rem; list-style: circle; }
+.gp-toc-link, .gp-related-link, .gp-filter-link { color: var(--blue, var(--accent-ink, inherit)); }
+.gp-toc-link, .gp-related-link { text-decoration: underline; text-underline-offset: .2em; }
+.gp-article-related { margin-top: 2rem; padding-top: 1rem; box-shadow: inset 0 1px 0 var(--line, #dde3ea); }
+.gp-article-related-title { margin: 0 0 .75rem; font-size: 1.15rem; font-weight: 700; }
+.gp-article-related-list { margin: 0; padding-inline-start: 1.25rem; list-style: disc; }
+.gp-related-item { margin: .35rem 0; }
+.gp-related-date { color: var(--muted, #5a665f); font-size: .85rem; }
+.gp-article-adjacent { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 2rem; }
+.gp-adjacent-link {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  padding: .75rem 1rem;
+  border-radius: var(--radius, 8px);
+  box-shadow: inset 0 0 0 1px var(--line, #dde3ea);
+  color: var(--ink, inherit);
+  text-decoration: none;
+}
+.gp-adjacent-label { color: var(--muted, #5a665f); font-size: .85rem; }
+.gp-adjacent-next { margin-inline-start: auto; text-align: end; }
+.gp-archive-filter-list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; padding: 0; list-style: none; }
+.gp-filter-link {
+  display: inline-flex;
+  gap: .4rem;
+  align-items: center;
+  padding: .3rem .75rem;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line, #dde3ea);
+  text-decoration: none;
+}
+.gp-filter-link[aria-current=page] { box-shadow: inset 0 0 0 2px var(--accent, currentColor); font-weight: 600; }
+.gp-filter-count { color: var(--muted, #5a665f); font-size: .8rem; }

@@ -25,6 +25,7 @@ real site.
 | 6 | Reviewable theme updates | Open |
 | 7 | Module readiness report | Partial (commerce only) |
 | 8 | Compatibility data in the release | Migrations: done in main, first published by the next release; template hashes open |
+| 9 | Page compositions (purpose presets, single and archive anatomy, localized destinations) | **Started**: template contract ([THEME-CONTRACT.md](THEME-CONTRACT.md#page-composition-helpers)); builder purpose presets next |
 
 ## 1. Unified theme contract
 

@@ -9,6 +9,16 @@ All notable changes to GoRun are recorded here. The format follows
 
 - Dashboard setup checklist with permission-aware configuration and saved evidence, contextual actions, and collapsed diagnostics while preserving saved personal layouts.
 - Independent experimental Edge instance registry and explicit Cloudflare creation plans: separate Worker/D1/private R2 resources, encrypted per-instance manager keys, pinned embedded runtime, durable checkpoints, and identity verification before acceptance. No Full content cloning or automatic provider retry/deletion.
+- Page composition contract for themes:
+  - `{{destination "contact"}}` resolves an about, service, methodology or contact page in the
+    current language, through translations, and marks a page in another language as a fallback
+    instead of guessing a localized URL.
+  - `{{related}}`, `{{adjacent}}` and `{{termsOf}}` return only published public items of the same
+    type and language.
+  - A `purpose` field on pages selects `page-<purpose>.html`.
+  - Default-theme components for article meta, table of contents, related articles, previous and
+    next, and an archive category filter render only when their data exists. The default article,
+    archive and term pages use them.
 
 - Core site stylesheet (`/static/site/core.css`), served from the binary with a content hash and
   linked by `{{sections .}}` in every theme. It holds zero-specificity element defaults for forms,

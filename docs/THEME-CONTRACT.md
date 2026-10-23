@@ -63,6 +63,39 @@ A theme keeps its character by styling its own classes and elements; it does not
 the shared pages. Rebuild the stylesheet with `tools/tailwind/build.sh` after changing a shared
 template's classes (CI runs `--check`).
 
+## Page composition helpers
+
+Template funcs every theme can use to compose complete pages from real data. Each returns nothing
+(or `Available` false) when the data does not exist, so a theme never shows an empty or invented
+part.
+
+| Func | Returns | Rules |
+|---|---|---|
+| `{{destination "contact"}}` | `{Available, Fallback, Purpose, URL, Title, Locale, Item}` | Purposes are `about`, `service`, `methodology` and `contact`. It takes a published public page with that purpose in the current locale, else one with that slug; else the current-locale translation (translation group) of such a page in another locale; else that other-locale page with `Fallback` true and its `Locale`, which a template must show as another language. Several matches: the oldest published, then the lowest id. It never builds a URL from a guessed slug. |
+| `{{related . 3}}` | up to N items (max 12) | Same type and locale, sharing at least one term, published and public, excluding the item; newest first, then newest id. |
+| `{{adjacent .}}` | `{Prev, Next}` | `Prev` is older and `Next` newer, same type and locale, published and public, by publication date then id; looks at the newest 1000 items. |
+| `{{termsOf "category" "post"}}` | `[{Term, Count}]` | Terms with published public items of that content type in the page locale, with that count; at most 50 terms. Link them with `{{url .Term}}`. |
+
+**Page purpose.** The page type has a `purpose` select field (content migration 0007, added only
+when the type has none). The page template order is `page-<slug>`, `page-<template>`,
+`page-<purpose>`, `page`, `single`, `index`, so a builder page keeps `page-builder.html`. Only the four
+known purposes reach the hierarchy; any other stored value is ignored.
+
+**Default components** (`themes/default/components`), each rendering nothing without data:
+
+| Component | Use |
+|---|---|
+| `article-meta` | `{{component "article-meta" .Content}}`: publication date and reading time. No "updated" date: edits and autosaves change it without meaning. |
+| `article-toc` | `{{$toc := toc .}}{{component "article-toc" $toc}}` and print `{{$toc.Body}}` as the body, never `.Body`: the list links to the ids `toc` adds to that body. Hidden below three h2/h3 headings. |
+| `article-related` | `{{component "article-related" (related .Content 3)}}` |
+| `article-adjacent` | `{{component "article-adjacent" (adjacent .Content)}}` |
+| `archive-filter` | `{{component "archive-filter" (dict "Terms" (termsOf "category" "post") "Current" .Term)}}`, linking real term archives; hidden below two terms. |
+
+The default `single`, `archive` and `taxonomy` templates use them; a child theme that overrides those
+templates includes the components where it wants them. Their base styles are in the core site
+stylesheet: one class per rule, so they beat an element reset, and a theme restyles them with its
+own scope (`html[data-theme="x"] .gp-article-toc`).
+
 ## Package surface
 
 | API | Role |
