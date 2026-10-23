@@ -121,3 +121,21 @@
 ### English — editable native sections
 
 Choose **Theme section library** for hero/features/FAQ, or add Steps, Comparison or Product preview. Existing pages retain their builder layout by default. Edit native content through structured fields, save a private draft, reload or preview, then publish explicitly. A CSS interface illustration is labeled and requires a caption; it is not an actual screenshot or an AI-generated image. Legacy hero scenes/feeds are incompatible with native mode and remain supported in the existing layout. No theme stylesheet is copied or replaced.
+
+## صفحات حسب الغرض
+
+من **المحتوى ← الصفحات** افتح «صفحة جديدة حسب الغرض» واختر الغرض (من نحن، خدمة، منهجية العمل، تواصل) والعنوان واللغة.
+تُنشأ مسودة خاصة في المنشئ: تستخدم الواجهة عنوانك، وتبدأ بقية الأقسام فارغة ومخفية بعنوان بنيوي فقط، فلا يظهر للزوار
+شيء لم تكتبه. صفحة التواصل تعرض نموذج التواصل الحقيقي. اكتب كل قسم ثم أظهره وانشر الصفحة. يُحفظ الغرض في حقل `purpose`،
+فتربط القوالب إليها بـ`{{destination "contact"}}`.
+
+### English — purpose pages
+
+Under **Content → Pages**, open "New page from a purpose" and choose the purpose (about, service,
+methodology or contact), the title and the language. It creates a private builder draft: the hero uses
+your title, and every other section starts empty and hidden with only a structural heading, so nothing
+you did not write reaches visitors. A contact page shows the site's real contact form. Write each
+section, show it, then publish. The purpose is stored in the page's `purpose` field, so themes link to
+the page with `{{destination "contact"}}`. The same draft can be created with `POST /api/v1/builder/pages`
+or the MCP tool `create_purpose_page`.
+

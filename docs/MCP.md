@@ -256,6 +256,7 @@ ignores `Mcp-Session-Id`. `GET /mcp` and `DELETE /mcp` return 405.
 
 ## Structured page builder tools
 
+- `create_purpose_page`: `{purpose, title, locale?}`; creates a private draft page for `about`, `service`, `methodology` or `contact` with its preset section structure (the hero takes the title; other sections start empty and hidden) and returns `{id, edit_url, draft}`; scopes `content.create` and `content.edit`. Nothing is published.
 - `get_page_layout`: `{id}`; returns the private draft, last-published flags and opaque version token; scope `content.edit`, with owner checks.
 - `save_page_layout`: `{id, document, base_updated_at}`; imports or updates a private draft without changing the public site; scope `content.edit`.
 - `publish_page_layout`: `{id, updated_at}`; scopes `content.edit` and `content.publish`; **sensitive**, so it waits for human approval before replacing public HTML.

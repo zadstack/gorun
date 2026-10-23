@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 )
@@ -103,6 +104,10 @@ func registerLayoutAPI(d *kernel.Deps, svc *service) {
 	d.API.Add(kernel.APIOperation{Method: "GET", Path: "/v1/builder/{id}/revisions", Summary: "List page-builder layout revisions (newest first)", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: id, Response: []LayoutRevision{}, Handler: a.listRevisions})
 	d.API.Add(kernel.APIOperation{Method: "GET", Path: "/v1/builder/{id}/revisions/{revision}", Summary: "Read one page-builder layout revision", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: rev, Response: LayoutRevision{}, Handler: a.getRevision})
 	d.API.Add(kernel.APIOperation{Method: "POST", Path: "/v1/builder/{id}/revisions/{revision}/restore", Summary: "Restore a layout revision into the private draft", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: rev, Request: layoutRestoreRequest{}, Response: Draft{}, Handler: a.restoreRevision, Contract: contract})
+	d.API.Add(kernel.APIOperation{Method: "POST", Path: "/v1/builder/pages", Summary: "Create a private draft page from a purpose preset (about, service, methodology, contact)", Tags: []string{"builder"}, Scopes: []string{"content.create", "content.edit"}, Request: PurposePageInput{}, Response: PurposePage{}, Handler: a.createPurposePage, Contract: contract})
+	d.MCP.AddTool(kernel.MCPTool{Name: "create_purpose_page", Description: "Create a private draft page for a purpose (about, service, methodology or contact) with its editable section structure. The hero takes the title; other sections start empty and hidden. Nothing is published.", Input: PurposePageInput{}, Scopes: []string{"content.create", "content.edit"}, Handler: bindLayout(func(ctx context.Context, in PurposePageInput) (any, error) {
+		return a.createPurpose(ctx, in)
+	})})
 	d.MCP.AddTool(kernel.MCPTool{Name: "get_page_layout", Description: "Read a private page-builder layout with its current opaque updated_at token. Requires ownership where applicable.", Input: layoutIDInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutIDInput) (any, error) { return a.load(ctx, in.ID) })})
 	d.MCP.AddTool(kernel.MCPTool{Name: "save_page_layout", Description: "Import or update validated structured sections as a private page-builder draft; public content stays unchanged. Pass updated_at from get_page_layout as base_updated_at.", Input: layoutSaveInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutSaveInput) (any, error) {
 		return a.saveLayout(ctx, in.ID, in.Document, in.BaseUpdatedAt)
@@ -234,6 +239,33 @@ func (a *layoutAPI) restore(ctx context.Context, id, revisionID, token string) (
 		return nil, layoutFailure(err)
 	}
 	return draft, nil
+}
+func (a *layoutAPI) createPurpose(ctx context.Context, in PurposePageInput) (*PurposePage, error) {
+	page, err := a.svc.CreatePurposePage(ctx, in)
+	if errors.Is(err, ErrPreset) {
+		return nil, invalidLayout("invalid purpose page", map[string]string{"purpose": "use about, service, methodology or contact", "title": "1 to 200 characters", "locale": "ar, en or empty"})
+	}
+	if err != nil {
+		var ve *content.ValidationError
+		if errors.As(err, &ve) {
+			return nil, invalidLayout("invalid purpose page", map[string]string(ve.Fields))
+		}
+		return nil, layoutFailure(err)
+	}
+	return page, nil
+}
+func (a *layoutAPI) createPurposePage(w http.ResponseWriter, r *http.Request) {
+	var in PurposePageInput
+	if err := decodeBuilder(w, r, &in); err != nil {
+		writeDecodeError(w, err)
+		return
+	}
+	page, err := a.createPurpose(r.Context(), in)
+	if err != nil {
+		a.writeError(w, err)
+		return
+	}
+	httpx.JSON(w, 201, page, nil)
 }
 func (a *layoutAPI) get(w http.ResponseWriter, r *http.Request) {
 	draft, err := a.load(r.Context(), chi.URLParam(r, "id"))

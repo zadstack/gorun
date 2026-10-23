@@ -5,6 +5,26 @@
   <h1 class="text-[22px] font-bold">{{.PluralName}}</h1>
   {{if .CanCreate}}<a href="{{.BaseURL}}/new" class="h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "content.list.new" .TypeName}}</span></a>{{end}}
 </div>
+{{if and .CanCreate (eq .Type.Slug "page")}}
+<details class="mb-4 rounded border border-line bg-panel p-4" data-purpose-page>
+  <summary class="font-medium cursor-pointer">{{t "builder.preset_new"}}</summary>
+  <form method="post" action="/admin/builder/new" class="mt-3 grid gap-3 sm:grid-cols-[auto_1fr] items-center max-w-2xl">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <label for="preset-purpose" class="font-medium">{{t "builder.preset_purpose"}}</label>
+    <select id="preset-purpose" name="purpose" required class="h-9 rounded border border-line bg-panel px-3">
+      <option value="about">{{t "builder.purpose_about"}}</option><option value="service">{{t "builder.purpose_service"}}</option><option value="methodology">{{t "builder.purpose_methodology"}}</option><option value="contact">{{t "builder.purpose_contact"}}</option>
+    </select>
+    <label for="preset-title" class="font-medium">{{t "builder.preset_title"}}</label>
+    <input id="preset-title" name="title" required maxlength="200" dir="auto" class="h-9 rounded border border-line bg-panel px-3">
+    <label for="preset-locale" class="font-medium">{{t "builder.preset_locale"}}</label>
+    <select id="preset-locale" name="locale" class="h-9 rounded border border-line bg-panel px-3">
+      <option value="">{{t "builder.preset_locale_site"}}</option><option value="ar">{{t "builder.locale_ar"}}</option><option value="en">{{t "builder.locale_en"}}</option>
+    </select>
+    <p class="text-sm text-muted sm:col-span-2">{{t "builder.preset_help"}}</p>
+    <div class="sm:col-span-2"><button type="submit" class="h-9 px-3 rounded bg-green text-white font-medium">{{t "builder.preset_create"}}</button></div>
+  </form>
+</details>
+{{end}}
 <details class="content-filter-drawer" open {{if or .Search .Status .Locale .Author .View}}data-active="true"{{end}}><summary>{{t "content.ux.filters"}}</summary>
 <form id="content-filters" role="search" class="flex flex-wrap gap-2 mb-3" action="{{.BaseURL}}" method="get">
   {{if .Tree}}<input type="hidden" name="layout" value="tree">{{end}}<label class="sr-only" for="content-search">{{t "content.list.search"}}</label>

@@ -79,7 +79,7 @@ part.
 **Page purpose.** The page type has a `purpose` select field (content migration 0007, added only
 when the type has none). The page template order is `page-<slug>`, `page-<template>`,
 `page-<purpose>`, `page`, `single`, `index`, so a builder page keeps `page-builder.html`. Only the four
-known purposes reach the hierarchy; any other stored value is ignored.
+known purposes reach the hierarchy; any other stored value is ignored. Editors create purpose pages from builder presets ([SITE_BUILDER.md](SITE_BUILDER.md#english--purpose-pages)).
 
 **Default components** (`themes/default/components`), each rendering nothing without data:
 

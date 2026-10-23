@@ -106,5 +106,19 @@
   "featured": "تمييز البطاقة",
   "status": "حالة الخلية",
   "none": "بدون",
-  "question_default": "اكتب سؤالك"
+  "question_default": "اكتب سؤالك",
+  "preset_new": "صفحة جديدة حسب الغرض",
+  "preset_purpose": "الغرض",
+  "preset_title": "عنوان الصفحة",
+  "preset_locale": "اللغة",
+  "preset_locale_site": "لغة الموقع",
+  "preset_create": "أنشئ المسودة وافتح المنشئ",
+  "preset_help": "تُنشئ مسودة خاصة ببنية الأقسام المناسبة لهذا الغرض. تستخدم الواجهة عنوانك، وتبدأ بقية الأقسام فارغة ومخفية حتى تكتبها. لا يُنشر شيء.",
+  "preset_error": "تعذر إنشاء الصفحة. تحقق من الغرض والعنوان واللغة.",
+  "purpose_about": "من نحن",
+  "purpose_service": "خدمة",
+  "purpose_methodology": "منهجية العمل",
+  "purpose_contact": "تواصل",
+  "locale_ar": "العربية",
+  "locale_en": "الإنجليزية"
 }
