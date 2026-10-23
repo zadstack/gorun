@@ -176,7 +176,9 @@ for (const locale of ["ar", "en"] as const)
         expect(privateImage.headers()["content-type"]).toBe("image/png");
         expect(privateImage.headers()["cache-control"]).toContain("no-store");
         expect(privateImage.headers()["cache-control"]).toContain("private");
-        expect(privateImage.headers()["x-content-type-options"]).toBe("nosniff");
+        expect(privateImage.headers()["x-content-type-options"]).toBe(
+          "nosniff",
+        );
         const anonymous = await browser.newContext();
         try {
           const r = await anonymous.request.get(
@@ -280,66 +282,136 @@ test("unknown image price fails closed without a provider call", async ({
   await expect(page.locator("[data-logo-generate]")).toHaveCount(0);
 });
 
-test("concurrent draft edit rejects stale candidate selection and preserves human fields", async ({
-  page,
-}) => {
-  await login(page);
-  await page.goto(route);
-  const before = snapshot();
-  const count = (await stats(page)).calls;
-  try {
-    await configure(page);
-    await review(page, "Synthetic stale candidate");
-    await generate(page);
-    expect((await stats(page)).calls).toBe(count + 1);
-    const d = db();
-    try {
-      d.prepare(
-        "INSERT INTO settings(key,value_json,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=excluded.updated_at",
-      ).run(
-        "theme.default.identity_draft",
-        JSON.stringify({
-          snapshot: {
-            theme: "default",
-            values: { identity_accent: "#112233" },
-            site: { "site.title": "Human concurrent draft" },
-            links: { cta_label: "Human CTA", cta_url: "/human" },
-          },
-          base: { "site.title": "Untouched live title" },
-          saved_at: "2026-10-23",
-          author: "human",
-        }),
-        "2026-10-23",
-      );
-    } finally {
-      d.close();
-    }
-    const concurrent = snapshot();
-    await page.locator("[data-logo-candidate] button[type=submit]").click();
-    await expect(page.locator("[data-logo-error]")).toBeVisible();
-    expect(snapshot().media).toEqual(concurrent.media);
-    expect(
-      snapshot().settings.find(
-        (r: any) => r.key === "theme.default.identity_draft",
-      ),
-    ).toEqual(
-      concurrent.settings.find(
-        (r: any) => r.key === "theme.default.identity_draft",
-      ),
-    );
-    expect((await stats(page)).calls).toBe(count + 1);
-  } finally {
-    const d = db();
-    try {
-      d.exec("BEGIN;DELETE FROM settings");
-      const insert = d.prepare(
-        "INSERT INTO settings(key,value_json,updated_at) VALUES(?,?,?)",
-      );
-      for (const row of before.settings as any[])
-        insert.run(row.key, row.value_json, row.updated_at);
-      d.exec("COMMIT");
-    } finally {
-      d.close();
-    }
-  }
-});
+for (const conflict of [false, true]) {
+  test(
+    conflict
+      ? "changed logo slot rejects selection without importing or losing human edits"
+      : "unrelated identity edits survive paid candidate selection",
+    async ({ page }) => {
+      await login(page);
+      await page.goto(route);
+      const before = snapshot();
+      const count = (await stats(page)).calls;
+      const human = await page.context().newPage();
+      const values = (rows: any[]) =>
+        Object.fromEntries(rows.map((r) => [r.key, r.value_json]));
+      const draft = () =>
+        JSON.parse(values(snapshot().settings)["theme.default.identity_draft"]);
+      try {
+        await configure(page);
+        await review(page, "Synthetic concurrent selection");
+        await generate(page);
+        expect((await stats(page)).calls).toBe(count + 1);
+        let humanMedia = "";
+        if (conflict) {
+          const upload = await page.request.post("/api/v1/media", {
+            headers: { "X-CSRF-Token": await csrf(page) },
+            multipart: {
+              file: {
+                name: "human-logo.svg",
+                mimeType: "image/svg+xml",
+                buffer: Buffer.from(
+                  '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#112233"/></svg>',
+                ),
+              },
+            },
+          });
+          expect(upload.status()).toBe(201);
+          humanMedia = (await upload.json()).data.id;
+        }
+        await human.goto("/admin/appearance/identity");
+        const field = conflict ? "site.logo" : "site.tagline";
+        const edited = conflict ? humanMedia : "Human concurrent tagline";
+        if (conflict) {
+          await human
+            .locator('[data-identity-logo="site.logo"] [data-media-open]')
+            .click();
+          await human
+            .locator(`#gp-media-picker-body [data-id="${humanMedia}"]`)
+            .click();
+          await human
+            .locator('[data-identity-form] button[value="draft"]')
+            .click();
+        } else {
+          await human
+            .locator(`[data-identity-form] [name="${field}"]`)
+            .fill(edited);
+        }
+        await expect.poll(() => draft().snapshot.site[field]).toBe(edited);
+        if (!conflict) {
+          await human.goto("/admin/settings/general");
+          await human
+            .locator('[name="title"]')
+            .fill("Human concurrent live title");
+          await human
+            .locator(
+              'form[action="/admin/settings/general"] button[type=submit]',
+            )
+            .click();
+          await expect
+            .poll(() => JSON.parse(values(snapshot().settings)["site.title"]))
+            .toBe("Human concurrent live title");
+        }
+        const concurrent = snapshot();
+        const oldDraft = draft();
+        await page
+          .locator("[data-logo-candidate] select[name=slot]")
+          .selectOption("site.logo");
+        await page.locator("[data-logo-candidate] button[type=submit]").click();
+        const after = snapshot();
+        if (conflict) {
+          await expect(page.locator("[data-logo-error]")).toBeVisible();
+          await expect(page.locator("[data-logo-error]")).not.toContainText(
+            /review again|regenerat|راجع.*مرة|توليد.*جديد/i,
+          );
+          expect(after.media).toEqual(concurrent.media);
+          expect(after.settings).toEqual(concurrent.settings);
+        } else {
+          await expect(page.locator("[data-logo-error]")).toHaveCount(0);
+          expect(after.media.length).toBe(concurrent.media.length + 1);
+          const selected = draft();
+          expect(selected.snapshot.site["site.logo"]).toBeTruthy();
+          const preserved = structuredClone(selected);
+          preserved.snapshot.site["site.logo"] =
+            oldDraft.snapshot.site["site.logo"];
+          expect(preserved.snapshot).toEqual(oldDraft.snapshot);
+          for (const [key, value] of Object.entries(oldDraft.base ?? {}))
+            if (key !== "site.logo")
+              expect(selected.base?.[key], key).toEqual(value);
+          const currentSettings = values(after.settings),
+            oldSettings = values(concurrent.settings);
+          for (const [key, value] of Object.entries(oldSettings))
+            if (key !== "theme.default.identity_draft")
+              expect(currentSettings[key], key).toBe(value);
+        }
+        expect(after.content).toEqual(concurrent.content);
+        expect(after.menus).toEqual(concurrent.menus);
+        expect(after.items).toEqual(concurrent.items);
+        expect((await stats(page)).calls).toBe(count + 1);
+      } finally {
+        try {
+          await human.close();
+        } finally {
+          const d = db();
+          try {
+            d.exec("BEGIN;DELETE FROM settings");
+            const existingMedia = new Set(
+              (before.media as any[]).map((row) => row.id),
+            );
+            const removeMedia = d.prepare("DELETE FROM media WHERE id=?");
+            for (const row of d.prepare("SELECT id FROM media").all() as any[])
+              if (!existingMedia.has(row.id)) removeMedia.run(row.id);
+            const insert = d.prepare(
+              "INSERT INTO settings(key,value_json,updated_at) VALUES(?,?,?)",
+            );
+            for (const row of before.settings as any[])
+              insert.run(row.key, row.value_json, row.updated_at);
+            d.exec("COMMIT");
+          } finally {
+            d.close();
+          }
+        }
+      }
+    },
+  );
+}
