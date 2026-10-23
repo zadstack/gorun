@@ -12,6 +12,17 @@ Write and publish content, shape your site with themes, and connect agents over 
 
 [Website guides](https://gorun.gocloud.run/gorun-guides) · [Security](SECURITY.md) · [Contribute](CONTRIBUTING.md)
 
+
+## Application preview
+
+![Actual application interface](docs/media/readme-preview.png)
+
+![Tour of actual application screens](docs/media/readme-tour.gif)
+
+Content list and post editor, using the existing Atlas Studio demonstration screenshots. This GIF is a slideshow of actual UI captures, not a new live-session recording.
+
+[Media provenance](docs/media/README.md)
+
 ## Run it now
 
 For a local trial on **macOS or Linux**, copy and paste this whole block. No Go, Docker, database setup or administrator privileges required.

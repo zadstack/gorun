@@ -379,3 +379,14 @@ GoRun برنامج حر بترخيص **[GNU Affero General Public License v3.0](
 
 تحتفظ مكونات الطرف الثالث بتراخيصها الخاصة (راجع `web/admin/static/vendor/*.LICENSE` و`web/admin/static/fonts/zad/OFL.txt` و`internal/builder/static/THREE-LICENSE.txt`). راجع [NOTICE](NOTICE) للإسناد.
 
+
+
+## معاينة التطبيق
+
+![واجهة التطبيق الفعلية](docs/media/readme-preview.png)
+
+![جولة من لقطات التطبيق الفعلية](docs/media/readme-tour.gif)
+
+جولة من لقطات الواجهة التجريبية المرفقة: قائمة المحتوى ومحرر المقالات باستخدام بيانات Atlas Studio التوضيحية. الـGIF تسلسل لقطات فعلية، وليس تسجيلًا جديدًا لجلسة تشغيل.
+
+[مصدر اللقطات](docs/media/README.md)
