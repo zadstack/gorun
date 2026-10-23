@@ -207,8 +207,12 @@ for (const theme of themes)
             `theme.${theme}.identity_history`,
           );
           d.close();
+          // Own the latest-posts homepage: a prior import may leave an Arabic
+          // static front page whose explicit SEO title correctly overrides identity.
+          // The full site/theme settings snapshot restores that page afterwards.
           for (const [key, entry] of Object.entries({
             "site.title": baseline,
+            "site.front_page": "",
             "site.logo": mediaID,
             "site.logo_light": mediaID,
             "site.logo_dark": mediaID,
@@ -262,6 +266,10 @@ for (const theme of themes)
           const publicPage = await page.context().newPage();
           try {
             expect((await publicPage.goto(`/${locale}/`))?.status()).toBe(200);
+            await expect(publicPage.locator("html")).toHaveAttribute(
+              "data-kind",
+              "home",
+            );
             expect(await publicPage.title()).toContain(baseline);
             expect(await publicPage.title()).not.toContain(changed);
           } finally {
@@ -436,6 +444,10 @@ for (const theme of themes)
                 "UPDATE users SET locale=?,updated_at=? WHERE id=?",
               ).run(user.locale, user.updated_at, user.id);
             d.close();
+            const front = saved.find((row) => row.key === "site.front_page");
+            expect(value("site.front_page")).toEqual(
+              front ? JSON.parse(front.value_json) : undefined,
+            );
           }
         }
       });
