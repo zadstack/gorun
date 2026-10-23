@@ -144,7 +144,7 @@ var moduleCatalogTable = map[string]builtin{
 // dependencyNotes are the consequences of a dependency being off, shown on
 // the dependent (key modules.dep.<dependency>.<dependent>, both locales).
 var dependencyNotes = map[[2]string]bool{
-	{"workagents", "membership"}: true, {"commerce", "saas"}: true, {"commerce", "wpmigrate"}: true, {"commerce", "mcp"}: true, {"commerce", "theme"}: true, {"wpmigrate", "mcp"}: true,
+	{"workagents", "membership"}: true, {"commerce", "saas"}: true, {"commerce", "membership"}: true, {"commerce", "wpmigrate"}: true, {"commerce", "mcp"}: true, {"commerce", "theme"}: true, {"wpmigrate", "mcp"}: true,
 }
 
 // coreServices are general services that are features of core modules, not

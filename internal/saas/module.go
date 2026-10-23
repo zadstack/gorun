@@ -161,7 +161,7 @@ func (h *handlers) page(management bool, d *kernel.Deps) http.HandlerFunc {
 		_, commerceOn := kernel.Get[any](d, kernel.ServiceCommerce)
 		if auth.UserFromContext(r.Context()) == nil {
 			if !commerceOn {
-				httpx.AccountSignInUnavailable(w)
+				httpx.AccountSignInUnavailable(w, r)
 				return
 			}
 			http.Redirect(w, r, "/account?next=/saas", 303)

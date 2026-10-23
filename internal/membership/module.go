@@ -111,7 +111,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 			_, workAgentsOn := kernel.Get[any](d, "workagents")
 			if actor(r.Context()) == "" {
 				if !commerceOn {
-					httpx.AccountSignInUnavailable(w)
+					httpx.AccountSignInUnavailable(w, r)
 					return
 				}
 				http.Redirect(w, r, "/account?next=/membership", 303)
