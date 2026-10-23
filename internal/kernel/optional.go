@@ -20,7 +20,7 @@ import (
 // off without calling Enabled; "enabled", "auto" or no entry leave the
 // decision to the module, so configuration alone never proves activation.
 // Modules that do not implement this interface are always booted; a mode
-// configured for them is reported in the module inventory and ignored.
+// configured for them is reported in the module inventory, warned about and ignored.
 type OptionalModule interface {
 	Enabled(context.Context, *sql.DB) (bool, error)
 }
@@ -72,10 +72,10 @@ func AddonEnabled(ctx context.Context, d *sql.DB, name string) (bool, error) {
 func enabledModules(ctx context.Context, cfg config.Config, log *slog.Logger, d *sql.DB, mods []Module) ([]Module, error) {
 	selected := make([]Module, 0, len(mods))
 	for _, m := range mods {
-		mode := cfg.Addons[m.Name()]
+		mode, configured := cfg.Addons[m.Name()]
 		optional, ok := m.(OptionalModule)
 		if !ok {
-			if mode == AddonModeDisabled && log != nil {
+			if configured && log != nil {
 				log.Warn("kernel: addon mode ignored: module is not optional and stays enabled", "module", m.Name(), "mode", mode)
 			}
 			selected = append(selected, m)
