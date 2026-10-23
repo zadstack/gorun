@@ -1,7 +1,7 @@
-# GoRun 0.10 product screenshots
+# GoRun product screenshots
 
-All 31 canonical PNGs were captured together from the actual GoRun application
-at the released 0.10 source, using fictional Atlas Studio content and the sample
+The canonical PNGs were last refreshed for 0.17 (after the v0.17.0 tag) from the actual GoRun
+application, using fictional Atlas Studio content and the sample
 editor Amira Hassan. One fresh local fixture supplies the editor, content list,
 site design, role catalog, canvas story, navigation, agent drawer, approvals,
 public theme and four new AI-suggestion/extension-method views. Existing user or
@@ -15,6 +15,17 @@ npm ci
 npx playwright install chromium
 README_SCREENSHOTS=1 npm test -- tests/readme-screenshots.spec.ts --project=chromium
 ```
+
+The nine `researcher-*.png` images come from the Updates Researcher story test. Run it, then
+copy its output: `recipe` becomes `setup`, `recipe-review` becomes `review`, `recipe-result`
+becomes `result`; `-en` stays, `-ar` (390 px) becomes `-ar-mobile` and `-ar-desktop` becomes `-ar`.
+
+```sh
+npm test -- tests/agent-recipes.spec.ts --project=chromium -g "Updates Researcher recipe EN/AR"
+```
+
+The READMEs show desktop screenshots two per row (HTML tables at 50% width, each image linking
+to its full size); mobile captures are linked rather than embedded.
 
 The opt-in capture boots a fresh temporary server, uploads repository-owned SVG
 artwork, creates English/Arabic articles and a real builder page, and generates
