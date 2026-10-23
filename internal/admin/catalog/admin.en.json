@@ -1023,5 +1023,7 @@
   "modules.compat.manifest_unverified": "manifest version; compatibility with this build is not verified",
   "modules.compat.not_in_build": "named in GORUN_ADDONS but not part of this build",
   "modules.name.identityai": "Identity AI",
-  "modules.desc.identityai": "AI identity suggestions (text only) written to the identity draft after a reviewed, approved request."
+  "modules.desc.identityai": "AI identity suggestions (text only) written to the identity draft after a reviewed, approved request.",
+  "modules.name.identitylogo": "Identity logo",
+  "modules.desc.identitylogo": "Reviewed static PNG generation with private staging and explicit identity draft selection."
 }

@@ -7,6 +7,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Optional Identity logo workflow: explicitly bind an encrypted AI profile to a compatible PNG
+  image protocol and operator estimate, review the exact request before generation, preview a
+  private ephemeral candidate, then import a local logo/icon derivative into one identity draft
+  slot. Imported media is public by URL; live identity changes still require Apply.
+
 - Section library pilot (`themes/default/assets/sections.css`, shared by every catalog theme):
   hero variants (`gp-s-hero-split`, `gp-s-hero-centered`, `gp-s-facts`), feature cards with
   CSS-drawn icon tiles and a featured card, steps on a connector track, a `gp-s-flow` diagram,
