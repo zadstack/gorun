@@ -27,8 +27,7 @@ contact Cloudflare inline.
 
 The token is a **management** credential used for read-only listing only. It is not an S3
 credential (R2 buckets are bound with their own S3 access keys, created for the bucket in the R2
-dashboard) and it is not a GoRun Edge manager key. GoRun never grants or widens permissions and
-never creates, modifies or deletes Cloudflare resources.
+dashboard) and it is not a GoRun Edge manager key. GoRun never grants or widens permissions. The inventory and connection-check endpoints are read-only. The separate [independent Edge manager](EDGE-MANAGER.md) can create a new Worker, D1 database and private R2 bucket only after explicit approval of a resource plan; it does not modify DNS or delete provider resources.
 
 ### Permission checks (scope lamps)
 

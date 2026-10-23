@@ -1,0 +1,13 @@
+{
+  "sha256": "b9d7ae7fe7e943b10034d15fce0449df99683f4bf0afd66804fcc1015bf3dcb8",
+  "compatibility_date": "2026-10-01",
+  "main_module": "index.js",
+  "files": [
+    "0001_readonly.sql",
+    "0002_owner_admin.sql",
+    "0003_managers.sql",
+    "admin-auth.js",
+    "admin.js",
+    "index.js"
+  ]
+}

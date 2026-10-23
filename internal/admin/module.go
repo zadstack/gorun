@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/edgeprovision"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/mailer"
@@ -139,6 +140,8 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.capabilityAPIOperations()
 	h.capabilityTestAPIOperations()
 	h.integrationAPIOperations()
+	h.edgeManagerAPIOperations()
+	h.registerEdgeInstanceProvisionJobs(edgeprovision.NewAdapter(), edgeprovision.ArtifactSHA())
 	h.updateAPIOperations()
 	h.observationAPIOperations()
 	h.backupScheduleAPIOperations()
@@ -181,6 +184,8 @@ func addNav(d *kernel.Deps) {
 		{ID: "settings.connections", LabelKey: "admin.connections.title", Icon: "plug", Href: "/admin/settings/connections", Permission: PermSettings, Group: "integrations", Position: 800},
 		{ID: "settings", LabelKey: "admin.nav.settings", Icon: "settings", Href: "/admin/settings/general", Permission: PermSettings, Group: "settings", Position: 700},
 		{ID: "settings.workspace", LabelKey: "admin.workspace.nav", Icon: "layout-template", Href: "/admin/workspace", Permission: PermSettings, Group: "settings", Position: 702},
+		{ID: "onboarding", LabelKey: "onboarding.title", Icon: "list-checks", Href: "/admin/platform-setup", Permission: PermSettings, Group: "settings", Position: 700},
+		{ID: "settings.edge.instances", LabelKey: "onboarding.edge_instances", Icon: "cloud", Href: "/admin/settings/edge/instances", Permission: PermSettings, Group: "integrations", Position: 805},
 		{ID: "settings.edge", LabelKey: "admin.settings.edge.nav", Icon: "cloud", Href: "/admin/settings/edge", Permission: PermSettings, Group: "settings", Position: 704},
 		{ID: "system.updates", LabelKey: "admin.updates.title", Icon: "download", Href: "/admin/system/updates", Permission: PermUpdate, Group: "system", Position: 905},
 		{ID: "system.health", LabelKey: "admin.nav.health", Icon: "activity", Href: "/admin/system/health", Permission: PermHealth, Group: "system", Position: 900},

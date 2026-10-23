@@ -7,6 +7,9 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Dashboard setup checklist with permission-aware configuration and saved evidence, contextual actions, and collapsed diagnostics while preserving saved personal layouts.
+- Independent experimental Edge instance registry and explicit Cloudflare creation plans: separate Worker/D1/private R2 resources, encrypted per-instance manager keys, pinned embedded runtime, durable checkpoints, and identity verification before acceptance. No Full content cloning or automatic provider retry/deletion.
+
 - Core site stylesheet (`/static/site/core.css`), served from the binary with a content hash and
   linked by `{{sections .}}` in every theme. It holds zero-specificity element defaults for forms,
   tables, code, quotes, messages and long content, plus the utilities of the shared functional

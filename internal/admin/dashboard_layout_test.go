@@ -36,8 +36,8 @@ func TestDashboardLayoutOwnershipCASResetAndNewWidgets(t *testing.T) {
 	}
 	u := s.login("layout@example.com", "admin", "en")
 	original := layoutIDs(t, s)
-	if original[0] != "quick_actions" {
-		t.Fatal("quick actions default order", original)
+	if original[0] != "setup_status" {
+		t.Fatal("setup attention default order", original)
 	}
 	order := slices.Clone(original)
 	slices.Reverse(order)

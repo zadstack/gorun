@@ -42,6 +42,7 @@ asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.
 | `internal/brand` | infra | — |
 | `internal/config` | infra | — |
 | `internal/diagnostics` | infra | `db` |
+| `internal/edgeprovision` | infra | — |
 | `internal/hooks` | infra | `jobs` |
 | `internal/httpx` | infra | `audit` `db` `i18n` |
 | `internal/kernel` | infra | `audit` `config` `db` `diagnostics` `hooks` `httpx` `i18n` `jobs` `metrics` `observe` `settings` `update` |
@@ -67,7 +68,7 @@ asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.
 | `internal/builder` | core | `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `settings` `theme` |
 | `internal/site` | core | `audit` `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `mailer` `redirects` `seo` `settings` `taxonomy` `theme` |
 | `internal/api` | core | `auth` `config` `content` `db` `httpx` `i18n` `jobs` `kernel` `media` `menus` `settings` `taxonomy` `theme` |
-| `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `seo` `settings` `theme` `update` |
+| `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `observe` `seo` `settings` `theme` `update` |
 | `internal/webhooks` | core | `audit` `auth` `db` `httpx` `i18n` `jobs` `kernel` |
 | `internal/commerce` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `redirects` `seo` `settings` `theme` |
 | `internal/saas` | feature | `admin` `api` `audit` `auth` `commerce` `db` `httpx` `kernel` |

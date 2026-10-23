@@ -1,6 +1,6 @@
 {{/* Data: []audit.Entry */}}
 {{define "content"}}
-<div data-widget="recent_audit">
+<details data-widget="recent_audit"><summary class="font-semibold cursor-pointer">{{t "admin.dashboard.recent_audit"}}</summary>
   <div class="flex items-center justify-between mb-3">
     <h2 class="text-base font-bold">{{t "admin.dashboard.recent_audit"}}</h2>
     <a href="/admin/agents/audit" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>
@@ -20,5 +20,5 @@
   {{else}}
   <p class="text-muted">{{t "admin.audit.empty"}}</p>
   {{end}}
-</div>
+</details>
 {{end}}

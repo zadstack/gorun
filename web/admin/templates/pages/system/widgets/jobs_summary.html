@@ -1,6 +1,6 @@
 {{/* Data: {Stats jobs.Stats} */}}
 {{define "content"}}
-<div data-widget="jobs_summary">
+<details data-widget="jobs_summary"><summary class="font-semibold cursor-pointer">{{t "admin.dashboard.jobs"}}</summary>
   <div class="flex items-center justify-between mb-3">
     <h2 class="text-base font-bold">{{t "admin.dashboard.jobs"}}</h2>
     <a href="/admin/system/jobs" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>
@@ -11,5 +11,5 @@
     <div class="rounded border {{if .Stats.Failed}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-bg{{end}} p-2"><dt class="font-mono text-[11px] uppercase tracking-wide {{if not .Stats.Failed}}text-muted{{end}}">{{t "admin.jobs.status_failed"}}</dt><dd class="font-mono text-lg" data-stat="failed">{{.Stats.Failed}}</dd></div>
     <div class="rounded border {{if .Stats.Dead}}border-red bg-red-soft text-red{{else}}border-line bg-bg{{end}} p-2"><dt class="font-mono text-[11px] uppercase tracking-wide {{if not .Stats.Dead}}text-muted{{end}}">{{t "admin.jobs.status_dead"}}</dt><dd class="font-mono text-lg" data-stat="dead">{{.Stats.Dead}}</dd></div>
   </dl>
-</div>
+</details>
 {{end}}

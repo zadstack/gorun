@@ -107,3 +107,5 @@ Audit follow-ups and status records. They describe what changed and why; the gui
 ## Also in the repository root / أيضًا في جذر المستودع
 
 [README.md](../README.md) · [PRODUCT.md](../PRODUCT.md) · [DESIGN.md](../DESIGN.md) · [SECURITY.md](../SECURITY.md) · [CONTRIBUTING.md](../CONTRIBUTING.md) · [CHANGELOG.md](../CHANGELOG.md)
+
+- [Independent Edge instances and site setup](EDGE-MANAGER.md): dashboard setup, separate Worker/D1/private-R2 creation plans, identity verification and reconciliation limits.

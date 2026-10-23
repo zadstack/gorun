@@ -49,6 +49,8 @@ func (h *handlers) routes() {
 	st.Post("/workspace", h.workspaceSave)
 	st.Get("/settings/general", h.settingsGeneral)
 	st.Post("/settings/general", h.settingsGeneralSave)
+	st.Get("/platform-setup", h.onboardingPage)
+	st.Get("/settings/edge/instances", h.edgeInstancesPage)
 	st.Get("/settings/edge", h.settingsEdge)
 	st.Post("/settings/edge", h.settingsEdgeSave)
 	st.Post("/settings/edge/check", h.settingsEdgeCheck)

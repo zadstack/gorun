@@ -1,4 +1,4 @@
-{{define "content"}}<details data-widget="setup_status" class="dashboard-setup">
-<summary><strong>{{t "dashboardlayout.setup"}}</strong><span>{{t "dashboardlayout.setup_hint"}}</span></summary>
-<p>{{t "dashboardlayout.local_only"}}</p><ul>{{range .}}<li><a href="{{.Href}}"><strong>{{t .TitleKey}}</strong><span>{{t .StatusKey}}</span><span aria-hidden="true">→</span></a></li>{{end}}</ul>
-</details>{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "onboarding.css"}}">
+<details data-widget="setup_status" class="dashboard-setup onboarding" {{if .Attention}}open{{end}}><summary><strong>{{t "onboarding.title"}}</strong> · {{t "dashboardlayout.setup_hint"}}</summary><p>{{t "onboarding.intro"}}</p><ul class="onboarding-compact">{{range .Items}}<li data-setup-state="{{.State}}"><a href="{{.Href}}">{{if .Title}}{{.Title}}{{else}}{{t .TitleKey}}{{end}}</a><span class="onboarding-state" data-state="{{.State}}">{{t .StatusKey}}</span></li>{{end}}</ul><a href="/admin/platform-setup">{{t "onboarding.open_checklist"}}</a></details>
+{{end}}

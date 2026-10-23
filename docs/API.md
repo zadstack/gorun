@@ -401,7 +401,7 @@ Example section in a version-1 document:
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **195 operations** in 24 tags.
+Generated from the current locally booted OpenAPI document: **203 operations** in 24 tags.
 
 ### builder
 
@@ -598,6 +598,10 @@ Generated from the current locally booted OpenAPI document: **195 operations** i
 | GET | `/api/v1/health` | Readiness: database reachable | any key or session |
 | GET | `/api/v1/me` | Current principal and effective scopes | any key or session |
 | GET | `/api/v1/site/capabilities` | Saved capability evidence (availability, activation, configuration, connectivity, operation tests) with no external checks | `system.health` |
+| GET | `/api/v1/site/edge/instances/capabilities` | Independent Edge manager contract; local capability discovery only, no provider request | `settings.manage` |
+| GET | `/api/v1/site/edge/instances/plans/{id}` | One saved creation plan with resource receipts and reconciliation state | `settings.manage` |
+| GET | `/api/v1/site/edge/instances/plans` | Saved creation plans and operation states; never returns credentials or calls Cloudflare | `settings.manage` |
+| GET | `/api/v1/site/edge/instances` | Saved independent Edge instance identities; no provider request. Revision is returned at envelope level | `settings.manage` |
 | GET | `/api/v1/site/info` | Public site identity, running build, languages and theme appearance with provenance | public |
 | GET | `/api/v1/site/integrations/cloudflare/inventory/{kind}` | Saved inventory of one kind with age and an explicit complete flag | `settings.manage` |
 | GET | `/api/v1/site/integrations` | Integrations snapshot: Cloudflare connection and scope lamps, R2/D1/Workers inventory, storage bindings with sources, mail settings; no external calls | `settings.manage` |
@@ -607,6 +611,10 @@ Generated from the current locally booted OpenAPI document: **195 operations** i
 | POST | `/api/v1/site/capabilities/connections/{id}/operation` | Queue an isolated operation test (S3: write/read/delete one probe object; AI: one tiny completion); answers 202 | `system.capability_test` |
 | POST | `/api/v1/site/capabilities/services/mail/operation` | Queue one test message to the requesting operator's own address; answers 202 | `system.capability_test` |
 | POST | `/api/v1/site/capabilities/services/storage/operation` | Queue one write/read/delete probe on the storage new uploads use (managed destination, configured bucket or local disk); answers 202 | `system.capability_test` |
+| POST | `/api/v1/site/edge/instances/plans/{id}/execute` | Explicitly approve the exact unexpired resource plan and queue one durable creation operation; no retries after an uncertain provider mutation | `settings.manage` |
+| POST | `/api/v1/site/edge/instances/plans` | Preview isolated Worker, D1 and private R2 creation using bounded read-only Cloudflare checks; creates no provider resource | `settings.manage` |
+| POST | `/api/v1/site/edge/instances/{id}/check` | Explicitly recheck one saved instance identity; preserves other instances | `settings.manage` |
+| POST | `/api/v1/site/edge/instances` | Connect an independent existing Edge instance after verifying its primary manager identity; write-only key and registry revision required | `settings.manage` |
 | POST | `/api/v1/site/integrations/cloudflare/check` | Queue the token verification, account listing and per-service read permission checks; answers 202 with the task references | `settings.manage` |
 | POST | `/api/v1/site/integrations/cloudflare/inventory/{kind}/refresh` | Queue a full re-read of one inventory kind (paginated, bounded); answers 202; concurrent requests share one job | `settings.manage` |
 | POST | `/api/v1/site/integrations/cloudflare/workers/{name}/identify` | Confirm a Worker as a GoRun Edge instance through its manager contract with a pasted manager key (never stored); records identity evidence | `settings.manage` |

@@ -63,6 +63,8 @@ func (h *handlers) dashboardRendered(r *http.Request, strict bool) ([]dashboardR
 	rank := func(id string) int {
 		switch id {
 		case "review_queue":
+			return -2
+		case "setup_status":
 			return -1
 		case "workspace_choice":
 			return 6
@@ -76,6 +78,8 @@ func (h *handlers) dashboardRendered(r *http.Request, strict bool) ([]dashboardR
 			return 0
 		case "canvas_gallery":
 			return 5
+		case "recent_audit", "jobs_summary", "system_summary":
+			return 10
 		default:
 			return 4
 		}
