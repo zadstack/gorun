@@ -32,13 +32,36 @@ fail the process by themselves.
 | Locales | Own `lang/en.json` and `lang/ar.json` (flat string maps, ≥1 key each) — inheritance alone is not enough for ship-with |
 | Templates | Resolve via own files or parents: `index`, `page`, `single`, `archive`, `taxonomy`, `search`, `404`, `500`, `page-builder`, `page-contact`, `form-result`, plus `front-page` **or** `home` |
 | Screenshot | `screenshot.png` at theme root |
-| Head | Own or inherited `parts/head.html` / `head-extra.html` call `sections` (links `sections.css` only on pages whose content uses `gp-s-` blocks; a plain `sections.css` link is still accepted), `builderIdentity` (or `builderStyle`) and `identity` |
+| Head | Own or inherited `parts/head.html` / `head-extra.html` call `sections` (links the [core site stylesheet](#core-site-stylesheet) on every page, the store stylesheet on commerce pages and `sections.css` only on pages whose content uses `gp-s-` blocks; a head without the call must link both `sections.css` and `/static/site/core.css` itself), `builderIdentity` (or `builderStyle`) and `identity` |
 | Tokens | Primary stylesheet (`assets/site.css`, `theme.css`, or `style.css`) declares `:where(html[data-theme="<slug>"])` (default may use bare `html[data-theme="default"]`) |
 | CSP | Theme HTML/CSS/JS must not reference known third-party script CDN hosts |
 
 Custom (non-catalog) themes checked by doctor use a lighter bar: `index.html` must resolve
 (`OptionsForSlug`). Use `ValidateDir(dir, roots, CatalogOptions())` in tests when you want
 the full ship-with bar on a fixture.
+
+## Core site stylesheet
+
+Every theme gets `/static/site/core.css` from `{{sections .}}`, served from the binary with a
+content hash. It gives new themes correct defaults without adding work to them:
+
+- **Element defaults** for page content: labels, fields, selects, text areas, unclassed buttons,
+  tables, code, quotes, alerts and status messages, and images and long words that never widen
+  the page. Under `<main>` every rule is wrapped in `:where()`, so its specificity is zero and
+  any rule a theme writes wins. Colours, radius and fonts come from the theme and identity tokens.
+- **The shared functional templates** come from `default` for every theme: `account`, `cart`,
+  `checkout`, `checkout-result`, `shop`, `product`, `private-intake` and `form-result` (children
+  may override `form-result`). They wrap their content in `<div class="gp-core">`. The core
+  stylesheet carries the utilities those templates use, scoped under `.gp-core` and without
+  Tailwind's reset, so they look right under any theme and never restyle a theme's own markup.
+  Inside `.gp-core` the element defaults weigh one class, enough to beat an element reset.
+- **The store stylesheet** (`commerce.css`) is linked on every commerce page. Its buttons use the
+  `--accent`, `--on-accent`, `--accent-ink` and `--panel` tokens, so they follow the theme and the
+  site identity.
+
+A theme keeps its character by styling its own classes and elements; it does not need to restyle
+the shared pages. Rebuild the stylesheet with `tools/tailwind/build.sh` after changing a shared
+template's classes (CI runs `--check`).
 
 ## Package surface
 

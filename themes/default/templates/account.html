@@ -1,6 +1,6 @@
 {{/* Commerce: /account. Signed out: .Extra.login_form (bool), .Extra.sent (bool).
      Signed in: .Extra.entitlements ([]commerce.Entitlement), .Extra.customer. Errors: .Extra.account_error (i18n key). */}}
-{{part "header" .}}
+{{part "header" .}}<div class="gp-core">
 <section class="mx-auto max-w-3xl">
   <h1 class="text-[22px] font-bold">{{t "commerce.account.title"}}</h1>
   {{with .Extra.account_error}}<p role="alert" class="mt-4 rounded border border-red bg-red-soft px-3 py-2 text-red">{{t .}}</p>{{end}}
@@ -63,4 +63,4 @@
   {{end}}
 </section>
 {{if not .Extra.login_form}}<section class="mx-auto max-w-3xl"><h2>{{t "store.account.orders"}}</h2><ul>{{range .Extra.orders}}<li><h3>#{{.Number}}</h3><p>{{t (print "commerce.order.status." .Status)}} · {{money .TotalMinor .Currency}}</p>{{if eq (index .ProductSnapshot "payment_method") "manual_request"}}<p>{{t "store.account.fulfillment"}}: {{.RequestStatus}}</p>{{end}}<ul>{{range index $.Extra.order_items .ID}}<li>{{.ProductName}} × {{.Quantity}}{{$line := .}}{{if .IntakeSchema}}<dl>{{range .IntakeSchema}}<dt>{{.Label}}</dt><dd>{{index $line.Intake .Key}}</dd>{{end}}</dl>{{end}}{{with .DownloadURL}} <a href="{{.}}">{{t "store.account.download"}}</a>{{end}}</li>{{end}}</ul></li>{{else}}<li>{{t "store.account.no_orders"}}</li>{{end}}</ul></section>{{end}}
-{{part "footer" .}}
+</div>{{part "footer" .}}

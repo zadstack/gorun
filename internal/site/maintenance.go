@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/theme"
 )
 
 // SettingMaintenance (bool) puts the public site in maintenance: every
@@ -54,7 +55,7 @@ func maintenanceExempt(r *http.Request) bool {
 		return false
 	}
 	p := r.URL.Path
-	if p == "/sitemap.xml" || p == "/robots.txt" || p == httpx.LaunchCSSPath || p == httpx.LaunchPolishPath ||
+	if p == "/sitemap.xml" || p == "/robots.txt" || p == httpx.LaunchCSSPath || p == httpx.LaunchPolishPath || p == theme.CoreCSSPath ||
 		strings.HasPrefix(p, "/media/") || strings.HasPrefix(p, httpx.StaticPrefix) {
 		return true
 	}

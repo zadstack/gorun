@@ -97,6 +97,7 @@ Audit follow-ups and status records. They describe what changed and why; the gui
 
 | Doc | Covers |
 | --- | --- |
+| [SITE-QUALITY-ROADMAP.md](SITE-QUALITY-ROADMAP.md) | Site quality in the core: theme contract, identity, readiness, assets, preview, theme updates, module readiness |
 | [CORE-UPGRADE-ROADMAP.md](CORE-UPGRADE-ROADMAP.md) | Shared Core operations after v0.14.1: requirements and their status |
 | [CONTENT-UX-REMEDIATION.md](CONTENT-UX-REMEDIATION.md) | Content and website audit follow-up (2026-10-19) |
 | [ADMIN-AUDIT-WORKSPACE-FIXES.md](ADMIN-AUDIT-WORKSPACE-FIXES.md) | Workspace audit improvements |

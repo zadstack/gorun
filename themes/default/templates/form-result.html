@@ -1,5 +1,5 @@
 {{/* After POST /forms/contact: .Extra.form is {OK, Errors, Values, Back}. */}}
-{{part "header" .}}
+{{part "header" .}}<div class="gp-core">
 {{with .Extra.form}}
 <section class="mx-auto max-w-2xl">
   {{if .OK}}
@@ -18,4 +18,4 @@
   {{end}}
 </section>
 {{end}}
-{{part "footer" .}}
+</div>{{part "footer" .}}

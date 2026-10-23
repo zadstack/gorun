@@ -1,0 +1,145 @@
+/* GoRun core site stylesheet. Source of web/site/core.css (tools/tailwind/build.sh).
+   Served by the binary and linked by {{sections .}} in every theme. */
+@tailwind base;
+@tailwind utilities;
+
+/* The wrapper of the shared functional templates keeps its content off the
+   screen edge in themes whose <main> has no side padding. */
+.gp-core {
+  box-sizing: border-box;
+  width: 100%;
+  padding-inline: var(--space-4, 1rem);
+  padding-block: var(--space-4, 1rem) var(--space-6, 2rem);
+}
+
+/* Buttons get a filled look only when they carry no class: a classed button
+   belongs to whoever styles that class, and half a default (a fill under a
+   theme's outline colour) would be worse than none. */
+
+/* Element defaults for page content. Under <main> every selector is wrapped in
+   :where(), so its specificity is zero and any rule a theme writes wins. Inside
+   .gp-core (the shared templates) the same defaults weigh one class, enough to
+   beat an element reset such as Tailwind's preflight but not a utility class.
+   Colours, radius and fonts come from the theme and identity tokens, with
+   neutral fallbacks. */
+:where(main) :where(label), .gp-core :where(label) {
+  display: block;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+:where(main) :where(input:not([type=checkbox], [type=radio], [type=hidden], [type=submit], [type=button], [type=reset], [type=file], [type=range], [type=color]), select, textarea), .gp-core :where(input:not([type=checkbox], [type=radio], [type=hidden], [type=submit], [type=button], [type=reset], [type=file], [type=range], [type=color]), select, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: 2.6rem;
+  padding: .5rem .75rem;
+  border: 1px solid var(--line-strong, var(--line, #c4ccd6));
+  border-radius: var(--radius, 8px);
+  background: var(--panel, #fff);
+  color: var(--ink, #14181f);
+  font: inherit;
+}
+:where(main) :where(textarea), .gp-core :where(textarea) {
+  min-height: 7rem;
+  resize: vertical;
+}
+:where(main) :where(input, select, textarea, button, summary):focus-visible, .gp-core :where(input, select, textarea, button, summary):focus-visible {
+  outline: 3px solid var(--accent-soft, color-mix(in srgb, var(--accent, #1748ed) 30%, transparent));
+  outline-offset: 1px;
+}
+:where(main) :where(button:not([class]), input[type=submit]:not([class]), input[type=button]:not([class])), .gp-core :where(button:not([class]), input[type=submit]:not([class]), input[type=button]:not([class])) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  min-height: 2.6rem;
+  margin-top: .75rem;
+  padding: .5rem 1.1rem;
+  border: 1px solid var(--accent, var(--green, #1748ed));
+  border-radius: var(--radius, 8px);
+  background: var(--accent, var(--green, #1748ed));
+  color: var(--on-accent, #fff);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+:where(main) :where(button:not([class]), input[type=submit]:not([class]), input[type=button]:not([class])):hover, .gp-core :where(button:not([class]), input[type=submit]:not([class]), input[type=button]:not([class])):hover {
+  background: var(--accent-hover, var(--accent, var(--green, #1748ed)));
+}
+:where(main) :where(button:disabled, input:disabled, select:disabled, textarea:disabled), .gp-core :where(button:disabled, input:disabled, select:disabled, textarea:disabled) {
+  opacity: .6;
+  cursor: not-allowed;
+}
+:where(main) :where(form), .gp-core :where(form) {
+  max-width: 100%;
+}
+:where(main) :where(details), .gp-core :where(details) {
+  margin: 1rem 0;
+}
+:where(main) :where(summary), .gp-core :where(summary) {
+  cursor: pointer;
+  font-weight: 600;
+}
+:where(main) :where(fieldset), .gp-core :where(fieldset) {
+  margin: 1rem 0;
+  padding: .75rem 1rem;
+  border: 1px solid var(--line, #dde3ea);
+  border-radius: var(--radius, 8px);
+}
+
+/* Tables: readable cells, and a long table scrolls inside itself instead of
+   widening the page. */
+:where(main) :where(table), .gp-core :where(table) {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+}
+:where(main) :where(th, td), .gp-core :where(th, td) {
+  padding: .55rem .75rem;
+  border-bottom: 1px solid var(--line, #dde3ea);
+  text-align: start;
+  vertical-align: top;
+}
+:where(main) :where(th), .gp-core :where(th) {
+  background: var(--panel-2, #f3f5f8);
+  font-weight: 600;
+}
+
+/* Media and long text never push the page sideways. */
+:where(main) {
+  overflow-wrap: break-word;
+}
+:where(main) :where(img, video), .gp-core :where(img, video) {
+  max-width: 100%;
+  height: auto;
+}
+:where(main) :where(pre), .gp-core :where(pre) {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: .75rem 1rem;
+  border-radius: var(--radius, 8px);
+  background: var(--panel-2, #f3f5f8);
+}
+:where(main) :where(code, kbd, samp, pre), .gp-core :where(code, kbd, samp, pre) {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+}
+:where(main) :where(blockquote), .gp-core :where(blockquote) {
+  margin: 1rem 0;
+  padding-inline-start: 1rem;
+  border-inline-start: 3px solid var(--accent, var(--line-strong, #c4ccd6));
+}
+
+/* Messages the core renders with a role. */
+:where(main) :where([role=alert]), .gp-core :where([role=alert]) {
+  padding: .6rem .8rem;
+  border: 1px solid var(--red, #b42318);
+  border-radius: var(--radius, 8px);
+  background: var(--danger-bg, var(--red-soft, #fdf0ef));
+  color: var(--danger-text, var(--red, #b42318));
+}
+:where(main) :where([role=status]:not(:empty)), .gp-core :where([role=status]:not(:empty)) {
+  padding: .6rem .8rem;
+  border: 1px solid var(--line, #dde3ea);
+  border-radius: var(--radius, 8px);
+  background: var(--success-bg, var(--panel-2, #f3f5f8));
+}

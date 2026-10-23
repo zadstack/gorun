@@ -52,6 +52,14 @@ func previewStylesheet(node *html.Node, chain []Info) bool {
 	return rel == "stylesheet" && ((ok && strings.HasSuffix(name, ".css")) || href == "/static/admin/zad-font.css")
 }
 
+// previewCoreStylesheet matches the core site stylesheet link, which the
+// sandboxed preview inlines from the binary like a theme stylesheet.
+func previewCoreStylesheet(node *html.Node) bool {
+	href, rel := previewLink(node)
+	u, err := url.Parse(href)
+	return rel == "stylesheet" && err == nil && u.Host == "" && u.Path == CoreCSSPath
+}
+
 func previewBuilderStylesheet(node *html.Node) bool {
 	href, rel := previewLink(node)
 	return rel == "stylesheet" && href == "/static/builder/builder.css"

@@ -10,7 +10,6 @@
 <link rel="stylesheet" href="{{asset "tokens.css"}}">
 <link rel="stylesheet" href="{{asset "a11y.css"}}">
 <link rel="stylesheet" href="{{asset "style.css"}}">
-{{if .Extra.commerce}}<link rel="stylesheet" href="{{asset "commerce.css"}}">{{end}}
 {{part "head-extra" .}}
 {{with .Content}}{{if eq .Template "builder"}}<link rel="stylesheet" href="/static/builder/builder.css">{{end}}{{end}}
 {{builderIdentity}}

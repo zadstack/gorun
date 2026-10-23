@@ -169,10 +169,13 @@ func ValidateDir(dir string, roots []string, opts Options) Result {
 	if len(opts.ForbidScriptHosts) > 0 {
 		res.Issues = append(res.Issues, scanForbiddenHosts(dir, opts.ForbidScriptHosts)...)
 	}
-	// {{sections .}} links sections.css only on pages whose content uses it;
-	// a theme whose own templates use gp-s-* keeps a plain link instead.
-	if !headMatches(chain, sectionsCall) && !headProvides(chain, "sections.css") {
-		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call {{sections .}} or load sections.css (own or inherited)", Path: "parts/head.html"})
+	// {{sections .}} links the core site stylesheet (forms, tables, the shared
+	// store and account templates) on every page and sections.css only on
+	// pages whose content uses it. A theme whose own templates use gp-s-* may
+	// keep a plain sections.css link instead, but then links the core
+	// stylesheet itself, or the shared functional pages lose their styling.
+	if !headMatches(chain, sectionsCall) && !(headProvides(chain, "sections.css") && headProvides(chain, CoreStylesheetPath)) {
+		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call {{sections .}}, or load both sections.css and " + CoreStylesheetPath + " (own or inherited)", Path: "parts/head.html"})
 	}
 	if !headProvides(chain, "builderIdentity") && !headProvides(chain, "builderStyle") {
 		res.Issues = append(res.Issues, Issue{Code: "head", Message: "head must call builderIdentity or builderStyle (own or inherited)", Path: "parts/head.html"})
@@ -267,6 +270,10 @@ func resolves(chain []string, kind, name string) bool {
 	}
 	return false
 }
+
+// CoreStylesheetPath is the core site stylesheet GoRun serves from the binary
+// (theme.CoreCSSPath); {{sections .}} links it with a content hash.
+const CoreStylesheetPath = "/static/site/core.css"
 
 // sectionsCall matches the {{sections .}} head func, with any spacing.
 var sectionsCall = regexp.MustCompile(`\{\{-?\s*sections\b`)
