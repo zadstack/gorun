@@ -3,7 +3,7 @@
 {{$title := t "latest_posts"}}{{with .Extra.title}}{{$title = .}}{{end}}
 <section class="gr-section" aria-labelledby="archive-title">
   {{component "section-head" (dict "Path" "/archive" "Title" $title "TitleID" "archive-title" "Level" 1)}}
-  {{with .Items}}{{component "archive-filter" (dict "Terms" (termsOf "category" (index . 0).Type) "Current" nil)}}{{end}}
-  {{component "list-variant" .}}
+  {{component "library-filters" .}}
+  {{if and (not .Items) (libraryFilters .).Active}}{{component "library-empty" .}}{{else}}{{component "list-variant" .}}{{end}}
 </section>
 {{part "footer" .}}

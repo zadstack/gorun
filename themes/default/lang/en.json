@@ -35,7 +35,7 @@
   "start_reading": "Start reading",
   "featured": "Featured",
   "all_posts": "All articles",
-  "reading_time": "%d min read",
+  "reading_time": "About %d min read",
   "search_cta_title": "Looking for something specific?",
   "search_cta_body": "Search everything published on this site.",
   "open_menu": "Open menu",
@@ -88,5 +88,9 @@
   "previous_post": "Previous",
   "next_post": "Next",
   "more_articles": "More articles",
-  "filter_by_category": "Filter by category"
+  "filter_by_category": "Filter by category",
+  "results_count": "%d results",
+  "remove_filter": "Remove filter: %s",
+  "clear_filters": "Clear filters",
+  "no_results_filters": "No published items match these filters."
 }

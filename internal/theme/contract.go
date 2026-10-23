@@ -72,6 +72,10 @@ type Pagination struct {
 	Pages   int  `json:"pages"`
 	HasPrev bool `json:"has_prev"`
 	HasNext bool `json:"has_next"`
+	// PrevURL and NextURL keep the request's other parameters (filters, a
+	// search query); set by the site for listings, empty otherwise.
+	PrevURL string `json:"prev_url,omitempty"`
+	NextURL string `json:"next_url,omitempty"`
 }
 
 type SiteInfo struct {

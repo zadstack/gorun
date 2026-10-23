@@ -192,7 +192,8 @@ func (h *handlers) list(ctx context.Context, r *http.Request, tc *theme.Context,
 		return err
 	}
 	tc.Items = res.Items
-	tc.Pagination = theme.NewPagination(res.Page, res.PerPage, res.Total)
+	lib, _ := tc.Extra["library"].(*theme.Library)
+	tc.Pagination = theme.PageURLs(theme.NewPagination(res.Page, res.PerPage, res.Total), r.URL, lib)
 	return nil
 }
 

@@ -35,7 +35,7 @@
   "start_reading": "ابدأ القراءة",
   "featured": "مقال مميز",
   "all_posts": "كل المقالات",
-  "reading_time": "قراءة %d د",
+  "reading_time": "نحو %d د قراءة",
   "search_cta_title": "تبحث عن موضوع معيّن؟",
   "search_cta_body": "ابحث في كل ما نُشر على الموقع.",
   "open_menu": "فتح القائمة",
@@ -88,5 +88,9 @@
   "previous_post": "السابق",
   "next_post": "التالي",
   "more_articles": "مقالات أخرى",
-  "filter_by_category": "تصفية حسب التصنيف"
+  "filter_by_category": "تصفية حسب التصنيف",
+  "results_count": "%d نتيجة",
+  "remove_filter": "إزالة التصفية: %s",
+  "clear_filters": "مسح التصفية",
+  "no_results_filters": "لا توجد عناصر منشورة تطابق هذه التصفية."
 }

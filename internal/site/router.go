@@ -3,6 +3,7 @@ package site
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/zadstack/gorun/internal/content"
@@ -133,7 +134,11 @@ func localized(m map[string]string, locale, fallback string) string {
 }
 
 func (h *handlers) archive(w http.ResponseWriter, r *http.Request, tc *theme.Context, t content.Type) {
-	if err := h.list(r.Context(), r, tc, content.Query{Type: t.Slug}); err != nil {
+	lib := theme.ParseLibrary(theme.LibrarySpecFor(t), r.URL)
+	q := content.Query{Type: t.Slug}
+	lib.Apply(&q)
+	tc.Extra["library"] = lib
+	if err := h.list(r.Context(), r, tc, q); err != nil {
 		h.serverError(w, r, tc, err)
 		return
 	}
@@ -184,6 +189,16 @@ func (h *handlers) termItems(r *http.Request, tc *theme.Context, tax *taxonomy.T
 		tc.Pagination = theme.NewPagination(1, h.perPage(ctx), 0)
 		return nil
 	case 1:
+		// One type: the term archive is a library of that type, filterable
+		// by its other taxonomies and fields; the term itself stays fixed.
+		if t, ok := public[types[0]]; ok {
+			spec := theme.LibrarySpecFor(t)
+			spec.Taxonomies = slices.DeleteFunc(spec.Taxonomies, func(s string) bool { return s == tax.Slug })
+			spec.Fixed = map[string][]string{tax.Slug: {term}}
+			lib := theme.ParseLibrary(spec, r.URL)
+			lib.Apply(&q)
+			tc.Extra["library"] = lib
+		}
 		q.Type = types[0]
 		return h.list(ctx, r, tc, q)
 	}

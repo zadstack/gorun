@@ -105,12 +105,13 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 			}
 			return identityCSS(get, httpx.Nonce(st.ctx))
 		},
-		"sections":    func(...any) template.HTML { return f.sectionsCSS(st.tc) },
-		"destination": f.destination,
-		"related":     f.related,
-		"adjacent":    f.adjacent,
-		"termsOf":     f.termsOf,
-		"builderBody": f.builderBody,
+		"sections":       func(...any) template.HTML { return f.sectionsCSS(st.tc) },
+		"destination":    f.destination,
+		"related":        f.related,
+		"adjacent":       f.adjacent,
+		"termsOf":        f.termsOf,
+		"libraryFilters": func(tc *Context) LibraryFilters { return f.libraryFilters(tc) },
+		"builderBody":    f.builderBody,
 		"addonBody": func(name, body string) template.HTML {
 			if render, ok := fm[name].(func(string) template.HTML); ok {
 				return render(body)
