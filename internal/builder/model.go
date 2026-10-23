@@ -21,21 +21,25 @@ type Document struct {
 	Sections []Section `json:"sections"`
 }
 type Section struct {
-	HeroScene string  `json:"hero_scene,omitempty"`
-	Feed      string  `json:"feed,omitempty"`
-	ID        string  `json:"id"`
-	Kind      string  `json:"kind"`
-	Variant   string  `json:"variant"`
-	Title     string  `json:"title"`
-	Text      string  `json:"text"`
-	Image     string  `json:"image"`
-	ImageAlt  string  `json:"image_alt"`
-	Link      string  `json:"link"`
-	LinkLabel string  `json:"link_label"`
-	Items     []Entry `json:"items"`
-	Hidden    bool    `json:"hidden"`
+	Library   string         `json:"library,omitempty" enum:",sections" doc:"Empty keeps legacy builder HTML; sections opts into the theme section library."`
+	Native    *NativeOptions `json:"native,omitempty"`
+	HeroScene string         `json:"hero_scene,omitempty"`
+	Feed      string         `json:"feed,omitempty"`
+	ID        string         `json:"id"`
+	Kind      string         `json:"kind"`
+	Variant   string         `json:"variant"`
+	Title     string         `json:"title"`
+	Text      string         `json:"text"`
+	Image     string         `json:"image"`
+	ImageAlt  string         `json:"image_alt"`
+	Link      string         `json:"link"`
+	LinkLabel string         `json:"link_label"`
+	Items     []Entry        `json:"items"`
+	Hidden    bool           `json:"hidden"`
 }
 type Entry struct {
+	Icon     string `json:"icon,omitempty" enum:",bolt,shield,chart,globe,clock,check,layers"`
+	Featured bool   `json:"featured,omitempty"`
 	Title    string `json:"title"`
 	Text     string `json:"text"`
 	Image    string `json:"image"`
@@ -48,9 +52,9 @@ type BlockSpec struct {
 	Label string `json:"label"`
 }
 
-var kinds = []string{"hero", "text", "features", "services", "projects", "testimonials", "pricing", "faq", "stats", "logos", "contact", "cta"}
-var enLabels = []string{"Hero", "Text", "Features", "Services", "Projects", "Testimonials", "Pricing", "Questions", "Statistics", "Client logos", "Contact", "Call to action"}
-var arLabels = []string{"واجهة رئيسية", "نص", "مميزات", "خدمات", "أعمال", "آراء العملاء", "أسعار", "أسئلة شائعة", "إحصائيات", "شعارات العملاء", "تواصل", "دعوة لاتخاذ إجراء"}
+var kinds = []string{"hero", "text", "features", "services", "projects", "testimonials", "pricing", "faq", "stats", "logos", "contact", "cta", "steps", "comparison", "product_preview"}
+var enLabels = []string{"Hero", "Text", "Features", "Services", "Projects", "Testimonials", "Pricing", "Questions", "Statistics", "Client logos", "Contact", "Call to action", "Steps", "Comparison", "Product preview"}
+var arLabels = []string{"واجهة رئيسية", "نص", "مميزات", "خدمات", "أعمال", "آراء العملاء", "أسعار", "أسئلة شائعة", "إحصائيات", "شعارات العملاء", "تواصل", "دعوة لاتخاذ إجراء", "خطوات", "مقارنة", "معاينة المنتج"}
 
 func Catalog(locale string) []BlockSpec {
 	labels := enLabels
@@ -89,6 +93,9 @@ func DefaultSection(kind, locale string) Section {
 			s.Items = append(s.Items, Entry{Title: fmt.Sprintf("%s %d", label, i+1), Text: text})
 		}
 	}
+	if kind == "steps" || kind == "comparison" || kind == "product_preview" {
+		defaultNative(&s, locale)
+	}
 	return s
 }
 
@@ -124,6 +131,9 @@ func Validate(doc Document) error {
 		}
 		if s.Feed != "" && (s.Feed != "posts" || (s.Kind != "text" && s.Kind != "projects")) {
 			return errors.New("builder: unsupported feed")
+		}
+		if err := validateNative(s); err != nil {
+			return err
 		}
 		if len(s.Items) > maxRepeatedEntries {
 			return errors.New("builder: too many section entries")

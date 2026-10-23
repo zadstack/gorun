@@ -108,3 +108,16 @@
 3. Edit drafts in the section builder; the live site is unchanged until **Publish and activate site**.
 4. Check **Appearance → Site readiness**, then test the published contact form and take a backup ([PRODUCTION.md](PRODUCTION.md)).
 5. To change look only: **Appearance → Themes** and activate a catalog slug. To get that theme's starter pages, run Build your site again and activate explicitly. Activating a theme alone does not create pages.
+
+
+## أقسام مكتبة الثيم داخل الباني
+
+في باني الصفحة، اختر «مكتبة أقسام الثيم» من «طريقة عرض القسم» للقسم الرئيسي أو المميزات أو الأسئلة الشائعة. وتبدأ أقسام «خطوات»، «مقارنة»، و«معاينة المنتج» الجديدة بالمكتبة مباشرة. الصفحات القديمة تبقى على تخطيط الباني الحالي ما لم تغيّر الخيار؛ لا يتم تحويل HTML المنشور إلى حقول تلقائيًا.
+
+يمكنك تعديل العنوان والنص والروابط، وأرقام القسم الرئيسي، وأيقونات بطاقات المميزات وتمييزها، وخطوات القائمة، وأعمدة وصفوف المقارنة، والأسئلة والأجوبة. الخلفية تستخدم مكتبة CSS الحالية وألوان وخطوط الثيم. لمعاينة المنتج اختر صورة فعلية مع وصف بديل، أو فعّل رسم CSS التوضيحي مع تعليق يوضح أنه توضيحي وليس لقطة منتج حقيقية. لا يجري توليد صورة أو إرسال طلب ذكاء اصطناعي.
+
+مشاهد hero المتحركة ومصدر المقالات لا يتوافقان مع المكتبة؛ يبقيهما التخطيط الحالي. امسح الخيارات غير المتوافقة يدويًا قبل التبديل. الرجوع إلى التخطيط الحالي يحتاج تأكيد إزالة الحقول الخاصة بالمكتبة. المعاينة والحفظ لا ينشران الصفحة؛ راجعها باللغة المناسبة ثم انشر صراحة. عند تعارض تعديل، انسخ تعديلاتك وأعد التحميل بدل تجاوز رمز الحفظ. عقد JSON وحدوده موضحان في [API](API.md#structured-theme-section-layouts).
+
+### English — editable native sections
+
+Choose **Theme section library** for hero/features/FAQ, or add Steps, Comparison or Product preview. Existing pages retain their builder layout by default. Edit native content through structured fields, save a private draft, reload or preview, then publish explicitly. A CSS interface illustration is labeled and requires a caption; it is not an actual screenshot or an AI-generated image. Legacy hero scenes/feeds are incompatible with native mode and remain supported in the existing layout. No theme stylesheet is copied or replaced.

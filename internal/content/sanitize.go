@@ -22,6 +22,12 @@ var cmsPolicy = sync.OnceValue(func() *bluemonday.Policy {
 	p := bluemonday.UGCPolicy() // no data-*, no style, no scripts or handlers
 	p.AllowElements("section", "figure", "figcaption", "details", "summary", "mark", "small", "u", "s", "sub", "sup", "hr", "br", "iframe", "picture", "source")
 	p.AllowAttrs("open").OnElements("details")
+	// Native comparison tables own horizontal scrolling. Keep a keyboard focus
+	// target and a bounded accessible name, without permitting focus reordering.
+	p.AllowAttrs("tabindex").Matching(regexp.MustCompile(`^0$`)).OnElements("div")
+	p.AllowAttrs("role").Matching(regexp.MustCompile(`^region$`)).OnElements("div")
+	p.AllowAttrs("aria-label").Matching(regexp.MustCompile(`^[^\x00-\x1f\x7f]{1,300}$`)).OnElements("div")
+	p.AllowAttrs("scope").Matching(regexp.MustCompile(`^(col|row)$`)).OnElements("th")
 	p.AllowAttrs("id").Matching(regexp.MustCompile(`^gp-[A-Za-z0-9_-]{1,80}$`)).OnElements("section")
 	p.AllowAttrs("loading", "width", "height", "srcset", "sizes").OnElements("img")
 	p.AllowAttrs("srcset", "sizes").OnElements("source")
