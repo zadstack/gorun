@@ -452,7 +452,7 @@ test("pilot sections and native builder previews across five active themes", asy
       });
     }
     // Restore the exact fixture-owned row independently of HTTP/CSRF failures.
-    // Foreign SQLite writes invalidate settings.Store through data_version;
+    // Foreign SQLite writes invalidate settings.Store through settings_revision;
     // the real public GET below also verifies the running theme sees the value.
     await attempt("restore original theme setting", async () => {
       const restore = db();

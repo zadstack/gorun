@@ -32,9 +32,10 @@ type cacheEntry struct {
 }
 
 // Store reads and writes settings. Get/GetString results are memoized in
-// process memory. The cache is dropped whenever SQLite's data_version changes
-// (any writer on this file, including e2e helpers that UPDATE settings via
-// another connection) and on every Store write path.
+// process memory. The cache is dropped whenever settings_revision.n changes
+// (triggers advance it on every committed settings write, from any
+// connection or process, including e2e helpers that UPDATE settings
+// directly) and on every Store write path.
 type Store struct {
 	db    *sql.DB
 	log   *slog.Logger
@@ -43,7 +44,7 @@ type Store struct {
 
 type settingsCache struct {
 	mu        sync.Mutex
-	dbVersion int64 // 0 means "unknown / must re-sync"
+	dbVersion int64 // settings_revision.n of the entries; 0 means "unknown / must re-sync"
 	entries   map[string]cacheEntry
 }
 
@@ -79,16 +80,21 @@ func (s *Store) Get(ctx context.Context, key string, out any) error {
 	return nil
 }
 
-func (s *Store) dataVersion() (int64, error) {
+// revision reads the settings write counter. It replaces PRAGMA
+// data_version, which is per connection: it ignores the connection's own
+// commits, and two pool connections can report the same number across a
+// write, so a raw write on the pool or a foreign write could leave a stale
+// memo behind.
+func (s *Store) revision(ctx context.Context) (int64, error) {
 	var ver int64
-	if err := s.db.QueryRow(`PRAGMA data_version`).Scan(&ver); err != nil {
+	if err := s.db.QueryRowContext(ctx, `SELECT n FROM settings_revision WHERE id = 1`).Scan(&ver); err != nil {
 		return 0, err
 	}
 	return ver, nil
 }
 
-// syncLocked drops the memo when another connection (or our own write path
-// via Invalidate) advanced SQLite's data_version. Caller must hold c.mu.
+// syncLocked drops the memo when a settings write (ours or any other
+// connection's) advanced the revision. Caller must hold c.mu.
 func (c *settingsCache) syncLocked(ver int64) {
 	if ver == c.dbVersion {
 		return
@@ -98,9 +104,9 @@ func (c *settingsCache) syncLocked(ver int64) {
 }
 
 func (s *Store) raw(ctx context.Context, key string) (string, error) {
-	ver, err := s.dataVersion()
+	ver, err := s.revision(ctx)
 	if err != nil {
-		return "", fmt.Errorf("settings: data_version: %w", err)
+		return "", fmt.Errorf("settings: revision: %w", err)
 	}
 	if s.cache == nil {
 		var raw string
@@ -139,7 +145,7 @@ func (s *Store) raw(ctx context.Context, key string) (string, error) {
 	return raw, nil
 }
 
-// remember stores a fill only when data_version is still fillVer (a Store
+// remember stores a fill only when the revision is still fillVer (a Store
 // write or foreign SQL write clears/advances the cache in between).
 func (s *Store) remember(key, raw string, ok bool, fillVer int64) {
 	if s.cache == nil {

@@ -50,6 +50,13 @@ All notable changes to GoRun are recorded here. The format follows
   cart, unreadable outline buttons. Even under default, the password sign-in and registration
   forms had invisible fields and unstyled buttons.
 
+- A settings change no longer goes unseen by the server's settings cache. The cache compared
+  SQLite's `data_version`, which is per connection: it ignores the connection's own commits, and
+  two pool connections could report the same number across a write. A theme variant, locale or
+  other setting saved by direct SQL, or by a raw write on the server's own pool, could keep
+  rendering the old value. A `settings_revision` counter, advanced by triggers on every settings
+  write, now decides when the cache is dropped.
+
 ## [0.17.0] - 2026-10-23
 
 ### Added

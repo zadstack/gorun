@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/zadstack/gorun/internal/db"
@@ -133,7 +135,7 @@ func TestSetThenGetSeesNewValue(t *testing.T) {
 	}
 }
 
-func TestForeignSQLWriteInvalidatesViaDataVersion(t *testing.T) {
+func TestForeignSQLWriteInvalidates(t *testing.T) {
 	s, path := newStore(t)
 	ctx := context.Background()
 	if err := s.Set(ctx, "site.title", "A"); err != nil {
@@ -153,7 +155,75 @@ func TestForeignSQLWriteInvalidatesViaDataVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := s.Get(ctx, "site.title", &v); err != nil || v != "B" {
-		t.Fatalf("PRAGMA data_version must drop memo after foreign SQL: %q %v", v, err)
+		t.Fatalf("a foreign SQL write must drop the memo: %q %v", v, err)
+	}
+}
+
+// PRAGMA data_version ignores a connection's own commits and differs between
+// pool connections, so it can miss a raw write made on the store's own pool
+// (connections_store, identity_store) or compare one connection's counter
+// with another's. Every settings write must reach the memo.
+func TestPoolSQLWriteInvalidates(t *testing.T) {
+	s, _ := newStore(t)
+	ctx := context.Background()
+	if err := s.Set(ctx, "site.title", "A"); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"B", "C", "D"} {
+		var v string
+		if err := s.Get(ctx, "site.title", &v); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.db.ExecContext(ctx, `UPDATE settings SET value_json = ? WHERE key = 'site.title'`, `"`+want+`"`); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Get(ctx, "site.title", &v); err != nil || v != want {
+			t.Fatalf("raw pool write must drop the memo: got %q want %q (%v)", v, want, err)
+		}
+	}
+	if _, err := s.db.ExecContext(ctx, `DELETE FROM settings WHERE key = 'site.title'`); err != nil {
+		t.Fatal(err)
+	}
+	var v string
+	if err := s.Get(ctx, "site.title", &v); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("raw pool delete must drop the memo: %q %v", v, err)
+	}
+}
+
+// A foreign write (e2e's setSetting between two page loads) must be seen
+// while the server reads through a warm pool of several connections.
+func TestForeignWriteSeenWithWarmPool(t *testing.T) {
+	s, path := newStore(t)
+	ctx := context.Background()
+	if err := s.Set(ctx, "theme.default.single_style", "native"); err != nil {
+		t.Fatal(err)
+	}
+	other, err := db.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer other.Close()
+	for round := 0; round < 300; round++ {
+		var wg sync.WaitGroup
+		for g := 0; g < 6; g++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for i := 0; i < 5; i++ {
+					var v string
+					_ = s.Get(ctx, "theme.default.single_style", &v)
+				}
+			}()
+		}
+		wg.Wait()
+		want := fmt.Sprint("v", round)
+		if _, err := other.ExecContext(ctx, `UPDATE settings SET value_json = ? WHERE key = 'theme.default.single_style'`, `"`+want+`"`); err != nil {
+			t.Fatal(err)
+		}
+		var v string
+		if err := s.Get(ctx, "theme.default.single_style", &v); err != nil || v != want {
+			t.Fatalf("round %d: read after a committed foreign write: got %q want %q (%v)", round, v, want, err)
+		}
 	}
 }
 
