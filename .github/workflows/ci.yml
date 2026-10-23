@@ -8,30 +8,29 @@ on:
 permissions:
   contents: read
 
+# Superseded PR runs cannot validate its newest head. Main runs keep unique
+# groups so this does not cancel or serialize post-merge verification.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          # Latest 1.27 patch (not the go.mod minimum) so govulncheck sees stdlib fixes.
+          # Latest 1.27 patch so govulncheck sees stdlib fixes.
           go-version: '1.27.x'
           check-latest: true
+          cache-dependency-path: go.sum
       - name: installer regression checks
         run: sh -n install.sh && python3 tools/test-install.py
       - name: build (CGO disabled)
         run: CGO_ENABLED=0 go build ./...
       - name: vet
         run: go vet ./...
-      - name: test
-        # Full admin fixtures use production Argon2 with race + cross-package coverage.
-        # Allow cumulative suite time on hosted runners; retain a finite package timeout.
-        run: go test -timeout=20m -race -coverpkg=./... -coverprofile=coverage.out ./...
-      - name: coverage (80% across unit and integration tests)
-        run: |
-          go tool cover -func=coverage.out > coverage-summary.txt
-          awk '$1 == "total:" { found = 1; sub(/%$/, "", $3); if ($3 + 0 < 80) exit 1 } END { if (!found) exit 1 }' coverage-summary.txt
       - name: staticcheck
         # Pinned; checks and exclusions live in staticcheck.conf.
         run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
@@ -40,8 +39,67 @@ jobs:
       - name: check formatting
         run: test -z "$(gofmt -l cmd pkg internal examples tools web)"
       - name: default theme CSS is up to date
-        # Pinned Tailwind standalone CLI, checksum verified (tools/tailwind/build.sh).
         run: tools/tailwind/build.sh --check
+
+  race:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+          cache-dependency-path: go.sum
+      - name: full race suite
+        # Keep production Argon2 and every package; no coverage instrumentation
+        # in the race run. CGO stays enabled for the race detector.
+        run: go test -timeout=20m -race ./...
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          check-latest: true
+          cache-dependency-path: go.sum
+      - name: full cross-package coverage suite
+        # A separate full run preserves integration coverage and avoids putting
+        # race instrumentation around the coverage counters themselves.
+        run: go test -timeout=20m -covermode=set -coverpkg=./... -coverprofile=coverage.out ./...
+      - name: coverage (80% across unit and integration tests)
+        run: |
+          go tool cover -func=coverage.out > coverage-summary.txt
+          awk '$1 == "total:" { found = 1; sub(/%$/, "", $3); if ($3 + 0 < 80) exit 1 } END { if (!found) exit 1 }' coverage-summary.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: go-coverage
+          path: |
+            coverage.out
+            coverage-summary.txt
+          if-no-files-found: ignore
+
+  # Branch protection requires this existing check name. A skipped, failed or
+  # cancelled dependency must not turn the aggregate into a successful check.
+  test:
+    if: ${{ always() }}
+    needs: [quality, race, coverage]
+    runs-on: ubuntu-latest
+    steps:
+      - name: require all Go checks
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          RACE_RESULT: ${{ needs.race.result }}
+          COVERAGE_RESULT: ${{ needs.coverage.result }}
+        run: |
+          for result in "$QUALITY_RESULT" "$RACE_RESULT" "$COVERAGE_RESULT"; do
+            if [ "$result" != success ]; then
+              echo "A required Go check did not succeed: $result" >&2
+              exit 1
+            fi
+          done
 
   browser:
     runs-on: ubuntu-latest
@@ -50,6 +108,7 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.x'
+          cache-dependency-path: go.sum
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
@@ -83,5 +142,6 @@ jobs:
           name: browser-failure-report
           path: |
             e2e/playwright-report/
+            e2e/test-results/
             e2e/playwright-report-logo/
             e2e/test-results-logo/
