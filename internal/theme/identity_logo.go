@@ -7,11 +7,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"maps"
 
 	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/kernel"
 )
 
 var ErrIdentityLogoConflict = errors.New("theme: identity changed since logo review")
+var ErrIdentityLogoDisabled = errors.New("theme: logo module disabled before draft selection")
 var ErrIdentityLogoMedia = errors.New("theme: logo must reference an existing PNG")
 
 // IdentityLogoStore is the bounded interface used by logo generation bridges.
@@ -21,9 +24,19 @@ type IdentityLogoStore interface {
 	SaveIdentityLogo(ctx context.Context, slug, revision, slot, mediaID string) error
 }
 
+// IdentityLogoSelectionStore captures all target baselines with the full review
+// revision, then compares one target inside the final draft transaction.
+type IdentityLogoSelectionStore interface {
+	IdentityLogoReview(context.Context, string) (revision string, slotBaselines map[string]string, err error)
+	SaveIdentityLogoSlot(ctx context.Context, slug, baseline, slot, mediaID string) error
+}
+
 type logoState struct {
-	revision string
-	draft    IdentityDraft
+	revision       string
+	slotBaselines  map[string]string
+	draft          IdentityDraft
+	selectionDraft IdentityDraft
+	liveSite       map[string]string
 }
 
 // logoStateTx reads only identity-owned settings through the same transaction.
@@ -104,11 +117,16 @@ func (s *service) logoStateTx(ctx context.Context, tx *sql.Tx, slug string) (log
 		if draft.Snapshot.Site == nil {
 			draft.Snapshot.Site = map[string]string{}
 		}
-		if draft.Base != nil {
-			for _, k := range SiteIdentityKeys {
-				if live.Site[k] != draft.Base[k] {
-					draft.Snapshot.Site[k] = live.Site[k]
-				}
+	}
+	selectionDraft := draft
+	selectionDraft.Snapshot.Site = maps.Clone(draft.Snapshot.Site)
+	selectionDraft.Snapshot.Values = maps.Clone(draft.Snapshot.Values)
+	selectionDraft.Snapshot.Links = maps.Clone(draft.Snapshot.Links)
+	selectionDraft.Base = maps.Clone(draft.Base)
+	if draft.Base != nil {
+		for _, k := range SiteIdentityKeys {
+			if live.Site[k] != draft.Base[k] {
+				draft.Snapshot.Site[k] = live.Site[k]
 			}
 		}
 	}
@@ -126,7 +144,18 @@ func (s *service) logoStateTx(ctx context.Context, tx *sql.Tx, slug string) (log
 	for k, v := range live.Site {
 		draft.Base[k] = v
 	}
-	return logoState{revision: hex.EncodeToString(hash[:]), draft: draft}, nil
+	baselines := make(map[string]string, len(logoKeys))
+	for slot := range logoKeys {
+		// Values only: draft existence, metadata and unrelated identity fields do
+		// not invalidate paid work. Include live even when a pending value masks it.
+		value, err := json.Marshal(struct{ Theme, Live, Pending string }{active, live.Site[slot], draft.Snapshot.Site[slot]})
+		if err != nil {
+			return logoState{}, err
+		}
+		sum := sha256.Sum256(value)
+		baselines[slot] = hex.EncodeToString(sum[:])
+	}
+	return logoState{revision: hex.EncodeToString(hash[:]), slotBaselines: baselines, draft: draft, selectionDraft: selectionDraft, liveSite: live.Site}, nil
 }
 
 func (s *service) IdentityLogoRevision(ctx context.Context, slug string) (string, error) {
@@ -141,18 +170,56 @@ func (s *service) IdentityLogoRevision(ctx context.Context, slug string) (string
 	return revision, err
 }
 
-// SaveIdentityLogo compares and merges within BEGIN IMMEDIATE. Unrelated draft
-// values, links, title, tagline and other logos survive. Live keys never change.
+// IdentityLogoReview captures the full revision and all target baselines from
+// the same transaction. No selection baseline is read from a later snapshot.
+func (s *service) IdentityLogoReview(ctx context.Context, slug string) (revision string, baselines map[string]string, err error) {
+	err = db.InTx(ctx, s.d.DB, func(tx *sql.Tx) error {
+		state, e := s.logoStateTx(ctx, tx, slug)
+		if e == nil {
+			revision, baselines = state.revision, state.slotBaselines
+		}
+		return e
+	})
+	return
+}
+
+// SaveIdentityLogo retains the existing full-revision CAS contract.
 func (s *service) SaveIdentityLogo(ctx context.Context, slug, revision, slot, mediaID string) error {
+	return s.saveIdentityLogo(ctx, slug, revision, slot, mediaID, false)
+}
+
+// SaveIdentityLogoSlot compares only target values and merges into the latest
+// draft under BEGIN IMMEDIATE; all unrelated latest fields survive.
+func (s *service) SaveIdentityLogoSlot(ctx context.Context, slug, baseline, slot, mediaID string) error {
+	return s.saveIdentityLogo(ctx, slug, baseline, slot, mediaID, true)
+}
+
+func (s *service) saveIdentityLogo(ctx context.Context, slug, revision, slot, mediaID string, slotScoped bool) error {
 	if !logoKeys[slot] || revision == "" || mediaID == "" {
 		return ErrIdentityLogoMedia
 	}
 	err := db.InTx(ctx, s.d.DB, func(tx *sql.Tx) error {
+		if slotScoped {
+			if s.d.Config.Addons["identitylogo"] == kernel.AddonModeDisabled {
+				return ErrIdentityLogoDisabled
+			}
+			enabled, err := kernel.AddonEnabledTx(ctx, tx, "identitylogo")
+			if err != nil {
+				return err
+			}
+			if !enabled {
+				return ErrIdentityLogoDisabled
+			}
+		}
 		state, err := s.logoStateTx(ctx, tx, slug)
 		if err != nil {
 			return err
 		}
-		if state.revision != revision {
+		current := state.revision
+		if slotScoped {
+			current = state.slotBaselines[slot]
+		}
+		if current != revision {
 			return ErrIdentityLogoConflict
 		}
 		var mime string
@@ -164,6 +231,14 @@ func (s *service) SaveIdentityLogo(ctx context.Context, slug, revision, slot, me
 		}
 		if mime != "image/png" {
 			return ErrIdentityLogoMedia
+		}
+		if slotScoped {
+			// Preserve the latest raw unrelated pending fields and baselines. Only
+			// this target needs a fresh Base to keep its new value effective.
+			state.draft = state.selectionDraft
+			if state.draft.Base != nil {
+				state.draft.Base[slot] = state.liveSite[slot]
+			}
 		}
 		state.draft.Snapshot.Site[slot] = mediaID
 		state.draft.SavedAt = db.Now()
@@ -183,3 +258,4 @@ func (s *service) SaveIdentityLogo(ctx context.Context, slug, revision, slot, me
 }
 
 var _ IdentityLogoStore = (*service)(nil)
+var _ IdentityLogoSelectionStore = (*service)(nil)

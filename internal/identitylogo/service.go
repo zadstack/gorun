@@ -27,15 +27,17 @@ const (
 )
 
 type pending struct {
-	owner  string
-	review Review
+	owner         string
+	review        Review
+	slotBaselines map[string]string
 }
 type staged struct {
-	owner     string
-	candidate Candidate
-	png       []byte
-	selecting bool
-	review    Review
+	owner         string
+	candidate     Candidate
+	png           []byte
+	selecting     bool
+	review        Review
+	slotBaselines map[string]string
 }
 
 // Service keeps bounded private staging in memory, outside the public media
@@ -67,6 +69,25 @@ func token() (string, error) {
 	}
 	return hex.EncodeToString(b), nil
 }
+
+var selectionSlots = []string{"site.logo", "site.logo_light", "site.logo_dark", "site.icon"}
+
+func validSlotBaselines(baselines map[string]string) bool {
+	for _, slot := range selectionSlots {
+		if baselines[slot] == "" {
+			return false
+		}
+	}
+	return true
+}
+func copySlotBaselines(baselines map[string]string) map[string]string {
+	out := make(map[string]string, len(selectionSlots))
+	for _, slot := range selectionSlots {
+		out[slot] = baselines[slot]
+	}
+	return out
+}
+
 func copyPrepared(p Prepared) Prepared {
 	p.Payload = append(json.RawMessage(nil), p.Payload...)
 	return p
@@ -109,11 +130,11 @@ func (s *Service) Preview(ctx context.Context, owner string, in Input) (Review, 
 	if !validPrepared(p, in) {
 		return Review{}, ErrUnsupported
 	}
-	revision, err := s.drafts.Revision(ctx, in.Theme)
+	revision, baselines, err := s.drafts.Review(ctx, in.Theme)
 	if err != nil {
 		return Review{}, err
 	}
-	if revision == "" {
+	if revision == "" || !validSlotBaselines(baselines) {
 		return Review{}, ErrChanged
 	}
 	t, err := token()
@@ -135,7 +156,7 @@ func (s *Service) Preview(ctx context.Context, owner string, in Input) (Review, 
 	}
 	saved := r
 	saved.Prepared = copyPrepared(p)
-	s.reviews[t] = pending{owner: owner, review: saved}
+	s.reviews[t] = pending{owner: owner, review: saved, slotBaselines: copySlotBaselines(baselines)}
 	s.mu.Unlock()
 	s.record(ctx, "review", "ready", owner, r, "")
 	return r, nil
@@ -249,7 +270,7 @@ func (s *Service) Generate(ctx context.Context, owner, approval string, approved
 	if len(s.candidates) >= maxCandidates || total > maxStagedBytes {
 		return Candidate{}, ErrLimit
 	}
-	s.candidates[id] = &staged{owner: owner, candidate: c, png: imageData, review: r}
+	s.candidates[id] = &staged{owner: owner, candidate: c, png: imageData, review: r, slotBaselines: copySlotBaselines(p.slotBaselines)}
 	return c, nil
 }
 
@@ -304,8 +325,9 @@ func (s *Service) Candidate(ctx context.Context, owner, id string) (Candidate, [
 	return c.candidate, append([]byte(nil), c.png...), nil
 }
 
-// Select imports only after a human explicitly chooses a slot. The revision is
-// the reviewed candidate revision, preventing concurrent draft/live overwrite.
+// Select imports only after a human explicitly chooses a slot. The original
+// candidate revision binds the submitted form; the private target
+// baseline prevents overwriting that slot while unrelated edits remain valid.
 func (s *Service) Select(ctx context.Context, owner, id, slot, expectedRevision string) error {
 	if !s.enabled(ctx) {
 		return ErrDisabled
@@ -320,15 +342,16 @@ func (s *Service) Select(ctx context.Context, owner, id, slot, expectedRevision 
 		s.mu.Unlock()
 		return ErrCandidate
 	}
-	if c.candidate.Revision != expectedRevision {
+	if c.candidate.Revision != expectedRevision || c.slotBaselines[slot] == "" {
 		s.mu.Unlock()
 		return ErrChanged
 	}
 	c.selecting = true
 	data := append([]byte(nil), c.png...)
 	meta := c.candidate
+	baseline := c.slotBaselines[slot]
 	s.mu.Unlock()
-	err := s.drafts.SelectPNG(ctx, meta.Theme, expectedRevision, slot, data)
+	err := s.drafts.SelectPNG(ctx, meta.Theme, baseline, slot, data)
 	outcome := "failed"
 	if err == nil {
 		outcome = "draft_saved"
