@@ -34,6 +34,16 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Identity layers no longer combine into unreadable text:
+  - The dark scheme redefines every surface and text token, including headings, secondary text,
+    the third panel, accent tints, link and hover colours and the status colours.
+  - Text in the accent colour (links, accent ink) is computed to reach 4.5:1 on the page
+    background, while fills keep the chosen accent.
+  - Saving the identity checks contrast against the background that renders (dark scheme, then
+    builder, then theme), so dark text on the dark scheme is refused.
+  - The header logo follows the page background instead of the visitor's system setting. A theme
+    opts into following the system with `color-scheme:auto`.
+
 - Store, cart, checkout, account, product and intake pages are styled under every theme. They
   come from the default theme's templates but relied on stylesheets only the default head linked,
   so under business, portfolio and magazine they had unstyled forms, no side padding and, on the

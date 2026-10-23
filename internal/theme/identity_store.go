@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/brand"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/media"
@@ -190,30 +191,49 @@ func (s *service) validateSnapshot(ctx context.Context, snap IdentitySnapshot) e
 	return nil
 }
 
-// effectiveTextBackground returns the snapshot's text and background colours
-// with the theme's declared colours as fallback (only when the snapshot sets
-// at least one of them, so an untouched theme is never re-validated).
+// effectiveTextBackground returns the text and background colours the save
+// check validates: those renderedTextBackground resolves, but only when the
+// snapshot sets a text or background colour or the dark scheme (an untouched
+// theme is never re-validated).
 func (s *service) effectiveTextBackground(ctx context.Context, snap IdentitySnapshot) (text, back string) {
-	text, back = snap.Values[idText], snap.Values[idBackground]
-	if text == "" && back == "" {
+	if snap.Values[idText] == "" && snap.Values[idBackground] == "" && snap.Values[idScheme] != "dark" {
 		return "", ""
 	}
+	return s.renderedTextBackground(ctx, snap)
+}
+
+// renderedTextBackground returns the text and background colours a visitor
+// sees for snap. A colour the snapshot does not set falls back to what
+// renders beneath the site identity: the dark scheme's palette, then the
+// builder identity, then the theme's declaration. ("", "") when either is
+// unknown. Falling back to the theme's light declaration alone let dark text
+// pass the check on the dark scheme's background.
+func (s *service) renderedTextBackground(ctx context.Context, snap IdentitySnapshot) (text, back string) {
+	text, back = snap.Values[idText], snap.Values[idBackground]
 	if text == "" || back == "" {
-		rep := s.Appearance(ctx)
-		declared := func(role string) string {
-			if rep.Declared == nil {
-				return ""
+		var fallbackText, fallbackBack string
+		var b brand.Identity
+		switch {
+		case snap.Values[idScheme] == "dark":
+			fallbackText, fallbackBack = identityDarkInk, identityDarkBackground
+		case s.d.Settings != nil && s.d.Settings.Get(ctx, "builder.identity", &b) == nil && brand.Validate(b) == nil:
+			fallbackText, fallbackBack = b.Text, b.Background
+		default:
+			rep := s.Appearance(ctx)
+			if rep.Declared != nil {
+				if v := rep.Declared.Colors["text"]; v.Available && v.Value != nil {
+					fallbackText = *v.Value
+				}
+				if v := rep.Declared.Colors["background"]; v.Available && v.Value != nil {
+					fallbackBack = *v.Value
+				}
 			}
-			if v := rep.Declared.Colors[role]; v.Available && v.Value != nil {
-				return *v.Value
-			}
-			return ""
 		}
 		if text == "" {
-			text = declared("text")
+			text = fallbackText
 		}
 		if back == "" {
-			back = declared("background")
+			back = fallbackBack
 		}
 	}
 	if !hexColor.MatchString(text) || !hexColor.MatchString(back) {

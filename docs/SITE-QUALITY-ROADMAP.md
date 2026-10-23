@@ -18,7 +18,7 @@ real site.
 | # | Item | Status |
 |---|---|---|
 | 1 | Unified theme contract | **Started**: core site stylesheet (below) |
-| 2 | Unified identity application | Open |
+| 2 | Unified identity application | **Started**: readable-layer rules (below) |
 | 3 | Site readiness check before publishing | Partial (two checkers, no rendered-page check) |
 | 4 | Automatic asset versioning | Mostly in place; two gaps |
 | 5 | Whole-site preview | Partial (one page or one template at a time) |
@@ -66,7 +66,16 @@ identity at `:root:root[data-theme]` (`internal/theme/site_identity.go:264`). Co
    page itself stays light.
 6. The effective-appearance report skips the builder layer (`appearance.go:207`).
 
-**Design.** Builder identity sets brand tokens only (accent, font, width, and background or text
+**Done.** Conflicts 1, 3 and 5 are closed, and conflict 2 is closed for text in the accent colour
+([THEMES.md](THEMES.md#rules-that-keep-the-layers-readable)): the dark scheme redefines every
+surface and text token; accent text is computed to reach 4.5:1 on the page background; the save
+check and the contrast shown use the background that renders; the logo follows the page.
+
+**Still open.** Conflict 4 (builder identity still sets surfaces, muted text and a square radius on
+every theme) and conflict 6 (the appearance report skips the builder layer). Narrowing the builder
+layer changes how existing builder sites look, so it needs a reviewed migration.
+
+**Original design.** Builder identity sets brand tokens only (accent, font, width, and background or text
 only when set) under `:where(:root)`; one scheme resolver defines light and dark values for every
 semantic token; Apply checks contrast against the effective background; `brandImg` follows the
 resolved scheme; the appearance report includes the builder layer.

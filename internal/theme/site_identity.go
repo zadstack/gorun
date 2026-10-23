@@ -3,6 +3,7 @@ package theme
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"html/template"
 	"math"
 	"regexp"
@@ -249,11 +250,78 @@ func identityOnAccent(accent string) string {
 	return "#000000"
 }
 
-// darkPalette is the scheme=dark base, overridden by explicit colors.
+// darkPalette is the scheme=dark base, overridden by explicit colors. It
+// redefines every semantic token a theme reads for surfaces and text, so no
+// light value survives on the dark page: headings, secondary text, the third
+// panel, accent tints and the status colours. Links and accent text start as
+// the accent mixed toward white; buildIdentity replaces them with a computed
+// readable colour when the accent is known.
 var darkPalette = [][2]string{
-	{"--bg", "#111418"}, {"--panel", "#181c22"}, {"--panel-2", "#20252d"}, {"--ink", "#eef1f4"},
-	{"--muted", "#a3acb8"}, {"--line", "rgba(238,241,244,.14)"}, {"--line-strong", "rgba(238,241,244,.3)"},
+	{"--bg", identityDarkBackground}, {"--panel", "#181c22"}, {"--panel-2", "#20252d"}, {"--panel-3", "#262c35"},
+	{"--ink", identityDarkInk}, {"--head", identityDarkInk}, {"--ink-2", "#c9d1da"},
+	{"--muted", "#a3acb8"}, {"--muted-tinted", "#a3acb8"},
+	{"--line", "rgba(238,241,244,.14)"}, {"--line-2", "rgba(238,241,244,.08)"}, {"--line-strong", "rgba(238,241,244,.3)"},
 	{"--focus-ring", "#d7dee8"},
+	{"--accent-soft", "color-mix(in srgb,var(--accent) 22%," + identityDarkBackground + ")"},
+	{"--accent-tint", "color-mix(in srgb,var(--accent) 14%," + identityDarkBackground + ")"},
+	{"--accent-line", "color-mix(in srgb,var(--accent) 45%," + identityDarkBackground + ")"},
+	{"--accent-ink", "color-mix(in srgb,var(--accent) 45%,#ffffff)"},
+	{"--blue", "color-mix(in srgb,var(--accent) 45%,#ffffff)"}, {"--link", "color-mix(in srgb,var(--accent) 45%,#ffffff)"},
+	{"--blue-hover", "color-mix(in srgb,var(--accent) 30%,#ffffff)"}, {"--red", "#f08a80"},
+	{"--danger-bg", "#3b1f1f"}, {"--danger-text", "#f6b3ab"}, {"--red-soft", "#3b1f1f"},
+	{"--success-bg", "#15301f"}, {"--success-text", "#9be0b3"},
+	{"--warning-bg", "#3a2c10"}, {"--warning-text", "#f1cf86"},
+	{"--info-bg", "#16283a"}, {"--info-text", "#a8cff3"}, {"--blue-soft", "#16283a"},
+}
+
+const (
+	identityDarkBackground = "#111418"
+	identityDarkInk        = "#eef1f4"
+	// identityLightFallback is the page background assumed when neither the
+	// site identity nor its dark scheme sets one: the darkest page background
+	// a shipped theme declares, so a link colour readable on it is readable
+	// on every shipped light theme.
+	identityLightFallback = "#f3f5f2"
+)
+
+// identityBackground is the page background the site identity produces:
+// its own colour, else the dark scheme's, else "" (the theme's or the
+// builder's, which the identity layer does not know).
+func identityBackground(get func(string) string) string {
+	if v := get(idBackground); hexColor.MatchString(v) {
+		return v
+	}
+	if get(idScheme) == "dark" {
+		return identityDarkBackground
+	}
+	return ""
+}
+
+// readableInk returns accent when it reaches minTextContrast as text on bg,
+// else accent mixed toward black (light bg) or white (dark bg) in 5% steps
+// until it does, so a light accent such as amber still yields readable links.
+func readableInk(accent, bg string) string {
+	a, ok1 := parseColor(accent)
+	b, ok2 := parseColor(bg)
+	if !ok1 || !ok2 {
+		return accent
+	}
+	target := [3]float64{0, 0, 0}
+	if luminance(b) < 0.5 {
+		target = [3]float64{255, 255, 255}
+	}
+	for step := 0; step <= 20; step++ {
+		t := float64(step) / 20
+		var c [3]float64
+		for i := range c {
+			c[i] = math.Round(a[i] + (target[i]-a[i])*t)
+		}
+		hex := fmt.Sprintf("#%02x%02x%02x", int(c[0]), int(c[1]), int(c[2]))
+		if contrast(hex, bg) >= minTextContrast {
+			return hex
+		}
+	}
+	return fmt.Sprintf("#%02x%02x%02x", int(target[0]), int(target[1]), int(target[2]))
 }
 
 // identityParts holds the validated identity CSS body and optional Google Fonts
@@ -283,8 +351,17 @@ func buildIdentity(get func(key string) string) identityParts {
 	}
 	color(idBackground, "--bg", "--gp-bg", "--paper")
 	color(idText, "--ink", "--gp-text")
-	color(idAccent, "--green", "--blue", "--accent", "--gp-accent", "--link")
+	color(idAccent, "--green", "--accent", "--gp-accent")
 	if v := get(idAccent); hexColor.MatchString(v) {
+		// Fills keep the accent; text in the accent colour (links, accent ink)
+		// must read on the page background, so it may be a darker or lighter
+		// shade of it.
+		bg := identityBackground(get)
+		if bg == "" {
+			bg = identityLightFallback
+		}
+		ink := readableInk(v, bg)
+		vars = append(vars, [2]string{"--blue", ink}, [2]string{"--blue-hover", ink}, [2]string{"--link", ink}, [2]string{"--accent-ink", ink})
 		on := identityOnAccent(v)
 		vars = append(vars, [2]string{"--green-hover", "color-mix(in srgb," + v + " 82%,#000)"}, [2]string{"--green-soft", "color-mix(in srgb," + v + " 12%,transparent)"},
 			[2]string{"--on-accent", on}, [2]string{"--gp-on-accent", on})
