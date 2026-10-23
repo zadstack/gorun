@@ -160,8 +160,8 @@ All notable changes to GoRun are recorded here. The format follows
 - A generated logo candidate can only be selected while the whole identity is unchanged: any other
   identity draft or live edit made after review makes Select fail and asks for a new review, even
   though the paid candidate is still viewable for 30 minutes. Select it before editing the identity.
-- When a builder preview is opened without a proposed identity, a saved `builder.identity` is not
-  applied to the preview, although the published page uses it.
+- A site-starter preview run that carries no identity of its own does not apply a saved
+  `builder.identity`, although the published page uses it; ordinary builder previews are unaffected.
 - Module activation changes apply at the next boot; the Modules page shows "pending restart" until then.
 - Only commerce, media and mail publish module configuration requirements; other modules report
   `module_publishes_no_requirements` instead of a configured verdict.
