@@ -141,8 +141,13 @@ func TestDisabledModuleParksQueuedJobsWhileWorkersRunAndResumesOnEnable(t *testi
 	m.enabled.Store(true)
 	app = boot(true)
 	defer app.Close()
-	deadline := time.Now().Add(5 * time.Second)
-	for m.runs.Load() == 0 && time.Now().Before(deadline) {
+	// The handler counts its run before the worker records the outcome, so
+	// wait for the job itself to finish rather than for the handler to start.
+	deadline := time.Now().Add(10 * time.Second)
+	for time.Now().Before(deadline) {
+		if job, err = app.Deps.Jobs.Get(ctx, id); err == nil && job.Status == "done" {
+			break
+		}
 		time.Sleep(20 * time.Millisecond)
 	}
 	job, _ = app.Deps.Jobs.Get(ctx, id)

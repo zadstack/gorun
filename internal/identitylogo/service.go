@@ -62,6 +62,22 @@ func (s *Service) enabled(ctx context.Context) bool {
 	return s.options.Enabled == nil || s.options.Enabled(ctx)
 }
 func digest(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
+
+// Hash the full reviewed contract, including a separate exact-byte payload hash:
+// encoding/json normalizes RawMessage whitespace when encoding Prepared.
+func approvalHash(owner, revision string, p Prepared) (string, error) {
+	encoded, err := json.Marshal(struct {
+		Version     string   `json:"version"`
+		Owner       string   `json:"owner"`
+		Revision    string   `json:"revision"`
+		Prepared    Prepared `json:"prepared"`
+		PayloadHash string   `json:"payload_hash"`
+	}{"identitylogo-approval-v1", owner, revision, p, digest(p.Payload)})
+	if err != nil {
+		return "", err
+	}
+	return digest(encoded), nil
+}
 func token() (string, error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
@@ -141,7 +157,11 @@ func (s *Service) Preview(ctx context.Context, owner string, in Input) (Review, 
 	if err != nil {
 		return Review{}, err
 	}
-	r := Review{Token: t, Expires: s.options.Now().Add(reviewTTL), Revision: revision, PayloadHash: digest(p.Payload), Prepared: copyPrepared(p)}
+	hash, err := approvalHash(owner, revision, p)
+	if err != nil {
+		return Review{}, err
+	}
+	r := Review{ApprovalHash: hash, Token: t, Expires: s.options.Now().Add(reviewTTL), Revision: revision, PayloadHash: digest(p.Payload), Prepared: copyPrepared(p)}
 	s.mu.Lock()
 	s.prune(s.options.Now())
 	// One pending review per owner avoids unbounded replacement/double-click state.
@@ -168,16 +188,13 @@ func (s *Service) Generate(ctx context.Context, owner, approval string, approved
 	if !s.enabled(ctx) {
 		return Candidate{}, ErrDisabled
 	}
-	if !approved || owner == "" {
-		s.record(ctx, "generation", "approval_rejected", owner, Review{}, "")
-		return Candidate{}, ErrApproval
-	}
 	s.mu.Lock()
 	p, ok := s.reviews[approval]
 	s.prune(s.options.Now())
-	if !ok || p.owner != owner {
+	if !ok || !approved || owner == "" || p.owner != owner {
 		s.mu.Unlock()
-		s.record(ctx, "generation", "approval_rejected", owner, Review{}, "")
+		// Correlate a known approval without attributing its owner to the caller.
+		s.record(ctx, "generation", "approval_rejected", owner, p.review, "")
 		return Candidate{}, ErrApproval
 	}
 	if !s.options.Now().Before(p.review.Expires) {
@@ -371,5 +388,28 @@ func (s *Service) record(ctx context.Context, action, outcome, owner string, r R
 	if s.hooks.Record == nil {
 		return
 	}
-	s.hooks.Record(ctx, AuditEvent{Action: action, Outcome: outcome, Owner: owner, Theme: r.Prepared.Input.Theme, ConnectionID: r.Prepared.Destination.ConnectionID, Model: r.Prepared.Destination.Model, PayloadHash: r.PayloadHash, PromptVersion: r.Prepared.PromptVersion, EstimateMicros: r.Prepared.Quote.AmountMicros, Currency: r.Prepared.Quote.Currency, CandidateHash: candidateHash})
+	quoteHash, revisionHash := "", ""
+	if r.ApprovalHash != "" {
+		quote, _ := json.Marshal(r.Prepared.Quote)
+		quoteHash, revisionHash = digest(quote), digest([]byte(r.Revision))
+	}
+	s.hooks.Record(ctx, AuditEvent{
+		ApprovalHash:           r.ApprovalHash,
+		DestinationFingerprint: r.Prepared.Destination.Fingerprint,
+		CapabilityFingerprint:  r.Prepared.Capability.Fingerprint,
+		QuoteHash:              quoteHash,
+		QuoteVersion:           r.Prepared.Quote.Version,
+		DraftRevisionHash:      revisionHash,
+		Action:                 action,
+		Outcome:                outcome,
+		Owner:                  owner,
+		Theme:                  r.Prepared.Input.Theme,
+		ConnectionID:           r.Prepared.Destination.ConnectionID,
+		Model:                  r.Prepared.Destination.Model,
+		PayloadHash:            r.PayloadHash,
+		PromptVersion:          r.Prepared.PromptVersion,
+		EstimateMicros:         r.Prepared.Quote.AmountMicros,
+		Currency:               r.Prepared.Quote.Currency,
+		CandidateHash:          candidateHash,
+	})
 }

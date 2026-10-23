@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { csrf, db } from "../lib/helpers.ts";
+import { csrf, db, MARKER_500 } from "../lib/helpers.ts";
 
 const themes = ["default", "business", "magazine", "portfolio", "docs"];
 const locales = ["ar", "en"];
@@ -183,13 +183,16 @@ test("pilot sections and native builder previews across five active themes", asy
     }[] = [];
   const database = db();
   const previous = database
-    .prepare("SELECT value_json FROM settings WHERE key='site.theme'")
-    .get() as { value_json: string } | undefined;
+    .prepare(
+      "SELECT value_json,updated_at FROM settings WHERE key='site.theme'",
+    )
+    .get() as { value_json: string; updated_at: string } | undefined;
   database.close();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   const publicPage = await page.context().newPage();
   publicPage.on("pageerror", (e) => errors.push(e.message));
+  let mainError: string | undefined;
   try {
     await page.goto("/admin");
     for (const locale of locales)
@@ -267,6 +270,13 @@ test("pilot sections and native builder previews across five active themes", asy
           await publicPage.setViewportSize({ width, height: 900 });
           const response = await publicPage.goto(fixture.path);
           expect(response?.status()).toBe(200);
+          expect(
+            await publicPage.content(),
+            "public page must not be the theme failure document",
+          ).not.toContain(MARKER_500);
+          await expect(publicPage.locator("body")).not.toContainText(
+            "Internal Server Error",
+          );
           await publicPage.evaluate(() => document.fonts.ready);
           const published = await probe(publicPage, fixture.kind);
           await publicPage.screenshot({
@@ -300,6 +310,13 @@ test("pilot sections and native builder previews across five active themes", asy
               .then((el) => el!.contentFrame());
             if (!frame) throw Error("builder frame unavailable");
             await frame.evaluate(() => document.fonts.ready);
+            expect(
+              await frame.content(),
+              "preview must not be the theme failure document",
+            ).not.toContain(MARKER_500);
+            await expect(frame.locator("body")).not.toContainText(
+              "Internal Server Error",
+            );
             preview = await probe(frame, "builder");
             await iframe.screenshot({
               path: resolve(
@@ -399,89 +416,149 @@ test("pilot sections and native builder previews across five active themes", asy
         }
       }
     }
+  } catch (error) {
+    mainError = error instanceof Error ? error.message : String(error);
+    throw error;
   } finally {
-    await page.goto("/admin/appearance/themes");
-    const token = await csrf(page);
+    const cleanupErrors: string[] = [];
+    const attempt = async (label: string, action: () => Promise<void>) => {
+      try {
+        await action();
+      } catch (error) {
+        cleanupErrors.push(
+          `${label}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    };
+    let token = "";
+    await attempt("load cleanup CSRF", async () => {
+      await page.goto("/admin/appearance/themes");
+      token = await csrf(page);
+    });
     for (const fixture of fixtures) {
-      expect(
-        (
-          await page.request.delete(`/api/v1/content/${fixture.id}?hard=1`, {
-            headers: { "X-CSRF-Token": token },
-          })
-        ).status(),
-      ).toBe(200);
-      expect(
-        (await page.request.get(`/api/v1/content/${fixture.id}`)).status(),
-      ).toBe(404);
+      await attempt(`delete ${fixture.id}`, async () => {
+        expect(
+          (
+            await page.request.delete(`/api/v1/content/${fixture.id}?hard=1`, {
+              headers: { "X-CSRF-Token": token },
+            })
+          ).status(),
+        ).toBe(200);
+      });
+      await attempt(`verify deletion ${fixture.id}`, async () => {
+        expect(
+          (await page.request.get(`/api/v1/content/${fixture.id}`)).status(),
+        ).toBe(404);
+      });
     }
-    expect(
-      (
-        await page.request.post(
-          `/admin/appearance/themes/${previous ? JSON.parse(previous.value_json) : "default"}/activate`,
-          { form: { _csrf: token }, maxRedirects: 0 },
-        )
-      ).status(),
-    ).toBe(303);
-    await publicPage.close();
-    writeFileSync(
-      resolve(output, "pilot-cross-theme-acceptance.json"),
-      JSON.stringify(
-        {
-          testedHead: execFileSync("git", ["rev-parse", "HEAD"], {
-            encoding: "utf8",
-          }).trim(),
-          trackedDirty:
-            execFileSync(
+    // Restore the exact fixture-owned row independently of HTTP/CSRF failures.
+    // Foreign SQLite writes invalidate settings.Store through data_version;
+    // the real public GET below also verifies the running theme sees the value.
+    await attempt("restore original theme setting", async () => {
+      const restore = db();
+      try {
+        if (previous)
+          restore
+            .prepare(
+              "INSERT INTO settings(key,value_json,updated_at) VALUES('site.theme',?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=excluded.updated_at",
+            )
+            .run(previous.value_json, previous.updated_at);
+        else
+          restore.prepare("DELETE FROM settings WHERE key='site.theme'").run();
+        expect(
+          restore
+            .prepare(
+              "SELECT value_json,updated_at FROM settings WHERE key='site.theme'",
+            )
+            .get(),
+        ).toEqual(previous);
+      } finally {
+        restore.close();
+      }
+    });
+    await attempt("verify restored active theme", async () => {
+      expect((await publicPage.goto("/"))?.status()).toBe(200);
+      await expect(publicPage.locator("html")).toHaveAttribute(
+        "data-theme",
+        previous ? JSON.parse(previous.value_json) : "default",
+      );
+    });
+    await attempt("close public page", async () => {
+      await publicPage.close();
+    });
+    expect.soft(errors, "editor/public JavaScript errors").toEqual([]);
+    await attempt("write acceptance report", async () => {
+      writeFileSync(
+        resolve(output, "pilot-cross-theme-acceptance.json"),
+        JSON.stringify(
+          {
+            testedHead: execFileSync("git", ["rev-parse", "HEAD"], {
+              encoding: "utf8",
+            }).trim(),
+            trackedDirty:
+              execFileSync(
+                "git",
+                ["status", "--porcelain", "--untracked-files=no"],
+                { encoding: "utf8" },
+              ).trim() !== "",
+            sources: Object.fromEntries(
+              [
+                "internal/theme/builder_preview.go",
+                "internal/builder/starter_preview.go",
+                "themes/docs/assets/theme.css",
+                "e2e/tests/pilot-cross-theme.spec.ts",
+              ].map((file) => [
+                file,
+                createHash("sha256")
+                  .update(readFileSync(resolve("..", file)))
+                  .digest("hex"),
+              ]),
+            ),
+            productionChanges: execFileSync(
               "git",
-              ["status", "--porcelain", "--untracked-files=no"],
+              [
+                "diff",
+                "--name-only",
+                "--",
+                "themes",
+                "internal/builder",
+                "internal/theme",
+              ],
               { encoding: "utf8" },
-            ).trim() !== "",
-          sources: Object.fromEntries(
-            [
-              "internal/theme/builder_preview.go",
-              "internal/builder/starter_preview.go",
-              "themes/docs/assets/theme.css",
-              "e2e/tests/pilot-cross-theme.spec.ts",
-            ].map((file) => [
-              file,
-              createHash("sha256")
-                .update(readFileSync(resolve("..", file)))
-                .digest("hex"),
-            ]),
-          ),
-          productionChanges: execFileSync(
-            "git",
-            [
-              "diff",
-              "--name-only",
-              "--",
-              "themes",
-              "internal/builder",
-              "internal/theme",
-            ],
-            { encoding: "utf8" },
-          ).trim(),
-          fixtureSHA256: Object.fromEntries(
-            locales.map((l) => [
-              l,
-              createHash("sha256")
-                .update(
-                  readFileSync(
-                    resolve(
-                      `../internal/theme/testdata/sections-pilot.${l}.html`,
+            ).trim(),
+            fixtureSHA256: Object.fromEntries(
+              locales.map((l) => [
+                l,
+                createHash("sha256")
+                  .update(
+                    readFileSync(
+                      resolve(
+                        `../internal/theme/testdata/sections-pilot.${l}.html`,
+                      ),
                     ),
-                  ),
-                )
-                .digest("hex"),
-            ]),
-          ),
-          records,
-          pageErrors: errors,
-          assertionErrors: info.errors.map((e) => e.message),
-        },
-        null,
-        2,
-      ),
-    );
+                  )
+                  .digest("hex"),
+              ]),
+            ),
+            records,
+            pageErrors: errors,
+            mainError,
+            cleanupErrors,
+            assertionErrors: info.errors.map((e) => e.message),
+          },
+          null,
+          2,
+        ),
+      );
+    });
+    await attempt("attach cleanup results", async () => {
+      await info.attach("pilot-cleanup-results", {
+        body: JSON.stringify({ mainError, cleanupErrors }, null, 2),
+        contentType: "application/json",
+      });
+    });
+    expect
+      .soft(cleanupErrors, "all cleanup and restoration steps must succeed")
+      .toEqual([]);
   }
 });

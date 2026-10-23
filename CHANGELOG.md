@@ -13,6 +13,11 @@ All notable changes to GoRun are recorded here. The format follows
   candidate's original selection token remain strict; conflicting target changes retain the
   private proposal instead of requiring another paid generation.
 
+### Fixed
+
+- Builder theme previews inline saved builder identity tokens when no explicit override is supplied,
+  while public pages keep their cached identity stylesheet URL.
+
 ## [0.16.0] - 2026-10-23
 
 ### Added

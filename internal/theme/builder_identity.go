@@ -19,13 +19,13 @@ func (f *funcs) builderStyle() template.CSS {
 }
 
 // builderIdentity emits a cached stylesheet link for builder brand tokens.
-// Preview sessions (no settings-backed URL) keep a nonced inline <style>.
+// Inert builder previews keep both saved and proposed tokens in a nonced inline <style>.
 func (f *funcs) builderIdentity() template.HTML {
 	css := string(f.builderStyle())
 	if css == "" {
 		return ""
 	}
-	if f.st.previewIdentity != nil {
+	if f.st.previewIdentity != nil || f.st.builderPreview {
 		nonce := httpx.Nonce(f.st.ctx)
 		return template.HTML(`<style nonce="` + template.HTMLEscapeString(nonce) + `" data-gorun-builder-identity>` + css + `</style>`)
 	}
