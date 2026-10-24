@@ -33,6 +33,13 @@ var cmsPolicy = sync.OnceValue(func() *bluemonday.Policy {
 	p.AllowAttrs("scope").Matching(regexp.MustCompile(`^(col|row)$`)).OnElements("th")
 	p.AllowAttrs("id").Matching(regexp.MustCompile(`^gp-[A-Za-z0-9_-]{1,80}$`)).OnElements("section")
 	p.AllowAttrs("loading", "width", "height", "srcset", "sizes").OnElements("img")
+	// bluemonday's UGC base matches img alt against a Latin-only pattern, so a
+	// localized alt with an Arabic comma (،), guillemets («») or a diacritic was
+	// dropped whole on save, silently losing it for assistive tech. Allow any
+	// printable text (no control characters, no angle brackets); the value is
+	// HTML-escaped on output, as with the div aria-label above. Empty alt (a
+	// decorative image) stays valid.
+	p.AllowAttrs("alt").Matching(regexp.MustCompile(`^[^\x00-\x1f\x7f<>]{0,1000}$`)).OnElements("img")
 	p.AllowAttrs("srcset", "sizes").OnElements("source")
 	p.AllowAttrs("type").Matching(regexp.MustCompile(`^image/(avif|webp|png|jpeg|gif)$`)).OnElements("source")
 	p.AllowAttrs("dir").Matching(regexp.MustCompile(`^(rtl|ltr|auto)$`)).Globally()
