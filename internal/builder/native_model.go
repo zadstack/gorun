@@ -40,8 +40,11 @@ type ComparisonCell struct {
 	Status string `json:"status,omitempty" enum:",yes,no"`
 }
 
-var nativeKinds = []string{"hero", "features", "steps", "comparison", "faq", "product_preview"}
-var nativeOnlyKinds = []string{"steps", "comparison", "product_preview"}
+var nativeKinds = []string{"hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher"}
+var nativeOnlyKinds = []string{"steps", "comparison", "product_preview", "media_text", "switcher"}
+
+// nativeEntryImageKinds are the native kinds whose entries may carry an image.
+var nativeEntryImageKinds = []string{"features", "steps", "media_text", "switcher"}
 var sectionIcons = []string{"", "bolt", "shield", "chart", "globe", "clock", "check", "layers"}
 var sectionBackgrounds = []string{"", "inherit", "none", "dots", "grid", "lines", "circles", "waves", "paper", "solid"}
 
@@ -83,13 +86,21 @@ func validateNative(s Section) error {
 		if s.Kind == "faq" && strings.TrimSpace(e.Title) == "" {
 			return errors.New("builder: native question needs a summary")
 		}
+		if s.Kind == "switcher" && strings.TrimSpace(e.Title) == "" {
+			return errors.New("builder: a switcher option needs a label")
+		}
 		if e.Link != "" && strings.TrimSpace(e.Title) == "" {
 			return errors.New("builder: native feature link needs a title")
 		}
 		if e.Price != "" || !slices.Contains(sectionIcons, e.Icon) {
 			return fail()
 		}
-		if s.Kind != "features" && (e.Image != "" || e.ImageAlt != "" || e.Link != "" || e.Icon != "" || e.Featured) {
+		// Entry images: feature cards, steps, text-and-media rows and switcher
+		// panels; links, icons and featuring: feature cards only.
+		if s.Kind != "features" && (e.Link != "" || e.Icon != "" || e.Featured) {
+			return fail()
+		}
+		if !slices.Contains(nativeEntryImageKinds, s.Kind) && (e.Image != "" || e.ImageAlt != "") {
 			return fail()
 		}
 	}

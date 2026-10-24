@@ -112,17 +112,19 @@
  if(key==="image"&&root.dataset.canPickMedia==="true") {const id=`builder-image-${sectionID}-${entryIndex??"section"}`;imageTargets.set(id,input);const choose=button("choose_image",()=>window.dispatchEvent(new CustomEvent("media:open",{detail:{target:id}})));wrap.append(choose);}
  parent.append(wrap);
   }
-  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview"];
-  const nativeOnlyKinds = ["steps", "comparison", "product_preview"];
+  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher"];
+  const nativeOnlyKinds = ["steps", "comparison", "product_preview", "media_text", "switcher"];
+  // Native kinds whose entries may carry an image (links stay on feature cards).
+  const entryImageKinds = ["features", "steps", "media_text", "switcher"];
   function nativeSwitchBlocked(section) {
     if (section.hero_scene || section.feed) return true;
     if (section.link && !section.link_label?.trim()) return true;
-    if (section.kind === "faq" && (section.items || []).some(entry => !entry.title?.trim())) return true;
+    if (["faq", "switcher"].includes(section.kind) && (section.items || []).some(entry => !entry.title?.trim())) return true;
     if (section.kind === "features" && (section.items || []).some(entry => entry.link && !entry.title?.trim())) return true;
     if (!["hero", "product_preview"].includes(section.kind) && (section.image || section.image_alt)) return true;
     if (["hero", "comparison", "product_preview"].includes(section.kind) && section.items?.length) return true;
     if (section.kind !== "hero" && section.variant && section.variant !== "default" && !(section.kind === "faq" && section.variant === "split")) return true;
-    return (section.items || []).some(entry => entry.price || (section.kind !== "features" && (entry.image || entry.image_alt || entry.link)));
+    return (section.items || []).some(entry => entry.price || (section.kind !== "features" && entry.link) || (!entryImageKinds.includes(section.kind) && (entry.image || entry.image_alt)));
   }
   // Field edits do not re-render the editor, preserving focus and selection.
   // Recompute the native option from the current section instead of leaving a
@@ -350,11 +352,11 @@
       );
       hideLabel.prepend(hide);
       article.append(hideLabel);
-      if (!native || ["features", "steps", "faq"].includes(section.kind)) {
+      if (!native || ["features", "steps", "faq", "media_text", "switcher"].includes(section.kind)) {
       (section.items || []).forEach((entry, itemIndex) => {
         const group = el("fieldset", "border border-line p-3 space-y-2");
         group.append(el("legend", "", `${text("item")} ${itemIndex + 1}`));
-        (native ? section.kind === "features" ? ["title", "text", "image", "image_alt", "link"] : ["title", "text"] : ["title", "text", "image", "image_alt", "link", "price"]).forEach(
+        (native ? section.kind === "features" ? ["title", "text", "image", "image_alt", "link"] : entryImageKinds.includes(section.kind) ? ["title", "text", "image", "image_alt"] : ["title", "text"] : ["title", "text", "image", "image_alt", "link", "price"]).forEach(
           (key) => field(entry, key, group, section.id, itemIndex),
         );
         if (native && section.kind === "features") {

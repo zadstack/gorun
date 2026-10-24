@@ -22,6 +22,9 @@ var cmsPolicy = sync.OnceValue(func() *bluemonday.Policy {
 	p := bluemonday.UGCPolicy() // no data-*, no style, no scripts or handlers
 	p.AllowElements("section", "figure", "figcaption", "details", "summary", "mark", "small", "u", "s", "sub", "sup", "hr", "br", "iframe", "picture", "source")
 	p.AllowAttrs("open").OnElements("details")
+	// A builder feature switcher groups its panels with name="gp-switch-<section id>",
+	// which makes them exclusive (one open at a time) without JavaScript.
+	p.AllowAttrs("name").Matching(regexp.MustCompile(`^gp-switch-[A-Za-z0-9_-]{1,80}$`)).OnElements("details")
 	// Native comparison tables own horizontal scrolling. Keep a keyboard focus
 	// target and a bounded accessible name, without permitting focus reordering.
 	p.AllowAttrs("tabindex").Matching(regexp.MustCompile(`^0$`)).OnElements("div")
