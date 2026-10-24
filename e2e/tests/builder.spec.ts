@@ -17,7 +17,7 @@ test(
     await expect(page).toHaveURL(/\/admin\/content\/page\/[0-9A-Z]{26}$/);
     const id = page.url().split("/").pop()!;
     await page.locator(`a[href="/admin/builder/${id}"]`).click();
-    await expect(page.locator("#builder-kind option")).toHaveCount(15);
+    await expect(page.locator("#builder-kind option")).toHaveCount(17);
     await page.locator('[data-action="add"]').click();
     const sections = page.locator("#builder-sections > section");
     await expect(sections).toHaveCount(1);

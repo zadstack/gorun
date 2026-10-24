@@ -7,6 +7,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Section library: **Text and media rows** (alternating image and copy) and a **Feature switcher**
+  (exclusive disclosure panels: one open at a time, keyboard-accessible, no JavaScript) join the
+  native sections, and steps may carry an image. They use the existing registry, renderer, editor,
+  validation and layout API/MCP operations; the content sanitizer keeps only the switcher's
+  generated `gp-switch-<id>` group name.
+
 - Image focal point: the media library, `PATCH /api/v1/media/{id}` and the MCP tool `update_media`
   set an optional focal point per image (additive migration). `{{img}}` prints it as
   `object-position`, so a theme that crops images keeps that part in view; it already prints width,
