@@ -12,6 +12,21 @@
   padding-block: var(--space-4, 1rem) var(--space-6, 2rem);
 }
 
+/* The search form the core injects into a builder directory section: one row
+   of field and button under its label. As a core form it takes the defaults
+   below at one class of weight. */
+.gp-core.gp-s-dir-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin-block: 1rem;
+  padding: 0;
+}
+.gp-s-dir-search label { flex-basis: 100%; margin: 0; }
+.gp-s-dir-search input { flex: 1; width: auto; min-width: 12rem; }
+.gp-s-dir-search button { margin-top: 0; }
+
 /* Buttons get a filled look only when they carry no class: a classed button
    belongs to whoever styles that class, and half a default (a fill under a
    theme's outline colour) would be worse than none. */

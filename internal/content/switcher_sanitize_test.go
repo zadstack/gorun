@@ -17,3 +17,12 @@ func TestSanitizeKeepsOnlyBuilderSwitcherNames(t *testing.T) {
 		t.Fatalf("kept an unexpected name: %s", out)
 	}
 }
+
+// A builder directory slot keeps its type class, underscores included, so the
+// theme can fill it at render time.
+func TestSanitizeKeepsDirectorySlot(t *testing.T) {
+	want := `<div class="gp-s-directory gp-s-dir-case_study"></div>`
+	if out := Sanitize(want); out != want {
+		t.Fatalf("directory slot changed: %s", out)
+	}
+}

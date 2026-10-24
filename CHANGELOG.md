@@ -13,6 +13,11 @@ All notable changes to GoRun are recorded here. The format follows
   validation and layout API/MCP operations; the content sanitizer keeps only the switcher's
   generated `gp-switch-<id>` group name.
 
+- Section library: a **Searchable directory** lists the published items of a chosen public content
+  type in the page language, narrowed by a plain `q` search form on the same page (no JavaScript,
+  up to 24 items, with a result count and a show-all link). Builder-generated `gp-` classes may now
+  contain underscores so type slugs such as `case_study` survive the sanitizer.
+
 - Image focal point: the media library, `PATCH /api/v1/media/{id}` and the MCP tool `update_media`
   set an optional focal point per image (additive migration). `{{img}}` prints it as
   `object-position`, so a theme that crops images keeps that part in view; it already prints width,

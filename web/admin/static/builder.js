@@ -112,8 +112,8 @@
  if(key==="image"&&root.dataset.canPickMedia==="true") {const id=`builder-image-${sectionID}-${entryIndex??"section"}`;imageTargets.set(id,input);const choose=button("choose_image",()=>window.dispatchEvent(new CustomEvent("media:open",{detail:{target:id}})));wrap.append(choose);}
  parent.append(wrap);
   }
-  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher"];
-  const nativeOnlyKinds = ["steps", "comparison", "product_preview", "media_text", "switcher"];
+  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher", "directory"];
+  const nativeOnlyKinds = ["steps", "comparison", "product_preview", "media_text", "switcher", "directory"];
   // Native kinds whose entries may carry an image (links stay on feature cards).
   const entryImageKinds = ["features", "steps", "media_text", "switcher"];
   function nativeSwitchBlocked(section) {
@@ -122,7 +122,7 @@
     if (["faq", "switcher"].includes(section.kind) && (section.items || []).some(entry => !entry.title?.trim())) return true;
     if (section.kind === "features" && (section.items || []).some(entry => entry.link && !entry.title?.trim())) return true;
     if (!["hero", "product_preview"].includes(section.kind) && (section.image || section.image_alt)) return true;
-    if (["hero", "comparison", "product_preview"].includes(section.kind) && section.items?.length) return true;
+    if (["hero", "comparison", "product_preview", "directory"].includes(section.kind) && section.items?.length) return true;
     if (section.kind !== "hero" && section.variant && section.variant !== "default" && !(section.kind === "faq" && section.variant === "split")) return true;
     return (section.items || []).some(entry => entry.price || (section.kind !== "features" && entry.link) || (!entryImageKinds.includes(section.kind) && (entry.image || entry.image_alt)));
   }
@@ -201,6 +201,11 @@
       group.append(el("p", "text-muted text-sm", text("illustration_help")));
     }
     if (section.kind === "comparison") comparisonFields(section, options, group);
+    if (section.kind === "directory") {
+      if (!options.list_type) options.list_type = "post";
+      field(options, "list_type", group, section.id);
+      group.append(el("p", "text-muted text-sm", text("list_type_help")));
+    }
     parent.append(group);
   }
   function comparisonFields(section, options, parent) {
