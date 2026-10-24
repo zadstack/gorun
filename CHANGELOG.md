@@ -94,6 +94,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- The appearance report's `link` colour role now reports the readable link ink the renderer actually
+  emits for `--link` (derived from the accent against the effective identity background), instead of the
+  raw accent. A light accent such as amber reported `#f5b800` as the link colour while the page rendered
+  a darker readable shade; the `accent` role still reports the raw accent, and unknown states are kept.
 - Identity layers no longer combine into unreadable text:
   - The dark scheme redefines every surface and text token, including headings, secondary text,
     the third panel, accent tints, link and hover colours and the status colours.
