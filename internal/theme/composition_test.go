@@ -15,6 +15,7 @@ import (
 	"github.com/zadstack/gorun/internal/media"
 	"github.com/zadstack/gorun/internal/settings/settingsmod"
 	"github.com/zadstack/gorun/internal/taxonomy"
+	"github.com/zadstack/gorun/internal/theme/fake"
 )
 
 // compositionEnv boots real content and taxonomy with a theme whose index
@@ -260,5 +261,37 @@ func TestRelatedIgnoresSeriesMembership(t *testing.T) {
 	mustItem(t, cs, content.Input{Type: "post", Title: "two", Slug: "two", Locale: "ar", Status: "published", Terms: map[string][]string{SeriesTaxonomy: {"s"}}})
 	if got := renderIn(t, e, "ar", &Context{Content: one}); got != "R:" {
 		t.Fatalf("series-only siblings must not be related: %q", got)
+	}
+}
+
+// {{img}} prints a media focal point as object-position, keeps width,
+// height and alt, and prints nothing for missing media; without a focal
+// point it adds no style.
+func TestImgCarriesFocalPointAndDimensions(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", `{"name":"Img","version":"1"}`, map[string]string{
+		"templates/index.html": `{{img "01FOCAL" "" "cover"}}|{{img "01PLAIN" ""}}|{{img "01MISSING" ""}}|`,
+	})
+	e := newEnv(t, root)
+	ms, _ := kernel.Get[media.Service](e.app.Deps, kernel.ServiceMedia)
+	store := ms.(*fake.Media)
+	store.Add(media.Media{ID: "01FOCAL", URL: "/media/a.jpg", Mime: "image/jpeg", Width: 1200, Height: 800, Alt: "Atlas studio desk", Focal: &media.Focal{X: 0.25, Y: 0.8}})
+	store.Add(media.Media{ID: "01PLAIN", URL: "/media/b.jpg", Mime: "image/jpeg", Width: 600, Height: 400, Alt: ""})
+	rec, err := e.render(kernel.KindRequest{Kind: "index"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parts := strings.Split(rec.Body.String(), "|")
+	focal, plain, missing := parts[0], parts[1], parts[2]
+	for _, want := range []string{`alt="Atlas studio desk"`, `width="1200" height="800"`, `class="cover"`, `style="object-position:25.0% 80.0%"`} {
+		if !strings.Contains(focal, want) {
+			t.Errorf("focal image lacks %s: %s", want, focal)
+		}
+	}
+	if strings.Contains(plain, "style=") || !strings.Contains(plain, `alt=""`) {
+		t.Errorf("plain image: %s", plain)
+	}
+	if strings.TrimSpace(missing) != "" {
+		t.Errorf("missing media rendered %q", missing)
 	}
 }

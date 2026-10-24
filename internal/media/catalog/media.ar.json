@@ -46,5 +46,11 @@
   "picker.upload": "رفع جديد",
   "variant.thumbnail": "مصغّرة",
   "variant.medium": "متوسطة",
-  "variant.large": "كبيرة"
+  "variant.large": "كبيرة",
+  "field.focal": "نقطة التركيز",
+  "field.focal_help": "الجزء الذي يبقى ظاهرًا حين يقص القالب الصورة، بالنسبة المئوية من اليسار ومن الأعلى. اتركهما فارغين للمنتصف.",
+  "field.focal_x": "من اليسار (٪)",
+  "field.focal_y": "من الأعلى (٪)",
+  "field.focal_clear": "إزالة نقطة التركيز",
+  "flash.focal_invalid": "يجب أن تكون نقطة التركيز رقمين بين 0 و100."
 }

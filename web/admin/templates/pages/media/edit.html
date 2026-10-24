@@ -26,6 +26,17 @@
         <label for="caption" class="block font-medium mb-1">{{t "media.field.caption"}}</label>
         <textarea id="caption" name="caption" rows="3" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{$m.Caption}}</textarea>
       </div>
+      {{if $m.Width}}<fieldset class="rounded border border-line p-3" aria-describedby="focal-help">
+        <legend class="font-medium px-1">{{t "media.field.focal"}}</legend>
+        <p id="focal-help" class="mb-2 text-xs text-muted">{{t "media.field.focal_help"}}</p>
+        <div class="flex flex-wrap gap-3 items-end">
+          <div><label for="focal_x" class="block text-sm mb-1">{{t "media.field.focal_x"}}</label>
+            <input id="focal_x" name="focal_x" type="number" min="0" max="100" step="1" dir="ltr" value="{{$.FocalX}}" class="w-24 h-9 rounded border border-line bg-panel px-3"></div>
+          <div><label for="focal_y" class="block text-sm mb-1">{{t "media.field.focal_y"}}</label>
+            <input id="focal_y" name="focal_y" type="number" min="0" max="100" step="1" dir="ltr" value="{{$.FocalY}}" class="w-24 h-9 rounded border border-line bg-panel px-3"></div>
+          {{if $m.Focal}}<label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" name="clear_focal" value="1"> {{t "media.field.focal_clear"}}</label>{{end}}
+        </div>
+      </fieldset>{{end}}
       <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button>
     </form>
     <dl class="rounded border border-line bg-panel p-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2">

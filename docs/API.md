@@ -504,7 +504,7 @@ Generated from the current locally booted OpenAPI document: **204 operations** i
 | DELETE | `/api/v1/media/{id}` | Delete a media item | `media.delete` |
 | GET | `/api/v1/media/{id}` | Get a media item | `media.upload` |
 | GET | `/api/v1/media` | List media | `media.upload` |
-| PATCH | `/api/v1/media/{id}` | Update alt, caption or title | `media.upload` |
+| PATCH | `/api/v1/media/{id}` | Update alt, caption, title or focal point | `media.upload` |
 | POST | `/api/v1/media` | Upload a media file | `media.upload` |
 
 ### membership
