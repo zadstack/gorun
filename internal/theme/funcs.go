@@ -110,6 +110,7 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 		"related":        f.related,
 		"adjacent":       f.adjacent,
 		"termsOf":        f.termsOf,
+		"series":         f.series,
 		"libraryFilters": func(tc *Context) LibraryFilters { return f.libraryFilters(tc) },
 		"builderBody":    f.builderBody,
 		"addonBody": func(name, body string) template.HTML {

@@ -124,3 +124,43 @@ func TestLibraryPaginationAndTermArchive(t *testing.T) {
 		t.Fatal("the term archive must not offer its own taxonomy as a filter")
 	}
 }
+
+// A series archive lists the whole series in series order (numbered parts by
+// number, then the unnumbered), whatever order the parts were published in,
+// and never a draft part.
+func TestSeriesArchiveListsPartsInSeriesOrder(t *testing.T) {
+	e := bootReal(t)
+	ctx := context.Background()
+	cs, _ := kernel.Get[content.Service](e.app.Deps, kernel.ServiceContent)
+	tax, _ := kernel.Get[taxonomy.Service](e.app.Deps, kernel.ServiceTaxonomy)
+	if _, err := tax.SaveTerm(ctx, taxonomy.Term{Taxonomy: "series", Slug: "start", Name: "ابدأ"}); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []struct {
+		slug, status string
+		order        any
+	}{{"part-b", "published", 2}, {"part-extra", "published", nil}, {"part-a", "published", 1}, {"part-draft", "draft", 3}, {"part-c", "published", 3}} {
+		fields := map[string]any{}
+		if p.order != nil {
+			fields["series_order"] = p.order
+		}
+		if _, err := cs.Create(ctx, content.Input{Type: "post", Slug: p.slug, Title: p.slug, Locale: "ar", Status: content.Status(p.status),
+			Terms: map[string][]string{"series": {"start"}}, Fields: fields}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	e.setting("site.posts_per_page", 2)
+	resp, body := e.get("/series/start")
+	if resp.StatusCode != 200 {
+		t.Fatalf("/series/start: %d", resp.StatusCode)
+	}
+	var got []string
+	for _, m := range regexp.MustCompile(`/post/(part-[a-z]+)"`).FindAllStringSubmatch(body, -1) {
+		if len(got) == 0 || got[len(got)-1] != m[1] {
+			got = append(got, m[1])
+		}
+	}
+	if strings.Join(got, ",") != "part-a,part-b,part-c,part-extra" {
+		t.Fatalf("series archive order = %v", got)
+	}
+}

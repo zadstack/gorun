@@ -7,6 +7,8 @@
     {{component "article-meta" .}}
   </header>
   {{with media .FeaturedMediaID}}<figure class="mb-6">{{img . "large" "w-full rounded border border-line"}}{{with .Caption}}<figcaption class="mt-2 text-sm text-muted">{{.}}</figcaption>{{end}}</figure>{{end}}
+  {{$series := series .}}
+  {{component "series-nav" $series}}
   {{$toc := toc .}}
   {{component "article-toc" $toc}}
   <div class="prose-gp">{{$toc.Body}}</div>
@@ -18,7 +20,7 @@
   </footer>
   {{end}}
   {{component "article-related" (related . 3)}}
-  {{component "article-adjacent" (adjacent .)}}
+  {{if not $series}}{{component "article-adjacent" (adjacent .)}}{{end}}
   {{component "comments" (dict "Item" . "Flash" $.Extra.comment_flash)}}
 </article>
 {{end}}

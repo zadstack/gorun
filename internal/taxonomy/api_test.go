@@ -38,7 +38,7 @@ func TestAPITaxonomiesAndTerms(t *testing.T) {
 		return rec.Code, env
 	}
 	code, env := call("GET", "/v1/taxonomies", nil)
-	if code != 200 || env["ok"] != true || len(env["data"].([]any)) != 2 {
+	if code != 200 || env["ok"] != true || len(env["data"].([]any)) != 3 { // category, tag and series (migration 0002)
 		t.Fatalf("list: %d %v", code, env)
 	}
 	code, env = call("POST", "/v1/taxonomies/category/terms", map[string]any{"name": "أخبار"})

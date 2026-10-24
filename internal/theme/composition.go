@@ -199,7 +199,8 @@ func (f *funcs) destination(p string) Destination {
 }
 
 // related returns up to n published public items of v's type and locale that
-// share at least one term with it, newest first (then newest id), excluding v.
+// share at least one term with it (series membership excluded: {{series}}
+// lists those), newest first (then newest id), excluding v.
 // Empty when v has no terms or nothing shares one.
 func (f *funcs) related(v any, n int) []content.Item {
 	it := itemOf(v)
@@ -211,7 +212,9 @@ func (f *funcs) related(v any, n int) []content.Item {
 	var out []content.Item
 	taxes := make([]string, 0, len(it.Terms))
 	for tax := range it.Terms {
-		taxes = append(taxes, tax)
+		if tax != SeriesTaxonomy { // a series has its own navigation ({{series}})
+			taxes = append(taxes, tax)
+		}
 	}
 	slices.Sort(taxes)
 	for _, tax := range taxes {
