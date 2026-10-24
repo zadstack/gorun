@@ -155,6 +155,14 @@ stays readable under any identity. No site brand, colour or asset is hard-coded 
 enhance them, but not replace a link or a form. Every interactive part is reachable by keyboard and
 names its purpose (`aria-label`, `aria-current`).
 
+An **image-only link** must still carry an accessible name, even when the image's alt is empty
+(decorative). Name it one of three ways: visible link text, an `aria-label`/`aria-labelledby` on the
+link, or an image with non-empty `alt`. Where the image is purely decorative and a separate link already
+names the destination — a card whose title is its own link — remove the image link from the
+accessibility tree instead (`aria-hidden="true"` and `tabindex="-1"` on it, as the default card does). An
+empty-alt image-only link with no name is invisible to assistive technology and fails acceptance
+(`TestCatalogLinksHaveAccessibleNames`).
+
 ## Package surface
 
 | API | Role |
