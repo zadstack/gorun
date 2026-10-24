@@ -331,3 +331,23 @@ func TestThemeManifestLogosMustStayUnderAssets(t *testing.T) {
 		t.Fatal("asset path rule")
 	}
 }
+
+// TestAppearanceLinkRoleIsResolvedInk: Appearance reports the link role as the
+// derived readable ink the renderer actually emits for --link (against the
+// effective identity background), not the raw accent, while the accent role
+// stays the raw accent.
+func TestAppearanceLinkRoleIsResolvedInk(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", `{"name":"Identity","version":"1","supports":["identity"]}`,
+		map[string]string{"templates/index.html": "x", "assets/style.css": `:root{--bg:#fff;--ink:#000;--accent:#111;}`})
+	e := newEnv(t, root)
+	e.setting(SettingKey("default", idAccent), "#f5b800") // a light accent: readable ink differs from the fill
+	rep := e.svc.Appearance(context.Background())
+
+	wantInk := identityVar(buildIdentity(identityGet(map[string]string{idAccent: "#f5b800"})).CSS, "--link")
+	if wantInk == "" || wantInk == "#f5b800" {
+		t.Fatalf("expected a derived link ink distinct from the accent, got %q", wantInk)
+	}
+	assertAppearanceValue(t, rep.Colors["link"], wantInk, "settings:theme.default.identity_accent")
+	assertAppearanceValue(t, rep.Colors["accent"], "#f5b800", "settings:theme.default.identity_accent")
+}

@@ -181,11 +181,24 @@ func (s *service) Appearance(ctx context.Context) AppearanceReport {
 				override("colors", role, setting(idScheme), palette[token], report.Declared.Colors)
 			}
 		}
-		for role, key := range map[string]string{"background": idBackground, "text": idText, "accent": idAccent, "link": idAccent} {
+		for role, key := range map[string]string{"background": idBackground, "text": idText, "accent": idAccent} {
 			if value := get(key); hexColor.MatchString(value) {
 				report.Colors[role] = appearanceKnown(value, setting(key))
 				override("colors", role, setting(key), value, report.Declared.Colors)
 			}
+		}
+		// The link role is the readable ink the renderer actually emits for
+		// --link (readableInk against the effective identity background, or the
+		// light fallback), not the raw accent. A light accent on a light page
+		// becomes a darker shade for text; the raw accent stays the accent role.
+		if accent := get(idAccent); hexColor.MatchString(accent) {
+			bg := identityBackground(get)
+			if bg == "" {
+				bg = identityLightFallback
+			}
+			ink := readableInk(accent, bg)
+			report.Colors["link"] = appearanceKnown(ink, setting(idAccent))
+			override("colors", "link", setting(idAccent), ink, report.Declared.Colors)
 		}
 		for role, key := range map[string]string{"body": idBody, "heading": idHeading} {
 			if font, ok := findFont(get(key)); ok {
