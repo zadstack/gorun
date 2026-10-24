@@ -79,6 +79,13 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- Builder identity now accepts a light brand accent (for example amber): instead of requiring white
+  button labels and rejecting it, it derives a readable label (white, near-black or black at WCAG AA)
+  the same way the theme identity layer does, and the builder's brand CSS emits the matching
+  `--on-accent`/`--gp-on-accent`. For any opaque color white or black always reaches AA, so a readable
+  label always exists; every previously valid accent stays valid. The builder now follows the theme's
+  rule via `brand.OnAccent`; sharing one implementation with the theme layer is deferred to a later
+  change.
 - The documentation index links every guide (35 were missing), and CI checks that it stays that way
   and that README and index links resolve.
 - READMEs: corrected stale facts (seven role templates, the recipe shipping since 0.11.0, Edge
