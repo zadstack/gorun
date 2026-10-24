@@ -189,7 +189,7 @@ for (const locale of ["ar", "en"] as const)
       path: info.outputPath(`editor-${locale}-before.png`),
       fullPage: true,
     });
-    await expect(page.locator("#builder-kind option")).toHaveCount(17);
+    await expect(page.locator("#builder-kind option")).toHaveCount(18);
     const labels = JSON.parse(
       (await page.locator("#page-builder").getAttribute("data-state"))!,
     ).labels;

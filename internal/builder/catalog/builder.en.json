@@ -120,5 +120,7 @@
   "purpose_methodology": "Methodology",
   "purpose_contact": "Contact",
   "locale_ar": "Arabic",
-  "locale_en": "English"
+  "locale_en": "English",
+  "list_type": "Content type to list",
+  "list_type_help": "The directory lists and searches published items of this type in the page language (for example post). A type that is not public shows nothing."
 }

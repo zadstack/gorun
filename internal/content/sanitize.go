@@ -16,7 +16,7 @@ var iframeSrc = regexp.MustCompile(`^https://(www\.youtube\.com/embed/|www\.yout
 // editorClass matches Quill's formatting classes (ql-align-right,
 // ql-direction-rtl, ql-indent-2, ...) and code-highlight language classes,
 // so alignment and RTL direction survive sanitizing.
-var editorClass = regexp.MustCompile(`^((ql-[a-z0-9-]+|gp-[a-z0-9-]+|language-[a-z0-9+-]+)( |$))+$`)
+var editorClass = regexp.MustCompile(`^((ql-[a-z0-9-]+|gp-[a-z0-9_-]+|language-[a-z0-9+-]+)( |$))+$`)
 
 var cmsPolicy = sync.OnceValue(func() *bluemonday.Policy {
 	p := bluemonday.UGCPolicy() // no data-*, no style, no scripts or handlers

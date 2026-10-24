@@ -2,6 +2,7 @@ package builder
 
 import (
 	"errors"
+	"regexp"
 	"slices"
 	"strings"
 )
@@ -26,6 +27,9 @@ type NativeOptions struct {
 	Rows           []ComparisonRow `json:"rows,omitempty"`
 	Caption        string          `json:"caption,omitempty"`
 	Illustration   bool            `json:"illustration,omitempty"`
+	// ListType is the content type a directory section lists and searches
+	// (a type slug; a type that is not public renders nothing).
+	ListType string `json:"list_type,omitempty"`
 }
 type SectionFact struct {
 	Label string `json:"label"`
@@ -40,8 +44,10 @@ type ComparisonCell struct {
 	Status string `json:"status,omitempty" enum:",yes,no"`
 }
 
-var nativeKinds = []string{"hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher"}
-var nativeOnlyKinds = []string{"steps", "comparison", "product_preview", "media_text", "switcher"}
+var nativeKinds = []string{"hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher", "directory"}
+var nativeOnlyKinds = []string{"steps", "comparison", "product_preview", "media_text", "switcher", "directory"}
+
+var listTypePattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,39}$`)
 
 // nativeEntryImageKinds are the native kinds whose entries may carry an image.
 var nativeEntryImageKinds = []string{"features", "steps", "media_text", "switcher"}
@@ -79,7 +85,7 @@ func validateNative(s Section) error {
 	if s.Kind != "hero" && s.Kind != "product_preview" && (s.Image != "" || s.ImageAlt != "") {
 		return fail()
 	}
-	if (s.Kind == "hero" || s.Kind == "comparison" || s.Kind == "product_preview") && len(s.Items) > 0 {
+	if (s.Kind == "hero" || s.Kind == "comparison" || s.Kind == "product_preview" || s.Kind == "directory") && len(s.Items) > 0 {
 		return fail()
 	}
 	for _, e := range s.Items {
@@ -105,7 +111,7 @@ func validateNative(s Section) error {
 		}
 	}
 	if s.Native == nil {
-		if s.Kind == "comparison" {
+		if s.Kind == "comparison" || s.Kind == "directory" {
 			return fail()
 		}
 		return nil
@@ -144,6 +150,9 @@ func validateNative(s Section) error {
 	}
 	if s.Kind != "comparison" && (len(n.Columns) > 0 || len(n.Rows) > 0) {
 		return fail()
+	}
+	if (s.Kind == "directory") != (n.ListType != "") || (n.ListType != "" && !listTypePattern.MatchString(n.ListType)) {
+		return errors.New("builder: a directory needs a content type to list")
 	}
 	if s.Kind == "comparison" {
 		if len(n.Columns) < 2 {
@@ -188,6 +197,8 @@ func defaultNative(s *Section, locale string) {
 			s.Native.Columns = []string{"الإمكانية", "الخيار أ", "الخيار ب"}
 			s.Native.Rows = []ComparisonRow{{Label: "ميزة", Cells: []ComparisonCell{{Text: "متاحة", Status: "yes"}, {Text: "غير متاحة", Status: "no"}}}}
 		}
+	case "directory":
+		s.Native.ListType = "post"
 	case "product_preview":
 		s.Native.Illustration = true
 		s.Native.Caption = "Illustrative interface drawn in CSS. Replace it with your product screenshot."
