@@ -115,19 +115,25 @@ func (stripePortal) Create(ctx context.Context, secretKey, customerID, returnURL
 	return ps.URL, nil
 }
 
-// refundCreator refunds a PaymentIntent in full.
+// refundCreator refunds a PaymentIntent in full. idempotencyKey must be
+// stable per order (e.g. "refund:"+orderID) so concurrent admin clicks
+// collapse to one Stripe Refund.
 type refundCreator interface {
-	Create(ctx context.Context, secretKey, paymentIntent string) (string, error)
+	Create(ctx context.Context, secretKey, paymentIntent, idempotencyKey string) (string, error)
 }
 
 type stripeRefunds struct{}
 
-func (stripeRefunds) Create(ctx context.Context, secretKey, paymentIntent string) (string, error) {
+func (stripeRefunds) Create(ctx context.Context, secretKey, paymentIntent, idempotencyKey string) (string, error) {
 	sc := stripe.NewClient(secretKey)
-	rf, err := sc.V1Refunds.Create(ctx, &stripe.RefundCreateParams{
+	params := &stripe.RefundCreateParams{
 		PaymentIntent: stripe.String(paymentIntent),
 		Reason:        stripe.String(string(stripe.RefundReasonRequestedByCustomer)),
-	})
+	}
+	if idempotencyKey != "" {
+		params.SetIdempotencyKey(idempotencyKey)
+	}
+	rf, err := sc.V1Refunds.Create(ctx, params)
 	if err != nil {
 		return "", fmt.Errorf("commerce: stripe refund: %w", err)
 	}

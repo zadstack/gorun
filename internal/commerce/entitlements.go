@@ -129,17 +129,37 @@ func (s *service) callOp(ctx context.Context, entID, kind, key, method, path str
 	case "failed":
 		return opResult{Attempts: attempts}, &MCBBError{Status: http4xx, Message: "operation failed permanently: " + lastErr}
 	}
+	// Atomically claim the pending row so concurrent callers cannot both
+	// execute. Correctness must not depend solely on the remote Idempotency-Key.
+	claim, err := s.db.ExecContext(ctx, `UPDATE provisioning_ops SET attempts = attempts + 1, updated_at = ?
+		WHERE id = ? AND status = 'pending' AND attempts = ?`, now, opID, attempts)
+	if err != nil {
+		return opResult{}, fmt.Errorf("commerce: claim op: %w", err)
+	}
+	if n, _ := claim.RowsAffected(); n != 1 {
+		if err := s.db.QueryRowContext(ctx, `SELECT status, response_json, attempts, last_error FROM provisioning_ops WHERE id = ?`, opID).
+			Scan(&status, &resp, &attempts, &lastErr); err != nil {
+			return opResult{}, fmt.Errorf("commerce: reload op: %w", err)
+		}
+		switch status {
+		case "done":
+			return opResult{Data: json.RawMessage(resp), Attempts: attempts}, nil
+		case "failed":
+			return opResult{Attempts: attempts}, &MCBBError{Status: http4xx, Message: "operation failed permanently: " + lastErr}
+		}
+		return opResult{Attempts: attempts}, &MCBBError{Status: 0, Message: "operation in flight"}
+	}
+	attempts++
 	r, err := s.serverClientForEntitlement(ctx, entID)
 	if err != nil { // local failure (config, secret, database): retried by the caller
-		s.finishOp(ctx, opID, attempts+1, "", err, lastAttempt)
-		return opResult{Attempts: attempts + 1}, err
+		s.finishOp(ctx, opID, attempts, "", err, lastAttempt)
+		return opResult{Attempts: attempts}, err
 	}
 	var send any
 	if method != "GET" {
 		send = json.RawMessage(storedReq)
 	}
 	data, callErr := r.Do(ctx, method, path, send, key)
-	attempts++
 	if callErr != nil {
 		final := !retryable(callErr) || lastAttempt
 		s.finishOp(ctx, opID, attempts, "", callErr, final)

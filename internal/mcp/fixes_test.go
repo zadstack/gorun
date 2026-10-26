@@ -137,7 +137,7 @@ func TestUpdateSettingsValidation(t *testing.T) {
 
 func TestGetLogs(t *testing.T) {
 	e := newEnv(t, nil)
-	a := e.agent("system.health", "content.view")
+	a := e.agent("audit.read", "content.view")
 	a.ok("list_content_types", nil)
 	logs := a.ok("get_logs", map[string]any{"action": "mcp.call", "limit": 5})
 	entries, _ := logs["audit"].([]any)

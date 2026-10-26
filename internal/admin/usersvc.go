@@ -34,6 +34,23 @@ func serviceFields(err error) (map[string]string, bool) {
 	return nil, false
 }
 
+// guardRoleAssign refuses a role whose permissions the actor cannot grant
+// (same rule as role edits and API-key scopes). Prevents users.manage from
+// minting an administrator and inheriting "*".
+func (h *handlers) guardRoleAssign(ctx context.Context, role string) map[string]string {
+	if role == "" {
+		return nil
+	}
+	r, err := h.roles.Get(ctx, role)
+	if err != nil {
+		return map[string]string{"role": "auth.error.role_invalid"}
+	}
+	if !auth.CanGrant(ctx, r.Permissions) {
+		return map[string]string{"role": "auth.error.role_grant_denied"}
+	}
+	return nil
+}
+
 // createUser creates a user, then applies locale and status. It returns
 // field errors (i18n keys) for invalid input.
 func (h *handlers) createUser(ctx context.Context, in userInput) (*auth.User, map[string]string, error) {
@@ -43,6 +60,11 @@ func (h *handlers) createUser(ctx context.Context, in userInput) (*auth.User, ma
 	}
 	if in.Status != "" && !validStatus(in.Status) {
 		fields["status"] = "auth.error.status_invalid"
+	}
+	if g := h.guardRoleAssign(ctx, in.Role); len(g) > 0 {
+		for k, v := range g {
+			fields[k] = v
+		}
 	}
 	if len(fields) > 0 {
 		return nil, fields, nil
@@ -95,6 +117,11 @@ func diffPatch(cur *auth.User, in userInput) auth.UserPatch {
 func (h *handlers) updateUser(ctx context.Context, target *auth.User, p auth.UserPatch) (*auth.User, map[string]string, error) {
 	if p.Locale != nil && !validLocale(*p.Locale) {
 		return nil, map[string]string{"locale": "admin.users.error_locale"}, nil
+	}
+	if p.Role != nil {
+		if fields := h.guardRoleAssign(ctx, *p.Role); len(fields) > 0 {
+			return nil, fields, nil
+		}
 	}
 	// Guard and mutation run under userMu against a fresh copy of the
 	// target, so two concurrent demotions cannot both pass the last-admin

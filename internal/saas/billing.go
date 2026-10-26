@@ -35,6 +35,10 @@ func decodeSubscription(raw []byte) (commerce.SubscriptionEvent, bool) {
 // applySubscription moves owned SaaS entitlements when commerce emits a
 // billing event. active and trialing stay usable; past_due is grace;
 // canceled and unpaid suspend.
+//
+// Updates are scoped to the event's plan (and, when SiteID is set, that
+// external id): a subscription change for plan A must not re-enable or
+// suspend entitlements for plan B of the same owner.
 func applySubscription(ctx context.Context, database *sql.DB, ev commerce.SubscriptionEvent) error {
 	status := "suspended"
 	until := ev.CurrentPeriodEnd
@@ -50,12 +54,17 @@ func applySubscription(ctx context.Context, database *sql.DB, ev commerce.Subscr
 	if ev.Reason == "grace_expired" {
 		status = "suspended"
 	}
-	if ev.AccountID == "" && ev.SiteID == "" {
+	if (ev.AccountID == "" || ev.Plan == "") && ev.SiteID == "" {
 		return nil
 	}
 	now := db.FormatTime(time.Now().UTC())
+	// Owner matches require a plan so one subscription cannot toggle every
+	// app the user owns. SiteID alone may identify a single external row.
 	_, err := database.ExecContext(ctx, `UPDATE saas_entitlements SET status = ?, valid_until = ?, updated_at = ?
-		WHERE (? <> '' AND (owner_id = ? OR external_id = ?)) OR (? <> '' AND external_id = ?)`,
-		status, until, now, ev.AccountID, ev.AccountID, ev.AccountID, ev.SiteID, ev.SiteID)
+		WHERE (? <> '' AND ? <> '' AND plan_id = ? AND (owner_id = ? OR external_id = ?))
+		   OR (? <> '' AND external_id = ? AND (? = '' OR plan_id = ?))`,
+		status, until, now,
+		ev.AccountID, ev.Plan, ev.Plan, ev.AccountID, ev.AccountID,
+		ev.SiteID, ev.SiteID, ev.Plan, ev.Plan)
 	return err
 }

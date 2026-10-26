@@ -165,12 +165,12 @@ func backupScheduleWithClient(ctx context.Context, d *kernel.Deps, now time.Time
 		d.Log.Error("backup.schedule: failed", "stage", stage, "err", cause)
 		return errors.Join(cause, saveErr)
 	}
-	res, err := backup.Create(d.Config.DataDir, d.Config.DBPath(), now)
+	res, err := backup.CreateWith(d.Config.DataDir, d.Config.DBPath(), now, backup.Options{SecretKey: d.Config.SecretKey})
 	if err != nil {
 		return fail("create", err)
 	}
 	state.Stamp = res.Stamp
-	success, err := verifiedBackup(res, now)
+	success, err := verifiedBackup(res, now, d.Config.SecretKey)
 	if err != nil {
 		return fail("verify", err)
 	}
@@ -204,7 +204,7 @@ func backupScheduleWithClient(ctx context.Context, d *kernel.Deps, now time.Time
 	}
 	pruned := 0
 	if keep := backupRetain(ctx, d); keep > 0 {
-		pruned, err = backup.PruneVerifiedKeeping(d.Config.DataDir, keep, res.Stamp)
+		pruned, err = backup.PruneVerifiedKeepingWith(d.Config.DataDir, keep, res.Stamp, d.Config.SecretKey)
 		if err != nil {
 			state.Status, state.Stage = "warning", "prune"
 			d.Audit.Record(ctx, "system.backup_retention_failed", "backup", res.Stamp, map[string]string{"stage": "prune"})
@@ -233,8 +233,8 @@ type backupSuccess struct {
 	Bytes int64  `json:"bytes"`
 }
 
-func verifiedBackup(res backup.Result, now time.Time) (backupSuccess, error) {
-	report, err := backup.Inspect(res.Manifest)
+func verifiedBackup(res backup.Result, now time.Time, key []byte) (backupSuccess, error) {
+	report, err := backup.InspectWith(res.Manifest, key)
 	if err != nil {
 		return backupSuccess{}, err
 	}

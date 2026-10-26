@@ -9,6 +9,7 @@ import (
 	"time"
 
 	gpbackup "github.com/zadstack/gorun/internal/backup"
+	"github.com/zadstack/gorun/internal/config"
 )
 
 const stagingUsage = "usage: gorun staging seed|promote (--from <source-data> | --input <stamp>.manifest.json) --dest <new-directory-path> [--include-secrets]"
@@ -50,11 +51,15 @@ func stagingCmd(args []string, out io.Writer) error {
 		return errors.New("staging: --include-secrets only applies with --from (the source backup already chose secrets)")
 	}
 
+	var secret []byte
 	manifest := input
 	if from != "" {
 		from = filepath.Clean(from)
 		dbPath := filepath.Join(from, "gorun.db")
-		res, createErr := gpbackup.CreateWith(from, dbPath, time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets})
+		if cfg, cfgErr := config.Load([]string{"--data", from}); cfgErr == nil {
+			secret = cfg.SecretKey
+		}
+		res, createErr := gpbackup.CreateWith(from, dbPath, time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: secret})
 		if createErr != nil {
 			return createErr
 		}
@@ -65,12 +70,14 @@ func stagingCmd(args []string, out io.Writer) error {
 		} else {
 			fmt.Fprintln(out, "secrets:  not archived; copy secret.key / GORUN_SECRET_KEY after restore")
 		}
+	} else {
+		secret = secretNearManifest(manifest)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(filepath.Clean(dest)), 0o700); err != nil {
 		return err
 	}
-	rep, err := gpbackup.Restore(manifest, dest)
+	rep, err := gpbackup.RestoreWith(manifest, dest, secret)
 	if err != nil {
 		if rep != nil {
 			_ = encodeInspection(out, rep)

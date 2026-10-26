@@ -80,8 +80,10 @@ you. Please give us a reasonable time to ship the fix before publishing details.
 
 - Sensitive MCP tools (publish, unpublish, delete, settings, edits to live content, template draft creation) do not run when called: the
   call is parked for a human with the `mcp.approve` permission, then runs once as the requesting key, which must
-  still be active and in scope. A key can never decide its own calls. `mcp.approve_self` bypasses approval and
-  must be listed explicitly (`*` does not include it). Undecided calls expire after 24 hours.
+  still be active and in scope. A key can never decide its own calls. Approver API keys must belong to a different
+  person than the requesting key unless `GORUN_MCP_SAME_OWNER_APPROVAL` is set; a signed-in session user (admin UI)
+  may still approve their own agent keys — that is the human-in-the-loop path and is not gated by that flag.
+  `mcp.approve_self` bypasses approval and must be listed explicitly (`*` does not include it). Undecided calls expire after 24 hours.
 - Draft previews are sandboxed static HTML: JavaScript, forms and external assets are blocked, even after draft creation is approved.
 - Every MCP call is audited with the SHA-256 of its arguments, never the arguments themselves.
 

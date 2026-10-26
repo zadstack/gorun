@@ -266,3 +266,37 @@ func TestUsersAudienceViewsUseSavedRoleAndPreserveSearch(t *testing.T) {
 		t.Fatal("invalid audience", resp.StatusCode)
 	}
 }
+
+func TestUsersManageCannotMintAdmin(t *testing.T) {
+	s := boot(t)
+	ctx := context.Background()
+	_, err := s.roles().Create(ctx, "usermgr", map[string]string{"en": "User mgr", "ar": "مدير"}, []string{"users.manage", "content.view"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mgr := s.login("mgr@example.com", "usermgr", "en")
+	_ = mgr
+	resp, page := s.post("/admin/users", url.Values{
+		"name": {"Evil"}, "email": {"evil@example.com"}, "role": {"admin"},
+		"locale": {"en"}, "status": {"active"}, "password": {testPassword},
+	})
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("create admin via users.manage: %d\n%s", resp.StatusCode, page)
+	}
+	mustContain(t, page, "field-error")
+	if _, err := s.users().GetByEmail(ctx, "evil@example.com"); err == nil {
+		t.Fatal("admin user was created")
+	}
+	ed := s.createUser("keep@example.com", "editor", "en")
+	resp, page = s.post("/admin/users/"+ed.ID, url.Values{
+		"name": {ed.Name}, "email": {ed.Email}, "role": {"admin"},
+		"locale": {"en"}, "status": {"active"},
+	})
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("promote to admin via users.manage: %d\n%s", resp.StatusCode, page)
+	}
+	fresh, _ := s.users().Get(ctx, ed.ID)
+	if fresh.Role != "editor" {
+		t.Fatalf("role became %s", fresh.Role)
+	}
+}

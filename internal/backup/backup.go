@@ -38,6 +38,9 @@ type Options struct {
 	// (`gorun backup --include-secrets`). Keep such archives offline and
 	// encrypted; the admin never sets it.
 	IncludeSecrets bool
+	// SecretKey (32 bytes) HMACs the manifest so a writable backups
+	// directory alone cannot forge digests. Prefer the site secret.
+	SecretKey []byte
 }
 
 // stampLayout names a backup by its UTC creation time.
@@ -138,7 +141,7 @@ func CreateWith(dataDir, dbPath string, now time.Time, opts Options) (Result, er
 		return Result{}, fmt.Errorf("backup: files: %w", err)
 	}
 	res.Count = n
-	if err := writeManifest(res, recovery, now); err != nil {
+	if err := writeManifest(res, recovery, now, opts.SecretKey); err != nil {
 		os.Remove(res.Files)
 		os.Remove(res.DB)
 		return Result{}, fmt.Errorf("backup: manifest: %w", err)

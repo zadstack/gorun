@@ -36,6 +36,7 @@ var basePermissions = []struct{ name, en, ar string }{
 	{"mcp.approve", "Approve AI agent actions", "الموافقة على إجراءات وكلاء الذكاء الاصطناعي"},
 	{"security.manage", "Manage login security", "إدارة أمان تسجيل الدخول"},
 	{"system.health", "View system health", "عرض حالة النظام"},
+	{"audit.read", "Read own audit log via MCP", "قراءة سجل التدقيق الخاص عبر MCP"},
 }
 
 // roleCache is the role → permission mapping used by Can. It is loaded by

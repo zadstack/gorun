@@ -29,7 +29,7 @@ func backupRestore(args []string, out io.Writer) error {
 	if err := os.MkdirAll(filepath.Dir(filepath.Clean(dest)), 0o700); err != nil {
 		return err
 	}
-	rep, err := gpbackup.Restore(input, dest)
+	rep, err := gpbackup.RestoreWith(input, dest, secretNearManifest(input))
 	if err != nil {
 		if rep != nil {
 			_ = encodeInspection(out, rep)
