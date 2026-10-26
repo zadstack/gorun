@@ -35,7 +35,7 @@ func TestBackupPreviewProcessCleanup(t *testing.T) {
 		t.Fatal(err)
 	}
 	app.Close()
-	res, err := gpbackup.Create(cfg.DataDir, cfg.DBPath(), time.Now())
+	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), gpbackup.Options{SecretKey: cfg.SecretKey})
 	if err != nil {
 		t.Fatal(err)
 	}

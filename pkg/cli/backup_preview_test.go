@@ -104,7 +104,7 @@ func TestPreparedBackupPreviewUsesDisposableSanitizedCopy(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(cfg.DataDir, "gorun.toml"), []byte("not valid archived configuration"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), gpbackup.Options{IncludeSecrets: true})
+	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), gpbackup.Options{IncludeSecrets: true, SecretKey: cfg.SecretKey})
 	if err != nil {
 		t.Fatal(err)
 	}
