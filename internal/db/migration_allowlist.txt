@@ -6,3 +6,4 @@
 # "Migrations must be additive".
 
 internal/workagents/migrations/0004_github_starred.sql # already applied fleet-wide; widens a CHECK by rename+add+copy+drop and keeps the column name execution_kind, so older readers still work
+internal/commerce/migrations/0008_provisioning_op_running.sql # widens status CHECK (adds running) by rename+add+copy+drop and keeps the column name status, so older readers still work
