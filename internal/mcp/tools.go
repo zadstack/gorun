@@ -19,7 +19,6 @@ const (
 	scopeUpload   = "media.upload"
 	scopeTaxonomy = "taxonomy.manage"
 	scopeThemes   = "themes.manage"
-	scopeHealth   = "system.health"
 	scopeAudit    = "audit.read"
 	scopeSettings = "settings.manage"
 	scopeMigrate  = "migrations.run"
