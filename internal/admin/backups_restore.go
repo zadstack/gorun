@@ -34,7 +34,7 @@ func (h *handlers) backupInspect(w http.ResponseWriter, r *http.Request) {
 		h.tpl.RenderError(w, r, http.StatusNotFound)
 		return
 	}
-	rep, err := backup.Inspect(manifest)
+	rep, err := backup.InspectWith(manifest, h.d.Config.SecretKey)
 	if err != nil {
 		h.serverError(w, r, err)
 		return
@@ -106,7 +106,7 @@ func (h *handlers) backupRestore(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	rep, err := backup.Restore(manifest, dest)
+	rep, err := backup.RestoreWith(manifest, dest, h.d.Config.SecretKey)
 	if err != nil {
 		h.d.Log.Error("admin: backup restore", "err", err, "stamp", stamp)
 		if errors.Is(err, backup.ErrPartialRestore) {

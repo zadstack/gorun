@@ -126,11 +126,11 @@ func backup(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets})
+	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: cfg.SecretKey})
 	if err != nil {
 		return err
 	}
-	report, err := gpbackup.Inspect(res.Manifest)
+	report, err := gpbackup.InspectWith(res.Manifest, cfg.SecretKey)
 	if err != nil {
 		return fmt.Errorf("backup: verification: %w", err)
 	}
@@ -145,7 +145,7 @@ func backup(args []string, out io.Writer) error {
 		fmt.Fprintln(out, "secrets:  not archived; keep secret.key / GORUN_SECRET_KEY separately (needed to restore encrypted settings and sessions)")
 	}
 	if retain >= 1 {
-		removed, pruneErr := gpbackup.PruneVerified(cfg.DataDir, retain)
+		removed, pruneErr := gpbackup.PruneVerifiedWith(cfg.DataDir, retain, cfg.SecretKey)
 		if pruneErr != nil {
 			return pruneErr
 		}

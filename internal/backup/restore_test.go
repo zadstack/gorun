@@ -81,7 +81,7 @@ func TestRestoreRejectsUnsafeArchivesBeforeWriting(t *testing.T) {
 			if err := os.Remove(res.Manifest); err != nil {
 				t.Fatal(err)
 			}
-			if err := writeManifest(res, nil, time.Now()); err != nil {
+			if err := writeManifest(res, nil, time.Now(), nil); err != nil {
 				t.Fatal(err)
 			}
 			dest := filepath.Join(t.TempDir(), "restored")
@@ -179,7 +179,7 @@ func TestRestoreClampsArchivePermissions(t *testing.T) {
 	if err := os.Remove(res.Manifest); err != nil {
 		t.Fatal(err)
 	}
-	if err := writeManifest(res, nil, time.Now()); err != nil {
+	if err := writeManifest(res, nil, time.Now(), nil); err != nil {
 		t.Fatal(err)
 	}
 	dest := filepath.Join(t.TempDir(), "restored")

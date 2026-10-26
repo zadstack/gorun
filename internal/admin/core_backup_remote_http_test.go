@@ -82,7 +82,7 @@ func TestCoreRemoteBackupHTTPFailedUploadRetainsInspectableLocalPair(t *testing.
 	if entries[0].Remote.DatabaseSHA256 != manifest.Database.SHA256 || entries[0].Remote.ArchiveSHA256 != manifest.Archive.SHA256 || manifest.Database.Size <= 0 || manifest.Archive.Size <= 0 {
 		t.Fatal("failed receipt lacks local manifest checksum binding")
 	}
-	report, err := backup.Inspect(manifestPath)
+	report, err := backup.InspectWith(manifestPath, s.app.Deps.Config.SecretKey)
 	if err != nil || report.Readiness != "local_ok" {
 		t.Fatal("local pair preflight should stay local_ok when only remote is unverified", err, report)
 	}

@@ -19,10 +19,14 @@ func (f *fakePortal) Create(_ context.Context, _, customerID, _ string) (string,
 	return f.url, nil
 }
 
-type fakeRefunds struct{ intent, id, key string }
+type fakeRefunds struct {
+	intent, id, key, idem string
+	calls                 int
+}
 
-func (f *fakeRefunds) Create(_ context.Context, key, paymentIntent string) (string, error) {
-	f.intent, f.key = paymentIntent, key
+func (f *fakeRefunds) Create(_ context.Context, key, paymentIntent, idempotencyKey string) (string, error) {
+	f.intent, f.key, f.idem = paymentIntent, key, idempotencyKey
+	f.calls++
 	if f.id == "" {
 		f.id = "re_test"
 	}
@@ -255,8 +259,8 @@ func TestBillingPortalRefundAndTestMode(t *testing.T) {
 	if r, _ := e.adminPost("/admin/commerce/orders/"+orderID+"/refund", nil); r.StatusCode != http.StatusSeeOther {
 		t.Fatalf("refund: %d", r.StatusCode)
 	}
-	if refunds.intent != "pi_"+orderID || e.str(`SELECT status FROM orders WHERE id = ?`, orderID) != OrderRefunded {
-		t.Fatalf("refund result intent=%s status=%s", refunds.intent, e.str(`SELECT status FROM orders WHERE id = ?`, orderID))
+	if refunds.intent != "pi_"+orderID || refunds.idem != "refund:"+orderID || e.str(`SELECT status FROM orders WHERE id = ?`, orderID) != OrderRefunded {
+		t.Fatalf("refund result intent=%s idem=%s status=%s", refunds.intent, refunds.idem, e.str(`SELECT status FROM orders WHERE id = ?`, orderID))
 	}
 	if errs := e.drain(JobSuspend); len(errs) > 0 {
 		t.Fatal(errs)

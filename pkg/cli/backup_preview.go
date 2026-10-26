@@ -120,7 +120,7 @@ func prepareBackupPreview(ctx context.Context, input, addr string) (result *back
 	}
 	p.tempDir = temp
 	p.DataDir = filepath.Join(temp, "site")
-	if _, err := gpbackup.Restore(input, p.DataDir); err != nil {
+	if _, err := gpbackup.RestoreWith(input, p.DataDir, secretNearManifest(input)); err != nil {
 		return nil, err
 	}
 	key := make([]byte, 32)

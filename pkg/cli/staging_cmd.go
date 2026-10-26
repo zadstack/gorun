@@ -50,11 +50,15 @@ func stagingCmd(args []string, out io.Writer) error {
 		return errors.New("staging: --include-secrets only applies with --from (the source backup already chose secrets)")
 	}
 
+	var secret []byte
 	manifest := input
 	if from != "" {
 		from = filepath.Clean(from)
 		dbPath := filepath.Join(from, "gorun.db")
-		res, createErr := gpbackup.CreateWith(from, dbPath, time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets})
+		// Only the source site's secret.key — never GORUN_SECRET_KEY from the
+		// process env, and never generate a new key into the source tree.
+		secret = readDataDirSecret(from)
+		res, createErr := gpbackup.CreateWith(from, dbPath, time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: secret})
 		if createErr != nil {
 			return createErr
 		}
@@ -65,12 +69,14 @@ func stagingCmd(args []string, out io.Writer) error {
 		} else {
 			fmt.Fprintln(out, "secrets:  not archived; copy secret.key / GORUN_SECRET_KEY after restore")
 		}
+	} else {
+		secret = secretNearManifest(manifest)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(filepath.Clean(dest)), 0o700); err != nil {
 		return err
 	}
-	rep, err := gpbackup.Restore(manifest, dest)
+	rep, err := gpbackup.RestoreWith(manifest, dest, secret)
 	if err != nil {
 		if rep != nil {
 			_ = encodeInspection(out, rep)

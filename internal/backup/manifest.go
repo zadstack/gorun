@@ -1,6 +1,7 @@
 package backup
 
 import (
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -11,6 +12,10 @@ import (
 	"regexp"
 	"time"
 )
+
+// manifestMACDomain separates backup manifest HMACs from other site-secret uses
+// (same pattern as backupCipher's "gorun.private.backup.v1").
+const manifestMACDomain = "gorun.private.backup.manifest.v1"
 
 const ManifestVersion = 1
 const consistency = "database_snapshot_files_not_atomic"
@@ -35,6 +40,9 @@ type Manifest struct {
 	RecoveryFiles      []string   `json:"recovery_files"`
 	Limitations        []string   `json:"limitations"`
 	EncryptedFileLimit int64      `json:"encrypted_file_limit"`
+	// HMAC is hex(HMAC-SHA256(site secret, domain || canonical digests)).
+	// Empty on legacy manifests written before keyed integrity.
+	HMAC string `json:"hmac,omitempty"`
 }
 
 type UploadFile struct {
@@ -75,7 +83,7 @@ func digest(path string) (FileDigest, error) {
 	return FileDigest{Name: filepath.Base(path), Size: n, SHA256: hex.EncodeToString(h.Sum(nil))}, nil
 }
 
-func writeManifest(res Result, recovery []string, now time.Time) error {
+func writeManifest(res Result, recovery []string, now time.Time, key []byte) error {
 	database, err := digest(res.DB)
 	if err != nil {
 		return err
@@ -87,7 +95,51 @@ func writeManifest(res Result, recovery []string, now time.Time) error {
 	m := Manifest{FormatVersion: ManifestVersion, Stamp: res.Stamp, CreatedAt: now.UTC().Format(time.RFC3339), Database: database, Archive: archive,
 		Consistency: consistency, RecoveryFiles: recovery, EncryptedFileLimit: MaxEncryptedFile,
 		Limitations: append([]string{}, backupLimitations...)}
+	if len(key) == 32 {
+		m.HMAC = manifestHMAC(key, m)
+	}
 	return writeJSONExclusive(res.Manifest, m)
+}
+
+// manifestHMAC binds the stamp and file digests to the site secret so a
+// writable backups directory alone cannot forge an accepted pair.
+func manifestHMAC(key []byte, m Manifest) string {
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte(manifestMACDomain))
+	mac.Write([]byte{0})
+	mac.Write([]byte(m.Stamp))
+	mac.Write([]byte{0})
+	mac.Write([]byte(m.Database.Name))
+	mac.Write([]byte{0})
+	mac.Write([]byte(m.Database.SHA256))
+	mac.Write([]byte{0})
+	mac.Write([]byte(m.Archive.Name))
+	mac.Write([]byte{0})
+	mac.Write([]byte(m.Archive.SHA256))
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+// CheckManifestHMAC reports whether m was signed with key. Unsigned
+// (legacy) manifests return false, nil — callers decide whether to warn.
+func CheckManifestHMAC(m *Manifest, key []byte) (ok bool, err error) {
+	if m == nil || m.HMAC == "" {
+		return false, nil
+	}
+	if len(key) != 32 {
+		return false, errors.New("backup: site secret required to verify manifest hmac")
+	}
+	want, err := hex.DecodeString(m.HMAC)
+	if err != nil || len(want) != sha256.Size {
+		return false, errors.New("backup: invalid manifest hmac")
+	}
+	got, err := hex.DecodeString(manifestHMAC(key, *m))
+	if err != nil {
+		return false, err
+	}
+	if !hmac.Equal(want, got) {
+		return false, errors.New("backup: manifest hmac mismatch")
+	}
+	return true, nil
 }
 
 func writeJSONExclusive(path string, value any) error {

@@ -137,15 +137,15 @@ func TestUpdateSettingsValidation(t *testing.T) {
 
 func TestGetLogs(t *testing.T) {
 	e := newEnv(t, nil)
-	a := e.agent("system.health", "content.view")
+	a := e.agent("audit.read", "content.view")
 	a.ok("list_content_types", nil)
 	logs := a.ok("get_logs", map[string]any{"action": "mcp.call", "limit": 5})
 	entries, _ := logs["audit"].([]any)
 	if len(entries) == 0 {
 		t.Fatalf("get_logs audit: %v", logs)
 	}
-	if _, ok := logs["failed_jobs"].([]any); !ok {
-		t.Fatalf("get_logs failed_jobs: %v", logs)
+	if _, ok := logs["failed_jobs"]; ok {
+		t.Fatalf("get_logs must not expose site-wide jobs under audit.read: %v", logs)
 	}
 }
 

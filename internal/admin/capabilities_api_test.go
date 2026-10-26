@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/api/apitest"
@@ -17,7 +18,8 @@ func TestCapabilityAPIUsesSavedEvidenceAndPreservesSettings(t *testing.T) {
 	client := apitest.NewClient(t, app, "system.health")
 	ctx := context.Background()
 	id := db.NewID()
-	profile := map[string]any{"id": id, "version": db.NewID(), "name": "PRIVATE_PROFILE_NAME", "kind": "mcp", "endpoint": "https://mcp.example/PRIVATE_ENDPOINT", "test_status": "pass", "tested_at": "2026-10-19T10:00:00Z", "test_count": 10}
+	testedAt := time.Now().Add(-24 * time.Hour).UTC().Format(time.RFC3339)
+	profile := map[string]any{"id": id, "version": db.NewID(), "name": "PRIVATE_PROFILE_NAME", "kind": "mcp", "endpoint": "https://mcp.example/PRIVATE_ENDPOINT", "test_status": "pass", "tested_at": testedAt, "test_count": 10}
 	for key, value := range map[string]any{"connections.profile." + id: profile, "site.theme": "custom-theme", "site.title": "Preserved site", "site.identity": map[string]string{"color": "#123456"}} {
 		if err := app.Deps.Settings.Set(ctx, key, value); err != nil {
 			t.Fatal(err)
