@@ -144,8 +144,8 @@ func TestGetLogs(t *testing.T) {
 	if len(entries) == 0 {
 		t.Fatalf("get_logs audit: %v", logs)
 	}
-	if _, ok := logs["failed_jobs"].([]any); !ok {
-		t.Fatalf("get_logs failed_jobs: %v", logs)
+	if _, ok := logs["failed_jobs"]; ok {
+		t.Fatalf("get_logs must not expose site-wide jobs under audit.read: %v", logs)
 	}
 }
 

@@ -101,8 +101,8 @@ All notable changes to GoRun are recorded here. The format follows
   share one Stripe Refund.
 - Assigning a user role requires `CanGrant` on that role's permissions: `users.manage` alone
   cannot mint or promote an administrator.
-- MCP `get_logs` requires `audit.read`, returns only the caller's audit rows (IPs omitted),
-  and omits failed-job `last_error` text.
+- MCP `get_logs` requires `audit.read` and returns only the caller's audit rows (IPs
+  omitted). Site-wide failed/dead job listings stay on `system.health` (admin / REST).
 - Backup manifests may carry an HMAC of the file digests under the site secret. When a key
   is supplied, Inspect / Restore / verified prune require a matching HMAC (stripping the
   field is blocked). CLI inspect/restore also honour `GORUN_SECRET_KEY`; staging `--from`

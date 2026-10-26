@@ -15,19 +15,9 @@ type getLogsInput struct {
 	Action string `json:"action,omitempty" jsonschema:"only this audit action, e.g. mcp.call"`
 }
 
-// failedJob is a failed or dead job without its payload (payloads may hold
-// personal data) and without LastError (may hold secret text from remotes).
-type failedJob struct {
-	ID        string `json:"id"`
-	Kind      string `json:"kind"`
-	Status    string `json:"status"`
-	Attempts  int    `json:"attempts"`
-	UpdatedAt string `json:"updated_at"`
-}
-
 func logTools(d *kernel.Deps) kernel.MCPTool {
 	return kernel.MCPTool{Name: "get_logs", Scopes: []string{scopeAudit}, Input: getLogsInput{},
-		Description: "Recent audit log entries for this key (or user) and failed background job summaries without error text.",
+		Description: "Recent audit log entries for this API key or signed-in user only. Site-wide job queues stay on system.health (admin / REST).",
 		Handler: bind(func(ctx context.Context, in getLogsInput) (any, error) {
 			limit := in.Limit
 			if limit <= 0 {
@@ -52,18 +42,7 @@ func logTools(d *kernel.Deps) kernel.MCPTool {
 					// IP deliberately omitted: get_logs must not leak peer addresses.
 				})
 			}
-			jobsOut := []failedJob{}
-			for _, status := range []string{"failed", "dead"} {
-				list, err := d.Jobs.List(ctx, status, 20)
-				if err != nil {
-					return nil, err
-				}
-				for _, j := range list {
-					jobsOut = append(jobsOut, failedJob{ID: j.ID, Kind: j.Kind, Status: j.Status, Attempts: j.Attempts,
-						UpdatedAt: j.UpdatedAt})
-				}
-			}
-			return map[string]any{"audit": out, "audit_total": total, "failed_jobs": jobsOut}, nil
+			return map[string]any{"audit": out, "audit_total": total}, nil
 		})}
 }
 
