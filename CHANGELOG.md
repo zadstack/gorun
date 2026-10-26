@@ -107,8 +107,8 @@ All notable changes to GoRun are recorded here. The format follows
   is supplied, Inspect / Restore / verified prune require a matching HMAC (stripping the
   field is blocked). CLI inspect/restore also honour `GORUN_SECRET_KEY`; staging `--from`
   signs only with the source `secret.key` and never generates into the source tree.
-- Provisioning ops are claimed atomically before the remote call so two workers cannot both
-  execute a pending op.
+- Provisioning ops are claimed atomically as `running` before the remote call so two workers
+  cannot both execute the same op; a stale `running` row may be reclaimed after two minutes.
 
 ### Fixed
 

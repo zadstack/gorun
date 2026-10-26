@@ -97,12 +97,19 @@ type opResult struct {
 	Attempts int
 }
 
+// opRunningStale is how long a 'running' claim may block other workers before
+// a crash is assumed and the row may be reclaimed. Remotes that exceed this
+// can still finish via Idempotency-Key; the late finishOp wins last-write.
+const opRunningStale = 2 * time.Minute
+
 // callOp performs one provisioning operation exactly once per idempotency
 // key: the op row is created on first use (request body frozen), a done op
 // returns its stored response without calling the server, and every
-// attempt is counted. A permanent failure (or the last allowed attempt)
-// marks the op failed. redact drops the response body (login links are
-// credentials). lastAttempt marks the op failed on a retryable failure too.
+// attempt is counted. A claim moves pending→running for the remote call so
+// a concurrent worker cannot re-claim mid-flight. A permanent failure (or
+// the last allowed attempt) marks the op failed. redact drops the response
+// body (login links are credentials). lastAttempt marks the op failed on a
+// retryable failure too.
 func (s *service) callOp(ctx context.Context, entID, kind, key, method, path string, body any, redact, lastAttempt bool) (opResult, error) {
 	reqBody, err := encodeMCBBBody(body)
 	if err != nil {
@@ -129,10 +136,12 @@ func (s *service) callOp(ctx context.Context, entID, kind, key, method, path str
 	case "failed":
 		return opResult{Attempts: attempts}, &MCBBError{Status: http4xx, Message: "operation failed permanently: " + lastErr}
 	}
-	// Atomically claim the pending row so concurrent callers cannot both
-	// execute. Correctness must not depend solely on the remote Idempotency-Key.
-	claim, err := s.db.ExecContext(ctx, `UPDATE provisioning_ops SET attempts = attempts + 1, updated_at = ?
-		WHERE id = ? AND status = 'pending' AND attempts = ?`, now, opID, attempts)
+	// Atomically claim pending (or reclaim a stale running row after a crash).
+	// Correctness must not depend solely on the remote Idempotency-Key.
+	staleBefore := db.FormatTime(s.now().Add(-opRunningStale))
+	claim, err := s.db.ExecContext(ctx, `UPDATE provisioning_ops SET status = 'running', attempts = attempts + 1, updated_at = ?
+		WHERE id = ? AND attempts = ? AND (status = 'pending' OR (status = 'running' AND updated_at < ?))`,
+		now, opID, attempts, staleBefore)
 	if err != nil {
 		return opResult{}, fmt.Errorf("commerce: claim op: %w", err)
 	}
