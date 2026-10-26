@@ -50,7 +50,9 @@ func Inspect(manifestPath string) (*Inspection, error) {
 }
 
 // InspectWith is Inspect, verifying a keyed manifest HMAC when key is the
-// 32-byte site secret. Signed manifests without a matching key are blocked.
+// 32-byte site secret. When a key is supplied, an HMAC is required (omitting
+// or stripping it is treated as tampering). Without a key, legacy unsigned
+// manifests are still accepted on digest checks alone.
 func InspectWith(manifestPath string, key []byte) (*Inspection, error) {
 	m, err := ReadManifest(manifestPath)
 	if err != nil {
@@ -60,7 +62,14 @@ func InspectWith(manifestPath string, key []byte) (*Inspection, error) {
 	r := &Inspection{Stamp: m.Stamp, CheckedAt: time.Now().UTC().Format(time.RFC3339), Consistency: m.Consistency, Readiness: "local_ok",
 		Errors: []string{}, Warnings: []string{}, CutoverChecklist: append([]string{}, backupLimitations...),
 		ExternalRequirements: []ExternalRequirement{}, Remote: receiptAt(dir, m.Stamp)}
-	if m.HMAC != "" {
+	if len(key) == 32 {
+		if m.HMAC == "" {
+			r.Errors = append(r.Errors, "manifest_hmac_required")
+			r.LocalComplete = false
+			r.IntegrityOK = false
+			r.Readiness = "blocked"
+			return r, nil
+		}
 		ok, herr := CheckManifestHMAC(m, key)
 		if herr != nil || !ok {
 			r.Errors = append(r.Errors, "manifest_hmac_mismatch")
@@ -69,6 +78,13 @@ func InspectWith(manifestPath string, key []byte) (*Inspection, error) {
 			r.Readiness = "blocked"
 			return r, nil
 		}
+	} else if m.HMAC != "" {
+		// Signed pair but no site secret to verify: block rather than trust digests alone.
+		r.Errors = append(r.Errors, "manifest_hmac_mismatch")
+		r.LocalComplete = false
+		r.IntegrityOK = false
+		r.Readiness = "blocked"
+		return r, nil
 	}
 	r.LocalComplete = true
 	for _, f := range []FileDigest{m.Database, m.Archive} {

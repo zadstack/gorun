@@ -9,7 +9,6 @@ import (
 	"time"
 
 	gpbackup "github.com/zadstack/gorun/internal/backup"
-	"github.com/zadstack/gorun/internal/config"
 )
 
 const stagingUsage = "usage: gorun staging seed|promote (--from <source-data> | --input <stamp>.manifest.json) --dest <new-directory-path> [--include-secrets]"
@@ -56,9 +55,9 @@ func stagingCmd(args []string, out io.Writer) error {
 	if from != "" {
 		from = filepath.Clean(from)
 		dbPath := filepath.Join(from, "gorun.db")
-		if cfg, cfgErr := config.Load([]string{"--data", from}); cfgErr == nil {
-			secret = cfg.SecretKey
-		}
+		// Only the source site's secret.key — never GORUN_SECRET_KEY from the
+		// process env, and never generate a new key into the source tree.
+		secret = readDataDirSecret(from)
 		res, createErr := gpbackup.CreateWith(from, dbPath, time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: secret})
 		if createErr != nil {
 			return createErr

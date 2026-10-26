@@ -96,14 +96,17 @@ All notable changes to GoRun are recorded here. The format follows
 
 - SaaS billing hooks update only the matching plan (owner matches require a plan), so one
   subscription event cannot re-enable or suspend every entitlement a user owns.
-- Admin refunds claim the order in SQLite before calling Stripe and send Idempotency-Key
-  `refund:{orderID}`, so concurrent refunds cannot create two Stripe refunds.
+- Admin refunds call Stripe first with Idempotency-Key `refund:{orderID}`, then claim the
+  order in SQLite. A provider failure leaves the order retryable; concurrent clicks still
+  share one Stripe Refund.
 - Assigning a user role requires `CanGrant` on that role's permissions: `users.manage` alone
   cannot mint or promote an administrator.
 - MCP `get_logs` requires `audit.read`, returns only the caller's audit rows (IPs omitted),
   and omits failed-job `last_error` text.
-- Backup manifests may carry an HMAC of the file digests under the site secret; Inspect,
-  Restore and verified prune check it when present.
+- Backup manifests may carry an HMAC of the file digests under the site secret. When a key
+  is supplied, Inspect / Restore / verified prune require a matching HMAC (stripping the
+  field is blocked). CLI inspect/restore also honour `GORUN_SECRET_KEY`; staging `--from`
+  signs only with the source `secret.key` and never generates into the source tree.
 - Provisioning ops are claimed atomically before the remote call so two workers cannot both
   execute a pending op.
 

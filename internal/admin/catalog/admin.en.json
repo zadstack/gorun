@@ -359,6 +359,7 @@
   "backups.code.pair_file_missing_or_unreadable": "The database or archive file is missing or unreadable.",
   "backups.code.pair_checksum_mismatch": "A file no longer matches the checksum recorded in the manifest.",
   "backups.code.manifest_hmac_mismatch": "The manifest HMAC does not match the site secret (tampered or wrong key).",
+  "backups.code.manifest_hmac_required": "This restore path requires a keyed manifest HMAC; the file is unsigned or the hmac field was removed.",
   "backups.code.stale_sqlite_sidecar": "A leftover SQLite -wal or -shm file sits next to the backup database.",
   "backups.code.archive_invalid_or_unsafe": "The files archive is damaged or contains unsafe paths or links.",
   "backups.code.database_unreadable": "The backup database cannot be opened.",

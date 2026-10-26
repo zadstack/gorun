@@ -35,15 +35,35 @@ func backupInspect(args []string, out io.Writer) error {
 	return nil
 }
 
-// secretNearManifest reads an existing site secret from the data directory that
-// owns the backups/ folder. It never generates a new secret.key.
+// secretNearManifest resolves the 32-byte site secret for a manifest: the
+// data directory's secret.key if present, otherwise GORUN_SECRET_KEY. It
+// never generates a new secret.key.
 func secretNearManifest(manifestPath string) []byte {
 	dataDir := filepath.Dir(filepath.Dir(filepath.Clean(manifestPath)))
-	raw, err := os.ReadFile(filepath.Join(dataDir, "secret.key"))
+	if key := decodeSecretBytes(readSecretFile(filepath.Join(dataDir, "secret.key"))); len(key) == 32 {
+		return key
+	}
+	return decodeSecretBytes([]byte(strings.TrimSpace(os.Getenv("GORUN_SECRET_KEY"))))
+}
+
+// readDataDirSecret reads secret.key under dataDir only (no env, no generate).
+func readDataDirSecret(dataDir string) []byte {
+	return decodeSecretBytes(readSecretFile(filepath.Join(dataDir, "secret.key")))
+}
+
+func readSecretFile(path string) []byte {
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil
 	}
-	s := strings.TrimSpace(string(raw))
+	return []byte(strings.TrimSpace(string(raw)))
+}
+
+func decodeSecretBytes(raw []byte) []byte {
+	if len(raw) == 0 {
+		return nil
+	}
+	s := string(raw)
 	key, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		key, err = base64.RawURLEncoding.DecodeString(strings.TrimRight(s, "="))

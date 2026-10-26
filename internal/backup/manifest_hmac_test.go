@@ -79,3 +79,28 @@ func TestManifestHMACBlocksMissingKey(t *testing.T) {
 		t.Fatalf("signed manifest without key: %+v", rep)
 	}
 }
+
+func TestManifestHMACRequiredWhenKeySupplied(t *testing.T) {
+	dir, path := backupSource(t)
+	res, err := Create(dir, path, time.Now()) // unsigned legacy pair
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := bytes.Repeat([]byte{1}, 32)
+	rep, err := InspectWith(res.Manifest, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rep.Readiness != "blocked" {
+		t.Fatalf("unsigned with key should block: %+v", rep)
+	}
+	found := false
+	for _, e := range rep.Errors {
+		if e == "manifest_hmac_required" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected manifest_hmac_required, got %v", rep.Errors)
+	}
+}

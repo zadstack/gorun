@@ -359,6 +359,7 @@
   "backups.code.pair_file_missing_or_unreadable": "ملف قاعدة البيانات أو الأرشيف مفقود أو تتعذر قراءته.",
   "backups.code.pair_checksum_mismatch": "أحد الملفات لم يعد يطابق البصمة المسجلة في ملف البيان.",
   "backups.code.manifest_hmac_mismatch": "توقيع HMAC لملف البيان لا يطابق سر الموقع (تم التلاعب أو المفتاح خاطئ).",
+  "backups.code.manifest_hmac_required": "مسار الاستعادة هذا يتطلب توقيع HMAC لملف البيان؛ الملف غير موقّع أو حُذف حقل hmac.",
   "backups.code.stale_sqlite_sidecar": "يوجد ملف ‎-wal أو ‎-shm متبقٍّ من SQLite بجوار قاعدة بيانات النسخة.",
   "backups.code.archive_invalid_or_unsafe": "أرشيف الملفات تالف أو يحتوي على مسارات أو روابط غير آمنة.",
   "backups.code.database_unreadable": "تعذّر فتح قاعدة بيانات النسخة.",
