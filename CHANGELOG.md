@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-26
+
 ### Added
 
 - Section library: **Text and media rows** (alternating image and copy) and a **Feature switcher**
@@ -138,7 +140,6 @@ All notable changes to GoRun are recorded here. The format follows
   other setting saved by direct SQL, or by a raw write on the server's own pool, could keep
   rendering the old value. A `settings_revision` counter, advanced by triggers on every settings
   write, now decides when the cache is dropped.
-
 ## [0.17.0] - 2026-10-23
 
 ### Added
@@ -1145,7 +1146,12 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.14.1...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/zadstack/gorun/compare/v0.17.0...v0.18.0
+[0.17.0]: https://github.com/zadstack/gorun/compare/v0.16.0...v0.17.0
+[0.16.0]: https://github.com/zadstack/gorun/compare/v0.15.1...v0.16.0
+[0.15.1]: https://github.com/zadstack/gorun/compare/v0.15.0...v0.15.1
+[0.15.0]: https://github.com/zadstack/gorun/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/zadstack/gorun/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/zadstack/gorun/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/zadstack/gorun/compare/v0.12.0...v0.13.0
