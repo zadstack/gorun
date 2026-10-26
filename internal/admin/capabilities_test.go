@@ -13,7 +13,9 @@ import (
 
 func TestCapabilityCheckDistinguishesConnectivityAndConfigurationEvidence(t *testing.T) {
 	h := &handlers{d: &kernel.Deps{Config: config.Config{SecretKey: make([]byte, 32)}}}
-	base := connectionRecord{ID: "profile-id", Version: "config-v2", Name: "Sensitive name", Kind: "mcp", Endpoint: "https://mcp.example/private-capability", TestedAt: "2026-10-19T10:00:00Z"}
+	// Fresh within evidenceTTL (7d); a fixed calendar stamp expires and flakes CI.
+	fresh := time.Now().Add(-24 * time.Hour).UTC().Format(time.RFC3339)
+	base := connectionRecord{ID: "profile-id", Version: "config-v2", Name: "Sensitive name", Kind: "mcp", Endpoint: "https://mcp.example/private-capability", TestedAt: fresh}
 	for _, tc := range []struct {
 		name, saved, version, stamp, want string
 		match                             *bool
