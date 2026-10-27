@@ -406,23 +406,32 @@ func opt(s string) *string {
 	return &s
 }
 
+type operationReader interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+}
+
 // Get returns one operation with its phases.
 func (s *Service) Get(ctx context.Context, id string) (Operation, error) {
-	o, err := scanOp(s.db.QueryRowContext(ctx, `SELECT `+opColumns+` FROM update_operations WHERE id = ?`, id))
+	return getOperation(ctx, s.db, id)
+}
+
+func getOperation(ctx context.Context, reader operationReader, id string) (Operation, error) {
+	o, err := scanOp(reader.QueryRowContext(ctx, `SELECT `+opColumns+` FROM update_operations WHERE id = ?`, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return Operation{}, notFound{ErrNotFound}
 	}
 	if err != nil {
 		return Operation{}, fmt.Errorf("update: get: %w", err)
 	}
-	if o.Phases, err = s.phases(ctx, id); err != nil {
+	if o.Phases, err = operationPhases(ctx, reader, id); err != nil {
 		return Operation{}, err
 	}
 	return o, nil
 }
 
-func (s *Service) phases(ctx context.Context, id string) ([]Phase, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT name, status, started_at, finished_at, duration_ms, progress, attempts, result_json, error, remediation, retryable
+func operationPhases(ctx context.Context, reader operationReader, id string) ([]Phase, error) {
+	rows, err := reader.QueryContext(ctx, `SELECT name, status, started_at, finished_at, duration_ms, progress, attempts, result_json, error, remediation, retryable
 		FROM update_phases WHERE operation_id = ? ORDER BY seq`, id)
 	if err != nil {
 		return nil, fmt.Errorf("update: phases: %w", err)
@@ -513,6 +522,61 @@ func (s *Service) Accepted(ctx context.Context) (string, error) {
 		return "", nil
 	}
 	return v, err
+}
+
+// StatusSnapshot contains lifecycle facts observed in one database snapshot.
+// An operation cannot appear both accepted and still active because acceptance
+// completed between independent queries.
+type StatusSnapshot struct {
+	AcceptedVersion string
+	Active          *Operation
+	Last            *Operation
+}
+
+// Snapshot holds a read-only transaction only while reading persisted facts.
+// It neither executes a phase nor makes a network request.
+func (s *Service) Snapshot(ctx context.Context) (StatusSnapshot, error) {
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return StatusSnapshot{}, err
+	}
+	defer tx.Rollback()
+	snapshot, err := readStatusSnapshot(ctx, tx)
+	if err != nil {
+		return StatusSnapshot{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return StatusSnapshot{}, err
+	}
+	return snapshot, nil
+}
+
+func readStatusSnapshot(ctx context.Context, reader operationReader) (StatusSnapshot, error) {
+	var snapshot StatusSnapshot
+	err := reader.QueryRowContext(ctx, `SELECT accepted_version FROM update_operations WHERE status = 'succeeded' ORDER BY finished_at DESC, id DESC LIMIT 1`).Scan(&snapshot.AcceptedVersion)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return snapshot, err
+	}
+	for _, entry := range []struct {
+		query  string
+		target **Operation
+	}{
+		{`SELECT id FROM update_operations WHERE status IN ('pending', 'running') ORDER BY created_at DESC LIMIT 1`, &snapshot.Active},
+		{`SELECT id FROM update_operations ORDER BY created_at DESC, id DESC LIMIT 1`, &snapshot.Last},
+	} {
+		var id string
+		if err := reader.QueryRowContext(ctx, entry.query).Scan(&id); errors.Is(err, sql.ErrNoRows) {
+			continue
+		} else if err != nil {
+			return snapshot, err
+		}
+		operation, err := getOperation(ctx, reader, id)
+		if err != nil {
+			return snapshot, err
+		}
+		*entry.target = &operation
+	}
+	return snapshot, nil
 }
 
 // Source returns the configured release source (nil when unconfigured).

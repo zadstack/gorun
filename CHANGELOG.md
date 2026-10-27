@@ -11,6 +11,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 - Update the SQLite engine to modernc.org/sqlite 1.61.0 and refresh its transitive dependencies.
 - Verify expired connectivity evidence explicitly while retaining current-base security fixes.
+- Read accepted, active and last update facts in one database snapshot so background acceptance cannot produce contradictory status.
 
 ## [0.18.0] - 2026-10-26
 
