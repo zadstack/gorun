@@ -239,19 +239,15 @@ type UpdateStatus struct {
 func (h *handlers) updateStatus(ctx context.Context) (UpdateStatus, error) {
 	st := UpdateStatus{RunningVersion: api.CoreVersion, Configured: h.update.Configured(), Source: h.update.SourceName(), Adapter: h.update.AdapterName(), Latest: LatestRelease{Status: "unknown"}}
 	st.IsRelease = update.IsRelease(api.CoreVersion)
-	accepted, err := h.update.Accepted(ctx)
+	snapshot, err := h.update.Snapshot(ctx)
 	if err != nil {
 		return st, err
 	}
-	if accepted != "" {
-		st.AcceptedVersion = &accepted
+	if snapshot.AcceptedVersion != "" {
+		st.AcceptedVersion = &snapshot.AcceptedVersion
 	}
-	if st.Active, err = h.update.Active(ctx); err != nil {
-		return st, err
-	}
-	if st.Last, err = h.update.Last(ctx); err != nil {
-		return st, err
-	}
+	st.Active, st.Last = snapshot.Active, snapshot.Last
+
 	o, err := h.observe.Get(ctx, releaseObservationKind, releaseObservationKey)
 	if err != nil && !errors.Is(err, observe.ErrNotFound) {
 		return st, err

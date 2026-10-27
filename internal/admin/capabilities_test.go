@@ -27,6 +27,7 @@ func TestCapabilityCheckDistinguishesConnectivityAndConfigurationEvidence(t *tes
 		{"invalid time", "pass", base.Version, "invalid", "unknown", boolPtr(true)},
 		{"missing time", "pass", "", "", "unknown", nil},
 		{"unknown status", "unexpected", "", base.TestedAt, "unknown", nil},
+		{"expired success", "pass", base.Version, time.Now().Add(-8 * 24 * time.Hour).UTC().Format(time.RFC3339), "expired", boolPtr(true)},
 		{"future time", "pass", base.Version, time.Now().Add(24 * time.Hour).UTC().Format(time.RFC3339), "unknown", boolPtr(true)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
