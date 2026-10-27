@@ -47,11 +47,16 @@ func RemovePartial(destination string) error {
 // destination only after the database and archive checksums verify, so
 // destination exists only for a complete restore.
 func Restore(manifestPath, destination string) (report *Inspection, resultErr error) {
+	return RestoreWith(manifestPath, destination, nil)
+}
+
+// RestoreWith is Restore, verifying a keyed manifest HMAC when key is set.
+func RestoreWith(manifestPath, destination string, key []byte) (report *Inspection, resultErr error) {
 	destination = filepath.Clean(destination)
 	if destination == "." || destination == string(filepath.Separator) {
 		return nil, errors.New("backup: restore requires a new destination directory")
 	}
-	report, err := Inspect(manifestPath)
+	report, err := InspectWith(manifestPath, key)
 	if err != nil {
 		return nil, err
 	}

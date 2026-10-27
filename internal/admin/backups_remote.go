@@ -138,7 +138,7 @@ func (h *handlers) backupRemoteCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	state := remoteBackupState{At: time.Now().UTC().Format(time.RFC3339), Status: "failed", Destination: dest.Name, DestinationID: dest.ID}
-	res, err := backup.Create(h.d.Config.DataDir, h.d.Config.DBPath(), time.Now())
+	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), time.Now(), backup.Options{SecretKey: h.d.Config.SecretKey})
 	if err == nil {
 		state.Stamp = res.Stamp
 		ctx, cancel := context.WithTimeout(r.Context(), 4*time.Minute)

@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-10-26
+
 ### Added
 
 - Section library: **Text and media rows** (alternating image and copy) and a **Feature switcher**
@@ -92,6 +94,24 @@ All notable changes to GoRun are recorded here. The format follows
   without MCP, version-neutral Docker and archive commands in Arabic) and described staged core
   updates instead of saying no updater exists. The architecture guide lists all 25 core modules.
 
+### Security
+
+- SaaS billing hooks update only the matching plan (owner matches require a plan), so one
+  subscription event cannot re-enable or suspend every entitlement a user owns.
+- Admin refunds call Stripe first with Idempotency-Key `refund:{orderID}`, then claim the
+  order in SQLite. A provider failure leaves the order retryable; concurrent clicks still
+  share one Stripe Refund.
+- Assigning a user role requires `CanGrant` on that role's permissions: `users.manage` alone
+  cannot mint or promote an administrator.
+- MCP `get_logs` requires `audit.read` and returns only the caller's audit rows (IPs
+  omitted). Site-wide failed/dead job listings stay on `system.health` (admin / REST).
+- Backup manifests may carry an HMAC of the file digests under the site secret. When a key
+  is supplied, Inspect / Restore / verified prune require a matching HMAC (stripping the
+  field is blocked). CLI inspect/restore also honour `GORUN_SECRET_KEY`; staging `--from`
+  signs only with the source `secret.key` and never generates into the source tree.
+- Provisioning ops are claimed atomically as `running` before the remote call so two workers
+  cannot both execute the same op; a stale `running` row may be reclaimed after two minutes.
+
 ### Fixed
 
 - The appearance report's `link` colour role now reports the readable link ink the renderer actually
@@ -120,7 +140,6 @@ All notable changes to GoRun are recorded here. The format follows
   other setting saved by direct SQL, or by a raw write on the server's own pool, could keep
   rendering the old value. A `settings_revision` counter, advanced by triggers on every settings
   write, now decides when the cache is dropped.
-
 ## [0.17.0] - 2026-10-23
 
 ### Added
@@ -1127,7 +1146,12 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.14.1...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/zadstack/gorun/compare/v0.17.0...v0.18.0
+[0.17.0]: https://github.com/zadstack/gorun/compare/v0.16.0...v0.17.0
+[0.16.0]: https://github.com/zadstack/gorun/compare/v0.15.1...v0.16.0
+[0.15.1]: https://github.com/zadstack/gorun/compare/v0.15.0...v0.15.1
+[0.15.0]: https://github.com/zadstack/gorun/compare/v0.14.1...v0.15.0
 [0.14.1]: https://github.com/zadstack/gorun/compare/v0.14.0...v0.14.1
 [0.14.0]: https://github.com/zadstack/gorun/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/zadstack/gorun/compare/v0.12.0...v0.13.0

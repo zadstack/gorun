@@ -236,6 +236,10 @@ func (st *approvalStore) Deny(ctx context.Context, id string) (*Approval, bool, 
 // belong to a different person than the requesting key: two keys of one
 // owner are one person approving their own call. Single-operator sites can
 // allow that with GORUN_MCP_SAME_OWNER_APPROVAL.
+//
+// Session users are the intentional human-in-the-loop path: the same operator
+// who owns an agent key may approve its parked calls in the admin UI. There is
+// no config to refuse that; API-key same-owner approval stays gated separately.
 func (st *approvalStore) checkDecider(ctx context.Context, id string) error {
 	a, err := st.get(ctx, id)
 	if err != nil {

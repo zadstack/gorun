@@ -82,7 +82,8 @@ public `Host` header.
 | `media.upload` | `upload_media`, `update_media` (metadata edits need approval) |
 | `taxonomy.manage` | `create_term` |
 | `themes.manage` | List and read templates, save template **drafts** |
-| `system.health` | `get_logs` |
+| `audit.read` | `get_logs` (own audit rows only; IPs omitted) |
+| `system.health` | Admin health screens and REST job/audit listings (not `get_logs`) |
 | `settings.manage` | `update_settings` (sensitive; site identity and SEO keys only, see below) |
 | `migrations.run` | Migration preview and status (when the WordPress migrator is installed) |
 | `commerce.manage` | `list_products` (when commerce is installed) |
@@ -137,7 +138,7 @@ input struct and use snake_case property names.
 | `list_templates` | themes.manage | | Theme templates and saved overrides |
 | `get_template` | themes.manage | | Published `body`, `source`, and saved `draft` (null when absent); draft-only templates are readable |
 | `create_template_draft` | themes.manage | **yes** | Approval saves an override **as a draft only**. A human previews and publishes it in Appearance → Templates. Use the authenticated admin preview to render Go template instructions before publication. |
-| `get_logs` | system.health | | Audit tail (`limit` ≤ 200, optional `action`) and failed/dead jobs (no payloads) |
+| `get_logs` | audit.read | | Own audit tail only (`limit` ≤ 200, optional `action`; IPs stripped). Site-wide failed/dead jobs stay on `system.health` (admin / `GET /api/v1/jobs`). |
 | `update_settings` | settings.manage | **yes** | `{"settings":{"site.title":"…"}}`. Allowed keys: `site.title`, `site.tagline`, `site.locale`, `site.timezone`, `site.logo` (an existing media id), `contact.email`, `site.posts_per_page` (1–100; a number or numeric string, stored as a number), `seo.title_template`, `seo.default_description`, `seo.default_og_image`, `seo.robots_txt`. String values, validated with the same rules as the admin pages. All keys are saved in one transaction, or none are. `site.base_url`, `site.theme` and `site.front_page` stay admin-only. |
 | `run_migration_preview` | migrations.run | | Dry-run report of a WordPress migration (only if wpmigrate is installed) |
 | `get_migration_status` | migrations.run | | Migration progress (only if wpmigrate is installed) |

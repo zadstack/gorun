@@ -70,19 +70,29 @@ func removeStamp(dir, stamp string) (int, error) {
 // Incomplete, legacy, and corrupt copies never displace a known-good copy and
 // are left for the operator to inspect rather than silently deleted.
 func PruneVerified(dataDir string, keep int) (removed int, err error) {
-	return pruneVerified(dataDir, keep, "")
+	return PruneVerifiedWith(dataDir, keep, nil)
+}
+
+// PruneVerifiedWith is PruneVerified, verifying keyed manifest HMACs with key.
+func PruneVerifiedWith(dataDir string, keep int, key []byte) (removed int, err error) {
+	return pruneVerified(dataDir, keep, "", key)
 }
 
 // PruneVerifiedKeeping reserves one retention slot for the just-created pair,
 // even when the host clock moved backwards since an earlier run.
 func PruneVerifiedKeeping(dataDir string, keep int, stamp string) (int, error) {
+	return PruneVerifiedKeepingWith(dataDir, keep, stamp, nil)
+}
+
+// PruneVerifiedKeepingWith is PruneVerifiedKeeping with a site secret for HMAC.
+func PruneVerifiedKeepingWith(dataDir string, keep int, stamp string, key []byte) (int, error) {
 	if !ValidStamp(stamp) {
 		return 0, fmt.Errorf("backup: invalid protected stamp")
 	}
-	return pruneVerified(dataDir, keep, stamp)
+	return pruneVerified(dataDir, keep, stamp, key)
 }
 
-func pruneVerified(dataDir string, keep int, protected string) (removed int, err error) {
+func pruneVerified(dataDir string, keep int, protected string, key []byte) (removed int, err error) {
 	if keep < 1 {
 		return 0, nil
 	}
@@ -99,7 +109,7 @@ func pruneVerified(dataDir string, keep int, protected string) (removed int, err
 		if err != nil {
 			continue
 		}
-		report, err := Inspect(manifest)
+		report, err := InspectWith(manifest, key)
 		if err == nil && report.Readiness != "blocked" && report.IntegrityOK {
 			verified = append(verified, entry)
 		}

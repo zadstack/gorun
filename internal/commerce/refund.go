@@ -8,8 +8,12 @@ import (
 )
 
 // RefundOrder refunds the order's PaymentIntent through Stripe, then marks
-// the order refunded and suspends its entitlement. A later charge.refunded
-// webhook is a no-op once the order is already refunded.
+// the order refunded and suspends its entitlement. Concurrent admin clicks
+// share Idempotency-Key "refund:"+orderID so Stripe returns one Refund; the
+// DB update claims the row afterward (RowsAffected==1). A later
+// charge.refunded webhook is a no-op once the order is already refunded.
+// Stripe is called before the local claim so a provider failure leaves the
+// order refundable for a retry.
 func (s *service) RefundOrder(ctx context.Context, orderID string) error {
 	o, err := s.Order(ctx, orderID)
 	if err != nil {
@@ -22,7 +26,7 @@ func (s *service) RefundOrder(ctx context.Context, orderID string) error {
 	if key == "" {
 		return ErrStripeNotConfigured
 	}
-	refundID, err := s.refunds.Create(ctx, key, o.StripePaymentIntent)
+	refundID, err := s.refunds.Create(ctx, key, o.StripePaymentIntent, "refund:"+o.ID)
 	if err != nil {
 		return err
 	}

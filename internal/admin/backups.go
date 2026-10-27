@@ -93,10 +93,10 @@ func (h *handlers) backupCreate(w http.ResponseWriter, r *http.Request) {
 	defer release()
 	backupMu.Lock()
 	now := time.Now()
-	res, err := backup.Create(h.d.Config.DataDir, h.d.Config.DBPath(), now)
+	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), now, backup.Options{SecretKey: h.d.Config.SecretKey})
 	if err == nil {
 		var success backupSuccess
-		success, err = verifiedBackup(res, now)
+		success, err = verifiedBackup(res, now, h.d.Config.SecretKey)
 		if err == nil {
 			err = h.d.Settings.Set(r.Context(), SettingBackupLastSuccess, success)
 		}
