@@ -22,10 +22,11 @@ test('readiness gives actionable local evidence, updates after corrections and s
   const response=await page.goto(route);expect(response?.status()).toBe(200);expect(response?.headers()['cache-control']).toContain('no-store');
   await expectNoServerError(page);await expect(page.getByRole('heading',{level:1})).toHaveText('Site readiness');
   await expect(check('contact_email')).toHaveAttribute('data-status','warn');
-  await expect(check('contact_email')).toContainText('fallback');
+  await expect(check('contact_email')).toContainText('may fall back to an administrator');
   await expect(check('smtp_config')).toHaveAttribute('data-status','warn');
   await expect(check('smtp_delivery')).toHaveAttribute('data-status','unknown');
   await expect(check('smtp_delivery')).toContainText('No message sent');
+  await expect(check('mail_inbox')).toHaveAttribute('data-status','unknown');
   await expect(check('seo')).toHaveAttribute('data-status','warn');
   await expect(check('base_url')).toHaveAttribute('data-status','warn');
   expect(snapshot()).toBe(before);
@@ -44,6 +45,10 @@ test('readiness gives actionable local evidence, updates after corrections and s
   // Presence of SMTP configuration cannot turn local evidence into delivery proof.
   set('mail.host','smtp.unverified.e2e.test');
   await page.reload();await expect(check('smtp_config')).toHaveAttribute('data-status','pass');await expect(check('smtp_delivery')).toHaveAttribute('data-status','unknown');await expect(check('smtp_delivery')).toContainText('No message sent');
+  await expect(check('smtp_delivery')).toContainText('Acceptance does not prove inbox receipt');
+  await expect(check('mail_inbox')).toHaveAttribute('data-status','unknown');
+  await expect(page.locator('#main')).not.toContainText('smtp.unverified.e2e.test');
+  await expect(page.locator('#main')).not.toContainText('readiness-owner@e2e.test');
   await expect(page.locator('#main')).toContainText('not a production certification');
   await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:testInfo.outputPath('readiness-en-desktop.png'),fullPage:true});
   for(const locale of ['ar','en'] as const){
