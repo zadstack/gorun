@@ -92,7 +92,7 @@ GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 
 - **Slow work runs in the background.** Provider checks, heavy reads and webhook deliveries run as durable jobs with retries. Pages show the last saved result and its age instead of waiting.
 - **Outside services are optional.** AI providers, Stripe, SMTP mail and Cloudflare Edge connect only when you configure them.
 
-[Architecture reference](docs/ARCHITECTURE.md) · [Modules](docs/MODULES.md)
+[Architecture reference](docs/ARCHITECTURE.md) · [Modules](docs/MODULES.md) · [Operational mail](docs/MAIL-OPERATIONS.md)
 
 ## A workspace that stays organized
 
