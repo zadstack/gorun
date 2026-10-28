@@ -89,7 +89,7 @@ func (s *service) Entries(ctx context.Context) ([]SitemapEntry, error) {
 			return nil, err
 		}
 	}
-	return out, nil
+	return s.finalSitemapEntries(ctx, base, out)
 }
 
 // Sitemap renders Entries as sitemap XML.

@@ -62,7 +62,7 @@ asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.
 | `internal/media` | core | `audit` `auth` `db` `hooks` `httpx` `kernel` `mailer` `settings` |
 | `internal/menus` | core | `audit` `auth` `content` `db` `hooks` `httpx` `i18n` `kernel` `taxonomy` |
 | `internal/redirects` | core | `audit` `auth` `db` `hooks` `httpx` `kernel` |
-| `internal/seo` | core | `auth` `content` `db` `hooks` `httpx` `kernel` `menus` `settings` `taxonomy` |
+| `internal/seo` | core | `auth` `content` `db` `hooks` `httpx` `i18n` `kernel` `menus` `redirects` `settings` `taxonomy` |
 | `internal/theme` | core | `auth` `brand` `config` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `redirects` `seo` `settings` `taxonomy` `web` |
 | `internal/pattern` | core | `auth` `config` `httpx` `i18n` `kernel` `pkg/patternkit` `settings` `theme` |
 | `internal/builder` | core | `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `settings` `theme` |

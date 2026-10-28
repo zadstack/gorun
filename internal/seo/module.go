@@ -9,6 +9,7 @@ import (
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/redirects"
 	"github.com/zadstack/gorun/internal/taxonomy"
 )
 
@@ -35,8 +36,9 @@ func (*Module) Catalogs() fs.FS { return catalogs }
 // Register publishes kernel.ServiceSEO and the Settings → SEO screen.
 func (*Module) Register(d *kernel.Deps) error {
 	svc := &service{settings: d.Settings, hooks: d.Hooks, log: d.Log, baseURL: d.Config.BaseURL,
-		content:  func() (content.Service, bool) { return kernel.Get[content.Service](d, kernel.ServiceContent) },
-		taxonomy: func() (taxonomy.Service, bool) { return kernel.Get[taxonomy.Service](d, kernel.ServiceTaxonomy) },
+		content:   func() (content.Service, bool) { return kernel.Get[content.Service](d, kernel.ServiceContent) },
+		taxonomy:  func() (taxonomy.Service, bool) { return kernel.Get[taxonomy.Service](d, kernel.ServiceTaxonomy) },
+		redirects: func() (redirects.Service, bool) { return kernel.Get[redirects.Service](d, kernel.ServiceRedirects) },
 	}
 	d.Services.Set(kernel.ServiceSEO, Service(svc))
 

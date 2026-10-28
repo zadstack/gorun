@@ -22,11 +22,12 @@ import (
 )
 
 // bootReal starts the real content stack (no fakes) with the repo themes.
-func bootReal(t *testing.T) *env {
+func bootReal(t *testing.T, extra ...kernel.Module) *env {
 	t.Helper()
 	cfg := config.Config{Env: "dev", DataDir: t.TempDir(), Addr: ":0", SecretKey: make([]byte, 32), BaseURL: "http://example.test", Theme: "default"}
-	app, err := kernel.Boot(context.Background(), cfg, []kernel.Module{settingsmod.New(), auth.New(), content.New(), taxonomy.New(),
-		media.New(), menus.New(), seo.New(), theme.New(theme.WithThemesDir("../../themes")), site.New()})
+	modules := append([]kernel.Module{settingsmod.New(), auth.New(), content.New(), taxonomy.New(), media.New(), menus.New()}, extra...)
+	modules = append(modules, seo.New(), theme.New(theme.WithThemesDir("../../themes")), site.New())
+	app, err := kernel.Boot(context.Background(), cfg, modules)
 	if err != nil {
 		t.Fatal(err)
 	}
