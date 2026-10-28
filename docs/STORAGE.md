@@ -43,7 +43,7 @@ A successful receipt binds the stamp, destination ID, private object keys, file 
 
 New `.gorb` objects begin with `GORUN-BACKUP-2\0`, followed by a 32-byte cryptographically random salt and a DARE 2.0 AES-256-GCM stream. The file key is HMAC-SHA256 of the site secret over `gorun.private.backup.v2\0`, fixed-length salt, a zero separator and the validated original filename. An encrypted fixed content marker also authenticates empty files. DARE uses bounded authenticated packages and rejects truncated, reordered, changed and trailing ciphertext; see the [format/API documentation](https://pkg.go.dev/github.com/minio/sio@v0.5.1). `encrypted_file_limit` in new manifests describes the DARE cryptographic bound (minus the marker), not an in-memory buffer size or a promise that the provider accepts objects of that size.
 
-**Keep a recovery binary containing this streaming-backup change (the next release after v0.18.2). GoRun v0.18.2 and older cannot decrypt v2 files.** The new binary still reads original `GORUN-BACKUP-1` AES-GCM objects with their original filename/key authentication and 64 MiB format limit. The byte-slice convenience APIs also remain bounded to 64 MiB; upload, readback and `backup-decrypt` use the streaming APIs for v2 files.
+**Keep a GoRun v0.18.3 or newer recovery binary. GoRun v0.18.2 and older cannot decrypt v2 files.** The new binary still reads original `GORUN-BACKUP-1` AES-GCM objects with their original filename/key authentication and 64 MiB format limit. The byte-slice convenience APIs also remain bounded to 64 MiB; upload, readback and `backup-decrypt` use the streaming APIs for v2 files.
 
 ### Local schedule and retention
 
