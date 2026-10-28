@@ -80,6 +80,7 @@ commands:
   info          the site's facts as JSON: title, theme, users (no secrets), content counts, sizes
   ai            ai set --provider openai|anthropic --model M [--base-url URL] [--api-key-stdin] | ai off:
                 AI writing in the editor, validated like Settings → AI (the key only from stdin)
+  mail send     send one message from JSON stdin using saved mail settings (--message-stdin)
   settings      recovery: settings get <key> | set <key> <json-or-string> | unset <key>
                 (validated like the admin, audited as system; no workers or themes needed)
 `
@@ -138,6 +139,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return c.Run(args[1:], in, out)
 	}
 	switch args[0] {
+	case "mail":
+		return mailCmd(args[1:], in, out)
 	case "doctor":
 		return doctorCmd(args[1:], out)
 	case "start":

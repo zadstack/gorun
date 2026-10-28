@@ -84,7 +84,7 @@ asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.
 | `pkg/patternkit` | contract | — |
 | `pkg/themekit` | contract | — |
 | `cmd/gorun` | binary | `pkg/cli` |
-| `pkg/cli` | binary | `admin` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `i18n` `identityai` `identitylogo` `jobs` `kernel` `launch` `mcp` `media` `membership` `menus` `observe` `pattern` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
+| `pkg/cli` | binary | `admin` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `i18n` `identityai` `identitylogo` `jobs` `kernel` `launch` `mailer` `mcp` `media` `membership` `menus` `observe` `pattern` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
 <!-- END GENERATED IMPORT GRAPH -->
 
 Reading the graph:

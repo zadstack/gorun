@@ -15,6 +15,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | [SERVER-SETUP.md](SERVER-SETUP.md) | Guided Linux domain setup: verified public release, DNS, Caddy HTTPS, persistent data, safe resume and acceptance checks |
 | [PRODUCTION.md](PRODUCTION.md) | Production env, HTTPS / reverse proxy / HSTS, backup + restore (CLI and admin), cutover, acceptance checks |
 | [BACKUPS.md](BACKUPS.md) | Scheduled local backups, verification, failure alerts, read-only restore preview, restore into a new directory |
+| [MAIL-OPERATIONS.md](MAIL-OPERATIONS.md) | Operational mail from JSON stdin using saved SMTP or Resend settings; provider acceptance and inbox verification |
 | [STAGING.md](STAGING.md) | Staging site (second data dir) + promote-to-live via `gorun staging seed\|promote` |
 | [OBSERVABILITY.md](OBSERVABILITY.md) | Optional `GET /metrics` (Prometheus text) + JSON log shipping notes |
 | [ERROR-INVENTORY.md](ERROR-INVENTORY.md) | System → Errors: read-only owner view of recent application errors by category |
