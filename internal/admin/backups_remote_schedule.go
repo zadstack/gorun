@@ -112,7 +112,7 @@ func scheduledRemoteUpload(ctx context.Context, d *kernel.Deps, res backup.Resul
 			uploadCtx, cancel := context.WithTimeout(ctx, remoteBackupTimeout)
 			state.Receipt, err = uploadEncryptedBackup(uploadCtx, res, dest, d.Config.SecretKey, site, client)
 			cancel()
-			receiptErr := backup.StoreUploadReceipt(res, state.Receipt)
+			receiptErr := backup.StoreUploadReceiptWithKey(res, state.Receipt, d.Config.SecretKey)
 			if err == nil && receiptErr != nil {
 				state.Status = "uploaded_unrecorded"
 			}

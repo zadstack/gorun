@@ -42,10 +42,17 @@ func TestScheduledRemoteBackupPreservesLocalAndLastAcknowledgementOnFailure(t *t
 		t.Fatal("remote schedule not enabled")
 	}
 	calls, fail := 0, false
+	objects := map[string][]byte{}
 	client := &http.Client{Transport: scheduledBackupTransport(func(r *http.Request) (*http.Response, error) {
 		calls++
-		if r.Method != "PUT" || !strings.HasSuffix(r.URL.Path, ".gorb") || r.Header.Get("Authorization") == "" {
+		if !strings.HasSuffix(r.URL.Path, ".gorb") || r.Header.Get("Authorization") == "" {
 			t.Fatal("unexpected network operation", r.Method, r.URL.Path)
+		}
+		if r.Method == http.MethodGet {
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(objects[r.URL.Path])), Header: http.Header{}}, nil
+		}
+		if r.Method != http.MethodPut {
+			t.Fatal("unexpected method", r.Method)
 		}
 		cipher, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -55,6 +62,7 @@ func TestScheduledRemoteBackupPreservesLocalAndLastAcknowledgementOnFailure(t *t
 		if err != nil || len(plain) == 0 {
 			t.Fatal("uploaded copy cannot be decrypted", err)
 		}
+		objects[r.URL.Path] = cipher
 		status := 200
 		if fail {
 			status = 403
@@ -76,7 +84,7 @@ func TestScheduledRemoteBackupPreservesLocalAndLastAcknowledgementOnFailure(t *t
 	if err = admin.BackupScheduleWithClient(ctx, s.app.Deps, now.Add(24*time.Hour), client); err == nil {
 		t.Fatal("provider failure hidden")
 	}
-	if calls != 3 {
+	if calls != 5 {
 		t.Fatalf("unexpected number of uploads: %d", calls)
 	}
 	var got string
@@ -103,7 +111,7 @@ func TestScheduledRemoteBackupPreservesLocalAndLastAcknowledgementOnFailure(t *t
 	_, page = s.do("GET", "/admin/system/health", nil)
 	mustContain(t, page, `data-check="backups" data-status="warn"`)
 	// The next tick must not create another local pair just to retry the upload.
-	if err = admin.BackupScheduleWithClient(ctx, s.app.Deps, now.Add(25*time.Hour), client); err != nil || calls != 3 {
+	if err = admin.BackupScheduleWithClient(ctx, s.app.Deps, now.Add(25*time.Hour), client); err != nil || calls != 5 {
 		t.Fatal("not-due tick uploaded again", err)
 	}
 }
@@ -279,12 +287,19 @@ func TestUploadAcknowledgementSurvivesReceiptFileFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.post("/admin/system/backups/schedule", url.Values{"schedule_hours": {"24"}, "retain": {"1"}, "remote_destination": {dest.ID}})
-	calls := 0
+	objects := map[string][]byte{}
 	client := &http.Client{Transport: scheduledBackupTransport(func(r *http.Request) (*http.Response, error) {
-		calls++
-		if calls == 2 {
+		if r.Method == http.MethodGet {
+			return &http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader(objects[r.URL.Path])), Header: http.Header{}}, nil
+		}
+		var err error
+		objects[r.URL.Path], err = io.ReadAll(r.Body)
+		if err != nil {
+			return nil, err
+		}
+		if strings.HasSuffix(r.URL.Path, ".tar.gz.gorb") {
 			stamp := strings.TrimSuffix(filepath.Base(r.URL.Path), ".tar.gz.gorb")
-			if err := os.Mkdir(filepath.Join(backup.Dir(s.app.Deps.Config.DataDir), stamp+".remote.json"), 0700); err != nil {
+			if err = os.Mkdir(filepath.Join(backup.Dir(s.app.Deps.Config.DataDir), stamp+".remote.json"), 0o700); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -297,7 +312,7 @@ func TestUploadAcknowledgementSurvivesReceiptFileFailure(t *testing.T) {
 		Status  string
 		Receipt backup.UploadReceipt
 	}
-	if err = s.app.Deps.Settings.Get(ctx, "storage.backup.last_success", &ack); err != nil || ack.Status != "uploaded_unrecorded" || ack.Receipt.State != "uploaded" || ack.Receipt.ReadBackVerified {
+	if err = s.app.Deps.Settings.Get(ctx, "storage.backup.last_success", &ack); err != nil || ack.Status != "uploaded_unrecorded" || ack.Receipt.State != "uploaded" || !ack.Receipt.ReadBackVerified {
 		t.Fatal("lost/overstated actual provider acknowledgement", ack, err)
 	}
 	_, page := s.do("GET", "/admin/system/backups", nil)

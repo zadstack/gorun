@@ -16,5 +16,6 @@ Third-party components bundled with GoRun keep their own licenses:
 - web/admin/static/fonts/zad/OFL.txt (Zad font, SIL Open Font License 1.1,
   derived from IBM Plex Sans Arabic)
 - internal/builder/static/THREE-LICENSE.txt (three.js, MIT)
+- docs/licenses/minio-sio.txt (github.com/minio/sio, Apache License 2.0)
 
 Contact: info@gocloud.run

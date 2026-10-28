@@ -48,15 +48,21 @@ type Manifest struct {
 type UploadFile struct {
 	Name      string `json:"name"`
 	State     string `json:"state"`
+	ObjectKey string `json:"object_key,omitempty"`
 	Code      string `json:"code,omitempty"`
 	CheckedAt string `json:"checked_at"`
 }
 
-// UploadReceipt records provider acknowledgments, never remote read-back proof.
+// UploadReceipt records acknowledgments; keyed receipts may additionally attest
+// to authenticated readback at upload time, not continued remote availability.
 type UploadReceipt struct {
 	State            string       `json:"state"`
 	Files            []UploadFile `json:"files"`
 	ReadBackVerified bool         `json:"read_back_verified"`
+	Stamp            string       `json:"stamp,omitempty"`
+	DestinationID    string       `json:"destination_id,omitempty"`
+	ManifestHMAC     string       `json:"manifest_hmac,omitempty"`
+	HMAC             string       `json:"hmac,omitempty"`
 	DatabaseSHA256   string       `json:"database_sha256,omitempty"`
 	ArchiveSHA256    string       `json:"archive_sha256,omitempty"`
 }
@@ -207,6 +213,12 @@ func ReadManifest(path string) (*Manifest, error) {
 }
 
 func StoreUploadReceipt(res Result, receipt UploadReceipt) error {
+	return StoreUploadReceiptWithKey(res, receipt, nil)
+}
+
+// StoreUploadReceiptWithKey authenticates the manifest identity, destination,
+// remote object keys and readback result with the existing site secret.
+func StoreUploadReceiptWithKey(res Result, receipt UploadReceipt, key []byte) error {
 	if !fileName.MatchString(res.Stamp+".db") || filepath.Base(res.DB) != res.Stamp+".db" || filepath.Base(res.Files) != res.Stamp+".tar.gz" || filepath.Dir(res.DB) != filepath.Dir(res.Files) {
 		return errors.New("backup: invalid upload pair")
 	}
@@ -222,14 +234,31 @@ func StoreUploadReceipt(res Result, receipt UploadReceipt) error {
 		}
 	}
 	receipt.DatabaseSHA256, receipt.ArchiveSHA256 = m.Database.SHA256, m.Archive.SHA256
+	if receipt.ReadBackVerified {
+		valid, err := CheckManifestHMAC(m, key)
+		if err != nil || !valid || receipt.DestinationID == "" || len(receipt.Files) != 2 {
+			return errors.New("backup: authenticated readback receipt required")
+		}
+		for _, file := range receipt.Files {
+			if file.State != "uploaded" || file.ObjectKey == "" {
+				return errors.New("backup: incomplete readback receipt")
+			}
+		}
+	}
+	if len(key) == 32 {
+		receipt.Stamp, receipt.ManifestHMAC = res.Stamp, m.HMAC
+		receipt.HMAC = uploadReceiptHMAC(receipt, key)
+	}
 	// Each backup has one manual upload attempt. O_EXCL keeps receipts immutable.
 	return writeJSONExclusive(path, receipt)
 }
 
-func receiptAt(dir, stamp string) UploadReceipt {
+func receiptAt(dir, stamp string) UploadReceipt { return receiptAtWithKey(dir, stamp, nil) }
+
+func receiptAtWithKey(dir, stamp string, key []byte) UploadReceipt {
 	unknown := UploadReceipt{State: "unverified", Files: []UploadFile{}}
 	var receipt UploadReceipt
-	if readJSONRegular(filepath.Join(dir, stamp+".remote.json"), &receipt) != nil || receipt.ReadBackVerified {
+	if readJSONRegular(filepath.Join(dir, stamp+".remote.json"), &receipt) != nil {
 		return unknown
 	}
 	if len(receipt.Files) != 2 {
@@ -238,6 +267,11 @@ func receiptAt(dir, stamp string) UploadReceipt {
 	m, err := ReadManifest(filepath.Join(dir, stamp+".manifest.json"))
 	if err != nil || receipt.DatabaseSHA256 != m.Database.SHA256 || receipt.ArchiveSHA256 != m.Archive.SHA256 {
 		return unknown
+	}
+	if receipt.ReadBackVerified || receipt.HMAC != "" && len(key) == 32 {
+		if !validUploadReceipt(receipt, m, key) {
+			return unknown
+		}
 	}
 	uploaded := 0
 	for i, f := range receipt.Files {

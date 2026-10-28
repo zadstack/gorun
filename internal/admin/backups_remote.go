@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -48,7 +47,7 @@ func (h *handlers) backupRemoteView(ctx context.Context, page *backupsPage) erro
 }
 func uploadEncryptedBackup(ctx context.Context, res backup.Result, d media.Destination, secret []byte, site string, client *http.Client) (receipt backup.UploadReceipt, resultErr error) {
 	at := time.Now().UTC().Format(time.RFC3339)
-	receipt = backup.UploadReceipt{State: "failed", Files: []backup.UploadFile{{Name: filepath.Base(res.DB), State: "not_attempted", CheckedAt: at}, {Name: filepath.Base(res.Files), State: "not_attempted", CheckedAt: at}}}
+	receipt = backup.UploadReceipt{State: "failed", DestinationID: d.ID, Files: []backup.UploadFile{{Name: filepath.Base(res.DB), State: "not_attempted", CheckedAt: at}, {Name: filepath.Base(res.Files), State: "not_attempted", CheckedAt: at}}}
 	defer func() {
 		uploaded := 0
 		for _, f := range receipt.Files {
@@ -78,39 +77,37 @@ func uploadEncryptedBackup(ctx context.Context, res backup.Result, d media.Desti
 	if err != nil {
 		return receipt, err
 	}
+	manifest, err := backup.ReadManifest(res.Manifest)
+	if err != nil {
+		return receipt, err
+	}
+	valid, err := backup.CheckManifestHMAC(manifest, secret)
+	if err != nil || !valid || manifest.Stamp != res.Stamp {
+		return receipt, errors.New("backup: authenticated local manifest is required")
+	}
+	expected := []backup.FileDigest{manifest.Database, manifest.Archive}
 	for i, path := range []string{res.DB, res.Files} {
-		st, err := os.Lstat(path)
+		if filepath.Base(path) != expected[i].Name || filepath.Dir(path) != filepath.Dir(res.Manifest) {
+			return receipt, errors.New("backup: manifest file binding mismatch")
+		}
+		object := "backups/" + site + "/" + stamp.Format("2006/01/02") + "/" + filepath.Base(path) + ".gorb"
+		receipt.Files[i].ObjectKey = object
+		request := encryptedBackupTransfer{driver: driver, client: client, path: path, object: object, secret: secret, expected: expected[i]}
+		acknowledged, err := request.transfer(ctx)
+		if acknowledged {
+			receipt.Files[i].State = "uploaded"
+		} else {
+			receipt.Files[i].State = "failed"
+		}
 		if err != nil {
-			return receipt, err
-		}
-		if !st.Mode().IsRegular() {
-			return receipt, errors.New("backup: upload requires a regular backup file")
-		}
-		if st.Size() > backup.MaxEncryptedFile {
-			return receipt, errors.New("backup: encrypted upload limit exceeded; local backup retained")
-		}
-		f, err := os.Open(path)
-		if err != nil {
-			return receipt, err
-		}
-		body, encryptErr := backup.Encrypt(f, secret, filepath.Base(path))
-		closeErr := f.Close()
-		if encryptErr != nil {
-			return receipt, encryptErr
-		}
-		if closeErr != nil {
-			return receipt, closeErr
-		}
-		key := "backups/" + site + "/" + stamp.Format("2006/01/02") + "/" + filepath.Base(path) + ".gorb"
-		if err = driver.PutEncryptedBackup(ctx, client, key, body); err != nil {
-			receipt.Files[i].State, receipt.Files[i].Code = "failed", "provider_upload_failed"
-			if i == 1 {
-				receipt.State = "partial"
+			receipt.Files[i].Code = "provider_upload_failed"
+			if acknowledged {
+				receipt.Files[i].Code = "provider_readback_failed"
 			}
 			return receipt, err
 		}
-		receipt.Files[i].State = "uploaded"
 	}
+	receipt.ReadBackVerified = true
 	receipt.State = "uploaded"
 	return receipt, nil
 }
@@ -146,7 +143,7 @@ func (h *handlers) backupRemoteCreate(w http.ResponseWriter, r *http.Request) {
 		if state.Receipt.State == "partial" {
 			state.Status = "partial"
 		}
-		if receiptErr := backup.StoreUploadReceipt(res, state.Receipt); receiptErr != nil {
+		if receiptErr := backup.StoreUploadReceiptWithKey(res, state.Receipt, h.d.Config.SecretKey); receiptErr != nil {
 			if err == nil && state.Receipt.State == "uploaded" {
 				state.Status = "uploaded_unrecorded"
 			}

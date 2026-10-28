@@ -5,6 +5,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Stream encrypted backup upload, authenticated readback and recovery with bounded memory, including archives larger than the former 64 MiB limit. New DARE 2.0 files bind the original filename and site key; legacy v1 recovery remains supported. Remote readback receipts are authenticated and failed uploads retain local backups.
+
+
 ## [0.18.2] - 2026-10-28
 
 ### Added

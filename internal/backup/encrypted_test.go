@@ -10,8 +10,8 @@ type zeroBackupReader struct{}
 
 func (zeroBackupReader) Read(p []byte) (int, error) { clear(p); return len(p), nil }
 
-func TestEncryptedBackupRejectsOver64MiB(t *testing.T) {
-	if _, err := Encrypt(io.LimitReader(zeroBackupReader{}, MaxEncryptedFile+1), bytes.Repeat([]byte{42}, 32), "20261012T120000Z.db"); err == nil {
+func TestBufferedEncryptedBackupRejectsOver64MiB(t *testing.T) {
+	if _, err := Encrypt(io.LimitReader(zeroBackupReader{}, maxBufferedEncryptedFile+1), bytes.Repeat([]byte{42}, 32), "20261012T120000Z.db"); err == nil {
 		t.Fatal("oversized backup encrypted")
 	}
 }
