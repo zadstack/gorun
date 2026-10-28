@@ -8,7 +8,6 @@ import (
 	"errors"
 	"mime"
 	"net/http"
-	"net/mail"
 	"net/url"
 	"os"
 	"strings"
@@ -19,6 +18,7 @@ import (
 	"github.com/zadstack/gorun/internal/audit"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/mailer"
 )
 
 const (
@@ -32,7 +32,6 @@ const (
 	honeypotField = "website"
 	maxFormBody   = 64 << 10
 	maxNameLen    = 200
-	maxEmailLen   = 254
 	maxMessageLen = 5000
 	csrfHeader    = "X-CSRF-Token" // what auth.CSRFMiddleware reads for multipart bodies
 
@@ -200,10 +199,7 @@ func (h *handlers) attach(r *http.Request, cfg formConfig, sub *FormSubmission) 
 }
 
 // validEmail reports a plain address (no display name) of at most 254 bytes.
-func validEmail(v string) bool {
-	a, err := mail.ParseAddress(v)
-	return err == nil && a.Address == v && len(v) <= maxEmailLen
-}
+func validEmail(v string) bool { return mailer.ValidPlainAddress(v) }
 
 func validateContact(v map[string]string) map[string]string {
 	errs := map[string]string{}

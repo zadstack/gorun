@@ -65,7 +65,7 @@ asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.
 | `internal/seo` | core | `auth` `content` `db` `hooks` `httpx` `kernel` `menus` `settings` `taxonomy` |
 | `internal/theme` | core | `auth` `brand` `config` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `redirects` `seo` `settings` `taxonomy` `web` |
 | `internal/pattern` | core | `auth` `config` `httpx` `i18n` `kernel` `pkg/patternkit` `settings` `theme` |
-| `internal/builder` | core | `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `settings` `theme` |
+| `internal/builder` | core | `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `mailer` `media` `menus` `settings` `theme` |
 | `internal/site` | core | `audit` `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `mailer` `redirects` `seo` `settings` `taxonomy` `theme` |
 | `internal/api` | core | `auth` `config` `content` `db` `httpx` `i18n` `jobs` `kernel` `media` `menus` `settings` `taxonomy` `theme` |
 | `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `observe` `seo` `settings` `theme` `update` |

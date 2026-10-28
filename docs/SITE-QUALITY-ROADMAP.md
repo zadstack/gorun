@@ -89,6 +89,15 @@ stored HTML. The SEO audit (`internal/seo/audit.go:28`) finds duplicate stored t
 descriptions per locale. Neither renders a page. Translations are `Locale` plus
 `TranslationGroup` on items (`internal/content/contract.go:71`).
 
+Mail readiness uses the selected native SMTP/Resend configuration and the shared native
+recipient parser (also used by form settings) to validate explicit
+`forms.recipients` before falling back to `contact.email`. Reports never expose recipient
+addresses or provider secrets, decrypt credentials, or send a message. A configuration pass
+means local setting presence only. Provider acceptance and actual inbox receipt remain
+separate, unknown checks until a controlled send and recipient confirmation. Legacy check
+IDs `smtp_config` and `smtp_delivery` are retained for existing consumers. Notification
+enablement (`forms.notify`) and the administrator fallback are not verified by these checks.
+
 **Design.** A background observation (`observe.Spec`, as `internal/admin/updates.go:75` uses)
 renders each published URL in each locale through the public router in-process, then reports one
 row per page and reason: non-200, missing or duplicate rendered `<title>`, `h1` count, broken

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/mail"
 	"net/url"
 	"strings"
 
@@ -128,30 +127,7 @@ func buildReadiness(ctx context.Context, d *kernel.Deps) readinessReport {
 		}
 	}
 	b.seo(home)
-	recipient, e := b.setting("contact.email")
-	status = "pass"
-	evidence = b.word("An explicit contact recipient is configured.", "مستلم صريح لرسائل التواصل مضبوط.")
-	parsed, parseErr := mail.ParseAddress(recipient)
-	if e != nil {
-		status = "unknown"
-		evidence = b.word("Recipient settings unavailable.", "تعذر قراءة إعداد مستلم البريد.")
-	} else if parseErr != nil || parsed.Address != recipient {
-		status = "warn"
-		evidence = b.word("Set a valid contact recipient; an administrator fallback may otherwise be used.", "حدد بريد تواصل صالحًا؛ قد يُستخدم بريد المدير احتياطيًا.")
-	}
-	b.add(2, "contact_email", "Contact recipient", "مستلم التواصل", status, evidence, "/admin/settings/general")
-	host, e := b.setting("mail.host")
-	status = "warn"
-	evidence = b.word("SMTP host is not configured; presence is checked only.", "خادم SMTP غير مضبوط؛ الفحص يثبت وجود الإعداد فقط.")
-	if e != nil {
-		status = "unknown"
-		evidence = b.word("SMTP settings unavailable.", "تعذر قراءة إعدادات SMTP.")
-	} else if strings.TrimSpace(host) != "" {
-		status = "pass"
-		evidence = b.word("SMTP host setting is present. Credentials and delivery are not tested or shown.", "إعداد خادم SMTP موجود. لم تُفحص بيانات الاعتماد أو التسليم ولم تُعرض.")
-	}
-	b.add(2, "smtp_config", "SMTP configuration", "إعداد SMTP", status, evidence, "/admin/settings/mail")
-	b.add(2, "smtp_delivery", "Real email delivery", "تسليم البريد الفعلي", "unknown", b.word("No message sent. Use the mail test and verify actual receipt.", "لم تُرسل رسالة. استخدم اختبار البريد وتحقق من الاستلام الفعلي."), "/admin/settings/mail")
+	b.contactMail()
 	base, e := b.setting("site.base_url")
 	if base == "" {
 		base = d.Config.BaseURL

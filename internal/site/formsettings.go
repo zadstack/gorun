@@ -6,6 +6,8 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+
+	"github.com/zadstack/gorun/internal/mailer"
 )
 
 // Form settings. The contact.* flags are public (themes read them with
@@ -18,7 +20,6 @@ const (
 	SettingAttachmentMaxMB       = "contact.attachment_max_mb" // 1–20, default 5
 	defaultAttachmentMaxMB       = 5
 	maxAttachmentMaxMB           = 20
-	maxFormRecipients            = 10
 	mailAttachmentLimit    int64 = 8 << 20 // larger files are linked from the email, not attached
 )
 
@@ -76,27 +77,7 @@ func (h *handlers) boolSetting(ctx context.Context, key string, def bool) bool {
 
 // parseRecipients splits a comma, semicolon or newline separated list of
 // plain addresses (at most 10, duplicates dropped).
-func parseRecipients(s string) ([]string, error) {
-	var out []string
-	seen := map[string]bool{}
-	for _, f := range strings.FieldsFunc(s, func(r rune) bool { return r == ',' || r == ';' || r == '\n' || r == '\r' }) {
-		v := strings.TrimSpace(f)
-		if v == "" {
-			continue
-		}
-		if !validEmail(v) {
-			return nil, errors.New("not a plain email address: " + v)
-		}
-		if k := strings.ToLower(v); !seen[k] {
-			seen[k] = true
-			out = append(out, v)
-		}
-	}
-	if len(out) > maxFormRecipients {
-		return nil, errors.New("at most 10 recipients")
-	}
-	return out, nil
-}
+func parseRecipients(s string) ([]string, error) { return mailer.ParseRecipients(s) }
 
 // ValidateFormSetting validates one form setting given as text (the admin
 // form, `gorun settings set`) and returns the value to store: a bool for
