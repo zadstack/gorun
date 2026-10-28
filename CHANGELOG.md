@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.18.3] - 2026-10-29
+
+### Fixed
+
+- Stream encrypted backup upload, authenticated readback and recovery with bounded memory, including archives larger than the former 64 MiB limit. New DARE 2.0 files bind the original filename and site key; legacy v1 recovery remains supported. Remote readback receipts are authenticated and failed uploads retain local backups.
+
 ## [0.18.2] - 2026-10-28
 
 ### Added
@@ -1169,7 +1175,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.2...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.3...HEAD
+[0.18.3]: https://github.com/zadstack/gorun/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/zadstack/gorun/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/zadstack/gorun/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/zadstack/gorun/compare/v0.17.0...v0.18.0

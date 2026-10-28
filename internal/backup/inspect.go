@@ -61,7 +61,7 @@ func InspectWith(manifestPath string, key []byte) (*Inspection, error) {
 	dir := filepath.Dir(manifestPath)
 	r := &Inspection{Stamp: m.Stamp, CheckedAt: time.Now().UTC().Format(time.RFC3339), Consistency: m.Consistency, Readiness: "local_ok",
 		Errors: []string{}, Warnings: []string{}, CutoverChecklist: append([]string{}, backupLimitations...),
-		ExternalRequirements: []ExternalRequirement{}, Remote: receiptAt(dir, m.Stamp)}
+		ExternalRequirements: []ExternalRequirement{}, Remote: receiptAtWithKey(dir, m.Stamp, key)}
 	if len(key) == 32 {
 		if m.HMAC == "" {
 			r.Errors = append(r.Errors, "manifest_hmac_required")
@@ -130,7 +130,9 @@ func InspectWith(manifestPath string, key []byte) (*Inspection, error) {
 	if r.Remote.State != "uploaded" {
 		r.CutoverChecklist = append(r.CutoverChecklist, "remote_pair_not_confirmed")
 	}
-	r.CutoverChecklist = append(r.CutoverChecklist, "remote_readback_not_verified")
+	if !r.Remote.ReadBackVerified {
+		r.CutoverChecklist = append(r.CutoverChecklist, "remote_readback_not_verified")
+	}
 	switch {
 	case len(r.Errors) > 0:
 		r.Readiness = "blocked"

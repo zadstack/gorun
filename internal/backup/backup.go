@@ -150,7 +150,11 @@ func CreateWith(dataDir, dbPath string, now time.Time, opts Options) (Result, er
 }
 
 // List returns the backups of dataDir, newest first.
-func List(dataDir string) ([]Entry, error) {
+func List(dataDir string) ([]Entry, error) { return ListWithKey(dataDir, nil) }
+
+// ListWithKey verifies historical readback receipts with the site secret.
+// Presence-only local metadata remains distinct from an integrity inspection.
+func ListWithKey(dataDir string, key []byte) ([]Entry, error) {
 	files, err := os.ReadDir(Dir(dataDir))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
@@ -196,7 +200,7 @@ func List(dataDir string) ([]Entry, error) {
 			}
 		}
 
-		e.Remote = receiptAt(Dir(dataDir), e.Stamp)
+		e.Remote = receiptAtWithKey(Dir(dataDir), e.Stamp, key)
 		out = append(out, *e)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Stamp > out[j].Stamp })

@@ -43,7 +43,7 @@ type backupRow struct {
 
 // backupsList shows the backups in the data directory, newest first.
 func (h *handlers) backupsList(w http.ResponseWriter, r *http.Request) {
-	list, err := backup.List(h.d.Config.DataDir)
+	list, err := backup.ListWithKey(h.d.Config.DataDir, h.d.Config.SecretKey)
 	if err != nil {
 		h.serverError(w, r, err)
 		return

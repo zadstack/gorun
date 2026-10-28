@@ -26,14 +26,24 @@ Storage destinations allow HTTPS endpoints only. Managed runtime requests use DN
 
 Choose **Use for encrypted backups**, then **System → Backups → Create and upload encrypted backup**. This is an explicit manual action. The **Create backup** action remains local-only. The optional schedule can also upload encrypted copies when you explicitly enable its backup-destination checkbox.
 
-GoRun first creates its existing consistent SQLite/database and file archive locally. Each file is encrypted with AES-256-GCM using a purpose-derived key from the site's recovery secret before upload. The format authenticates the original filename and file bytes. Uploaded object names are:
+GoRun first creates its existing consistent SQLite/database and file archive locally. New uploads use streaming AES-256-GCM through the [MinIO sio DARE 2.0 implementation](https://github.com/minio/sio/tree/v0.5.1). A fresh random salt derives a separate file key from the original site recovery secret and filename. The stream authenticates data, package order and finalization. Uploaded object names are:
 
 ```text
 backups/<site-id>/YYYY/MM/DD/<timestamp>.db.gorb
 backups/<site-id>/YYYY/MM/DD/<timestamp>.tar.gz.gorb
 ```
 
-The limit is **64 MiB per plaintext backup file**. This bounded implementation is intended for small sites; it does not implement multipart uploads. A remote failure leaves the new completed local backup pair available; scheduled retention can still remove older verified pairs. Remote objects can be incomplete when only one upload succeeds; only success for both files is recorded as a successful remote backup. **Nothing in the bucket is automatically deleted** — retain-N applies only to local pairs under `<data>/backups/`. Bucket ACL settings are not treated as proof of privacy: uploaded backup bytes are always encrypted.
+The upload and recovery paths use bounded buffers rather than a 64 MiB whole-file buffer. Encryption spools **ciphertext only**, in a private `0600` file beside the local pair, so SigV4 can sign the complete ciphertext SHA-256 and length before the PUT. The spool is removed on success or failure. Files remain subject to the DARE format bound, available local spool space and the provider's single-object PUT limits; this does not implement multipart uploads. A remote failure leaves the new completed local backup pair available; scheduled retention can still remove older verified pairs. Remote objects can be incomplete when only one upload succeeds; only success for both files is recorded as a successful remote backup. **Nothing in the bucket is automatically deleted** — retain-N applies only to local pairs under `<data>/backups/`. Bucket ACL settings are not treated as proof of privacy: uploaded backup bytes are always encrypted.
+
+### Verification, format and compatibility
+
+Before sending either object, GoRun verifies the signed local manifest and checks the plaintext hash while encrypting. After each acknowledged PUT it performs a signed GET, authenticates the complete stream, and compares the recovered plaintext size and SHA-256 against that manifest. A readback failure retains the provider acknowledgement and local backup but prevents a successful remote-backup result. Acknowledgement alone is not readback proof.
+
+A successful receipt binds the stamp, destination ID, private object keys, file hashes, manifest identity and readback flag using a separate HMAC domain under the site secret. Keyed inspection and the admin backup list verify that MAC. Legacy unsigned acknowledgement receipts remain readable with readback unverified. An authenticated receipt proves the check performed during that upload attempt, not that an object still exists remotely today; inspection itself makes no network requests. Keep the normal independent restore drill.
+
+New `.gorb` objects begin with `GORUN-BACKUP-2\0`, followed by a 32-byte cryptographically random salt and a DARE 2.0 AES-256-GCM stream. The file key is HMAC-SHA256 of the site secret over `gorun.private.backup.v2\0`, fixed-length salt, a zero separator and the validated original filename. An encrypted fixed content marker also authenticates empty files. DARE uses bounded authenticated packages and rejects truncated, reordered, changed and trailing ciphertext; see the [format/API documentation](https://pkg.go.dev/github.com/minio/sio@v0.5.1). `encrypted_file_limit` in new manifests describes the DARE cryptographic bound (minus the marker), not an in-memory buffer size or a promise that the provider accepts objects of that size.
+
+**Keep a GoRun v0.18.3 or newer recovery binary. GoRun v0.18.2 and older cannot decrypt v2 files.** The new binary still reads original `GORUN-BACKUP-1` AES-GCM objects with their original filename/key authentication and 64 MiB format limit. The byte-slice convenience APIs also remain bounded to 64 MiB; upload, readback and `backup-decrypt` use the streaming APIs for v2 files.
 
 ### Local schedule and retention
 
@@ -58,7 +68,7 @@ gorun backup-decrypt --input 20261012T120000Z.db.gorb --output restored.db --dat
 gorun backup-decrypt --input 20261012T120000Z.tar.gz.gorb --output restored.tar.gz --data /path/to/recovery-secret-directory
 ```
 
-The directory must contain the original `secret.key`, or supply the original `GORUN_SECRET_KEY` through your normal protected environment. Do not put secrets in command-line arguments or logs. The command authenticates the entire encrypted file before creating output, uses mode `0600`, and refuses to overwrite an existing output. Restore the decrypted pair using the normal stopped-site recovery process; the decrypt command does not change any running site.
+The directory must contain the original `secret.key`, or supply the original `GORUN_SECRET_KEY` through your normal protected environment. Do not put secrets in command-line arguments or logs. The command verifies the complete encrypted stream to a discard sink before creating output, then rewinds the same input and decrypts to the explicitly requested `0600` file. It compares ciphertext hashes across both passes, removes its own partial output on failure, creates no plaintext temporary file, and refuses to overwrite an existing output. Restore the decrypted pair using the normal stopped-site recovery process; the decrypt command does not change any running site.
 
 ## العربية
 
@@ -68,7 +78,7 @@ The directory must contain the original `secret.key`, or supply the original `GO
 
 تُرتّب الصور والفيديوهات المولّدة حسب الموقع والمحتوى والتاريخ. تخضع لنفس فحص نوع الملف وحد الحجم الموجودين في مكتبة الوسائط.
 
-يمكن إنشاء النسخ المشفّرة ورفعها يدويًا، أو تفعيل رفع كل نسخة مجدولة صراحةً من شاشة النسخ الاحتياطية، بحد 64 ميبيبايت لكل ملف قبل التشفير. الاحتفاظ N يطبّق على النسخ المحلية فقط؛ لا تُحذف كائنات S3 تلقائيًا. احتفظ بنسخة مستقلة وآمنة من سر الموقع؛ فقدانه يمنع استعادة النسخ المشفّرة. فشل الرفع لا يحذف النسخة المحلية، ولا يعني وجود ملف خارجي واحد اكتمال النسخة. استعادة الملفات بأمر `backup-decrypt` لا تعدّل الموقع الجاري ولا تستبدل ملفًا موجودًا. يمكن أيضًا `gorun backup --retain N` من cron المضيف.
+يمكن إنشاء النسخ المشفّرة ورفعها يدويًا، أو تفعيل رفع كل نسخة مجدولة صراحةً من شاشة النسخ الاحتياطية، بتشفير تدفقي وذاكرة محدودة، دون حد التحميل القديم البالغ 64 ميبيبايت. تُخزّن الملفات المؤقتة كنص مشفّر فقط بصلاحيات 0600 ثم تُحذف، وتُفحص النسخة الخارجية بتنزيلها والتحقق من مصادقتها وبصمتها. تنسيق v2 الجديد يحتاج إصدارًا يحتوي هذا التحسين للاستعادة؛ لا يقرؤه الإصدار 0.18.2 أو أقدم، بينما تبقى قراءة نسخ v1 القديمة مدعومة. تبقى حدود مزود التخزين والمساحة المحلية سارية. الاحتفاظ N يطبّق على النسخ المحلية فقط؛ لا تُحذف كائنات S3 تلقائيًا. احتفظ بنسخة مستقلة وآمنة من سر الموقع؛ فقدانه يمنع استعادة النسخ المشفّرة. فشل الرفع لا يحذف النسخة المحلية، ولا يعني وجود ملف خارجي واحد اكتمال النسخة. استعادة الملفات بأمر `backup-decrypt` لا تعدّل الموقع الجاري ولا تستبدل ملفًا موجودًا. يمكن أيضًا `gorun backup --retain N` من cron المضيف.
 
 No real bucket credentials are required to build or test these paths. Unit tests use synthetic data and fake S3 responses. A configured destination is not evidence of a successful real-provider upload.
 
@@ -107,11 +117,11 @@ reports the locally verified snapshot; `backup.schedule.state` reports a
 `warning` at stage `remote`. System Health shows the warning. The per-backup
 receipt separates acknowledgement of each file from read-back verification.
 `storage.backup.last` is the latest attempt, and `storage.backup.last_success`
-retains the latest fully acknowledged pair even after later failures. If both
+retains the latest successful attempt even after later failures (legacy entries may contain acknowledgements only; check the readback flag). If both
 objects were acknowledged but writing the local receipt fails, the saved state
 is `uploaded_unrecorded`; acknowledgement remains recorded, while the missing
 receipt is an explicit warning. Losing the data-directory lease after recording
 local success similarly produces a `lease` warning and skips cleanup, rather
 than relabelling the verified snapshot as failed. Older
 versions did not preserve the latter, so it is empty until a new upload succeeds.
-A successful upload is not proof of a complete restore or a remote read-back.
+Provider acknowledgement alone is not readback proof. The new authenticated readback flag records verification during that attempt; it is not proof of a complete restore or of continued object availability.
