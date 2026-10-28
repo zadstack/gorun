@@ -11,6 +11,7 @@ import (
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/hooks"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/redirects"
 	"github.com/zadstack/gorun/internal/settings"
 	"github.com/zadstack/gorun/internal/taxonomy"
 )
@@ -31,12 +32,13 @@ const (
 )
 
 type service struct {
-	settings *settings.Store
-	hooks    *hooks.Registry
-	log      *slog.Logger
-	baseURL  string // config fallback for site.base_url
-	content  func() (content.Service, bool)
-	taxonomy func() (taxonomy.Service, bool)
+	settings  *settings.Store
+	hooks     *hooks.Registry
+	log       *slog.Logger
+	baseURL   string // config fallback for site.base_url
+	content   func() (content.Service, bool)
+	taxonomy  func() (taxonomy.Service, bool)
+	redirects func() (redirects.Service, bool)
 }
 
 func first(vals ...string) string {
