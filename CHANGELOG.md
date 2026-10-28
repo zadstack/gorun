@@ -5,6 +5,21 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.18.2] - 2026-10-28
+
+### Added
+
+- Send one operational message with `gorun mail send --message-stdin` through saved encrypted SMTP or Resend settings, without starting HTTP or background workers. Output distinguishes provider acceptance from unverified inbox delivery.
+
+### Fixed
+
+- Resolve native sitemap redirects to final same-origin indexable destinations, including populated localized listings; omit unsafe destinations and deduplicate final URLs without HTTP requests or redirect hit increments.
+- Check the selected SMTP/Resend provider and explicit form recipients in site readiness. Keep configuration, provider acceptance and inbox receipt separate, with no message send or disclosure of addresses and secrets.
+
+### Security
+
+- Update `golang.org/x/net` to 0.62.0 for HTML parsing/rendering advisories GO-2026-6860 and GO-2026-6866, and request Go toolchain 1.27.3 for certificate-trust advisory GO-2026-6809.
+
 ## [0.18.1] - 2026-10-28
 
 ### Changed
@@ -1154,7 +1169,9 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.2...HEAD
+[0.18.2]: https://github.com/zadstack/gorun/compare/v0.18.1...v0.18.2
+[0.18.1]: https://github.com/zadstack/gorun/compare/v0.18.0...v0.18.1
 [0.18.0]: https://github.com/zadstack/gorun/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/zadstack/gorun/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/zadstack/gorun/compare/v0.15.1...v0.16.0
