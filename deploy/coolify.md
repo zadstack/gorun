@@ -43,7 +43,7 @@ as below. Images are multi-arch (linux/amd64, linux/arm64).
 |---|---|---|
 | `GORUN_SECRET_KEY` | yes | `openssl rand -base64 32`. Signs sessions and encrypts stored secrets. Never rotate casually. |
 | `GORUN_BASE_URL` | yes | Public URL, e.g. `https://example.com` (no trailing slash). |
-| `GORUN_SETUP_TOKEN` | for web setup | At least 16 characters (`openssl rand -hex 24`). `/admin/setup` asks for it before creating the first administrator; without it the page only shows instructions. Remove it once the first admin exists. |
+| `GORUN_SETUP_TOKEN` | for web setup | At least 16 characters (`openssl rand -hex 24`). `/admin/setup` asks for it before creating the first administrator. Unset, GoRun prints a one-run token in the logs instead. Remove it once the first admin exists. |
 | `GORUN_TRUSTED_PROXIES` | behind Traefik: yes | Comma-separated IPs/CIDRs of the reverse proxy, e.g. Coolify's `coolify` network `10.0.1.0/24` (verify, see [step 4](#trust-traefiks-forwarded-headers)). Empty trusts no forwarding headers, so every visitor shares Traefik's IP for login limits and audit. |
 | `GORUN_HSTS_INCLUDE_SUBDOMAINS` | no | `true` only when **every** subdomain of the host already serves HTTPS. Default HSTS is already `max-age=31536000` on HTTPS responses. |
 | `GORUN_HSTS_PRELOAD` | no | `true` only with the subdomain flag, and only if you intend to submit the host to the browser preload list (hard to undo). |
@@ -183,7 +183,8 @@ live, also probe **from outside** the container (see [§9](#9-https-acceptance-c
 ## 6. First run
 
 Either open `https://<your-domain>/admin/setup` and enter the `GORUN_SETUP_TOKEN`
-value with the new administrator's details, or create the administrator from the
+value (or, when unset, the first-run token from the container logs) with the new
+administrator's details, or create the administrator from the
 host (the image has no shell, so call the binary directly):
 
 ```sh

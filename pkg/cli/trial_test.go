@@ -2,16 +2,24 @@ package cli
 
 import (
 	"bufio"
+	"context"
+	"encoding/base64"
 	"io"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/config"
+	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/pattern"
 )
 
 // A real process with the image's baked environment: the banner shows the
@@ -123,5 +131,132 @@ func TestServeTrialProcess(t *testing.T) {
 				t.Fatalf("admin login through a server IP: %d", resp.StatusCode)
 			}
 		}()
+	}
+}
+
+func TestApplyFirstRunToken(t *testing.T) {
+	t.Setenv("GORUN_ENV", "prod")
+	t.Setenv("GORUN_BASE_URL", "https://example.com")
+	t.Setenv("GORUN_SECRET_KEY", base64.StdEncoding.EncodeToString(make([]byte, 32)))
+	cfg, err := config.Load([]string{"--data", t.TempDir()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	app, err := kernel.Boot(ctx, cfg, Modules(cfg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer app.Close()
+	var out strings.Builder
+	if err := applyFirstRunToken(ctx, app, &out); err != nil {
+		t.Fatal(err)
+	}
+	token := app.Deps.Config.SetupToken
+	if len(token) != 48 || !strings.Contains(out.String(), token) || !strings.Contains(out.String(), "https://example.com/admin/setup") {
+		t.Fatalf("no usable token (length %d)", len(token))
+	}
+	// A configured token is never replaced or printed.
+	out.Reset()
+	if err := applyFirstRunToken(ctx, app, &out); err != nil {
+		t.Fatal(err)
+	}
+	if app.Deps.Config.SetupToken != token || out.Len() != 0 {
+		t.Fatal("a set token must stay and print nothing")
+	}
+	// An account closes setup, so a later boot generates nothing.
+	app.Deps.Config.SetupToken = ""
+	users, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
+	if _, err := auth.BootstrapAdmin(ctx, app.Deps.DB, app.Deps.Audit, strings.Repeat("Aa1!", 8)); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := users.Count(ctx); err != nil || n != 1 {
+		t.Fatalf("users %d: %v", n, err)
+	}
+	if err := applyFirstRunToken(ctx, app, &out); err != nil {
+		t.Fatal(err)
+	}
+	if app.Deps.Config.SetupToken != "" || out.Len() != 0 {
+		t.Fatal("an existing account must not get a setup token")
+	}
+}
+
+// Development needs no token, so none is invented there.
+func TestApplyFirstRunTokenSkipsDev(t *testing.T) {
+	cfg, err := config.Load([]string{"--data", t.TempDir()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	app, err := kernel.Boot(ctx, cfg, Modules(cfg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer app.Close()
+	var out strings.Builder
+	if err := applyFirstRunToken(ctx, app, &out); err != nil {
+		t.Fatal(err)
+	}
+	if app.Deps.Config.SetupToken != "" || out.Len() != 0 {
+		t.Fatal("dev must not get a generated token")
+	}
+}
+
+func TestSecretKeyPrintsTrialKey(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("GORUN_DATA", dir)
+	t.Setenv("GORUN_TRIAL", "1")
+	cfg, err := config.Load(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out strings.Builder
+	if err := secretKey(nil, &out); err != nil {
+		t.Fatal(err)
+	}
+	got, err := base64.StdEncoding.DecodeString(strings.TrimSpace(out.String()))
+	if err != nil || string(got) != string(cfg.SecretKey) {
+		t.Fatalf("secret-key must print the site key: %v", err)
+	}
+	// The printed value is what production accepts.
+	t.Setenv("GORUN_TRIAL", "")
+	t.Setenv("GORUN_ENV", "prod")
+	t.Setenv("GORUN_BASE_URL", "https://example.com")
+	t.Setenv("GORUN_SECRET_KEY", strings.TrimSpace(out.String()))
+	prod, err := config.Load(nil)
+	if err != nil || string(prod.SecretKey) != string(cfg.SecretKey) {
+		t.Fatalf("production must accept the printed key: %v", err)
+	}
+}
+
+// With no patterns directory beside the executable, the embedded ones are offered.
+func TestBundledPatternsWithoutDirectory(t *testing.T) {
+	themesDir, err := filepath.Abs("../../themes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GORUN_THEMES", themesDir)
+	data := t.TempDir()
+	t.Chdir(t.TempDir())
+	cfg, err := config.Load([]string{"--data", data})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := installBundledPatterns(cfg); err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	app, err := kernel.Boot(ctx, cfg, Modules(cfg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer app.Close()
+	svc, ok := kernel.Get[pattern.Service](app.Deps, kernel.ServicePattern)
+	if !ok {
+		t.Fatal("pattern service missing")
+	}
+	list, err := svc.List(ctx)
+	if err != nil || len(list) != 4 {
+		t.Fatalf("want the 4 bundled patterns, got %d: %v", len(list), err)
 	}
 }

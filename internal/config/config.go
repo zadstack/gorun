@@ -241,7 +241,7 @@ func checkPublicBaseURL(raw string) error {
 		return fmt.Errorf("config: GORUN_BASE_URL %s in prod: set it to the public URL, e.g. https://example.com (got %q)", why, raw)
 	}
 	if raw == "" {
-		return fail("is required")
+		return fmt.Errorf("%w. To try GoRun first with no configuration, set GORUN_TRIAL=1", fail("is required"))
 	}
 	u, err := url.Parse(raw)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
@@ -456,7 +456,7 @@ func resolveSecretMode(c Config, encoded string, allowGenerate bool) ([]byte, er
 		return decodeSecret(encoded)
 	}
 	if c.Env == "prod" {
-		return nil, errors.New("config: GORUN_SECRET_KEY is required in prod (base64 of 32 random bytes)")
+		return nil, errors.New("config: GORUN_SECRET_KEY is required in prod (base64 of 32 random bytes; create one with: openssl rand -base64 32). To try GoRun first with no configuration, set GORUN_TRIAL=1")
 	}
 	path := filepath.Join(c.DataDir, secretFile)
 	if b, err := os.ReadFile(path); err == nil {

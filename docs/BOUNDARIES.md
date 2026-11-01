@@ -25,7 +25,7 @@ verified by hand. The same test file enforces the import policy below.
 | **Kernel and infrastructure** | `internal/kernel` and the packages it constructs or that sit under every module: `config`, `db`, `hooks`, `httpx`, `settings`, `i18n`, `audit`, `jobs`, `diagnostics`, `observe`, `update`, `metrics`, `backup`, `mailer`, `brand`, `starter`. | Never imports a domain module. Knows module *vocabulary* (service names, nav groups) but no module behaviour. |
 | **Core module** | `kernel.BootOrder` from `settings` to `webhooks`: settings, auth, content, taxonomy, media, menus, redirects, seo, theme, pattern, builder, site, api, admin, webhooks. | Boots in every install. Imports only earlier core modules or infrastructure. Never imports a feature module. |
 | **Built-in feature module** | `BootOrder` after `webhooks`: commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext, identityai, identitylogo. | Owns its routes, workers, admin UI, migrations and permissions. Reaches other modules through `kernel.Get`, hooks or an adapter published in `Deps.Services`; imports another feature module only through a declared edge (`featureEdges` in the test). |
-| **Theme / pattern** | `themes/<slug>` (templates, parts, components, `lang/`, `assets/`, `theme.json`) and `patterns/<slug>`. Public contract: `pkg/themekit`, `pkg/patternkit`, [THEME-CONTRACT.md](THEME-CONTRACT.md). | Consumes declared display data (`theme.Context`, template funcs) and nothing else. No Go code, no business logic, no hard dependency on an optional module: a func an optional module provides must have a core fallback. |
+| **Theme / pattern** | `themes/<slug>` (templates, parts, components, `lang/`, `assets/`, `theme.json`) and `patterns/<slug>`. Public contract: `pkg/themekit`, `pkg/patternkit`, [THEME-CONTRACT.md](THEME-CONTRACT.md). | Consumes declared display data (`theme.Context`, template funcs) and nothing else. No Go code beyond the one embed file of each root, no business logic, no hard dependency on an optional module: a func an optional module provides must have a core fallback. |
 | **External extension** | A program described by a manifest (`internal/ext`): signed hook deliveries over HTTP and a scoped API key. [EXTENSIONS.md](EXTENSIONS.md). | Sees GoRun only through hooks and the REST API. GoRun never loads extension code. |
 | **Composition root** | `pkg/cli` (`CoreModules()`, `Modules(cfg)`, commands) and `cmd/gorun`. | Imports everything by design; downstream binaries extend it with `cli.WithModules`. |
 
@@ -33,7 +33,7 @@ verified by hand. The same test file enforces the import policy below.
 
 Module-level, non-test files, sub-packages collapsed into their module (`internal/settings/settingsmod`
 is the settings *module*; `internal/settings` is the store). `web` is the embedded admin/launch
-asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.go`).
+asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`themes/bundled.go`, `patterns/bundled.go`), imported only by the composition root.
 
 <!-- BEGIN GENERATED IMPORT GRAPH -->
 | Package | Layer | Imports (repository packages, non-test files) |
@@ -84,7 +84,7 @@ asset FS (`web/embed.go`); `themes` is the bundled-theme embed (`themes/bundled.
 | `pkg/patternkit` | contract | — |
 | `pkg/themekit` | contract | — |
 | `cmd/gorun` | binary | `pkg/cli` |
-| `pkg/cli` | binary | `admin` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `i18n` `identityai` `identitylogo` `jobs` `kernel` `launch` `mailer` `mcp` `media` `membership` `menus` `observe` `pattern` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
+| `pkg/cli` | binary | `admin` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `i18n` `identityai` `identitylogo` `jobs` `kernel` `launch` `mailer` `mcp` `media` `membership` `menus` `observe` `pattern` `patterns` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
 <!-- END GENERATED IMPORT GRAPH -->
 
 Reading the graph:
@@ -97,7 +97,7 @@ Reading the graph:
   Any new edge must be added to `featureEdges` with a reason, or go through a service.
 - `pkg/themekit`, `pkg/patternkit` and `pkg/edge` import nothing from `internal/`
   (`TestContractPackagesAndThemesStayStandalone`), so theme and pattern authors build against a
-  stable surface. `themes/` and `patterns/` contain no Go besides `themes/bundled.go`.
+  stable surface. `themes/` and `patterns/` contain no Go besides their `bundled.go` embed.
 
 ## Runtime contracts
 

@@ -13,6 +13,11 @@ on:
       - deploy/Dockerfile
       - .github/workflows/release.yml
       - tools/package-release.py
+      - tools/smoke-docker.sh
+      - deploy/compose.server.yml
+      - deploy/coolify-compose.yml
+      - internal/config/**
+      - pkg/cli/**
 
 permissions:
   contents: read
@@ -64,6 +69,18 @@ jobs:
             org.opencontainers.image.description=Self-hosted CMS in Go and SQLite: bilingual admin, page builder, canvases, REST and MCP.
             org.opencontainers.image.licenses=AGPL-3.0-only
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
+      - name: build the image for the smoke test
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: deploy/Dockerfile
+          platforms: linux/amd64
+          load: true
+          build-args: VERSION=${{ steps.meta.outputs.version }}
+          tags: ${{ env.IMAGE }}:smoke
+          cache-from: type=gha
+      - name: test the documented Docker and Coolify paths before publishing
+        run: tools/smoke-docker.sh smoke
       - id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:

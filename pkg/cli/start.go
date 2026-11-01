@@ -23,7 +23,9 @@ import (
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/pattern"
 	"github.com/zadstack/gorun/internal/theme"
+	"github.com/zadstack/gorun/patterns"
 	"github.com/zadstack/gorun/themes"
 )
 
@@ -80,6 +82,9 @@ func start(args []string, out io.Writer) error {
 	cfg.BaseURL = "http://127.0.0.1:" + port
 	cfg.TrustedProxies = nil // Never trust a LAN peer's forwarded identity.
 	if err := installStartTheme(cfg); err != nil {
+		return err
+	}
+	if err := installBundledPatterns(cfg); err != nil {
 		return err
 	}
 	var ips []string
@@ -152,6 +157,17 @@ func installStartTheme(cfg config.Config) error {
 	return themes.InstallDefault(themeRoot)
 }
 
+// installBundledPatterns installs the embedded patterns unless a patterns
+// directory other than the bundled copy is in use.
+func installBundledPatterns(cfg config.Config) error {
+	bundled := filepath.Join(filepath.Clean(cfg.DataDir), "bundled-patterns")
+	root := pattern.PatternsDir(cfg)
+	if st, err := os.Stat(root); err == nil && st.IsDir() && filepath.Clean(root) != bundled {
+		return nil
+	}
+	return patterns.Install(bundled)
+}
+
 // writeTrialBanner prints how to reach a GORUN_TRIAL site. Unlike the local
 // preview of start, its admin answers on every address the container publishes.
 func writeTrialBanner(out io.Writer, cfg config.Config, password string) error {
@@ -159,7 +175,7 @@ func writeTrialBanner(out io.Writer, cfg config.Config, password string) error {
 	if err != nil {
 		return fmt.Errorf("trial address: %w", err)
 	}
-	banner := fmt.Sprintf("GoRun trial mode: not for production.\nOpen: http://localhost:%s/admin (on a server: http://SERVER-IP:%s/admin)\nThe admin is reachable over unencrypted HTTP on every published address. Use a trusted network, and remove GORUN_TRIAL for a real site.\n", port, port)
+	banner := fmt.Sprintf("GoRun trial mode: not for production.\nOpen: http://localhost:%s/admin (on a server: http://SERVER-IP:%s/admin)\nThe admin is reachable over unencrypted HTTP on every published address. Use a trusted network. To keep this site, see docs/local-start.md.\n", port, port)
 	if password != "" {
 		banner += fmt.Sprintf("Username: admin\nEmail: admin@localhost.invalid\nPassword (shown once; save it now): %s\nFirst sign-in: replace this password and choose your email, site name and language.\n", password)
 	} else {

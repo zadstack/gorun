@@ -6,7 +6,10 @@ package cli
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -51,6 +54,7 @@ commands:
   user status   turn a user off or on (--email --status active|disabled; not the last active admin)
   user password set a user's password and end their sessions (--email, --password or --password-stdin)
   healthcheck   GET /healthz on the local server (for container healthchecks)
+  secret-key    print this site's key, to move a GORUN_TRIAL site to production
   reindex       rebuild the content search index and relation rows ([--no-jobs])
   mcp           serve MCP over stdio as an API key (--key gp_… or GORUN_MCP_KEY); no job
                 workers unless --jobs (the running server executes the jobs)
@@ -165,6 +169,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return errors.New("usage: gorun user create --email --password [--name] [--admin] | user password --email (--password | --password-stdin)")
 	case "healthcheck":
 		return healthcheck(args[1:])
+	case "secret-key":
+		return secretKey(args[1:], out)
 	case "reindex":
 		return reindex(args[1:], out)
 	case "mcp":
@@ -225,6 +231,9 @@ func serve(args []string, out io.Writer) error {
 			return err
 		}
 	}
+	if err := installBundledPatterns(cfg); err != nil {
+		return err
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	app, err := kernel.Boot(ctx, cfg, Modules(cfg))
@@ -237,6 +246,9 @@ func serve(args []string, out io.Writer) error {
 		if password, err = bootstrapStart(ctx, app); err != nil {
 			return err
 		}
+	}
+	if err := applyFirstRunToken(ctx, app, out); err != nil {
+		return err
 	}
 	srv := &http.Server{Addr: cfg.Addr, Handler: app.Handler, ReadHeaderTimeout: readHeaderTimeout, ReadTimeout: 60 * time.Second, IdleTimeout: 60 * time.Second}
 	errc := make(chan error, 1)
@@ -259,6 +271,41 @@ func serve(args []string, out io.Writer) error {
 		return fmt.Errorf("shutdown: %w", err)
 	}
 	return nil
+}
+
+// applyFirstRunToken lets a production site with no account and no configured
+// token finish /admin/setup without a restart. The token is random, lives in
+// memory for this process, and is read by whoever can read the server's output.
+func applyFirstRunToken(ctx context.Context, app *kernel.App, out io.Writer) error {
+	if app.Deps.Config.Env != "prod" || app.Deps.Config.SetupToken != "" {
+		return nil
+	}
+	users, ok := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
+	if !ok {
+		return nil
+	}
+	if n, err := users.Count(ctx); err != nil || n != 0 {
+		return err
+	}
+	var b [24]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return err
+	}
+	token := hex.EncodeToString(b[:])
+	app.Deps.Config.SetupToken = token
+	_, err := fmt.Fprintf(out, "First-run setup token (valid until the first administrator exists): %s\nOpen %s/admin/setup and enter it.\n", token, app.Deps.Config.BaseURL)
+	return err
+}
+
+// secretKey prints the site key that serve needs as GORUN_SECRET_KEY. The image
+// has no shell to read <data>/secret.key with.
+func secretKey(args []string, out io.Writer) error {
+	cfg, err := config.LoadReadOnly(args)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintln(out, base64.StdEncoding.EncodeToString(cfg.SecretKey))
+	return err
 }
 
 func migrate(args []string) error {
