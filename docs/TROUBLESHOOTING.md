@@ -11,7 +11,7 @@ Short fixes for common self-host failures. For full procedures see [installation
 | `data directory is in use by another GoRun process` | Second `serve` / `mcp --jobs` / `reindex` on the same `GORUN_DATA` | Stop the holder named in the message. On Docker/Coolify: stop-then-start (no overlapping replicas). Do not delete `gorun.lock` while a process is alive; the OS releases it on exit. |
 | Prod refuses to start: empty or loopback `GORUN_BASE_URL` | `GORUN_ENV=prod` requires a public base URL | Set `GORUN_BASE_URL=https://your-site.example` (no trailing slash). |
 | Prod refuses: missing / invalid `GORUN_SECRET_KEY` | Key must decode to 32 bytes (Base64) | `openssl rand -base64 32`. Keep the same value forever for that data dir. |
-| `/admin/setup` only shows instructions | No `GORUN_SETUP_TOKEN`, or an admin already exists | Set a token ≥16 chars for web setup, or `gorun user create --admin …`. After the first admin exists, setup is closed. |
+| `/admin/setup` asks for a token you never set | `gorun serve` generated one because `GORUN_SETUP_TOKEN` is unset | Find `First-run setup token` in the server logs, for example `docker logs gorun`. It changes on each restart until the first admin exists, then setup is closed. |
 | Encrypted settings unreadable after restore / redeploy | New secret key | Restore the **original** `GORUN_SECRET_KEY` / `secret.key`. Generating a new key does not decrypt old rows. |
 
 ## HTTPS, proxy, HSTS

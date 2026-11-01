@@ -30,7 +30,7 @@
   "setup.intro": "No accounts exist yet. This account will have full access. Name the site now so public pages are not left untitled.",
   "setup.submit": "Create account",
   "setup.token": "Setup token",
-  "setup.token_help": "The value of GORUN_SETUP_TOKEN on the server.",
+  "setup.token_help": "The value of GORUN_SETUP_TOKEN on the server, or the first-run token printed in the server logs.",
   "setup.token_invalid": "The setup token is not correct.",
   "setup.blocked": "This server runs in production and no setup token is configured, so the first administrator cannot be created here. Do one of the following, then reload:",
   "setup.blocked_token": "Set a setup token (at least 16 characters) and restart:",

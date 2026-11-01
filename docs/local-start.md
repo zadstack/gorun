@@ -66,6 +66,24 @@ host name, so the admin is reachable over plain HTTP on every published address.
 Use a trusted network, not production. It refuses a data directory that holds a
 site without its key. Requires GoRun 0.18.4 or newer.
 
+To turn a trial into a real site, keep its volume and key, and replace the container.
+This needs a release newer than 0.18.4. Save the printed key somewhere safe first:
+
+```sh
+docker exec gorun /app/gorun secret-key
+```
+
+```sh
+docker rm -f gorun
+docker run -d --name gorun -p 8080:8080 -v gorun-data:/data --restart unless-stopped \
+  -e GORUN_BASE_URL=https://your-domain.example \
+  -e GORUN_SECRET_KEY=PASTE_THE_KEY_HERE \
+  ghcr.io/zadstack/gorun:latest
+```
+
+Accounts and content stay. Serve it over HTTPS and run the
+[HTTPS checklist](../deploy/coolify.md#9-https-acceptance-checklist).
+
 ## First sign-in
 
 The generated administrator signs in with `admin` and the one-time terminal

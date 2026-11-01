@@ -5,6 +5,20 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.18.5] - 2026-11-01
+
+### Added
+
+- `gorun serve` in production prints a first-run setup token in the logs when `GORUN_SETUP_TOKEN` is unset and no account exists, so `/admin/setup` works without a restart. The token lives in memory and setup closes once the first administrator exists.
+- `gorun secret-key` prints the site key, so a `GORUN_TRIAL` site can move to production on the same volume.
+- The executable embeds the core layout patterns, and `serve` and `start` install them under `<data>/bundled-patterns` when no `patterns/` directory is present.
+- The release workflow runs the documented Docker trial, `compose.server.yml`, `coolify-compose.yml` and the trial-to-production move against the built image before publishing.
+
+### Changed
+
+- Configuration errors for a missing base URL or key now mention `GORUN_TRIAL=1`.
+- Update `github.com/pb33f/libopenapi` to 0.41.8.
+
 ## [0.18.4] - 2026-11-01
 
 ### Added
@@ -1188,7 +1202,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.4...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.5...HEAD
+[0.18.5]: https://github.com/zadstack/gorun/compare/v0.18.4...v0.18.5
 [0.18.4]: https://github.com/zadstack/gorun/compare/v0.18.3...v0.18.4
 [0.18.3]: https://github.com/zadstack/gorun/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/zadstack/gorun/compare/v0.18.1...v0.18.2

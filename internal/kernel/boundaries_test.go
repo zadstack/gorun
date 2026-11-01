@@ -183,8 +183,8 @@ func TestContractPackagesAndThemesStayStandalone(t *testing.T) {
 		}
 	}
 	for pkg := range graph {
-		if (strings.HasPrefix(pkg, "themes") && pkg != "themes") || strings.HasPrefix(pkg, "patterns") {
-			t.Errorf("Go package under %s; themes/ holds only themes/bundled.go (the embed) and patterns/ no Go at all", pkg)
+		if (strings.HasPrefix(pkg, "themes") && pkg != "themes") || (strings.HasPrefix(pkg, "patterns") && pkg != "patterns") {
+			t.Errorf("Go package under %s; themes/ and patterns/ hold only their bundled.go (the embed)", pkg)
 		}
 	}
 }

@@ -81,3 +81,16 @@ func TestLoadTrialOffKeepsProdRules(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+// A first run with nothing set points at the trial instead of a dead end.
+func TestProdErrorsMentionTrial(t *testing.T) {
+	t.Setenv("GORUN_DATA", t.TempDir())
+	t.Setenv("GORUN_ENV", "prod")
+	if _, err := Load(nil); err == nil || !strings.Contains(err.Error(), "GORUN_TRIAL=1") {
+		t.Fatalf("missing base URL: %v", err)
+	}
+	t.Setenv("GORUN_BASE_URL", "https://example.com")
+	if _, err := Load(nil); err == nil || !strings.Contains(err.Error(), "GORUN_TRIAL=1") {
+		t.Fatalf("missing key: %v", err)
+	}
+}
