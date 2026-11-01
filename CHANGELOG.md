@@ -1188,7 +1188,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.3...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.4...HEAD
+[0.18.4]: https://github.com/zadstack/gorun/compare/v0.18.3...v0.18.4
 [0.18.3]: https://github.com/zadstack/gorun/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/zadstack/gorun/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/zadstack/gorun/compare/v0.18.0...v0.18.1
