@@ -44,6 +44,7 @@ type Config struct {
 	TrustedProxies  []string          // GORUN_TRUSTED_PROXIES; empty trusts no forwarded headers
 	CSPScriptSrc    []string          // GORUN_CSP_SCRIPT_SRC: extra public-page script sources (see PublicScriptSources)
 	Env             string            // "dev" | "prod"
+	Trial           bool              // GORUN_TRIAL: disposable zero-config site for a container; forces Env "dev" (see applyTrial)
 	DataDir         string            // GORUN_DATA, default ./data
 	BaseURL         string            // GORUN_BASE_URL
 	Addr            string            // GORUN_ADDR default 127.0.0.1:8080 (dev), :8080 (prod)
@@ -161,6 +162,9 @@ func load(args []string, allowGenerate bool) (Config, error) {
 		return Config{}, err
 	}
 	applyFlags(&c, fl, set)
+	if err := applyTrial(&c); err != nil {
+		return Config{}, err
+	}
 	if err := validateAddons(c.Addons); err != nil {
 		return Config{}, err
 	}
@@ -178,7 +182,7 @@ func load(args []string, allowGenerate bool) (Config, error) {
 	}
 	if c.Addr == "" {
 		c.Addr = defaultAddr
-		if c.Env == "dev" {
+		if c.Env == "dev" && !c.Trial {
 			c.Addr = "127.0.0.1:8080"
 		}
 	}
@@ -209,6 +213,24 @@ func load(args []string, allowGenerate bool) (Config, error) {
 	}
 	c.SecretKey = key
 	return c, nil
+}
+
+// applyTrial reads GORUN_TRIAL, which lets the published image run with no
+// configuration although it bakes GORUN_ENV=prod. It wins over that value and
+// never trusts forwarded headers, because no proxy has been configured.
+func applyTrial(c *Config) error {
+	v := os.Getenv("GORUN_TRIAL")
+	if v == "" {
+		return nil
+	}
+	on, err := strconv.ParseBool(v)
+	if err != nil {
+		return fmt.Errorf("config: GORUN_TRIAL: %w", err)
+	}
+	if on {
+		c.Trial, c.Env, c.TrustedProxies = true, "dev", nil
+	}
+	return nil
 }
 
 // checkPublicBaseURL fails fast when prod has no usable public base URL:
@@ -444,6 +466,12 @@ func resolveSecretMode(c Config, encoded string, allowGenerate bool) ([]byte, er
 	}
 	if !allowGenerate {
 		return nil, errors.New("config: existing secret is required for read-only access")
+	}
+	if c.Trial {
+		// A site whose key lives elsewhere would lose its stored secrets to a new key.
+		if _, err := os.Stat(c.DBPath()); err == nil {
+			return nil, errors.New("config: GORUN_TRIAL found an existing site without its key: set GORUN_SECRET_KEY to that site's key, or use an empty data directory")
+		}
 	}
 	key := make([]byte, secretKeyLen)
 	if _, err := rand.Read(key); err != nil {

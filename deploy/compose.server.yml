@@ -1,0 +1,27 @@
+# Runs the released image on any server with Docker. No source checkout or build.
+# The guided block in deploy/coolify.md and the README writes the .env this reads.
+#   docker compose -f compose.server.yml up -d
+services:
+  gorun:
+    image: ghcr.io/zadstack/gorun:${GORUN_VERSION:-latest}
+    container_name: gorun
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      GORUN_BASE_URL: ${GORUN_BASE_URL:?set GORUN_BASE_URL (the public URL)}
+      GORUN_SECRET_KEY: ${GORUN_SECRET_KEY:?set GORUN_SECRET_KEY (openssl rand -base64 32)}
+      GORUN_SETUP_TOKEN: ${GORUN_SETUP_TOKEN:-}
+      GORUN_TRUSTED_PROXIES: ${GORUN_TRUSTED_PROXIES:-}
+    volumes:
+      - gorun-data:/data
+    healthcheck:
+      # distroless has no shell or curl; the binary probes its own /healthz.
+      test: ["CMD", "/app/gorun", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  gorun-data:

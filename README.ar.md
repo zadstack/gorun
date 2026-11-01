@@ -286,7 +286,37 @@ If you lack terminal access or a prerequisite, explain exactly what is needed.
 
 ### البدء السريع
 
-**صورة Docker:** قد يتطلب سحب حزمة GHCR صلاحيات؛ لا نفترض توفرها دون تسجيل الدخول. يستخدم [إعداد السيرفر](docs/SERVER-SETUP.md) الأرشيفات العامة المتحقق منها دون الاعتماد على GHCR. تُبنى للإصدارات صورة متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بوسم الإصدار الكامل (مثل `0.17.0`) ووسم الإصدار الفرعي (مثل `0.17`) و`latest`. ضع رقم [أحدث إصدار](https://github.com/zadstack/gorun/releases/latest) مكان `VERSION`:
+| تريد | استخدم | تحتاج |
+|---|---|---|
+| تجربة على جهازك | [الكتلة أعلاه](#quick-start) | macOS أو Linux |
+| تجربة في Docker | الأمر الأول أدناه | Docker |
+| موقع حقيقي على سيرفرك | الكتلة الثانية أدناه | Docker Compose |
+| موقع حقيقي على Coolify | [لصق ملف واحد](deploy/coolify.md#1-create-the-resource) | Coolify |
+
+**تجربة في Docker:**
+
+```sh
+docker run -d --name gorun -p 8080:8080 -v gorun-data:/data -e GORUN_TRIAL=1 ghcr.io/zadstack/gorun:latest && sleep 3 && docker logs gorun
+```
+
+افتح `http://localhost:8080/admin`، أو `http://YOUR_SERVER_IP:8080/admin` على سيرفر، وادخل باسم `admin` وكلمة المرور الظاهرة في المخرجات. **وضع التجربة ليس للإنتاج:** لوحة الإدارة متاحة عبر HTTP غير مشفّر على كل عنوان منشور، فاستخدمه على شبكة موثوقة. يحتاج GoRun 0.18.4 أو أحدث. للحذف: `docker rm -f gorun && docker volume rm gorun-data`.
+
+**سيرفر بـDocker Compose:** استبدل `YOUR_SERVER_IP` ثم الصق الكتلة كاملة. تكتب ملف `.env` مرة واحدة وتحافظ على مفتاحك عند التكرار، فاحتفظ بنسخة منه.
+
+```sh
+SITE_URL=http://YOUR_SERVER_IP:8080
+mkdir -p gorun && cd gorun &&
+curl -fsSLO https://raw.githubusercontent.com/zadstack/gorun/main/deploy/compose.server.yml &&
+if [ ! -f .env ]; then (umask 077; printf 'GORUN_BASE_URL=%s\nGORUN_SECRET_KEY=%s\nGORUN_SETUP_TOKEN=%s\n' "$SITE_URL" "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env); fi &&
+docker compose -f compose.server.yml up -d &&
+grep GORUN_SETUP_TOKEN .env
+```
+
+افتح `/admin/setup` على موقعك وأدخل الرمز الظاهر. لـHTTPS ضع وكيلًا عكسيًا أمامه واتبع [قائمة قبول HTTPS](deploy/coolify.md#9-https-acceptance-checklist).
+
+**Coolify:** اختر **+ New ← Docker Compose Empty**، والصق [`deploy/coolify-compose.yml`](deploy/coolify-compose.yml)، ثم **Save** و**Deploy**. يولّد Coolify الأسرار ويحتفظ بها بين عمليات النشر.
+
+**صورة Docker:** الحزمة عامة ولا تحتاج تسجيل دخول. تُبنى للإصدارات صورة متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بوسم الإصدار الكامل (مثل `0.17.0`) ووسم الإصدار الفرعي (مثل `0.17`) و`latest`. ضع رقم [أحدث إصدار](https://github.com/zadstack/gorun/releases/latest) مكان `VERSION`:
 
 ```sh
 VERSION=0.17.0

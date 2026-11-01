@@ -29,6 +29,24 @@ func TestDeployFilesSafety(t *testing.T) {
 	if strings.Contains(compose, "localhost") {
 		t.Error("docker-compose.yml must not default the base URL to localhost")
 	}
+	for _, name := range []string{"deploy/compose.server.yml", "deploy/coolify-compose.yml"} {
+		paste := repoFile(t, name)
+		if !strings.Contains(paste, "image: ghcr.io/zadstack/gorun:${GORUN_VERSION:-latest}") || strings.Contains(paste, "build:") {
+			t.Errorf("%s must run the released image without a build", name)
+		}
+		if strings.Contains(paste, "GORUN_TRIAL") {
+			t.Errorf("%s is for real sites and must not enable trial mode", name)
+		}
+	}
+	coolifyPaste := repoFile(t, "deploy/coolify-compose.yml")
+	for _, want := range []string{"${SERVICE_URL_GORUN_8080}", "${SERVICE_REALBASE64_32_GORUNKEY}", "${SERVICE_HEX_32_GORUNSETUP}"} {
+		if !strings.Contains(coolifyPaste, want) {
+			t.Errorf("coolify-compose.yml lacks %q", want)
+		}
+	}
+	if !strings.Contains(repoFile(t, "deploy/Dockerfile"), "COPY patterns /app/patterns") {
+		t.Error("the image must ship the bundled patterns")
+	}
 	if ignore := repoFile(t, ".dockerignore"); !strings.Contains("\n"+ignore+"\n", "\ne2e/\n") {
 		t.Error(".dockerignore must exclude e2e/")
 	}

@@ -5,6 +5,19 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.18.4] - 2026-11-01
+
+### Added
+
+- Try the Docker image with one command through `GORUN_TRIAL=1`: no base URL or secrets to prepare, a generated `admin` password shown once in the logs, and an admin reachable on the server's address. Trial mode is not for production and refuses a site whose key is missing.
+- Paste-ready deployments: `deploy/compose.server.yml` runs the released image on any Docker server, and `deploy/coolify-compose.yml` deploys through Coolify's **Docker Compose Empty** with generated secrets.
+- Copy buttons for the commands on the blocked `/admin/setup` page.
+
+### Fixed
+
+- Ship the bundled patterns in the Docker image; it logged `ship-with directory missing` and offered none.
+- Installation guide: keep the generated `GORUN_SECRET_KEY` instead of losing it to a one-off shell expansion, and replace outdated image tags.
+
 ## [0.18.3] - 2026-10-29
 
 ### Fixed
@@ -1175,7 +1188,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.3...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.4...HEAD
+[0.18.4]: https://github.com/zadstack/gorun/compare/v0.18.3...v0.18.4
 [0.18.3]: https://github.com/zadstack/gorun/compare/v0.18.2...v0.18.3
 [0.18.2]: https://github.com/zadstack/gorun/compare/v0.18.1...v0.18.2
 [0.18.1]: https://github.com/zadstack/gorun/compare/v0.18.0...v0.18.1

@@ -1,13 +1,29 @@
 # Deploying GoRun on Coolify
 
-GoRun is one container with one persistent volume. Coolify deploys it from
-`deploy/docker-compose.yml`, or you can run a released GHCR image. For general
+GoRun is one container with one persistent volume. The fastest way is to paste
+[`coolify-compose.yml`](coolify-compose.yml), which runs the released image and
+needs no repository, build or typed secrets. For general
 production rules (HSTS, backup cutover, upgrades) see
 [docs/PRODUCTION.md](../docs/PRODUCTION.md). Install overview:
 [docs/GORUN-INSTALLATION.md](../docs/GORUN-INSTALLATION.md). Docs index:
 [docs/README.md](../docs/README.md).
 
 ## 1. Create the resource
+
+1. In Coolify choose **+ New → Docker Compose Empty**, then your server.
+2. Paste [`coolify-compose.yml`](coolify-compose.yml) and select **Save**. Coolify
+   generates `GORUN_SECRET_KEY` and `GORUN_SETUP_TOKEN` once and keeps them across
+   deployments; both appear under **Environment Variables**.
+3. Check the domain on the `gorun` service. Without a wildcard domain on the server,
+   add yours under **Domains** with the port, e.g. `https://example.com:8080`.
+4. Select **Deploy**, open `https://<your-domain>/admin/setup` and enter the
+   `SERVICE_HEX_32_GORUNSETUP` value. Then confirm the proxy network in
+   [step 4](#trust-traefiks-forwarded-headers).
+
+Set `GORUN_VERSION` to pin a release, e.g. `0.18` (default `latest`). Keep the
+generated key: it encrypts stored secrets.
+
+To build from source instead:
 
 1. In Coolify: **New Resource → Docker Compose** and point it at this repository.
 2. Set **Base Directory** to `/` and **Docker Compose Location** to
@@ -17,7 +33,7 @@ production rules (HSTS, backup cutover, upgrades) see
    (`SOURCE_COMMIT`) instead of `dev`, or set a `VERSION` build variable yourself.
 
 To run a released image instead of building, use **New Resource → Docker Image** with
-`ghcr.io/zadstack/gorun:0.4` (or a full version such as `0.4.0`; `latest` follows
+`ghcr.io/zadstack/gorun:0.18` (or a full version such as `0.18.3`; `latest` follows
 every release), port `8080`, and the same environment variables and `/data` volume
 as below. Images are multi-arch (linux/amd64, linux/arm64).
 
@@ -37,7 +53,7 @@ as below. Images are multi-arch (linux/amd64, linux/arm64).
 | `GORUN_S3_ENDPOINT`, `GORUN_S3_BUCKET`, `GORUN_S3_ACCESS_KEY`, `GORUN_S3_SECRET_KEY` | no | New media in an S3-compatible bucket (R2: `https://<account>.r2.cloudflarestorage.com`). Optional `GORUN_S3_REGION` (default `auto`) and `GORUN_S3_PUBLIC_URL`. A misconfigured bucket stops the server at boot. |
 
 `GORUN_ENV=prod`, `GORUN_DATA=/data` and `GORUN_ADDR=:8080` are baked into
-the image. Pin the image tag (`0.4.0` or `0.4`) in production rather than
+the image. Pin the image tag (`0.18.3` or `0.18`) in production rather than
 relying on `latest` alone.
 
 ## 3. Persistent storage
@@ -199,7 +215,7 @@ copy and the **original** `GORUN_SECRET_KEY`. An interrupted restore leaves
 
 ```sh
 docker run --rm -v gorun-data:/data -v /var/lib/gorun-restored:/restore \
-  --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.4.0 \
+  --entrypoint /app/gorun ghcr.io/zadstack/gorun:0.18.3 \
   backup-restore --input /data/backups/<timestamp>.manifest.json --dest /restore
 ```
 
@@ -335,7 +351,7 @@ Docker health alone is not enough.
 | Outside ready | `curl -fsS https://…/readyz` | HTTP 200 |
 
 Same env vars apply to plain `docker run` / compose with nginx, Caddy, or
-Traefik in front of `ghcr.io/zadstack/gorun:0.1` — only the CIDR discovery
+Traefik in front of `ghcr.io/zadstack/gorun:0.18` — only the CIDR discovery
 commands change (inspect the network your reverse proxy shares with GoRun).
 Troubleshooting: [TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md#https-proxy-hsts).
 Production overview: [PRODUCTION.md](../docs/PRODUCTION.md).

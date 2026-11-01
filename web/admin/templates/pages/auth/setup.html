@@ -1,4 +1,13 @@
 {{define "title"}}{{t "auth.setup.title"}}{{end}}
+{{define "setup-command"}}
+<div class="mt-1 flex items-start gap-2" x-data="{ copied: false }">
+  <code x-ref="command" dir="ltr" class="min-w-0 flex-1 break-all rounded border border-line bg-panel p-2 font-mono text-xs text-ink">{{.}}</code>
+  <button type="button" @click="navigator.clipboard.writeText($refs.command.textContent).then(() => copied = true)"
+          class="shrink-0 rounded border border-line bg-panel px-2 py-1 text-xs text-ink hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+    <span data-label-copy="{{t "auth.setup.copy"}}" data-label-copied="{{t "auth.setup.copied"}}" x-text="copied ? $el.dataset.labelCopied : $el.dataset.labelCopy">{{t "auth.setup.copy"}}</span>
+  </button>
+</div>
+{{end}}
 {{define "content"}}
 <div class="admin-auth-panel">
   <p class="admin-auth-brand">{{t "core.app.name"}}</p>
@@ -6,10 +15,10 @@
   {{if .SetupBlocked}}
   <div role="alert" class="mt-4 rounded border border-amber bg-amber-soft p-3 text-amber-text">
     <p class="mb-2">{{t "auth.setup.blocked"}}</p>
-    <ul class="list-disc ps-5 space-y-1">
-      <li>{{t "auth.setup.blocked_token"}} <code dir="ltr" class="font-mono text-xs">GORUN_SETUP_TOKEN</code></li>
-      <li>{{t "auth.setup.blocked_cli"}} <code dir="ltr" class="font-mono text-xs">gorun user create --admin --email … --password …</code></li>
-    </ul>
+    <ol class="list-decimal ps-5 space-y-3">
+      <li>{{t "auth.setup.blocked_token"}} <code dir="ltr" class="font-mono text-xs">GORUN_SETUP_TOKEN</code>{{template "setup-command" "openssl rand -hex 24"}}</li>
+      <li>{{t "auth.setup.blocked_cli"}} <code dir="ltr" class="font-mono text-xs">gorun user create --admin --email … --password …</code>{{template "setup-command" "docker exec -i gorun /app/gorun user create --admin --email you@example.com --password-stdin"}}</li>
+    </ol>
   </div>
   {{else}}
   <p class="text-muted mt-2 mb-4">{{t "auth.setup.intro"}}</p>

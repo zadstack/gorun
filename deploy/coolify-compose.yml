@@ -1,0 +1,26 @@
+# Paste into Coolify: + New -> Docker Compose Empty. No repository or build.
+# Coolify generates the SERVICE_* values once and keeps them across redeploys.
+# Set GORUN_VERSION in Environment Variables to pin a release, for example 0.18.
+services:
+  gorun:
+    image: ghcr.io/zadstack/gorun:${GORUN_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      - SERVICE_URL_GORUN_8080
+      - GORUN_BASE_URL=${SERVICE_URL_GORUN_8080}
+      - GORUN_SECRET_KEY=${SERVICE_REALBASE64_32_GORUNKEY}
+      - GORUN_SETUP_TOKEN=${SERVICE_HEX_32_GORUNSETUP}
+      # Coolify's default network; confirm it with deploy/coolify.md, section 4.
+      - GORUN_TRUSTED_PROXIES=${GORUN_TRUSTED_PROXIES:-10.0.1.0/24}
+    volumes:
+      - gorun-data:/data
+    healthcheck:
+      # distroless has no shell or curl; the binary probes its own /healthz.
+      test: ["CMD", "/app/gorun", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  gorun-data:
