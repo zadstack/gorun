@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.18.4] - 2026-11-01
+
 ### Added
 
 - Try the Docker image with one command through `GORUN_TRIAL=1`: no base URL or secrets to prepare, a generated `admin` password shown once in the logs, and an admin reachable on the server's address. Trial mode is not for production and refuses a site whose key is missing.
