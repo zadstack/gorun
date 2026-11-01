@@ -20,6 +20,7 @@ LABEL org.opencontainers.image.title="GoRun" \
 WORKDIR /app
 COPY --from=build /out/gorun /app/gorun
 COPY themes /app/themes
+COPY patterns /app/patterns
 # Pre-create /data owned by the nonroot user so a fresh named volume inherits it.
 COPY --from=build --chown=65532:65532 /out/data /data
 ENV GORUN_ENV=prod \

@@ -25,6 +25,15 @@ Content list and post editor, using the existing Atlas Studio demonstration scre
 
 ## Run it now
 
+| You want | Use | Needs |
+|---|---|---|
+| To try it on this computer | [One block](#on-your-computer) | macOS or Linux |
+| To try it in Docker | [One command](#in-docker) | Docker |
+| A real site on your server | [Docker Compose](#on-a-server-with-docker) | Docker Compose |
+| A real site on Coolify | [Paste one file](#on-coolify) | Coolify |
+
+### On your computer
+
 For a local trial on **macOS or Linux**, copy and paste this whole block. No Go, Docker, database setup or administrator privileges required.
 
 ```sh
@@ -44,6 +53,35 @@ The installer detects Intel or ARM, downloads the latest release, verifies its S
 The quick start requires **GoRun 0.4.0 or newer**. The installer refuses older releases without changing an existing installation.
 
 The executable lives at `~/.local/bin/gorun`; your local site lives at `~/.local/share/gorun/site`. Stop the server with **Ctrl+C**. Repeating the block uses the same site. LAN access is a public, read-only preview; administration stays on localhost. Use `--local-only` when starting manually to disable LAN access. [Local setup and recovery](docs/local-start.md).
+
+### In Docker
+
+```sh
+docker run -d --name gorun -p 8080:8080 -v gorun-data:/data -e GORUN_TRIAL=1 ghcr.io/zadstack/gorun:latest && sleep 3 && docker logs gorun
+```
+
+Open `http://localhost:8080/admin`, or `http://YOUR_SERVER_IP:8080/admin` on a server, and sign in as `admin` with the password printed in the output. **Trial mode is not for production:** the admin is reachable over plain HTTP on every published address, so use a trusted network. Requires GoRun 0.18.4 or newer. Remove it with `docker rm -f gorun && docker volume rm gorun-data`.
+
+### On a server with Docker
+
+Replace `YOUR_SERVER_IP`, then paste the whole block. It writes `.env` once and keeps your secret key if you run it again, so back that file up.
+
+```sh
+SITE_URL=http://YOUR_SERVER_IP:8080
+mkdir -p gorun && cd gorun &&
+curl -fsSLO https://raw.githubusercontent.com/zadstack/gorun/main/deploy/compose.server.yml &&
+if [ ! -f .env ]; then (umask 077; printf 'GORUN_BASE_URL=%s\nGORUN_SECRET_KEY=%s\nGORUN_SETUP_TOKEN=%s\n' "$SITE_URL" "$(openssl rand -base64 32)" "$(openssl rand -hex 24)" > .env); fi &&
+docker compose -f compose.server.yml up -d &&
+grep GORUN_SETUP_TOKEN .env
+```
+
+Open `/admin/setup` on your site and enter the printed token. For HTTPS, put a reverse proxy in front and follow the [HTTPS checklist](deploy/coolify.md#9-https-acceptance-checklist).
+
+### On Coolify
+
+In Coolify choose **+ New → Docker Compose Empty**, paste [`deploy/coolify-compose.yml`](deploy/coolify-compose.yml), then **Save** and **Deploy**. Coolify generates the secrets and keeps them across deployments. [All steps](deploy/coolify.md#1-create-the-resource).
+
+### Guided server setup
 
 For a domain with HTTPS and a persistent service, use the [guided Linux server setup](docs/SERVER-SETUP.md). It asks for your domain and installation directory, verifies DNS, and reports the final URL and data path after acceptance checks. It requires Linux root access, Python 3 and Docker Compose; it uses verified public release downloads without a GHCR login. For an existing proxy or Coolify deployment, follow the [Docker / Coolify guide](deploy/coolify.md). The local preview is intended for development.
 

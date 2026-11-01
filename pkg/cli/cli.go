@@ -146,7 +146,7 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 	case "start":
 		return start(args[1:], out)
 	case "serve":
-		return serve(args[1:])
+		return serve(args[1:], out)
 	case "migrate":
 		return migrate(args[1:])
 	case "user":
@@ -215,10 +215,15 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 	}
 }
 
-func serve(args []string) error {
+func serve(args []string, out io.Writer) error {
 	cfg, err := config.Load(args)
 	if err != nil {
 		return err
+	}
+	if cfg.Trial {
+		if err := installStartTheme(cfg); err != nil {
+			return err
+		}
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -227,10 +232,22 @@ func serve(args []string) error {
 		return err
 	}
 	defer app.Close()
+	password := ""
+	if cfg.Trial {
+		if password, err = bootstrapStart(ctx, app); err != nil {
+			return err
+		}
+	}
 	srv := &http.Server{Addr: cfg.Addr, Handler: app.Handler, ReadHeaderTimeout: readHeaderTimeout, ReadTimeout: 60 * time.Second, IdleTimeout: 60 * time.Second}
 	errc := make(chan error, 1)
 	go func() { errc <- srv.ListenAndServe() }()
 	app.Deps.Log.Info("gorun listening", "addr", cfg.Addr, "env", cfg.Env, "version", version)
+	if cfg.Trial {
+		if err := writeTrialBanner(out, cfg, password); err != nil {
+			srv.Close()
+			return err
+		}
+	}
 	select {
 	case err := <-errc:
 		return err

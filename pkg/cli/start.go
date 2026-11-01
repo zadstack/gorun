@@ -79,14 +79,7 @@ func start(args []string, out io.Writer) error {
 	// IPv6 listener/proxy on the same port.
 	cfg.BaseURL = "http://127.0.0.1:" + port
 	cfg.TrustedProxies = nil // Never trust a LAN peer's forwarded identity.
-	themeRoot := theme.ThemesDir(cfg)
-	if _, err := os.Stat(themeRoot); os.IsNotExist(err) {
-		if os.Getenv(theme.EnvThemesDir) != "" {
-			return fmt.Errorf("configured theme directory does not exist: %w", err)
-		}
-		themeRoot = filepath.Join(cfg.DataDir, "themes")
-	}
-	if err := themes.InstallDefault(themeRoot); err != nil {
+	if err := installStartTheme(cfg); err != nil {
 		return err
 	}
 	var ips []string
@@ -145,6 +138,35 @@ func start(args []string, out io.Writer) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	return srv.Shutdown(shutdownCtx)
+}
+
+// installStartTheme installs the bundled default theme when it is missing.
+func installStartTheme(cfg config.Config) error {
+	themeRoot := theme.ThemesDir(cfg)
+	if _, err := os.Stat(themeRoot); os.IsNotExist(err) {
+		if os.Getenv(theme.EnvThemesDir) != "" {
+			return fmt.Errorf("configured theme directory does not exist: %w", err)
+		}
+		themeRoot = filepath.Join(cfg.DataDir, "themes")
+	}
+	return themes.InstallDefault(themeRoot)
+}
+
+// writeTrialBanner prints how to reach a GORUN_TRIAL site. Unlike the local
+// preview of start, its admin answers on every address the container publishes.
+func writeTrialBanner(out io.Writer, cfg config.Config, password string) error {
+	_, port, err := net.SplitHostPort(cfg.Addr)
+	if err != nil {
+		return fmt.Errorf("trial address: %w", err)
+	}
+	banner := fmt.Sprintf("GoRun trial mode: not for production.\nOpen: http://localhost:%s/admin (on a server: http://SERVER-IP:%s/admin)\nThe admin is reachable over unencrypted HTTP on every published address. Use a trusted network, and remove GORUN_TRIAL for a real site.\n", port, port)
+	if password != "" {
+		banner += fmt.Sprintf("Username: admin\nEmail: admin@localhost.invalid\nPassword (shown once; save it now): %s\nFirst sign-in: replace this password and choose your email, site name and language.\n", password)
+	} else {
+		banner += "Existing accounts preserved; password is not displayed again.\n"
+	}
+	_, err = io.WriteString(out, banner)
+	return err
 }
 
 func bootstrapStart(ctx context.Context, app *kernel.App) (string, error) {

@@ -68,7 +68,7 @@ func (*Module) Catalogs() fs.FS { return catalogs }
 // and API operations.
 func (*Module) Register(d *kernel.Deps) error {
 	d.Perms.Declare(Perm, map[string]string{"en": "Manage webhooks", "ar": "إدارة الويبهوكس"})
-	allowPrivate := d.Config.AllowPrivateNet || d.Config.Env == "dev"
+	allowPrivate := d.Config.AllowPrivateNet || (d.Config.Env == "dev" && !d.Config.Trial)
 	svc := &service{db: d.DB, jobs: d.Jobs, audit: d.Audit, log: d.Log, key: d.Config.SecretKey, allowPrivate: allowPrivate,
 		baseURL: func(ctx context.Context) string { return kernel.BaseURL(ctx, d) }, now: time.Now,
 		send: httpSender(deliveryClient(allowPrivate))}

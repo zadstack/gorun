@@ -51,6 +51,21 @@ production configuration for deployment; `start` rejects production mode.
 IPv6-only LANs are not advertised. If no private IPv4 interface is available,
 the terminal says so and localhost still works. Firewalls may block LAN access.
 
+## Docker trial
+
+`gorun start` restricts the admin to loopback, which a published container port
+never is. To try the image with no configuration, set `GORUN_TRIAL=1`:
+
+```sh
+docker run -d --name gorun -p 8080:8080 -v gorun-data:/data -e GORUN_TRIAL=1 ghcr.io/zadstack/gorun:latest && sleep 3 && docker logs gorun
+```
+
+Trial mode generates the site key in `/data/secret.key` and one `admin` password,
+shown once in `docker logs gorun`. It listens on all interfaces and answers on any
+host name, so the admin is reachable over plain HTTP on every published address.
+Use a trusted network, not production. It refuses a data directory that holds a
+site without its key. Requires GoRun 0.18.4 or newer.
+
 ## First sign-in
 
 The generated administrator signs in with `admin` and the one-time terminal

@@ -35,6 +35,8 @@
   "setup.blocked": "This server runs in production and no setup token is configured, so the first administrator cannot be created here. Do one of the following, then reload:",
   "setup.blocked_token": "Set a setup token (at least 16 characters) and restart:",
   "setup.blocked_cli": "Or create the administrator from the command line:",
+  "setup.copy": "Copy",
+  "setup.copied": "Copied",
   "setup.site_section": "Site identity",
   "setup.site_title": "Site name",
   "setup.tagline": "Tagline",
