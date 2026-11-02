@@ -10,12 +10,12 @@ import (
 // AccountPageCSS is shared presentation for standalone account add-on pages.
 // Each enabled add-on serves it from its own route to avoid activation coupling.
 const AccountPageCSS = `
-body{margin:0;background:var(--standalone-bg,#f7f8fa);color:var(--standalone-ink,#172b26);font:16px/1.65 var(--font-ui,system-ui,sans-serif)}
+body{margin:0;background:var(--standalone-bg,#f8fafb);color:var(--standalone-ink,#1e293b);font:16px/1.65 var(--font-ui,system-ui,sans-serif)}
 main{max-width:var(--gp-width,1100px);margin:auto;padding:28px;min-width:0;overflow-wrap:anywhere}
 main *{box-sizing:border-box;min-width:0}
 nav{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;border-bottom:1px solid var(--standalone-line,#d9e2dc);padding-bottom:14px}
 nav a{display:inline-flex;align-items:center;min-height:44px}
-a{color:var(--standalone-link,#176d50);text-underline-offset:3px}
+a{color:var(--standalone-link,#315f9b);text-underline-offset:3px}
 h1{font-size:28px;line-height:1.3}h2{font-size:20px;line-height:1.4;margin-top:32px}h3{line-height:1.4}
 article,table{background:var(--standalone-panel,#fbfdfc)}
 article{border:1px solid var(--standalone-line,#d9e2dc);border-radius:8px;padding:16px;margin:12px 0}
@@ -31,9 +31,9 @@ input,select,textarea,button{font:inherit;padding:8px;border:1px solid var(--sta
 input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,button,summary{min-height:44px}
 textarea{display:block;width:100%;line-height:1.65;resize:vertical}
 summary{cursor:pointer;padding-block:8px}
-button{background:var(--standalone-accent,#176d50);color:var(--standalone-on-accent,#fbfdfc);cursor:pointer}
+button{background:var(--standalone-accent,#315f9b);color:var(--standalone-on-accent,#fbfdfc);cursor:pointer}
 button:disabled{cursor:not-allowed;opacity:.65}
-:is(a,button,input,select,textarea,summary,.scroll):focus-visible{outline:2px solid var(--standalone-ink,#172b26);outline-offset:3px}
+:is(a,button,input,select,textarea,summary,.scroll):focus-visible{outline:2px solid var(--standalone-ink,#1e293b);outline-offset:3px}
 [aria-invalid=true]{border:2px solid currentColor}
 [role=alert],[role=status]{padding:12px 16px;border:1px solid var(--standalone-line,#d9e2dc);border-radius:5px}
 @media(max-width:600px){main{padding:20px 16px}h1{font-size:24px}dl{grid-template-columns:minmax(0,1fr)}dd{margin-block-end:12px}}

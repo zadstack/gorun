@@ -13,6 +13,7 @@ All notable changes to GoRun are recorded here. The format follows
 ### Changed
 
 - Default customer accounts separate password, email-link and optional registration paths, and group services, orders and invoices with actionable empty states. Custom account template overrides retain precedence.
+- New/fallback builder and standalone customer identities use a light neutral/blue palette; explicitly saved site colors are preserved.
 - Launch forms retain site colors, selected fonts and the published primary media logo; field validation associates errors with inputs and focuses the first invalid field.
 
 ## [0.18.6] - 2026-11-02

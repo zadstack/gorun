@@ -13,4 +13,6 @@ Selected homepage heroes may use a self-hosted Three.js enhancement, with three 
 
 ## Shared customer surfaces
 
+Shared customer surfaces default to a light neutral background, dark slate text and a restrained blue action color. Explicit saved site identities continue to take precedence.
+
 Core-owned launch, Membership and SaaS surfaces use the safe published identity subset described in [Shared site UI](docs/SHARED_SITE_UI.md). Their presentation consumes standalone semantic tokens and retains module/session boundaries. Default commerce account styling is scoped to its own component, supports dark identity pairs, and uses native progressive disclosure for alternative sign-in methods. Theme overrides retain precedence.

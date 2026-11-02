@@ -46,3 +46,14 @@ Codex in-app browser, localhost fixture on port 8931; default desktop 1280 and m
 ## Limits and rollout
 
 No merge, production deployment or Fleet rebuild belongs to this core change. Custom `account.html` overrides remain authoritative; custom cards may need their own styling under the compact hook. Membership/SaaS retain their pre-existing Arabic text. Launch uses the published primary media logo; theme-manifest/dark-logo variants are not added. Full WCAG certification, every third-party theme and a real payment/email workflow were not tested. A site-specific theme/content pass can follow the core review; these changes do not rewrite existing custom homepage compositions.
+
+## Selected neutral-blue default follow-up
+
+The user selected a light neutral surface with restrained blue actions. The default/fallback brand is now accent `#315f9b`, background `#f8fafb` and ink `#1e293b`; explicitly saved identities continue to win. Standalone fallback styles follow this palette. This does not repaint existing customer themes or change the admin workspace palette.
+
+The full local race suite completed successfully before this color-only follow-up. After the follow-up, focused brand/standalone identity race tests, vet and CLI build passed. CI rechecks the final PR head. The earlier dark images remain contrast-regression evidence rather than the selected default.
+
+- [Selected blue launch](launch-neutral-blue-ar.png)
+- [Selected blue account](account-neutral-blue-ar.png)
+
+Browser computed the selected launch background as rgb(248,250,251), ink rgb(30,41,59), and primary action rgb(49,95,155). Only the isolated review fixture settings were changed for these captures.
