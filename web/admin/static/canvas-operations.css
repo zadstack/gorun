@@ -16,7 +16,9 @@
 .canvas-workspace .canvas-edges path[data-state=flowing]{stroke-dasharray:7 9;animation:canvas-edge-flow 1.1s linear infinite}
 .canvas-workspace .canvas-edges path[data-state=failed]{stroke:#b42318;stroke-dasharray:4 5}
 .canvas-workspace .canvas-edges polygon.canvas-edge-tip{stroke:none;fill:#476781}
-.canvas-workspace .canvas-edges circle.canvas-edge-packet{fill:#286f9d;stroke:#fff;stroke-width:1.5;offset-rotate:0deg;animation:canvas-edge-packet 2.4s linear infinite}
+/* Packets ride their edge with offset-path; without support they stay hidden rather than sit at the origin. */
+.canvas-workspace .canvas-edges circle.canvas-edge-packet{display:none;fill:#286f9d;stroke:#fff;stroke-width:1.5}
+@supports (offset-path: path('M0 0')){.canvas-workspace .canvas-edges circle.canvas-edge-packet{display:inline;offset-rotate:0deg;animation:canvas-edge-packet 2.4s linear infinite}}
 .canvas-workspace .canvas-edges text.canvas-edge-mark{fill:#b42318;font:700 18px sans-serif;paint-order:stroke;stroke:#fff;stroke-width:3px}
 @keyframes canvas-edge-flow{to{stroke-dashoffset:-32}}
 @keyframes canvas-edge-packet{from{offset-distance:0%}to{offset-distance:100%}}

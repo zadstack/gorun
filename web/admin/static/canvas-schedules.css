@@ -97,6 +97,8 @@
     background: #fffffff7;
     box-shadow: 0 12px 32px #17202c24;
   }
+  /* Lanes: anchor at the block end so the four column headers along the top stay readable. */
+  .canvas-workspace[data-view=lanes] .canvas-schedules { top: auto; bottom: .75rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   .canvas-workspace .canvas-schedules-chevron { transition: none; }

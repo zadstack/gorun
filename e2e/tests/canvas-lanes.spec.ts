@@ -78,6 +78,22 @@ test('rtl mirrors en', async ({page})=>{
  expect(en.agent).not.toBe(ar.agent);
 });
 
+test('the schedules panel sits clear of the lane headers', async ({page})=>{
+ for(const locale of ['ar','en'] as const){
+  await lanesBoard(page,locale);await lanes(page);
+  const panel=page.locator('[data-canvas-schedules]');
+  const toggle=panel.locator('button[aria-expanded][aria-controls]');
+  await expect(toggle).toHaveAttribute('aria-expanded','false');
+  await page.locator('.canvas-viewport').evaluate(el=>{el.scrollTop=0;el.scrollLeft=0;});
+  const hits=await page.evaluate(()=>{
+   const p=document.querySelector('[data-canvas-schedules]')!.getBoundingClientRect();
+   return [...document.querySelectorAll('.canvas-lane-header')].map(h=>h.getBoundingClientRect()).filter(h=>h.left<p.right&&p.left<h.right&&h.top<p.bottom&&p.top<h.bottom).length;
+  });
+  expect(hits,locale).toBe(0);
+ }
+ await setLocale(page,'ar');
+});
+
 test('lanes never saves', async ({page})=>{
  const path=await lanesBoard(page);
  const endpoint=path+'/document';

@@ -11,8 +11,9 @@
     if (!aside || !window.CanvasState) return null;
     const doc = root.ownerDocument;
     const lang = () => doc.documentElement.lang || undefined;
-    let expanded = true;
-    try { expanded = sessionStorage.getItem(KEY) !== 'collapsed'; } catch (_) {}
+    // Collapsed until the person opens it, so the panel never covers the board on a first visit.
+    let expanded = false;
+    try { expanded = sessionStorage.getItem(KEY) === 'expanded'; } catch (_) {}
 
     const heading = el('h2', undefined, 'canvas-schedules-heading'); heading.id = 'canvas-schedules-title';
     const toggle = btn('', () => setExpanded(!expanded), 'canvas-schedules-toggle');

@@ -307,3 +307,70 @@ test('polling keeps focus on Cancel run in the run history', async ({page})=>{
  await expect(history.locator('li')).toHaveCount(2);
  await expect(page.locator(`[data-run-id="${id}"][data-action=cancel]`)).toBeFocused();
 });
+
+test.describe('coarse pointer', ()=>{
+ test.use({hasTouch:true,isMobile:true});
+ for(const locale of ['ar','en'] as const) test(`the waiting pill and its 44px action stay inside a 300px card · ${locale}`, async ({page})=>{
+  const path=await presetBoard(page),board=path.split('/').pop()!;
+  expect(await page.evaluate(()=>matchMedia('(pointer:coarse)').matches)).toBe(true);
+  const agent=page.locator('.canvas-card[data-kind=agent]');const node=(await agent.getAttribute('data-card-id'))!;
+  await insertRun(board,node,'77777777-7777-4777-8777-00000000001'+(locale==='ar'?'3':'4'),'waiting');
+  // A long title leaves the pill no room beside it.
+  const database=db();const row=database.prepare('SELECT document_json FROM admin_canvases WHERE id=?').get(board) as {document_json:string};
+  const cards=JSON.parse(row.document_json);for(const c of cards)if(c.id===node)c.title='وكيل التلخيص اليومي للمحتوى المنشور حديثًا';
+  database.prepare('UPDATE admin_canvases SET document_json=? WHERE id=?').run(JSON.stringify(cards),board);database.close();
+  await page.reload();
+  if(locale==='en')await setLocale(page,'en');
+  await page.locator('[data-canvas-view=flow]').click();
+  await expect(agent.locator('.canvas-node-state')).toContainText(locale==='ar'?'بانتظارك':'Needs you');
+  const m=await agent.evaluate(card=>{
+   const c=card.getBoundingClientRect(),h=card.querySelector('.canvas-card-heading') as HTMLElement,pill=h.querySelector('.canvas-node-state') as HTMLElement,b=pill.querySelector('button')!.getBoundingClientRect(),p=pill.getBoundingClientRect();
+   const title=h.querySelector('h2')!.parentElement!.getBoundingClientRect();
+   return {tw:title.width,cw:c.width,inside:p.left>=c.left-0.5&&p.right<=c.right+0.5&&b.left>=c.left-0.5&&b.right<=c.right+0.5,hsw:h.scrollWidth,hcw:h.clientWidth,psw:pill.scrollWidth,pcw:pill.clientWidth,bw:b.width,bh:b.height};
+  });
+  if(locale==='en')await setLocale(page,'ar');
+  expect(m.cw).toBe(300);
+  expect(m.inside).toBe(true);
+  // The pill wraps to its own line rather than crushing the title beside it.
+  expect(m.tw).toBeGreaterThanOrEqual(144);
+  expect(m.hsw).toBeLessThanOrEqual(m.hcw);
+  expect(m.psw).toBeLessThanOrEqual(m.pcw);
+  expect(m.bw).toBeGreaterThanOrEqual(44);expect(m.bh).toBeGreaterThanOrEqual(44);
+ });
+});
+
+test('packets are gated behind offset-path support', async ({page})=>{
+ await runningAgentBoard(page,'77777777-7777-4777-8777-000000000015');
+ const rules=await page.evaluate(()=>{
+  const out:{supports:string|null,display:string}[]=[];
+  const walk=(list:CSSRuleList,supports:string|null)=>{for(const r of [...list]){
+   if(r instanceof CSSSupportsRule)walk(r.cssRules,r.conditionText);
+   else if(r instanceof CSSMediaRule)continue;
+   else if(r instanceof CSSStyleRule&&r.selectorText.includes('canvas-edge-packet'))out.push({supports,display:r.style.display});
+  }};
+  for(const s of [...document.styleSheets])try{walk(s.cssRules,null);}catch(_){}
+  return out;
+ });
+ expect(rules.find(r=>r.supports===null)?.display).toBe('none');
+ const gated=rules.find(r=>r.supports!==null)!;
+ expect(gated.supports).toContain('offset-path');
+ expect(gated.display).not.toBe('none');
+ // Chromium supports offset-path, so the packet shows and moves along its edge.
+ const packet=page.locator('.canvas-edge-packet').first();
+ expect(await packet.evaluate(e=>getComputedStyle(e).display)).not.toBe('none');
+ expect(await packet.evaluate(e=>getComputedStyle(e).animationName)).toBe('canvas-edge-packet');
+});
+
+test('the prompt fold mask matches the surface in flow and lanes', async ({page})=>{
+ await presetBoard(page);
+ const prompt=page.locator('.canvas-card[data-kind=prompt]');
+ const viewport=await page.locator('.canvas-viewport').evaluate(e=>getComputedStyle(e).backgroundColor);
+ const mask=()=>prompt.evaluate(e=>{const a=getComputedStyle(e,'::after');return {color:a.backgroundColor,image:a.backgroundImage};});
+ expect(await mask()).toEqual({color:viewport,image:'none'});
+ await page.locator('[data-canvas-view=lanes]').click();
+ const band=await page.locator('.canvas-lane[data-lane="1"]').evaluate(e=>getComputedStyle(e).backgroundColor);
+ const lanes=await mask();
+ expect(lanes.color).toBe(viewport);
+ expect(lanes.image).toBe(`linear-gradient(${band}, ${band})`);
+ await page.locator('[data-canvas-view=flow]').click();
+});

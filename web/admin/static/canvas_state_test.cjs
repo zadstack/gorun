@@ -108,3 +108,13 @@ test('laneOrder sorts by lane then saved order', () => {
   ];
   assert.deepEqual(state.laneOrder(cards, {n: {actor_name: 'x'}}).map(card => card.id), ['s', 'p1', 'p2', 'g', 'r', 'n']);
 });
+test('nextRunLabel picks the unit after rounding (never "24 hours" or "60 minutes")', () => {
+  const label = minutes => state.nextRunLabel(new Date(now + minutes * 60_000).toISOString(), now, 'en').text;
+  // One day in the day unit; numeric:'auto' (kept from the existing formatter) words it "tomorrow".
+  const oneDay = new Intl.RelativeTimeFormat('en', {numeric: 'auto'}).format(1, 'day');
+  for (const m of [1410, 1425, 1439, 1440]) assert.equal(label(m), oneDay, `${m} minutes`);
+  for (const m of [1410, 1439]) assert.doesNotMatch(label(m), /hour/);
+  assert.equal(label(1409), 'in 23 hours');
+  assert.equal(label(59.6), 'in 1 hour');
+  assert.equal(label(59.4), 'in 59 minutes');
+});

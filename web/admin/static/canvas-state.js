@@ -76,10 +76,12 @@
     if (t <= now) return {kind: 'due'};
     const minutes = Math.max(1, Math.round((t - now) / 60000));
     const fmt = new Intl.RelativeTimeFormat(lang, {numeric: 'auto'});
+    // Round first, then pick the unit, so 1410-1439 minutes reads "in 1 day", never "in 24 hours".
+    const hours = Math.round(minutes / 60);
     let text;
     if (minutes < 60) text = fmt.format(minutes, 'minute');
-    else if (minutes < 1440) text = fmt.format(Math.round(minutes / 60), 'hour');
-    else text = fmt.format(Math.round(minutes / 1440), 'day');
+    else if (hours < 24) text = fmt.format(hours, 'hour');
+    else text = fmt.format(Math.max(1, Math.round(minutes / 1440)), 'day');
     return {kind: 'in', text};
   }
   // Lanes view: positions are computed for display only and never written back to the cards.

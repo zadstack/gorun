@@ -28,11 +28,25 @@ async function presetBoard(page: Page): Promise<string> {
 const panel=(page:Page)=>page.locator('[data-canvas-schedules]');
 const toggle=(page:Page)=>panel(page).locator('button[aria-expanded][aria-controls]');
 const SCHEDULE='ملخص يومي اختياري', AGENT='اختيار الوكيل';
+// The panel starts collapsed on a first visit; tests that read its rows open it first.
+const expand=async(page:Page)=>{if(await toggle(page).getAttribute('aria-expanded')!=='true')await toggle(page).click();await expect(toggle(page)).toHaveAttribute('aria-expanded','true');};
+
+test('starts collapsed on a first visit', async ({page})=>{
+ await presetBoard(page);
+ await expect(panel(page)).toBeVisible();
+ await expect(toggle(page)).toHaveAttribute('aria-expanded','false');
+ await expect(page.locator('#'+await toggle(page).getAttribute('aria-controls'))).toBeHidden();
+ // A fresh context has no stored value, so this is the default; render() then stores the folded state.
+ await expect.poll(()=>page.evaluate(()=>sessionStorage.getItem('gorun.canvas.schedules'))).toBe('collapsed');
+ // Flow keeps the top anchor (lanes moves it to the block end).
+ const gap=await page.evaluate(()=>document.querySelector('[data-canvas-schedules]')!.getBoundingClientRect().top-document.querySelector('.canvas-stage')!.getBoundingClientRect().top);
+ expect(gap).toBeLessThan(24);
+});
 
 test('lists the schedule under its agent', async ({page})=>{
  await presetBoard(page);
  await expect(panel(page)).toBeVisible();
- await expect(toggle(page)).toHaveAttribute('aria-expanded','true');
+ await expand(page);
  const groups=panel(page).locator('.canvas-schedules-group');
  await expect(groups).toHaveCount(1);
  await expect(groups.locator('h3')).toContainText(AGENT);
@@ -55,6 +69,7 @@ test('no panel without schedules', async ({page})=>{
 
 test('collapse persists and Escape returns focus', async ({page})=>{
  await presetBoard(page);
+ await expand(page);
  const region=page.locator('#'+await toggle(page).getAttribute('aria-controls'));
  await expect(region).toBeVisible();
  await toggle(page).click();
@@ -81,6 +96,7 @@ for(const locale of ['ar','en'] as const){
  test(`show on board focuses the node · ${locale}`, async ({page})=>{
   await presetBoard(page);
   if(locale==='en'){await setLocale(page,'en');await expect(page.locator('.canvas-state')).toHaveAttribute('data-state','saved');}
+  await expand(page);
   const show=panel(page).getByRole('button',{name:locale==='ar'?'اعرض على اللوح':'Show on board'});
   const handle=page.locator('.canvas-card[data-kind=schedule] .canvas-handle');
   // Move the node out of sight first, so the reveal has work to do.
@@ -122,6 +138,7 @@ test('show on board keeps the docked panel open', async ({page})=>{
  await presetBoard(page);
  await page.setViewportSize({width:375,height:812});
  await expect.poll(()=>panel(page).evaluate(el=>getComputedStyle(el).position)).toBe('static');
+ await expand(page);
  await panel(page).getByRole('button',{name:'اعرض على اللوح'}).click();
  const handle=page.locator('.canvas-card[data-kind=schedule] .canvas-handle');
  await expect(handle).toBeFocused();
@@ -149,6 +166,7 @@ test('needs_review row offers review', async ({page})=>{
  database.close();
  await page.reload();
  await expect(page.locator('.canvas-state')).toHaveAttribute('data-state','saved');
+ await expand(page);
  const row=panel(page).locator('li').filter({hasText:SCHEDULE});
  await expect(row.locator('.canvas-schedules-chip')).toHaveText('يلزم المراجعة');
  const review=row.getByRole('button',{name:'راجع وفعّل'});
@@ -189,6 +207,7 @@ test('panel has no horizontal overflow', async ({page})=>{
  for(const width of [1280,375]){
   await page.setViewportSize({width,height:900});
   await expect(panel(page)).toBeVisible();
+  await expand(page);
   const m=await panel(page).evaluate(el=>{const region=el.querySelector('[role=region]')!;return {sw:el.scrollWidth,cw:el.clientWidth,rsw:region.scrollWidth,rcw:region.clientWidth,right:el.getBoundingClientRect().right,left:el.getBoundingClientRect().left,vw:document.documentElement.clientWidth};});
   expect(m.sw,`${width}px panel`).toBeLessThanOrEqual(m.cw);
   expect(m.rsw,`${width}px region`).toBeLessThanOrEqual(m.rcw);
@@ -215,5 +234,6 @@ test('en locale', async ({page})=>{
  await setLocale(page,'en');
  await expect(page.locator('.canvas-state')).toHaveAttribute('data-state','saved');
  await expect(toggle(page)).toHaveText('Scheduled tasks · 1');
+ await expand(page);
  await expect(panel(page).getByRole('button',{name:'Show on board'})).toBeVisible();
 });

@@ -1,7 +1,10 @@
 /* Compact task cards retain real editing and movement controls in both locales. */
+/* Board surface tokens: the viewport colour and the two lane band tints drawn over it. The prompt fold's mask
+   reads them, so it matches the surface it sits on in flow and in lanes. */
+.canvas-workspace { --cv-canvas: #f5f7f8; --cv-lane: #fffffff0; --cv-lane-alt: #f9fafbf0; }
 .canvas-workspace .canvas-viewport {
   border-radius: 6px;
-  background-color: #f5f7f8;
+  background-color: var(--cv-canvas);
   background-image: radial-gradient(#d4dce3 .8px, transparent .8px);
   background-size: 20px 20px;
 }
@@ -156,7 +159,9 @@
   .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt]::before,
   .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt]::after { content: ""; position: absolute; top: -3px; inset-inline-start: -1px; width: 16px; height: 16px; }
   .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt]::before { z-index: 1; background: var(--card-accent); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
-  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt]::after { background: #f5f7f8; clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt]::after { background: var(--cv-fold-mask, var(--cv-canvas)); clip-path: polygon(0 0, 100% 0, 0 100%); }
+  /* Prompts always sit in lane 1, an alt-tinted band: composite that tint over the viewport colour. */
+  .canvas-workspace[data-view=lanes] .canvas-card[data-kind=prompt] { --cv-fold-mask: linear-gradient(var(--cv-lane-alt), var(--cv-lane-alt)) var(--cv-canvas); }
   .canvas-workspace:is([data-view=flow],[data-view=lanes]):dir(rtl) .canvas-card[data-kind=prompt]::before { clip-path: polygon(0 0, 100% 100%, 0 100%); }
   .canvas-workspace:is([data-view=flow],[data-view=lanes]):dir(rtl) .canvas-card[data-kind=prompt]::after { clip-path: polygon(0 0, 100% 0, 100% 100%); }
 
@@ -220,15 +225,20 @@
 .canvas-workspace .canvas-card[data-state=failed] .canvas-node-state { color: #a3292d; }
 @keyframes canvas-state-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .canvas-workspace .canvas-card[data-state=running] .canvas-node-state::before { animation: none; } }
+/* The pill may wrap: on a 300px card the title keeps a readable width and the pill (with its 44px action on a coarse
+   pointer) moves to its own line instead of overflowing or crushing the title. */
+.canvas-workspace .canvas-card-heading:has(> .canvas-node-state) { flex-wrap: wrap; }
+.canvas-workspace .canvas-card-heading:has(> .canvas-node-state) > div:has(> h2) { flex: 1 1 9rem; min-width: 0; }
+.canvas-workspace .canvas-node-state { flex-wrap: wrap; max-width: 100%; min-width: 0; box-sizing: border-box; white-space: normal; overflow-wrap: anywhere; }
 @media (max-width: 767px), (pointer: coarse) { .canvas-workspace .canvas-node-state button { min-height: 44px; min-width: 44px; } }
 
 /* Lanes view (spec §7): decorative column bands behind the computed card positions. Each band is one 336px column
    pitch; its inline padding puts the card at the column's x. Hidden on mobile, where lanes renders like list. */
 .canvas-workspace .canvas-lanes { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .canvas-workspace:not([data-view=lanes]) .canvas-lanes { display: none; }
-.canvas-workspace .canvas-lane { position: absolute; inset-block: 0; width: 336px; box-sizing: border-box; padding-inline: 18px; border-inline-start: 1px solid #e1e6eb; background: #fffffff0; direction: ltr; }
+.canvas-workspace .canvas-lane { position: absolute; inset-block: 0; width: 336px; box-sizing: border-box; padding-inline: 18px; border-inline-start: 1px solid #e1e6eb; background: var(--cv-lane); direction: ltr; }
 .canvas-workspace:dir(rtl) .canvas-lane { direction: rtl; }
-.canvas-workspace .canvas-lane:is([data-lane="1"],[data-lane="3"]) { background: #f9fafbf0; }
+.canvas-workspace .canvas-lane:is([data-lane="1"],[data-lane="3"]) { background: var(--cv-lane-alt); }
 .canvas-workspace .canvas-lane-header { display: flex; align-items: center; gap: .25rem; height: 48px; color: #4f5b69; font-size: .75rem; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .canvas-workspace .canvas-lane-header strong { font-weight: 700; }
 .canvas-workspace .canvas-lane-header span { font-weight: 500; }
