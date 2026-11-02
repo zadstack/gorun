@@ -188,6 +188,7 @@ func (f *funcs) libraryFilters(tc *Context) LibraryFilters {
 	count := func(values map[string]string) int {
 		q := content.Query{Status: "published", PublicOnly: true, PublicLocale: f.pageLocale(), PerPage: 1}
 		l.apply(&q, values)
+		q.Search = l.query.Get("q")
 		page, err := csvc.Query(f.st.ctx, q)
 		if err != nil {
 			return 0
