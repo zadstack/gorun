@@ -54,6 +54,24 @@ var nativeEntryImageKinds = []string{"features", "steps", "media_text", "switche
 var sectionIcons = []string{"", "bolt", "shield", "chart", "globe", "clock", "check", "layers"}
 var sectionBackgrounds = []string{"", "inherit", "none", "dots", "grid", "lines", "circles", "waves", "paper", "solid"}
 
+// Native layouts are a closed set per section kind; no raw classes are accepted.
+func validNativeVariant(kind, variant string) bool {
+	if variant == "" || variant == "default" {
+		return true
+	}
+	switch kind {
+	case "hero":
+		return variant == "split" || variant == "centered"
+	case "faq":
+		return variant == "split"
+	case "directory":
+		return variant == "compact"
+	case "media_text":
+		return variant == "image_start" || variant == "image_end"
+	}
+	return false
+}
+
 func validateNative(s Section) error {
 	fail := func() error { return errors.New("builder: unsupported native section option") }
 	if s.Library == "" {
@@ -70,7 +88,7 @@ func validateNative(s Section) error {
 	if s.Library != SectionLibrary || !slices.Contains(nativeKinds, s.Kind) || s.HeroScene != "" || s.Feed != "" {
 		return fail()
 	}
-	if s.Kind != "hero" && s.Kind != "faq" && s.Variant != "" && s.Variant != "default" {
+	if !validNativeVariant(s.Kind, s.Variant) {
 		return fail()
 	}
 	if s.Link != "" && strings.TrimSpace(s.LinkLabel) == "" {
@@ -78,9 +96,6 @@ func validateNative(s Section) error {
 	}
 	if s.Kind == "comparison" && strings.TrimSpace(s.Title) == "" {
 		return errors.New("builder: comparison needs an accessible title")
-	}
-	if s.Kind == "faq" && s.Variant == "centered" {
-		return fail()
 	}
 	if s.Kind != "hero" && s.Kind != "product_preview" && (s.Image != "" || s.ImageAlt != "") {
 		return fail()

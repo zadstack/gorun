@@ -1,17 +1,4 @@
-/* GoRun section library: layout blocks for HTML page bodies.
-   The content sanitizer keeps only class names that start with "gp-", so every
-   block here uses the gp-s- prefix (the page builder owns gp-section/gp-grid).
-   Selectors are wrapped in :where() (zero specificity) and colors come from the
-   theme tokens (--bg, --panel, --ink, --muted, --line, --green, --on-accent, --radius), so any
-   theme, site identity or custom CSS can restyle them without fighting selectors.
-   Inside page bodies the themes' .prose-gp rules (link color and underline,
-   list markers, h2/h3 sizes, sibling margins; up to (0,2,2) specificity) would
-   win over zero-specificity rules, so the block at the end re-applies those
-   properties under ":root .prose-gp" (0,3,0). To restyle a section inside a
-   page body, use the same prefix or put the rule later (custom CSS loads after).
-   Graphics are CSS only (gradients and data-URI SVG masks): the sanitizer strips
-   inline <svg>, and every drawing takes its color from the tokens.
-   Markup examples: docs/THEMES.md → "Section library". */
+/* Sanitizer-safe gp-s- layouts; tokens and :where() let themes restyle them. See docs/THEMES.md. */
 
 /* ---- Depth and icon tokens (themes may override) ---- */
 :where(:root) {
@@ -31,15 +18,8 @@
   --gp-s-icon-arrow-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4v16m-6-6 6 6 6-6'/%3E%3C/svg%3E");
 }
 
-/* ---- Section backgrounds ----
-   A section with gp-s-bg gets a masked color layer behind its content. The
-   drawing (--gp-pattern-image, a mask) and its tile (--gp-pattern-size) come
-   either from the site identity (theme.<slug>.identity_pattern writes
-   .gp-s-bg{--gp-pattern-image:var(--gp-pat-<name>);…} into /site/identity.css)
-   or from a modifier class: gp-s-bg gp-s-bg-dots (the modifiers carry (0,2,0)
-   so they beat the identity's (0,1,0) site default). Color and density are
-   tokens too: --gp-pattern-ink (identity_pattern_color, default accent) and
-   --gp-pattern-scale (identity_pattern_density: .72 / 1 / 1.4). */
+/* Section backgrounds: masked token-colored layers stay behind content;
+   the inherited data-bg preset may be overridden per section. */
 :where(.gp-s-bg) {
   position: relative;
   isolation: isolate;
@@ -252,6 +232,8 @@
 :where(.gp-s-rows){display:grid;gap:40px;margin-block:24px}
 :where(.gp-s-row){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:32px;align-items:center}
 :where(.gp-s-row:nth-child(even))>:where(.gp-s-row-media){order:2}
+:where(.gp-s-rows-image-start) > :where(.gp-s-row) > :where(.gp-s-row-media){order:0}
+:where(.gp-s-rows-image-end) > :where(.gp-s-row) > :where(.gp-s-row-media){order:2}
 :where(.gp-s-row-text){grid-template-columns:minmax(0,1fr)}
 :where(.gp-s-row-media){margin:0}
 :where(.gp-s-row-copy) :where(h3){margin:0 0 8px;font-size:22px}
@@ -261,7 +243,7 @@
 :where(.gp-s-switch)>:where(summary){cursor:pointer;padding:14px 16px;font-weight:600}
 :where(.gp-s-switch[open])>:where(summary){color:var(--accent,var(--green,inherit))}
 :where(.gp-s-switch-panel){display:grid;gap:12px;padding:0 16px 16px}
-@media (max-width:720px){:where(.gp-s-row){grid-template-columns:minmax(0,1fr);gap:16px}}
+@media (max-width:720px){:where(.gp-s-row){grid-template-columns:minmax(0,1fr);gap:16px}:where(.gp-s-rows) > :where(.gp-s-row) > :where(.gp-s-row-media){order:0}}
 
 
 /* ---- Product preview: a window frame around a screenshot or a drawn UI ---- */
@@ -389,3 +371,14 @@
    above later anchor resets (including Tailwind preflight's color: inherit). */
 :root .gp-s-btn, :root .gp-s-btn:hover { color: var(--on-accent, #fff); text-decoration: none; }
 :root .gp-s-btn-ghost, :root .gp-s-btn-ghost:hover { color: var(--ink, #111); }
+
+/* Compact stock cards; custom cards keep their content. */
+.gp-s-directory-compact{--gp-s-thumb:96px}
+:root .gp-s-directory-compact > .gp-grid{grid-template-columns:minmax(0,1fr);gap:0}
+:root .gp-s-directory-compact > .gp-grid > :where(article){min-width:0;margin:0;padding:16px 0;border:0;border-block-end:1px solid var(--line);border-radius:0;box-shadow:none}
+:root .gp-s-directory-compact .gp-grid :where(.gr-card,.reading-card,.sb-card):has(.gr-card-media,.gr-card-cover,.sb-card-image){display:grid;grid-template-columns:var(--gp-s-thumb) minmax(0,1fr);align-items:start;gap:16px}
+:root .gp-s-directory-compact .gp-grid :where(.gr-card-media,.gr-card-cover,.sb-card-image){width:var(--gp-s-thumb);aspect-ratio:1;min-height:0;margin:0}
+:root .gp-s-directory-compact .gp-grid :where(.gr-card-copy,.sb-card-copy){min-width:0;padding:0}
+:root .gp-s-directory-compact .gp-grid :where(h2){font-size:1.125rem;margin-block:0 .35rem}
+:root .gp-s-directory-compact .gp-grid :where(.gr-card-excerpt,.sb-card-copy p){margin-block:.35rem;font-size:.9rem}
+@media(max-width:480px){.gp-s-directory-compact{--gp-s-thumb:64px}}

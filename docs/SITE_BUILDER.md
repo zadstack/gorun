@@ -139,3 +139,9 @@ section, show it, then publish. The purpose is stored in the page's `purpose` fi
 the page with `{{destination "contact"}}`. The same draft can be created with `POST /api/v1/builder/pages`
 or the MCP tool `create_purpose_page`.
 
+
+### Native list and media layouts
+
+In the section's advanced layout control, **Searchable directory** offers Default (theme cards) or Compact list. Compact keeps the existing search, results, links and visibility rules; it changes the result grid to one column and uses smaller covers on the default card. A custom card template still owns its inner markup and may supply its own compact styling under `.gp-s-directory-compact`.
+
+**Text and media rows** offers Default (alternating images), Image at start, or Image at end. Start/end follow the page's reading direction. On narrow screens images return to source order above their copy. Existing documents keep their default layout; the new values are `compact` for native directory sections and `image_start` / `image_end` for native media_text sections. Other kinds and the legacy renderer reject these values. They introduce no new content types or raw CSS/HTML options.

@@ -387,5 +387,9 @@
   "error.test_slot_live_key": "The test secret key field only takes a test key (sk_test_…): a live key here would take real payments in test mode. Nothing was saved.",
   "error.live_slot_test_key": "The Stripe secret key field only takes a live key (sk_live_…): put test keys in the test secret key field. Nothing was saved.",
   "settings.auth_stale": "last check is older than a day: verify again",
-  "health.auth_stale": "key check is %s old; verify again"
+  "health.auth_stale": "key check is %s old; verify again",
+  "account.password_help": "Use the password for your customer account.",
+  "account.email_sign_in": "Sign in by email instead",
+  "account.services": "Your services",
+  "account.sections": "Account sections"
 }

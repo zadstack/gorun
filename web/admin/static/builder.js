@@ -116,6 +116,13 @@
   const nativeOnlyKinds = ["steps", "comparison", "product_preview", "media_text", "switcher", "directory"];
   // Native kinds whose entries may carry an image (links stay on feature cards).
   const entryImageKinds = ["features", "steps", "media_text", "switcher"];
+  function nativeVariants(kind) {
+    if (kind === "hero") return ["default", "split", "centered"];
+    if (kind === "faq") return ["default", "split"];
+    if (kind === "directory") return ["default", "compact"];
+    if (kind === "media_text") return ["default", "image_start", "image_end"];
+    return ["default"];
+  }
   function nativeSwitchBlocked(section) {
     if (section.hero_scene || section.feed) return true;
     if (section.link && !section.link_label?.trim()) return true;
@@ -123,7 +130,7 @@
     if (section.kind === "features" && (section.items || []).some(entry => entry.link && !entry.title?.trim())) return true;
     if (!["hero", "product_preview"].includes(section.kind) && (section.image || section.image_alt)) return true;
     if (["hero", "comparison", "product_preview", "directory"].includes(section.kind) && section.items?.length) return true;
-    if (section.kind !== "hero" && section.variant && section.variant !== "default" && !(section.kind === "faq" && section.variant === "split")) return true;
+    if (!nativeVariants(section.kind).includes(section.variant || "default")) return true;
     return (section.items || []).some(entry => entry.price || (section.kind !== "features" && entry.link) || (!entryImageKinds.includes(section.kind) && (entry.image || entry.image_alt)));
   }
   // Field edits do not re-render the editor, preserving focus and selection.
@@ -292,7 +299,7 @@
       const advanced=el("details","border border-line p-3 space-y-2");advanced.append(el("summary","cursor-pointer font-medium",text("advanced")));advanced.open=advancedSections.has(section.id);advanced.addEventListener("toggle",()=>{if(!advanced.isConnected)return;if(advanced.open)advancedSections.add(section.id);else advancedSections.delete(section.id);});
  const variantLabel = el("label", "block text-sm", text("variant")),
         variant = el("select", "bg-panel border border-line p-2");
-      (native && section.kind !== "hero" ? section.kind === "faq" ? ["default", "split"] : ["default"] : ["default", "split", "centered"]).forEach((value) => {
+      (native ? nativeVariants(section.kind) : ["default", "split", "centered"]).forEach((value) => {
         const option = el("option", "", text("layout_" + value));
         option.value = value;
         variant.append(option);

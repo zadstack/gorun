@@ -71,9 +71,9 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `observe` `seo` `settings` `theme` `update` |
 | `internal/webhooks` | core | `audit` `auth` `db` `httpx` `i18n` `jobs` `kernel` |
 | `internal/commerce` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `redirects` `seo` `settings` `theme` |
-| `internal/saas` | feature | `admin` `api` `audit` `auth` `commerce` `db` `httpx` `kernel` |
-| `internal/membership` | feature | `api` `audit` `auth` `content` `db` `httpx` `kernel` |
-| `internal/launch` | feature | `auth` `httpx` `i18n` `kernel` |
+| `internal/saas` | feature | `admin` `api` `audit` `auth` `commerce` `db` `httpx` `kernel` `theme` |
+| `internal/membership` | feature | `api` `audit` `auth` `content` `db` `httpx` `kernel` `theme` |
+| `internal/launch` | feature | `auth` `httpx` `i18n` `kernel` `media` `theme` |
 | `internal/workagents` | feature | `admin` `auth` `content` `db` `httpx` `jobs` `kernel` `theme` |
 | `internal/identityai` | feature | `auth` `db` `httpx` `i18n` `kernel` `theme` |
 | `internal/identitylogo` | feature | `admin` `auth` `db` `httpx` `kernel` `media` `theme` |

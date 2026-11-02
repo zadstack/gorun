@@ -229,6 +229,8 @@ test.describe.serial('commerce with the fake billing server', () => {
     const page = await ctx.newPage();
     for (const email of [CUSTOMER, 'nobody@e2e.test']) {
       await page.goto('/account');
+      const emailMethod = page.locator('details').filter({ has: page.locator('form[action="/account/login"]') });
+      await emailMethod.locator('summary').click();
       await page.fill('#account-email', email);
       await page.locator('form[action="/account/login"] button[type="submit"]').click();
       await expect(page.locator('[role="status"]')).toBeVisible();

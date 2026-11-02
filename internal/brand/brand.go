@@ -28,7 +28,7 @@ var fonts = map[string]string{"zad": `"Zad",system-ui,-apple-system,"Segoe UI",T
 var widths = map[string]string{"narrow": "800px", "standard": "1080px", "wide": "1280px"}
 
 func Default() Identity {
-	return Identity{Accent: "#167252", Background: "#f8faf9", Text: "#172b29", Font: "zad", Width: "standard"}
+	return Identity{Accent: "#315f9b", Background: "#f8fafb", Text: "#1e293b", Font: "zad", Width: "standard"}
 }
 func Validate(identity Identity) error {
 	for _, value := range []string{identity.Accent, identity.Background, identity.Text} {

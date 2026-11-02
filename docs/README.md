@@ -28,6 +28,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 
 | Doc | Covers |
 | --- | --- |
+| [SHARED_SITE_UI.md](SHARED_SITE_UI.md) | Shared published identity and customer account/onboarding components |
 | [SITE_BUILDER.md](SITE_BUILDER.md) | Starter sites (business / portfolio / magazine), draft → activate, readiness |
 | [THEMES.md](THEMES.md) | Theme catalog, activate a theme, overrides, locales on the public site |
 | [PATTERN-PLUGINS.md](PATTERN-PLUGINS.md) | Site layout patterns (independent of theme identity): package shape, admin picker, starters |
