@@ -170,6 +170,10 @@ test('waiting state offers the existing check action', async ({page})=>{
  await expect(agent).toHaveAttribute('data-state','waiting');
  await expect(agent.locator('.canvas-node-state')).toContainText('بانتظارك');
  await expect(agent.locator('.canvas-node-state button')).toHaveCount(1);
+ const pill=agent.locator('.canvas-node-state button');const visible=(await pill.textContent())!.trim();const title=(await agent.locator('h2').textContent())!.trim();
+ await expect(pill).toHaveAccessibleName(visible+': '+title);
+ await page.locator('[data-canvas-operations] details').nth(1).locator('summary').click();
+ await expect(page.getByRole('button',{name:visible,exact:true})).toHaveCount(1);
 });
 
 async function insertRun(board:string,node:string,id:string,status:string,created=new Date().toISOString()){
@@ -278,9 +282,14 @@ test('polling stops when idle', async ({page})=>{
 test('a poll with no change keeps the edge elements', async ({page})=>{
  const node=await runningAgentBoard(page,'77777777-7777-4777-8777-000000000010');
  const flow=page.locator(`.canvas-edges path[data-to="${node}"][data-state=flowing]`).first();
- await expect(flow).toBeAttached();
+ await expect(flow).toBeAttached({timeout:15000});
+ const pillText=page.locator('.canvas-card[data-kind=agent] .canvas-node-state');
+ const before=await pillText.textContent();
+ const polled=runsResponse(page);
  await flow.evaluate(e=>{(e as any).__probe=1;});
- await runsResponse(page);await page.waitForTimeout(300);
+ await polled;
+ // The running pill shows an elapsed timer, so its text only changes once applyRunStates has processed the poll.
+ await expect.poll(()=>pillText.textContent(),{timeout:10000}).not.toBe(before);
  expect(await page.locator(`.canvas-edges path[data-to="${node}"][data-state=flowing]`).first().evaluate(e=>(e as any).__probe)).toBe(1);
 });
 

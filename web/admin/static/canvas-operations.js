@@ -276,7 +276,10 @@
           const key = `${text}|${state}|${run.id}|${run.status}`;
           if (span.dataset.key !== key) {
             span.dataset.key = key; span.replaceChildren(text);
-            if (state === 'waiting') { const act = runAction(run); if (act) span.append(' ', act); }
+            if (state === 'waiting') {
+              const act = runAction(run);
+              if (act) { const title = card.querySelector('h2')?.textContent || ''; if (title) act.setAttribute('aria-label', `${act.textContent}: ${title}`); span.append(' ', act); }
+            }
           }
         }
         if ((lastStates.get(id) || '') !== state) {
