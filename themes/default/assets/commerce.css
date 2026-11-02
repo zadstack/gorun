@@ -14,3 +14,48 @@
 .zad-runtime-note{background:#eff4e5;border-bottom:1px solid #d9e3c8;color:#435929;padding:10px 20px;font-size:13px;text-align:center;line-height:1.8}
 
 .zad-card-image{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:7px;background:#f1f5eb}.zad-store ul:not(.zad-account-list){list-style:disc;padding-inline-start:20px}.zad-product-detail h2{margin-block:20px 10px}
+
+/* Shared customer account surface. Scoped so theme overrides and unrelated
+   storefront content retain their own layout. No JavaScript is required. */
+.gp-core .gp-account{max-width:56rem;margin-inline:auto;color:var(--ink);overflow-wrap:anywhere}
+.gp-core .gp-account-guest{max-width:32rem}
+.gp-account-heading,.gp-account-row{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.gp-account-heading{padding-block:1rem 1.5rem;border-bottom:1px solid var(--line)}
+.gp-account h1{font-size:1.75rem;line-height:1.4;margin:0}
+.gp-account h2{font-size:1.125rem;line-height:1.5;margin:0 0 .75rem;font-weight:700}
+.gp-account h3{font-size:1rem;line-height:1.5;margin:0;font-weight:700}
+.gp-account p{line-height:1.7;margin:.5rem 0}
+.gp-account .gp-account-muted{color:var(--ink)}
+.gp-account-access{max-width:30rem;padding-block:1.5rem}
+.gp-account-form{display:grid;gap:1rem;margin-block:1rem 0}
+.gp-account-form>button{justify-self:start}
+.gp-account-form label{margin:0 0 .375rem}
+.gp-account-form input{min-height:44px}
+/* Identity background/text are a validated pair; legacy panel/muted tokens
+   can still describe the theme's original light palette. */
+.gp-core .gp-account :is(input,select,textarea){background:var(--bg);color:var(--ink);border-color:var(--ink)}
+.gp-core .gp-account :is(input,select,textarea,button,summary,a):focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.gp-core .gp-account .zad-button:hover{background:var(--accent);border-color:var(--accent);color:var(--on-accent);text-decoration:underline}
+.gp-core .gp-account .zad-button-outline,.gp-core .gp-account .zad-button-outline:hover{background:var(--bg);border-color:var(--ink);color:var(--ink)}
+.gp-account-alternative{border-top:1px solid var(--line);margin-block-start:1.5rem;padding-block:1rem 0}
+.gp-account-alternative>summary{min-height:44px;cursor:pointer;font-weight:600;line-height:1.6;padding-block:.5rem;box-sizing:border-box}
+.gp-account a{color:var(--ink);text-underline-offset:.2em}
+.gp-account-message{border:1px solid var(--line-strong,var(--line));background:var(--bg);color:var(--ink);padding:.875rem 1rem;border-radius:var(--radius,6px)}
+.gp-account .gp-account-error{border-color:var(--ink);color:var(--ink);background:var(--bg)}
+.gp-account-nav{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;padding-block:1rem;border-bottom:1px solid var(--line)}
+.gp-account-nav a{display:inline-flex;align-items:center;min-height:44px}
+.gp-account-section{margin-block-start:2rem;scroll-margin-block-start:1rem}
+.gp-account .gp-account-list{list-style:none;padding:0;margin:0}
+.gp-account-list>li{border-bottom:1px solid var(--line);padding-block:1.25rem}
+.gp-account-list>li:first-child{border-top:1px solid var(--line)}
+.gp-account-badge{border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:.875rem;padding:.2rem .65rem;border-radius:var(--radius,6px)}
+.gp-account-action{margin-block-start:1rem}
+.gp-account-empty{color:var(--ink)}
+.gp-account-links{display:flex;flex-wrap:wrap;gap:1rem}
+.gp-account-links a,.gp-account-order-items a,.gp-account-empty>a{display:inline-flex;align-items:center;min-height:44px}
+.gp-account-order-items{padding-inline-start:1.25rem;margin-block:.75rem 0}
+.gp-account-order-items>li+li{margin-block-start:1rem}
+.gp-account-intake{display:grid;grid-template-columns:minmax(6rem,1fr) minmax(0,2fr);gap:.375rem 1rem;margin-block:.75rem}
+.gp-account-intake dt{color:var(--ink)}
+.gp-account-intake dd{margin:0;white-space:pre-wrap}
+@media(max-width:560px){.gp-account-heading{padding-block:.5rem 1rem}.gp-account h1{font-size:1.5rem}.gp-account-access{padding-block-start:1.25rem}.gp-account-form>button{width:100%;justify-self:stretch}.gp-account-intake{grid-template-columns:1fr}.gp-account-intake dd+dt{margin-block-start:.5rem}}
