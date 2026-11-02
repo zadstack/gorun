@@ -52,9 +52,9 @@ type BlockSpec struct {
 	Label string `json:"label"`
 }
 
-var kinds = []string{"hero", "text", "features", "services", "projects", "testimonials", "pricing", "faq", "stats", "logos", "contact", "cta", "steps", "comparison", "product_preview", "media_text", "switcher", "directory"}
-var enLabels = []string{"Hero", "Text", "Features", "Services", "Projects", "Testimonials", "Pricing", "Questions", "Statistics", "Client logos", "Contact", "Call to action", "Steps", "Comparison", "Product preview", "Text and media rows", "Feature switcher", "Searchable directory"}
-var arLabels = []string{"واجهة رئيسية", "نص", "مميزات", "خدمات", "أعمال", "آراء العملاء", "أسعار", "أسئلة شائعة", "إحصائيات", "شعارات العملاء", "تواصل", "دعوة لاتخاذ إجراء", "خطوات", "مقارنة", "معاينة المنتج", "صفوف نص ووسائط", "مبدّل المزايا", "دليل قابل للبحث"}
+var kinds = []string{"hero", "text", "features", "services", "projects", "testimonials", "pricing", "faq", "stats", "logos", "contact", "cta", "steps", "comparison", "product_preview", "media_text", "switcher", "directory", "task_entry"}
+var enLabels = []string{"Hero", "Text", "Features", "Services", "Projects", "Testimonials", "Pricing", "Questions", "Statistics", "Client logos", "Contact", "Call to action", "Steps", "Comparison", "Product preview", "Text and media rows", "Feature switcher", "Searchable directory", "Task entry"}
+var arLabels = []string{"واجهة رئيسية", "نص", "مميزات", "خدمات", "أعمال", "آراء العملاء", "أسعار", "أسئلة شائعة", "إحصائيات", "شعارات العملاء", "تواصل", "دعوة لاتخاذ إجراء", "خطوات", "مقارنة", "معاينة المنتج", "صفوف نص ووسائط", "مبدّل المزايا", "دليل قابل للبحث", "مدخل المهمة"}
 
 func Catalog(locale string) []BlockSpec {
 	labels := enLabels
@@ -93,7 +93,7 @@ func DefaultSection(kind, locale string) Section {
 			s.Items = append(s.Items, Entry{Title: fmt.Sprintf("%s %d", label, i+1), Text: text})
 		}
 	}
-	if kind == "steps" || kind == "comparison" || kind == "product_preview" || kind == "media_text" || kind == "switcher" || kind == "directory" {
+	if kind == "steps" || kind == "comparison" || kind == "product_preview" || kind == "media_text" || kind == "switcher" || kind == "directory" || kind == "task_entry" {
 		defaultNative(&s, locale)
 	}
 	return s

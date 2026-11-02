@@ -95,7 +95,7 @@
       "w-full bg-panel border border-line p-2",
     );
     input.value = target[key] || "";
-    input.maxLength = key === "link" || key === "image" || key === "secondary_link" ? 2048 : ["label", "value", "column"].includes(labelKey) ? 300 : 12000;
+    input.maxLength = key === "link" || key === "image" || key === "secondary_link" || key === "action" ? 2048 : ["label", "value", "column", "search_label", "search_placeholder"].includes(labelKey) ? 300 : 12000;
     input.dir = "auto";
     input.dataset.field = key;
     input.dataset.section = sectionID;
@@ -112,13 +112,15 @@
  if(key==="image"&&root.dataset.canPickMedia==="true") {const id=`builder-image-${sectionID}-${entryIndex??"section"}`;imageTargets.set(id,input);const choose=button("choose_image",()=>window.dispatchEvent(new CustomEvent("media:open",{detail:{target:id}})));wrap.append(choose);}
  parent.append(wrap);
   }
-  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher", "directory"];
-  const nativeOnlyKinds = ["steps", "comparison", "product_preview", "media_text", "switcher", "directory"];
-  // Native kinds whose entries may carry an image (links stay on feature cards).
+  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher", "directory", "task_entry"];
+  const nativeOnlyKinds = ["steps", "comparison", "product_preview", "media_text", "switcher", "directory", "task_entry"];
+  // Entry images stay on these kinds; task choices use text, links and icons.
   const entryImageKinds = ["features", "steps", "media_text", "switcher"];
   function nativeVariants(kind) {
     if (kind === "hero") return ["default", "split", "centered"];
     if (kind === "faq") return ["default", "split"];
+    if (kind === "task_entry") return ["default", "search_first", "choice_first", "service_first"];
+    if (kind === "features") return ["default", "compact_rows", "image_led", "featured_secondary"];
     if (kind === "directory") return ["default", "compact"];
     if (kind === "media_text") return ["default", "image_start", "image_end"];
     return ["default"];
@@ -207,6 +209,14 @@
       checkbox(options, "illustration", group);
       group.append(el("p", "text-muted text-sm", text("illustration_help")));
     }
+    if (section.kind === "task_entry") {
+      group.append(el("p", "text-muted text-sm", text("task_entry_help")));
+      if (section.variant === "search_first") {
+        const search = options.search || (options.search = {action: "", label: text("search_label_default"), param: "q"});
+        for (const key of ["action", "label", "placeholder", "param"]) field(search, key, group, section.id, undefined, "search_" + key);
+      }
+    }
+    if (section.kind === "features" && ["compact_rows", "image_led", "featured_secondary"].includes(section.variant)) field(options, "empty_text", group, section.id);
     if (section.kind === "comparison") comparisonFields(section, options, group);
     if (section.kind === "directory") {
       if (!options.list_type) options.list_type = "post";
@@ -307,7 +317,11 @@
       variant.value = section.variant || "default";
       variant.addEventListener(
         "change",
-        () => mutate(() => section.variant = variant.value),
+        () => mutate(() => {
+          section.variant = variant.value;
+          if (section.kind === "task_entry" && section.variant !== "search_first" && section.native) delete section.native.search;
+          if (section.kind === "features" && section.variant === "default" && section.native) delete section.native.empty_text;
+        }),
       );
       variantLabel.append(variant);
       advanced.append(variantLabel);
@@ -364,16 +378,16 @@
       );
       hideLabel.prepend(hide);
       article.append(hideLabel);
-      if (!native || ["features", "steps", "faq", "media_text", "switcher"].includes(section.kind)) {
+      if (!native || ["features", "steps", "faq", "media_text", "switcher", "task_entry"].includes(section.kind)) {
       (section.items || []).forEach((entry, itemIndex) => {
         const group = el("fieldset", "border border-line p-3 space-y-2");
         group.append(el("legend", "", `${text("item")} ${itemIndex + 1}`));
-        (native ? section.kind === "features" ? ["title", "text", "image", "image_alt", "link"] : entryImageKinds.includes(section.kind) ? ["title", "text", "image", "image_alt"] : ["title", "text"] : ["title", "text", "image", "image_alt", "link", "price"]).forEach(
+        (native ? section.kind === "features" ? ["title", "text", "image", "image_alt", "link"] : section.kind === "task_entry" ? ["title", "text", "link"] : entryImageKinds.includes(section.kind) ? ["title", "text", "image", "image_alt"] : ["title", "text"] : ["title", "text", "image", "image_alt", "link", "price"]).forEach(
           (key) => field(entry, key, group, section.id, itemIndex),
         );
-        if (native && section.kind === "features") {
+        if (native && ["features", "task_entry"].includes(section.kind)) {
           selectField(entry, "icon", ["", "bolt", "shield", "chart", "globe", "clock", "check", "layers"], group);
-          checkbox(entry, "featured", group);
+          if (section.kind === "features") checkbox(entry, "featured", group);
         }
         group.append(
           button(

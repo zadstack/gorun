@@ -125,5 +125,18 @@
   "locale_ar": "Arabic",
   "locale_en": "English",
   "list_type": "Content type to list",
-  "list_type_help": "The directory lists and searches published items of this type in the page language (for example post). A type that is not public shows nothing."
+  "list_type_help": "The directory lists and searches published items of this type in the page language (for example post). A type that is not public shows nothing.",
+  "layout_search_first": "Search first",
+  "layout_choice_first": "Choose a task",
+  "layout_service_first": "Choose a service",
+  "layout_compact_rows": "Compact rows",
+  "layout_image_led": "Image-led results",
+  "layout_featured_secondary": "Featured and secondary results",
+  "empty_text": "Empty-state message",
+  "search_action": "Local search results page",
+  "search_label": "Search field label",
+  "search_placeholder": "Search example (optional)",
+  "search_param": "Destination query field (default q)",
+  "search_label_default": "Search",
+  "task_entry_help": "Links open real destinations. Search sends a GET request to a local page; it does not run tools, create sites or submit orders."
 }
