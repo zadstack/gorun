@@ -214,7 +214,41 @@
       reviewDialog.replaceChildren(content); title.focus();
     }
     async function refreshHistory() {
-      const data = await json('/runs'); runs = data.runs || []; renderHistory();
+      const data = await json('/runs'); runs = data.runs || []; renderHistory(); applyRunStates();
+    }
+    function runAction(run) {
+      if (run.status === 'waiting') return btn(t('check_result'), () => action(async () => { await json(`/runs/${encodeURIComponent(run.id)}/check`, {}); await refreshHistory(); }));
+      if (run.status === 'waiting_tool') return btn(t('tool_review'), () => action(() => reviewTool(run)));
+      if (run.status === 'requested') return btn(t('review_run'), () => action(() => preview(run.node_id)));
+      return null;
+    }
+    const live = el('div', undefined, 'canvas-state-live canvas-sr-only'); live.setAttribute('aria-live', 'polite'); root.append(live);
+    const lastStates = new Map(); let doneTimer = 0;
+    const stateWord = state => t(state === 'done' ? 'state_done' : state === 'waiting' ? 'state_waiting' : state);
+    function applyRunStates() {
+      const now = Date.now(), states = window.CanvasState ? window.CanvasState.nodeStates(runs, now) : {};
+      clearTimeout(doneTimer);
+      const expiry = window.CanvasState ? window.CanvasState.doneExpiry(runs, now) : null;
+      if (expiry !== null) doneTimer = setTimeout(applyRunStates, Math.max(expiry - now, 0) + 50);
+      const newest = new Map(); for (const run of runs) if (run.node_id && !newest.has(run.node_id)) newest.set(run.node_id, run);
+      const messages = [];
+      for (const card of cardsEl.querySelectorAll('[data-card-id]')) {
+        const id = card.dataset.cardId, state = states[id] || '', heading = card.querySelector('.canvas-card-heading');
+        let span = heading && heading.querySelector(':scope > .canvas-node-state');
+        if (!state) { delete card.dataset.state; span?.remove(); } else if (heading) {
+          card.dataset.state = state;
+          if (!span) { span = el('span', undefined, 'canvas-node-state'); heading.append(span); }
+          const run = newest.get(id); let text = stateWord(state);
+          if (state === 'running') { const s = Math.max(0, Math.floor((now - Date.parse(run.created_at)) / 1000)); text += ` · ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+          span.replaceChildren(text);
+          if (state === 'waiting') { const act = runAction(run); if (act) span.append(' ', act); }
+        }
+        if ((lastStates.get(id) || '') !== state) {
+          if (state || lastStates.has(id)) messages.push(`${card.querySelector('h2')?.textContent || ''}: ${state ? stateWord(state) : ''}`);
+          if (state) lastStates.set(id, state); else lastStates.delete(id);
+        }
+      }
+      if (messages.length) live.textContent = messages.filter(m => !m.endsWith(': ')).join('. ');
     }
     function renderHistory() {
       history.replaceChildren(btn(t('refresh_runs'), () => action(refreshHistory)));
@@ -224,9 +258,7 @@
         const item = el('li'); item.append(el('strong', t(run.status)), el('span', [run.provider_title,run.actor_name].filter(Boolean).join(' · ')), el('small', new Date(run.created_at).toLocaleString()));
         if (run.tool_calls_attempted) item.append(el('p', `${t('tool_attempts')}: ${run.tool_calls_attempted}. ${t('tool_effect_warning')}`));
         if (run.error) item.append(el('p', run.error === 'run_stopped' ? t('run_stopped') : run.error));
-        if (run.status === 'waiting') item.append(btn(t('check_result'), () => action(async () => { await json(`/runs/${encodeURIComponent(run.id)}/check`, {}); await refreshHistory(); })));
-        if (run.status === 'waiting_tool') item.append(btn(t('tool_review'), () => action(() => reviewTool(run))));
-        if (run.status === 'requested') item.append(btn(t('review_run'), () => action(() => preview(run.node_id))));
+        const act = runAction(run); if (act) item.append(act);
         if (['requested','queued','waiting_agent','waiting','waiting_tool'].includes(run.status)) item.append(btn(t('cancel_run'), () => action(async () => {
           if (!window.confirm(t('cancel_run_help'))) return;
           await json(`/runs/${encodeURIComponent(run.id)}/cancel`, {}); await refreshHistory(); announce(t('cancelled'));
@@ -277,7 +309,7 @@
       box.append(label(t('preset_target'), target),apply);
     }
     const documentNodeLanguage = () => window.document.documentElement.lang;
-    function render() { renderPreset(); renderConnections(); renderSharing(); drawEdges(); }
+    function render() { renderPreset(); renderConnections(); renderSharing(); drawEdges(); applyRunStates(); }
     new ResizeObserver(drawEdges).observe(cardsEl);
     loadOptions();
     function saved() {
@@ -287,6 +319,6 @@
       }
       drawEdges();
     }
-    return {editCard,readCard,cardBody,drawEdges,render,saved};
+    return {editCard,readCard,cardBody,drawEdges,render,saved,applyRunStates};
   }
 })();

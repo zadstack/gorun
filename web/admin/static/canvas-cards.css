@@ -206,3 +206,20 @@
 @media (min-width: 768px) and (pointer: fine) and (prefers-reduced-motion: reduce) {
   .canvas-workspace[data-view=flow] .canvas-card-footer { transition: none; }
 }
+
+/* Run state on nodes: a word plus a dot, never color alone. Last child of the heading, so it never meets the
+   start-side badges (agent avatar, schedule clock) in either direction. */
+.canvas-workspace .canvas-node-state { display: inline-flex; align-items: center; gap: .3rem; margin-inline-start: auto; padding: .1rem .45rem; border: 1px solid currentColor; border-radius: 999px; background: #fff; color: #3d4a5c; font-size: .6875rem; font-weight: 600; line-height: 1.4; white-space: nowrap; }
+.canvas-workspace .canvas-node-state::before { content: ""; flex: none; width: .5rem; height: .5rem; border-radius: 50%; background: currentColor; }
+.canvas-workspace .canvas-node-state button { min-height: 0; padding: .05rem .4rem; font-size: .6875rem; }
+.canvas-workspace .canvas-card[data-state=queued] .canvas-node-state { color: #4a5568; }
+.canvas-workspace .canvas-card[data-state=running] .canvas-node-state { color: #1a5a9e; }
+.canvas-workspace .canvas-card[data-state=running] .canvas-node-state::before { animation: canvas-state-pulse 1.4s ease-in-out infinite; }
+.canvas-workspace .canvas-card[data-state=waiting] .canvas-node-state { color: #8a4b00; }
+.canvas-workspace .canvas-card[data-state=done] .canvas-node-state { color: #1c6b3a; }
+.canvas-workspace .canvas-card[data-state=failed] .canvas-node-state { color: #a3292d; }
+.canvas-workspace .canvas-card[data-state=failed] { outline: 2px solid #a3292d; outline-offset: -2px; }
+.canvas-workspace .canvas-card[data-state=running] { outline: 2px solid #1a5a9e; outline-offset: -2px; }
+@keyframes canvas-state-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .canvas-workspace .canvas-card[data-state=running] .canvas-node-state::before { animation: none; } }
+@media (max-width: 767px), (pointer: coarse) { .canvas-workspace .canvas-node-state button { min-height: 44px; min-width: 44px; } }

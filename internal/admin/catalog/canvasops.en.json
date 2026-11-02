@@ -39,6 +39,8 @@
   "queued": "Queued",
   "running": "Running",
   "succeeded": "Result saved as a note",
+  "state_done": "Done",
+  "state_waiting": "Needs you",
   "failed": "Failed",
   "uncertain": "Delivery uncertain — review before trying again",
   "show_result": "Load result note",

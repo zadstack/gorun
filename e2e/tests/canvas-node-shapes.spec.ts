@@ -143,3 +143,31 @@ test('a wrapped note toolbar never covers the body or takes clicks at rest', asy
  const center=await footer.locator('button[data-remove]').evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)===el;});
  expect(center).toBe(true);
 });
+
+test('running agent shows its state', async ({page})=>{
+ const path=await presetBoard(page),board=path.split('/').pop()!;
+ const agent=page.locator('.canvas-card[data-kind=agent]');const node=(await agent.getAttribute('data-card-id'))!;
+ const database=db();const owner=database.prepare('SELECT id FROM users WHERE email=?').get('admin@e2e.test') as {id:string};
+ const run='77777777-7777-4777-8777-000000000001';
+ database.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at) VALUES(?,?,?,?,?,'running',?,?)").run(run,board,owner.id,'node-state-run',node,JSON.stringify({candidate:{input:{kind:'text'}}}),new Date(Date.now()-65000).toISOString());database.close();
+ await page.reload();await page.locator('[data-canvas-view=flow]').click();
+ await expect(agent).toHaveAttribute('data-state','running');
+ await expect(agent.locator('.canvas-node-state')).toHaveText(/^قيد التشغيل · \d+:\d{2}/);
+ await expect(page.locator('.canvas-state-live')).toHaveAttribute('aria-live','polite');
+ await page.screenshot({path:'../.superpowers/sdd/2026-11-03-canvas-node-shapes/task-3-flow.png'});
+ const d2=db();d2.prepare("UPDATE admin_canvas_runs SET status='failed' WHERE id=?").run(run);d2.close();
+ await page.reload();await page.locator('[data-canvas-view=flow]').click();
+ await expect(agent).toHaveAttribute('data-state','failed');
+ await expect(agent.locator('.canvas-node-state')).toHaveText('فشل');
+});
+
+test('waiting state offers the existing check action', async ({page})=>{
+ const path=await presetBoard(page),board=path.split('/').pop()!;
+ const agent=page.locator('.canvas-card[data-kind=agent]');const node=(await agent.getAttribute('data-card-id'))!;
+ const database=db();const owner=database.prepare('SELECT id FROM users WHERE email=?').get('admin@e2e.test') as {id:string};
+ database.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at) VALUES(?,?,?,?,?,'waiting',?,?)").run('77777777-7777-4777-8777-000000000002',board,owner.id,'node-state-wait',node,JSON.stringify({candidate:{input:{kind:'text'}}}),new Date().toISOString());database.close();
+ await page.reload();await page.locator('[data-canvas-view=flow]').click();
+ await expect(agent).toHaveAttribute('data-state','waiting');
+ await expect(agent.locator('.canvas-node-state')).toContainText('بانتظارك');
+ await expect(agent.locator('.canvas-node-state button')).toHaveCount(1);
+});
