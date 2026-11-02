@@ -27,7 +27,10 @@
       if (!card) return;
       revealHash = false;
       card.scrollIntoView({block:'center', inline:'center'});
-      card.querySelector('button,a')?.focus({preventScroll:true});
+      // The move handle is display:none outside flow, so focus the first control that is rendered, else the card.
+      const control = [...card.querySelectorAll('button,a')].find(el => el.getClientRects().length);
+      if (control) control.focus({preventScroll:true});
+      else { card.tabIndex = -1; card.focus({preventScroll:true}); }
     });
   }
   window.addEventListener('hashchange', () => { revealHash = true; revealCardHash(); });

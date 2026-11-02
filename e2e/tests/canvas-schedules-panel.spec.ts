@@ -102,6 +102,22 @@ for(const locale of ['ar','en'] as const){
  });
 }
 
+test('show on board focuses the node in lanes', async ({page})=>{
+ await presetBoard(page);
+ await page.locator('[data-canvas-view=lanes]').click();
+ await expect(page.locator('.canvas-workspace')).toHaveAttribute('data-view','lanes');
+ if(await toggle(page).getAttribute('aria-expanded')==='false')await toggle(page).click();
+ const card=page.locator('.canvas-card[data-kind=schedule]');
+ await page.locator('.canvas-viewport').evaluate(el=>{el.scrollTop=el.scrollHeight;});
+ await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+ await panel(page).getByRole('button',{name:'اعرض على اللوح'}).click();
+ // Focus lands on a rendered control inside the node (the move handle is hidden in lanes), never on body.
+ await expect.poll(()=>card.evaluate(el=>{const a=document.activeElement as HTMLElement|null;return !!a&&a!==document.body&&el.contains(a)&&a.getClientRects().length>0;})).toBe(true);
+ const focused=page.locator(':focus');
+ await expect(focused).toBeInViewport();
+ await unobscured(page,focused);
+});
+
 test('show on board keeps the docked panel open', async ({page})=>{
  await presetBoard(page);
  await page.setViewportSize({width:375,height:812});

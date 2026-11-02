@@ -287,22 +287,32 @@
       if (messages.length && !silent) live.textContent = messages.filter(m => !m.endsWith(': ')).join('. ');
       drawEdges();
     }
+    // Polling calls this every few seconds: skip the rebuild when nothing shown has changed, and keep focus on
+    // the same run's control (data-run-id + data-action) when it must rebuild, as canvas-schedules.js does.
+    let historySignature = null;
+    const tag = (control, runID, name) => { if (control) { control.dataset.runId = runID; control.dataset.action = name; } return control; };
     function renderHistory() {
-      history.replaceChildren(btn(t('refresh_runs'), () => action(refreshHistory)));
+      const signature = JSON.stringify(runs.map(run => [run.id, run.status, run.error || '', run.result_card_id || '', run.tool_calls_attempted || 0]));
+      if (signature === historySignature) return;
+      historySignature = signature;
+      const active = history.contains(window.document.activeElement) ? window.document.activeElement : null;
+      const focusKey = active?.dataset.action ? [active.dataset.action, active.dataset.runId || ''] : null;
+      history.replaceChildren(tag(btn(t('refresh_runs'), () => action(refreshHistory)), '', 'refresh'));
       if (!runs.length) history.append(el('p', t('no_runs')));
       const list = el('ol', undefined, 'canvas-run-list');
       for (const run of runs) {
         const item = el('li'); item.append(el('strong', t(run.status)), el('span', [run.provider_title,run.actor_name].filter(Boolean).join(' · ')), el('small', new Date(run.created_at).toLocaleString()));
         if (run.tool_calls_attempted) item.append(el('p', `${t('tool_attempts')}: ${run.tool_calls_attempted}. ${t('tool_effect_warning')}`));
         if (run.error) item.append(el('p', run.error === 'run_stopped' ? t('run_stopped') : run.error));
-        const act = runAction(run); if (act) item.append(act);
-        if (['requested','queued','waiting_agent','waiting','waiting_tool'].includes(run.status)) item.append(btn(t('cancel_run'), () => action(async () => {
+        const act = tag(runAction(run), run.id, 'run'); if (act) item.append(act);
+        if (['requested','queued','waiting_agent','waiting','waiting_tool'].includes(run.status)) item.append(tag(btn(t('cancel_run'), () => action(async () => {
           if (!window.confirm(t('cancel_run_help'))) return;
           await json(`/runs/${encodeURIComponent(run.id)}/cancel`, {}); await refreshHistory(); announce(t('cancelled'));
-        })));
-        if (run.result_card_id) item.append(btn(t('show_result'), () => api.reload())); list.append(item);
+        })), run.id, 'cancel'));
+        if (run.result_card_id) item.append(tag(btn(t('show_result'), () => api.reload()), run.id, 'result')); list.append(item);
       }
       history.append(list);
+      if (focusKey) [...history.querySelectorAll('[data-action]')].find(c => c.dataset.action === focusKey[0] && c.dataset.runId === focusKey[1])?.focus({preventScroll: true});
     }
     function renderSharing() {
       sharing.replaceChildren(); sharing.parentElement.hidden = !options.can_share;

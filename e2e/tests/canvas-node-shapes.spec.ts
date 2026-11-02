@@ -283,3 +283,27 @@ test('a poll with no change keeps the edge elements', async ({page})=>{
  await runsResponse(page);await page.waitForTimeout(300);
  expect(await page.locator(`.canvas-edges path[data-to="${node}"][data-state=flowing]`).first().evaluate(e=>(e as any).__probe)).toBe(1);
 });
+
+test('polling keeps focus on Cancel run in the run history', async ({page})=>{
+ const path=await presetBoard(page),board=path.split('/').pop()!;
+ const agent=page.locator('.canvas-card[data-kind=agent]');const node=(await agent.getAttribute('data-card-id'))!;
+ const id='77777777-7777-4777-8777-000000000011';
+ await insertRun(board,node,id,'waiting_agent'); // active (polled) and cancellable
+ await page.reload();await page.locator('[data-canvas-view=flow]').click();
+ await expect(agent).toHaveAttribute('data-state','running');
+ const history=page.locator('[data-canvas-operations] details').nth(1);
+ await history.locator('summary').click();
+ const cancel=history.getByRole('button',{name:'إلغاء التشغيل'});
+ await expect(cancel).toHaveCount(1);
+ await cancel.focus();
+ await page.evaluate(()=>{(document.activeElement as any).__mark=1;});
+ // An unchanged poll leaves the control in place.
+ await runsResponse(page);await page.waitForTimeout(300);
+ expect(await page.evaluate(()=>(document.activeElement as any)?.__mark)).toBe(1);
+ await expect(cancel).toBeFocused();
+ // A poll that changes the list rebuilds it and puts focus back on the same run's control.
+ await insertRun(board,'',  '77777777-7777-4777-8777-000000000012','failed',new Date(Date.now()-60_000).toISOString());
+ await runsResponse(page);await page.waitForTimeout(300);
+ await expect(history.locator('li')).toHaveCount(2);
+ await expect(page.locator(`[data-run-id="${id}"][data-action=cancel]`)).toBeFocused();
+});
