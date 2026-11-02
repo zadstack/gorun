@@ -1,0 +1,116 @@
+import { test, expect, type Page } from '@playwright/test';
+import { db, setLocale } from '../lib/helpers.ts';
+
+// Flow-view node shapes are decoration on top of the unchanged card DOM: the kind label stays text,
+// badges are pseudo-elements, and the footer becomes a hover/focus toolbar on desktop only.
+
+async function newBoard(page: Page, title: string): Promise<string> {
+ await page.setViewportSize({width:1440,height:1000});
+ await page.goto('/admin/canvases');await setLocale(page,'ar');
+ await page.locator('#new-canvas-title').fill(title);
+ await page.locator('form[action="/admin/canvases"] [type=submit]').click();
+ await expect(page).toHaveURL(/\/admin\/canvases\/[A-Z0-9]+$/);
+ return new URL(page.url()).pathname;
+}
+
+async function presetBoard(page: Page): Promise<string> {
+ const path=await newBoard(page,'لوحة الأشكال');
+ await page.goto(path+'?preset=periodic-brief');
+ const setup=page.locator('.canvas-preset-setup');await expect(setup).toBeVisible();
+ await setup.locator('select').selectOption('agent');
+ await setup.locator('button.canvas-primary').click();
+ await expect(page.locator('[data-canvas-cards] .canvas-card')).toHaveCount(5);
+ await expect(page.locator('.canvas-state')).toHaveAttribute('data-state','saved');
+ await page.locator('[data-canvas-view=flow]').click();
+ return path;
+}
+
+// Every kind on one board, written straight to the fixture database (read-only in this test).
+async function allKindsBoard(page: Page): Promise<string> {
+ const path=await newBoard(page,'كل الأنواع'), board=path.split('/').pop()!;
+ const id=(n:number)=>'88888888-8888-4888-8888-'+String(n).padStart(12,'0');
+ const at=(n:number)=>({x:24+(n%4)*336,y:24+Math.floor(n/4)*480});
+ const cards=[
+  {kind:'source',title:'مصدر',source_type:'',source_limit:3},
+  {kind:'content',title:'محتوى',content_id:''},
+  {kind:'prompt',title:'تعليمات',body:'لخّص المحتوى.'},
+  {kind:'note',title:'ملاحظة',body:'سياق حر.'},
+  {kind:'checklist',title:'قائمة',items:[{text:'أولًا',checked:true},{text:'ثانيًا',checked:false}]},
+  {kind:'link',title:'رابط',url:'https://example.test/'},
+  {kind:'widget',title:'ودجت',widget_id:'content-summary'},
+  {kind:'agent',title:'وكيل',agent_id:''},
+  {kind:'provider',title:'مزوّد',provider_id:'',generation_kind:'image'},
+  {kind:'schedule',title:'جدولة',interval:'daily'},
+  {kind:'result',title:'نتيجة',run_id:board,body:'ناتج.'},
+ ].map((c,n)=>({id:id(n+1),body:'',...c,...at(n)}));
+ const database=db();const owner=database.prepare('SELECT id FROM users WHERE email=?').get('admin@e2e.test') as {id:string};
+ database.prepare('UPDATE admin_canvases SET document_json=?,edges_json=? WHERE id=?').run(JSON.stringify(cards),'[]',board);
+ database.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,result_card_id,created_at) VALUES(?,?,?,?,?,'succeeded',?,?,?)").run(board,board,owner.id,'node-shapes-result',id(8),JSON.stringify({candidate:{input:{kind:'text'}}}),id(11),new Date().toISOString());
+ database.close();
+ await page.goto(path);await page.locator('[data-canvas-view=flow]').click();
+ await expect(page.locator('[data-canvas-cards] .canvas-card')).toHaveCount(11);
+ return path;
+}
+
+const shape=(el:Element)=>{
+ const s=getComputedStyle(el),b=getComputedStyle(el,'::before'),a=getComputedStyle(el,'::after'),h=el.querySelector('.canvas-card-heading')!,hb=getComputedStyle(h,'::before'),hs=getComputedStyle(h);
+ return [s.borderRadius,s.borderInlineStartWidth,b.content,b.clipPath,b.boxShadow,a.content,hs.borderRadius,hb.content,hb.borderRadius,hb.backgroundImage].join('|');
+};
+
+test('every kind keeps a text label', async ({page})=>{
+ await presetBoard(page);
+ for(const card of await page.locator('[data-canvas-cards] .canvas-card').all()){
+  const label=card.locator('.canvas-card-heading small');await expect(label).toBeVisible();expect((await label.textContent())!.trim()).not.toBe('');
+ }
+ await allKindsBoard(page);
+ const cards=page.locator('[data-canvas-cards] .canvas-card');
+ for(const card of await cards.all()){
+  const label=card.locator('.canvas-card-heading small');await expect(label).toBeVisible();expect((await label.textContent())!.trim()).not.toBe('');
+ }
+ // Shape, not just hue: each of the 11 kinds has its own geometry.
+ const signatures=await cards.evaluateAll((els,fn)=>els.map(el=>(new Function('return '+fn)())(el)),shape.toString());
+ expect(new Set(signatures).size).toBe(11);
+});
+
+test('kinds differ by shape', async ({page})=>{
+ await presetBoard(page);
+ const radius=(kind:string)=>page.locator(`.canvas-card[data-kind=${kind}]`).evaluate(el=>getComputedStyle(el).borderRadius);
+ expect(await radius('agent')).not.toBe(await radius('source'));
+ const prompt=page.locator('.canvas-card[data-kind=prompt]');
+ expect(await prompt.evaluate(el=>getComputedStyle(el,'::before').clipPath)).not.toBe('none');
+ expect(await prompt.evaluate(el=>getComputedStyle(el).clipPath)).toBe('none');
+ const clock=page.locator('.canvas-card[data-kind=schedule] .canvas-card-heading');
+ expect(await clock.evaluate(el=>getComputedStyle(el,'::before').borderRadius)).toBe('50%');
+ // Grid view keeps today's look.
+ await page.locator('[data-canvas-view=grid]').click();
+ expect(await prompt.evaluate(el=>getComputedStyle(el,'::before').content)).toBe('none');
+ expect(await radius('agent')).toBe(await radius('source'));
+});
+
+test('toolbar visible on focus', async ({page})=>{
+ await presetBoard(page);
+ const top=page.locator('.canvas-card[data-kind=source]');
+ await expect(top).toHaveAttribute('style',/top:\s*24px/);
+ const footer=top.locator('.canvas-card-footer');
+ await page.mouse.move(2,2);
+ await expect.poll(()=>footer.evaluate(el=>getComputedStyle(el).opacity)).toBe('0');
+ const edit=footer.locator('.canvas-card-actions button').first();
+ await top.locator('.canvas-handle').focus();
+ for(let i=0;i<10&&!(await edit.evaluate(el=>el===document.activeElement));i++)await page.keyboard.press('Tab');
+ await expect(edit).toBeFocused();
+ await expect.poll(()=>footer.evaluate(el=>getComputedStyle(el).opacity)).toBe('1');
+ const box=(await footer.boundingBox())!,surface=(await page.locator('.canvas-surface').boundingBox())!;
+ expect(box.y).toBeGreaterThanOrEqual(surface.y);expect(box.x).toBeGreaterThanOrEqual(surface.x);
+ expect(box.y+box.height).toBeLessThanOrEqual(surface.y+surface.height);expect(box.x+box.width).toBeLessThanOrEqual(surface.x+surface.width);
+ // At rest the toolbar never covers content: the card reserves its height.
+ const reserved=await top.evaluate(el=>parseFloat(getComputedStyle(el).paddingBlockEnd));
+ expect(reserved).toBeGreaterThanOrEqual(box.height-1);
+});
+
+test('grid view keeps the footer', async ({page})=>{
+ await presetBoard(page);
+ await page.locator('[data-canvas-view=grid]').click();
+ await expect(page.locator('.canvas-workspace')).toHaveAttribute('data-view','grid');
+ await page.mouse.move(2,2);
+ for(const footer of await page.locator('.canvas-card-footer').all())expect(await footer.evaluate(el=>getComputedStyle(el).opacity)).toBe('1');
+});
