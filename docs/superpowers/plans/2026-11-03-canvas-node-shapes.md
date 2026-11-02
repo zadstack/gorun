@@ -31,7 +31,7 @@ arranges nodes in four fixed columns without changing saved positions.
 - Grid and list views keep today's look. Shapes, edge states and the floating panel apply to the `[data-view=flow]` desktop
   layout. The panel is docked (not floating) in other views and on mobile.
 - Commits use `git -c user.name=ahmedvnabil -c user.email=vacrom414@gmail.com commit -s` on a feature branch, never `main`.
-- Delivery is 3 PRs:
+- Delivery is 4 PRs:
   - PR1: Tasks 1–3 (shapes and node state).
   - PR2: Tasks 4–5 (live edges and polling).
   - PR3: Task 6 (schedules panel).
