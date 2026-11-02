@@ -241,3 +241,45 @@ test('every edge has an arrowhead', async ({page})=>{
  for(const p of await paths.all())await expect(p).toHaveAttribute('marker-end','url(#canvas-edge-arrow)');
  await expect(page.locator('.canvas-edges marker#canvas-edge-arrow')).toHaveAttribute('orient','auto-start-reverse');
 });
+
+const runsResponse=(page:Page)=>page.waitForResponse(r=>/\/operations\/runs(\?|$)/.test(r.url())&&r.request().method()==='GET',{timeout:10000});
+
+test('state updates without reload', async ({page})=>{
+ const id='77777777-7777-4777-8777-000000000007';
+ await runningAgentBoard(page,id);
+ const agent=page.locator('.canvas-card[data-kind=agent]');
+ const d=db();d.prepare("UPDATE admin_canvas_runs SET status='succeeded',finished_at=? WHERE id=?").run(new Date().toISOString(),id);d.close();
+ await expect(agent).toHaveAttribute('data-state','done',{timeout:10000});
+});
+
+test('card element survives polling', async ({page})=>{
+ await runningAgentBoard(page,'77777777-7777-4777-8777-000000000008');
+ const agent=page.locator('.canvas-card[data-kind=agent]');
+ await agent.evaluate(e=>{(e as any).__probe=1;});
+ const handle=agent.locator('.canvas-handle').first();
+ await handle.focus();
+ await page.evaluate(()=>{(document.activeElement as any).__mark=1;});
+ await runsResponse(page);await page.waitForTimeout(300);
+ expect(await agent.evaluate(e=>(e as any).__probe)).toBe(1);
+ expect(await page.evaluate(()=>(document.activeElement as any)?.__mark)).toBe(1);
+});
+
+test('polling stops when idle', async ({page})=>{
+ const id='77777777-7777-4777-8777-000000000009';
+ await runningAgentBoard(page,id);
+ const agent=page.locator('.canvas-card[data-kind=agent]');
+ const d=db();d.prepare("UPDATE admin_canvas_runs SET status='failed',finished_at=? WHERE id=?").run(new Date().toISOString(),id);d.close();
+ await expect(agent).toHaveAttribute('data-state','failed',{timeout:10000});
+ let n=0;page.on('request',r=>{if(/\/operations\/runs(\?|$)/.test(r.url()))n++;});
+ await page.waitForTimeout(9000);
+ expect(n).toBeLessThanOrEqual(1);
+});
+
+test('a poll with no change keeps the edge elements', async ({page})=>{
+ const node=await runningAgentBoard(page,'77777777-7777-4777-8777-000000000010');
+ const flow=page.locator(`.canvas-edges path[data-to="${node}"][data-state=flowing]`).first();
+ await expect(flow).toBeAttached();
+ await flow.evaluate(e=>{(e as any).__probe=1;});
+ await runsResponse(page);await page.waitForTimeout(300);
+ expect(await page.locator(`.canvas-edges path[data-to="${node}"][data-state=flowing]`).first().evaluate(e=>(e as any).__probe)).toBe(1);
+});
