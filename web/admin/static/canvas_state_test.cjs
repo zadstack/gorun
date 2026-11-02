@@ -66,3 +66,45 @@ test('nextRunLabel: past is due', () => {
   assert.deepEqual(state.nextRunLabel(new Date(now+3*3_600_000).toISOString(), now, 'en'), {kind:'in', text:'in 3 hours'});
   assert.deepEqual(state.nextRunLabel(new Date(now+2*86_400_000).toISOString(), now, 'en'), {kind:'in', text:'in 2 days'});
 });
+test('lanes assigns kinds', () => {
+  const kinds = ['source','content','link','checklist','widget','note','prompt','schedule','agent','provider','result','mystery'];
+  const cards = kinds.map((kind, i) => ({id: kind, kind, x: 24, y: i * 24}));
+  cards.push({id: 'attributed', kind: 'note', x: 24, y: 999});
+  const heights = Object.fromEntries(cards.map(card => [card.id, 100]));
+  const out = state.lanes(cards, heights, {attributed: {actor_name: 'Agent'}}, 'ltr');
+  const laneOf = id => (out.positions[id].x - 24) / 336;
+  assert.deepEqual(Object.fromEntries(cards.map(card => [card.id, laneOf(card.id)])), {
+    source: 0, content: 0, link: 0, checklist: 0, widget: 0, note: 0, mystery: 0,
+    prompt: 1, schedule: 1, agent: 2, provider: 2, result: 3, attributed: 3,
+  });
+  assert.deepEqual(out.columns, [
+    {lane: 0, x: 24, count: 7}, {lane: 1, x: 360, count: 2}, {lane: 2, x: 696, count: 2}, {lane: 3, x: 1032, count: 2},
+  ]);
+});
+test('lanes mirrors in rtl', () => {
+  const cards = [{id: 'a', kind: 'agent', x: 0, y: 0}];
+  assert.deepEqual(state.lanes(cards, {a: 100}, {}, 'ltr').positions.a, {x: 24 + 2 * 336, y: 72});
+  assert.deepEqual(state.lanes(cards, {a: 100}, {}, 'rtl').positions.a, {x: 24 + 1 * 336, y: 72});
+  assert.deepEqual(state.lanes(cards, {a: 100}, {}, 'rtl').columns.map(c => c.x), [24 + 3 * 336, 24 + 2 * 336, 24 + 336, 24]);
+});
+test('lanes keeps saved order and stacks by height', () => {
+  const cards = [{id: 'low', kind: 'prompt', x: 0, y: 500}, {id: 'high', kind: 'prompt', x: 0, y: 100}];
+  const {positions} = state.lanes(cards, {low: 200, high: 120}, {}, 'ltr');
+  assert.deepEqual(positions, {high: {x: 360, y: 72}, low: {x: 360, y: 72 + 120 + 24}});
+  const ties = [{id: 'b', kind: 'note', x: 10, y: 0}, {id: 'c', kind: 'note', x: 5, y: 0}, {id: 'a', kind: 'note', x: 5, y: 0}];
+  const tied = state.lanes(ties, {a: 50, b: 50, c: 50}, null, 'ltr').positions;
+  assert.deepEqual([tied.a.y, tied.c.y, tied.b.y], [72, 146, 220]);
+});
+test('lanes does not mutate cards', () => {
+  const cards = [{id: 'p', kind: 'prompt', x: 48, y: 96, title: 'P'}, {id: 'n', kind: 'note', x: 0, y: 0}];
+  const before = structuredClone(cards);
+  state.lanes(cards, {p: 80, n: 80}, {n: {actor_name: 'x'}}, 'rtl');
+  assert.deepEqual(cards, before);
+});
+test('laneOrder sorts by lane then saved order', () => {
+  const cards = [
+    {id: 'r', kind: 'result', x: 0, y: 0}, {id: 'g', kind: 'agent', x: 0, y: 0}, {id: 'p2', kind: 'prompt', x: 0, y: 300},
+    {id: 'n', kind: 'note', x: 0, y: 50}, {id: 'p1', kind: 'prompt', x: 0, y: 100}, {id: 's', kind: 'source', x: 0, y: 900},
+  ];
+  assert.deepEqual(state.laneOrder(cards, {n: {actor_name: 'x'}}).map(card => card.id), ['s', 'p1', 'p2', 'g', 'r', 'n']);
+});

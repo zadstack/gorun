@@ -101,5 +101,10 @@
   "schedules_due": "due now",
   "schedules_show": "Show on board",
   "schedules_review": "Review and enable",
-  "schedules_unconnected": "Not connected"
+  "schedules_unconnected": "Not connected",
+  "view_lanes": "Lanes",
+  "lane_inputs": "Inputs",
+  "lane_instructions": "Instructions and triggers",
+  "lane_execution": "Execution",
+  "lane_results": "Results"
 }

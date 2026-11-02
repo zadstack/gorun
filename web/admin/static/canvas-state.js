@@ -82,5 +82,24 @@
     else text = fmt.format(Math.round(minutes / 1440), 'day');
     return {kind: 'in', text};
   }
-  return Object.freeze({nodeStates, doneExpiry, isActive, edgeStates, scheduleGroups, nextRunLabel});
+  // Lanes view: positions are computed for display only and never written back to the cards.
+  const LANE = {source: 0, content: 0, link: 0, checklist: 0, widget: 0, note: 0, prompt: 1, schedule: 1, agent: 2, provider: 2, result: 3};
+  function laneOf(card, provenance) {
+    if (card.kind === 'note' && provenance && provenance[card.id]) return 3;
+    return LANE[card.kind] ?? 0;
+  }
+  const savedOrder = (a, b) => a.y - b.y || a.x - b.x || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const laneOrder = (cards, provenance) => [...(cards || [])].sort((a, b) => laneOf(a, provenance) - laneOf(b, provenance) || savedOrder(a, b));
+  function lanes(cards, heights, provenance, dir) {
+    const columns = [0, 1, 2, 3].map(lane => ({lane, x: 24 + (dir === 'rtl' ? 3 - lane : lane) * 336, count: 0}));
+    const positions = {}, next = [72, 72, 72, 72];
+    for (const card of [...(cards || [])].sort(savedOrder)) {
+      const lane = laneOf(card, provenance);
+      positions[card.id] = {x: columns[lane].x, y: next[lane]};
+      next[lane] += ((heights && heights[card.id]) || 240) + 24;
+      columns[lane].count++;
+    }
+    return {positions, columns};
+  }
+  return Object.freeze({nodeStates, doneExpiry, isActive, edgeStates, scheduleGroups, nextRunLabel, laneOf, laneOrder, lanes});
 });

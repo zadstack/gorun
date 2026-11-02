@@ -83,7 +83,7 @@
 @media (min-width: 768px) and (pointer: fine) {
   .canvas-workspace .canvas-schedules-toggle { min-height: 40px; }
   .canvas-workspace .canvas-schedules-actions button { min-height: 32px; }
-  .canvas-workspace[data-view=flow] .canvas-schedules {
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-schedules {
     position: absolute;
     inset-inline-end: .75rem;
     top: .75rem;

@@ -65,8 +65,8 @@
 .canvas-workspace[data-view=grid] [data-canvas-cards] { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(280px,100%),1fr)); gap: .75rem; align-items: start; }
 .canvas-workspace[data-view=list] [data-canvas-cards] { display: grid; grid-template-columns: minmax(0,1fr); gap: .75rem; }
 .canvas-workspace:is([data-view=grid],[data-view=list]) .canvas-card { position: relative; width: auto; left: auto!important; top: auto!important; margin: 0; }
-.canvas-workspace:is([data-view=grid],[data-view=list]) .canvas-handle,
-.canvas-workspace:is([data-view=grid],[data-view=list]) .canvas-move-controls { display: none; }
+.canvas-workspace:is([data-view=grid],[data-view=list],[data-view=lanes]) .canvas-handle,
+.canvas-workspace:is([data-view=grid],[data-view=list],[data-view=lanes]) .canvas-move-controls { display: none; }
 .canvas-workspace[data-view=list] .canvas-card-body { max-height: none; }
 @media (max-width:767px), (pointer:coarse) {
   .canvas-workspace .canvas-views button { min-height: 44px; }
@@ -133,66 +133,66 @@
 .canvas-workspace .canvas-card-body > p[dir=auto] { unicode-bidi: plaintext; text-align: start; }
 .canvas-workspace .canvas-card-body[tabindex]:focus-visible { outline: 3px solid var(--card-accent); outline-offset: -3px; }
 
-/* Flow view: each kind gets its own shape (spec §1). Decoration lives on ::before/::after only, never on the
+/* Flow and lanes views: each kind gets its own shape (spec §1). Decoration lives on ::before/::after only, never on the
    element that draws focus outlines; the written kind label stays the primary signal. Grid and list keep the card. */
 @media (min-width: 768px) {
-  .canvas-workspace[data-view=flow] .canvas-card { --card-radius: 8px; --sheet-x: 5px; overflow: visible; border-radius: var(--card-radius); }
-  .canvas-workspace[data-view=flow]:dir(rtl) .canvas-card { --sheet-x: -5px; }
-  .canvas-workspace[data-view=flow] .canvas-card-heading { border-start-start-radius: max(0px, calc(var(--card-radius) - 2px)); border-start-end-radius: max(0px, calc(var(--card-radius) - 2px)); }
-  .canvas-workspace[data-view=flow] .canvas-card-footer { border-end-start-radius: max(0px, calc(var(--card-radius) - 1px)); border-end-end-radius: max(0px, calc(var(--card-radius) - 1px)); }
-  .canvas-workspace[data-view=flow] .canvas-card::before,
-  .canvas-workspace[data-view=flow] .canvas-card::after,
-  .canvas-workspace[data-view=flow] .canvas-card-heading::before { pointer-events: none; }
-  .canvas-workspace[data-view=flow] .canvas-card-heading::before { flex: none; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card { --card-radius: 8px; --sheet-x: 5px; overflow: visible; border-radius: var(--card-radius); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]):dir(rtl) .canvas-card { --sheet-x: -5px; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card-heading { border-start-start-radius: max(0px, calc(var(--card-radius) - 2px)); border-start-end-radius: max(0px, calc(var(--card-radius) - 2px)); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card-footer { border-end-start-radius: max(0px, calc(var(--card-radius) - 1px)); border-end-end-radius: max(0px, calc(var(--card-radius) - 1px)); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card::before,
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card::after,
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card-heading::before { pointer-events: none; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card-heading::before { flex: none; }
 
   /* source: a stack of sheets; content: one sheet. Outer shadows only paint outside the box, never over it. */
-  .canvas-workspace[data-view=flow] .canvas-card:is([data-kind=source],[data-kind=content])::before { content: ""; position: absolute; inset: -3px -1px -1px; border-radius: inherit; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=source]::before { box-shadow: var(--sheet-x) 5px 0 -1px var(--card-soft), var(--sheet-x) 5px 0 0 #b9d2df, calc(var(--sheet-x) * 2) 10px 0 -1px #dceaf2; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=content]::before { box-shadow: var(--sheet-x) 5px 0 -1px var(--card-soft), var(--sheet-x) 5px 0 0 #b9d2df; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card:is([data-kind=source],[data-kind=content])::before { content: ""; position: absolute; inset: -3px -1px -1px; border-radius: inherit; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=source]::before { box-shadow: var(--sheet-x) 5px 0 -1px var(--card-soft), var(--sheet-x) 5px 0 0 #b9d2df, calc(var(--sheet-x) * 2) 10px 0 -1px #dceaf2; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=content]::before { box-shadow: var(--sheet-x) 5px 0 -1px var(--card-soft), var(--sheet-x) 5px 0 0 #b9d2df; }
 
   /* prompt: a document whose inline-start top corner is folded. */
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=prompt] { --card-radius: 4px; border-start-start-radius: 0; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=prompt] .canvas-card-heading { border-start-start-radius: 0; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=prompt]::before,
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=prompt]::after { content: ""; position: absolute; top: -3px; inset-inline-start: -1px; width: 16px; height: 16px; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=prompt]::before { z-index: 1; background: var(--card-accent); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=prompt]::after { background: #f5f7f8; clip-path: polygon(0 0, 100% 0, 0 100%); }
-  .canvas-workspace[data-view=flow]:dir(rtl) .canvas-card[data-kind=prompt]::before { clip-path: polygon(0 0, 100% 100%, 0 100%); }
-  .canvas-workspace[data-view=flow]:dir(rtl) .canvas-card[data-kind=prompt]::after { clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt] { --card-radius: 4px; border-start-start-radius: 0; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt] .canvas-card-heading { border-start-start-radius: 0; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt]::before,
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt]::after { content: ""; position: absolute; top: -3px; inset-inline-start: -1px; width: 16px; height: 16px; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt]::before { z-index: 1; background: var(--card-accent); clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=prompt]::after { background: #f5f7f8; clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]):dir(rtl) .canvas-card[data-kind=prompt]::before { clip-path: polygon(0 0, 100% 100%, 0 100%); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]):dir(rtl) .canvas-card[data-kind=prompt]::after { clip-path: polygon(0 0, 100% 0, 100% 100%); }
 
   /* note: a sticky note held by a strip of tape; attributed notes keep their violet tokens. */
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=note] { --card-radius: 2px; border-end-start-radius: 14px; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=note] .canvas-card-footer { border-end-start-radius: 13px; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=note]::before { content: ""; position: absolute; top: -10px; inset-inline: 0; width: 48px; height: 14px; margin-inline: auto; border-radius: 2px; background: color-mix(in srgb, var(--card-accent) 32%, #fff); opacity: .9; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=note] { --card-radius: 2px; border-end-start-radius: 14px; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=note] .canvas-card-footer { border-end-start-radius: 13px; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=note]::before { content: ""; position: absolute; top: -10px; inset-inline: 0; width: 48px; height: 14px; margin-inline: auto; border-radius: 2px; background: color-mix(in srgb, var(--card-accent) 32%, #fff); opacity: .9; }
 
   /* checklist and widget: a glyph in the heading. */
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=checklist] .canvas-card-heading::before { content: ""; width: 14px; height: 14px; border-radius: 3px; background: var(--card-accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center / 10px no-repeat; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=widget] .canvas-card-heading::before { content: ""; width: 18px; height: 14px; background: linear-gradient(var(--card-accent), var(--card-accent)) 0 100% / 4px 45% no-repeat, linear-gradient(var(--card-label), var(--card-label)) 50% 100% / 4px 100% no-repeat, linear-gradient(var(--card-accent), var(--card-accent)) 100% 100% / 4px 70% no-repeat; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=checklist] .canvas-card-heading::before { content: ""; width: 14px; height: 14px; border-radius: 3px; background: var(--card-accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center / 10px no-repeat; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=widget] .canvas-card-heading::before { content: ""; width: 18px; height: 14px; background: linear-gradient(var(--card-accent), var(--card-accent)) 0 100% / 4px 45% no-repeat, linear-gradient(var(--card-label), var(--card-label)) 50% 100% / 4px 100% no-repeat, linear-gradient(var(--card-accent), var(--card-accent)) 100% 100% / 4px 70% no-repeat; }
 
   /* link: a narrow capsule. */
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=link] { --card-radius: 24px; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=link] .canvas-card-heading { padding-inline: 1rem; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=link] .canvas-card-body { padding: .375rem 1.125rem .5rem; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=link] .canvas-card-footer { padding-inline: .875rem; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=link] { --card-radius: 24px; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=link] .canvas-card-heading { padding-inline: 1rem; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=link] .canvas-card-body { padding: .375rem 1.125rem .5rem; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=link] .canvas-card-footer { padding-inline: .875rem; }
 
   /* agent: larger radius, thicker border, a round avatar over the top edge. */
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=agent] { --card-radius: 16px; border-width: 2px; border-color: var(--card-accent); border-block-start-width: 3px; box-shadow: 0 0 0 4px var(--card-soft), 0 6px 18px #464d8820; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=agent] .canvas-card-heading { position: relative; padding-block-start: 1.375rem; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=agent] .canvas-card-heading::before { content: ""; position: absolute; top: -21px; inset-inline-start: 14px; width: 34px; height: 34px; border-radius: 50%; background: var(--card-label) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'%3E%3Crect x='4' y='8' width='16' height='11' rx='3'/%3E%3Cpath d='M12 4v4M9 13h.01M15 13h.01'/%3E%3C/svg%3E") center / 18px no-repeat; box-shadow: 0 0 0 3px #fff; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=agent] { --card-radius: 16px; border-width: 2px; border-color: var(--card-accent); border-block-start-width: 3px; box-shadow: 0 0 0 4px var(--card-soft), 0 6px 18px #464d8820; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=agent] .canvas-card-heading { position: relative; padding-block-start: 1.375rem; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=agent] .canvas-card-heading::before { content: ""; position: absolute; top: -21px; inset-inline-start: 14px; width: 34px; height: 34px; border-radius: 50%; background: var(--card-label) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'%3E%3Crect x='4' y='8' width='16' height='11' rx='3'/%3E%3Cpath d='M12 4v4M9 13h.01M15 13h.01'/%3E%3C/svg%3E") center / 18px no-repeat; box-shadow: 0 0 0 3px #fff; }
 
   /* provider: a capsule heading with a plug badge; the generation kind reads as a chip. */
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=provider] { --card-radius: 14px; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=provider] .canvas-card-heading { margin: .375rem .375rem 0; padding-inline-start: .375rem; border: 1px solid var(--card-accent); border-radius: 999px; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=provider] .canvas-card-heading::before { content: ""; width: 28px; height: 28px; border-radius: 50%; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d5257' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5'/%3E%3C/svg%3E") center / 16px no-repeat; box-shadow: inset 0 0 0 1px var(--card-accent); }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=provider] .canvas-card-body > small:first-of-type { display: inline-block; padding: .05rem .5rem; border: 1px solid var(--card-accent); border-radius: 999px; color: var(--card-label); background: var(--card-soft); font-weight: 600; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=provider] { --card-radius: 14px; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=provider] .canvas-card-heading { margin: .375rem .375rem 0; padding-inline-start: .375rem; border: 1px solid var(--card-accent); border-radius: 999px; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=provider] .canvas-card-heading::before { content: ""; width: 28px; height: 28px; border-radius: 50%; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d5257' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5'/%3E%3C/svg%3E") center / 16px no-repeat; box-shadow: inset 0 0 0 1px var(--card-accent); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=provider] .canvas-card-body > small:first-of-type { display: inline-block; padding: .05rem .5rem; border: 1px solid var(--card-accent); border-radius: 999px; color: var(--card-label); background: var(--card-soft); font-weight: 600; }
 
   /* schedule: a round clock badge and a round-cornered body. */
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=schedule] { --card-radius: 18px; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=schedule] .canvas-card-heading::before { content: ""; width: 28px; height: 28px; border-radius: 50%; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23804457' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center / 18px no-repeat; box-shadow: inset 0 0 0 1.5px var(--card-accent), 0 0 0 3px var(--card-soft); }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=schedule] { --card-radius: 18px; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=schedule] .canvas-card-heading::before { content: ""; width: 28px; height: 28px; border-radius: 50%; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23804457' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E") center / 18px no-repeat; box-shadow: inset 0 0 0 1.5px var(--card-accent), 0 0 0 3px var(--card-soft); }
 
   /* result: a framed output with a seal on the inline-end corner. */
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=result] { box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--card-accent), 0 2px 5px #17202c08; }
-  .canvas-workspace[data-view=flow] .canvas-card[data-kind=result]::before { content: ""; position: absolute; z-index: 1; top: -12px; inset-inline-end: -12px; width: 22px; height: 22px; border-radius: 50%; background: #2f8a5f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center / 12px no-repeat; box-shadow: 0 0 0 2px #fff; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=result] { box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--card-accent), 0 2px 5px #17202c08; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=result]::before { content: ""; position: absolute; z-index: 1; top: -12px; inset-inline-end: -12px; width: 22px; height: 22px; border-radius: 50%; background: #2f8a5f url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5 9-10'/%3E%3C/svg%3E") center / 12px no-repeat; box-shadow: 0 0 0 2px #fff; }
 }
 
 /* Flow view on a fine pointer: card actions become a toolbar on hover and focus (spec §3). The DOM and tab order
@@ -200,11 +200,11 @@
    (notes with draft actions, long Arabic labels): it can never cover body content. At rest it is transparent and
    takes no clicks, so a click near the bottom of the card never lands on a hidden Edit or Remove button. */
 @media (min-width: 768px) and (pointer: fine) {
-  .canvas-workspace[data-view=flow] .canvas-card-footer { opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
-  .canvas-workspace[data-view=flow] .canvas-card:is(:hover, :focus-within) .canvas-card-footer { opacity: 1; pointer-events: auto; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card-footer { opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card:is(:hover, :focus-within) .canvas-card-footer { opacity: 1; pointer-events: auto; }
 }
 @media (min-width: 768px) and (pointer: fine) and (prefers-reduced-motion: reduce) {
-  .canvas-workspace[data-view=flow] .canvas-card-footer { transition: none; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card-footer { transition: none; }
 }
 
 /* Run state on nodes: a word plus a dot, never color alone. Last child of the heading, so it never meets the
@@ -221,3 +221,15 @@
 @keyframes canvas-state-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .canvas-workspace .canvas-card[data-state=running] .canvas-node-state::before { animation: none; } }
 @media (max-width: 767px), (pointer: coarse) { .canvas-workspace .canvas-node-state button { min-height: 44px; min-width: 44px; } }
+
+/* Lanes view (spec §7): decorative column bands behind the computed card positions. Each band is one 336px column
+   pitch; its inline padding puts the card at the column's x. Hidden on mobile, where lanes renders like list. */
+.canvas-workspace .canvas-lanes { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.canvas-workspace:not([data-view=lanes]) .canvas-lanes { display: none; }
+.canvas-workspace .canvas-lane { position: absolute; inset-block: 0; width: 336px; box-sizing: border-box; padding-inline: 18px; border-inline-start: 1px solid #e1e6eb; background: #fffffff0; direction: ltr; }
+.canvas-workspace:dir(rtl) .canvas-lane { direction: rtl; }
+.canvas-workspace .canvas-lane:is([data-lane="1"],[data-lane="3"]) { background: #f9fafbf0; }
+.canvas-workspace .canvas-lane-header { display: flex; align-items: center; gap: .25rem; height: 48px; color: #4f5b69; font-size: .75rem; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.canvas-workspace .canvas-lane-header strong { font-weight: 700; }
+.canvas-workspace .canvas-lane-header span { font-weight: 500; }
+@media (max-width: 767px) { .canvas-workspace .canvas-lanes { display: none; } }

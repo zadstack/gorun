@@ -101,5 +101,10 @@
   "schedules_due": "مستحق الآن",
   "schedules_show": "اعرض على اللوح",
   "schedules_review": "راجع وفعّل",
-  "schedules_unconnected": "غير موصول"
+  "schedules_unconnected": "غير موصول",
+  "view_lanes": "مسارات",
+  "lane_inputs": "المدخلات",
+  "lane_instructions": "التعليمات والمشغّلات",
+  "lane_execution": "التنفيذ",
+  "lane_results": "النتائج"
 }

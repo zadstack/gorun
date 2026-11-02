@@ -128,7 +128,7 @@
     function drawEdges() {
       const state = api.document(); if (!state) return;
       const warning=root.querySelector('[data-route-warning]');
-      if(root.dataset.view!=='flow'||matchMedia('(max-width:767px)').matches){svg.replaceChildren();edgeSignature=null;if(warning)warning.hidden=true;return;}
+      if(!['flow','lanes'].includes(root.dataset.view)||matchMedia('(max-width:767px)').matches){svg.replaceChildren();edgeSignature=null;if(warning)warning.hidden=true;return;}
       const width=surface.scrollWidth,height=surface.scrollHeight;
       const boxes=[...cardsEl.children].map(node=>({id:node.dataset.cardId,x:node.offsetLeft,y:node.offsetTop,width:node.offsetWidth,height:node.offsetHeight}));
       const edges=state.edges||[],kinds=window.CanvasState?window.CanvasState.edgeStates(state.cards||[],edges,states,state.schedules||{}):[];

@@ -32,7 +32,7 @@
   }
   window.addEventListener('hashchange', () => { revealHash = true; revealCardHash(); });
   let view = 'flow';
-  try { const stored=sessionStorage.getItem('gorun.canvas.view'); if (['flow','grid','list'].includes(stored)) view=stored; } catch (_) {}
+  try { const stored=sessionStorage.getItem('gorun.canvas.view'); if (['flow','grid','list','lanes'].includes(stored)) view=stored; } catch (_) {}
   root.dataset.view=view;
   const heights = () => Object.fromEntries([...cardsEl.children].map(el=>[el.dataset.cardId,el.offsetHeight]));
   function normalizePositions() {
@@ -41,7 +41,7 @@
     for (const card of documentState.cards) { Object.assign(card,positions[card.id]); const el=cardsEl.querySelector(`[data-card-id="${card.id}"]`); if(el)place(el,card); }
     updateBounds();
   }
-  const resizeCards = new ResizeObserver(() => normalizePositions());
+  const resizeCards = new ResizeObserver(() => { if (view === 'lanes') updateBounds(); else normalizePositions(); });
   function canPlace(card,x,y) {
     const size=heights(), box={x,y,width:CanvasLayout.WIDTH,height:size[card.id]||240};
     return documentState.cards.every(other=>other.id===card.id||!CanvasLayout.overlap(box,{x:other.x,y:other.y,width:CanvasLayout.WIDTH,height:size[other.id]||240},24));
@@ -135,7 +135,36 @@
       el.replaceChildren(ref ? link(ref.title, ref.href, true) : element('p', el.dataset.reference ? t('unavailable') : t('choose_content')));
     });
   }
+  // Lanes: a display-only arrangement by kind. Positions come from CanvasState.lanes and are applied to the
+  // elements only; the cards keep their saved x/y, so this view never calls changed().
+  const laneKeys = ['lane_inputs', 'lane_instructions', 'lane_execution', 'lane_results'];
+  let laneBands = null;
+  function layoutLanes() {
+    const active = view === 'lanes' && !mobile.matches;
+    if (!active) { laneBands?.remove(); laneBands = null; return false; }
+    const dir = getComputedStyle(root).direction === 'rtl' ? 'rtl' : 'ltr';
+    const size = heights(), {positions, columns} = CanvasState.lanes(documentState.cards, size, documentState.provenance || {}, dir);
+    let bottom = 0;
+    for (const el of cardsEl.children) {
+      const at = positions[el.dataset.cardId]; if (!at) continue;
+      el.style.left = `${at.x}px`; el.style.top = `${at.y}px`;
+      bottom = Math.max(bottom, at.y + (size[el.dataset.cardId] || 240));
+    }
+    if (!laneBands) { laneBands = element('div', undefined, 'canvas-lanes'); laneBands.setAttribute('aria-hidden', 'true'); surface.prepend(laneBands); }
+    const number = new Intl.NumberFormat(document.documentElement.lang || undefined);
+    laneBands.replaceChildren(...columns.map(column => {
+      const band = element('div', undefined, 'canvas-lane'); band.dataset.lane = String(column.lane);
+      band.style.left = `${column.x - 18}px`;
+      const header = element('div', undefined, 'canvas-lane-header');
+      header.append(element('strong', `${number.format(column.lane + 1)} · ${t(laneKeys[column.lane])}`), document.createTextNode(' '), element('span', `(${number.format(column.count)})`));
+      band.append(header); return band;
+    }));
+    surface.style.minWidth = `${Math.max(1050, ...columns.map(column => column.x + 318))}px`;
+    surface.style.minHeight = `${Math.max(850, bottom + 72)}px`;
+    return true;
+  }
   function updateBounds() {
+    if (layoutLanes()) { operations?.drawEdges(); return; }
     if (view !== 'flow') { surface.style.minWidth='0';surface.style.minHeight='0';operations?.drawEdges();return; }
     const cards = documentState.cards;
     surface.style.minWidth = `${Math.max(1050, ...cards.map(card => card.x + 348))}px`;
@@ -293,7 +322,7 @@
   }
   function render() {
     resizeCards.disconnect();
-    const cards = mobile.matches || view !== 'flow' ? [...documentState.cards].sort(cardOrder) : documentState.cards;
+    const cards = view === 'lanes' ? CanvasState.laneOrder(documentState.cards, documentState.provenance || {}) : mobile.matches || view !== 'flow' ? [...documentState.cards].sort(cardOrder) : documentState.cards;
     cardsEl.replaceChildren(...cards.map(cardView));
     root.querySelector('.canvas-empty').hidden = cards.length !== 0;
     root.querySelector('[data-count]').textContent = `${cards.length} ${t('count')}`;
