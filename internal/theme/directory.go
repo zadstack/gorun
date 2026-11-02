@@ -204,6 +204,8 @@ func (f *funcs) renderDirectory(slot directorySlot, scope directoryScope) error 
 			first := local.Query()
 			first.Del("page")
 			fmt.Fprintf(&markup, `<a href="%s">%s</a>`, template.HTMLEscapeString(scope.href(first)), f.directoryWord("First page", "الصفحة الأولى"))
+		} else if query.Search == "" && len(library.Values) > 0 {
+			fmt.Fprintf(&markup, `<a class="gp-filter-clear" href="%s">%s</a>`, template.HTMLEscapeString(scope.href(nil)), f.directoryWord("Clear filters", "مسح الفلاتر"))
 		}
 	} else {
 		markup.WriteString(`<div class="gp-grid">`)

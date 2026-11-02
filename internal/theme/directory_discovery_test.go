@@ -3,7 +3,10 @@ package theme
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/http/httptest"
+	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -142,4 +145,75 @@ func TestDirectoryHidesPrivateTypesButReportsReadFailure(t *testing.T) {
 		t.Fatalf("query failure masqueraded as empty: %s", failed)
 	}
 	mustNotContain(t, failed, "Nothing is published", "no such table", "SELECT")
+}
+
+// A nonexistent taxonomy term has no facet chip to remove. The empty-state
+// recovery must still clear that collection without reviving legacy shared q.
+func TestDirectoryEmptyFiltersHaveScopedRecovery(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", map[string]string{"templates/page-builder.html": `{{builderBody .Content}}`, "components/card.html": `<article>{{.Title}}</article>`})
+	e := bootRealTheme(t, root)
+	ctx := context.Background()
+	cs, _ := kernel.Get[content.Service](e.app.Deps, kernel.ServiceContent)
+	typ, err := cs.GetType(ctx, "post")
+	if err != nil {
+		t.Fatal(err)
+	}
+	typ.Fields = append(typ.Fields, content.Field{Key: "audience", Type: content.FieldSelect, Indexed: true, Label: map[string]string{"en": "Audience"}, Options: []content.Option{{Value: "team", Label: map[string]string{"en": "Teams"}}, {Value: "solo", Label: map[string]string{"en": "Solo"}}}})
+	if err := cs.SaveType(ctx, *typ); err != nil {
+		t.Fatal(err)
+	}
+	for _, title := range []string{"Solar guide", "Garden guide"} {
+		if _, err := cs.Create(ctx, content.Input{Type: "post", Title: title, Status: "published", Locale: "en", Fields: map[string]any{"audience": "team"}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	page := &content.Item{Title: "Collections", Body: `<section id="gp-main"><div class="gp-s-directory gp-s-dir-post"></div></section><section id="gp-other"><div class="gp-s-directory gp-s-dir-post"></div></section>`}
+	render := func(target string) string {
+		t.Helper()
+		rec, err := e.render(kernel.KindRequest{Kind: KindPage, Template: "builder"}, &Context{Content: page, Locale: "en", Request: httptest.NewRequest("GET", target, nil)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return rec.Body.String()
+	}
+	base := url.Values{"q": {"solar"}, "dir_gp-main_q": {""}, "dir_gp-other_q": {"garden"}, "dir_gp-other_page": {"1"}, "campaign": {`"><script>`}}
+	for _, filter := range []struct{ key, value string }{{"category", "does-not-exist"}, {"audience", "solo"}} {
+		t.Run(filter.key, func(t *testing.T) {
+			query := url.Values{}
+			for key, values := range base {
+				query[key] = append([]string(nil), values...)
+			}
+			query.Set("dir_gp-main_"+filter.key, filter.value)
+			body := render("/collections?" + query.Encode())
+			if strings.Count(body, "<article>") != 1 {
+				t.Fatalf("filtered collection should be empty while sibling remains: %s", body)
+			}
+			link := regexp.MustCompile(`class="gp-filter-clear" href="([^"]+)"`).FindStringSubmatch(body)
+			if len(link) != 2 {
+				t.Fatalf("filtered empty state has no recovery: %s", body)
+			}
+			target, err := url.Parse(html.UnescapeString(link[1]))
+			if err != nil {
+				t.Fatal(err)
+			}
+			reset := target.Query()
+			if target.Path != "/collections" || target.Fragment != "gp-main" || reset.Has("dir_gp-main_"+filter.key) || !reset.Has("dir_gp-main_q") || reset.Get("dir_gp-main_q") != "" || reset.Get("q") != "solar" || reset.Get("dir_gp-other_q") != "garden" || reset.Get("dir_gp-other_page") != "1" || reset.Get("campaign") != `"><script>` {
+				t.Fatalf("reset changed sibling or revived legacy search: %s", target)
+			}
+			recovered := render(target.String())
+			if strings.Count(recovered, "<article>") != 3 || strings.Contains(body+recovered, "<script>") {
+				t.Fatal("reset did not recover both main records safely")
+			}
+		})
+	}
+	query := url.Values{}
+	for key, values := range base {
+		query[key] = append([]string(nil), values...)
+	}
+	query.Set("dir_gp-main_audience", "unknown-option")
+	body := render("/collections?" + query.Encode())
+	if strings.Count(body, "<article>") != 3 || strings.Contains(body, `class="gp-filter-clear"`) {
+		t.Fatal("unknown select options must be ignored, not trap results behind an invalid filter")
+	}
 }
