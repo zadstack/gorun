@@ -43,7 +43,7 @@ func TestSetupBlockedInProdWithoutToken(t *testing.T) {
 	if strings.Contains(page, `name="password"`) {
 		t.Fatal("blocked setup must not render the form")
 	}
-	for _, want := range []string{"openssl rand -hex 24", "user create --admin --email you@example.com --password-stdin", "navigator.clipboard.writeText"} {
+	for _, want := range []string{"openssl rand -hex 24", "user create --admin --email you@example.com --password-stdin", "gp.copy("} {
 		if !strings.Contains(page, want) {
 			t.Fatalf("blocked setup lacks a command to copy: %q\n%s", want, page)
 		}

@@ -50,7 +50,7 @@
       <dd x-data="{ copied: false }" data-url="{{$m.URL}}">
         <code class="block font-mono text-xs break-all mb-1" dir="ltr">{{$m.URL}}</code>
         <button type="button" class="h-8 px-2 rounded border border-line hover:border-line-strong inline-flex items-center gap-1 focus:outline-none focus:ring-[3px] focus:ring-green-soft"
-                @click="navigator.clipboard.writeText(new URL($root.dataset.url, location.origin).href); copied = true; setTimeout(() => copied = false, 2000)">
+                @click="gp.copy(new URL($root.dataset.url, location.origin).href).then((ok) => { copied = ok; setTimeout(() => copied = false, 2000) })">
           {{icon "copy"}}<span x-show="!copied">{{t "media.action.copy"}}</span><span x-show="copied" x-cloak class="[&[x-cloak]]:hidden">{{t "media.action.copied"}}</span>
         </button>
       </dd>

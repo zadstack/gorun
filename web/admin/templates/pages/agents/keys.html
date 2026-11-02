@@ -14,7 +14,7 @@
     <label class="sr-only" for="k-plaintext">{{t "admin.keys.plaintext"}}</label>
     <input id="k-plaintext" x-ref="key" readonly value="{{.Plaintext}}" dir="ltr" @focus="$el.select()"
            class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
-    <button type="button" @click="navigator.clipboard.writeText($refs.key.value).then(() => copied = true)"
+    <button type="button" @click="gp.copy($refs.key.value).then((ok) => copied = ok)"
             class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">
       {{icon "copy"}}<span data-label-copy="{{t "admin.keys.copy"}}" data-label-copied="{{t "admin.keys.copied"}}" x-text="copied ? $el.dataset.labelCopied : $el.dataset.labelCopy">{{t "admin.keys.copy"}}</span>
     </button>
