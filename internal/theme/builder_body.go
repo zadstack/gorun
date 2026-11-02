@@ -49,7 +49,7 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 	for _, node := range nodes {
 		wrapper.AppendChild(node)
 	}
-	var sections, directories []*html.Node
+	var sections, directories, taskSearches []*html.Node
 	hasHeading := false
 	var walk func(*html.Node)
 	walk = func(node *html.Node) {
@@ -61,6 +61,9 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 		}
 		if node.Type == html.ElementNode && node.Data == "div" && hasClass(node, "gp-s-directory") {
 			directories = append(directories, node)
+		}
+		if node.Type == html.ElementNode && node.Data == "div" && hasClass(node, "gp-task-search") {
+			taskSearches = append(taskSearches, node)
 		}
 		for child := node.FirstChild; child != nil; child = child.NextSibling {
 			walk(child)
@@ -134,6 +137,9 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 		if err := f.directory(node, i); err != nil {
 			return "", err
 		}
+	}
+	for index, search := range taskSearches {
+		f.expandTaskSearch(search, index)
 	}
 	var output bytes.Buffer
 	if !hasHeading {
