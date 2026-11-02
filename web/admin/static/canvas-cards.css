@@ -196,11 +196,12 @@
 }
 
 /* Flow view on a fine pointer: card actions become a toolbar on hover and focus (spec §3). The DOM and tab order
-   are unchanged; the card reserves the toolbar's height so it never covers content at rest. */
+   are unchanged. The footer stays in flow, so the card always holds its real height, even when it wraps to more rows
+   (notes with draft actions, long Arabic labels): it can never cover body content. At rest it is transparent and
+   takes no clicks, so a click near the bottom of the card never lands on a hidden Edit or Remove button. */
 @media (min-width: 768px) and (pointer: fine) {
-  .canvas-workspace[data-view=flow] .canvas-card { --card-toolbar: 2.8125rem; padding-block-end: var(--card-toolbar); }
-  .canvas-workspace[data-view=flow] .canvas-card-footer { position: absolute; inset-inline: 0; bottom: 0; box-sizing: border-box; min-height: var(--card-toolbar); opacity: 0; transition: opacity 120ms ease; }
-  .canvas-workspace[data-view=flow] .canvas-card:is(:hover, :focus-within) .canvas-card-footer { opacity: 1; }
+  .canvas-workspace[data-view=flow] .canvas-card-footer { opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
+  .canvas-workspace[data-view=flow] .canvas-card:is(:hover, :focus-within) .canvas-card-footer { opacity: 1; pointer-events: auto; }
 }
 @media (min-width: 768px) and (pointer: fine) and (prefers-reduced-motion: reduce) {
   .canvas-workspace[data-view=flow] .canvas-card-footer { transition: none; }

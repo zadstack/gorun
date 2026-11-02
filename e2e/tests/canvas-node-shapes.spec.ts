@@ -102,9 +102,9 @@ test('toolbar visible on focus', async ({page})=>{
  const box=(await footer.boundingBox())!,surface=(await page.locator('.canvas-surface').boundingBox())!;
  expect(box.y).toBeGreaterThanOrEqual(surface.y);expect(box.x).toBeGreaterThanOrEqual(surface.x);
  expect(box.y+box.height).toBeLessThanOrEqual(surface.y+surface.height);expect(box.x+box.width).toBeLessThanOrEqual(surface.x+surface.width);
- // At rest the toolbar never covers content: the card reserves its height.
- const reserved=await top.evaluate(el=>parseFloat(getComputedStyle(el).paddingBlockEnd));
- expect(reserved).toBeGreaterThanOrEqual(box.height-1);
+ // The toolbar never covers content: it stays in flow below the body.
+ const body=(await top.locator('.canvas-card-body').boundingBox())!;
+ expect(box.y).toBeGreaterThanOrEqual(body.y+body.height-0.5);
 });
 
 test('grid view keeps the footer', async ({page})=>{
@@ -113,4 +113,33 @@ test('grid view keeps the footer', async ({page})=>{
  await expect(page.locator('.canvas-workspace')).toHaveAttribute('data-view','grid');
  await page.mouse.move(2,2);
  for(const footer of await page.locator('.canvas-card-footer').all())expect(await footer.evaluate(el=>getComputedStyle(el).opacity)).toBe('1');
+});
+
+test('a wrapped note toolbar never covers the body or takes clicks at rest', async ({page})=>{
+ const path=await newBoard(page,'ملاحظة منسوبة'),board=path.split('/').pop()!;
+ const note='99999999-9999-4999-8999-999999999991';
+ const database=db();const owner=database.prepare('SELECT id FROM users WHERE email=?').get('admin@e2e.test') as {id:string};
+ database.prepare('UPDATE admin_canvases SET document_json=?,edges_json=? WHERE id=?').run(JSON.stringify([{id:note,kind:'note',title:'مسودة خطة الحملة',body:'خطة إطلاق عملية.\nراجِعها قبل النشر.\n'+Array(12).fill('سطر إضافي طويل لتنظيم الحملة واختيار المصادر.').join('\n'),x:24,y:24}]),'[]',board);
+ database.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,result_card_id,created_at) VALUES(?,?,?,?,?,'succeeded',?,?,?)").run(board,board,owner.id,'node-shapes-note',note,JSON.stringify({candidate:{input:{kind:'text'}}}),note,new Date().toISOString());
+ database.prepare("INSERT INTO admin_canvas_provenance(board_id,card_id,actor_kind,actor_name,run_id,created_at) VALUES(?,?,'api_key','وكيل تجريبي',?,?)").run(board,note,board,new Date().toISOString());database.close();
+ await page.goto(path);await page.locator('[data-canvas-view=flow]').click();
+ const card=page.locator('#card-'+note);await expect(card).toHaveAttribute('data-note-source','attributed');
+ const footer=card.locator('.canvas-card-footer');
+ await expect(footer.locator('button')).toHaveCount(7); // edit, create draft, remove, four moves
+ await page.mouse.move(2,2);
+ await expect.poll(()=>footer.evaluate(el=>getComputedStyle(el).opacity)).toBe('0');
+ // Wrapped or not, the footer sits below the body's last child.
+ const f=(await footer.boundingBox())!;
+ const last=(await card.locator('.canvas-card-body > :last-child').boundingBox())!,body=(await card.locator('.canvas-card-body').boundingBox())!;
+ expect(f.y).toBeGreaterThanOrEqual(last.y+last.height-0.5);expect(f.y).toBeGreaterThanOrEqual(body.y+body.height-0.5);
+ // At rest the hidden toolbar takes no clicks anywhere in its zone.
+ const hits=await footer.evaluate(el=>{const r=el.getBoundingClientRect(),out:string[]=[];
+  for(const fy of [.25,.5,.75])for(let x=r.left+4;x<r.right-4;x+=12){const hit=document.elementFromPoint(x,r.top+r.height*fy);if(hit&&el.contains(hit))out.push(hit.outerHTML.slice(0,60));}
+  return out;});
+ expect(hits).toEqual([]);
+ // Hovering the card shows it and makes it clickable again.
+ await card.locator('.canvas-card-heading h2').hover();
+ await expect.poll(()=>footer.evaluate(el=>getComputedStyle(el).opacity)).toBe('1');
+ const center=await footer.locator('button[data-remove]').evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)===el;});
+ expect(center).toBe(true);
 });

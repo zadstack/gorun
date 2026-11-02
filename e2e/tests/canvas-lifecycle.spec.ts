@@ -23,14 +23,15 @@ test('agent text becomes one human-reviewed draft; private structure can be reus
   await page.evaluate(()=>{location.hash='';});await page.evaluate(value=>{location.hash=value;},'card-'+card);
   await expect(result).toBeInViewport();
  }
- await result.getByRole('button',{name:'Create content draft',exact:true}).click();
+ // Flow view: card actions are a hover/focus toolbar that takes no clicks at rest, as for a real pointer.
+ await result.hover();await result.getByRole('button',{name:'Create content draft',exact:true}).click();
  const dialog=page.locator('[data-draft-dialog]');await expect(dialog).toBeVisible();
  await page.screenshot({path:testInfo.outputPath('review-text-as-draft.png')});
  await dialog.locator('select[name=type]').selectOption('post');await dialog.locator('[type=submit]').click();
  await expect(page).toHaveURL(/\/admin\/content\/post\/[A-Z0-9]+$/);
  const firstDraft=new URL(page.url()).pathname;
  const check=db();const item=check.prepare('SELECT status,body FROM content WHERE id=?').get(firstDraft.split('/').pop()!) as {status:string,body:string};expect(item.status).toBe('draft');expect(item.body).toContain('practical launch');check.close();
- await page.goto(boardURL);await page.locator('#card-'+card).getByRole('button',{name:'Create content draft',exact:true}).click();await dialog.locator('[type=submit]').click();await expect(page).toHaveURL(new RegExp(firstDraft+'$'));
+ await page.goto(boardURL);await page.locator('#card-'+card).hover();await page.locator('#card-'+card).getByRole('button',{name:'Create content draft',exact:true}).click();await dialog.locator('[type=submit]').click();await expect(page).toHaveURL(new RegExp(firstDraft+'$'));
  await page.goto(boardURL);
  // Adding a personal note still opens the card editor, not the draft dialog.
  await page.locator('[data-action=add]').click();
