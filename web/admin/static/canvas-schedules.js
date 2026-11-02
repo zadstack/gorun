@@ -47,6 +47,8 @@
       const hash = '#card-' + id;
       // Setting the same hash fires no hashchange, so clear it first to reveal the node again.
       if (location.hash === hash) history.replaceState(history.state, '', location.pathname + location.search);
+      // Floating over the flow view, the open panel can cover the node it reveals; fold it first.
+      if (getComputedStyle(aside).position === 'absolute') setExpanded(false);
       location.hash = hash;
     }
     function row(item, now) {

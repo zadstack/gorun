@@ -73,21 +73,44 @@ test('collapse persists and Escape returns focus', async ({page})=>{
  await expect(region).toBeHidden();
 });
 
-test('show on board focuses the node', async ({page})=>{
+async function unobscured(page:Page, target:ReturnType<Page['locator']>){
+ await expect.poll(()=>target.evaluate(el=>{const r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return !!hit&&(hit===el||el.contains(hit));})).toBe(true);
+}
+
+for(const locale of ['ar','en'] as const){
+ test(`show on board focuses the node · ${locale}`, async ({page})=>{
+  await presetBoard(page);
+  if(locale==='en'){await setLocale(page,'en');await expect(page.locator('.canvas-state')).toHaveAttribute('data-state','saved');}
+  const show=panel(page).getByRole('button',{name:locale==='ar'?'اعرض على اللوح':'Show on board'});
+  const handle=page.locator('.canvas-card[data-kind=schedule] .canvas-handle');
+  // Move the node out of sight first, so the reveal has work to do.
+  await page.locator('.canvas-viewport').evaluate(el=>{el.scrollTop=el.scrollHeight;});
+  await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+  await expect(handle).not.toBeInViewport();
+  await show.click();
+  await expect(handle).toBeFocused();
+  await expect(handle).toBeInViewport();
+  await unobscured(page,handle);
+  // The floating panel folds so it cannot cover the node it revealed.
+  await expect(toggle(page)).toHaveAttribute('aria-expanded','false');
+  await expect(page).toHaveURL(/#card-[0-9a-f-]{36}$/);
+  // A second reveal of the same node still works.
+  await toggle(page).click();
+  await show.click();
+  await expect(handle).toBeFocused();
+  await unobscured(page,handle);
+ });
+}
+
+test('show on board keeps the docked panel open', async ({page})=>{
  await presetBoard(page);
+ await page.setViewportSize({width:375,height:812});
+ await expect.poll(()=>panel(page).evaluate(el=>getComputedStyle(el).position)).toBe('static');
+ await panel(page).getByRole('button',{name:'اعرض على اللوح'}).click();
  const handle=page.locator('.canvas-card[data-kind=schedule] .canvas-handle');
- // Move the node out of sight first, so the reveal has work to do.
- await page.locator('.canvas-viewport').evaluate(el=>{el.scrollTop=el.scrollHeight;});
- await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
- await expect(handle).not.toBeInViewport();
- await panel(page).getByRole('button',{name:'اعرض على اللوح'}).click();
  await expect(handle).toBeFocused();
- await expect(handle).toBeInViewport();
- await expect(page).toHaveURL(/#card-[0-9a-f-]{36}$/);
- // A second click on the same node still reveals it.
- await page.locator('[data-canvas-view=flow]').focus();
- await panel(page).getByRole('button',{name:'اعرض على اللوح'}).click();
- await expect(handle).toBeFocused();
+ await unobscured(page,handle);
+ await expect(toggle(page)).toHaveAttribute('aria-expanded','true');
 });
 
 async function outcome(page:Page){
