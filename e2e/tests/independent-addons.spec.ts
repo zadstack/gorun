@@ -63,12 +63,18 @@ for (const addon of ['saas', 'membership']) {
             }
           }
         }
-        const css = page.locator('link[rel="stylesheet"]');
-        await expect(css).toHaveAttribute('href', `${path}/assets.css`);
+        // Published identity fonts may add stylesheets independently of the
+        // add-on. Its own layout asset must still be present exactly once.
+        const css = page.locator(`link[rel="stylesheet"][href="${path}/assets.css"]`);
+        await expect(css).toHaveCount(1);
         const asset = await page.request.get(`${path}/assets.css`);
         expect(asset.status()).toBe(200);
         expect(asset.headers()['content-type']).toContain('text/css');
-        await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(247, 248, 250)');
+        const background = await page.locator('html').evaluate((el) =>
+          getComputedStyle(el).getPropertyValue('--standalone-bg').trim());
+        expect(background).toMatch(/^#[0-9a-f]{6}$/i);
+        const channels = [1, 3, 5].map((start) => parseInt(background.slice(start, start + 2), 16));
+        await expect(page.locator('body')).toHaveCSS('background-color', `rgb(${channels.join(', ')})`);
         await expect(page.locator('a[href="/account"]')).toHaveCount(enabled('commerce') ? 1 : 0);
         await expect(page.locator('nav a[href="/shop"]')).toHaveCount(enabled('commerce') ? 1 : 0);
         if (addon === 'membership') await expect(page.locator('a[href="/saas"]')).toHaveCount(enabled('saas') ? 1 : 0);

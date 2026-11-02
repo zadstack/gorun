@@ -139,3 +139,43 @@ func TestStartLoginCustomerSession(t *testing.T) {
 		t.Fatalf("login redirect: %d %q", resp.StatusCode, resp.Header.Get("Location"))
 	}
 }
+
+func TestLaunchPagesShareSafePublishedIdentity(t *testing.T) {
+	app, srv, c := bootLaunch(t)
+	svc, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
+	if _, err := svc.Create(context.Background(), "ops@example.test", "Ops", "correct horse battery", auth.RoleAdmin); err != nil {
+		t.Fatal(err)
+	}
+	for key, value := range map[string]any{
+		"site.title":                   `Studio <script>bad()</script>`,
+		"builder.identity":             map[string]string{"accent": "#f5b800", "background": "#172b29", "text": "#f8faf9", "font": "system", "width": "standard"},
+		"theme.default.identity_draft": map[string]any{"secret": "PRIVATE-DRAFT"},
+	} {
+		if err := app.Deps.Settings.Set(context.Background(), key, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, path := range []string{"/start?hl=ar", "/start/login?hl=en", "/start/verify?hl=ar"} {
+		resp, err := c.Get(srv.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil || resp.StatusCode != http.StatusOK {
+			t.Fatalf("%s: status=%d err=%v", path, resp.StatusCode, err)
+		}
+		html := string(body)
+		for _, want := range []string{`data-launch-identity`, `--standalone-accent:#f5b800`, `--standalone-bg:#172b29`, `Studio &lt;script&gt;bad()&lt;/script&gt;`} {
+			if !strings.Contains(html, want) {
+				t.Errorf("%s missing %q", path, want)
+			}
+		}
+		if strings.Contains(html, "PRIVATE-DRAFT") || strings.Contains(html, `<script>bad()</script>`) || strings.Contains(html, `nonce=""`) {
+			t.Errorf("%s leaked unsafe data or omitted the CSP nonce", path)
+		}
+		if strings.Contains(path, "hl=ar") && !strings.Contains(html, `dir="rtl"`) {
+			t.Errorf("%s lost RTL", path)
+		}
+	}
+}

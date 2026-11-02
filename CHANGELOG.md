@@ -11,6 +11,14 @@ All notable changes to GoRun are recorded here. The format follows
 - Canvas edges show live run state: an edge into a running node flows, and a failed one is dashed. The editor polls runs only while one is active and the tab is visible.
 - A scheduled tasks panel lists this board's schedule nodes, grouped by the card each one triggers, with their next run, status, **Show on board** and **Review and enable**.
 - A lanes view arranges the canvas into four columns by kind (inputs, instructions and triggers, execution, results) for display only. It never moves or saves cards.
+- Native builder layouts for compact directories and media rows with images at the reading start or end; existing layouts keep their defaults.
+- Shared validated published identity tokens for standalone launch, Membership and SaaS pages, with safe defaults when the theme module is unavailable.
+
+### Changed
+
+- Default customer accounts separate password, email-link and optional registration paths, and group services, orders and invoices with actionable empty states. Custom account template overrides retain precedence.
+- New/fallback builder and standalone customer identities use a light neutral/blue palette; explicitly saved site colors are preserved.
+- Launch forms retain site colors, selected fonts and the published primary media logo; field validation associates errors with inputs and focuses the first invalid field.
 
 ## [0.18.6] - 2026-11-02
 

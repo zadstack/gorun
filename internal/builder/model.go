@@ -123,7 +123,7 @@ func Validate(doc Document) error {
 		if !found {
 			return errors.New("builder: unknown section kind")
 		}
-		if s.Variant != "" && s.Variant != "default" && s.Variant != "split" && s.Variant != "centered" {
+		if s.Library != SectionLibrary && s.Variant != "" && s.Variant != "default" && s.Variant != "split" && s.Variant != "centered" {
 			return errors.New("builder: unknown layout")
 		}
 		if s.HeroScene != "" && (s.Kind != "hero" || (s.HeroScene != "orbit" && s.HeroScene != "ribbons" && s.HeroScene != "blocks")) {
