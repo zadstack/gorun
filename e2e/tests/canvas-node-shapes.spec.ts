@@ -171,3 +171,37 @@ test('waiting state offers the existing check action', async ({page})=>{
  await expect(agent.locator('.canvas-node-state')).toContainText('بانتظارك');
  await expect(agent.locator('.canvas-node-state button')).toHaveCount(1);
 });
+
+async function insertRun(board:string,node:string,id:string,status:string,created=new Date().toISOString()){
+ const database=db();const owner=database.prepare('SELECT id FROM users WHERE email=?').get('admin@e2e.test') as {id:string};
+ database.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at) VALUES(?,?,?,?,?,?,?,?)").run(id,board,owner.id,'req-'+id,node,status,JSON.stringify({candidate:{input:{kind:'text'}}}),created);database.close();
+}
+const refresh=async(page:Page)=>{await page.locator('[data-canvas-operations] details').nth(1).locator('summary').click();await page.locator('[data-canvas-operations] details').nth(1).locator('button').first().click();};
+
+test('initial load does not announce existing states; a later change announces once', async ({page})=>{
+ const path=await presetBoard(page),board=path.split('/').pop()!;
+ const agent=page.locator('.canvas-card[data-kind=agent]');const node=(await agent.getAttribute('data-card-id'))!;
+ const id='77777777-7777-4777-8777-000000000003';
+ await insertRun(board,node,id,'running');
+ await page.reload();await page.locator('[data-canvas-view=flow]').click();
+ await expect(agent).toHaveAttribute('data-state','running');
+ await expect(page.locator('.canvas-state-live')).toHaveText('');
+ const d=db();d.prepare("UPDATE admin_canvas_runs SET status='failed' WHERE id=?").run(id);d.close();
+ await refresh(page);
+ await expect(agent).toHaveAttribute('data-state','failed');
+ const title=(await agent.locator('h2').textContent())!;
+ await expect(page.locator('.canvas-state-live')).toHaveText(title+': فشل');
+});
+
+test('refresh keeps focus on the waiting action', async ({page})=>{
+ const path=await presetBoard(page),board=path.split('/').pop()!;
+ const agent=page.locator('.canvas-card[data-kind=agent]');const node=(await agent.getAttribute('data-card-id'))!;
+ await insertRun(board,node,'77777777-7777-4777-8777-000000000004','waiting');
+ await page.reload();await page.locator('[data-canvas-view=flow]').click();
+ const act=agent.locator('.canvas-node-state button');await expect(act).toHaveCount(1);
+ await act.focus();
+ await page.evaluate(()=>{(document.activeElement as any).__mark=1;});
+ await page.locator('[data-canvas-operations] details').nth(1).evaluate(d=>{(d as HTMLDetailsElement).open=true;(d.querySelector('button') as HTMLButtonElement).click();}); // click() keeps focus where it is
+ await page.waitForTimeout(500);
+ expect(await page.evaluate(()=>{const a=document.activeElement as any;return a&&a.__mark===1&&!!a.closest('.canvas-node-state');})).toBe(true);
+});

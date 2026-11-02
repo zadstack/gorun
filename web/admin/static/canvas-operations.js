@@ -214,7 +214,7 @@
       reviewDialog.replaceChildren(content); title.focus();
     }
     async function refreshHistory() {
-      const data = await json('/runs'); runs = data.runs || []; renderHistory(); applyRunStates();
+      const data = await json('/runs'); runs = data.runs || []; renderHistory(); const first = !primed; primed = true; applyRunStates(first);
     }
     function runAction(run) {
       if (run.status === 'waiting') return btn(t('check_result'), () => action(async () => { await json(`/runs/${encodeURIComponent(run.id)}/check`, {}); await refreshHistory(); }));
@@ -223,9 +223,9 @@
       return null;
     }
     const live = el('div', undefined, 'canvas-state-live canvas-sr-only'); live.setAttribute('aria-live', 'polite'); root.append(live);
-    const lastStates = new Map(); let doneTimer = 0;
+    const lastStates = new Map(); let doneTimer = 0, primed = false;
     const stateWord = state => t(state === 'done' ? 'state_done' : state === 'waiting' ? 'state_waiting' : state);
-    function applyRunStates() {
+    function applyRunStates(silent = false) {
       const now = Date.now(), states = window.CanvasState ? window.CanvasState.nodeStates(runs, now) : {};
       clearTimeout(doneTimer);
       const expiry = window.CanvasState ? window.CanvasState.doneExpiry(runs, now) : null;
@@ -240,15 +240,18 @@
           if (!span) { span = el('span', undefined, 'canvas-node-state'); heading.append(span); }
           const run = newest.get(id); let text = stateWord(state);
           if (state === 'running') { const s = Math.max(0, Math.floor((now - Date.parse(run.created_at)) / 1000)); text += ` · ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
-          span.replaceChildren(text);
-          if (state === 'waiting') { const act = runAction(run); if (act) span.append(' ', act); }
+          const key = `${text}|${state}|${run.id}|${run.status}`;
+          if (span.dataset.key !== key) {
+            span.dataset.key = key; span.replaceChildren(text);
+            if (state === 'waiting') { const act = runAction(run); if (act) span.append(' ', act); }
+          }
         }
         if ((lastStates.get(id) || '') !== state) {
           if (state || lastStates.has(id)) messages.push(`${card.querySelector('h2')?.textContent || ''}: ${state ? stateWord(state) : ''}`);
           if (state) lastStates.set(id, state); else lastStates.delete(id);
         }
       }
-      if (messages.length) live.textContent = messages.filter(m => !m.endsWith(': ')).join('. ');
+      if (messages.length && !silent) live.textContent = messages.filter(m => !m.endsWith(': ')).join('. ');
     }
     function renderHistory() {
       history.replaceChildren(btn(t('refresh_runs'), () => action(refreshHistory)));

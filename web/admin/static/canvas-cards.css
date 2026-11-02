@@ -218,8 +218,6 @@
 .canvas-workspace .canvas-card[data-state=waiting] .canvas-node-state { color: #8a4b00; }
 .canvas-workspace .canvas-card[data-state=done] .canvas-node-state { color: #1c6b3a; }
 .canvas-workspace .canvas-card[data-state=failed] .canvas-node-state { color: #a3292d; }
-.canvas-workspace .canvas-card[data-state=failed] { outline: 2px solid #a3292d; outline-offset: -2px; }
-.canvas-workspace .canvas-card[data-state=running] { outline: 2px solid #1a5a9e; outline-offset: -2px; }
 @keyframes canvas-state-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .canvas-workspace .canvas-card[data-state=running] .canvas-node-state::before { animation: none; } }
 @media (max-width: 767px), (pointer: coarse) { .canvas-workspace .canvas-node-state button { min-height: 44px; min-width: 44px; } }
