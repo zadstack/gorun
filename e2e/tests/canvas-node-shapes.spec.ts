@@ -205,3 +205,39 @@ test('refresh keeps focus on the waiting action', async ({page})=>{
  await page.waitForTimeout(500);
  expect(await page.evaluate(()=>{const a=document.activeElement as any;return a&&a.__mark===1&&!!a.closest('.canvas-node-state');})).toBe(true);
 });
+
+async function runningAgentBoard(page:Page,id:string){
+ const path=await presetBoard(page),board=path.split('/').pop()!;
+ const agent=page.locator('.canvas-card[data-kind=agent]');const node=(await agent.getAttribute('data-card-id'))!;
+ await insertRun(board,node,id,'running');
+ await page.reload();await page.locator('[data-canvas-view=flow]').click();
+ await expect(agent).toHaveAttribute('data-state','running');
+ return node;
+}
+
+test('edge into a running agent flows', async ({page})=>{
+ const node=await runningAgentBoard(page,'77777777-7777-4777-8777-000000000005');
+ const into=page.locator(`.canvas-edges path[data-to="${node}"]`);
+ expect(await into.count()).toBeGreaterThan(0);
+ for(const p of await into.all())await expect(p).toHaveAttribute('data-state','flowing');
+ await expect(page.locator('.canvas-edge-packet').first()).toBeAttached();
+ const sched=await page.locator('.canvas-card[data-kind=schedule]').first().getAttribute('data-card-id');
+ await expect(page.locator(`.canvas-edges path[data-from="${sched}"]`).first()).toHaveAttribute('data-state','flowing');
+});
+
+test('reduced motion stops edges', async ({page})=>{
+ const node=await runningAgentBoard(page,'77777777-7777-4777-8777-000000000006');
+ await page.emulateMedia({reducedMotion:'reduce'});
+ const p=page.locator(`.canvas-edges path[data-to="${node}"]`).first();
+ await expect(p).toHaveAttribute('data-state','flowing');
+ expect(await p.evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
+ expect(await page.locator('.canvas-edge-packet').first().evaluate(e=>getComputedStyle(e).display)).toBe('none');
+});
+
+test('every edge has an arrowhead', async ({page})=>{
+ await presetBoard(page);
+ const paths=page.locator('.canvas-edges path[data-from]');
+ expect(await paths.count()).toBeGreaterThan(0);
+ for(const p of await paths.all())await expect(p).toHaveAttribute('marker-end','url(#canvas-edge-arrow)');
+ await expect(page.locator('.canvas-edges marker#canvas-edge-arrow')).toHaveAttribute('orient','auto-start-reverse');
+});

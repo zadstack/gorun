@@ -126,12 +126,19 @@
       if(root.dataset.view!=='flow'||matchMedia('(max-width:767px)').matches)return;
       svg.setAttribute('width',surface.scrollWidth);svg.setAttribute('height',surface.scrollHeight);
       const boxes=[...cardsEl.children].map(node=>({id:node.dataset.cardId,x:node.offsetLeft,y:node.offsetTop,width:node.offsetWidth,height:node.offsetHeight}));
-      for(const pair of CanvasLayout.ports(boxes,state.edges||[])) {
+      const defs=documentNode('defs'),marker=documentNode('marker'),tip=documentNode('polygon');
+      marker.id='canvas-edge-arrow';marker.setAttribute('viewBox','0 0 10 10');marker.setAttribute('refX','17');marker.setAttribute('refY','5');marker.setAttribute('markerWidth','9');marker.setAttribute('markerHeight','9');marker.setAttribute('markerUnits','userSpaceOnUse');marker.setAttribute('orient','auto-start-reverse');
+      tip.setAttribute('points','0,0 10,5 0,10');tip.setAttribute('class','canvas-edge-tip');marker.append(tip);defs.append(marker);svg.append(defs);
+      const edges=state.edges||[],kinds=window.CanvasState?window.CanvasState.edgeStates(state.cards||[],edges,states,state.schedules||{}):[];
+      for(const pair of CanvasLayout.ports(boxes,edges)) {
         const points=CanvasLayout.route(pair,boxes);
         if(!points){if(warning)warning.hidden=false;continue;}
-        const path=documentNode('path');
-        path.setAttribute('d',points.map((point,index)=>`${index?'L':'M'} ${point.x} ${point.y}`).join(' '));
+        const path=documentNode('path'),d=points.map((point,index)=>`${index?'L':'M'} ${point.x} ${point.y}`).join(' ');
+        const edgeState=kinds[edges.findIndex(e=>e.from===pair.edge.from&&e.to===pair.edge.to)]||'idle';
+        path.setAttribute('d',d);path.setAttribute('marker-end','url(#canvas-edge-arrow)');path.dataset.state=edgeState;
         path.dataset.from=pair.edge.from;path.dataset.to=pair.edge.to;svg.append(path);
+        if(edgeState==='flowing'){const packet=documentNode('circle');packet.setAttribute('r','4');packet.setAttribute('class','canvas-edge-packet');packet.style.offsetPath=`path('${d}')`;svg.append(packet);}
+        if(edgeState==='failed'){const mid=points[Math.floor((points.length-1)/2)],next=points[Math.floor((points.length-1)/2)+1]||mid,mark=documentNode('text');mark.setAttribute('x',(mid.x+next.x)/2);mark.setAttribute('y',(mid.y+next.y)/2);mark.setAttribute('class','canvas-edge-mark');mark.setAttribute('text-anchor','middle');mark.setAttribute('dominant-baseline','central');mark.textContent='\u00d7';svg.append(mark);}
         for(const [end,point] of [['from',pair.from],['to',pair.to]]) {
           const dot=documentNode('circle');dot.setAttribute('cx',point.x);dot.setAttribute('cy',point.y);dot.setAttribute('r','4.25');dot.dataset.port=end;dot.dataset.cardId=pair.edge[end];svg.append(dot);
         }
@@ -223,10 +230,10 @@
       return null;
     }
     const live = el('div', undefined, 'canvas-state-live canvas-sr-only'); live.setAttribute('aria-live', 'polite'); root.append(live);
-    const lastStates = new Map(); let doneTimer = 0, primed = false;
+    const lastStates = new Map(); let doneTimer = 0, primed = false, states = {};
     const stateWord = state => t(state === 'done' ? 'state_done' : state === 'waiting' ? 'state_waiting' : state);
     function applyRunStates(silent = false) {
-      const now = Date.now(), states = window.CanvasState ? window.CanvasState.nodeStates(runs, now) : {};
+      const now = Date.now(); states = window.CanvasState ? window.CanvasState.nodeStates(runs, now) : {};
       clearTimeout(doneTimer);
       const expiry = window.CanvasState ? window.CanvasState.doneExpiry(runs, now) : null;
       if (expiry !== null) doneTimer = setTimeout(applyRunStates, Math.max(expiry - now, 0) + 50);
@@ -252,6 +259,7 @@
         }
       }
       if (messages.length && !silent) live.textContent = messages.filter(m => !m.endsWith(': ')).join('. ');
+      drawEdges();
     }
     function renderHistory() {
       history.replaceChildren(btn(t('refresh_runs'), () => action(refreshHistory)));
