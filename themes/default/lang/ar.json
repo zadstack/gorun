@@ -95,5 +95,9 @@
   "no_results_filters": "لا توجد عناصر منشورة تطابق هذه التصفية.",
   "series_part": "الجزء %d من %d",
   "series_prev": "السابق في السلسلة",
-  "series_next": "التالي في السلسلة"
+  "series_next": "التالي في السلسلة",
+  "public_ui_other_language": "متاح بلغة أخرى",
+  "public_ui_context": "استكشف الموقع",
+  "public_ui_full_content": "اقرأ التفاصيل كاملة",
+  "public_ui_unavailable": "هذا الإجراء غير متاح حاليًا."
 }

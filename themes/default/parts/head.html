@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="{{asset "a11y.css"}}">
 <link rel="stylesheet" href="{{asset "style.css"}}">
 {{part "head-extra" .}}
+{{if publicUI .}}<link rel="stylesheet" href="{{asset "public-ui.css"}}">{{end}}
 {{with .Content}}{{if eq .Template "builder"}}<link rel="stylesheet" href="/static/builder/builder.css">{{end}}{{end}}
 {{builderIdentity}}
 {{sections .}}{{identity .}}
