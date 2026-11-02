@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.18.6] - 2026-11-02
+
+### Fixed
+
+- Admin copy buttons now work over plain HTTP, such as `http://server-ip:8080`, where browsers do not offer the Clipboard API. The media URL button no longer reports a copy that failed.
+
 ## [0.18.5] - 2026-11-01
 
 ### Added
@@ -1202,7 +1208,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.5...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.6...HEAD
+[0.18.6]: https://github.com/zadstack/gorun/compare/v0.18.5...v0.18.6
 [0.18.5]: https://github.com/zadstack/gorun/compare/v0.18.4...v0.18.5
 [0.18.4]: https://github.com/zadstack/gorun/compare/v0.18.3...v0.18.4
 [0.18.3]: https://github.com/zadstack/gorun/compare/v0.18.2...v0.18.3

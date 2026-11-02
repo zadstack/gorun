@@ -132,6 +132,30 @@ document.addEventListener('alpine:init', () => {
 window.gp = {
   confirm(message, onYes) { Alpine.store('confirm').ask(message, onYes); },
   toast(message, kind) { Alpine.store('toasts').push(message, kind); },
+  // copy resolves to whether text reached the clipboard. The Clipboard API
+  // needs HTTPS or localhost, so http://server-ip takes the fallback.
+  async copy(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) { /* fall through */ }
+    const focused = document.activeElement;
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.readOnly = true;
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.append(area);
+    area.select();
+    try {
+      return document.execCommand('copy');
+    } catch (e) {
+      return false;
+    } finally {
+      area.remove();
+      focused?.focus();
+    }
+  },
   // aiWrite posts to the AI writing endpoint and resolves to its text; it
   // rejects with the server's message, or fallback when there is none.
   async aiWrite(action, text, fallback) {

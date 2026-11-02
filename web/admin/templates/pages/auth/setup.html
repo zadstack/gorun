@@ -2,7 +2,7 @@
 {{define "setup-command"}}
 <div class="mt-1 flex items-start gap-2" x-data="{ copied: false }">
   <code x-ref="command" dir="ltr" class="min-w-0 flex-1 break-all rounded border border-line bg-panel p-2 font-mono text-xs text-ink">{{.}}</code>
-  <button type="button" @click="navigator.clipboard.writeText($refs.command.textContent).then(() => copied = true)"
+  <button type="button" @click="gp.copy($refs.command.textContent).then((ok) => copied = ok)"
           class="shrink-0 rounded border border-line bg-panel px-2 py-1 text-xs text-ink hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">
     <span data-label-copy="{{t "auth.setup.copy"}}" data-label-copied="{{t "auth.setup.copied"}}" x-text="copied ? $el.dataset.labelCopied : $el.dataset.labelCopy">{{t "auth.setup.copy"}}</span>
   </button>

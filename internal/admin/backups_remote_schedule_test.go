@@ -218,7 +218,8 @@ func TestScheduledUploadDoesNotFollowChangedDestination(t *testing.T) {
 }
 
 func TestScheduledBackupsQueueOnceAndRespectDisabledPolicy(t *testing.T) {
-	s := boot(t)
+	// A running worker would claim the job before the count below.
+	s := bootNoJobs(t)
 	ctx := context.Background()
 	if err := admin.BackupScheduleTick(ctx, s.app.Deps); err != nil {
 		t.Fatal(err)

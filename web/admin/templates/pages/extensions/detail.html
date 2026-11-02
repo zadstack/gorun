@@ -36,7 +36,7 @@
       <div class="flex flex-wrap gap-2">
         <input id="ext-secret" x-ref="secret" readonly value="{{.Secret}}" dir="ltr" @focus="$el.select()"
                class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
-        <button type="button" @click="navigator.clipboard.writeText($refs.secret.value).then(() => copied = 'secret')"
+        <button type="button" @click="gp.copy($refs.secret.value).then((ok) => copied = ok ? 'secret' : '')"
                 class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "copy"}}<span x-text="copied === 'secret' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
       </div>
       <p class="mt-1 text-xs text-muted">{{t "ext.reveal.secret_help"}}</p>
@@ -47,7 +47,7 @@
       <div class="flex flex-wrap gap-2">
         <input id="ext-key" x-ref="key" readonly value="{{.APIKey}}" dir="ltr" @focus="$el.select()"
                class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
-        <button type="button" @click="navigator.clipboard.writeText($refs.key.value).then(() => copied = 'key')"
+        <button type="button" @click="gp.copy($refs.key.value).then((ok) => copied = ok ? 'key' : '')"
                 class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "copy"}}<span x-text="copied === 'key' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
       </div>
       <p class="mt-1 text-xs text-muted">{{t "ext.reveal.key_help"}}</p>

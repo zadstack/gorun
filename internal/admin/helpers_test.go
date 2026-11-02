@@ -40,9 +40,21 @@ func boot(t *testing.T, extra ...kernel.Module) *site {
 	return bootWith(t, nil, extra...)
 }
 
+// bootNoJobs boots without job workers, so queued jobs stay queued for the
+// test to inspect.
+func bootNoJobs(t *testing.T) *site {
+	t.Helper()
+	return bootSite(t, nil, kernel.BootOptions{StartJobs: false})
+}
+
 // bootWith boots with the default config after tweak adjusted it (a shared
 // data directory, operator update settings, …).
 func bootWith(t *testing.T, tweak func(*config.Config), extra ...kernel.Module) *site {
+	t.Helper()
+	return bootSite(t, tweak, kernel.BootOptions{StartJobs: true}, extra...)
+}
+
+func bootSite(t *testing.T, tweak func(*config.Config), opts kernel.BootOptions, extra ...kernel.Module) *site {
 	t.Helper()
 	cfg := config.Config{Env: "dev", DataDir: t.TempDir(), Addr: ":0", SecretKey: make([]byte, 32), BaseURL: "http://localhost"}
 	if tweak != nil {
@@ -53,7 +65,7 @@ func bootWith(t *testing.T, tweak func(*config.Config), extra ...kernel.Module) 
 		mods = append(mods, api.New())
 	}
 	mods = append(mods, admin.New())
-	app, err := kernel.Boot(context.Background(), cfg, mods)
+	app, err := kernel.BootWithOptions(context.Background(), cfg, mods, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
