@@ -26,9 +26,11 @@
     el = document.createElement('p');
     el.id = id;
     el.className = 'field-help polish-error';
-    el.style.color = '#a3261f';
     el.setAttribute('role', 'alert');
     input.insertAdjacentElement('afterend', el);
+    var describedBy = (input.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+    if (describedBy.indexOf(id) < 0) describedBy.push(id);
+    input.setAttribute('aria-describedby', describedBy.join(' '));
     return el;
   }
 
@@ -98,6 +100,10 @@
         );
       }
     }
-    if (!ok) ev.preventDefault();
+    if (!ok) {
+      ev.preventDefault();
+      var firstInvalid = form.querySelector('[aria-invalid="true"]');
+      if (firstInvalid) firstInvalid.focus();
+    }
   });
 })();

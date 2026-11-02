@@ -272,9 +272,12 @@ func TestIndependentAddonPagesWithMixedActivation(t *testing.T) {
 					t.Fatalf("%s has no stylesheet", path)
 				}
 				for _, asset := range assets {
-					status, css := serveStatus(app.Handler, "GET", asset[1], nil)
-					if status != 200 || !strings.Contains(css, "font:") {
-						t.Errorf("%s stylesheet %s: %d", path, asset[1], status)
+					response := httptest.NewRecorder()
+					app.Handler.ServeHTTP(response, httptest.NewRequest("GET", asset[1], nil))
+					// Shared identities may add a local @font-face stylesheet;
+					// it need not contain the page layout's font shorthand.
+					if response.Code != 200 || !strings.HasPrefix(response.Header().Get("Content-Type"), "text/css") || strings.TrimSpace(response.Body.String()) == "" {
+						t.Errorf("%s stylesheet %s: %d %s", path, asset[1], response.Code, response.Header().Get("Content-Type"))
 					}
 				}
 				for _, target := range []string{"/account", "/shop", "/saas"} {

@@ -1,7 +1,9 @@
 package launch
 
 import (
+	"context"
 	"errors"
+	"html/template"
 	"net/http"
 	"net/mail"
 	"net/url"
@@ -12,11 +14,16 @@ import (
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/media"
+	"github.com/zadstack/gorun/internal/theme"
 )
 
 type pageData struct {
 	Brand, Locale, Dir, Title, CSRF, Error, Email, Name, Theme string
 	CSS, JS                                                    string
+	IdentityCSS                                                template.CSS
+	FontStylesheets                                            []string
+	Nonce, LogoURL                                             string
 	OtherLangHref, OtherLangLabel                              string
 	LoginHref, StartHref, VerifyHref, AdminLoginHref           string
 	HomeHref, AccountHref                                      string
@@ -25,6 +32,7 @@ type pageData struct {
 func (h *handlers) base(r *http.Request, titleKey string) pageData {
 	loc := i18n.Locale(r.Context())
 	brand := h.brand(r)
+	identity := theme.StandaloneIdentityFor(r.Context(), h.d)
 	dir := "ltr"
 	if loc == "ar" {
 		dir = "rtl"
@@ -35,6 +43,7 @@ func (h *handlers) base(r *http.Request, titleKey string) pageData {
 	}
 	return pageData{
 		Brand: brand, Locale: loc, Dir: dir,
+		IdentityCSS: template.CSS(identity.CSS), FontStylesheets: identity.FontStylesheets, Nonce: httpx.Nonce(r.Context()), LogoURL: h.logo(r),
 		Title:          h.tr(r, titleKey, brand),
 		CSRF:           auth.CSRFToken(r.Context()),
 		CSS:            httpx.LaunchCSSPath,
@@ -196,4 +205,20 @@ func validTheme(s string) bool {
 	default:
 		return false
 	}
+}
+
+// logo resolves only the published media setting, never draft identity data.
+func (h *handlers) logo(r *http.Request) string {
+	id := h.d.Settings.GetString(r.Context(), "site.logo", "")
+	if id == "" {
+		return ""
+	}
+	if svc, ok := kernel.Get[interface {
+		Get(context.Context, string) (*media.Media, error)
+	}](h.d, kernel.ServiceMedia); ok {
+		if image, err := svc.Get(r.Context(), id); err == nil && image != nil && strings.HasPrefix(image.Mime, "image/") {
+			return image.URL
+		}
+	}
+	return ""
 }
