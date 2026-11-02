@@ -90,11 +90,7 @@
         body.append(el('p', t(card.interval)), el('p', state ? t(state.status) : t('schedule_inactive')));
         if (state?.next_run_at) body.append(el('small', new Date(state.next_run_at).toLocaleString()));
         if (state?.reason) body.append(el('p', state.reason));
-        body.append(btn(t(state?.enabled ? 'disable_schedule' : 'enable_schedule'), () => action(async () => {
-          if (!(await api.save())) throw new Error(t('save_first'));
-          if (state?.enabled) { await json(`/schedules/${encodeURIComponent(card.id)}`, {enabled:false}); await api.reload(); }
-          else { const edge = api.document().edges.find(edge => edge.from === card.id); if (!edge) throw new Error(t('connection_error')); await preview(edge.to, card.id); }
-        }), 'canvas-operation-button'));
+        body.append(btn(t(state?.enabled ? 'disable_schedule' : 'enable_schedule'), () => toggleSchedule(card), 'canvas-operation-button'));
       }
       if (card.kind === 'result') {
         const result = document.results?.[card.run_id];
@@ -118,6 +114,15 @@
         time.dateTime = provenance.created_at; time.dir = 'auto';
         source.append(root.ownerDocument.createTextNode(t('attributed') + ' '), actor, root.ownerDocument.createTextNode(' · '), time); body.append(source);
       }
+    }
+    // The one enable/disable path for a schedule node, shared by its card button and the schedules panel.
+    function toggleSchedule(card) {
+      return action(async () => {
+        const state = api.document().schedules?.[card.id];
+        if (!(await api.save())) throw new Error(t('save_first'));
+        if (state?.enabled) { await json(`/schedules/${encodeURIComponent(card.id)}`, {enabled:false}); await api.reload(); }
+        else { const edge = api.document().edges.find(edge => edge.from === card.id); if (!edge) throw new Error(t('connection_error')); await preview(edge.to, card.id); }
+      });
     }
     let edgeSignature = null;
     function drawEdges() {
@@ -351,6 +356,6 @@
       }
       drawEdges();
     }
-    return {editCard,readCard,cardBody,drawEdges,render,saved,applyRunStates};
+    return {editCard,readCard,cardBody,drawEdges,render,saved,applyRunStates,toggleSchedule};
   }
 })();

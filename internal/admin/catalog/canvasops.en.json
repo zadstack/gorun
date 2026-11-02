@@ -95,5 +95,11 @@
   "reviewed": "Reviewed — accepted run recorded",
   "cancelled": "Cancelled locally",
   "cancel_run": "Cancel run",
-  "cancel_run_help": "Stop accepting a result for this run? This does not cancel work already sent to an external provider."
+  "cancel_run_help": "Stop accepting a result for this run? This does not cancel work already sent to an external provider.",
+  "schedules_title": "Scheduled tasks",
+  "schedules_next": "next",
+  "schedules_due": "due now",
+  "schedules_show": "Show on board",
+  "schedules_review": "Review and enable",
+  "schedules_unconnected": "Not connected"
 }

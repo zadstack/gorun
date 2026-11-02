@@ -14,7 +14,7 @@
   const mobile = matchMedia('(max-width:767px)');
   const widgetCache = new Map();
   const widgetLoading = new Set();
-  let operations = null, lifecycle = null, inbound = null;
+  let operations = null, lifecycle = null, inbound = null, schedules = null;
   let revealHash = true, revealScheduled = false;
   function revealCardHash() {
     if (!revealHash || revealScheduled || !/^#card-[a-f0-9]{8}-[a-f0-9-]{27}$/.test(location.hash)) return;
@@ -120,7 +120,7 @@
         documentState.schedules = data.schedules || {};
         savedSerial = capturedSerial;
         status(dirty() ? 'unsaved' : 'saved');
-        refreshReferences(); operations?.saved(); inbound?.saved();
+        refreshReferences(); operations?.saved(); inbound?.saved(); schedules?.render();
         return true;
       } catch (_) { status('error'); return false; }
       finally { pending = null; }
@@ -301,6 +301,7 @@
     normalizePositions();
     for(const el of cardsEl.children)resizeCards.observe(el);
     revealCardHash();
+    schedules?.render();
   }
   function placeNewCard(card) {
     const existing = documentState.cards.filter(c => c.id !== card.id).map(c => ({...c, height: Math.max(200, cardsEl.querySelector(`[data-card-id="${c.id}"]`)?.offsetHeight || 520)}));
@@ -391,6 +392,7 @@
   window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
   mobile.addEventListener('change', () => { if (documentState) render(); });
   operations = window.CanvasOperations?.create({root, t, element, button, request, csrf, form, surface, cardsEl, document: () => documentState, applyPreset: data => { if (!documentState || documentState.version !== 1 || documentState.cards.length || documentState.edges.length) return false; documentState.cards = data.cards; documentState.edges = data.edges; changed(); render(); return true; }, changed, render, save, reload: async () => { if (dirty() && !confirm(t('reload_confirm'))) return false; clearTimeout(timer); await load(); return true; }});
+  schedules = window.CanvasSchedules?.create({root,t,element,button,document:()=>documentState,toggle:card=>operations?.toggleSchedule(card)});
   root.querySelectorAll('[data-canvas-view]').forEach(button=>button.addEventListener('click',()=>selectView(button.dataset.canvasView)));
   root.querySelector('[data-action=arrange]').addEventListener('click',()=>{
     if(!documentState||view!=='flow')return;
