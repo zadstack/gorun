@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.18.7] - 2026-11-03
+
 ### Added
 
 - Native builder layouts for compact directories and media rows with images at the reading start or end; existing layouts keep their defaults.
