@@ -73,7 +73,7 @@ func publicNavigationURL(raw string) bool {
 		return false
 	}
 	u, err := url.Parse(raw)
-	if err != nil || u.User != nil || strings.IndexFunc(u.Path, unicode.IsControl) >= 0 {
+	if err != nil || u.User != nil || strings.Contains(u.Path, "\\") || strings.IndexFunc(u.Path, unicode.IsControl) >= 0 {
 		return false
 	}
 	// Only root-relative paths, same-document fragments and explicit web URLs.

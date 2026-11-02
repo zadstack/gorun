@@ -51,8 +51,12 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 	}
 	var sections, directories, taskSearches []*html.Node
 	hasHeading := false
+	hasNativeUI := false
 	var walk func(*html.Node)
 	walk = func(node *html.Node) {
+		if node.Type == html.ElementNode && hasClass(node, "gp-native-ui") {
+			hasNativeUI = true
+		}
 		if node.Type == html.ElementNode && node.Data == "h1" {
 			hasHeading = true
 		}
@@ -151,6 +155,12 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 	if hasHeroScene {
 		output.WriteString(`<link rel="stylesheet" href="/static/builder/hero-scenes.css"><script type="module" src="/static/builder/hero-scenes.js"></script>`)
 	}
+	if hasNativeUI {
+		if len(NativeUICSS()) == 0 {
+			return "", fmt.Errorf("theme: native UI stylesheet missing")
+		}
+		fmt.Fprintf(&output, `<link rel="stylesheet" href="%s">`, NativeUICSSURL())
+	}
 	return template.HTML(output.String()), nil
 }
 
@@ -162,7 +172,7 @@ func (s *service) RenderBuilderBody(ctx context.Context, it *content.Item) (stri
 		locale = s.d.Settings.GetString(ctx, "site.locale", "ar")
 	}
 	ctx = i18n.WithLocale(ctx, locale)
-	tc := &Context{Content: it, Locale: locale, Dir: s.d.I18n.Dir(locale), Extra: map[string]any{}, Request: &http.Request{URL: &url.URL{Path: "/" + it.Slug}}}
+	tc := &Context{Site: s.siteInfo(ctx), Content: it, Locale: locale, Dir: s.d.I18n.Dir(locale), Extra: map[string]any{}, Request: &http.Request{URL: &url.URL{Path: "/" + it.Slug}}}
 	set, err := s.set(ctx, s.activeSlug(ctx), false)
 	if err != nil {
 		return "", err
@@ -183,5 +193,14 @@ func (s *service) RenderBuilderBody(ctx context.Context, it *content.Item) (stri
 	if err := compiled.ExecuteTemplate(&buffer, "builder.preview", tc); err != nil {
 		return "", err
 	}
-	return buffer.String(), nil
+	rendered := buffer.String()
+	stylesheetLink := `<link rel="stylesheet" href="` + NativeUICSSURL() + `">`
+	if strings.Contains(rendered, stylesheetLink) {
+		var inline bytes.Buffer
+		if err := html.Render(&inline, previewInlineStyle(string(NativeUICSS()))); err != nil {
+			return "", err
+		}
+		rendered = strings.ReplaceAll(rendered, stylesheetLink, inline.String())
+	}
+	return rendered, nil
 }

@@ -29,6 +29,7 @@ func TestPublicActionNavigationBoundary(t *testing.T) {
 		{"/%2fexample.org", "", "unavailable||"},
 		{"https://user:password@example.org", "", "unavailable||"},
 		{"/%0aexample.org", "", "unavailable||"},
+		{"/%5cexample.org", "", "unavailable||"},
 		{"/safe", "arbitrary-state", "unavailable||"},
 	} {
 		out := renderIn(t, e, "ar", &Context{Extra: map[string]any{"action": map[string]any{"label": "<open>", "url": tc.url, "state": tc.state, "reason": "<reason>"}}})

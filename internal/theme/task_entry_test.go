@@ -120,3 +120,15 @@ func TestTaskSearchInvalidMarkersRetainSafeFallbackWithoutAForm(t *testing.T) {
 		})
 	}
 }
+
+func TestTaskBodyPreviewKeepsTheSiteLanguageSearchUnprefixed(t *testing.T) {
+	e := newEnv(t, "../../themes")
+	e.setting("site.locale", "en")
+	preview, err := e.svc.RenderBuilderBody(t.Context(), &content.Item{ID: "preview", Type: "page", Title: "Task", Locale: "en", Body: taskSearchFixture("/search", "q")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(preview, `action="/search"`) || strings.Contains(preview, `action="/en/search"`) {
+		t.Fatal("body preview did not inherit the site's language")
+	}
+}
