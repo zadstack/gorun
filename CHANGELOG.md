@@ -12,6 +12,15 @@ All notable changes to GoRun are recorded here. The format follows
 - Builder forms can have one file field. Attachments download from the entry page under the same permission, and plain captured forms never accept files.
 - `site.form.submitted` webhooks for these forms carry `form` (the slug) and `fields`. The contact form and its inbox are unchanged.
 - The `{{form "slug" csrf .Request.URL.Path}}` theme function renders a published builder form anywhere, and the editor previews a draft form with every control disabled.
+- Native task-entry search, choice and service layouts, with compact rows, image-led and featured/secondary result layouts in the page builder.
+- Shared opt-in public navigation, detail/action and feedback components, plus a default `public-detail` page template.
+- Search, taxonomy/field filters and pagination in native directories, including independent query state for multiple directories on one page.
+- Directory results that open an opted-in detail return to the same search, filters and page, and a filtered directory with no results offers a reset link.
+- **Suggest improvement** on every builder section offers validated layout alternatives that keep the section's text, links and media; preview renders in the sandbox, apply changes only the unsaved draft, and a configured AI provider may pick one of the allowed alternatives from layout metadata alone.
+
+### Fixed
+
+- A canvas watchdog closes runs that stopped making progress and records why. Runs left queued for 15 minutes fail as never started. Runs waiting more than 24 hours for an external agent become uncertain. Interrupted runs (running past 5 minutes, already swept) now say so. Stuck runs no longer count against the board's run limit, and the run history explains each stop in Arabic and English. Nothing is retried automatically.
 
 ## [0.18.7] - 2026-11-03
 

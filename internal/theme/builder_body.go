@@ -134,10 +134,14 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 	for _, node := range nodes {
 		wrapper.AppendChild(node)
 	}
-	var sections, directories []*html.Node
+	var sections, directories, taskSearches []*html.Node
 	hasHeading := false
+	hasNativeUI := false
 	var walk func(*html.Node)
 	walk = func(node *html.Node) {
+		if node.Type == html.ElementNode && hasClass(node, "gp-native-ui") {
+			hasNativeUI = true
+		}
 		if node.Type == html.ElementNode && node.Data == "h1" {
 			hasHeading = true
 		}
@@ -146,6 +150,9 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 		}
 		if node.Type == html.ElementNode && node.Data == "div" && hasClass(node, "gp-s-directory") {
 			directories = append(directories, node)
+		}
+		if node.Type == html.ElementNode && node.Data == "div" && hasClass(node, "gp-task-search") {
+			taskSearches = append(taskSearches, node)
 		}
 		for child := node.FirstChild; child != nil; child = child.NextSibling {
 			walk(child)
@@ -226,10 +233,11 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 			}
 		}
 	}
-	for i, node := range directories {
-		if err := f.directory(node, i); err != nil {
-			return "", err
-		}
+	if err := f.renderDirectories(directories); err != nil {
+		return "", err
+	}
+	for index, search := range taskSearches {
+		f.expandTaskSearch(search, index)
 	}
 	var output bytes.Buffer
 	if !hasHeading {
@@ -243,6 +251,12 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 	if hasHeroScene {
 		output.WriteString(`<link rel="stylesheet" href="/static/builder/hero-scenes.css"><script type="module" src="/static/builder/hero-scenes.js"></script>`)
 	}
+	if hasNativeUI {
+		if len(NativeUICSS()) == 0 {
+			return "", fmt.Errorf("theme: native UI stylesheet missing")
+		}
+		fmt.Fprintf(&output, `<link rel="stylesheet" href="%s">`, NativeUICSSURL())
+	}
 	return template.HTML(output.String()), nil
 }
 
@@ -254,7 +268,7 @@ func (s *service) RenderBuilderBody(ctx context.Context, it *content.Item) (stri
 		locale = s.d.Settings.GetString(ctx, "site.locale", "ar")
 	}
 	ctx = i18n.WithLocale(ctx, locale)
-	tc := &Context{Content: it, Locale: locale, Dir: s.d.I18n.Dir(locale), Extra: map[string]any{}, Request: &http.Request{URL: &url.URL{Path: "/" + it.Slug}}}
+	tc := &Context{Site: s.siteInfo(ctx), Content: it, Locale: locale, Dir: s.d.I18n.Dir(locale), Extra: map[string]any{}, Request: &http.Request{URL: &url.URL{Path: "/" + it.Slug}}}
 	set, err := s.set(ctx, s.activeSlug(ctx), false)
 	if err != nil {
 		return "", err
@@ -275,81 +289,14 @@ func (s *service) RenderBuilderBody(ctx context.Context, it *content.Item) (stri
 	if err := compiled.ExecuteTemplate(&buffer, "builder.preview", tc); err != nil {
 		return "", err
 	}
-	return buffer.String(), nil
-}
-
-// directoryLimit caps the items one directory section lists; a search
-// narrows them.
-const directoryLimit = 24
-
-// directory fills a native directory section with a search form and the
-// published items of its content type in the page locale, matched by the
-// request's q. A type that is not public lists nothing.
-func (f *funcs) directory(node *html.Node, index int) error {
-	listType := ""
-	for _, attribute := range node.Attr {
-		if attribute.Key == "class" {
-			for _, value := range strings.Fields(attribute.Val) {
-				if strings.HasPrefix(value, "gp-s-dir-") {
-					listType = strings.TrimPrefix(value, "gp-s-dir-")
-				}
-			}
+	rendered := buffer.String()
+	stylesheetLink := `<link rel="stylesheet" href="` + NativeUICSSURL() + `">`
+	if strings.Contains(rendered, stylesheetLink) {
+		var inline bytes.Buffer
+		if err := html.Render(&inline, previewInlineStyle(string(NativeUICSS()))); err != nil {
+			return "", err
 		}
+		rendered = strings.ReplaceAll(rendered, stylesheetLink, inline.String())
 	}
-	if listType == "" {
-		return nil
-	}
-	path, search := "/", ""
-	if r := f.st.tc.Request; r != nil && r.URL != nil {
-		path = r.URL.Path
-		search = strings.TrimSpace(r.URL.Query().Get("q"))
-	}
-	if runes := []rune(search); len(runes) > 100 {
-		search = string(runes[:100])
-	}
-	args := map[string]any{"type": listType, "status": "published", "per_page": directoryLimit}
-	if search != "" {
-		args["search"] = search
-	}
-	items, err := f.query(args)
-	if err != nil {
-		return nil // an unknown or private type lists nothing rather than failing the page
-	}
-	ar := f.st.tc.Locale == "ar"
-	word := func(en, arabic string) string {
-		if ar {
-			return arabic
-		}
-		return en
-	}
-	esc := template.HTMLEscapeString
-	id := fmt.Sprintf("gp-dir-%d-q", index)
-	var markup strings.Builder
-	fmt.Fprintf(&markup, `<form class="gp-core gp-s-dir-search" role="search" method="get" action="%s"><label for="%s">%s</label><input id="%s" type="search" name="q" value="%s" maxlength="100"><button type="submit">%s</button></form>`,
-		esc(path), id, word("Search", "بحث"), id, esc(search), word("Search", "بحث"))
-	if search != "" {
-		fmt.Fprintf(&markup, `<p class="gp-s-dir-count">%s <a href="%s">%s</a></p>`,
-			esc(fmt.Sprintf(word("%d results for “%s”.", "%d نتيجة لـ «%s»."), items.Total, search)), esc(path), word("Show all", "عرض الكل"))
-	}
-	if len(items.Items) == 0 {
-		if search != "" {
-			markup.WriteString(`<p class="gp-s-dir-empty">` + word("Nothing matches this search yet.", "لا شيء يطابق هذا البحث بعد.") + `</p>`)
-		} else {
-			markup.WriteString(`<p class="gp-s-dir-empty">` + word("Nothing is published here yet.", "لم يُنشر شيء هنا بعد.") + `</p>`)
-		}
-		return appendHTML(node, markup.String())
-	}
-	markup.WriteString(`<div class="gp-grid">`)
-	for _, item := range items.Items {
-		card, err := f.include("components.card.html", []any{item})
-		if err != nil {
-			return err
-		}
-		markup.WriteString(string(card))
-	}
-	markup.WriteString("</div>")
-	if items.Total > len(items.Items) {
-		fmt.Fprintf(&markup, `<p class="gp-s-dir-more">%s</p>`, esc(fmt.Sprintf(word("Showing %d of %d. Search to narrow the list.", "يُعرض %d من %d. ابحث لتضييق القائمة."), len(items.Items), items.Total)))
-	}
-	return appendHTML(node, markup.String())
+	return rendered, nil
 }

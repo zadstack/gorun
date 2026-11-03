@@ -1,0 +1,42 @@
+/* Opt-in native task/result layouts. Linked only when a rendered body uses them. */
+.gp-native-ui{min-width:0;color:var(--ink,#1e293b);overflow-wrap:anywhere}
+.gp-native-ui *, .gp-native-ui *::before, .gp-native-ui *::after{box-sizing:border-box}
+.gp-native-ui :where(a,button,input):focus-visible{outline:3px solid var(--green,var(--accent,#315f9b));outline-offset:4px}
+.gp-native-ui :where(h3,p,figure){margin:0}
+.gp-native-ui h3{font-size:1.125rem;line-height:1.5}
+.gp-native-ui p{line-height:1.7;max-inline-size:70ch}
+.gp-native-ui a{text-underline-offset:.2em}
+.gp-native-ui .gp-task-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));list-style:none;gap:0;margin:1.5rem 0 0;padding:0;border-block-start:1px solid var(--line,#dbe1e8)}
+.gp-native-ui .gp-task-choices li{min-width:0;padding:1.25rem;border-block-end:1px solid var(--line,#dbe1e8)}
+.gp-native-ui .gp-task-choices a{display:inline-flex;align-items:center;min-block-size:44px;font-weight:700}
+.gp-native-ui .gp-task-choices p{font-size:.9375rem;margin-block-start:.25rem}
+.gp-native-ui.gp-task-service-first .gp-task-choices{grid-template-columns:1fr}
+.gp-native-ui.gp-task-service-first .gp-task-choices li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);align-items:start;gap:.5rem 1.5rem;padding-inline:0}
+.gp-native-ui.gp-task-service-first .gp-task-choices li:has(.gp-s-icon){grid-template-columns:2rem minmax(0,1fr) minmax(0,2fr)}
+.gp-native-ui .gp-task-search{padding:1.25rem;border:1px solid var(--line,#dbe1e8);background:var(--panel,var(--bg,#f8fafb));border-radius:var(--radius,8px)}
+.gp-native-ui .gp-task-search-placeholder{display:block;margin-block-start:.5rem}
+.gp-native-ui .gp-task-search form{display:flex;flex-wrap:wrap;align-items:end;gap:.75rem}
+.gp-native-ui .gp-task-search label{flex:1 1 18rem;display:grid;gap:.5rem;font-weight:600;min-width:0}
+.gp-native-ui .gp-task-search input{inline-size:100%;min-block-size:44px;font:inherit;padding:.65rem .8rem;border:1px solid var(--line,#b8c3d1);border-radius:var(--radius,8px);background:var(--bg,#f8fafb);color:inherit}
+.gp-native-ui .gp-task-search button{min-block-size:44px;font:inherit;font-weight:700;padding:.65rem 1.25rem;border:1px solid currentColor;border-radius:var(--radius,8px);background:var(--panel,var(--bg,#f8fafb));color:inherit;cursor:pointer}
+.gp-native-ui .gp-task-search button:hover{box-shadow:inset 0 0 0 1px currentColor}
+.gp-native-ui .gp-feature-entry{display:grid;min-width:0;gap:1rem;padding:1.25rem 0;border-block-end:1px solid var(--line,#dbe1e8);align-content:start}
+.gp-native-ui .gp-feature-copy{min-width:0;display:grid;align-content:start;gap:.5rem}
+.gp-native-ui .gp-feature-media{margin:0;min-width:0;overflow:hidden;border-radius:var(--radius,8px)}
+.gp-native-ui .gp-feature-media img{display:block;inline-size:100%;aspect-ratio:16/10;object-fit:cover}
+.gp-native-ui.gp-feature-compact-rows .gp-feature-entry:has(.gp-feature-media){grid-template-columns:6rem minmax(0,1fr)}
+.gp-native-ui.gp-feature-compact-rows .gp-feature-media img{aspect-ratio:1}
+.gp-native-ui.gp-feature-image-led{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
+.gp-native-ui.gp-feature-featured-secondary{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:0 2rem}
+.gp-native-ui.gp-feature-featured-secondary .gp-feature-primary,.gp-native-ui.gp-feature-featured-secondary .gp-feature-secondary{min-width:0}
+.gp-native-ui.gp-feature-featured-secondary .gp-feature-secondary .gp-feature-entry:has(.gp-feature-media){grid-template-columns:5rem minmax(0,1fr)}
+.gp-native-ui.gp-feature-featured-secondary .gp-feature-secondary .gp-feature-media img{aspect-ratio:1}
+.gp-native-ui.gp-feature-featured-secondary .gp-feature-primary:only-child{grid-column:1/-1}
+.gp-native-ui .gp-native-empty{grid-column:1/-1;padding-block:1rem}
+@media(max-width:640px){
+.gp-native-ui.gp-feature-image-led,.gp-native-ui.gp-feature-featured-secondary{grid-template-columns:minmax(0,1fr)}
+.gp-native-ui.gp-feature-featured-secondary .gp-feature-entry,.gp-native-ui.gp-feature-featured-secondary .gp-feature-primary{grid-column:auto}
+.gp-native-ui.gp-feature-compact-rows .gp-feature-entry:has(.gp-feature-media){grid-template-columns:4.5rem minmax(0,1fr)}
+.gp-native-ui.gp-task-service-first .gp-task-choices li,.gp-native-ui.gp-task-service-first .gp-task-choices li:has(.gp-s-icon){display:block}
+.gp-native-ui .gp-task-search button{inline-size:100%}
+}

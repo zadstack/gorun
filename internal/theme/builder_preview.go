@@ -102,6 +102,12 @@ func (s *service) RenderBuilderThemePreview(ctx context.Context, it *content.Ite
 				child = next
 				continue
 			}
+			if child.Type == html.ElementNode && child.Data == "link" && previewNativeUIStylesheet(child) {
+				node.InsertBefore(previewInlineStyle(string(NativeUICSS())), child)
+				node.RemoveChild(child)
+				child = next
+				continue
+			}
 			if child.Type == html.ElementNode && child.Data == "link" && previewStylesheet(child, set.chain) {
 				href, _ := previewLink(child)
 				css, err := inlinePreviewCSS(href, set.chain, &assetBudget)

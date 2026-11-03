@@ -1,0 +1,5 @@
+{{/* Kind empty/error/unavailable. Text is plain escaped content, never raw HTML. */}}
+<section role="{{if eq .Kind "error"}}alert{{else}}status{{end}}" class="gp-public-state" data-state="{{if eq .Kind "error"}}error{{else if eq .Kind "empty"}}empty{{else}}unavailable{{end}}">
+  {{with .Title}}<h2>{{.}}</h2>{{end}}{{with .Text}}<p>{{.}}</p>{{end}}
+  {{with .Action}}{{component "public-action" .}}{{end}}
+</section>
