@@ -199,7 +199,14 @@ func validateFormsForPublish(doc Document) error {
 		}
 		slugs[f.Slug] = true
 		names := map[string]bool{}
+		files := 0
 		for _, fl := range f.Fields {
+			// Site stores one upload per entry, so a form takes one file field.
+			if fl.Type == "file" {
+				if files++; files > 1 {
+					return errors.New("builder: a form takes at most one file field")
+				}
+			}
 			if !formFieldPattern.MatchString(fl.Name) || strings.HasPrefix(fl.Name, "_") || fl.Name == "website" {
 				return fmt.Errorf("builder: invalid form field name %q", fl.Name)
 			}

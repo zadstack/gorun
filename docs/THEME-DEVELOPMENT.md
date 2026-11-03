@@ -50,6 +50,32 @@ GoRun resolves templates by hierarchy:
 
 Use `{{part "header" .}}` and `{{component "card" .}}` to reuse existing UI; see [THEMES.md](THEMES.md) for template context, functions and the full hierarchy.
 
+### Forms
+
+A form built with the page builder can be placed anywhere in a theme with the `form` function. It renders the published form's fields, labels, help text and button, posts to `/forms/<slug>` and is validated on the server. A closed or unknown form renders nothing:
+
+```html
+{{form "booking" csrf .Request.URL.Path}}
+```
+
+The arguments are the form's slug, the CSRF token and the path to return to. Field markup uses the classes `sb-form gp-form-fields` (form), `sf-field sf-<type>` (each field) and `sf-help` (help text), and element ids start with `sf-<slug>-`.
+
+A plain HTML form that posts to `/forms/<slug>` is captured: its first submission creates the form in **Inbox → Forms**, and each field it sends becomes a column. Include the CSRF token:
+
+```html
+<form method="post" action="/forms/quote">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="_back" value="{{.Request.URL.Path}}">
+  <label for="quote-name">{{t "quote.name"}}</label>
+  <input id="quote-name" name="name" required>
+  <label for="quote-details">{{t "quote.details"}}</label>
+  <textarea id="quote-details" name="details"></textarea>
+  <button type="submit">{{t "quote.send"}}</button>
+</form>
+```
+
+Field names must match `[a-z0-9_]{1,40}`. A captured form takes at most 30 fields of 4,000 characters each and no files; names starting with `_` and the `website` honeypot are not stored. After a submission, the theme's `form-result.html` renders `.Extra.form`, and `.Message` holds a builder form's own success text when it has one.
+
 ## 4. Add CSS and assets
 
 Put your CSS in `assets/style.css` and link it from an overridden head part (or the inherited extension hook when available) using:

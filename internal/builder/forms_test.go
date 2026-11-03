@@ -27,6 +27,11 @@ func TestFormSectionValidates(t *testing.T) {
 	if err := ValidatePublication(Document{Version: 1, Sections: []Section{formSection("f", "booking")}}); err != nil {
 		t.Fatalf("valid form rejected: %v", err)
 	}
+	oneFile := formSection("f", "booking")
+	oneFile.Form.Fields = append(oneFile.Form.Fields, FormFieldSpec{Name: "cv", Label: "CV", Type: "file"})
+	if err := ValidatePublication(Document{Version: 1, Sections: []Section{oneFile}}); err != nil {
+		t.Fatalf("one file field rejected: %v", err)
+	}
 	// A draft may hold an unfinished form: no slug and no fields yet.
 	draft := formSection("f", "")
 	draft.Form.Fields = nil
@@ -70,7 +75,10 @@ func TestFormSectionValidates(t *testing.T) {
 		"unknown type":    with(func(s *Section) { s.Form.Fields[0].Type = "color" }),
 		"choice no list":  with(func(s *Section) { s.Form.Fields[2].Choices = nil }),
 		"empty choice":    with(func(s *Section) { s.Form.Fields[2].Choices = []string{"Sales", " "} }),
-		"duplicate slug":  {Version: 1, Sections: []Section{formSection("a", "booking"), formSection("b", "booking")}},
+		"two file fields": with(func(s *Section) {
+			s.Form.Fields = append(s.Form.Fields, FormFieldSpec{Name: "cv", Label: "CV", Type: "file"}, FormFieldSpec{Name: "photo", Label: "Photo", Type: "file"})
+		}),
+		"duplicate slug": {Version: 1, Sections: []Section{formSection("a", "booking"), formSection("b", "booking")}},
 	}
 	// Bounds hold for drafts too.
 	always := map[string]Document{

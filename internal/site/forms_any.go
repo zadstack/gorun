@@ -130,6 +130,29 @@ func (h *handlers) formBySlug(ctx context.Context, slug string) (FormDefinition,
 	return formBySlugQ(ctx, h.d.DB, slug)
 }
 
+// fileField returns def's pinned file field (a builder form has at most
+// one), or nil.
+func fileField(def FormDefinition) *FormField {
+	for i, f := range def.Fields {
+		if f.Type == fieldFile && f.State == statePinned {
+			return &def.Fields[i]
+		}
+	}
+	return nil
+}
+
+// successMessage is builder form slug's own success text, or "".
+func (h *handlers) successMessage(ctx context.Context, slug string) string {
+	if slug == "" {
+		return ""
+	}
+	def, err := h.formBySlug(ctx, slug)
+	if err != nil || def.Source != formBuilder {
+		return ""
+	}
+	return strings.TrimSpace(def.Success)
+}
+
 type formOrderKey struct{}
 
 // formGuard runs on POST /forms/{slug} before the CSRF middleware, like
@@ -137,10 +160,19 @@ type formOrderKey struct{}
 // The body is read once to record the order its fields arrive in (the
 // column order of a captured form), then replayed for form parsing; a
 // multipart body is parsed here and its _csrf passed on as X-CSRF-Token.
+// An open builder form with a file field, while attachments are on, gets
+// contactGuard's raised cap instead and is parsed without the order scan
+// (its columns are its declared fields). The form configuration rides on.
 func (h *handlers) formGuard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !h.limiter.allow(audit.IPFromContext(r.Context())) {
 			h.formResult(w, r, http.StatusTooManyRequests, FormState{Errors: map[string]string{"form": "site.form.rate_limited"}})
+			return
+		}
+		cfg := h.formConfig(r.Context())
+		r = r.WithContext(context.WithValue(r.Context(), formConfigKey{}, cfg))
+		if h.takesFile(r, cfg) {
+			h.fileFormGuard(w, r, cfg, next)
 			return
 		}
 		raw, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxFormBody))
@@ -168,6 +200,39 @@ func (h *handlers) formGuard(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), formOrderKey{}, order)))
 	})
+}
+
+// takesFile reports a POST to an open builder form with a file field while
+// attachments are on.
+func (h *handlers) takesFile(r *http.Request, cfg formConfig) bool {
+	slug := chi.URLParam(r, "slug")
+	if !cfg.Attachments || !formSlugRe.MatchString(slug) {
+		return false
+	}
+	def, err := h.formBySlug(r.Context(), slug)
+	return err == nil && def.Source == formBuilder && def.Open && fileField(def) != nil
+}
+
+// fileFormGuard is contactGuard's body handling for a builder form with a
+// file field: 64 KiB plus the attachment limit, multipart parsed once.
+func (h *handlers) fileFormGuard(w http.ResponseWriter, r *http.Request, cfg formConfig, next http.Handler) {
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxFormBody)+cfg.maxBytes()+multipartOverhead)
+	if ct, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type")); ct == "multipart/form-data" {
+		if err := r.ParseMultipartForm(multipartMemory); err != nil {
+			if _, tooBig := errors.AsType[*http.MaxBytesError](err); tooBig {
+				h.formResult(w, r, http.StatusRequestEntityTooLarge, FormState{Errors: map[string]string{"form": errFileTooLarge.Error()},
+					Back: safeBack("", r.Referer())})
+				return
+			}
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		defer r.MultipartForm.RemoveAll()
+		if tok := r.PostFormValue("_csrf"); tok != "" && r.Header.Get(csrfHeader) == "" {
+			r.Header.Set(csrfHeader, tok)
+		}
+	}
+	next.ServeHTTP(w, r)
 }
 
 // fieldOrder lists the distinct field names of a form body in the order
@@ -246,13 +311,27 @@ func (h *handlers) formSubmit(w http.ResponseWriter, r *http.Request) {
 	builder := known && def.Source == formBuilder
 	var data map[string]string
 	var names []string
+	var up *upload
 	if builder {
 		var errs map[string]string
-		if data, errs = validateBuilder(def, values); len(errs) > 0 {
+		data, errs = validateBuilder(def, values)
+		cfg, ok := ctx.Value(formConfigKey{}).(formConfig)
+		if !ok {
+			cfg = h.formConfig(ctx)
+		}
+		if up, err = builderUpload(r, def, cfg, errs); err != nil {
+			h.d.Log.Error("site: read form upload", "form", slug, "err", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		if len(errs) > 0 {
 			// "form" also tells form-result.html not to re-render the contact form.
 			errs["form"] = "site.form.check_fields"
 			h.formResult(w, r, http.StatusUnprocessableEntity, FormState{Errors: errs, Values: data, Back: back})
 			return
+		}
+		if up != nil {
+			data[fileField(def).Name] = up.Name
 		}
 	} else {
 		hasFiles := r.MultipartForm != nil && len(r.MultipartForm.File) > 0
@@ -277,11 +356,29 @@ func (h *handlers) formSubmit(w http.ResponseWriter, r *http.Request) {
 	if token == "" {
 		token = r.Header.Get(csrfHeader)
 	}
-	encoded, _ := json.Marshal([]any{token, slug, data, page}) // map keys marshal sorted
-	sum := sha256.Sum256(encoded)
+	keyParts := []any{token, slug, data, page} // map keys marshal sorted
 	sub := FormSubmission{ID: db.NewID(), Form: slug, Fields: data, Page: page, IP: audit.IPFromContext(ctx), SubmittedAt: db.Now()}
+	if up != nil {
+		// The file's bytes are part of the key: a different file is a new entry.
+		fileHash, err := up.hash()
+		if err == nil {
+			err = h.saveUpload(sub.ID, up)
+		}
+		if err != nil {
+			h.d.Log.Error("site: store form upload", "form", slug, "err", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		keyParts = append(keyParts, fileHash)
+		sub.AttachmentName, sub.AttachmentType, sub.AttachmentSize = up.Name, up.Type, up.Size
+	}
+	encoded, _ := json.Marshal(keyParts)
+	sum := sha256.Sum256(encoded)
 
 	duplicate, err := h.storeFormEntry(ctx, slug, builder, names, sub, hex.EncodeToString(sum[:]))
+	if (err != nil || duplicate) && up != nil {
+		_ = h.removeUpload(sub.ID)
+	}
 	switch {
 	case errors.Is(err, errFormCap), errors.Is(err, errFormChanged):
 		h.formResult(w, r, http.StatusUnprocessableEntity, FormState{Errors: map[string]string{"form": "site.form.invalid"}, Back: back})
@@ -299,7 +396,33 @@ func (h *handlers) formSubmit(w http.ResponseWriter, r *http.Request) {
 		h.d.Hooks.Emit(ctx, HookFormSubmitted, sub)
 		h.d.Audit.Record(ctx, "site.form.submit", "form", slug, map[string]any{"page": page})
 	}
-	h.formResult(w, r, http.StatusOK, FormState{OK: true, Back: back})
+	ok := FormState{OK: true, Back: back}
+	if builder {
+		ok.Message, ok.Form = strings.TrimSpace(def.Success), slug
+	}
+	h.formResult(w, r, http.StatusOK, ok)
+}
+
+// builderUpload reads the file posted to def's file field when attachments
+// are on (otherwise the field does not exist for visitors) and records a
+// rejection, or a missing required file, in errs. err is an internal
+// failure.
+func builderUpload(r *http.Request, def FormDefinition, cfg formConfig, errs map[string]string) (*upload, error) {
+	f := fileField(def)
+	if f == nil || !cfg.Attachments {
+		return nil, nil
+	}
+	up, err := readUploadField(r.MultipartForm, f.Name, cfg.maxBytes())
+	switch {
+	case errors.Is(err, errFileTooLarge), errors.Is(err, errFileType):
+		errs[f.Name] = err.Error()
+		return nil, nil
+	case err != nil:
+		return nil, err
+	case up == nil && f.Required:
+		errs[f.Name] = "core.validation.required"
+	}
+	return up, nil
 }
 
 // completeOrder appends any posted name the body scan missed, sorted.
@@ -366,7 +489,7 @@ func captureValues(order []string, values map[string]string, hasFiles bool) (nam
 // validateBuilder checks the posted values against def's pinned fields and
 // returns only those fields' non-empty values; unknown and discovered
 // fields are dropped. errs maps a field name to an i18n key. File fields
-// are not handled yet (no value is stored for them).
+// are left to builderUpload.
 func validateBuilder(def FormDefinition, values map[string]string) (data, errs map[string]string) {
 	data, errs = map[string]string{}, map[string]string{}
 	for _, f := range def.Fields {
@@ -455,8 +578,8 @@ func (h *handlers) storeFormEntry(ctx context.Context, slug string, builder bool
 				return err
 			}
 		}
-		if _, err := tx.ExecContext(ctx, `INSERT INTO form_entries (id, form_id, data_json, page, ip, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-			sub.ID, def.ID, string(data), sub.Page, sub.IP, sub.SubmittedAt); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO form_entries (id, form_id, data_json, page, ip, attachment_name, attachment_type, attachment_size, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, sub.ID, def.ID, string(data), sub.Page, sub.IP, sub.AttachmentName, sub.AttachmentType, sub.AttachmentSize, sub.SubmittedAt); err != nil {
 			return err
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO form_entry_keys (request_key, entry_id, created_at) VALUES (?, ?, ?)`, key, sub.ID, sub.SubmittedAt)
@@ -523,7 +646,13 @@ func validateDefinition(d FormDefinition) error {
 		return fmt.Errorf("site: form %s has more than %d fields", d.Slug, maxFormFields)
 	}
 	seen := map[string]bool{}
+	files := 0
 	for _, f := range d.Fields {
+		if f.Type == fieldFile {
+			if files++; files > 1 {
+				return fmt.Errorf("site: form %s has more than one file field", d.Slug)
+			}
+		}
 		if !fieldNameRe.MatchString(f.Name) || ignoredField(f.Name) {
 			return fmt.Errorf("site: form %s: invalid field name %q", d.Slug, f.Name)
 		}

@@ -41,6 +41,7 @@ type reqState struct {
 	settings        map[string]string // memo for setting() within one render
 	menus           map[string]*menus.Menu
 	builderPreview  bool // Inline stored builder tokens inside the inert preview.
+	inertForms      bool // Builder previews: injected site forms render disabled.
 	previewIdentity *brand.Identity
 	previewMenu     *menus.Menu
 	previewSettings map[string]string
@@ -67,6 +68,7 @@ func (f *funcs) itemPath(it *content.Item) string {
 type funcs struct {
 	s  *service
 	st *reqState
+	fm template.FuncMap // the render's full func map (module funcs included)
 }
 
 // funcMap returns module funcs (ThemeRegistry) overlaid with the engine
@@ -79,11 +81,23 @@ func (s *service) funcMap(st *reqState) template.FuncMap {
 	fm := template.FuncMap{
 		"products": func() []any { return nil },
 		"product":  func(string) any { return nil },
+		"form":     func(string, string, string) template.HTML { return "" },
 	}
 	if s.d.Theme != nil {
 		maps.Copy(fm, s.d.Theme.Funcs())
 	}
-	f := &funcs{s: s, st: st}
+	// The site module's form(slug, csrf, back, locale...) renders in the
+	// locale of this render; templates call it as form(slug, csrf, back).
+	if render, ok := fm[formFunc].(func(string, string, string, ...string) template.HTML); ok {
+		fm[formFunc] = func(slug, csrf, back string) template.HTML {
+			locale := ""
+			if st.tc != nil {
+				locale = st.tc.Locale
+			}
+			return render(slug, csrf, back, locale)
+		}
+	}
+	f := &funcs{s: s, st: st, fm: fm}
 	maps.Copy(fm, template.FuncMap{
 		"t":               f.t,
 		"dir":             func() string { return st.tc.Dir },

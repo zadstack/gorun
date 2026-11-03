@@ -13,6 +13,12 @@
     <dd class="whitespace-pre-wrap break-words" dir="auto"><bdi>{{.Value}}</bdi></dd>
     {{end}}
   </dl>
+  {{if .AttachmentName}}
+  <div class="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded border border-line bg-panel-2 p-3">
+    <span class="inline-flex items-center gap-2 min-w-0">{{icon "paperclip" "w-4 h-4 shrink-0"}}<span class="truncate" dir="auto">{{.AttachmentName}}</span><span class="font-mono text-xs text-muted">{{.SizeText}}</span></span>
+    <a href="/admin/forms/{{.Form.Slug}}/entries/{{.ID}}/attachment" class="h-8 px-3 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "download" "w-4 h-4"}}{{t "site.submissions.download"}}</a>
+  </div>
+  {{end}}
   <dl class="px-4 pb-4 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_minmax(0,1fr)] border-t border-line pt-4">
     <dt class="text-muted">{{t "site.submissions.received"}}</dt><dd class="font-mono">{{.CreatedAt}}</dd>
     <dt class="text-muted">{{t "site.forms.entry.page"}}</dt><dd><bdi class="font-mono">{{.Page}}</bdi></dd>

@@ -9,6 +9,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -117,7 +118,13 @@ type formEntryPage struct {
 	Page      string
 	IP        string
 	Fields    []entryField
+	// The uploaded file of a builder form's file field, if any.
+	AttachmentName string
+	AttachmentSize int64
 }
+
+// SizeText is the attachment size for display.
+func (p formEntryPage) SizeText() string { return humanSize(p.AttachmentSize) }
 
 type formDeletePage struct {
 	Form    FormDefinition
@@ -148,6 +155,7 @@ func registerFormsAdmin(d *kernel.Deps, h *handlers) {
 	r.Get(formsPath+"/{slug}/entries/{id}", a.entry)
 	r.Post(formsPath+"/{slug}/entries/{id}/status", a.entryStatus)
 	r.Post(formsPath+"/{slug}/entries/{id}/delete", a.entryDelete)
+	r.Get(formsPath+"/{slug}/entries/{id}/attachment", a.entryAttachment)
 }
 
 func (a *formsAdmin) fail(w http.ResponseWriter, r *http.Request, err error) {
@@ -333,8 +341,8 @@ func (a *formsAdmin) entry(w http.ResponseWriter, r *http.Request) {
 	}
 	p := formEntryPage{Form: def, ID: chi.URLParam(r, "id")}
 	var raw string
-	err = a.h.d.DB.QueryRowContext(ctx, `SELECT status, created_at, page, ip, data_json FROM form_entries WHERE id = ? AND form_id = ?`,
-		p.ID, def.ID).Scan(&p.Status, &p.CreatedAt, &p.Page, &p.IP, &raw)
+	err = a.h.d.DB.QueryRowContext(ctx, `SELECT status, created_at, page, ip, data_json, attachment_name, attachment_size FROM form_entries WHERE id = ? AND form_id = ?`,
+		p.ID, def.ID).Scan(&p.Status, &p.CreatedAt, &p.Page, &p.IP, &raw, &p.AttachmentName, &p.AttachmentSize)
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -357,6 +365,45 @@ func (a *formsAdmin) entry(w http.ResponseWriter, r *http.Request) {
 		p.Fields = append(p.Fields, entryField{Name: k, Label: k, Value: m[k]})
 	}
 	a.tpl.Render(w, r, "pages/site/form_entry.html", p)
+}
+
+// entryAttachment sends an entry's stored file as a download (never
+// inline), like the contact inbox's attachment handler.
+func (a *formsAdmin) entryAttachment(w http.ResponseWriter, r *http.Request) {
+	def, err := a.form(r)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var name, ctype string
+	var size int64
+	err = a.h.d.DB.QueryRowContext(r.Context(), `SELECT attachment_name, attachment_type, attachment_size FROM form_entries WHERE id = ? AND form_id = ?`,
+		id, def.ID).Scan(&name, &ctype, &size)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	f, err := os.Open(a.h.uploadPath(id))
+	if size == 0 || errors.Is(err, os.ErrNotExist) {
+		if err == nil {
+			f.Close()
+		}
+		a.tpl.RenderError(w, r, http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	defer f.Close()
+	h := w.Header()
+	h.Set("Content-Type", ctype)
+	h.Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": name}))
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Cache-Control", "private, no-store")
+	h.Set("Content-Security-Policy", "sandbox")
+	http.ServeContent(w, r, "", time.Time{}, f)
 }
 
 func sortedKeys(m map[string]string) []string {
@@ -411,6 +458,9 @@ func (a *formsAdmin) entryDelete(w http.ResponseWriter, r *http.Request) {
 	if n, _ := res.RowsAffected(); n == 0 {
 		a.tpl.RenderError(w, r, http.StatusNotFound)
 		return
+	}
+	if err := a.h.removeUpload(id); err != nil {
+		a.h.d.Log.Error("site: forms admin", "err", err)
 	}
 	a.h.d.Audit.Record(r.Context(), "site.form.entry.delete", "form_entry", id, map[string]any{"form": def.Slug})
 	a.back(w, r, "/"+def.Slug, "success", "site.forms.flash.deleted")
@@ -550,16 +600,38 @@ func (a *formsAdmin) deleteForm(w http.ResponseWriter, r *http.Request) {
 		a.tpl.RenderWith(w, r, http.StatusConflict, "admin", "pages/site/form_delete.html", p)
 		return
 	}
+	var files []string
 	err = db.InTx(ctx, a.h.d.DB, func(tx *sql.Tx) error {
+		files = files[:0]
+		rows, err := tx.QueryContext(ctx, `SELECT id FROM form_entries WHERE form_id = ? AND attachment_size > 0`, def.ID)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				rows.Close()
+				return err
+			}
+			files = append(files, id)
+		}
+		if err := errors.Join(rows.Err(), rows.Close()); err != nil {
+			return err
+		}
 		if _, err := tx.ExecContext(ctx, `DELETE FROM form_entries WHERE form_id = ?`, def.ID); err != nil {
 			return err
 		}
-		_, err := tx.ExecContext(ctx, `DELETE FROM forms WHERE id = ?`, def.ID)
+		_, err = tx.ExecContext(ctx, `DELETE FROM forms WHERE id = ?`, def.ID)
 		return err
 	})
 	if err != nil {
 		a.fail(w, r, err)
 		return
+	}
+	for _, id := range files { // after the commit: a rollback keeps every file
+		if err := a.h.removeUpload(id); err != nil {
+			a.h.d.Log.Error("site: forms admin", "err", err)
+		}
 	}
 	a.h.d.Audit.Record(ctx, "site.form.delete_form", "form", def.Slug, map[string]any{"entries": p.Entries})
 	a.back(w, r, "", "success", "site.forms.flash.form_deleted")
