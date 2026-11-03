@@ -192,8 +192,9 @@ func segSQL(segs [][2]string) (string, []any, bool) {
 }
 
 // visitorQuery counts the distinct visitors of f's whole range. With kind
-// and ts leading the WHERE, SQLite answers it with a range scan of
-// events_kind_ts (TestVisitorQueryUsesKindTSIndex checks the plan).
+// and ts leading the WHERE, SQLite answers it with a range scan of the
+// covering index events_kind_ts_visitor (TestVisitorQueryUsesKindTSIndex
+// checks the plan).
 func visitorQuery(f Filter) (string, []any) {
 	fs, fargs := filterSQL(f)
 	q := `SELECT COUNT(DISTINCT visitor) FROM events WHERE kind = 'view' AND ts >= ? AND ts < ? AND visitor <> ''` + fs

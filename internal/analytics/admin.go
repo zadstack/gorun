@@ -151,7 +151,7 @@ func (a *adminUI) viewOf(r *http.Request) dashView {
 		base.Set(dim, v)
 		switch dim {
 		case DimPage:
-			f.Page = v
+			f.Page = canonicalPath(v) // stored paths are canonical
 		case DimRef:
 			f.Ref = v
 		case DimCountry:

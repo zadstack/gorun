@@ -101,9 +101,10 @@ func TestCleanPath(t *testing.T) {
 	if p, _ := cleanPath(long); len(p) != maxPath {
 		t.Errorf("long path len = %d, want %d", len(p), maxPath)
 	}
-	// A cut never splits a UTF-8 sequence.
+	// Paths are stored canonical (percent-encoded), and a cut never splits
+	// an escape or the escapes of one UTF-8 character.
 	multi := "/" + strings.Repeat("é", 300)
-	if p, _ := cleanPath(multi); len(p) > maxPath || !strings.HasSuffix(p, "é") {
-		t.Errorf("multibyte cut: len %d", len(p))
+	if p, _ := cleanPath(multi); len(p) > maxPath || !strings.HasSuffix(p, "%C3%A9") {
+		t.Errorf("multibyte cut: len %d, ends %q", len(p), p[max(0, len(p)-6):])
 	}
 }

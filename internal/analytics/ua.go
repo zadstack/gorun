@@ -101,14 +101,18 @@ func refHost(ref, siteHost string) string {
 }
 
 // cleanPath keeps a site-relative path without its query and fragment,
-// cut to maxPath bytes on a rune boundary, plus the utm_source,
-// utm_medium and utm_campaign query values (every other query value is
-// dropped). A value that is not a site path ("" or not starting with a
-// single "/") returns "".
+// in canonical form (canonicalPath) and cut to maxPath bytes without
+// splitting an escape, plus the utm_source, utm_medium and utm_campaign
+// query values (every other query value is dropped). A value that is not
+// a site path ("" or not starting with a single "/", before or after
+// canonicalisation) returns "".
 func cleanPath(raw string) (path string, utm [3]string) {
 	raw, _, _ = strings.Cut(raw, "#")
 	p, q, _ := strings.Cut(raw, "?")
 	if !strings.HasPrefix(p, "/") || strings.HasPrefix(p, "//") || strings.ContainsAny(p, "\x00\r\n\t\\") {
+		return "", utm
+	}
+	if p = canonicalPath(p); strings.HasPrefix(p, "//") {
 		return "", utm
 	}
 	if q != "" {
@@ -117,7 +121,43 @@ func cleanPath(raw string) (path string, utm [3]string) {
 			utm[i] = truncate(strings.TrimSpace(vals.Get(k)), maxUTM)
 		}
 	}
-	return truncate(p, maxPath), utm
+	return truncateEscaped(p, maxPath), utm
+}
+
+// canonicalPath is the one form every stored and compared path takes:
+// decoded, then re-escaped as net/url escapes a path (upper-case hex,
+// UTF-8 percent-encoded). location.pathname (views) is encoded, site's
+// form source (submits) and an operator's typed exclusion are decoded,
+// and a request's EscapedPath may use either; all meet here. A value that
+// does not decode is kept as given.
+func canonicalPath(p string) string {
+	d, err := url.PathUnescape(p)
+	if err != nil {
+		return p
+	}
+	return (&url.URL{Path: d}).EscapedPath()
+}
+
+// truncateEscaped is truncate for a canonical path: a cut never splits a
+// %XX escape, nor the escapes of one UTF-8 character (up to three trailing
+// escapes are dropped until the path decodes to valid UTF-8).
+func truncateEscaped(s string, n int) string {
+	s = truncate(s, n)
+	switch l := len(s); {
+	case l >= 1 && s[l-1] == '%':
+		s = s[:l-1]
+	case l >= 2 && s[l-2] == '%':
+		s = s[:l-2]
+	}
+	for range utf8.UTFMax - 1 {
+		if d, err := url.PathUnescape(s); err != nil || utf8.ValidString(d) {
+			break
+		}
+		if l := len(s); l >= 3 && s[l-3] == '%' {
+			s = s[:l-3]
+		}
+	}
+	return s
 }
 
 // truncate cuts s to at most n bytes without splitting a UTF-8 sequence.

@@ -12,6 +12,7 @@ import (
 	"mime"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"strconv"
 	"strings"
@@ -109,13 +110,29 @@ func (m *Module) tracking(ctx context.Context) (on bool, exclude []string) {
 	}
 	for _, line := range strings.Split(m.settings.GetString(ctx, SettingExclude, ""), "\n") {
 		if p := strings.TrimSpace(line); p != "" {
-			exclude = append(exclude, p)
+			// Saved values are canonical already (cleanExclude); this
+			// also covers a value written before that, or by hand.
+			exclude = append(exclude, canonicalPath(p))
 		}
 	}
 	return true, exclude
 }
 
+// hardExcluded lists the path prefixes that are never tracked, whatever
+// the saved exclusions say: /auth/ carries live credentials in the path
+// (GET /auth/magic/{token} is a 200 page that does not consume its
+// token), /admin is the back office and /_a/ the collection endpoints.
+// Each entry also matches its bare form without the trailing slash.
+var hardExcluded = []string{"/auth/", "/admin/", "/_a/"}
+
+// excluded reports a canonical path that must not be tracked: under a
+// hard exclusion or one of the operator's (canonical) prefixes.
 func excluded(path string, prefixes []string) bool {
+	for _, p := range hardExcluded {
+		if strings.HasPrefix(path, p) || path == strings.TrimSuffix(p, "/") {
+			return true
+		}
+	}
 	for _, p := range prefixes {
 		if strings.HasPrefix(path, p) {
 			return true
@@ -146,7 +163,7 @@ func (m *Module) collect(r *http.Request) {
 	ctx := r.Context()
 	now := time.Now().UTC()
 	ip := audit.IPFromContext(ctx)
-	if !m.limiter.allow(ip, now) || !m.sameOrigin(r) || r.ContentLength > maxBeacon {
+	if !m.limiter.allow(rateKey(ip), now) || !m.sameOrigin(r) || r.ContentLength > maxBeacon {
 		return
 	}
 	body, err := io.ReadAll(io.LimitReader(r.Body, maxBeacon+1))
@@ -235,6 +252,27 @@ func cleanLocale(l string) string {
 	return l
 }
 
+// rateKey is the limiter bucket for a client IP: an IPv4 address keys by
+// itself (/32), an IPv6 address by its /64 (one host, or one subscriber,
+// usually holds a whole /64 and can rotate through it at will). An empty
+// or unparseable IP (no trusted client address) gets the one constant key
+// "-": such requests share a single bucket rather than escaping the limit.
+func rateKey(ip string) string {
+	a, err := netip.ParseAddr(ip)
+	if err != nil {
+		return "-"
+	}
+	a = a.Unmap()
+	if a.Is4() {
+		return a.String()
+	}
+	pfx, err := a.WithZone("").Prefix(64)
+	if err != nil {
+		return "-"
+	}
+	return pfx.String()
+}
+
 // limiter is a fixed-window per-key counter.
 type limiter struct {
 	mu     sync.Mutex
@@ -288,23 +326,27 @@ func (l *limiter) allow(key string, now time.Time) bool {
 }
 
 // inject is the public-router middleware that inserts the script tag
-// before the first </head> of GET 200 text/html responses (ruling A3).
-// Admin paths, the collection endpoints and theme previews are skipped
+// before the first </head> of GET 200 text/html responses that the theme
+// rendered (ruling A3, narrowed by the final review): a module's own HTML
+// page (the magic-link form, launch, work agents...) is never touched.
+// The theme renderer marks its pages through httpx.MarkThemePage on the
+// mark installed here. Hard-excluded paths and theme previews are skipped
 // outright; staff, the tracking switch and excluded prefixes are checked
-// only once a response turns out to be an HTML page.
+// only once a response turns out to be a theme HTML page.
 func (m *Module) inject(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		p := r.URL.Path
-		if r.Method != http.MethodGet || p == "/admin" || strings.HasPrefix(p, "/admin/") || strings.HasPrefix(p, "/_a/") ||
-			r.URL.Query().Has(previewParam) {
+		p := canonicalPath(r.URL.EscapedPath())
+		if r.Method != http.MethodGet || excluded(p, nil) || r.URL.Query().Has(previewParam) {
 			next.ServeHTTP(w, r)
 			return
 		}
+		ctx, mark := httpx.WithPageMark(r.Context())
+		r = r.WithContext(ctx)
 		iw := &injectWriter{ResponseWriter: w, want: func() bool {
-			if auth.Can(r.Context(), permStaff) {
+			if !mark.Themed() || auth.Can(ctx, permStaff) {
 				return false
 			}
-			on, exclude := m.tracking(r.Context())
+			on, exclude := m.tracking(ctx)
 			return on && !excluded(p, exclude)
 		}}
 		next.ServeHTTP(iw, r)

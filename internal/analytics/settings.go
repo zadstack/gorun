@@ -65,7 +65,7 @@ func (a *adminUI) settingsPage(w http.ResponseWriter, r *http.Request) {
 	data := settingsData{
 		Enabled:       m.boolSetting(ctx, SettingEnabled, true),
 		BackupExclude: m.boolSetting(ctx, SettingBackupExclude, false),
-		Exclude:       m.settings.GetString(ctx, SettingExclude, ""),
+		Exclude:       excludeForDisplay(m.settings.GetString(ctx, SettingExclude, "")),
 		GeoFound:      m.geoFound(),
 		GeoPath:       filepath.Join(a.d.Config.DataDir, GeoFile),
 		Today:         dayKey(m.store.clock()),
@@ -94,8 +94,9 @@ func (a *adminUI) back(w http.ResponseWriter, r *http.Request, kind, msg string)
 	http.Redirect(w, r, "/admin"+settingsPath, http.StatusSeeOther)
 }
 
-// cleanExclude trims each line and drops empty ones. Every prefix must be
-// a path (start with one "/"); they are plain string prefixes.
+// cleanExclude trims each line, drops empty ones and stores each prefix
+// in canonical form (canonicalPath). Every prefix must be a path (start
+// with one "/"); they are plain string prefixes of the canonical path.
 func cleanExclude(raw string) (string, bool) {
 	var out []string
 	for _, line := range strings.Split(strings.ReplaceAll(raw, "\r", "\n"), "\n") {
@@ -103,7 +104,14 @@ func cleanExclude(raw string) (string, bool) {
 		if p == "" {
 			continue
 		}
-		if !strings.HasPrefix(p, "/") || strings.HasPrefix(p, "//") || len(p) > 512 || strings.ContainsAny(p, " \t\\") {
+		if !strings.HasPrefix(p, "/") || strings.HasPrefix(p, "//") || strings.ContainsAny(p, "\t\\") {
+			return "", false
+		}
+		// Stored canonical, like every tracked path, so a prefix typed
+		// decoded (/ar/اتصل) and one pasted encoded (/ar/%D8%A7...) both
+		// match.
+		p = canonicalPath(p)
+		if strings.HasPrefix(p, "//") || len(p) > 512 {
 			return "", false
 		}
 		out = append(out, p)
@@ -138,6 +146,19 @@ func (a *adminUI) saveSettings(w http.ResponseWriter, r *http.Request) {
 	a.d.Audit.Record(ctx, "analytics.settings", "settings", ModuleName, map[string]any{
 		"enabled": values[0].v, "exclude": strings.Count(exclude, "\n") + btoi(exclude != ""), "backup_exclude": values[2].v})
 	a.back(w, r, "success", "analytics.settings.flash.saved")
+}
+
+// excludeForDisplay shows each saved (canonical) prefix decoded where that
+// is safe (displayPath), so the operator sees what was typed.
+func excludeForDisplay(saved string) string {
+	if saved == "" {
+		return ""
+	}
+	lines := strings.Split(saved, "\n")
+	for i, l := range lines {
+		lines[i] = displayPath(l)
+	}
+	return strings.Join(lines, "\n")
 }
 
 func btoi(b bool) int {

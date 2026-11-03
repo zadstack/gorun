@@ -60,8 +60,9 @@ func TestMultiDayVisitorsDistinct(t *testing.T) {
 	}
 }
 
-// TestVisitorQueryUsesKindTSIndex checks the range visitor count is an
-// index range scan on events(kind, ts), not a table scan.
+// TestVisitorQueryUsesKindTSIndex checks the range visitor count is a
+// range scan of the covering index events(kind, ts, visitor), not a table
+// scan nor a lookup of every row.
 func TestVisitorQueryUsesKindTSIndex(t *testing.T) {
 	s := clockStore(t)
 	q, args := visitorQuery(rangeOf(day(2026, 10, 1), day(2026, 11, 1)))
@@ -85,8 +86,8 @@ func TestVisitorQueryUsesKindTSIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p := strings.Join(plan, "; "); !strings.Contains(p, "events_kind_ts") {
-		t.Fatalf("plan does not use events_kind_ts: %s", p)
+	if p := strings.Join(plan, "; "); !strings.Contains(p, "COVERING INDEX events_kind_ts_visitor") {
+		t.Fatalf("plan does not use the covering index events_kind_ts_visitor: %s", p)
 	}
 }
 

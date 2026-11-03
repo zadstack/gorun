@@ -123,6 +123,9 @@ func apiRange(r *http.Request, now time.Time) (Filter, map[string]string) {
 		}
 		*p.dst = v
 	}
+	if f.Page != "" {
+		f.Page = canonicalPath(f.Page) // stored paths are canonical
+	}
 	return f, bad
 }
 

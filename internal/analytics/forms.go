@@ -55,7 +55,8 @@ func decodeFormPayload(p any) (formPayload, error) {
 
 // formSubmitted is the site.form.submitted action: it queues a submit
 // event with the form slug and the submission's page path (query and
-// fragment dropped, capped like a view's path). The visitor is unknown,
+// fragment dropped, canonical and capped like a view's path, so a decoded
+// Arabic form source meets the encoded views of the same page). The visitor is unknown,
 // so it stays empty. The event keeps the submission's own time.
 //
 // It never returns an error: a failing action makes the hooks.event job

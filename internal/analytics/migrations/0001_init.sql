@@ -20,7 +20,9 @@ CREATE TABLE events (
 );
 CREATE INDEX events_ts ON events(ts);
 CREATE INDEX events_path_ts ON events(path, ts);
-CREATE INDEX events_kind_ts ON events(kind, ts);
+-- Covering index for the range visitor count (visitorQuery): kind and ts
+-- bound the scan, visitor is read from the index without touching rows.
+CREATE INDEX events_kind_ts_visitor ON events(kind, ts, visitor);
 
 -- dim is one of: total, page, ref, utm, browser, os, device, country, form.
 CREATE TABLE daily (
