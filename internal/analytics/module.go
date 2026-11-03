@@ -9,9 +9,11 @@ import (
 	"context"
 	"database/sql"
 	"io/fs"
+	"log/slog"
 	"time"
 
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/settings"
 )
 
 // Module name, permission and cron.
@@ -28,6 +30,15 @@ const rollupEvery = time.Hour
 type Module struct {
 	store *Store  // nil when analytics.db could not be opened: collection is off
 	buf   *Buffer // nil with store
+
+	// Collection (collect.go), set in Register.
+	settings *settings.Store
+	log      *slog.Logger
+	geo      geo
+	limiter  *limiter
+	siteID   string // siteIDFor(secret key)
+	origin   string // configured site origin (scheme://host)
+	siteHost string // configured site host name
 }
 
 // New returns the analytics module.
@@ -50,8 +61,9 @@ func (*Module) Enabled(ctx context.Context, d *sql.DB) (bool, error) {
 }
 
 // Register opens analytics.db, starts the write buffer (stopped and flushed
-// when the app closes), declares analytics.view and adds the hourly rollup
-// cron. A store that fails to open is logged and the module registers
+// when the app closes), serves the beacon script and endpoint, injects the
+// script into public HTML, declares analytics.view and adds the hourly
+// rollup cron. A store that fails to open is logged and the module registers
 // nothing else, so the site keeps serving with collection off.
 func (m *Module) Register(d *kernel.Deps) error {
 	store, err := OpenStore(d.Config.DataDir)
@@ -67,13 +79,26 @@ func (m *Module) Register(d *kernel.Deps) error {
 		defer close(done)
 		m.buf.Run(ctx)
 	}()
+	m.settings, m.log = d.Settings, d.Log
+	m.limiter = newLimiter(rateLimit, rateWindow)
+	m.siteID = siteIDFor(d.Config.SecretKey)
+	m.origin, m.siteHost = siteOrigin(d.Config.BaseURL)
+	g, closeGeo := openGeo(d.Config.DataDir, d.Log)
+	m.geo = g
 	d.OnClose(func() {
 		stop()
 		<-done // Run flushes what is queued before returning
 		if err := store.Close(); err != nil {
 			d.Log.Error("analytics: close analytics.db", "err", err)
 		}
+		closeGeo()
 	})
+
+	pub := d.Router.Public
+	pub.Get(ScriptPath, serveScript)
+	pub.Head(ScriptPath, serveScript)
+	pub.Post(BeaconPath, m.beacon)
+	pub.Use(m.inject)
 
 	d.Perms.Declare(PermView, map[string]string{"en": "View analytics", "ar": "عرض الإحصائيات"})
 	d.Jobs.Cron(CronRollup, rollupEvery, m.rollup)

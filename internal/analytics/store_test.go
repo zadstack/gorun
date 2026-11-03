@@ -200,9 +200,7 @@ func TestModuleDisabled(t *testing.T) {
 	}
 	srv := httptest.NewServer(app.Handler)
 	defer srv.Close()
-	// Task 1 serves no /_a routes even when enabled, so this 404 only
-	// becomes meaningful once Task 2 adds /_a/s.js and its enabled
-	// counterpart test (200 when the module is on).
+	// TestModuleEnabledServesScript is the enabled counterpart (200).
 	resp, err := http.Get(srv.URL + "/_a/s.js")
 	if err != nil {
 		t.Fatal(err)
