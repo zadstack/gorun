@@ -1,6 +1,8 @@
 package site
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -20,6 +22,8 @@ const (
 	uploadsDir      = "form-uploads"
 	attachmentField = "attachment"
 	maxFileNameLen  = 120
+	// uploadAccept is the file input's accept list, the formats classify takes.
+	uploadAccept = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.csv,.docx,.xlsx,.pptx"
 )
 
 // upload is a validated attachment ready to store; the bytes stay in the
@@ -62,10 +66,16 @@ var (
 // none was sent, or errFileTooLarge / errFileType. It reads only the head of
 // the file to classify it.
 func readUpload(form *multipart.Form, maxBytes int64) (*upload, error) {
-	if form == nil || len(form.File[attachmentField]) == 0 {
+	return readUploadField(form, attachmentField, maxBytes)
+}
+
+// readUploadField is readUpload for the file posted under field (a builder
+// form's file field).
+func readUploadField(form *multipart.Form, field string, maxBytes int64) (*upload, error) {
+	if form == nil || len(form.File[field]) == 0 {
 		return nil, nil
 	}
-	fh := form.File[attachmentField][0]
+	fh := form.File[field][0]
 	if fh.Size == 0 {
 		return nil, nil // an empty file input
 	}
@@ -179,6 +189,21 @@ func (h *handlers) saveUpload(id string, up *upload) error {
 		return fmt.Errorf("site: save upload: %w", err)
 	}
 	return nil
+}
+
+// hash returns the hex SHA-256 of up's bytes (part of a request key, so
+// different files stay distinct submissions).
+func (up *upload) hash() (string, error) {
+	f, err := up.file.Open()
+	if err != nil {
+		return "", fmt.Errorf("site: hash upload: %w", err)
+	}
+	defer f.Close()
+	sum := sha256.New()
+	if _, err := io.Copy(sum, f); err != nil {
+		return "", fmt.Errorf("site: hash upload: %w", err)
+	}
+	return hex.EncodeToString(sum.Sum(nil)), nil
 }
 
 // removeUpload deletes id's attachment; a missing file is not an error.

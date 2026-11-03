@@ -63,6 +63,10 @@ func layoutFailure(err error) *layoutError {
 	if errors.As(err, &known) {
 		return known
 	}
+	var taken *FormSlugTakenError
+	if errors.As(err, &taken) {
+		return &layoutError{code: "validation_failed", message: "page layout cannot be published", fields: map[string]string{"document": taken.Error()}, cause: err}
+	}
 	switch {
 	case errors.Is(err, ErrForbidden):
 		return &layoutError{code: "forbidden", message: "page layout access forbidden", cause: err}

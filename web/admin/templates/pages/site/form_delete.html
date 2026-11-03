@@ -1,0 +1,19 @@
+{{/* Data: site.formDeletePage */}}
+{{define "title"}}{{t "site.forms.delete.title"}}{{end}}
+{{define "content"}}
+<a href="/admin/forms/{{.Form.Slug}}" class="inline-flex items-center gap-1 mb-3 text-blue hover:text-blue-hover underline underline-offset-2">{{icon "chevron-right" "w-4 h-4 ltr:rotate-180"}}{{t "site.forms.delete.cancel"}}</a>
+<div class="rounded border border-line bg-panel p-4 max-w-xl">
+  <h1 class="text-lg font-bold mb-2">{{t "site.forms.delete.title"}} <bdi>{{.Form.Title}}</bdi></h1>
+  <p class="mb-2">{{t "site.forms.delete.entries"}}: <strong class="font-mono" data-entries="{{.Entries}}">{{.Entries}}</strong></p>
+  {{if .Blocked}}
+  <p class="rounded border border-red bg-red-soft text-red px-3 py-2">{{t "site.forms.delete.blocked"}}</p>
+  {{else}}
+  <p class="text-muted mb-4">{{t "site.forms.delete.warning"}}</p>
+  <form method="post" action="/admin/forms/{{.Form.Slug}}/delete" class="flex gap-2">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" class="h-9 px-4 inline-flex items-center gap-1 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2" "w-4 h-4"}}{{t "site.forms.delete.confirm"}}</button>
+    <a href="/admin/forms/{{.Form.Slug}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.forms.delete.cancel"}}</a>
+  </form>
+  {{end}}
+</div>
+{{end}}

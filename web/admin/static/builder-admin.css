@@ -18,3 +18,14 @@
 }
 #page-builder .builder-sort-chosen .builder-drag { cursor: grabbing; }
 #page-builder .builder-sort-ghost { opacity: .45; }
+#page-builder .builder-form-hint { color: var(--red, #b91c1c); font-size: .875rem; }
+#page-builder .builder-form [aria-invalid="true"] { border-color: var(--red, #b91c1c); }
+#page-builder .builder-form-check { min-height: 2rem; }
+@media (pointer: coarse) {
+  #page-builder .builder-form button,
+  #page-builder .builder-form select,
+  #page-builder .builder-form input:not([type="checkbox"]) { min-height: 44px; }
+  #page-builder .builder-form button { min-width: 44px; }
+  #page-builder .builder-form-check { min-height: 44px; }
+  #page-builder .builder-form input[type="checkbox"] { width: 24px; height: 24px; }
+}

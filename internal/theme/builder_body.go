@@ -7,8 +7,10 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
+	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/i18n"
 	"golang.org/x/net/html"
@@ -37,6 +39,89 @@ func appendHTML(target *html.Node, markup string) error {
 	}
 	return nil
 }
+
+// formFunc is the theme func the site module registers to render one of
+// its forms: form(slug, csrf, back string) template.HTML. Theme never
+// imports site, so the builder injector calls it by name.
+const formFunc = "form"
+
+type draftFormsKey struct{}
+
+// WithDraftForms carries a builder draft's form markup, keyed by section ID,
+// into a preview render. Site knows only published forms, so the builder
+// renders each draft form section itself; the preview shows that markup
+// (disabled) instead of the published form. Renders that are not builder
+// previews ignore it.
+func WithDraftForms(ctx context.Context, forms map[string]string) context.Context {
+	return context.WithValue(ctx, draftFormsKey{}, forms)
+}
+
+// formMarkup renders the site form named by a gp-form section's data-form,
+// or "" when the section names none, the func is missing, or the form is
+// unknown or closed. In the builder preview every control is disabled, and
+// a preview carrying draft forms shows the draft's markup for the section.
+func (f *funcs) formMarkup(section *html.Node) (string, error) {
+	slug, id := "", ""
+	for _, attribute := range section.Attr {
+		switch attribute.Key {
+		case "data-form":
+			slug = attribute.Val
+		case "id":
+			id = strings.TrimPrefix(attribute.Val, "gp-")
+		}
+	}
+	if drafts, ok := f.st.ctx.Value(draftFormsKey{}).(map[string]string); ok && f.st.inertForms {
+		if markup := drafts[id]; id != "" && markup != "" {
+			return disableControls(markup)
+		}
+		return "", nil
+	}
+	render, ok := f.fm[formFunc].(func(string, string, string) template.HTML)
+	if slug == "" || !ok {
+		return "", nil
+	}
+	path := "/"
+	if r := f.st.tc.Request; r != nil && r.URL != nil && r.URL.Path != "" {
+		path = r.URL.Path
+	}
+	markup := string(render(slug, auth.CSRFToken(f.st.ctx), path))
+	if markup == "" || !f.st.inertForms {
+		return markup, nil
+	}
+	return disableControls(markup)
+}
+
+// disableControls marks every input, select, textarea and button of markup
+// disabled, as the inert preview shows forms.
+func disableControls(markup string) (string, error) {
+	nodes, err := html.ParseFragment(strings.NewReader(markup), &html.Node{Type: html.ElementNode, Data: "div", DataAtom: atom.Div})
+	if err != nil {
+		return "", err
+	}
+	var walk func(*html.Node)
+	walk = func(node *html.Node) {
+		if node.Type == html.ElementNode {
+			switch node.DataAtom {
+			case atom.Input, atom.Select, atom.Textarea, atom.Button:
+				if !slices.ContainsFunc(node.Attr, func(a html.Attribute) bool { return a.Key == "disabled" }) {
+					node.Attr = append(node.Attr, html.Attribute{Key: "disabled"})
+				}
+			}
+		}
+		for child := node.FirstChild; child != nil; child = child.NextSibling {
+			walk(child)
+		}
+	}
+	var out bytes.Buffer
+	for _, node := range nodes {
+		walk(node)
+		if err := html.Render(&out, node); err != nil {
+			return "", err
+		}
+	}
+	return out.String(), nil
+}
+
 func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 	if it == nil {
 		return "", nil
@@ -110,6 +195,17 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 				return "", err
 			}
 		}
+		if hasClass(section, "gp-form") {
+			markup, err := f.formMarkup(section)
+			if err != nil {
+				return "", err
+			}
+			if markup != "" {
+				if err := appendHTML(target, markup); err != nil {
+					return "", err
+				}
+			}
+		}
 		if hasClass(section, "gp-feed-posts") {
 			posts, err := f.query(map[string]any{"type": "post", "status": "published", "per_page": 6})
 			if err != nil {
@@ -177,7 +273,7 @@ func (s *service) RenderBuilderBody(ctx context.Context, it *content.Item) (stri
 	if err != nil {
 		return "", err
 	}
-	st := &reqState{ctx: ctx, tc: tc, set: set}
+	st := &reqState{ctx: ctx, tc: tc, set: set, inertForms: true}
 	s.cloneMu.Lock()
 	compiled, err := set.base.Clone()
 	s.cloneMu.Unlock()

@@ -7,6 +7,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Any form on the site now stores its submissions. A builder **Form** section (title, slug, fields, button label, thank-you message) creates the form when the page is published, and a plain HTML form posting to `/forms/{slug}` with the CSRF token is captured on its first submission, with unknown fields recorded as discovered.
+- **Forms** in the admin inbox group lists each form with a table of its entries: filters by status, dates and text, 50 per page, CSV export, a detail page that marks an entry read, spam or deleted, and field pinning, hiding, renaming and reordering that never rewrite stored entries.
+- Builder forms can have one file field. Attachments download from the entry page under the same permission, and plain captured forms never accept files.
+- `site.form.submitted` webhooks for these forms carry `form` (the slug) and `fields`. The contact form and its inbox are unchanged.
+- The `{{form "slug" csrf .Request.URL.Path}}` theme function renders a published builder form anywhere, and the editor previews a draft form with every control disabled.
 - Canvas agent and provider cards list their inputs and the schedule that triggers them. A running agent turns a ring around its avatar and shows a short writing line, a failed node says why under its heading, and the toolbar counts running runs.
 - Schedule cards and the scheduled tasks panel show the next run as a clock time with a relative label, such as "Next 14:20 · in 42 minutes".
 - The flow and lanes views carry an edge legend, and an edge from an enabled schedule shows a clock mark.
