@@ -7,6 +7,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Canvas run context inlines each source under a `## [ref:…]` header and shortens long sources to fit 64,000 characters with a marker giving the exact characters left out, instead of failing the run or silently cutting items over 12,000 bytes to 3,000 characters. The review dialog says how many sources were shortened, and external agents fetch the full text with the new `canvases.source` MCP tool.
 - Any form on the site now stores its submissions. A builder **Form** section (title, slug, fields, button label, thank-you message) creates the form when the page is published, and a plain HTML form posting to `/forms/{slug}` with the CSRF token is captured on its first submission, with unknown fields recorded as discovered.
 - **Forms** in the admin inbox group lists each form with a table of its entries: filters by status, dates and text, 50 per page, CSV export, a detail page that marks an entry read, spam or deleted, and field pinning, hiding, renaming and reordering that never rewrite stored entries.
 - Builder forms can have one file field. Attachments download from the entry page under the same permission, and plain captured forms never accept files.

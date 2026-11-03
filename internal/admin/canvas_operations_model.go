@@ -70,10 +70,16 @@ type canvasPrepared struct {
 	ReviewHash         string            `json:"review_hash"`
 	Provider           map[string]string `json:"provider"`
 	Nodes              []string          `json:"nodes"`
+	// Refs lists every source reference in Context; canvases.source serves only these.
+	Refs []string `json:"refs,omitempty"`
+	// Spilled lists the sources Context shortened, in context order.
+	Spilled []canvasSpill `json:"spilled,omitempty"`
+	// full holds each ref's whole text for canvases.source; it is never stored.
+	full map[string]string
 }
 
 func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID string) (canvasPrepared, error) {
-	p := canvasPrepared{BoardID: b.ID, OwnerID: auth.UserFromContext(ctx).ID, NodeID: nodeID, Version: b.Version, SourceTokens: map[string]string{}}
+	p := canvasPrepared{BoardID: b.ID, OwnerID: auth.UserFromContext(ctx).ID, NodeID: nodeID, Version: b.Version, SourceTokens: map[string]string{}, full: map[string]string{}}
 	if !auth.Can(auth.WithUser(ctx, auth.UserFromContext(ctx)), "content.edit") || auth.ActorFromContext(ctx).Kind != "api_key" && !auth.Can(ctx, "content.edit") || auth.ActorFromContext(ctx).Kind == "api_key" && !auth.Can(ctx, "content.view") {
 		return p, errCanvasConsent
 	}
@@ -93,7 +99,14 @@ func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID str
 		}
 	}
 	graph := []canvasCard{}
-	source := []string{}
+	source := []canvasSourceItem{}
+	addSource := func(it canvasSourceItem) {
+		source = append(source, it)
+		if _, seen := p.full[it.Ref]; !seen {
+			p.Refs = append(p.Refs, it.Ref)
+		}
+		p.full[it.Ref] = it.Body
+	}
 	prompts := []string{}
 	for _, c := range b.Cards {
 		if c.ID != nodeID && !connected[c.ID] {
@@ -110,13 +123,13 @@ func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID str
 		case "prompt":
 			prompts = append(prompts, c.Body)
 		case "note":
-			source = append(source, c.Title+"\n"+c.Body)
+			addSource(canvasSourceItem{Ref: "note/" + c.ID, Title: c.Title, Body: c.Body})
 		case "content":
-			text, token, e := h.canvasSourceText(ctx, c.ContentID, "")
+			title, text, token, e := h.canvasSourceText(ctx, c.ContentID, "")
 			if e != nil {
 				return p, e
 			}
-			source = append(source, text)
+			addSource(canvasSourceItem{Ref: "content/" + c.ContentID, Title: title, Body: text})
 			p.SourceTokens[c.ContentID] = token
 		case "source":
 			cs, ok := h.contentService()
@@ -143,18 +156,23 @@ func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID str
 				}
 			}
 			for _, id := range ids {
-				text, token, e := h.canvasSourceText(ctx, id, c.SourceType)
+				title, text, token, e := h.canvasSourceText(ctx, id, c.SourceType)
 				if e != nil {
 					return p, e
 				}
-				source = append(source, text)
+				addSource(canvasSourceItem{Ref: "content/" + id, Title: title, Body: text})
 				p.SourceTokens[id] = token
 			}
 		}
 	}
 	p.Prompt = strings.Join(prompts, "\n\n")
-	p.Context = strings.Join(source, "\n\n")
-	if strings.TrimSpace(p.Prompt) == "" || len(p.Prompt) > 16000 || len(p.Context) > 64000 {
+	// Sources are inlined up to a shared budget; what does not fit is replaced
+	// by a marker naming the ref, and only fails when even the minimums do not fit.
+	var e error
+	if p.Context, p.Spilled, e = canvasInline(source); e != nil {
+		return p, e
+	}
+	if strings.TrimSpace(p.Prompt) == "" || len(p.Prompt) > 16000 {
 		return p, errCanvasInvalid
 	}
 	kind := target.GenerationKind
@@ -299,19 +317,18 @@ func (h *handlers) canvasPrepare(ctx context.Context, b *canvasBoard, nodeID str
 	p.ReviewHash = studioReviewHash(map[string]any{"graph": p.GraphHash, "source": p.Context, "versions": p.SourceTokens})
 	return p, nil
 }
-func (h *handlers) canvasSourceText(ctx context.Context, id, typ string) (string, string, error) {
+
+// canvasSourceText returns the sanitized title and full sanitized body of a
+// readable content item, and its edit token. Size is left to canvasInline.
+func (h *handlers) canvasSourceText(ctx context.Context, id, typ string) (string, string, string, error) {
 	if _, ok := h.canvasReference(ctx, id); !ok {
-		return "", "", errCanvasConsent
+		return "", "", "", errCanvasConsent
 	}
 	cs, _ := h.contentService()
 	it, e := cs.Get(ctx, id)
 	if e != nil || typ != "" && it.Type != typ {
-		return "", "", errCanvasConsent
+		return "", "", "", errCanvasConsent
 	}
-	text := plainText.Sanitize(it.Title + "\n" + it.Body)
-	if len(text) > 12000 {
-		text = string([]rune(text)[:min(3000, len([]rune(text)))])
-	}
-	return text, content.EditToken(it), nil
+	return plainText.Sanitize(it.Title), plainText.Sanitize(it.Body), content.EditToken(it), nil
 }
 func canvasEncode(v any) string { b, _ := json.Marshal(v); return string(b) }
