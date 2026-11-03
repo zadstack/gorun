@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { mkdirSync, readdirSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { csrf, db, mcp, toolPayload, setLocale } from '../lib/helpers.ts';
+import { csrf, db, mcp, toolPayload, setLocale, setContentLocale } from '../lib/helpers.ts';
 
 test('capture current README product screens with synthetic campaign data', async ({ page, request },testInfo) => {
   test.skip(process.env.README_SCREENSHOTS !== '1', 'Documentation capture is opt-in.');
@@ -15,7 +15,7 @@ test('capture current README product screens with synthetic campaign data', asyn
   mkdirSync(output,{recursive:true});
   const captured=new Set<string>(),secrets:string[]=[];
   // researcher-*.png come from tests/agent-recipes.spec.ts (see the screenshots README).
-  const expectedImages=[...readdirSync(output).filter(name=>name.endsWith('.png')&&!name.startsWith('researcher-')),'canvas-ai-suggestions-en.png','canvas-ai-suggestions-ar-mobile.png','extensions-methods-en.png','extensions-methods-ar-mobile.png'];
+  const expectedImages=[...readdirSync(output).filter(name=>name.endsWith('.png')&&!name.startsWith('researcher-')),'canvas-ai-suggestions-en.png','canvas-ai-suggestions-ar-mobile.png','extensions-methods-en.png','extensions-methods-ar-mobile.png','canvas-lanes-en.png','canvas-schedules-en.png','forms-en.png','forms-ar.png','builder-form-en.png'];
   const database = db();
   database.prepare("UPDATE users SET name='Amira Hassan' WHERE email='admin@e2e.test'").run();
   database.prepare("INSERT INTO settings(key,value_json,updated_at) VALUES('site.title',?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json").run(JSON.stringify('Atlas Studio'),new Date().toISOString());
@@ -181,6 +181,13 @@ test('capture current README product screens with synthetic campaign data', asyn
   const afterViews=await (await request.get(boardPath+'/document')).json();
   expect(afterViews.version).toBe(beforeViews.version);
   expect(afterViews.cards).toEqual(beforeViews.cards);
+  // Lanes is a read-only arrangement: it must not change the saved board either.
+  await page.locator('[data-canvas-view="lanes"]').click();
+  await expect(page.locator('[data-canvas-view="lanes"]')).toHaveAttribute('aria-pressed','true');
+  await expect(page.locator('.canvas-lane')).toHaveCount(4);
+  await shot('canvas-lanes-en.png');
+  await page.locator('[data-canvas-view="flow"]').click();
+  expect((await (await request.get(boardPath+'/document')).json()).version).toBe(beforeViews.version);
   // Save a second locale and a mobile view to inspect the actual card controls.
   await setLocale(page,'ar');
   await shot('canvas-ar.png');
@@ -277,6 +284,102 @@ test('capture current README product screens with synthetic campaign data', asyn
     }
   }finally{await new Promise<void>(resolve=>provider.close(()=>resolve()));const cleanup=db();cleanup.prepare("DELETE FROM settings WHERE key LIKE 'ai.%'").run();cleanup.close();}
   await page.setViewportSize({width:1600,height:1040});await setLocale(page,'en');
+
+  // A board with one running agent and one enabled schedule: live state, a flowing
+  // edge, the edge legend and the Scheduled tasks panel. Rows are seeded straight
+  // into the fixture database; nothing is run and no provider is called.
+  await page.goto('/admin/canvases');
+  await page.locator('#new-canvas-title').fill('Weekly editorial brief');
+  await page.locator('form[action="/admin/canvases"] [type=submit]').click();
+  await expect(page).toHaveURL(/\/admin\/canvases\/[A-Z0-9]+$/);
+  const weeklyPath=new URL(page.url()).pathname,weeklyID=weeklyPath.split('/').pop()!;
+  await page.goto(weeklyPath+'?preset=periodic-brief');
+  const setup=page.locator('.canvas-preset-setup');await expect(setup).toBeVisible();
+  await setup.locator('select').selectOption('agent');
+  await setup.locator('button.canvas-primary').click();
+  await expect(page.locator('[data-canvas-cards] .canvas-card')).toHaveCount(5);
+  await expect(page.locator('.canvas-state')).toHaveAttribute('data-state','saved');
+  const weeklyAgent=await page.locator('.canvas-card[data-kind=agent]').first().getAttribute('data-card-id');
+  const weeklySchedule=await page.locator('.canvas-card[data-kind=schedule]').first().getAttribute('data-card-id');
+  const weeklyDB=db();
+  // Keep the floating panel (top right) clear of the cards: lower the schedule and note cards beneath it.
+  const weeklyRow=weeklyDB.prepare('SELECT document_json FROM admin_canvases WHERE id=?').get(weeklyID) as any;
+  const weeklyCards=JSON.parse(weeklyRow.document_json).map((c:any)=>c.id===weeklySchedule?{...c,y:190}:c.kind==='note'?{...c,y:520}:c);
+  weeklyDB.prepare('UPDATE admin_canvases SET document_json=? WHERE id=?').run(JSON.stringify(weeklyCards),weeklyID);
+  weeklyDB.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at,started_at) VALUES(?,?,?,?,?,'running',?,?,?)").run(randomUUID(),weeklyID,owner,'readme-running',weeklyAgent,JSON.stringify({candidate:{input:{kind:'text'}}}),new Date(Date.now()-5000).toISOString(),new Date().toISOString());
+  weeklyDB.prepare("INSERT INTO admin_canvas_schedules(board_id,node_id,provider_node_id,interval,consent_hash,enabled,next_run_at,status) VALUES(?,?,?,'daily','readme-hash',1,?,'enabled')").run(weeklyID,weeklySchedule,weeklyAgent,new Date(Date.now()+42*60_000).toISOString());
+  weeklyDB.close();
+  await page.goto(weeklyPath);
+  await page.locator('[data-canvas-view="flow"]').click();
+  await expect(page.locator(`#card-${weeklyAgent}`)).toHaveAttribute('data-state','running');
+  await expect(page.locator('.canvas-legend')).toBeVisible();
+  const schedulesToggle=page.locator('[data-canvas-schedules] button[aria-expanded][aria-controls]');
+  if(await schedulesToggle.getAttribute('aria-expanded')!=='true')await schedulesToggle.click();
+  await expect(schedulesToggle).toHaveAttribute('aria-expanded','true');
+  await page.evaluate(()=>(document.activeElement as HTMLElement|null)?.blur());
+  await shot('canvas-schedules-en.png');
+
+  // Forms: two builder forms (English and Arabic) with fictional entries seeded into
+  // their tables. Publishing announces a form through a queued hook, so wait for it.
+  const formPages=[
+    {locale:'en' as const,pageSlug:'atlas-book-a-call',slug:'atlas-book-a-call',title:'Book a call',success:'Thanks, we will reply within a day.',fields:[['Name','name','text',true],['Email','email','email',true],['Plan','plan','choice',false],['Notes','notes','textarea',false]] as const,choices:'Starter\nStudio\nAgency',
+      entries:[['Amira Hassan','amira@atlas-studio.test','Studio','Interested in a bilingual launch.'],['Omar Khalil','omar@atlas-studio.test','Agency','Can we add a second editor?'],['Lina Farouk','lina@atlas-studio.test','Starter','Please send the pricing sheet.'],['Youssef Nasser','youssef@atlas-studio.test','Studio','We publish in Arabic and English.'],['Sara Mansour','sara@atlas-studio.test','Starter','']]},
+    {locale:'ar' as const,pageSlug:'atlas-appointment-ar',slug:'atlas-appointment-ar',title:'طلب موعد',success:'وصلنا طلبك، وسنرد خلال يوم.',fields:[['الاسم','name','text',true],['البريد الإلكتروني','email','email',true],['الباقة','plan','choice',false],['ملاحظات','notes','textarea',false]] as const,choices:'أساسية\nاستوديو\nوكالة',
+      entries:[['منى السيد','mona@atlas-studio.test','استوديو','نرغب بإطلاق بلغتين.'],['خالد يوسف','khaled@atlas-studio.test','وكالة','هل يمكن إضافة محرر ثانٍ؟'],['هدى سعيد','huda@atlas-studio.test','أساسية','نرجو إرسال قائمة الأسعار.'],['طارق عادل','tarek@atlas-studio.test','استوديو','ننشر بالعربية والإنجليزية.'],['ريم فؤاد','reem@atlas-studio.test','أساسية','']]},
+  ];
+  await setLocale(page,'en');
+  for(const f of formPages){
+    await page.goto('/admin/content/page/new');
+    await setContentLocale(page,f.locale);
+    await page.fill('#title',f.title);await page.fill('#slug',f.pageSlug);
+    await page.locator('button[name="intent"][value="save"]').click();
+    await expect(page).toHaveURL(/\/admin\/content\/page\/[0-9A-Z]{26}$/);
+    await page.goto(`/admin/builder/${page.url().split('/').pop()}`);
+    await page.locator('#builder-kind').selectOption('form');
+    await page.locator('[data-action="add"]').click();
+    const section=page.locator('#builder-sections > section').last();
+    await section.locator('input[data-field="title"]').fill(f.title);
+    await section.locator('input[data-form="slug"]').fill(f.slug);
+    await section.locator('textarea[data-form="success"]').fill(f.success);
+    const fields=section.locator('fieldset[data-form-field]');
+    while(await fields.count())await fields.first().getByRole('button').filter({hasText:/Remove field|حذف الحقل/}).click();
+    for(const [label,name,type,required] of f.fields){
+      await section.getByRole('button',{name:/Add field|إضافة حقل/}).click();
+      const field=fields.last();
+      await field.locator('input[data-form="label"]').fill(label);
+      await field.locator('input[data-form="name"]').fill(name);
+      await field.locator('select[data-form="type"]').selectOption(type);
+      if(required)await field.locator('input[data-form="required"]').check();
+      if(type==='choice')await field.locator('textarea[data-form="choices"]').fill(f.choices);
+    }
+    await page.locator('[data-action="save"]').click();
+    await expect(page.locator('#builder-status')).toContainText(/حُفظت|Draft saved/);
+    await expect(page.locator('[data-action="publish"]')).toBeEnabled();
+    page.once('dialog',dialog=>dialog.accept());
+    await page.locator('[data-action="publish"]').click();
+    await expect(page.locator('#builder-status')).toContainText(/Page published|نُشرت/);
+    if(f.locale==='en'){
+      // The editor with the Form section open: slug, success message and the field editor.
+      await section.locator('fieldset:not([data-form-field])').filter({hasText:/Form settings/}).first().evaluate(el=>el.scrollIntoView({block:'start'}));
+      await page.evaluate(()=>window.scrollBy(0,-90));
+      await shot('builder-form-en.png');
+    }
+    await expect.poll(()=>{const d=db();const r=d.prepare('SELECT count(*) n FROM forms WHERE slug=?').get(f.slug) as any;d.close();return r.n;},{timeout:30_000}).toBe(1);
+    const formDB=db();const row=formDB.prepare('SELECT id FROM forms WHERE slug=?').get(f.slug) as any;
+    f.entries.forEach((entry,index)=>{
+      const data:Record<string,string>={name:entry[0],email:entry[1],plan:entry[2],notes:entry[3]};
+      formDB.prepare("INSERT INTO form_entries(id,form_id,data_json,page,status,created_at) VALUES(?,?,?,?,?,?)").run(randomUUID(),row.id,JSON.stringify(data),'/'+f.pageSlug,index<2?'new':'read',new Date(Date.now()-(index+1)*5*3600_000).toISOString());
+    });
+    formDB.close();
+  }
+  await page.goto('/admin/forms/atlas-book-a-call');
+  await expect(page.locator('tbody tr:has(time)')).toHaveCount(5);
+  await shot('forms-en.png');
+  await setLocale(page,'ar');
+  await page.goto('/admin/forms/atlas-appointment-ar');
+  await expect(page.locator('tbody tr:has(time)')).toHaveCount(5);
+  await shot('forms-ar.png');
+  await setLocale(page,'en');
 
   const created=await mcp(request,agent,'tools/call',{name:'create_content',arguments:{type:'post',title:'Campaign launch email · ready for review',body:'<p>A synthetic campaign draft awaiting the editor’s decision.</p>'}});
   const draftID=toolPayload(created.body.result).data.id;
