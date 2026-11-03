@@ -66,6 +66,8 @@ commands:
                 to <data>/backups/<timestamp>.{db,tar.gz}; secret.key and gorun.toml only
                 with --include-secrets (plain text: keep that archive offline); optional
                 --retain N keeps the newest N locally verified pairs and deletes older ones
+                analytics.db is copied to <timestamp>-analytics.db unless --skip-analytics
+                or the analytics.backup_exclude setting is on
   staging       staging seed|promote (--from <source-data> | --input <stamp>.manifest.json)
                 --dest <new-directory-path> [--include-secrets]: backup (optional) + restore
                 into a new data dir for a staging site or promote-to-live cutover; never merges

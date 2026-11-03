@@ -41,30 +41,60 @@ type Options struct {
 	// SecretKey (32 bytes) HMACs the manifest so a writable backups
 	// directory alone cannot forge digests. Prefer the site secret.
 	SecretKey []byte
+	// SkipAnalytics leaves <dataDir>/analytics.db out of the backup.
+	// Callers set it from the setting named by SettingSkipAnalytics.
+	SkipAnalytics bool
 }
+
+// AnalyticsFile is the analytics database in the data directory. Backup
+// knows it only by this name (it never imports the analytics module): when
+// present, it is copied to <stamp>-analytics.db as an optional member.
+const AnalyticsFile = "analytics.db"
+
+// SettingSkipAnalytics is the JSON-bool setting ("Leave analytics out of
+// backups") that callers map to Options.SkipAnalytics. It must match
+// analytics.SettingBackupExclude.
+const SettingSkipAnalytics = "analytics.backup_exclude"
+
+// analyticsSuffix names the analytics copy: <stamp>-analytics.db.
+const analyticsSuffix = "-analytics.db"
 
 // stampLayout names a backup by its UTC creation time.
 const stampLayout = "20060102T150405Z"
 
-// fileName is a backup file: <stamp>.db or <stamp>.tar.gz.
-var fileName = regexp.MustCompile(`^(\d{8}T\d{6}Z)\.(db|tar\.gz)$`)
+// fileName is a backup file: <stamp>.db, <stamp>.tar.gz or the optional
+// <stamp>-analytics.db (group 2 is "db", "tar.gz" or "analytics").
+var fileName = regexp.MustCompile(`^(\d{8}T\d{6}Z)(?:\.(db|tar\.gz)|-(analytics)\.db)$`)
+
+// fileKind is the kind of a fileName match: "db", "tar.gz" or "analytics".
+func fileKind(m []string) string {
+	if m[2] != "" {
+		return m[2]
+	}
+	return m[3]
+}
 
 // Result names the files one backup wrote.
 type Result struct {
 	Stamp, DB, Files string
 	Manifest         string
-	Count            int // archived files
+	// Analytics is the <stamp>-analytics.db copy, or "" when the backup
+	// has no analytics member (skipped, or no analytics.db to copy).
+	Analytics string
+	Count     int // archived files
 }
 
 // Entry is one backup in the backups directory (either file may be missing).
 type Entry struct {
-	Stamp       string
-	Time        time.Time
-	DBSize      int64 // -1 when the .db is missing
-	FilesSize   int64 // -1 when the .tar.gz is missing
-	LocalState  string
-	HasManifest bool
-	Remote      UploadReceipt
+	Stamp     string
+	Time      time.Time
+	DBSize    int64 // -1 when the .db is missing
+	FilesSize int64 // -1 when the .tar.gz is missing
+	// AnalyticsSize is the size of <stamp>-analytics.db, -1 when absent.
+	AnalyticsSize int64
+	LocalState    string
+	HasManifest   bool
+	Remote        UploadReceipt
 }
 
 // Dir is the backups directory of dataDir.
@@ -100,7 +130,7 @@ func CreateWith(dataDir, dbPath string, now time.Time, opts Options) (Result, er
 	defer os.Remove(lockPath)
 	res := Result{Stamp: stamp, DB: filepath.Join(dir, stamp+".db"), Files: filepath.Join(dir, stamp+".tar.gz")}
 	res.Manifest = filepath.Join(dir, stamp+".manifest.json")
-	for _, p := range []string{res.DB, res.Files, res.Manifest, filepath.Join(dir, stamp+".remote.json")} {
+	for _, p := range []string{res.DB, res.Files, res.Manifest, filepath.Join(dir, stamp+".remote.json"), filepath.Join(dir, stamp+analyticsSuffix)} {
 		if _, err := os.Stat(p); err == nil {
 			return Result{}, fmt.Errorf("backup: %s already exists", p)
 		}
@@ -117,6 +147,22 @@ func CreateWith(dataDir, dbPath string, now time.Time, opts Options) (Result, er
 		os.Remove(res.DB)
 		return Result{}, fmt.Errorf("backup: database: %w", err)
 	}
+	if !opts.SkipAnalytics {
+		copied, err := copyAnalytics(dataDir, filepath.Join(dir, stamp+analyticsSuffix))
+		if err != nil {
+			os.Remove(res.DB)
+			return Result{}, fmt.Errorf("backup: analytics (set %s to skip it): %w", SettingSkipAnalytics, err)
+		}
+		res.Analytics = copied
+	}
+	// removeAll undoes a failed backup: never leave half a backup behind.
+	removeAll := func() {
+		os.Remove(res.Files)
+		os.Remove(res.DB)
+		if res.Analytics != "" {
+			os.Remove(res.Analytics)
+		}
+	}
 	paths := append([]string{}, Dirs...)
 	recovery := []string{}
 	for _, name := range recoveryFiles {
@@ -128,7 +174,7 @@ func CreateWith(dataDir, dbPath string, now time.Time, opts Options) (Result, er
 			continue
 		}
 		if err != nil || !st.Mode().IsRegular() {
-			os.Remove(res.DB)
+			removeAll()
 			return Result{}, fmt.Errorf("backup: recovery file %s must be readable and regular", name)
 		}
 		paths = append(paths, name)
@@ -136,14 +182,12 @@ func CreateWith(dataDir, dbPath string, now time.Time, opts Options) (Result, er
 	}
 	n, err := writeTar(res.Files, dataDir, paths)
 	if err != nil {
-		os.Remove(res.Files)
-		os.Remove(res.DB) // never leave half a backup behind
+		removeAll()
 		return Result{}, fmt.Errorf("backup: files: %w", err)
 	}
 	res.Count = n
 	if err := writeManifest(res, recovery, now, opts.SecretKey); err != nil {
-		os.Remove(res.Files)
-		os.Remove(res.DB)
+		removeAll()
 		return Result{}, fmt.Errorf("backup: manifest: %w", err)
 	}
 	return res, nil
@@ -166,7 +210,7 @@ func ListWithKey(dataDir string, key []byte) ([]Entry, error) {
 	for _, f := range files {
 		m := fileName.FindStringSubmatch(f.Name())
 		if match := manifestName.FindStringSubmatch(f.Name()); m == nil && match != nil {
-			m = []string{match[0], match[1], "manifest"}
+			m = []string{match[0], match[1], "manifest", ""}
 		}
 		if m == nil || !f.Type().IsRegular() {
 			continue
@@ -174,17 +218,20 @@ func ListWithKey(dataDir string, key []byte) ([]Entry, error) {
 		e := by[m[1]]
 		if e == nil {
 			t, _ := time.Parse(stampLayout, m[1])
-			e = &Entry{Stamp: m[1], Time: t, DBSize: -1, FilesSize: -1}
+			e = &Entry{Stamp: m[1], Time: t, DBSize: -1, FilesSize: -1, AnalyticsSize: -1}
 			by[m[1]] = e
 		}
 		info, err := f.Info()
 		if err != nil {
 			continue
 		}
-		if m[2] == "db" {
+		switch fileKind(m) {
+		case "db":
 			e.DBSize = info.Size()
-		} else if m[2] == "tar.gz" {
+		case "tar.gz":
 			e.FilesSize = info.Size()
+		case "analytics":
+			e.AnalyticsSize = info.Size()
 		}
 	}
 	out := make([]Entry, 0, len(by))
@@ -195,7 +242,8 @@ func ListWithKey(dataDir string, key []byte) ([]Entry, error) {
 		}
 		if m, err := ReadManifest(filepath.Join(Dir(dataDir), e.Stamp+".manifest.json")); err == nil {
 			e.HasManifest = true
-			if m.Database.Size == e.DBSize && m.Archive.Size == e.FilesSize {
+			analyticsOK := m.Analytics == nil || m.Analytics.Size == e.AnalyticsSize
+			if m.Database.Size == e.DBSize && m.Archive.Size == e.FilesSize && analyticsOK {
 				e.LocalState = "paired_not_inspected"
 			}
 		}
@@ -207,7 +255,8 @@ func ListWithKey(dataDir string, key []byte) ([]Entry, error) {
 	return out, nil
 }
 
-// File returns the path of the backup file name (<stamp>.db or <stamp>.tar.gz); any other
+// File returns the path of the backup file name (<stamp>.db, <stamp>.tar.gz,
+// <stamp>-analytics.db or <stamp>.manifest.json); any other
 // name, or a missing file, is fs.ErrNotExist.
 func File(dataDir, name string) (string, error) {
 	if (!fileName.MatchString(name) && !manifestName.MatchString(name)) || strings.ContainsAny(name, `/\`) {
@@ -234,6 +283,38 @@ func vacuumInto(src, dst string) error {
 	defer d.Close()
 	_, err = d.ExecContext(context.Background(), `VACUUM INTO ?`, dst)
 	return err
+}
+
+// copyAnalytics snapshots <dataDir>/analytics.db into dst with VACUUM INTO
+// on a separate read-only connection: the analytics module keeps its own
+// handle, and under WAL the copy is a consistent read transaction that
+// includes committed WAL frames. It returns "" when there is no
+// analytics.db (nothing about analytics is then recorded).
+func copyAnalytics(dataDir, dst string) (string, error) {
+	src := filepath.Join(dataDir, AnalyticsFile)
+	st, err := os.Lstat(src)
+	if errors.Is(err, fs.ErrNotExist) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	if !st.Mode().IsRegular() {
+		return "", fmt.Errorf("%s must be a regular file", AnalyticsFile)
+	}
+	f, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	if err != nil {
+		return "", err
+	}
+	if err := f.Close(); err != nil {
+		os.Remove(dst)
+		return "", err
+	}
+	if err := vacuumInto(src, dst); err != nil {
+		os.Remove(dst)
+		return "", err
+	}
+	return dst, nil
 }
 
 // writeTar archives the regular files under each root-relative path (paths

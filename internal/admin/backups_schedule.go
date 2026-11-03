@@ -165,7 +165,7 @@ func backupScheduleWithClient(ctx context.Context, d *kernel.Deps, now time.Time
 		d.Log.Error("backup.schedule: failed", "stage", stage, "err", cause)
 		return errors.Join(cause, saveErr)
 	}
-	res, err := backup.CreateWith(d.Config.DataDir, d.Config.DBPath(), now, backup.Options{SecretKey: d.Config.SecretKey})
+	res, err := backup.CreateWith(d.Config.DataDir, d.Config.DBPath(), now, backupOptions(ctx, d))
 	if err != nil {
 		return fail("create", err)
 	}

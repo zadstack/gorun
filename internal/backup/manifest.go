@@ -17,6 +17,9 @@ import (
 // (same pattern as backupCipher's "gorun.private.backup.v1").
 const manifestMACDomain = "gorun.private.backup.manifest.v1"
 
+// ManifestVersion stays 1: the analytics member is an optional field, so a
+// manifest without it (every manifest before it existed) reads, verifies
+// and restores exactly as before.
 const ManifestVersion = 1
 const consistency = "database_snapshot_files_not_atomic"
 
@@ -40,6 +43,9 @@ type Manifest struct {
 	RecoveryFiles      []string   `json:"recovery_files"`
 	Limitations        []string   `json:"limitations"`
 	EncryptedFileLimit int64      `json:"encrypted_file_limit"`
+	// Analytics is the optional <stamp>-analytics.db member: absent when
+	// the backup skipped analytics or there was no analytics.db.
+	Analytics *FileDigest `json:"analytics,omitempty"`
 	// HMAC is hex(HMAC-SHA256(site secret, domain || canonical digests)).
 	// Empty on legacy manifests written before keyed integrity.
 	HMAC string `json:"hmac,omitempty"`
@@ -65,6 +71,19 @@ type UploadReceipt struct {
 	HMAC             string       `json:"hmac,omitempty"`
 	DatabaseSHA256   string       `json:"database_sha256,omitempty"`
 	ArchiveSHA256    string       `json:"archive_sha256,omitempty"`
+	// AnalyticsSHA256 is set when the manifest has an analytics member; the
+	// receipt then lists it as a third file.
+	AnalyticsSHA256 string `json:"analytics_sha256,omitempty"`
+}
+
+// Members are the backup files the manifest binds, in upload order:
+// database, archive and, when present, the analytics copy.
+func (m *Manifest) Members() []FileDigest {
+	out := []FileDigest{m.Database, m.Archive}
+	if m.Analytics != nil {
+		out = append(out, *m.Analytics)
+	}
+	return out
 }
 
 func digest(path string) (FileDigest, error) {
@@ -101,6 +120,13 @@ func writeManifest(res Result, recovery []string, now time.Time, key []byte) err
 	m := Manifest{FormatVersion: ManifestVersion, Stamp: res.Stamp, CreatedAt: now.UTC().Format(time.RFC3339), Database: database, Archive: archive,
 		Consistency: consistency, RecoveryFiles: recovery, EncryptedFileLimit: MaxEncryptedFile,
 		Limitations: append([]string{}, backupLimitations...)}
+	if res.Analytics != "" {
+		analytics, err := digest(res.Analytics)
+		if err != nil {
+			return err
+		}
+		m.Analytics = &analytics
+	}
 	if len(key) == 32 {
 		m.HMAC = manifestHMAC(key, m)
 	}
@@ -122,6 +148,17 @@ func manifestHMAC(key []byte, m Manifest) string {
 	mac.Write([]byte(m.Archive.Name))
 	mac.Write([]byte{0})
 	mac.Write([]byte(m.Archive.SHA256))
+	// The analytics member extends the original input only when present, so
+	// manifests without it keep their original HMAC. The tag cannot collide
+	// with a digest: ReadManifest requires the archive SHA-256 to be 64 hex.
+	if m.Analytics != nil {
+		mac.Write([]byte{0})
+		mac.Write([]byte("analytics"))
+		mac.Write([]byte{0})
+		mac.Write([]byte(m.Analytics.Name))
+		mac.Write([]byte{0})
+		mac.Write([]byte(m.Analytics.SHA256))
+	}
 	return hex.EncodeToString(mac.Sum(nil))
 }
 
@@ -203,7 +240,10 @@ func ReadManifest(path string) (*Manifest, error) {
 	if m.FormatVersion != ManifestVersion || m.Stamp != match[1] || m.Database.Name != m.Stamp+".db" || m.Archive.Name != m.Stamp+".tar.gz" || m.Consistency != consistency {
 		return nil, errors.New("backup: unsupported or mismatched manifest")
 	}
-	for _, f := range []FileDigest{m.Database, m.Archive} {
+	if m.Analytics != nil && m.Analytics.Name != m.Stamp+analyticsSuffix {
+		return nil, errors.New("backup: unsupported or mismatched manifest")
+	}
+	for _, f := range m.Members() {
 		h, err := hex.DecodeString(f.SHA256)
 		if err != nil || len(h) != sha256.Size || f.Size < 0 {
 			return nil, errors.New("backup: invalid file digest")
@@ -222,21 +262,31 @@ func StoreUploadReceiptWithKey(res Result, receipt UploadReceipt, key []byte) er
 	if !fileName.MatchString(res.Stamp+".db") || filepath.Base(res.DB) != res.Stamp+".db" || filepath.Base(res.Files) != res.Stamp+".tar.gz" || filepath.Dir(res.DB) != filepath.Dir(res.Files) {
 		return errors.New("backup: invalid upload pair")
 	}
+	if res.Analytics != "" && (filepath.Base(res.Analytics) != res.Stamp+analyticsSuffix || filepath.Dir(res.Analytics) != filepath.Dir(res.DB)) {
+		return errors.New("backup: invalid upload pair")
+	}
 	path := filepath.Join(filepath.Dir(res.DB), res.Stamp+".remote.json")
 	m, err := ReadManifest(filepath.Join(filepath.Dir(res.DB), res.Stamp+".manifest.json"))
 	if err != nil {
 		return err
 	}
-	for _, f := range []FileDigest{m.Database, m.Archive} {
+	if (res.Analytics != "") != (m.Analytics != nil) {
+		return errors.New("backup: upload pair changed")
+	}
+	for _, f := range m.Members() {
 		actual, err := digest(filepath.Join(filepath.Dir(res.DB), f.Name))
 		if err != nil || actual.SHA256 != f.SHA256 || actual.Size != f.Size {
 			return errors.New("backup: upload pair changed")
 		}
 	}
 	receipt.DatabaseSHA256, receipt.ArchiveSHA256 = m.Database.SHA256, m.Archive.SHA256
+	receipt.AnalyticsSHA256 = ""
+	if m.Analytics != nil {
+		receipt.AnalyticsSHA256 = m.Analytics.SHA256
+	}
 	if receipt.ReadBackVerified {
 		valid, err := CheckManifestHMAC(m, key)
-		if err != nil || !valid || receipt.DestinationID == "" || len(receipt.Files) != 2 {
+		if err != nil || !valid || receipt.DestinationID == "" || len(receipt.Files) != len(m.Members()) {
 			return errors.New("backup: authenticated readback receipt required")
 		}
 		for _, file := range receipt.Files {
@@ -261,11 +311,12 @@ func receiptAtWithKey(dir, stamp string, key []byte) UploadReceipt {
 	if readJSONRegular(filepath.Join(dir, stamp+".remote.json"), &receipt) != nil {
 		return unknown
 	}
-	if len(receipt.Files) != 2 {
-		return unknown
-	}
 	m, err := ReadManifest(filepath.Join(dir, stamp+".manifest.json"))
 	if err != nil || receipt.DatabaseSHA256 != m.Database.SHA256 || receipt.ArchiveSHA256 != m.Archive.SHA256 {
+		return unknown
+	}
+	members := m.Members()
+	if len(receipt.Files) != len(members) || (m.Analytics == nil && receipt.AnalyticsSHA256 != "") || (m.Analytics != nil && receipt.AnalyticsSHA256 != m.Analytics.SHA256) {
 		return unknown
 	}
 	if receipt.ReadBackVerified || receipt.HMAC != "" && len(key) == 32 {
@@ -275,11 +326,7 @@ func receiptAtWithKey(dir, stamp string, key []byte) UploadReceipt {
 	}
 	uploaded := 0
 	for i, f := range receipt.Files {
-		name := stamp + ".db"
-		if i == 1 {
-			name = stamp + ".tar.gz"
-		}
-		if f.Name != name || f.CheckedAt == "" {
+		if f.Name != members[i].Name || f.CheckedAt == "" {
 			return unknown
 		}
 		switch f.State {
@@ -291,9 +338,9 @@ func receiptAtWithKey(dir, stamp string, key []byte) UploadReceipt {
 		}
 	}
 	state := "failed"
-	if uploaded == 2 {
+	if uploaded == len(members) {
 		state = "uploaded"
-	} else if uploaded == 1 {
+	} else if uploaded > 0 {
 		state = "partial"
 	}
 	if receipt.State != state {

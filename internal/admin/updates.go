@@ -137,7 +137,7 @@ func (h *handlers) updateBackup(ctx context.Context) (update.Report, error) {
 	backupMu.Lock()
 	defer backupMu.Unlock()
 	now := time.Now().UTC()
-	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), now, backup.Options{SecretKey: h.d.Config.SecretKey})
+	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), now, backupOptions(ctx, h.d))
 	if err != nil {
 		h.d.Audit.Record(ctx, "system.update.backup_failed", "system", "update", nil)
 		return update.Report{}, err

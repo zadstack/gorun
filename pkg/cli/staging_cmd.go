@@ -58,7 +58,9 @@ func stagingCmd(args []string, out io.Writer) error {
 		// Only the source site's secret.key — never GORUN_SECRET_KEY from the
 		// process env, and never generate a new key into the source tree.
 		secret = readDataDirSecret(from)
-		res, createErr := gpbackup.CreateWith(from, dbPath, time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: secret})
+		// The source site's analytics.backup_exclude also keeps analytics.db
+		// out of a staging copy.
+		res, createErr := gpbackup.CreateWith(from, dbPath, time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: secret, SkipAnalytics: analyticsBackupExcluded(dbPath)})
 		if createErr != nil {
 			return createErr
 		}

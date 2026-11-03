@@ -223,14 +223,21 @@ func TestBackupRetainKeepsNewestPairs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	dbs := 0
+	dbs, analytics := 0, 0
 	for _, e := range entries {
-		if strings.HasSuffix(e.Name(), ".db") {
+		switch {
+		case strings.HasSuffix(e.Name(), "-analytics.db"):
+			analytics++
+		case strings.HasSuffix(e.Name(), ".db"):
 			dbs++
 		}
 	}
 	if dbs != 2 {
 		t.Fatalf("want 2 .db files after retain, got %d (%v)", dbs, entries)
+	}
+	// Retention prunes each stamp's optional analytics copy with it.
+	if analytics > dbs {
+		t.Fatalf("pruned stamps left analytics copies: %v", entries)
 	}
 	if err := backup([]string{"--data", dir, "--retain", "0"}, &bytes.Buffer{}); err == nil {
 		t.Fatal("--retain 0 must fail")

@@ -81,7 +81,7 @@
       {{range .Backups}}
       <tr class="border-t border-line">
         <td class="px-3 py-2"><time class="font-mono text-xs" datetime="{{.Time}}">{{date .Time}}</time></td>
-        <td class="px-3 py-2">{{if .HasDB}}<a href="/admin/system/backups/{{.Stamp}}.db" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "download" "w-4 h-4"}}<span class="font-mono text-xs">{{.DBSize}}</span></a>{{else}}<span class="text-muted">—</span>{{end}}</td>
+        <td class="px-3 py-2">{{if .HasDB}}<a href="/admin/system/backups/{{.Stamp}}.db" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "download" "w-4 h-4"}}<span class="font-mono text-xs">{{.DBSize}}</span></a>{{else}}<span class="text-muted">—</span>{{end}}{{if .HasAnalytics}}<a href="/admin/system/backups/{{.Stamp}}-analytics.db" class="text-blue hover:text-blue-hover flex items-center gap-1 mt-1" data-analytics-copy>{{icon "download" "w-4 h-4"}}<span class="text-xs">{{t "admin.backups.analytics_copy"}}</span> <span class="font-mono text-xs">{{.AnalyticsSize}}</span></a>{{end}}</td>
         <td class="px-3 py-2">{{if .HasFiles}}<a href="/admin/system/backups/{{.Stamp}}.tar.gz" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "download" "w-4 h-4"}}<span class="font-mono text-xs">{{.FilesSize}}</span></a>{{else}}<span class="text-muted">—</span>{{end}}</td>
         <td class="px-3 py-2 text-xs" data-local-state="{{.LocalState}}" data-remote-state="{{.Remote.State}}">
           <p>{{t (print "admin.backups.local." .LocalState)}}</p>

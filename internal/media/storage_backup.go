@@ -12,7 +12,7 @@ import (
 	"regexp"
 )
 
-var backupObjectPattern = regexp.MustCompile(`^backups/[0-9a-hjkmnp-tv-z]{26}/[0-9]{4}/[0-9]{2}/[0-9]{2}/[0-9]{8}T[0-9]{6}Z\.(db|tar\.gz)\.gorb$`)
+var backupObjectPattern = regexp.MustCompile(`^backups/[0-9a-hjkmnp-tv-z]{26}/[0-9]{4}/[0-9]{2}/[0-9]{2}/[0-9]{8}T[0-9]{6}Z(\.db|\.tar\.gz|-analytics\.db)\.gorb$`)
 
 // PutEncryptedBackup is the in-memory compatibility entry point.
 func (s *S3Storage) PutEncryptedBackup(ctx context.Context, client *http.Client, key string, body []byte) error {

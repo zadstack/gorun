@@ -103,13 +103,16 @@ func mcpStdio(args []string, in io.ReadCloser, out io.WriteCloser) error {
 	return err
 }
 
-// backup implements `gorun backup [--data dir] [--include-secrets]`: a
-// consistent copy of the database (VACUUM INTO) and a gzip tar of media/,
-// overrides/, extensions/ and form-uploads/, both under
-// <DataDir>/backups/<UTC timestamp>. secret.key and gorun.toml are archived
-// only with --include-secrets.
+// backup implements `gorun backup [--data dir] [--include-secrets]
+// [--skip-analytics]`: a consistent copy of the database (VACUUM INTO) and a
+// gzip tar of media/, overrides/, extensions/ and form-uploads/, both under
+// <DataDir>/backups/<UTC timestamp>, plus <stamp>-analytics.db when
+// analytics.db exists. secret.key and gorun.toml are archived only with
+// --include-secrets. Analytics is skipped with --skip-analytics or when the
+// site's analytics.backup_exclude setting is on.
 func backup(args []string, out io.Writer) error {
 	includeSecrets, args := boolFlag(args, "include-secrets")
+	skipAnalytics, args := boolFlag(args, "skip-analytics")
 	retainStr, args, err := stringFlag(args, "retain")
 	if err != nil {
 		return err
@@ -126,7 +129,8 @@ func backup(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: cfg.SecretKey})
+	skipAnalytics = skipAnalytics || analyticsBackupExcluded(cfg.DBPath())
+	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: cfg.SecretKey, SkipAnalytics: skipAnalytics})
 	if err != nil {
 		return err
 	}
@@ -138,6 +142,14 @@ func backup(args []string, out io.Writer) error {
 		return fmt.Errorf("backup: local verification failed (%s); previous copies preserved", strings.Join(report.Errors, ", "))
 	}
 	fmt.Fprintf(out, "database: %s\nfiles:    %s (%d files)\n", res.DB, res.Files, res.Count)
+	switch {
+	case res.Analytics != "":
+		fmt.Fprintf(out, "analytics: %s\n", res.Analytics)
+	case skipAnalytics:
+		fmt.Fprintln(out, "analytics: skipped (--skip-analytics or analytics.backup_exclude)")
+	default:
+		fmt.Fprintln(out, "analytics: none (no analytics.db)")
+	}
 	fmt.Fprintf(out, "integrity: local checks passed (readiness=%s); cutover still needs secrets, themes, stopped writes, and any remote copy\n", report.Readiness)
 	if includeSecrets {
 		fmt.Fprintln(out, "secrets:  secret.key and gorun.toml are in the archive in plain text; keep it offline and encrypted")

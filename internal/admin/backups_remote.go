@@ -47,7 +47,16 @@ func (h *handlers) backupRemoteView(ctx context.Context, page *backupsPage) erro
 }
 func uploadEncryptedBackup(ctx context.Context, res backup.Result, d media.Destination, secret []byte, site string, client *http.Client) (receipt backup.UploadReceipt, resultErr error) {
 	at := time.Now().UTC().Format(time.RFC3339)
-	receipt = backup.UploadReceipt{State: "failed", DestinationID: d.ID, Files: []backup.UploadFile{{Name: filepath.Base(res.DB), State: "not_attempted", CheckedAt: at}, {Name: filepath.Base(res.Files), State: "not_attempted", CheckedAt: at}}}
+	// Upload order matches backup.Manifest.Members: database, archive and the
+	// optional <stamp>-analytics.db.
+	paths := []string{res.DB, res.Files}
+	if res.Analytics != "" {
+		paths = append(paths, res.Analytics)
+	}
+	receipt = backup.UploadReceipt{State: "failed", DestinationID: d.ID}
+	for _, path := range paths {
+		receipt.Files = append(receipt.Files, backup.UploadFile{Name: filepath.Base(path), State: "not_attempted", CheckedAt: at})
+	}
 	defer func() {
 		uploaded := 0
 		for _, f := range receipt.Files {
@@ -55,9 +64,9 @@ func uploadEncryptedBackup(ctx context.Context, res backup.Result, d media.Desti
 				uploaded++
 			}
 		}
-		if uploaded == 2 {
+		if uploaded == len(receipt.Files) {
 			receipt.State = "uploaded"
-		} else if uploaded == 1 {
+		} else if uploaded > 0 {
 			receipt.State = "partial"
 		}
 	}()
@@ -85,8 +94,11 @@ func uploadEncryptedBackup(ctx context.Context, res backup.Result, d media.Desti
 	if err != nil || !valid || manifest.Stamp != res.Stamp {
 		return receipt, errors.New("backup: authenticated local manifest is required")
 	}
-	expected := []backup.FileDigest{manifest.Database, manifest.Archive}
-	for i, path := range []string{res.DB, res.Files} {
+	expected := manifest.Members()
+	if len(expected) != len(paths) {
+		return receipt, errors.New("backup: manifest file binding mismatch")
+	}
+	for i, path := range paths {
 		if filepath.Base(path) != expected[i].Name || filepath.Dir(path) != filepath.Dir(res.Manifest) {
 			return receipt, errors.New("backup: manifest file binding mismatch")
 		}
@@ -135,7 +147,7 @@ func (h *handlers) backupRemoteCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	state := remoteBackupState{At: time.Now().UTC().Format(time.RFC3339), Status: "failed", Destination: dest.Name, DestinationID: dest.ID}
-	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), time.Now(), backup.Options{SecretKey: h.d.Config.SecretKey})
+	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), time.Now(), backupOptions(r.Context(), h.d))
 	if err == nil {
 		state.Stamp = res.Stamp
 		ctx, cancel := context.WithTimeout(r.Context(), 4*time.Minute)

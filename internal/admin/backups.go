@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,6 +14,8 @@ import (
 
 	"github.com/zadstack/gorun/internal/backup"
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/settings"
 	"github.com/zadstack/gorun/internal/update"
 )
 
@@ -34,6 +38,8 @@ type backupsPage struct {
 
 type backupRow struct {
 	Stamp, Time, DBSize, FilesSize string
+	AnalyticsSize                  string
+	HasAnalytics                   bool
 	HasDB, HasFiles                bool
 	LocalState                     string
 	HasManifest                    bool
@@ -69,7 +75,8 @@ func (h *handlers) backupsList(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, e := range list {
 		row := backupRow{Stamp: e.Stamp, Time: e.Time.Format(time.RFC3339),
-			DBSize: humanSize(e.DBSize), FilesSize: humanSize(e.FilesSize), HasDB: e.DBSize >= 0, HasFiles: e.FilesSize >= 0, LocalState: e.LocalState, HasManifest: e.HasManifest, Remote: e.Remote}
+			DBSize: humanSize(e.DBSize), FilesSize: humanSize(e.FilesSize), HasDB: e.DBSize >= 0, HasFiles: e.FilesSize >= 0,
+			AnalyticsSize: humanSize(e.AnalyticsSize), HasAnalytics: e.AnalyticsSize >= 0, LocalState: e.LocalState, HasManifest: e.HasManifest, Remote: e.Remote}
 		if dest, ok := backup.Restored(h.d.Config.DataDir, e.Stamp); ok {
 			row.RestoredPath = dest
 		}
@@ -93,7 +100,7 @@ func (h *handlers) backupCreate(w http.ResponseWriter, r *http.Request) {
 	defer release()
 	backupMu.Lock()
 	now := time.Now()
-	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), now, backup.Options{SecretKey: h.d.Config.SecretKey})
+	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), now, backupOptions(r.Context(), h.d))
 	if err == nil {
 		var success backupSuccess
 		success, err = verifiedBackup(res, now, h.d.Config.SecretKey)
@@ -141,4 +148,17 @@ func humanSize(n int64) string {
 		return fmt.Sprintf("%.1f MB", float64(n)/(1024*1024))
 	}
 	return fmt.Sprintf("%.1f GB", float64(n)/(1024*1024*1024))
+}
+
+// backupOptions are the Create options every admin backup uses: the site
+// secret for the manifest HMAC, and SkipAnalytics from the setting
+// analytics.backup_exclude (read by name; admin never imports analytics).
+// An unreadable setting keeps the default and includes analytics.db.
+func backupOptions(ctx context.Context, d *kernel.Deps) backup.Options {
+	var skip bool
+	if err := d.Settings.Get(ctx, backup.SettingSkipAnalytics, &skip); err != nil && !errors.Is(err, settings.ErrNotFound) {
+		d.Log.Warn("admin: backup: cannot read analytics exclusion; including analytics.db", "err", err)
+		skip = false
+	}
+	return backup.Options{SecretKey: d.Config.SecretKey, SkipAnalytics: skip}
 }

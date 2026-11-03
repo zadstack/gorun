@@ -42,6 +42,48 @@ entries are left for inspection and do **not** displace healthy copies. This can
 leave more than N entries on disk; review them deliberately. Verification may
 read large archives, so allow time and I/O capacity for the scheduled run.
 
+## Analytics data
+
+Site analytics live in their own database, `<data>/analytics.db`, separate from
+`gorun.db`. When that file exists, every backup (**Back up now**, the schedule,
+remote uploads, the pre-update backup, `gorun backup` and `gorun staging --from`)
+also writes `<stamp>-analytics.db` next to `<stamp>.db`. It is a consistent
+`VACUUM INTO` snapshot taken over a separate read-only connection while the site
+keeps collecting, so recent writes still in the WAL are included.
+
+- The manifest records it as an optional `analytics` member with name, size and
+  SHA-256. The manifest HMAC covers it, so it cannot be swapped or silently
+  dropped. Verification checks its digest and SQLite integrity, and a damaged
+  copy blocks restore like a damaged `.db`.
+- Backups without the member are still valid: manifests from earlier releases,
+  sites with analytics turned off, and backups that excluded it all keep
+  `format_version` 1 and verify, prune and restore as before.
+- Releases older than this one reject a manifest that has the member, because
+  they refuse unknown manifest fields. Inspect and restore such a backup with
+  this release or a newer one, including after rolling back an update.
+- Retention deletes `<stamp>-analytics.db` together with its stamp. Encrypted
+  remote uploads send it as a third object, `<stamp>-analytics.db.gorb`, and the
+  upload counts as complete only when all three files are uploaded and read back.
+  `gorun backup-decrypt` recovers it like the others.
+- The Backups list offers it for download next to the database.
+
+**Excluding analytics.** Turn on **Settings → Analytics → Leave analytics out of
+backups** (setting `analytics.backup_exclude`, off by default) to leave
+`analytics.db` out of all backups. For one CLI run, pass
+`gorun backup --skip-analytics`. The CLI also reads the setting from the site
+database. If `analytics.db` exists but cannot be copied, the backup fails and
+says so. Fix the file or exclude analytics to keep backing up.
+
+**Restoring analytics.** A restore of a backup that has the member writes
+`analytics.db` into the new directory beside `gorun.db`, checksum-verified and
+with no `-wal` or `-shm` files. A restore of a backup without it writes no
+`analytics.db`. Restore never touches the live data directory, so an existing
+`analytics.db` there is left alone. To carry it over, stop the site (a clean stop
+closes and checkpoints the analytics database), then copy `analytics.db` into
+the new directory before cutover. If no file is there at startup, analytics starts
+empty. Restores never replace files under a running site, so the running
+analytics store needs no reopen.
+
 The Backups page shows backup-entry count, total regular-file bytes under the
 local backup directory, filesystem free space where supported, and the last
 recorded locally verified success. That timestamp is a history record, not a
@@ -154,3 +196,10 @@ See [storage](STORAGE.md), [production recovery](PRODUCTION.md) and
 أوقفها عبر Ctrl+C. الاستعادة الدائمة تظل إلى مجلد جديد، ولا تستبدل البيانات
 الحالية تلقائيًا. احتفظ بالمفتاح الأصلي والثيم والملفات الخارجية مستقلًا؛
 المعاينة ليست إثباتًا لاكتمال كل متطلبات الاستعادة.
+
+تُحفظ الإحصائيات في ملف مستقل `analytics.db`. إن وُجد، تنسخه كل نسخة احتياطية إلى
+`<stamp>-analytics.db` نسخةً متسقة، ويسجّله الملف الوصفي عضوًا اختياريًا محميًا
+بالـHMAC، ويُرفع ويُحذف مع بقية النسخة. لاستبعاده فعّل **الإعدادات ← الإحصائيات ←
+استبعاد الإحصائيات من النسخ الاحتياطية**، أو استخدم `gorun backup --skip-analytics`.
+الاستعادة تضع `analytics.db` في المجلد الجديد إن كان في النسخة، ولا تمس الملف الحالي
+إن لم يكن فيها؛ انسخه يدويًا إلى المجلد الجديد قبل النقل إن أردت الاحتفاظ به.

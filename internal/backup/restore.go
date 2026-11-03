@@ -46,6 +46,14 @@ func RemovePartial(destination string) error {
 // Everything is written into PartialPath(destination) first and renamed to
 // destination only after the database and archive checksums verify, so
 // destination exists only for a complete restore.
+//
+// A backup with the optional analytics member restores it as
+// <destination>/analytics.db, verified like gorun.db. The staging directory
+// is new and empty, so no analytics.db-wal or -shm can sit beside it. A backup
+// without the member restores no analytics.db: Restore never touches the live
+// data directory, so an existing analytics.db stays where it is (copy it into
+// the new directory before cutover to keep it). Restore never runs against
+// the live tree, so a running analytics store needs no Reopen.
 func Restore(manifestPath, destination string) (report *Inspection, resultErr error) {
 	return RestoreWith(manifestPath, destination, nil)
 }
@@ -100,6 +108,11 @@ func RestoreWith(manifestPath, destination string, key []byte) (report *Inspecti
 	if actual, err := digest(filepath.Join(PartialPath(destination), "gorun.db")); err != nil || actual.Size != m.Database.Size || actual.SHA256 != m.Database.SHA256 {
 		return report, errors.New("backup: restored database checksum mismatch")
 	}
+	if m.Analytics != nil {
+		if err := restoreAnalytics(root, PartialPath(destination), filepath.Join(dir, m.Analytics.Name), *m.Analytics); err != nil {
+			return report, err
+		}
+	}
 	_, _, err = scanArchive(filepath.Join(dir, m.Archive.Name), func(name string, h *tar.Header, reader io.Reader) error {
 		// Permissions are clamped, never taken from the archive: the restored
 		// tree holds site data and possibly secret.key.
@@ -138,13 +151,35 @@ func RestoreWith(manifestPath, destination string, key []byte) (report *Inspecti
 	return report, nil
 }
 
+// restoreAnalytics copies the analytics member to staging/analytics.db and
+// checks it against the manifest digest. Stale sidecars are refused rather
+// than removed: staging is created empty, so one there means interference.
+func restoreAnalytics(root *os.Root, staging, source string, want FileDigest) error {
+	for _, suffix := range []string{"-wal", "-shm"} {
+		if _, err := root.Lstat(AnalyticsFile + suffix); !errors.Is(err, os.ErrNotExist) {
+			return errors.New("backup: unexpected analytics sidecar in restore staging")
+		}
+	}
+	if err := copyRestoredFile(root, source, AnalyticsFile); err != nil {
+		return err
+	}
+	if actual, err := digest(filepath.Join(staging, AnalyticsFile)); err != nil || actual.Size != want.Size || actual.SHA256 != want.SHA256 {
+		return errors.New("backup: restored analytics checksum mismatch")
+	}
+	return nil
+}
+
 func copyRestoredDatabase(root *os.Root, source string) error {
+	return copyRestoredFile(root, source, "gorun.db")
+}
+
+func copyRestoredFile(root *os.Root, source, name string) error {
 	f, err := os.Open(source)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	out, err := root.OpenFile("gorun.db", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	out, err := root.OpenFile(name, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
