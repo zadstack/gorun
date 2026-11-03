@@ -1,12 +1,14 @@
 package site_test
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -602,5 +604,152 @@ func TestBuilderFormsHookUpserts(t *testing.T) {
 	// A malformed payload is dropped, not retried forever.
 	if err := e.app.Deps.Hooks.Do(ctx, "builder.forms.published", json.RawMessage(`{"forms":`)); err != nil {
 		t.Fatalf("bad payload: %v", err)
+	}
+}
+
+func TestTrashedPageClosesItsForms(t *testing.T) {
+	for _, hard := range []bool{false, true} {
+		t.Run(fmt.Sprintf("hard=%v", hard), func(t *testing.T) {
+			e, tok := formsEnv(t)
+			ctx := context.Background()
+			pg := e.fake.Content.Add(content.Item{Type: "page", Slug: "book", Title: "Book"})
+			if err := site.UpsertBuilderForms(e.app.Deps, pg.ID, []site.FormDefinition{{Slug: "booking", Fields: []site.FormField{{Name: "name", Type: "text"}}}}); err != nil {
+				t.Fatal(err)
+			}
+			if err := site.UpsertBuilderForms(e.app.Deps, "other", []site.FormDefinition{{Slug: "kept", Fields: []site.FormField{{Name: "name", Type: "text"}}}}); err != nil {
+				t.Fatal(err)
+			}
+			// The struct value content emits, and its JSON form from the queue.
+			var payload any = map[string]any{"id": pg.ID, "type": "page", "slug": "book", "hard": hard}
+			if hard {
+				payload = json.RawMessage(`{"id":"` + pg.ID + `","type":"page","slug":"book","hard":true}`)
+			}
+			if err := e.app.Deps.Hooks.Do(ctx, "content.deleted", payload); err != nil {
+				t.Fatal(err)
+			}
+			if f, _ := site.FormBySlug(e.app.Deps, "booking"); f.Open {
+				t.Fatal("form of the deleted page still open")
+			}
+			if f, _ := site.FormBySlug(e.app.Deps, "kept"); !f.Open {
+				t.Fatal("another page's form closed")
+			}
+			if resp, _ := e.postForm("booking", tok, "name", "A"); resp.StatusCode != http.StatusGone {
+				t.Fatalf("post to closed form: %d", resp.StatusCode)
+			}
+			// A malformed payload is dropped.
+			if err := e.app.Deps.Hooks.Do(ctx, "content.deleted", json.RawMessage(`{"id":`)); err != nil {
+				t.Fatalf("bad payload: %v", err)
+			}
+		})
+	}
+}
+
+func TestBuilderChoicesTrimmed(t *testing.T) {
+	e, tok := formsEnv(t)
+	err := site.UpsertBuilderForms(e.app.Deps, "page-1", []site.FormDefinition{{Slug: "plan", Fields: []site.FormField{
+		{Name: "tier", Label: "Tier", Type: "choice", Required: true, Choices: []string{" Gold ", "Silver", "  ", "Gold"}}}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, _ := site.FormBySlug(e.app.Deps, "plan")
+	if got := strings.Join(f.Fields[0].Choices, "|"); got != "Gold|Silver" {
+		t.Fatalf("choices = %q", got)
+	}
+	if resp, body := e.postForm("plan", tok, "tier", "Gold"); !okStatus(resp.StatusCode) {
+		t.Fatalf("Gold rejected: %d\n%s", resp.StatusCode, body)
+	}
+}
+
+// postRaw posts body with the given content type to /forms/slug.
+func (e *env) postRaw(slug, ctype string, body io.Reader) int {
+	e.t.Helper()
+	req, _ := http.NewRequest("POST", e.srv.URL+"/forms/"+slug, body)
+	req.Header.Set("Content-Type", ctype)
+	resp, err := e.c.Do(req)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	_, _ = io.Copy(io.Discard, resp.Body)
+	resp.Body.Close()
+	return resp.StatusCode
+}
+
+func multipartBody(kv ...string) (string, *bytes.Buffer) {
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	for i := 0; i+1 < len(kv); i += 2 {
+		_ = mw.WriteField(kv[i], kv[i+1])
+	}
+	_ = mw.Close()
+	return mw.FormDataContentType(), &buf
+}
+
+// TestFormSubmitCSRF: a missing or wrong _csrf is 403 and stores nothing,
+// for a captured (unknown) slug and a builder form, urlencoded and
+// multipart. One env per encoding keeps each under the 5/min limiter.
+func TestFormSubmitCSRF(t *testing.T) {
+	for _, multi := range []bool{false, true} {
+		t.Run(fmt.Sprintf("multipart=%v", multi), func(t *testing.T) {
+			e, tok := formsEnv(t)
+			builderQuote(t, e)
+			post := func(slug string, kv ...string) int {
+				t.Helper()
+				if multi {
+					ct, body := multipartBody(kv...)
+					return e.postRaw(slug, ct, body)
+				}
+				form := url.Values{}
+				for i := 0; i+1 < len(kv); i += 2 {
+					form.Set(kv[i], kv[i+1])
+				}
+				return e.postRaw(slug, "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
+			}
+			for _, slug := range []string{"quote", "booking"} {
+				if c := post(slug, "name", "A", "email", "a@example.com"); c != http.StatusForbidden {
+					t.Errorf("%s without _csrf: %d", slug, c)
+				}
+				if c := post(slug, "_csrf", tok+"x", "name", "A", "email", "a@example.com"); c != http.StatusForbidden {
+					t.Errorf("%s with a wrong _csrf: %d", slug, c)
+				}
+			}
+			if _, _, ok := e.formRow("quote"); ok {
+				t.Fatal("a form was created without a valid CSRF token")
+			}
+			var n int
+			_ = e.app.Deps.DB.QueryRow(`SELECT count(*) FROM form_entries`).Scan(&n)
+			if n != 0 {
+				t.Fatalf("entries stored: %d", n)
+			}
+			// The same body with the right token passes.
+			if c := post("booking", "_csrf", tok, "name", "A", "email", "a@example.com"); !okStatus(c) {
+				t.Fatalf("valid: %d", c)
+			}
+		})
+	}
+}
+
+func TestFormSubmitRateLimited(t *testing.T) {
+	e, tok := formsEnv(t)
+	for i := range 5 {
+		if resp, _ := e.postForm("quote", tok, "name", fmt.Sprintf("n%d", i)); !okStatus(resp.StatusCode) {
+			t.Fatalf("post %d: %d", i+1, resp.StatusCode)
+		}
+	}
+	if resp, _ := e.postForm("quote", tok, "name", "n5"); resp.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("6th post: %d", resp.StatusCode)
+	}
+	if n := len(e.entryData("quote")); n != 5 {
+		t.Fatalf("entries = %d", n)
+	}
+}
+
+func TestFormSubmitBodyTooLarge(t *testing.T) {
+	e, tok := formsEnv(t)
+	builderQuote(t, e)
+	if resp, _ := e.postForm("booking", tok, "name", strings.Repeat("x", 65*1024), "email", "a@example.com"); resp.StatusCode != http.StatusRequestEntityTooLarge {
+		t.Fatalf("large body: %d", resp.StatusCode)
+	}
+	if n := len(e.entryData("booking")); n != 0 {
+		t.Fatalf("entries = %d", n)
 	}
 }

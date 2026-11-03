@@ -18,6 +18,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
@@ -43,6 +44,7 @@ type formRow struct {
 	Slug, Title, Source string
 	Open                bool
 	Entries, New        int
+	LastEntry           string // created_at of the newest entry, "" when none
 	Href                string
 }
 
@@ -61,7 +63,9 @@ type entryFilter struct {
 }
 
 type formEntriesPage struct {
-	Form    FormDefinition
+	Form FormDefinition
+	// Fields is Form.Fields in admin order (the fields panel).
+	Fields  []FormField
 	Columns []FormField
 	Rows    []entryRow
 	Filter  entryFilter
@@ -69,6 +73,8 @@ type formEntriesPage struct {
 	Page    int
 	PerPage int
 	Types   []string
+	// Error is an i18n key shown above the fields panel ("" for none).
+	Error string
 }
 
 // Link returns the table's URL for page n with the current filters.
@@ -187,7 +193,7 @@ func (a *formsAdmin) form(r *http.Request) (FormDefinition, error) {
 
 func (a *formsAdmin) list(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	rows, err := a.h.d.DB.QueryContext(ctx, `SELECT f.slug, f.title, f.source, f.open, count(e.id), coalesce(sum(e.status = 'new'), 0)
+	rows, err := a.h.d.DB.QueryContext(ctx, `SELECT f.slug, f.title, f.source, f.open, count(e.id), coalesce(sum(e.status = 'new'), 0), coalesce(max(e.created_at), '')
 		FROM forms f LEFT JOIN form_entries e ON e.form_id = f.id
 		WHERE f.source <> 'contact' GROUP BY f.id ORDER BY f.created_at, f.slug`)
 	if err != nil {
@@ -198,7 +204,7 @@ func (a *formsAdmin) list(w http.ResponseWriter, r *http.Request) {
 	data := formsListPage{Rows: []formRow{}}
 	for rows.Next() {
 		var f formRow
-		if err := rows.Scan(&f.Slug, &f.Title, &f.Source, &f.Open, &f.Entries, &f.New); err != nil {
+		if err := rows.Scan(&f.Slug, &f.Title, &f.Source, &f.Open, &f.Entries, &f.New, &f.LastEntry); err != nil {
 			a.fail(w, r, err)
 			return
 		}
@@ -217,8 +223,13 @@ func (a *formsAdmin) list(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
+	var last string
+	if err := a.h.d.DB.QueryRowContext(ctx, `SELECT coalesce(max(created_at), '') FROM form_submissions WHERE status <> 'spam'`).Scan(&last); err != nil {
+		a.fail(w, r, err)
+		return
+	}
 	data.Rows = append(data.Rows, formRow{Slug: formContact, Title: formContact, Source: formContact, Open: true,
-		Entries: counts["inbox"], New: counts["new"], Href: "/admin" + submissionsPath})
+		Entries: counts["inbox"], New: counts["new"], LastEntry: last, Href: "/admin" + submissionsPath})
 	data.NewTotal += counts["new"]
 	a.tpl.Render(w, r, "pages/site/forms.html", data)
 }
@@ -261,10 +272,11 @@ func (f entryFilter) where(formID string) (string, []any) {
 	return strings.Join(cond, " AND "), args
 }
 
-// visibleColumns returns the first maxEntryColumns fields that are not hidden.
+// visibleColumns returns the first maxEntryColumns fields that are not
+// hidden, in admin order.
 func visibleColumns(fields []FormField) []FormField {
 	var out []FormField
-	for _, f := range fields {
+	for _, f := range adminOrder(fields) {
 		if !f.Hidden && len(out) < maxEntryColumns {
 			out = append(out, f)
 		}
@@ -290,15 +302,20 @@ func dataMap(raw string) map[string]string {
 }
 
 func (a *formsAdmin) entries(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
 	def, err := a.form(r)
 	if err != nil {
 		a.fail(w, r, err)
 		return
 	}
+	a.renderEntries(w, r, http.StatusOK, def, "")
+}
+
+// renderEntries renders def's table with status and an optional error key.
+func (a *formsAdmin) renderEntries(w http.ResponseWriter, r *http.Request, status int, def FormDefinition, errKey string) {
+	ctx := r.Context()
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	data := formEntriesPage{Form: def, Columns: visibleColumns(def.Fields), Filter: filterFrom(r), Page: max(page, 1),
-		PerPage: formEntriesPerPage, Rows: []entryRow{}, Types: fieldTypes}
+	data := formEntriesPage{Form: def, Fields: adminOrder(def.Fields), Columns: visibleColumns(def.Fields), Filter: filterFrom(r), Page: max(page, 1),
+		PerPage: formEntriesPerPage, Rows: []entryRow{}, Types: fieldTypes, Error: errKey}
 	cond, args := data.Filter.where(def.ID)
 	if err := a.h.d.DB.QueryRowContext(ctx, `SELECT count(*) FROM form_entries WHERE `+cond, args...).Scan(&data.Total); err != nil {
 		a.fail(w, r, err)
@@ -328,7 +345,7 @@ func (a *formsAdmin) entries(w http.ResponseWriter, r *http.Request) {
 		a.fail(w, r, err)
 		return
 	}
-	a.tpl.Render(w, r, "pages/site/form_entries.html", data)
+	a.tpl.RenderWith(w, r, status, "admin", "pages/site/form_entries.html", data)
 }
 
 // entry renders one entry and marks it read when it was new.
@@ -355,9 +372,9 @@ func (a *formsAdmin) entry(w http.ResponseWriter, r *http.Request) {
 		p.Status = statusRead
 	}
 	m := dataMap(raw)
-	for _, f := range def.Fields {
+	for _, f := range adminOrder(def.Fields) {
 		if v, ok := m[f.Name]; ok {
-			p.Fields = append(p.Fields, entryField{Name: f.Name, Label: f.Label, Value: v, Known: true})
+			p.Fields = append(p.Fields, entryField{Name: f.Name, Label: f.DisplayLabel(), Value: v, Known: true})
 			delete(m, f.Name)
 		}
 	}
@@ -488,10 +505,17 @@ func (h *handlers) saveFields(ctx context.Context, slug string, change func([]Fo
 	})
 }
 
-var errBadField = errors.New("site: invalid field change")
+var (
+	errBadField = errors.New("site: invalid field change")
+	// errBuilderPin: a builder form's fields come from its page (the builder
+	// owns that schema), so none can be pinned in the admin.
+	errBuilderPin = errors.New("site: builder form fields cannot be pinned")
+)
 
-// field changes how one field is presented: hide, show, rename, up, down, or
-// pin a discovered field with a type, label and the required flag.
+// field changes how one field is presented in the admin: hide, show, rename
+// (admin_label), up and down (admin_pos); or pins a discovered field of a
+// captured form with a type, label and the required flag. Only pin changes
+// the schema visitors are checked against, and a builder form refuses it.
 func (a *formsAdmin) field(w http.ResponseWriter, r *http.Request) {
 	def, err := a.form(r)
 	if err != nil {
@@ -513,16 +537,16 @@ func (a *formsAdmin) field(w http.ResponseWriter, r *http.Request) {
 			if label == "" || len([]rune(label)) > maxLabelLen {
 				return nil, errBadField
 			}
-			f.Label = label
+			f.AdminLabel = label
+			if label == f.Label {
+				f.AdminLabel = ""
+			}
 		case "up", "down":
-			j := i - 1
-			if op == "down" {
-				j = i + 1
-			}
-			if j >= 0 && j < len(fields) {
-				fields[i], fields[j] = fields[j], fields[i]
-			}
+			moveField(fields, name, op == "up")
 		case "pin":
+			if def.Source == formBuilder {
+				return nil, errBuilderPin
+			}
 			typ := r.PostFormValue("type")
 			if !slices.Contains(fieldTypes, typ) || typ == fieldFile {
 				return nil, errBadField
@@ -551,6 +575,9 @@ func (a *formsAdmin) field(w http.ResponseWriter, r *http.Request) {
 		return fields, nil
 	})
 	switch {
+	case errors.Is(err, errBuilderPin):
+		a.renderEntries(w, r, http.StatusBadRequest, def, "site.forms.fields.pin_builder")
+		return
 	case errors.Is(err, errBadField):
 		a.tpl.RenderError(w, r, http.StatusBadRequest)
 		return
@@ -562,11 +589,51 @@ func (a *formsAdmin) field(w http.ResponseWriter, r *http.Request) {
 	a.back(w, r, "/"+def.Slug, "success", "site.forms.flash.field")
 }
 
+// moveField moves field name one place up or down in admin order and
+// renumbers every field's AdminPos from 1; the schema order is untouched.
+func moveField(fields []FormField, name string, up bool) {
+	order := adminOrder(fields)
+	i := slices.IndexFunc(order, func(f FormField) bool { return f.Name == name })
+	j := i + 1
+	if up {
+		j = i - 1
+	}
+	if i < 0 || j < 0 || j >= len(order) {
+		return
+	}
+	order[i], order[j] = order[j], order[i]
+	for pos, o := range order {
+		k := slices.IndexFunc(fields, func(f FormField) bool { return f.Name == o.Name })
+		fields[k].AdminPos = pos + 1
+	}
+}
+
+// pageExists reports whether content item id still exists (trashed counts:
+// only a hard delete removes it). Without the content service, or on any
+// error other than not found, the page is taken to exist.
+func (h *handlers) pageExists(ctx context.Context, id string) bool {
+	svc, ok := h.content()
+	if !ok || id == "" {
+		return ok
+	}
+	_, err := svc.Get(ctx, id)
+	return !errors.Is(err, content.ErrNotFound)
+}
+
+// deleteBlocked reports a builder form that is open while its page exists:
+// the page still declares it. A form whose page was deleted can go.
+func (a *formsAdmin) deleteBlocked(ctx context.Context, def FormDefinition) bool {
+	return def.Source == formBuilder && def.Open && a.h.pageExists(ctx, def.PageID)
+}
+
 func (a *formsAdmin) deletePage(r *http.Request, def FormDefinition) (formDeletePage, error) {
-	p := formDeletePage{Form: def, Blocked: def.Source == formBuilder && def.Open}
+	p := formDeletePage{Form: def, Blocked: a.deleteBlocked(r.Context(), def)}
 	err := a.h.d.DB.QueryRowContext(r.Context(), `SELECT count(*) FROM form_entries WHERE form_id = ?`, def.ID).Scan(&p.Entries)
 	return p, err
 }
+
+// errFormOpen: the guarded DELETE found the form open on a live page.
+var errFormOpen = errors.New("site: form is open on a page")
 
 func (a *formsAdmin) confirmDelete(w http.ResponseWriter, r *http.Request) {
 	def, err := a.form(r)
@@ -582,8 +649,9 @@ func (a *formsAdmin) confirmDelete(w http.ResponseWriter, r *http.Request) {
 	a.tpl.Render(w, r, "pages/site/form_delete.html", p)
 }
 
-// deleteForm removes a form and, by cascade, its entries. A builder form
-// whose page still declares it (open) is refused with 409.
+// deleteForm removes a form and its entries. A builder form that is open
+// while its page exists is refused with 409; the DELETE itself carries that
+// condition, so a republish between the check and the commit is refused too.
 func (a *formsAdmin) deleteForm(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	def, err := a.form(r)
@@ -600,6 +668,8 @@ func (a *formsAdmin) deleteForm(w http.ResponseWriter, r *http.Request) {
 		a.tpl.RenderWith(w, r, http.StatusConflict, "admin", "pages/site/form_delete.html", p)
 		return
 	}
+	// Read before the write transaction; the DELETE re-checks open itself.
+	live := def.Source == formBuilder && a.h.pageExists(ctx, def.PageID)
 	var files []string
 	err = db.InTx(ctx, a.h.d.DB, func(tx *sql.Tx) error {
 		files = files[:0]
@@ -618,12 +688,29 @@ func (a *formsAdmin) deleteForm(w http.ResponseWriter, r *http.Request) {
 		if err := errors.Join(rows.Err(), rows.Close()); err != nil {
 			return err
 		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM form_entries WHERE form_id = ?`, def.ID); err != nil {
+		q := `DELETE FROM forms WHERE id = ?`
+		if live {
+			q += ` AND NOT (source = 'builder' AND open = 1)`
+		}
+		res, err := tx.ExecContext(ctx, q, def.ID)
+		if err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, `DELETE FROM forms WHERE id = ?`, def.ID)
+		if n, err := res.RowsAffected(); err != nil || n == 0 {
+			return errors.Join(err, errFormOpen)
+		}
+		_, err = tx.ExecContext(ctx, `DELETE FROM form_entries WHERE form_id = ?`, def.ID) // no-op when the FK cascade ran
 		return err
 	})
+	if errors.Is(err, errFormOpen) {
+		if cur, cerr := a.h.formBySlug(ctx, def.Slug); cerr == nil && cur.ID == def.ID {
+			p.Form, p.Blocked = cur, true
+			a.tpl.RenderWith(w, r, http.StatusConflict, "admin", "pages/site/form_delete.html", p)
+			return
+		}
+		a.tpl.RenderError(w, r, http.StatusNotFound) // deleted meanwhile
+		return
+	}
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -649,9 +736,9 @@ func (a *formsAdmin) export(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cond, args := filterFrom(r).where(def.ID)
-	columns := make([]string, 0, len(def.Fields))
-	for _, f := range def.Fields {
-		columns = append(columns, f.Name)
+	columns, labels := make([]string, 0, len(def.Fields)), make([]string, 0, len(def.Fields))
+	for _, f := range adminOrder(def.Fields) {
+		columns, labels = append(columns, f.Name), append(labels, f.DisplayLabel())
 	}
 	if err := a.extraKeys(ctx, cond, args, &columns); err != nil {
 		a.fail(w, r, err)
@@ -670,7 +757,9 @@ func (a *formsAdmin) export(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "private, no-store")
 	_, _ = w.Write([]byte("\xef\xbb\xbf"))
 	cw := csv.NewWriter(w)
-	head := append([]string{"id", "created_at", "status", "page"}, columns...)
+	// Schema fields are headed by their admin label; keys found only in
+	// entries by their name.
+	head := append(append([]string{"id", "created_at", "status", "page"}, labels...), columns[len(labels):]...)
 	for i := range head {
 		head[i] = csvSafe(head[i])
 	}

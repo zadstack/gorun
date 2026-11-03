@@ -190,13 +190,13 @@ test.describe.serial("site forms", () => {
     await page.goto("/admin/forms");
     await expect(page.locator(`a[href="/admin/forms/${formSlugEn}"]`).first()).toBeVisible();
 
-    // CSV: field headers and values.
+    // CSV: field labels as headers, and values.
     const csv = await page.request.get(`/admin/forms/${formSlugAr}/export.csv`);
     expect(csv.status()).toBe(200);
     expect(csv.headers()["content-type"]).toContain("text/csv");
     const text = await csv.text();
     const [head, ...lines] = text.replace(/^﻿/, "").trim().split(/\r?\n/);
-    expect(head.split(",")).toEqual(["id", "created_at", "status", "page", "name", "email", "plan", "notes"]);
+    expect(head.split(",")).toEqual(["id", "created_at", "status", "page", "Name", "Email", "Plan", "Notes"]);
     expect(lines).toHaveLength(1);
     expect(lines[0]).toContain("منى");
     expect(lines[0]).toContain("mona@e2e.test");

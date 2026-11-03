@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/site"
@@ -213,7 +215,7 @@ func TestFormsCSVKeepsRetiredFields(t *testing.T) {
 		t.Fatalf("csv: %d %q", resp.StatusCode, resp.Header.Get("Content-Type"))
 	}
 	rows := csvRows(t, body)
-	want := []string{"id", "created_at", "status", "page", "name", "old", "email", "zzz", "aaa"}
+	want := []string{"id", "created_at", "status", "page", "Name", "Old", "Email", "zzz", "aaa"}
 	if len(rows) != 3 || strings.Join(rows[0], ",") != strings.Join(want, ",") {
 		t.Fatalf("rows: %q", rows)
 	}
@@ -285,11 +287,16 @@ func TestFieldPresentationOnly(t *testing.T) {
 	for _, f := range fields {
 		names += f.Name
 	}
-	if names != "acb" && names != "cab" {
-		t.Fatalf("order = %s", names)
+	if names != "abc" {
+		t.Fatalf("reorder rewrote the schema order: %s", names)
 	}
-	if names != "acb" {
-		t.Fatalf("c should move above b only: %s", names)
+	// c moves above b only (b is hidden, so the table shows a then c).
+	if a, b, c := e.fieldOf("quote", "a").AdminPos, e.fieldOf("quote", "b").AdminPos, e.fieldOf("quote", "c").AdminPos; !(a < c && c < b) {
+		t.Fatalf("admin_pos a=%d b=%d c=%d", a, b, c)
+	}
+	_, table := e.get(page)
+	if got := thOrder(table); got != "a,c" {
+		t.Fatalf("table order = %s", got)
 	}
 	for _, f := range fields {
 		switch f.Name {
@@ -298,15 +305,18 @@ func TestFieldPresentationOnly(t *testing.T) {
 				t.Fatal("b not hidden")
 			}
 		case "a":
-			if f.Label != "First" {
-				t.Fatalf("label = %q", f.Label)
+			if f.AdminLabel != "First" || f.Label != "A" {
+				t.Fatalf("label = %q admin_label = %q", f.Label, f.AdminLabel)
 			}
 		}
 	}
 	post("/fields/b/show")
 	_, fields, _ = e.formRow("quote")
-	if fields[2].Hidden {
+	if fields[1].Hidden {
 		t.Fatal("b still hidden")
+	}
+	if _, table = e.get(page); thOrder(table) != "a,c,b" {
+		t.Fatalf("table order after show = %s", thOrder(table))
 	}
 	var after string
 	_ = e.app.Deps.DB.QueryRow(`SELECT data_json FROM form_entries WHERE id = ?`, eid).Scan(&after)
@@ -321,6 +331,7 @@ func TestDeleteCapturedForm(t *testing.T) {
 	e.seedEntry(cid, map[string]string{"a": "1"}, "new", "2026-03-01T10:00:00Z")
 	e.seedEntry(cid, map[string]string{"a": "2"}, "new", "2026-03-02T10:00:00Z")
 	bid := e.seedForm("book", "builder", true, pinned("a"))
+	e.fake.Content.Add(content.Item{ID: "page-1", Type: "page", Slug: "book", Title: "Book"}) // its page is live
 	e.seedEntry(bid, map[string]string{"a": "1"}, "new", "2026-03-01T10:00:00Z")
 	e.loginAdmin()
 
@@ -459,4 +470,169 @@ func TestExportLinkHasNoPage(t *testing.T) {
 	mustContain(t, body, `href="/admin/forms/quote/export.csv?q=x&amp;status=new"`)
 	_, plain := e.get("/admin/forms/quote")
 	mustContain(t, plain, `href="/admin/forms/quote/export.csv"`)
+}
+
+// fieldOf returns the field named name of slug's schema.
+func (e *env) fieldOf(slug, name string) site.FormField {
+	e.t.Helper()
+	_, fields, _ := e.formRow(slug)
+	for _, f := range fields {
+		if f.Name == name {
+			return f
+		}
+	}
+	e.t.Fatalf("%s has no field %s: %+v", slug, name, fields)
+	return site.FormField{}
+}
+
+// thOrder lists the data-field names of the entries table header, in order.
+func thOrder(body string) string {
+	var out []string
+	for _, m := range thRe.FindAllStringSubmatch(body, -1) {
+		out = append(out, m[1])
+	}
+	return strings.Join(out, ",")
+}
+
+var thRe = regexp.MustCompile(`<th data-field="([^"]+)"`)
+
+func TestAdminPresentationSurvivesRepublish(t *testing.T) {
+	e := boot(t)
+	defs := []site.FormDefinition{{Slug: "booking", Title: "Booking", Fields: []site.FormField{
+		{Name: "name", Label: "Name", Type: "text"}, {Name: "email", Label: "Email", Type: "email"}, {Name: "phone", Label: "Phone", Type: "text"}}}}
+	if err := site.UpsertBuilderForms(e.app.Deps, "page-1", defs); err != nil {
+		t.Fatal(err)
+	}
+	def, _ := site.FormBySlug(e.app.Deps, "booking")
+	e.seedEntry(def.ID, map[string]string{"name": "A", "email": "a@x.test", "phone": "1"}, "new", "2026-03-01T10:00:00Z")
+	e.loginAdmin()
+	page := "/admin/forms/booking"
+	for _, p := range [][]string{{"/fields/name/rename", "label", "Full name"}, {"/fields/email/up"}, {"/fields/phone/hide"}} {
+		if resp := e.adminPost(page+p[0], page, p[1:]...); resp.StatusCode != http.StatusSeeOther {
+			t.Fatalf("%s: %d", p[0], resp.StatusCode)
+		}
+	}
+	check := func(when string) {
+		t.Helper()
+		_, body := e.get(page)
+		if got := thOrder(body); got != "email,name" {
+			t.Fatalf("%s: admin order = %s", when, got)
+		}
+		mustContain(t, body, "<bdi>Full name</bdi>")
+		if f := e.fieldOf("booking", "name"); f.Label != "Name" || f.AdminLabel != "Full name" {
+			t.Fatalf("%s: name field = %+v", when, f)
+		}
+		if !e.fieldOf("booking", "phone").Hidden {
+			t.Fatalf("%s: phone not hidden", when)
+		}
+		out := string(e.formFunc()("booking", "tok", "/book", "en"))
+		mustNotContain(t, out, "Full name")
+		if i, j := strings.Index(out, `name="name"`), strings.Index(out, `name="email"`); i < 0 || j < 0 || i > j {
+			t.Fatalf("%s: public order changed:\n%s", when, out)
+		}
+		mustContain(t, out, `>Name</label>`, `name="phone"`) // hidden is admin-only
+	}
+	check("before republish")
+	if err := site.UpsertBuilderForms(e.app.Deps, "page-1", defs); err != nil {
+		t.Fatal(err)
+	}
+	check("after republish")
+	_, csvBody := e.get(page + "/export.csv")
+	if got := strings.Join(csvRows(t, csvBody)[0], ","); got != "id,created_at,status,page,Email,Full name,Phone" {
+		t.Fatalf("csv header = %s", got)
+	}
+}
+
+func TestRetiredBuilderFieldHiddenButInCSV(t *testing.T) {
+	e := boot(t)
+	two := []site.FormField{{Name: "name", Label: "Name", Type: "text"}, {Name: "old", Label: "Old", Type: "text"}}
+	if err := site.UpsertBuilderForms(e.app.Deps, "page-1", []site.FormDefinition{{Slug: "booking", Fields: two}}); err != nil {
+		t.Fatal(err)
+	}
+	def, _ := site.FormBySlug(e.app.Deps, "booking")
+	e.seedEntry(def.ID, map[string]string{"name": "A", "old": "legacy"}, "new", "2026-03-01T10:00:00Z")
+	if err := site.UpsertBuilderForms(e.app.Deps, "page-1", []site.FormDefinition{{Slug: "booking", Fields: two[:1]}}); err != nil {
+		t.Fatal(err)
+	}
+	if f := e.fieldOf("booking", "old"); !f.Hidden || f.State != "discovered" {
+		t.Fatalf("retired field = %+v", f)
+	}
+	e.loginAdmin()
+	_, body := e.get("/admin/forms/booking")
+	if got := thOrder(body); got != "name" {
+		t.Fatalf("table columns = %s", got)
+	}
+	_, csvBody := e.get("/admin/forms/booking/export.csv")
+	rows := csvRows(t, csvBody)
+	if strings.Join(rows[0], ",") != "id,created_at,status,page,Name,Old" || rows[1][5] != "legacy" {
+		t.Fatalf("csv = %q", rows)
+	}
+	mustNotContain(t, string(e.formFunc()("booking", "tok", "/", "en")), `name="old"`)
+}
+
+func TestPinRefusedOnBuilderForm(t *testing.T) {
+	e := boot(t)
+	two := []site.FormField{{Name: "name", Label: "Name", Type: "text"}, {Name: "old", Label: "Old", Type: "text"}}
+	if err := site.UpsertBuilderForms(e.app.Deps, "page-1", []site.FormDefinition{{Slug: "booking", Fields: two}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := site.UpsertBuilderForms(e.app.Deps, "page-1", []site.FormDefinition{{Slug: "booking", Fields: two[:1]}}); err != nil {
+		t.Fatal(err)
+	}
+	e.loginAdmin()
+	_, page := e.get("/admin/forms/booking")
+	mustNotContain(t, page, "/fields/old/pin")
+	_, html := e.get("/admin/forms/booking")
+	resp, body := e.do("POST", "/admin/forms/booking/fields/old/pin", url.Values{"_csrf": {csrfFrom(t, html)}, "type": {"text"}})
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("pin on builder form: %d", resp.StatusCode)
+	}
+	mustContain(t, body, "منشئ الصفحات")
+	if f := e.fieldOf("booking", "old"); f.State != "discovered" {
+		t.Fatalf("field pinned: %+v", f)
+	}
+	mustNotContain(t, string(e.formFunc()("booking", "tok", "/", "en")), `name="old"`)
+}
+
+func TestFormsListShowsLastEntry(t *testing.T) {
+	e := boot(t)
+	id := e.seedForm("quote", "captured", true, pinned("name"))
+	e.seedEntry(id, map[string]string{"name": "A"}, "new", "2026-03-01T10:00:00Z")
+	e.seedEntry(id, map[string]string{"name": "B"}, "read", "2026-03-04T09:30:00Z")
+	e.seedForm("empty", "captured", true, pinned("name"))
+	e.loginAdmin()
+	_, body := e.get("/admin/forms")
+	mustContain(t, body, `data-last="2026-03-04T09:30:00Z"`, `data-last=""`, "آخر رسالة")
+}
+
+func TestSearchFindsHTMLCharacters(t *testing.T) {
+	e, tok := formsEnv(t)
+	if resp, _ := e.postForm("quote", tok, "dept", "R&D <team>"); !okStatus(resp.StatusCode) {
+		t.Fatalf("capture: %d", resp.StatusCode)
+	}
+	if got := e.entryData("quote"); len(got) != 1 || got[0] != `{"dept":"R&D <team>"}` {
+		t.Fatalf("stored = %v", got)
+	}
+	e.loginAdmin()
+	_, body := e.get("/admin/forms/quote?q=" + url.QueryEscape("R&D"))
+	mustContain(t, body, "<bdi>R&amp;D &lt;team&gt;</bdi>")
+	_, body = e.get("/admin/forms/quote?q=" + url.QueryEscape("<team>"))
+	mustContain(t, body, "<bdi>R&amp;D &lt;team&gt;</bdi>")
+}
+
+func TestDeleteBuilderFormOfDeletedPage(t *testing.T) {
+	e := boot(t)
+	// No content item "gone" exists: its page was hard-deleted.
+	if err := site.UpsertBuilderForms(e.app.Deps, "gone", []site.FormDefinition{{Slug: "booking", Fields: []site.FormField{{Name: "name", Type: "text"}}}}); err != nil {
+		t.Fatal(err)
+	}
+	e.loginAdmin()
+	_, confirm := e.get("/admin/forms/booking/delete")
+	mustNotContain(t, confirm, "هذا النموذج ما زال في صفحة")
+	if resp := e.adminPost("/admin/forms/booking/delete", "/admin/forms/booking"); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("delete: %d", resp.StatusCode)
+	}
+	if _, _, ok := e.formRow("booking"); ok {
+		t.Fatal("form kept")
+	}
 }

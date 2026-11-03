@@ -201,5 +201,8 @@
   "forms.flash.form_deleted": "Form deleted.",
   "forms.flash.open": "This form is still on a page and cannot be deleted.",
   "forms.fields.choices_help": "Choices apply to the Choice type only (1 to 20).",
-  "forms.fields.required_warning": "A required field makes every submission fail if the page's form no longer sends it."
+  "forms.fields.required_warning": "A required field makes every submission fail if the page's form no longer sends it.",
+  "forms.col.last": "Last entry",
+  "forms.fields.pin_builder": "This form's fields come from its page in the page builder, so they cannot be pinned here. Edit the form section in the page builder instead.",
+  "forms.fields.builder_help": "The fields, their labels and order on the site come from the page builder. Renaming and reordering here change this table only."
 }

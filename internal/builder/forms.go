@@ -245,8 +245,9 @@ func publishedForms(doc Document) []PublishedForm {
 }
 
 // checkFormSlugsFree rejects a slug that another page's published document
-// uses (ruling R5). Pages whose content was trashed still hold their slugs:
-// their site forms stay registered until the page is deleted.
+// uses (ruling R5). A trashed page still holds its slugs (its document is
+// kept, so a restore can republish it), although site closes its forms on
+// content.deleted; a hard delete drops the document and frees them.
 func (s *service) checkFormSlugsFree(ctx context.Context, id string, forms []PublishedForm) error {
 	if len(forms) == 0 {
 		return nil

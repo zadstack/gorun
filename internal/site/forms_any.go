@@ -2,6 +2,7 @@ package site
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -69,7 +70,10 @@ var (
 	errInvalidBuilderForms = errors.New("site: invalid builder forms")
 )
 
-// FormField is one column of a form's table, in display order.
+// FormField is one field of a form's schema, in schema order (the
+// builder's, or first-seen for a captured form). Label, order, type,
+// required and choices are the published schema the visitor form renders;
+// Hidden, AdminLabel and AdminPos are admin presentation only.
 type FormField struct {
 	Name     string   `json:"name"`
 	Label    string   `json:"label"`
@@ -79,6 +83,45 @@ type FormField struct {
 	Choices  []string `json:"choices,omitempty"`
 	State    string   `json:"state"` // pinned | discovered
 	Hidden   bool     `json:"hidden,omitempty"`
+	// AdminLabel is the admin's rename ("" shows Label); AdminPos the
+	// admin's column position (0 = not placed: after placed fields, in
+	// schema order).
+	AdminLabel string `json:"admin_label,omitempty"`
+	AdminPos   int    `json:"admin_pos,omitempty"`
+}
+
+// DisplayLabel is the label the admin tables and CSV headers show.
+func (f FormField) DisplayLabel() string {
+	if f.AdminLabel != "" {
+		return f.AdminLabel
+	}
+	return f.Label
+}
+
+// adminOrder returns a copy of fields in admin order: by AdminPos (unplaced
+// last), then schema order.
+func adminOrder(fields []FormField) []FormField {
+	out := slices.Clone(fields)
+	key := func(f FormField) int {
+		if f.AdminPos > 0 {
+			return f.AdminPos
+		}
+		return math.MaxInt
+	}
+	slices.SortStableFunc(out, func(a, b FormField) int { return cmp.Compare(key(a), key(b)) })
+	return out
+}
+
+// marshalJSON encodes v without HTML escaping, so stored text keeps &, <
+// and > as typed (the entries search matches it literally).
+func marshalJSON(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	return bytes.TrimSuffix(buf.Bytes(), []byte("\n")), nil
 }
 
 // FormDefinition is a forms row. PageID is the builder page that declares
@@ -544,7 +587,7 @@ func checkFieldValue(f FormField, v string) string {
 // on its first submission (within the 50-form cap) and appends new names
 // as discovered fields. duplicate reports a replay inside the window.
 func (h *handlers) storeFormEntry(ctx context.Context, slug string, builder bool, names []string, sub FormSubmission, key string) (duplicate bool, err error) {
-	data, err := json.Marshal(sub.Fields)
+	data, err := marshalJSON(sub.Fields)
 	if err != nil {
 		return false, err
 	}
@@ -749,13 +792,18 @@ func (h *handlers) upsertBuilderFormsAt(ctx context.Context, pageID string, publ
 // taken from when it belonged to another page's builder form. The builder's
 // slug check across its published pages (ruling R5) is the only authority,
 // so a slug another page released (or still lists, after a race) moves here.
+// The builder owns the schema (label, order, type, required, choices); the
+// admin's presentation (hidden, admin_label, admin_pos) of a field that is
+// still declared carries over. A field the builder retired stays as a
+// hidden discovered column, so old entries keep it in the CSV.
 func upsertBuilderForm(ctx context.Context, tx *sql.Tx, pageID string, d FormDefinition, now string) (movedFrom string, err error) {
 	fields := make([]FormField, 0, len(d.Fields))
 	for _, f := range d.Fields {
-		f.State = statePinned
-		if f.Label == "" {
+		f.State, f.Hidden, f.AdminLabel, f.AdminPos = statePinned, false, "", 0
+		if f.Label = strings.TrimSpace(f.Label); f.Label == "" {
 			f.Label = f.Name
 		}
+		f.Choices = trimChoices(f.Choices)
 		fields = append(fields, f)
 	}
 	title := strings.TrimSpace(d.Title)
@@ -776,10 +824,18 @@ func upsertBuilderForm(ctx context.Context, tx *sql.Tx, pageID string, d FormDef
 		}
 		var extras []FormField
 		for _, old := range cur.Fields {
-			if !slices.ContainsFunc(fields, func(f FormField) bool { return f.Name == old.Name }) {
-				old.State = stateDiscovered
+			i := slices.IndexFunc(fields, func(f FormField) bool { return f.Name == old.Name })
+			if i < 0 {
+				old.State, old.Hidden = stateDiscovered, true
 				extras = append(extras, old)
+				continue
 			}
+			f := &fields[i]
+			f.AdminLabel, f.AdminPos = old.AdminLabel, old.AdminPos
+			// A field the builder retired (hidden by that) shows again when
+			// it is declared again; the admin's own hide carries over.
+			retired := cur.Source == formBuilder && old.State == stateDiscovered
+			f.Hidden = old.Hidden && !retired
 		}
 		// Keep at most maxFormFields columns: the oldest discovered extras go first.
 		if room := maxFormFields - len(fields); len(extras) > room {
@@ -799,6 +855,18 @@ func upsertBuilderForm(ctx context.Context, tx *sql.Tx, pageID string, d FormDef
 	_, err = tx.ExecContext(ctx, `INSERT INTO forms (id, slug, title, source, page_id, submit_label, success, fields_json, open, created_at, updated_at)
 		VALUES (?, ?, ?, 'builder', ?, ?, ?, ?, 1, ?, ?)`, db.NewID(), d.Slug, title, pageID, d.SubmitLabel, d.Success, string(raw), now, now)
 	return "", err
+}
+
+// trimChoices trims each choice and drops empty and repeated ones, so a
+// stored " Gold " matches the trimmed posted "Gold".
+func trimChoices(in []string) []string {
+	var out []string
+	for _, c := range in {
+		if c = strings.TrimSpace(c); c != "" && !slices.Contains(out, c) {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // builderFormsPublished is the builder's HookFormsPublished. Site does not
@@ -893,6 +961,49 @@ func (h *handlers) onBuilderForms(ctx context.Context, payload any) error {
 	if err != nil {
 		h.d.Log.Error("site: builder forms: store failed", "page", ev.PageID, "err", err)
 		return err
+	}
+	return nil
+}
+
+// contentDeleted is content's hook for a trashed or hard-deleted item
+// (internal/content/status.go); the payload is {id, type, slug, hard}.
+const contentDeleted = "content.deleted"
+
+// onContentDeleted closes the builder forms of a page that was trashed or
+// deleted: its form sections are no longer on the site. Entries stay, a
+// form whose page is gone can then be deleted in the admin, and a restored
+// page reopens its forms on its next publish. A payload without an id is
+// logged and dropped; a store error is returned so the event is retried.
+func (h *handlers) onContentDeleted(ctx context.Context, payload any) error {
+	var raw []byte
+	switch v := payload.(type) {
+	case json.RawMessage:
+		raw = v
+	case []byte:
+		raw = v
+	default:
+		b, err := json.Marshal(v)
+		if err != nil {
+			h.d.Log.Error("site: content.deleted: dropped", "err", err)
+			return nil
+		}
+		raw = b
+	}
+	var p struct {
+		ID   string `json:"id"`
+		Hard bool   `json:"hard"`
+	}
+	if err := json.Unmarshal(raw, &p); err != nil || p.ID == "" {
+		h.d.Log.Error("site: content.deleted: dropped", "err", err)
+		return nil
+	}
+	res, err := h.d.DB.ExecContext(ctx, `UPDATE forms SET open = 0, updated_at = ? WHERE source = 'builder' AND page_id = ? AND open = 1`, db.Now(), p.ID)
+	if err != nil {
+		h.d.Log.Error("site: close forms of deleted page", "page", p.ID, "err", err)
+		return err
+	}
+	if n, _ := res.RowsAffected(); n > 0 {
+		h.d.Log.Info("site: closed forms of deleted page", "page", p.ID, "hard", p.Hard, "forms", n)
 	}
 	return nil
 }
