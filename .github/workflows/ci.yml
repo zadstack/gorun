@@ -56,8 +56,9 @@ jobs:
           cache-dependency-path: go.sum
       - name: full race suite
         # Keep production Argon2 and every package; no coverage instrumentation
-        # in the race run. CGO stays enabled for the race detector.
-        run: go test -timeout=20m -race ./...
+        # in the race run. CGO stays enabled for the race detector. internal/admin
+        # alone takes 15 minutes under race and more on a slow runner.
+        run: go test -timeout=35m -race ./...
 
   coverage:
     runs-on: ubuntu-latest

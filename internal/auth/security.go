@@ -21,12 +21,17 @@ type securitySamples struct {
 	minute int64
 	total  int
 	hits   map[string]int
+	now    func() time.Time // nil means time.Now
 }
 
 func (s *securitySamples) allow(ip string, perIP, total int) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	minute := time.Now().Unix() / 60
+	now := time.Now
+	if s.now != nil {
+		now = s.now
+	}
+	minute := now().Unix() / 60
 	if minute != s.minute {
 		s.minute = minute
 		s.total = 0
