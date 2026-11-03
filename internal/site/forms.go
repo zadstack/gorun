@@ -41,18 +41,22 @@ const (
 
 // FormSubmission is the HookFormSubmitted payload. It carries attachment
 // metadata only; delivery reads the file from <data>/form-uploads/<id>.
+// For the contact form ID is the form_submissions row and Name, Email and
+// Message are set; for any other form (Form is its slug) ID is the
+// form_entries row and Fields holds the stored values.
 type FormSubmission struct {
-	ID             string `json:"id"` // form_submissions row
-	Form           string `json:"form"`
-	Name           string `json:"name"`
-	Email          string `json:"email"`
-	Message        string `json:"message"`
-	Page           string `json:"page"`
-	IP             string `json:"ip"`
-	SubmittedAt    string `json:"submitted_at"`
-	AttachmentName string `json:"attachment_name,omitempty"`
-	AttachmentType string `json:"attachment_type,omitempty"`
-	AttachmentSize int64  `json:"attachment_size,omitempty"`
+	ID             string            `json:"id"`
+	Form           string            `json:"form"`
+	Fields         map[string]string `json:"fields,omitempty"`
+	Name           string            `json:"name"`
+	Email          string            `json:"email"`
+	Message        string            `json:"message"`
+	Page           string            `json:"page"`
+	IP             string            `json:"ip"`
+	SubmittedAt    string            `json:"submitted_at"`
+	AttachmentName string            `json:"attachment_name,omitempty"`
+	AttachmentType string            `json:"attachment_type,omitempty"`
+	AttachmentSize int64             `json:"attachment_size,omitempty"`
 }
 
 // FormState is passed to form-result.html as .Extra.form.

@@ -118,5 +118,11 @@
   "intake.enable": "Enable public incident and follow-up forms",
   "intake.enabled": "Intake is enabled.",
   "intake.disabled": "Intake is disabled. Existing records remain available to authorized reviewers.",
-  "intake.settings_boundary": "Review access requires intake.review; ordinary editors are excluded. No email, uploads, exports, public lookup or AI forwarding is provided. Reports and reviewer notes are encrypted with the application key; preserve that key."
+  "intake.settings_boundary": "Review access requires intake.review; ordinary editors are excluded. No email, uploads, exports, public lookup or AI forwarding is provided. Reports and reviewer notes are encrypted with the application key; preserve that key.",
+  "form.closed": "This form is no longer accepting submissions.",
+  "form.invalid": "This submission could not be accepted.",
+  "form.check_fields": "Please check the fields below.",
+  "form.invalid_number": "Enter a number",
+  "form.invalid_date": "Enter a valid date",
+  "form.invalid_choice": "Choose one of the options"
 }

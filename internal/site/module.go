@@ -47,7 +47,7 @@ const KindFormResult = "form-result"
 // dispatches everything else (archives, singles, terms, pages, 404).
 // Routes rendering forms pass through auth.CSRFMiddleware (on these routes
 // only, never Public.Use: other modules' public POSTs have their own rules);
-// POST /forms/contact first passes contactGuard.
+// POST /forms/contact first passes contactGuard, POST /forms/{slug} formGuard.
 func (*Module) Register(d *kernel.Deps) error {
 	h := newHandlers(d)
 	d.Theme.AddKind(KindFormResult, func(kernel.KindRequest) []string { return []string{"form-result.html"} })
@@ -84,6 +84,8 @@ func (*Module) Register(d *kernel.Deps) error {
 		get(p, "/search", h.search)
 		r.With(h.contactGuard, csrf).Post("/forms/contact", h.contact)
 		p.Post("/forms/comment", h.comment)
+		// Any other form, after the contact and comment routes so they keep priority.
+		r.With(h.formGuard, csrf).Post("/forms/{slug}", h.formSubmit)
 		get(p, "/reports/{form}", h.intakeForm)
 		r.With(h.intakeGuard, csrf).Post("/reports/{form}", h.intakeSubmit)
 		get(p, "/*", h.dispatch)

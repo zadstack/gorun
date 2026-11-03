@@ -29,7 +29,8 @@ type formSender interface {
 
 var _ formSender = (*mailer.Mailer)(nil)
 
-// deliverForm is the HookFormSubmitted action: unless forms.notify is off
+// deliverForm is the HookFormSubmitted action for the contact form (other
+// forms are skipped, so they never mail or claim a delivery): unless forms.notify is off
 // it mails the submission to every recipient (Reply-To = the visitor, the
 // attachment attached when small enough, else linked) and records the
 // outcome on the row and in the audit log (site.form.delivered or
@@ -40,6 +41,9 @@ func (h *handlers) deliverForm(ctx context.Context, payload any) error {
 	if err != nil {
 		h.d.Log.Error("site: form delivery: bad payload", "err", err)
 		return nil
+	}
+	if sub.Form != "contact" {
+		return nil // other forms are stored and sent to webhooks only
 	}
 	result, claimErr := h.d.DB.ExecContext(ctx, `INSERT INTO form_event_deliveries (submission_id) VALUES (?) ON CONFLICT(submission_id) DO NOTHING`, sub.ID)
 	if claimErr != nil {
