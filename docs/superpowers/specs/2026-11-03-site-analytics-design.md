@@ -51,9 +51,16 @@ device and from which country, and how often its forms convert. No external serv
 - **Script `GET /_a/s.js`**
   - Under 1 KB, served from the site with `Cache-Control: public, max-age=86400`.
   - Injected as `<script defer src="/_a/s.js"></script>` right before `</head>` by a public-router middleware.
-  - Injection happens only on `GET`, status 200, `text/html` responses.
+  - Injection happens only on `GET`, status 200, `text/html` responses **rendered by the theme** (amended by the final
+    review: the theme renderer marks its pages with `httpx.MarkThemePage`; a module's own HTML page is never injected).
   - Skipped for builder or theme preview requests, any response under `/admin`, signed-in staff (any user with
     `content.edit`), excluded paths, and when tracking is switched off.
+  - Hard exclusions (amended): `/auth/`, `/admin` and `/_a/` are never tracked, in injection, beacons and form submits,
+    whatever the saved exclusions say (`/auth/magic/{token}` carries a live login token).
+  - Paths are canonical (amended): decoded, then re-escaped as `net/url` escapes a path, for views, submits, the
+    injection exclusion check and saved exclusion prefixes.
+  - The beacon rate limit keys an IPv4 address by /32 and an IPv6 address by /64; an empty or unparseable IP shares
+    one constant bucket (amended).
   - It must satisfy the site's CSP (same-origin `script-src`; check the CSP middleware and add the path if needed).
 - **The beacon**
   - On load, and after `history.pushState` or `popstate`, it sends `navigator.sendBeacon('/_a/e', JSON)` with:
@@ -92,7 +99,7 @@ events(id INTEGER PRIMARY KEY, ts TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind I
        utm_source TEXT NOT NULL DEFAULT '', utm_medium TEXT NOT NULL DEFAULT '', utm_campaign TEXT NOT NULL DEFAULT '',
        browser TEXT NOT NULL DEFAULT '', os TEXT NOT NULL DEFAULT '', device TEXT NOT NULL DEFAULT '',
        country TEXT NOT NULL DEFAULT '', locale TEXT NOT NULL DEFAULT '', form TEXT NOT NULL DEFAULT '')
-  index (ts), (path, ts), (kind, ts)
+  index (ts), (path, ts), (kind, ts, visitor)  -- covering index for range visitor counts (amended)
 daily(day TEXT, dim TEXT, key TEXT, views INTEGER, visitors INTEGER, submits INTEGER, PRIMARY KEY(day, dim, key))
   dim ∈ total | page | ref | utm | browser | os | device | country | form
 salts(day TEXT PRIMARY KEY, salt BLOB NOT NULL)

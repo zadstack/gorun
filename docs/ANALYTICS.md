@@ -7,24 +7,32 @@ sends nothing to a third party. It is on by default.
 ## What is counted
 
 - **Page views** from a tiny script, `/_a/s.js` (under 1 KB, served from your own site). GoRun adds it
-  before `</head>` of public HTML pages. On load, and after `history.pushState` or `popstate`, it sends one
+  before `</head>` of public pages rendered by the theme (not to other HTML a module serves, such as the
+  sign-in link page). On load, and after `history.pushState` or `popstate`, it sends one
   beacon to `/_a/e` with the path, the referrer, the window width and the page language.
 - **Only the path counts.** A change of the `#hash` alone is not a new view. The query string is dropped,
   except `utm_source`, `utm_medium` and `utm_campaign`.
 - **Unique visitors** are a cookieless daily hash: `sha256(daily random salt + site + IP + user agent)`,
   cut to 16 characters. The salt is random, changes at UTC midnight and the old one is deleted, so a
-  visitor cannot be followed from one day to the next, and the hash cannot be reversed.
+  visitor cannot be followed from one day to the next. The hash is hard to reverse, but not impossible:
+  anyone who holds a backup with that day's salt **and** your site secret (`GORUN_SECRET_KEY`) can test
+  guessed IP and user agent pairs against it. Keep backups and the secret as private as the database.
 - **No IP address and no user agent are stored.** The IP is used only to make the hash and to look up the
   country. The user agent is reduced to a browser family, an OS family and a device size (mobile below 768
   px, tablet below 1024 px, otherwise desktop).
 - **Referrers** are reduced to their host. An empty referrer, or your own site, is "direct".
 - **Do Not Track and Global Privacy Control are respected.** If the browser sends either, the script does
   nothing.
-- **Staff are not counted.** Pages are not tracked (and the script is not added) for anyone signed in with
-  `content.edit`, for `/admin`, for builder and theme previews, and for responses that are not a 200 HTML
-  page. Known bots and crawlers are dropped.
+- **Staff views are not counted.** Pages are not tracked (and the script is not added) for anyone signed in
+  with `content.edit`, for builder and theme previews, and for responses that are not a 200 theme page.
+  Known bots and crawlers are dropped.
+- **Never tracked, whatever the settings say:** `/auth/` (sign-in links carry a live token in the path),
+  `/admin` and `/_a/`. Beacons and form submissions naming these paths are dropped too.
 - **Form submissions** are counted as `submit` events (form slug and page) through the
-  `site.form.submitted` hook. They carry no visitor, so they count submissions only.
+  `site.form.submitted` hook. They carry no visitor, so they count submissions only. Submissions by staff
+  **are** counted (only staff views are left out).
+- **Paths are stored percent-encoded** (`/ar/%D8%A7...`), the form a browser sends, and shown decoded in the
+  dashboard. A view and a form submission of the same Arabic page therefore match.
 
 ## Country (optional GeoIP)
 
@@ -45,11 +53,14 @@ Open **Settings → Analytics** (`/admin/settings/analytics`, permission `settin
 
 - **Tracking on or off.** Off stops the script and the beacon. Existing data stays.
 - **Excluded paths.** One prefix per line, each starting with `/`. It is a plain prefix match: `/shop` also
-  matches `/shopping` and `/shop/cart`. Add a trailing slash (`/shop/`) to match a folder only.
-  Up to 200 lines of 512 bytes.
+  matches `/shopping` and `/shop/cart`. Add a trailing slash (`/shop/`) to match a folder only. Type a path
+  as you read it (`/ar/اتصل`) or paste it encoded (`/ar/%D8%A7...`): both are saved in one form and match.
+  Up to 200 lines of 512 bytes (encoded).
 - **Leave analytics out of backups.** Off by default (see Backups).
 - **Delete data.** *Delete before a date* or *Delete all*. Both need you to type `DELETE`, are written to
-  the audit log, and compact the file afterwards. Today's salt is kept so counting continues.
+  the audit log, and compact the file afterwards. Today's salt is kept so counting continues. Deleting
+  does **not** reach existing backups or their remote copies: the rows stay in those files until the
+  backups themselves are deleted or expire.
 - **GeoIP status** and the number of stored events.
 
 ## Dashboard, CSV and API
@@ -97,14 +108,17 @@ GORUN_ADDONS='{"analytics":"disabled"}'
 ```
 
 Restart GoRun. Existing `analytics.db` is left untouched on disk, so enabling the module again brings the
-history back.
+history back. **Backups still copy an existing `analytics.db` while the module is off.** To stop that,
+delete the file, or turn on **Leave analytics out of backups** before disabling the module (or use
+`gorun backup --skip-analytics`).
 
 ## Privacy notes
 
 - No cookie, no local storage, no fingerprinting beyond the daily hash; no consent banner is needed for this
   data in most jurisdictions, but check your own legal advice.
 - Nothing leaves your server. There is no external request and no third-party script.
-- The visitor hash cannot be linked across days, and it is not stored for form submissions.
+- The visitor hash cannot be linked across days, and it is not stored for form submissions. A backup holds
+  the salts it was taken with; together with the site secret it allows guessing (see Unique visitors).
 - Paths and UTM values you put in a URL are stored as written, so do not put personal data in URLs.
 - **Raw events are kept forever.** There is no automatic expiry. Use **Delete before a date** in settings to
   trim old data. Rollups (`daily`) are rebuilt hourly for today and yesterday.
@@ -121,20 +135,27 @@ history back.
 ## ما الذي يُحسب
 
 - **مشاهدات الصفحات** عبر سكربت صغير `/_a/s.js` (أقل من 1 كيلوبايت ويُقدَّم من موقعك). يضيفه GoRun قبل
-  `</head>` في صفحات الموقع العامة، ويرسل إشارة واحدة إلى `/_a/e` فيها المسار والمُحيل وعرض النافذة ولغة الصفحة.
+  `</head>` في صفحات الموقع العامة التي يعرضها القالب (لا في صفحات HTML أخرى تقدّمها الوحدات، مثل صفحة رابط
+  تسجيل الدخول)، ويرسل إشارة واحدة إلى `/_a/e` فيها المسار والمُحيل وعرض النافذة ولغة الصفحة.
 - **المسار وحده هو ما يُحسب.** تغيير `#hash` فقط ليس مشاهدة جديدة. يُحذف الاستعلام عدا `utm_source` و
   `utm_medium` و`utm_campaign`.
 - **الزوّار الفريدون** بتجزئة يومية بلا ملفات تعريف ارتباط: `sha256(ملح يومي عشوائي + الموقع + IP + وكيل
   المستخدم)` مقتطعة إلى 16 حرفًا. يتغير الملح عند منتصف الليل بتوقيت UTC ويُحذف القديم، فلا يمكن تتبع زائر
-  من يوم إلى آخر ولا عكس التجزئة.
+  من يوم إلى آخر. عكس التجزئة صعب لكنه ليس مستحيلًا: من يملك نسخة احتياطية فيها ملح ذلك اليوم **و**مفتاح
+  الموقع السري (`GORUN_SECRET_KEY`) يستطيع تجربة أزواج مخمَّنة من IP ووكيل المستخدم عليها. احفظ النسخ
+  الاحتياطية والمفتاح بالسرية نفسها التي تحفظ بها قاعدة البيانات.
 - **لا يُخزَّن عنوان IP ولا وكيل المستخدم.** يُستخدم IP لصنع التجزئة ومعرفة البلد فقط. ويُختزل وكيل المستخدم
   إلى عائلة المتصفح وعائلة النظام وحجم الجهاز (جوال أقل من 768، لوحي أقل من 1024، وإلا حاسوب).
 - **المُحيل** يُختزل إلى اسم المضيف. والمُحيل الفارغ أو موقعك نفسه يُعدّ «مباشر».
 - **يُحترم «عدم التتبع» (DNT) وGPC.** إن أرسلهما المتصفح لا يفعل السكربت شيئًا.
-- **الموظفون لا يُحسبون.** لا يُتتبَّع من سجّل دخوله بصلاحية `content.edit`، ولا `/admin`، ولا معاينات
-  المنشئ والقالب، ولا ما ليس صفحة HTML بحالة 200. وتُستبعد الروبوتات المعروفة.
+- **مشاهدات الموظفين لا تُحسب.** لا يُتتبَّع من سجّل دخوله بصلاحية `content.edit`، ولا معاينات المنشئ
+  والقالب، ولا ما ليس صفحة قالب بحالة 200. وتُستبعد الروبوتات المعروفة.
+- **لا يُتتبَّع أبدًا مهما كانت الإعدادات:** `/auth/` (روابط تسجيل الدخول تحمل رمزًا صالحًا في المسار)،
+  و`/admin`، و`/_a/`. وتُهمل الإشارات وإرسالات النماذج التي تحمل هذه المسارات أيضًا.
 - **إرسال النماذج** يُحسب حدثًا من نوع `submit` (اسم النموذج والصفحة) عبر الخطّاف `site.form.submitted`، دون
-  زائر، فيحصي عدد الإرسالات فقط.
+  زائر، فيحصي عدد الإرسالات فقط. إرسالات الموظفين **تُحسب** (المستبعد مشاهداتهم فقط).
+- **تُخزَّن المسارات مرمّزة** (`/ar/%D8%A7...`) كما يرسلها المتصفح، وتُعرض في اللوحة مفكوكة. لذا تتطابق
+  مشاهدة صفحة عربية مع إرسال نموذج منها.
 
 ## البلد (GeoIP اختياري)
 
@@ -154,10 +175,12 @@ MaxMind واحفظها باسم:
 
 - **تشغيل التتبع أو إيقافه.** الإيقاف يوقف السكربت والإشارة، وتبقى البيانات.
 - **مسارات مستبعدة.** بادئة في كل سطر تبدأ بـ `/`. المطابقة بادئة نصية بسيطة: `/shop` يطابق `/shopping`
-  و`/shop/cart` أيضًا. أضف شرطة أخيرة (`/shop/`) لمطابقة المجلد فقط. حتى 200 سطر، وكل سطر حتى 512 بايت.
+  و`/shop/cart` أيضًا. أضف شرطة أخيرة (`/shop/`) لمطابقة المجلد فقط. اكتب المسار كما تقرؤه (`/ar/اتصل`) أو الصقه مرمّزًا
+  (`/ar/%D8%A7...`): يُحفظ الاثنان بصيغة واحدة ويتطابقان. حتى 200 سطر، وكل سطر حتى 512 بايت (بعد الترميز).
 - **استبعاد الإحصائيات من النسخ الاحتياطية.** معطَّل افتراضيًا (انظر النسخ الاحتياطية).
 - **حذف البيانات.** «حذف ما قبل تاريخ» أو «حذف الكل». يتطلبان كتابة `DELETE`، ويُسجَّلان في سجل التدقيق،
-  ويُضغط الملف بعدهما. يبقى ملح اليوم ليستمر العدّ.
+  ويُضغط الملف بعدهما. يبقى ملح اليوم ليستمر العدّ. الحذف **لا** يصل إلى النسخ الاحتياطية الموجودة ولا إلى
+  نسخها البعيدة: تبقى الصفوف فيها حتى تُحذف تلك النسخ أو تنتهي صلاحيتها.
 - **حالة GeoIP** وعدد الأحداث المخزّنة.
 
 ## اللوحة وCSV وواجهة API
@@ -203,14 +226,17 @@ MaxMind واحفظها باسم:
 GORUN_ADDONS='{"analytics":"disabled"}'
 ```
 
-أعد تشغيل GoRun. يبقى `analytics.db` القائم على القرص دون مساس، فإعادة التفعيل تعيد السجل.
+أعد تشغيل GoRun. يبقى `analytics.db` القائم على القرص دون مساس، فإعادة التفعيل تعيد السجل. **وتستمر النسخ
+الاحتياطية في نسخ `analytics.db` القائم والوحدة معطَّلة.** لإيقاف ذلك احذف الملف، أو فعّل **استبعاد الإحصائيات
+من النسخ الاحتياطية** قبل تعطيل الوحدة (أو استخدم `gorun backup --skip-analytics`).
 
 ## ملاحظات الخصوصية
 
 - لا ملفات تعريف ارتباط ولا تخزين محلي ولا بصمة جهاز سوى التجزئة اليومية؛ ولا يلزم شريط موافقة لهذه البيانات في
   أغلب الأنظمة، لكن راجع استشارتك القانونية.
 - لا يغادر شيء خادمك. لا طلبات خارجية ولا سكربت لطرف ثالث.
-- لا تُربط التجزئة بين الأيام، ولا تُخزَّن لإرسالات النماذج.
+- لا تُربط التجزئة بين الأيام، ولا تُخزَّن لإرسالات النماذج. تحمل النسخة الاحتياطية أملاح وقت أخذها، ومعها
+  مفتاح الموقع السري تسمح بالتخمين (انظر الزوّار الفريدون).
 - تُخزَّن المسارات وقيم UTM كما كُتبت، فلا تضع بيانات شخصية في الروابط.
 - **الأحداث الخام تُحفظ إلى الأبد.** لا انتهاء تلقائيًا. استخدم «حذف ما قبل تاريخ» في الإعدادات لتقليص القديم.
   وتُعاد بناء التجميعات اليومية (`daily`) كل ساعة لليوم والأمس.
