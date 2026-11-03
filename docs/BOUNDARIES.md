@@ -24,7 +24,7 @@ verified by hand. The same test file enforces the import policy below.
 |---|---|---|
 | **Kernel and infrastructure** | `internal/kernel` and the packages it constructs or that sit under every module: `config`, `db`, `hooks`, `httpx`, `settings`, `i18n`, `audit`, `jobs`, `diagnostics`, `observe`, `update`, `metrics`, `backup`, `mailer`, `brand`, `starter`. | Never imports a domain module. Knows module *vocabulary* (service names, nav groups) but no module behaviour. |
 | **Core module** | `kernel.BootOrder` from `settings` to `webhooks`: settings, auth, content, taxonomy, media, menus, redirects, seo, theme, pattern, builder, site, api, admin, webhooks. | Boots in every install. Imports only earlier core modules or infrastructure. Never imports a feature module. |
-| **Built-in feature module** | `BootOrder` after `webhooks`: commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext, identityai, identitylogo. | Owns its routes, workers, admin UI, migrations and permissions. Reaches other modules through `kernel.Get`, hooks or an adapter published in `Deps.Services`; imports another feature module only through a declared edge (`featureEdges` in the test). |
+| **Built-in feature module** | `BootOrder` after `webhooks`: analytics, commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext, identityai, identitylogo. | Owns its routes, workers, admin UI, migrations and permissions. Reaches other modules through `kernel.Get`, hooks or an adapter published in `Deps.Services`; imports another feature module only through a declared edge (`featureEdges` in the test). |
 | **Theme / pattern** | `themes/<slug>` (templates, parts, components, `lang/`, `assets/`, `theme.json`) and `patterns/<slug>`. Public contract: `pkg/themekit`, `pkg/patternkit`, [THEME-CONTRACT.md](THEME-CONTRACT.md). | Consumes declared display data (`theme.Context`, template funcs) and nothing else. No Go code beyond the one embed file of each root, no business logic, no hard dependency on an optional module: a func an optional module provides must have a core fallback. |
 | **External extension** | A program described by a manifest (`internal/ext`): signed hook deliveries over HTTP and a scoped API key. [EXTENSIONS.md](EXTENSIONS.md). | Sees GoRun only through hooks and the REST API. GoRun never loads extension code. |
 | **Composition root** | `pkg/cli` (`CoreModules()`, `Modules(cfg)`, commands) and `cmd/gorun`. | Imports everything by design; downstream binaries extend it with `cli.WithModules`. |
@@ -70,6 +70,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/api` | core | `auth` `config` `content` `db` `httpx` `i18n` `jobs` `kernel` `media` `menus` `settings` `taxonomy` `theme` |
 | `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `observe` `seo` `settings` `theme` `update` |
 | `internal/webhooks` | core | `audit` `auth` `db` `httpx` `i18n` `jobs` `kernel` |
+| `internal/analytics` | feature | `audit` `auth` `db` `httpx` `i18n` `kernel` `settings` |
 | `internal/commerce` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `redirects` `seo` `settings` `theme` |
 | `internal/saas` | feature | `admin` `api` `audit` `auth` `commerce` `db` `httpx` `kernel` `theme` |
 | `internal/membership` | feature | `api` `audit` `auth` `content` `db` `httpx` `kernel` `theme` |
@@ -84,7 +85,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `pkg/patternkit` | contract | — |
 | `pkg/themekit` | contract | — |
 | `cmd/gorun` | binary | `pkg/cli` |
-| `pkg/cli` | binary | `admin` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `i18n` `identityai` `identitylogo` `jobs` `kernel` `launch` `mailer` `mcp` `media` `membership` `menus` `observe` `pattern` `patterns` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
+| `pkg/cli` | binary | `admin` `analytics` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `i18n` `identityai` `identitylogo` `jobs` `kernel` `launch` `mailer` `mcp` `media` `membership` `menus` `observe` `pattern` `patterns` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
 <!-- END GENERATED IMPORT GRAPH -->
 
 Reading the graph:
@@ -128,7 +129,7 @@ finds no service degrades (see the *Absent* column). Hooks: `Hooks.Action`/`Filt
 |---|---|---|
 | `content.before_save` (filter), `content.after_save`, `content.published`, `content.deleted` | content | webhooks (every catalog event), ext bridge; **site** (`content.deleted`: `onContentDeleted` closes the trashed or deleted page's builder forms) |
 | `content.authorize_save` (filter) | content | **membership** (quota check) |
-| `taxonomy.term_saved`, `media.uploaded`, `media.deleted`, `menus.saved`, `redirects.saved`, `user.login`, `site.form.submitted` | the core module | webhooks, ext bridge; site (form mail) |
+| `taxonomy.term_saved`, `media.uploaded`, `media.deleted`, `menus.saved`, `redirects.saved`, `user.login`, `site.form.submitted` | the core module | webhooks, ext bridge; site (form mail); analytics (submit events) |
 | `builder.forms.published` | builder (after every page publish, with or without form sections; payload `page_id`, `published_at`, `forms`; an empty `forms` closes the page's old forms) | **site** (`onBuilderForms` upserts the `forms` rows and closes the page's forms it no longer lists; site never imports builder) |
 | `menus.resolve_url`, `seo.sitemap_entry`, `theme.render.context` (filters) | menus, seo, theme | theme (links) |
 | `system.health.checks` (filter) | admin | commerce, saas, wpmigrate, mcp, ext, workagents |
@@ -150,6 +151,7 @@ can be parked (`internal/jobs/park.go`). Crons run only when their module regist
 | media | `media.fetch_url` | — |
 | admin | `canvas.generate`, `canvas.tools`, `studio.generate`, `backup.scheduled`, `update.run`, `observe.*` | `canvas.schedule` 1m, `studio.recover` 1m, `jobs.prune` 1h, `observe.tick` 1m, `update.reconcile` 1m, `backup.schedule` 1h |
 | webhooks | `webhooks.deliver` | `webhooks.prune` 24h |
+| **analytics** | — (writes go through an in-process buffer, flushed every 2s and on close) | `analytics.rollup` 1h |
 | **commerce** | `commerce.provision`, `commerce.suspend`, `commerce.resume`, `commerce.magic_mail`, `commerce.billing_mail` | `commerce.expire` 24h, `commerce.billing_grace` 1h, `commerce.request_receipts` 10s |
 | workagents | `workagents.run` | `workagents.schedules` 30s, `workagents.linear` 30s |
 | wpmigrate | `migration.step`, `migration.item`, `migration.advance` | `wpmigrate.watchdog` 5m |
@@ -171,6 +173,7 @@ Public paths are mounted at `/`, admin paths under `/admin`, API operations unde
 | api | — | — | `/v1/openapi.json`, `/docs`, `/v1/*` mount, `site/info` | — | — |
 | admin | `/webhooks/canvas/{endpoint}` | dashboard, `/users/*`, `/roles/*`, `/settings/*` (general, mail, storage, ai, connections, edge, integrations, studio, metricool), `/system/*` (health, jobs, backups, updates, errors), `/canvases/*`, `/agents/*`, `/metricool`, `/workspace` | 22 (+ keys, roles, canvas read) | canvas read/operations 3 | `users.manage`, `settings.manage`, `api_keys.manage`, `system.health`, `system.backup`, `system.update` |
 | webhooks | — | `/webhooks/*` | 1 | — | `webhooks.manage` |
+| **analytics** | `/_a/s.js`, `/_a/e` (beacon); script-injection middleware on public HTML | `/analytics`, `/analytics/now`, `/analytics/export.csv`, `/settings/analytics` (+ `/delete`); dashboard widget `analytics` | 1 (`analytics/summary`) | — | `analytics.view`; settings reuse `settings.manage` |
 | **commerce** | `/shop`, `/product/{slug}`, `/cart*`, `/checkout*`, `/account*`; `/webhooks/stripe{,/test,/live}` | `/commerce/*` (products, orders, entitlements, servers, settings, setup) | 14 | `list_products` (registered by mcp when the service exists) | `commerce.manage`, `commerce.view_orders` |
 | **saas** | `/saas`, `/saas/assets.css` | `/saas`, `/saas/new`, `/saas/apps/*`, `/saas/subscriptions/*` | 8 | — | `saas.read`, `saas.use`, `saas.manage` |
 | **membership** | `/membership`, `/membership/assets.css`, `/membership/submissions` | `/membership`, `/membership/grants` | 7 | — | `membership.manage`, `membership.read`, `membership.unlimited`, `membership.submit` |

@@ -185,6 +185,7 @@ func BootWithOptions(ctx context.Context, cfg config.Config, mods []Module, opts
 		once.Do(func() {
 			cancel()
 			deps.Jobs.Wait()
+			deps.runClosers()
 			collector.Close()
 			if err := d.Close(); err != nil {
 				deps.Log.Error("close db", "err", err)
@@ -199,7 +200,7 @@ func BootWithOptions(ctx context.Context, cfg config.Config, mods []Module, opts
 
 // wire migrates and registers mods (the enabled modules); all is the full
 // module list, used to tell which applied migrations this binary knows.
-func wire(ctx context.Context, d *sql.DB, cfg config.Config, mods, all []Module) (*Deps, error) {
+func wire(ctx context.Context, d *sql.DB, cfg config.Config, mods, all []Module) (_ *Deps, err error) {
 	fresh, err := ledgerEmpty(ctx, d)
 	if err != nil {
 		return nil, err
@@ -227,6 +228,11 @@ func wire(ctx context.Context, d *sql.DB, cfg config.Config, mods, all []Module)
 		Services: NewServiceRegistry(),
 	}
 	deps.Services.Set(diagnostics.ServiceName, collector)
+	defer func() {
+		if err != nil { // modules registered before the failure release what they opened
+			deps.runClosers()
+		}
+	}()
 	deps.Hooks.AttachQueue(deps.Jobs)
 	guard := requireAuthenticator(deps.Router)
 	deps.Router.Admin.Use(guard)

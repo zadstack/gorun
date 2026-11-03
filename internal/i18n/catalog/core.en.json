@@ -57,5 +57,7 @@
   "nav.section.categories": "Section categories",
   "nav.group.site-pages": "Pages and navigation",
   "nav.group.site-design": "Design",
-  "nav.group.site-search": "Search and readiness"
+  "nav.group.site-search": "Search and readiness",
+  "nav.group.site-analytics": "Analytics",
+  "nav.group.site": "Site"
 }

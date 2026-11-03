@@ -1,10 +1,13 @@
 package admin
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,6 +15,8 @@ import (
 
 	"github.com/zadstack/gorun/internal/backup"
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/settings"
 	"github.com/zadstack/gorun/internal/update"
 )
 
@@ -34,6 +39,8 @@ type backupsPage struct {
 
 type backupRow struct {
 	Stamp, Time, DBSize, FilesSize string
+	AnalyticsSize                  string
+	HasAnalytics                   bool
 	HasDB, HasFiles                bool
 	LocalState                     string
 	HasManifest                    bool
@@ -69,7 +76,8 @@ func (h *handlers) backupsList(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, e := range list {
 		row := backupRow{Stamp: e.Stamp, Time: e.Time.Format(time.RFC3339),
-			DBSize: humanSize(e.DBSize), FilesSize: humanSize(e.FilesSize), HasDB: e.DBSize >= 0, HasFiles: e.FilesSize >= 0, LocalState: e.LocalState, HasManifest: e.HasManifest, Remote: e.Remote}
+			DBSize: humanSize(e.DBSize), FilesSize: humanSize(e.FilesSize), HasDB: e.DBSize >= 0, HasFiles: e.FilesSize >= 0,
+			AnalyticsSize: humanSize(e.AnalyticsSize), HasAnalytics: e.AnalyticsSize >= 0, LocalState: e.LocalState, HasManifest: e.HasManifest, Remote: e.Remote}
 		if dest, ok := backup.Restored(h.d.Config.DataDir, e.Stamp); ok {
 			row.RestoredPath = dest
 		}
@@ -93,7 +101,7 @@ func (h *handlers) backupCreate(w http.ResponseWriter, r *http.Request) {
 	defer release()
 	backupMu.Lock()
 	now := time.Now()
-	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), now, backup.Options{SecretKey: h.d.Config.SecretKey})
+	res, err := backup.CreateWith(h.d.Config.DataDir, h.d.Config.DBPath(), now, backupOptions(r.Context(), h.d))
 	if err == nil {
 		var success backupSuccess
 		success, err = verifiedBackup(res, now, h.d.Config.SecretKey)
@@ -108,7 +116,12 @@ func (h *handlers) backupCreate(w http.ResponseWriter, r *http.Request) {
 		httpx.SetFlash(w, "error", "admin.backups.failed")
 	} else {
 		h.d.Audit.Record(r.Context(), "system.backup", "backup", res.Stamp, map[string]any{"files": res.Count, "verified": true})
-		httpx.SetFlash(w, "success", "admin.backups.created")
+		if noteAnalyticsSkipped(r.Context(), h.d, res, "manual") {
+			// httpx has no warning kind; info carries the warning text.
+			httpx.SetFlash(w, "info", "admin.backups.analytics_skipped")
+		} else {
+			httpx.SetFlash(w, "success", "admin.backups.created")
+		}
 	}
 	http.Redirect(w, r, "/admin/system/backups", http.StatusSeeOther)
 }
@@ -141,4 +154,39 @@ func humanSize(n int64) string {
 		return fmt.Sprintf("%.1f MB", float64(n)/(1024*1024))
 	}
 	return fmt.Sprintf("%.1f GB", float64(n)/(1024*1024*1024))
+}
+
+// backupOptions are the Create options every admin backup uses: the site
+// secret for the manifest HMAC, and SkipAnalytics from the setting
+// analytics.backup_exclude (read by name; admin never imports analytics).
+// The setting fails closed: if it cannot be read (or is not a JSON bool),
+// analytics.db is left out and the skip is reported as a warning, so an
+// operator who excluded analytics never gets it copied by accident.
+func backupOptions(ctx context.Context, d *kernel.Deps) backup.Options {
+	opts := backup.Options{SecretKey: d.Config.SecretKey}
+	var skip bool
+	err := d.Settings.Get(ctx, backup.SettingSkipAnalytics, &skip)
+	switch {
+	case err == nil:
+		opts.SkipAnalytics = skip
+	case errors.Is(err, settings.ErrNotFound):
+	default:
+		d.Log.Warn("admin: backup: cannot read analytics exclusion; leaving analytics.db out", "err", err)
+		opts.SkipAnalytics = true
+		opts.SkipAnalyticsReason = backup.AnalyticsSettingUnread + ": " + err.Error()
+	}
+	return opts
+}
+
+// noteAnalyticsSkipped audits and logs a backup that left analytics.db out
+// involuntarily (see backup.Result.AnalyticsSkipped). It reports whether
+// there was such a skip. Only the reason's code reaches the audit log.
+func noteAnalyticsSkipped(ctx context.Context, d *kernel.Deps, res backup.Result, source string) bool {
+	if res.AnalyticsSkipped == "" {
+		return false
+	}
+	code, _, _ := strings.Cut(res.AnalyticsSkipped, ":")
+	d.Audit.Record(ctx, "system.backup_analytics_skipped", "backup", res.Stamp, map[string]string{"source": source, "code": code})
+	d.Log.Warn("backup: analytics.db left out of the backup", "stamp", res.Stamp, "source", source, "reason", res.AnalyticsSkipped)
+	return true
 }

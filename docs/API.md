@@ -401,7 +401,13 @@ Example section in a version-1 document:
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **204 operations** in 24 tags.
+Generated from the current locally booted OpenAPI document: **205 operations** in 25 tags.
+
+### analytics
+
+| Method | Path | Summary | Scopes |
+|---|---|---|---|
+| GET | `/api/v1/analytics/summary` | Site analytics for a period: headline numbers with the previous period, the visitors/views series and the top 10 of each table | `analytics.view` |
 
 ### builder
 

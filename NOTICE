@@ -17,5 +17,7 @@ Third-party components bundled with GoRun keep their own licenses:
   derived from IBM Plex Sans Arabic)
 - internal/builder/static/THREE-LICENSE.txt (three.js, MIT)
 - docs/licenses/minio-sio.txt (github.com/minio/sio, Apache License 2.0)
+- docs/licenses/maxminddb-golang.txt (github.com/oschwald/maxminddb-golang/v2,
+  ISC License)
 
 Contact: info@gocloud.run

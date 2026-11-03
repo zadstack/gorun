@@ -36,6 +36,8 @@ func navigationBucket(it NavItem) (string, string) {
 		return "content", it.Group
 	case "appearance":
 		return "site", "site-design"
+	case "site":
+		return "site", "site-analytics"
 	case "agents":
 		return "canvas", "canvas"
 	case "inbox":
