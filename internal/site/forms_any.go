@@ -591,12 +591,23 @@ func upsertBuilderForm(ctx context.Context, tx *sql.Tx, pageID string, d FormDef
 		if cur.Source == formContact {
 			return fmt.Errorf("site: form slug %q is reserved", d.Slug)
 		}
+		// The builder checks slug uniqueness across its published pages
+		// (ruling R5); this refusal is the defense in depth behind it.
+		if cur.Source == formBuilder && cur.PageID != "" && cur.PageID != pageID {
+			return fmt.Errorf("site: form slug %q belongs to another page", d.Slug)
+		}
+		var extras []FormField
 		for _, old := range cur.Fields {
 			if !slices.ContainsFunc(fields, func(f FormField) bool { return f.Name == old.Name }) {
 				old.State = stateDiscovered
-				fields = append(fields, old)
+				extras = append(extras, old)
 			}
 		}
+		// Keep at most maxFormFields columns: the oldest discovered extras go first.
+		if room := maxFormFields - len(fields); len(extras) > room {
+			extras = extras[len(extras)-room:]
+		}
+		fields = append(fields, extras...)
 	}
 	raw, err := json.Marshal(fields)
 	if err != nil {
@@ -610,4 +621,76 @@ func upsertBuilderForm(ctx context.Context, tx *sql.Tx, pageID string, d FormDef
 	_, err = tx.ExecContext(ctx, `INSERT INTO forms (id, slug, title, source, page_id, fields_json, open, created_at, updated_at)
 		VALUES (?, ?, ?, 'builder', ?, ?, 1, ?, ?)`, db.NewID(), d.Slug, title, pageID, string(raw), now, now)
 	return err
+}
+
+// builderFormsPublished is the builder's HookFormsPublished. Site does not
+// import the builder (docs/BOUNDARIES.md), so the name and payload shape are
+// mirrored here.
+const builderFormsPublished = "builder.forms.published"
+
+// builderFormsPayload mirrors the builder's FormsPublished JSON.
+type builderFormsPayload struct {
+	PageID string `json:"page_id"`
+	Forms  []struct {
+		Slug        string `json:"slug"`
+		Title       string `json:"title"`
+		SubmitLabel string `json:"submit_label"`
+		Success     string `json:"success"`
+		Fields      []struct {
+			Name     string   `json:"name"`
+			Label    string   `json:"label"`
+			Type     string   `json:"type"`
+			Required bool     `json:"required"`
+			Help     string   `json:"help"`
+			Choices  []string `json:"choices"`
+		} `json:"fields"`
+	} `json:"forms"`
+}
+
+// decodeBuilderForms reads a builder.forms.published payload: JSON when
+// delivered through the queue (Emit), or any JSON-encodable value when a
+// caller passes it to Do directly.
+func decodeBuilderForms(payload any) (string, []FormDefinition, error) {
+	var raw []byte
+	switch v := payload.(type) {
+	case json.RawMessage:
+		raw = v
+	case []byte:
+		raw = v
+	default:
+		b, err := json.Marshal(v)
+		if err != nil {
+			return "", nil, fmt.Errorf("site: builder forms payload %T: %w", payload, err)
+		}
+		raw = b
+	}
+	var p builderFormsPayload
+	if err := json.Unmarshal(raw, &p); err != nil {
+		return "", nil, fmt.Errorf("site: builder forms payload: %w", err)
+	}
+	defs := make([]FormDefinition, 0, len(p.Forms))
+	for _, f := range p.Forms {
+		def := FormDefinition{Slug: f.Slug, Title: f.Title, Source: formBuilder, PageID: p.PageID, Fields: make([]FormField, 0, len(f.Fields))}
+		for _, fl := range f.Fields {
+			def.Fields = append(def.Fields, FormField{Name: fl.Name, Label: fl.Label, Type: fl.Type, Required: fl.Required, Help: fl.Help, Choices: fl.Choices})
+		}
+		defs = append(defs, def)
+	}
+	return p.PageID, defs, nil
+}
+
+// onBuilderForms stores the forms of a page the builder just published. A
+// malformed payload is logged and dropped; a store error is returned so the
+// queued event is retried (the upsert is idempotent).
+func (h *handlers) onBuilderForms(ctx context.Context, payload any) error {
+	pageID, defs, err := decodeBuilderForms(payload)
+	if err != nil {
+		h.d.Log.Error("site: builder forms: bad payload", "err", err)
+		return nil
+	}
+	if err := h.upsertBuilderForms(ctx, pageID, defs); err != nil {
+		h.d.Log.Error("site: builder forms: upsert refused", "page", pageID, "err", err)
+		return err
+	}
+	return nil
 }

@@ -296,6 +296,8 @@ func (h *starterHandler) activateReviewed(ctx context.Context, token string, rev
 		return content.ErrForbidden
 	}
 	expected := make([]content.PublishExpectation, 0, len(review))
+	announced := make([]FormsPublished, 0, len(review))
+	batchSlugs := map[string]bool{}
 	for _, p := range review {
 		draft, err := h.svc.Load(ctx, p.ID)
 		if err != nil {
@@ -307,13 +309,24 @@ func (h *starterHandler) activateReviewed(ctx context.Context, token string, rev
 		if err := ValidatePublication(draft.Document); err != nil {
 			return err
 		}
+		forms := publishedForms(draft.Document)
+		if err := h.svc.checkFormSlugsFree(ctx, p.ID, forms); err != nil {
+			return err
+		}
+		for _, f := range forms {
+			if batchSlugs[f.Slug] {
+				return &FormSlugTakenError{Slug: f.Slug}
+			}
+			batchSlugs[f.Slug] = true
+		}
+		announced = append(announced, FormsPublished{PageID: p.ID, Forms: forms})
 		body, err := Render(draft.Document)
 		if err != nil {
 			return err
 		}
 		expected = append(expected, content.PublishExpectation{ID: p.ID, UpdatedAt: p.UpdatedAt, Body: &body, Template: "builder"})
 	}
-	return publisher.PublishBatch(ctx, expected, func(tx *sql.Tx, saved []*content.Item) error {
+	err = publisher.PublishBatch(ctx, expected, func(tx *sql.Tx, saved []*content.Item) error {
 		tokens := map[string]string{}
 		for _, it := range saved {
 			tokens[it.ID] = content.EditToken(it)
@@ -365,6 +378,16 @@ func (h *starterHandler) activateReviewed(ctx context.Context, token string, rev
 		h.d.Audit.RecordTx(ctx, tx, "builder.activate", "starter", token, map[string]any{"kind": run.Kind, "pages": len(run.Pages)})
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	// After the commit, as Publish does: one announcement per published page.
+	for _, ev := range announced {
+		if h.d.Hooks != nil {
+			h.d.Hooks.Emit(ctx, HookFormsPublished, ev)
+		}
+	}
+	return nil
 }
 
 func runTheme(run *starterRun) string {

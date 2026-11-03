@@ -36,6 +36,8 @@ type Section struct {
 	LinkLabel string         `json:"link_label"`
 	Items     []Entry        `json:"items"`
 	Hidden    bool           `json:"hidden"`
+	// Form holds a form section's settings (kind "form" only).
+	Form *FormSpec `json:"form,omitempty"`
 }
 type Entry struct {
 	Icon     string `json:"icon,omitempty" enum:",bolt,shield,chart,globe,clock,check,layers"`
@@ -52,9 +54,9 @@ type BlockSpec struct {
 	Label string `json:"label"`
 }
 
-var kinds = []string{"hero", "text", "features", "services", "projects", "testimonials", "pricing", "faq", "stats", "logos", "contact", "cta", "steps", "comparison", "product_preview", "media_text", "switcher", "directory"}
-var enLabels = []string{"Hero", "Text", "Features", "Services", "Projects", "Testimonials", "Pricing", "Questions", "Statistics", "Client logos", "Contact", "Call to action", "Steps", "Comparison", "Product preview", "Text and media rows", "Feature switcher", "Searchable directory"}
-var arLabels = []string{"واجهة رئيسية", "نص", "مميزات", "خدمات", "أعمال", "آراء العملاء", "أسعار", "أسئلة شائعة", "إحصائيات", "شعارات العملاء", "تواصل", "دعوة لاتخاذ إجراء", "خطوات", "مقارنة", "معاينة المنتج", "صفوف نص ووسائط", "مبدّل المزايا", "دليل قابل للبحث"}
+var kinds = []string{"hero", "text", "features", "services", "projects", "testimonials", "pricing", "faq", "stats", "logos", "contact", "cta", "steps", "comparison", "product_preview", "media_text", "switcher", "directory", "form"}
+var enLabels = []string{"Hero", "Text", "Features", "Services", "Projects", "Testimonials", "Pricing", "Questions", "Statistics", "Client logos", "Contact", "Call to action", "Steps", "Comparison", "Product preview", "Text and media rows", "Feature switcher", "Searchable directory", "Form"}
+var arLabels = []string{"واجهة رئيسية", "نص", "مميزات", "خدمات", "أعمال", "آراء العملاء", "أسعار", "أسئلة شائعة", "إحصائيات", "شعارات العملاء", "تواصل", "دعوة لاتخاذ إجراء", "خطوات", "مقارنة", "معاينة المنتج", "صفوف نص ووسائط", "مبدّل المزايا", "دليل قابل للبحث", "نموذج"}
 
 func Catalog(locale string) []BlockSpec {
 	labels := enLabels
@@ -96,6 +98,9 @@ func DefaultSection(kind, locale string) Section {
 	if kind == "steps" || kind == "comparison" || kind == "product_preview" || kind == "media_text" || kind == "switcher" || kind == "directory" {
 		defaultNative(&s, locale)
 	}
+	if kind == "form" {
+		defaultForm(&s, locale)
+	}
 	return s
 }
 
@@ -107,6 +112,9 @@ func Validate(doc Document) error {
 	}
 	if len(doc.Sections) > maxSections {
 		return errors.New("builder: too many sections")
+	}
+	if err := validateFormBounds(doc); err != nil {
+		return err
 	}
 	seen := map[string]bool{}
 	for _, s := range doc.Sections {
@@ -198,6 +206,9 @@ func safeURL(raw string, image bool) error {
 // ValidatePublication allows incomplete drafts but requires a visible page heading for publishing.
 func ValidatePublication(doc Document) error {
 	if err := Validate(doc); err != nil {
+		return err
+	}
+	if err := validateFormsForPublish(doc); err != nil {
 		return err
 	}
 	for _, section := range doc.Sections {

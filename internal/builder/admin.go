@@ -236,6 +236,11 @@ func (h *adminHandlers) fail(w http.ResponseWriter, r *http.Request, err error) 
 		status = 403
 	}
 	h.d.Log.Warn("builder request rejected", "error", err)
+	var taken *FormSlugTakenError
+	if errors.As(err, &taken) {
+		builderJSON(w, status, map[string]string{"error": "builder.form_slug_taken", "slug": taken.Slug})
+		return
+	}
 	builderJSON(w, status, map[string]string{"error": "builder.error"})
 }
 

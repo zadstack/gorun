@@ -402,3 +402,99 @@ func TestUpsertBuilderFormsRejectsInvalid(t *testing.T) {
 		t.Fatalf("an invalid definition was stored: %v", err)
 	}
 }
+
+func TestUpsertRefusesSlugOfAnotherPage(t *testing.T) {
+	e, _ := formsEnv(t)
+	def := site.FormDefinition{Slug: "booking", Title: "Booking", Fields: []site.FormField{{Name: "name", Type: "text"}}}
+	if err := site.UpsertBuilderForms(e.app.Deps, "p1", []site.FormDefinition{def}); err != nil {
+		t.Fatal(err)
+	}
+	other := def
+	other.Title = "Stolen"
+	if err := site.UpsertBuilderForms(e.app.Deps, "p2", []site.FormDefinition{other}); err == nil || !strings.Contains(err.Error(), "booking") {
+		t.Fatalf("slug of another page reassigned: %v", err)
+	}
+	f, err := site.FormBySlug(e.app.Deps, "booking")
+	if err != nil || f.PageID != "p1" || f.Title != "Booking" || !f.Open {
+		t.Fatalf("owner's form changed: %+v %v", f, err)
+	}
+	// The refusal rolls back the whole publish: p2's other forms are not stored either.
+	if err := site.UpsertBuilderForms(e.app.Deps, "p2", []site.FormDefinition{{Slug: "quote", Title: "Quote"}, other}); err == nil {
+		t.Fatal("mixed publish accepted")
+	}
+	if _, err := site.FormBySlug(e.app.Deps, "quote"); !errors.Is(err, site.ErrNoForm) {
+		t.Fatalf("partial upsert stored quote: %v", err)
+	}
+	// Once p1 closes it the slug is still p1's; p1 itself can always reopen it.
+	if err := site.UpsertBuilderForms(e.app.Deps, "p1", []site.FormDefinition{def}); err != nil {
+		t.Fatalf("owner republish: %v", err)
+	}
+}
+
+func TestUpsertCapsFieldsAt30(t *testing.T) {
+	e, tok := formsEnv(t)
+	var kv []string
+	for i := 0; i < 30; i++ {
+		kv = append(kv, fmt.Sprintf("f%d", i), "v")
+	}
+	if resp, body := e.postForm("survey", tok, kv...); !okStatus(resp.StatusCode) {
+		t.Fatalf("capture: %d\n%s", resp.StatusCode, body)
+	}
+	var declared []site.FormField
+	for _, n := range []string{"a", "b", "c", "d", "e"} {
+		declared = append(declared, site.FormField{Name: n, Type: "text"})
+	}
+	if err := site.UpsertBuilderForms(e.app.Deps, "p1", []site.FormDefinition{{Slug: "survey", Title: "Survey", Fields: declared}}); err != nil {
+		t.Fatal(err)
+	}
+	f, err := site.FormBySlug(e.app.Deps, "survey")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(f.Fields) != 30 {
+		t.Fatalf("stored %d fields", len(f.Fields))
+	}
+	want := "a:pinned,b:pinned,c:pinned,d:pinned,e:pinned"
+	for i := 5; i < 30; i++ {
+		want += fmt.Sprintf(",f%d:discovered", i)
+	}
+	if got := fieldNames(f.Fields); got != want {
+		t.Fatalf("fields = %s", got)
+	}
+}
+
+func TestBuilderFormsHookUpserts(t *testing.T) {
+	e, _ := formsEnv(t)
+	ctx := context.Background()
+	raw := json.RawMessage(`{"page_id":"p1","forms":[{"slug":"booking","title":"Book a call","submit_label":"Send","success":"Thanks",
+		"fields":[{"name":"name","label":"Name","type":"text","required":true},{"name":"topic","label":"Topic","type":"choice","help":"Pick one","choices":["Sales","Support"]}]}]}`)
+	if err := e.app.Deps.Hooks.Do(ctx, "builder.forms.published", raw); err != nil {
+		t.Fatal(err)
+	}
+	f, err := site.FormBySlug(e.app.Deps, "booking")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.Source != "builder" || f.PageID != "p1" || f.Title != "Book a call" || !f.Open || len(f.Fields) != 2 {
+		t.Fatalf("form = %+v", f)
+	}
+	topic := f.Fields[1]
+	if !f.Fields[0].Required || topic.Type != "choice" || topic.Help != "Pick one" || strings.Join(topic.Choices, "|") != "Sales|Support" || topic.State != "pinned" {
+		t.Fatalf("fields = %+v", f.Fields)
+	}
+	// A typed value (sync delivery of a struct) decodes too; an empty list closes the page's forms.
+	type payload struct {
+		PageID string `json:"page_id"`
+		Forms  []any  `json:"forms"`
+	}
+	if err := e.app.Deps.Hooks.Do(ctx, "builder.forms.published", payload{PageID: "p1", Forms: []any{}}); err != nil {
+		t.Fatal(err)
+	}
+	if f, _ = site.FormBySlug(e.app.Deps, "booking"); f.Open {
+		t.Fatal("empty publish left the form open")
+	}
+	// A malformed payload is dropped, not retried forever.
+	if err := e.app.Deps.Hooks.Do(ctx, "builder.forms.published", json.RawMessage(`{"forms":`)); err != nil {
+		t.Fatalf("bad payload: %v", err)
+	}
+}
