@@ -5,6 +5,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Extension HTTP responses from an earlier activation no longer change a reactivated extension's delivery log, failure counters or error status.
+
 ## [0.19.0] - 2026-11-03
 
 ### Added
