@@ -28,6 +28,8 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 
 | Doc | Covers |
 | --- | --- |
+| [PUBLIC_UI_COMPONENTS.md](PUBLIC_UI_COMPONENTS.md) | Opt-in public navigation, detail/action and feedback composition |
+| [COMPONENT_FOUNDATION.md](COMPONENT_FOUNDATION.md) | Native task entry, result layouts, scoped directory search and theme adoption |
 | [SHARED_SITE_UI.md](SHARED_SITE_UI.md) | Shared published identity and customer account/onboarding components |
 | [SITE_BUILDER.md](SITE_BUILDER.md) | Starter sites (business / portfolio / magazine), draft → activate, readiness |
 | [THEMES.md](THEMES.md) | Theme catalog, activate a theme, overrides, locales on the public site |

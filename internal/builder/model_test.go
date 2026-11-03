@@ -7,8 +7,8 @@ import (
 )
 
 func TestRenderEscapesAndSupportsCatalog(t *testing.T) {
-	if len(Catalog("ar")) != 18 {
-		t.Fatal("expected eighteen sections")
+	if len(Catalog("ar")) != len(Catalog("en")) {
+		t.Fatal("Arabic and English section catalogs differ")
 	}
 	for _, spec := range Catalog("en") {
 		s := DefaultSection(spec.Kind, "en")

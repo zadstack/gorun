@@ -1,0 +1,2 @@
+{{/* Input: dict label/url/state/reason. Navigation only; the server still authorizes the destination. */}}
+{{$action := publicAction .}}{{if $action.Label}}<span class="gp-public-action-group">{{if $action.URL}}<a class="gp-public-action" href="{{$action.URL}}">{{$action.Label}}</a>{{else}}<span class="gp-public-action" aria-disabled="true" data-state="{{$action.State}}">{{$action.Label}}</span>{{end}}{{with $action.Reason}}<small class="gp-public-action-reason">{{.}}</small>{{end}}</span>{{end}}

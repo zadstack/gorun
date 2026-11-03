@@ -50,14 +50,21 @@ func (h *handlers) asset(w http.ResponseWriter, r *http.Request) {
 // coreCSS serves the embedded core site stylesheet (theme.CoreCSSURL links it
 // with a content hash, so that URL is cached as immutable).
 func (h *handlers) coreCSS(w http.ResponseWriter, r *http.Request) {
-	b := theme.CoreCSS()
-	if len(b) == 0 {
+	serveSiteStylesheet(w, r, "core.css", theme.CoreCSS())
+}
+
+func (h *handlers) nativeUICSS(w http.ResponseWriter, r *http.Request) {
+	serveSiteStylesheet(w, r, "native-ui.css", theme.NativeUICSS())
+}
+
+func serveSiteStylesheet(w http.ResponseWriter, r *http.Request, name string, stylesheet []byte) {
+	if len(stylesheet) == 0 {
 		http.NotFound(w, r)
 		return
 	}
 	w.Header().Set("Content-Type", "text/css; charset=utf-8")
-	w.Header().Set("Cache-Control", httpx.AssetCacheControl(r, "core.css"))
-	_, _ = w.Write(b)
+	w.Header().Set("Cache-Control", httpx.AssetCacheControl(r, name))
+	_, _ = w.Write(stylesheet)
 }
 
 // themeDir returns the directory of installed theme slug (one theme.json

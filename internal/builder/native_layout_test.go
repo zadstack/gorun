@@ -70,8 +70,9 @@ func TestNativeLayoutRejectsUnsupportedKindsAndLegacy(t *testing.T) {
 }
 
 func TestNativeDefaultLayoutsRemainUnmarked(t *testing.T) {
-	for _, kind := range []string{"directory", "media_text"} {
+	for _, kind := range []string{"directory", "media_text", "features"} {
 		section := DefaultSection(kind, "en")
+		section.Library = SectionLibrary
 		// Empty layout was accepted before default became an explicit editor choice.
 		explicit, err := Render(Document{Version: 1, Sections: []Section{section}})
 		if err != nil {

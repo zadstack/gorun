@@ -104,6 +104,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Services.Set(mailer.ServiceName, m)
 
 	h := &handlers{d: d, tpl: tpl, users: users, roles: roles, keys: keys, mail: m, aiLimit: newAILimiter(), started: time.Now()}
+	d.Services.Set("builder.layout-advisor", &builderLayoutAdvisor{h: h})
 	h.observe = observe.New(d.DB, d.Jobs, d.Log)
 	h.update = h.buildUpdateService(d)
 	h.update.Register()
