@@ -32,7 +32,7 @@ type canvasRun struct {
 }
 
 func (h *handlers) canvasRuns(ctx context.Context, board string) ([]canvasRun, error) {
-	rows, e := h.d.DB.QueryContext(ctx, `SELECT r.id,r.node_id,r.status,r.created_at,r.finished_at,r.result_card_id,r.document,r.accepted_run_id,COALESCE((SELECT json_extract(s.document,'$.calls') FROM admin_canvas_tool_states s WHERE s.run_id=r.id),0) FROM admin_canvas_runs r WHERE board_id=? ORDER BY created_at DESC,id DESC LIMIT 20`, board)
+	rows, e := h.d.DB.QueryContext(ctx, `SELECT r.id,r.node_id,r.status,r.created_at,r.finished_at,r.result_card_id,r.document,r.accepted_run_id,r.stop_reason,COALESCE((SELECT json_extract(s.document,'$.calls') FROM admin_canvas_tool_states s WHERE s.run_id=r.id),0) FROM admin_canvas_runs r WHERE board_id=? ORDER BY created_at DESC,id DESC LIMIT 20`, board)
 	if e != nil {
 		return nil, e
 	}
@@ -40,8 +40,8 @@ func (h *handlers) canvasRuns(ctx context.Context, board string) ([]canvasRun, e
 	out := []canvasRun{}
 	for rows.Next() {
 		var r canvasRun
-		var raw string
-		if e = rows.Scan(&r.ID, &r.NodeID, &r.Status, &r.CreatedAt, &r.FinishedAt, &r.ResultCardID, &raw, &r.AcceptedRunID, &r.ToolCallsAttempted); e != nil {
+		var raw, stopReason string
+		if e = rows.Scan(&r.ID, &r.NodeID, &r.Status, &r.CreatedAt, &r.FinishedAt, &r.ResultCardID, &raw, &r.AcceptedRunID, &stopReason, &r.ToolCallsAttempted); e != nil {
 			return nil, e
 		}
 		var p canvasPrepared
@@ -50,7 +50,7 @@ func (h *handlers) canvasRuns(ctx context.Context, board string) ([]canvasRun, e
 		}
 		r.ProviderTitle = p.Provider["title"]
 		if r.Status == "failed" || r.Status == "uncertain" {
-			r.Error = "run_stopped"
+			r.Error = canvasStopError(stopReason)
 		}
 		out = append(out, r)
 	}
