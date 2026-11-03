@@ -214,6 +214,10 @@ func (f *funcs) renderDirectory(slot directorySlot, scope directoryScope) error 
 			if err != nil {
 				return err
 			}
+			card, err = f.directoryCardReturn(card, &record, scope)
+			if err != nil {
+				return err
+			}
 			markup.WriteString(string(card))
 		}
 		markup.WriteString(`</div>`)
