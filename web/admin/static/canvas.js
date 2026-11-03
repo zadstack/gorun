@@ -14,7 +14,7 @@
   const mobile = matchMedia('(max-width:767px)');
   const widgetCache = new Map();
   const widgetLoading = new Set();
-  let operations = null, lifecycle = null, inbound = null;
+  let operations = null, lifecycle = null, inbound = null, schedules = null;
   let revealHash = true, revealScheduled = false;
   function revealCardHash() {
     if (!revealHash || revealScheduled || !/^#card-[a-f0-9]{8}-[a-f0-9-]{27}$/.test(location.hash)) return;
@@ -27,12 +27,15 @@
       if (!card) return;
       revealHash = false;
       card.scrollIntoView({block:'center', inline:'center'});
-      card.querySelector('button,a')?.focus({preventScroll:true});
+      // The move handle is display:none outside flow, so focus the first control that is rendered, else the card.
+      const control = [...card.querySelectorAll('button,a')].find(el => el.getClientRects().length);
+      if (control) control.focus({preventScroll:true});
+      else { card.tabIndex = -1; card.focus({preventScroll:true}); }
     });
   }
   window.addEventListener('hashchange', () => { revealHash = true; revealCardHash(); });
   let view = 'flow';
-  try { const stored=sessionStorage.getItem('gorun.canvas.view'); if (['flow','grid','list'].includes(stored)) view=stored; } catch (_) {}
+  try { const stored=sessionStorage.getItem('gorun.canvas.view'); if (['flow','grid','list','lanes'].includes(stored)) view=stored; } catch (_) {}
   root.dataset.view=view;
   const heights = () => Object.fromEntries([...cardsEl.children].map(el=>[el.dataset.cardId,el.offsetHeight]));
   function normalizePositions() {
@@ -41,7 +44,7 @@
     for (const card of documentState.cards) { Object.assign(card,positions[card.id]); const el=cardsEl.querySelector(`[data-card-id="${card.id}"]`); if(el)place(el,card); }
     updateBounds();
   }
-  const resizeCards = new ResizeObserver(() => normalizePositions());
+  const resizeCards = new ResizeObserver(() => { if (view === 'lanes') updateBounds(); else normalizePositions(); });
   function canPlace(card,x,y) {
     const size=heights(), box={x,y,width:CanvasLayout.WIDTH,height:size[card.id]||240};
     return documentState.cards.every(other=>other.id===card.id||!CanvasLayout.overlap(box,{x:other.x,y:other.y,width:CanvasLayout.WIDTH,height:size[other.id]||240},24));
@@ -120,7 +123,7 @@
         documentState.schedules = data.schedules || {};
         savedSerial = capturedSerial;
         status(dirty() ? 'unsaved' : 'saved');
-        refreshReferences(); operations?.saved(); inbound?.saved();
+        refreshReferences(); operations?.saved(); inbound?.saved(); schedules?.render();
         return true;
       } catch (_) { status('error'); return false; }
       finally { pending = null; }
@@ -135,7 +138,36 @@
       el.replaceChildren(ref ? link(ref.title, ref.href, true) : element('p', el.dataset.reference ? t('unavailable') : t('choose_content')));
     });
   }
+  // Lanes: a display-only arrangement by kind. Positions come from CanvasState.lanes and are applied to the
+  // elements only; the cards keep their saved x/y, so this view never calls changed().
+  const laneKeys = ['lane_inputs', 'lane_instructions', 'lane_execution', 'lane_results'];
+  let laneBands = null;
+  function layoutLanes() {
+    const active = view === 'lanes' && !mobile.matches;
+    if (!active) { laneBands?.remove(); laneBands = null; return false; }
+    const dir = getComputedStyle(root).direction === 'rtl' ? 'rtl' : 'ltr';
+    const size = heights(), {positions, columns} = CanvasState.lanes(documentState.cards, size, documentState.provenance || {}, dir);
+    let bottom = 0;
+    for (const el of cardsEl.children) {
+      const at = positions[el.dataset.cardId]; if (!at) continue;
+      el.style.left = `${at.x}px`; el.style.top = `${at.y}px`;
+      bottom = Math.max(bottom, at.y + (size[el.dataset.cardId] || 240));
+    }
+    if (!laneBands) { laneBands = element('div', undefined, 'canvas-lanes'); laneBands.setAttribute('aria-hidden', 'true'); surface.prepend(laneBands); }
+    const number = new Intl.NumberFormat(document.documentElement.lang || undefined);
+    laneBands.replaceChildren(...columns.map(column => {
+      const band = element('div', undefined, 'canvas-lane'); band.dataset.lane = String(column.lane);
+      band.style.left = `${column.x - 18}px`;
+      const header = element('div', undefined, 'canvas-lane-header');
+      header.append(element('strong', `${number.format(column.lane + 1)} · ${t(laneKeys[column.lane])}`), document.createTextNode(' '), element('span', `(${number.format(column.count)})`));
+      band.append(header); return band;
+    }));
+    surface.style.minWidth = `${Math.max(1050, ...columns.map(column => column.x + 318))}px`;
+    surface.style.minHeight = `${Math.max(850, bottom + 72)}px`;
+    return true;
+  }
   function updateBounds() {
+    if (layoutLanes()) { operations?.drawEdges(); return; }
     if (view !== 'flow') { surface.style.minWidth='0';surface.style.minHeight='0';operations?.drawEdges();return; }
     const cards = documentState.cards;
     surface.style.minWidth = `${Math.max(1050, ...cards.map(card => card.x + 348))}px`;
@@ -293,7 +325,7 @@
   }
   function render() {
     resizeCards.disconnect();
-    const cards = mobile.matches || view !== 'flow' ? [...documentState.cards].sort(cardOrder) : documentState.cards;
+    const cards = view === 'lanes' ? CanvasState.laneOrder(documentState.cards, documentState.provenance || {}) : mobile.matches || view !== 'flow' ? [...documentState.cards].sort(cardOrder) : documentState.cards;
     cardsEl.replaceChildren(...cards.map(cardView));
     root.querySelector('.canvas-empty').hidden = cards.length !== 0;
     root.querySelector('[data-count]').textContent = `${cards.length} ${t('count')}`;
@@ -301,6 +333,7 @@
     normalizePositions();
     for(const el of cardsEl.children)resizeCards.observe(el);
     revealCardHash();
+    schedules?.render();
   }
   function placeNewCard(card) {
     const existing = documentState.cards.filter(c => c.id !== card.id).map(c => ({...c, height: Math.max(200, cardsEl.querySelector(`[data-card-id="${c.id}"]`)?.offsetHeight || 520)}));
@@ -391,6 +424,7 @@
   window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
   mobile.addEventListener('change', () => { if (documentState) render(); });
   operations = window.CanvasOperations?.create({root, t, element, button, request, csrf, form, surface, cardsEl, document: () => documentState, applyPreset: data => { if (!documentState || documentState.version !== 1 || documentState.cards.length || documentState.edges.length) return false; documentState.cards = data.cards; documentState.edges = data.edges; changed(); render(); return true; }, changed, render, save, reload: async () => { if (dirty() && !confirm(t('reload_confirm'))) return false; clearTimeout(timer); await load(); return true; }});
+  schedules = window.CanvasSchedules?.create({root,t,element,button,document:()=>documentState,toggle:card=>operations?.toggleSchedule(card)});
   root.querySelectorAll('[data-canvas-view]').forEach(button=>button.addEventListener('click',()=>selectView(button.dataset.canvasView)));
   root.querySelector('[data-action=arrange]').addEventListener('click',()=>{
     if(!documentState||view!=='flow')return;

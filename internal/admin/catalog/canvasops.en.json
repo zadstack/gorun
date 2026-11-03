@@ -39,6 +39,8 @@
   "queued": "Queued",
   "running": "Running",
   "succeeded": "Result saved as a note",
+  "state_done": "Done",
+  "state_waiting": "Needs you",
   "failed": "Failed",
   "uncertain": "Delivery uncertain — review before trying again",
   "show_result": "Load result note",
@@ -93,5 +95,16 @@
   "reviewed": "Reviewed — accepted run recorded",
   "cancelled": "Cancelled locally",
   "cancel_run": "Cancel run",
-  "cancel_run_help": "Stop accepting a result for this run? This does not cancel work already sent to an external provider."
+  "cancel_run_help": "Stop accepting a result for this run? This does not cancel work already sent to an external provider.",
+  "schedules_title": "Scheduled tasks",
+  "schedules_next": "next",
+  "schedules_due": "due now",
+  "schedules_show": "Show on board",
+  "schedules_review": "Review and enable",
+  "schedules_unconnected": "Not connected",
+  "view_lanes": "Lanes",
+  "lane_inputs": "Inputs",
+  "lane_instructions": "Instructions and triggers",
+  "lane_execution": "Execution",
+  "lane_results": "Results"
 }

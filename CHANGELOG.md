@@ -9,6 +9,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Canvas nodes in the flow view take a shape for each kind and show their latest run state (queued, running, needs you, done, failed) as a word and a dot. The kind stays written on every card.
+- Canvas edges show live run state: an edge into a running node flows, and a failed one is dashed. The editor polls runs only while one is active and the tab is visible.
+- A scheduled tasks panel lists this board's schedule nodes, grouped by the card each one triggers, with their next run, status, **Show on board** and **Review and enable**.
+- A lanes view arranges the canvas into four columns by kind (inputs, instructions and triggers, execution, results) for display only. It never moves or saves cards.
 - Native builder layouts for compact directories and media rows with images at the reading start or end; existing layouts keep their defaults.
 - Shared validated published identity tokens for standalone launch, Membership and SaaS pages, with safe defaults when the theme module is unavailable.
 
