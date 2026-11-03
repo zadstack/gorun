@@ -12,6 +12,7 @@ Open **Inbox → Forms** (`/admin/forms`). It needs the same permission as the c
    editable; an Arabic title leaves it empty and asks for one), the button label, the thank-you message and the
    fields. Publishing the page creates the form with every field declared, so the server validates each one.
    Removing the section and republishing closes the form (it answers 410), and its table and entries stay.
+   Trashing or deleting the page closes its forms too; a restored page reopens them when it is published again.
    A draft page registers nothing, and the editor previews the form with every control disabled.
 2. **Capture.** Any form that posts to `/forms/{slug}` with the CSRF token is accepted. Its first submission creates
    the form, and every field name it has not seen is added as *discovered*. In a theme:
@@ -26,7 +27,8 @@ Open **Inbox → Forms** (`/admin/forms`). It needs the same permission as the c
 
    Page content cannot hold a `<form>` (the sanitizer removes it), so a captured form lives in a theme template.
    A discovered field can be **pinned** in the admin (type, label, choices, required). From then on the server
-   validates it, and old entries keep what they stored.
+   validates it, and old entries keep what they stored. A builder form's fields come from its page, so they cannot
+   be pinned in the admin.
 
 A builder form that takes a captured form's slug adopts it: its fields become pinned and its entries are kept.
 If another page already uses a slug, publishing moves the form to the page that publishes it, with its entries.
@@ -47,6 +49,10 @@ Captured field names match `[a-z0-9_]{1,40}`. Names that start with `_`, plus `w
 breach rejects the whole submission with 422 and creates nothing, so a flood of random names cannot create a form.
 Slugs match `[a-z0-9-]{1,40}`, and `contact` and `comment` are reserved.
 
+Any slug that posts valid fields creates a captured form, so junk slugs (a bot posting to `/forms/random-name`)
+can fill the 50-form cap; once it is full, new captured forms are refused with 422. An admin frees slots by
+deleting unwanted captured forms in **Inbox → Forms**.
+
 ## The admin tables
 
 - **`/admin/forms`** lists each form with its source (builder or captured), entries, new entries and last entry.
@@ -54,16 +60,19 @@ Slugs match `[a-z0-9-]{1,40}`, and `contact` and `comment` are reserved.
 - **`/admin/forms/{slug}`** shows date, status and up to six visible fields, newest first, 50 a page.
   - **Filters:** status (new, read, spam), a date range (inclusive days, UTC) and a text search over the stored values.
   - **CSV:** **Export** downloads every field, including hidden and retired ones, with the active filter applied.
-    The columns are `id`, `created_at`, `status`, `page`, then the field names. Cells that start with `=`, `+`, `-`
+    The columns are `id`, `created_at`, `status`, `page`, then each field headed by its label (the admin rename
+    when set), in the table's order, then any key found only in entries, by its name. Cells that start with `=`, `+`, `-`
     or `@` are neutralized against spreadsheet formula injection.
   - **Entry page:** opening an entry marks it read. An entry can be marked spam or deleted.
   - **Fields:** pin a discovered field, hide or show a column, rename its label, reorder. These change presentation only
-    and never rewrite stored entries. A field a builder form no longer declares keeps its column in the CSV.
+    and never rewrite stored entries. For a builder form they change the admin table and CSV only: the form on the
+    site keeps the labels and order set in the page builder, and they survive republishing. A field a builder form
+    no longer declares is hidden from the table and keeps its column in the CSV.
 - **Attachments.** A builder form with a file field stores the file with the entry. Download it from the entry page.
   The download needs the same permission and is served as an attachment with `nosniff`.
-- **Deleting.** A captured form, or a builder form whose section is gone, can be deleted from its table after a
-  confirmation that shows the entry count. This removes its entries and files. An open builder form cannot be
-  deleted (409). Deleting an entry removes its file. Exports and deletions are audited, without field values.
+- **Deleting.** A captured form, or a builder form whose section or page is gone, can be deleted from its table after
+  a confirmation that shows the entry count. This removes its entries and files. A builder form that is still open
+  on an existing page cannot be deleted (409). Deleting an entry removes its file. Exports and deletions are audited, without field values.
 
 ## Webhook
 
@@ -117,20 +126,26 @@ unknown, closed or captured form. Builder pages inject their forms automatically
 
 1. **من المنشئ:** أضف قسم **نموذج** في صفحة المنشئ، وحدّد العنوان والمعرّف (slug) ونص الزر ورسالة الشكر والحقول.
    نشر الصفحة ينشئ النموذج وتصبح كل حقوله مُعرَّفة ويتحقق منها الخادم. العنوان العربي يترك المعرّف فارغًا
-   فاكتبه بحروف لاتينية. حذف القسم ثم إعادة النشر يغلق النموذج (يردّ 410) وتبقى الرسائل. المسودة لا تُسجّل شيئًا،
+   فاكتبه بحروف لاتينية. حذف القسم ثم إعادة النشر يغلق النموذج (يردّ 410) وتبقى الرسائل. نقل الصفحة إلى المهملات أو حذفها
+يغلق نماذجها أيضًا، والصفحة المستعادة تعيد فتحها عند نشرها من جديد. المسودة لا تُسجّل شيئًا،
    والمعاينة تعرض الحقول معطّلة.
 2. **الالتقاط:** أي نموذج `method="post"` و`action="/forms/{slug}"` مع حقل `_csrf` يُقبل. أول رسالة تنشئ النموذج وتُسجَّل
    الحقول الجديدة كحقول *مكتشفة*. يوضع هذا النموذج في قالب الثيم لأن محتوى الصفحات يحذف وسم `<form>`.
-   يمكن **تثبيت** الحقل المكتشف من اللوحة (النوع والعنوان والخيارات والإلزام) فيتحقق منه الخادم بعدها.
+   يمكن **تثبيت** الحقل المكتشف من اللوحة (النوع والعنوان والخيارات والإلزام) فيتحقق منه الخادم بعدها. حقول نموذج المنشئ
+   تأتي من صفحته فلا تُثبَّت من اللوحة.
 
 **الحدود:** 30 حقلًا في النموذج، و4000 حرف في القيمة، و50 نموذجًا ملتقطًا، وحقل ملف واحد (للنماذج من المنشئ فقط)،
 و20 خيارًا في الحقل. أسماء الحقول الملتقطة `[a-z0-9_]` حتى 40 حرفًا. أي مخالفة ترفض الرسالة كلها (422) ولا تنشئ نموذجًا.
+أي معرّف يستقبل حقولًا صحيحة ينشئ نموذجًا ملتقطًا، فقد تملأ معرّفات عشوائية (من روبوت مثلًا) حد الخمسين، وبعدها تُرفض النماذج
+الملتقطة الجديدة (422). يحرّر المدير أماكن بحذف النماذج الملتقطة غير المرغوبة من **الوارد ← النماذج**.
 
 **الجداول:** كل نموذج له جدول بالأحدث أولًا، 50 في الصفحة، مع فلتر الحالة (جديد/مقروء/سبام) والتاريخ وبحث نصي.
 زر **تصدير** ينزّل CSV بكل الحقول (حتى المخفية والقديمة) ويحترم الفلتر الحالي. فتح الرسالة يجعلها مقروءة، ويمكن تحديدها سبام
-أو حذفها. تثبيت الحقول وإخفاؤها وإعادة تسميتها وترتيبها يغيّر العرض فقط ولا يعدّل البيانات المحفوظة. المرفق (لنموذج المنشئ
-بحقل ملف) يُنزَّل من صفحة الرسالة بنفس الصلاحية. حذف نموذج ملتقط (أو نموذج منشئ أُزيل قسمه) يتم بعد تأكيد يعرض عدد
-الرسائل، ويحذف رسائله وملفاته. النموذج المنشور المفتوح لا يُحذف. التصدير والحذف يُسجَّلان في سجل التدقيق.
+أو حذفها. تثبيت الحقول وإخفاؤها وإعادة تسميتها وترتيبها يغيّر العرض فقط ولا يعدّل البيانات المحفوظة. في نموذج المنشئ تغيّر
+جدول اللوحة وCSV فقط، ويبقى النموذج في الموقع بتسميات المنشئ وترتيبه، ولا تضيع عند إعادة النشر. الحقل الذي أزاله المنشئ
+يُخفى من الجدول ويبقى في CSV. المرفق (لنموذج المنشئ
+بحقل ملف) يُنزَّل من صفحة الرسالة بنفس الصلاحية. حذف نموذج ملتقط (أو نموذج منشئ أُزيل قسمه أو صفحته) يتم بعد تأكيد يعرض عدد
+الرسائل، ويحذف رسائله وملفاته. نموذج المنشئ المفتوح في صفحة موجودة لا يُحذف. التصدير والحذف يُسجَّلان في سجل التدقيق.
 
 **الويب هوك:** `site.form.submitted` مرة واحدة لكل رسالة، ويحمل `form` (المعرّف) و`fields` (القيم نصوصًا) إلى جانب
 بيانات نموذج التواصل. الحمولة فيها بيانات شخصية، فوجّهها لأنظمة مسموح لها باستلامها.
