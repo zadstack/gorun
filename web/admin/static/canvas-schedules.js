@@ -61,7 +61,8 @@
       meta.append(el('span', t(card.interval)));
       const next = window.CanvasState.nextRunLabel(state.next_run_at, now, lang());
       if (next) {
-        const time = el('time', next.kind === 'due' ? t('schedules_due') : next.text);
+        const at = next.kind === 'due' ? '' : window.CanvasState.atLabel(state.next_run_at, now, lang());
+        const time = el('time', next.kind === 'due' ? t('schedules_due') : `${at} · ${next.text}`);
         time.dateTime = state.next_run_at; time.title = new Date(state.next_run_at).toLocaleString(lang());
         meta.append(doc.createTextNode(' · '), time);
       }

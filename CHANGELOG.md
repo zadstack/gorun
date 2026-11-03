@@ -7,6 +7,9 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Canvas agent and provider cards list their inputs and the schedule that triggers them. A running agent turns a ring around its avatar and shows a short writing line, a failed node says why under its heading, and the toolbar counts running runs.
+- Schedule cards and the scheduled tasks panel show the next run as a clock time with a relative label, such as "Next 14:20 · in 42 minutes".
+- The flow and lanes views carry an edge legend, and an edge from an enabled schedule shows a clock mark.
 - Native task-entry search, choice and service layouts, with compact rows, image-led and featured/secondary result layouts in the page builder.
 - Shared opt-in public navigation, detail/action and feedback components, plus a default `public-detail` page template.
 - Search, taxonomy/field filters and pagination in native directories, including independent query state for multiple directories on one page.
@@ -15,6 +18,9 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- A canvas result whose media is missing shows a red seal and a placeholder, not the green check.
+- Decoration on canvas cards at the board's top or start edge is no longer clipped, and footer buttons stay inside rounded card corners.
+- The lanes view narrows its cards (down to 240px) so the four columns fit a 1440px screen without sideways scrolling.
 - A canvas watchdog closes runs that stopped making progress and records why. Runs left queued for 15 minutes fail as never started. Runs waiting more than 24 hours for an external agent become uncertain. Interrupted runs (running past 5 minutes, already swept) now say so. Stuck runs no longer count against the board's run limit, and the run history explains each stop in Arabic and English. Nothing is retried automatically.
 
 ## [0.18.7] - 2026-11-03

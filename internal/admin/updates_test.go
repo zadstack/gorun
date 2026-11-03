@@ -83,7 +83,9 @@ func (s *site) updateStatus() statusEnvelope {
 
 func (s *site) waitFor(what string, cond func(statusEnvelope) bool) statusEnvelope {
 	s.t.Helper()
-	deadline := time.Now().Add(15 * time.Second)
+	// Generous: the cross-package coverage run (-coverpkg=./...) slows the
+	// booted workers several times over. The loop returns as soon as cond holds.
+	deadline := time.Now().Add(60 * time.Second)
 	for time.Now().Before(deadline) {
 		st := s.updateStatus()
 		if cond(st) {
