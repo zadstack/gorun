@@ -89,7 +89,7 @@ public `Host` header.
 | `commerce.manage` | `list_products` (when commerce is installed) |
 | `mcp.approve_self` | Sensitive tools run immediately, with no human approval. It must be listed explicitly in the key's scopes: `*` does **not** imply it. |
 | `mcp.approve` | Decide approvals over REST. It must be listed explicitly in the key's scopes (`*` does not count). A key can never decide calls it requested itself, nor calls requested by another key of the same owner (see below). |
-| `canvas.read` | `list_canvases`, `get_canvas`, `gorun://canvases/{id}`, and selected-board ops (`canvases.pending`, `canvases.context`). Agent keys also need an explicit board grant. |
+| `canvas.read` | `list_canvases`, `get_canvas`, `gorun://canvases/{id}`, and selected-board ops (`canvases.pending`, `canvases.context`, `canvases.source`). Agent keys also need an explicit board grant. |
 | `canvas.append` | `canvases.append_result` (append a private result note; never publishes) |
 | `canvas.run` | `canvases.request_run` (creates a `requested` run for human review; does not execute) |
 
@@ -146,7 +146,8 @@ input struct and use snake_case property names.
 | `list_canvases` | canvas.read, content.view | | Boards the key may read: owner boards for REST keys, or grant-listed boards for agent keys. Returns `{id,title,updated_at,version}` only (`page` / `per_page` ≤ 100) |
 | `get_canvas` | canvas.read, content.view | | Board by `id`: `{id,title,version,updated_at,cards[],edges[]}`. Agent keys receive only grant-allowed cards and edges between them. No inbound secrets or provider credentials |
 | `canvases.pending` | canvas.read, content.view | | Waiting runs for this agent key on a granted board (`board_id`) |
-| `canvases.context` | canvas.read, content.view | | Bounded prompt/context for one delegated run (`board_id`, `run_id`) |
+| `canvases.context` | canvas.read, content.view | | Bounded prompt/context for one delegated run (`board_id`, `run_id`). Each source starts with `## [ref:content/<id>] <title>` or `## [ref:note/<card id>] <title>`; a shortened source ends with `[… N more characters. Full text: ref:…]`. Also returns `refs` and `spilled` |
+| `canvases.source` | canvas.read, content.view | | Full current text of one ref from that run's context (`board_id`, `run_id`, `ref`), at most 200,000 characters (`characters` returned, `total_characters` full length, `truncated` when cut). Other refs are refused |
 | `canvases.append_result` | canvas.append, content.view | | Append a private result note for a waiting run (idempotent; never publishes) |
 | `canvases.request_run` | canvas.run, content.view | | Request a run (`requested`) for human review (`board_id`, `node_id`, `request_id`) |
 | `check_approval` | any key | | Status of a sensitive call (see below) |

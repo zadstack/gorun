@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/db"
@@ -20,12 +22,21 @@ type canvasMCPInput struct {
 	Token     string `json:"context_token,omitempty"`
 	Text      string `json:"text,omitempty"`
 	RequestID string `json:"request_id,omitempty"`
+	Ref       string `json:"ref,omitempty"`
 }
 
+const canvasMCPDescription = "Selected-board operations only. Named-agent tasks require explicit owner review. Results append notes and never publish content."
+
 func (h *handlers) canvasMCPTools() {
-	for _, spec := range []struct{ name, scope string }{{"canvases.context", "canvas.read"}, {"canvases.pending", "canvas.read"}, {"canvases.request_run", "canvas.run"}, {"canvases.append_result", "canvas.append"}} {
+	for _, spec := range []struct{ name, scope, description string }{
+		{"canvases.context", "canvas.read", canvasMCPDescription + " Context sources start with a \"## [ref:…]\" header; a shortened source ends with a \"[… N more characters. Full text: ref:…]\" marker."},
+		{"canvases.source", "canvas.read", canvasMCPDescription + " Returns the full current text of one ref (board_id, run_id, ref) listed in that run's context, at most 200,000 characters: characters is the returned length, total_characters the full length, truncated is true when cut."},
+		{"canvases.pending", "canvas.read", canvasMCPDescription},
+		{"canvases.request_run", "canvas.run", canvasMCPDescription},
+		{"canvases.append_result", "canvas.append", canvasMCPDescription},
+	} {
 		name, scope := spec.name, spec.scope
-		h.d.MCP.AddTool(kernel.MCPTool{Name: name, Description: "Selected-board operations only. Named-agent tasks require explicit owner review. Results append notes and never publish content.", Input: canvasMCPInput{}, Scopes: []string{scope, "content.view"}, Handler: func(ctx context.Context, raw json.RawMessage) (any, error) {
+		h.d.MCP.AddTool(kernel.MCPTool{Name: name, Description: spec.description, Input: canvasMCPInput{}, Scopes: []string{scope, "content.view"}, Handler: func(ctx context.Context, raw json.RawMessage) (any, error) {
 			var in canvasMCPInput
 			dec := json.NewDecoder(bytes.NewReader(raw))
 			dec.DisallowUnknownFields()
@@ -65,7 +76,7 @@ func (h *handlers) canvasMCPTools() {
 					out = append(out, map[string]string{"id": id, "node_id": node, "created_at": created})
 				}
 				return map[string]any{"runs": out}, rows.Err()
-			case "canvases.context", "canvases.append_result":
+			case "canvases.context", "canvases.source", "canvases.append_result":
 				var raw, status string
 				e = h.d.DB.QueryRowContext(ctx, `SELECT document,status FROM admin_canvas_runs WHERE id=? AND board_id=? AND key_id=?`, in.RunID, b.ID, actor.ID).Scan(&raw, &status)
 				if e != nil {
@@ -95,7 +106,20 @@ func (h *handlers) canvasMCPTools() {
 				}
 				token := studioReviewHash(map[string]any{"run": in.RunID, "key": actor.ID, "review": p.ReviewHash})
 				if name == "canvases.context" {
-					return map[string]any{"run_id": in.RunID, "context_token": token, "prompt": p.Prompt, "context": p.Context, "board_version": b.Version, "model_preference": p.Provider["model"]}, nil
+					return map[string]any{"run_id": in.RunID, "context_token": token, "prompt": p.Prompt, "context": p.Context, "refs": p.Refs, "spilled": p.Spilled, "board_version": b.Version, "model_preference": p.Provider["model"]}, nil
+				}
+				if name == "canvases.source" {
+					// Only refs recorded for this run, and still produced by the
+					// current preparation (same authority checks as execution).
+					text, ok := current.full[in.Ref]
+					if !slices.Contains(p.Refs, in.Ref) || !slices.Contains(current.Refs, in.Ref) || !ok {
+						return nil, errCanvasConsent
+					}
+					total := utf8.RuneCountInString(text)
+					if total > canvasSourceMax {
+						text = string([]rune(text)[:canvasSourceMax])
+					}
+					return map[string]any{"run_id": in.RunID, "ref": in.Ref, "text": text, "characters": min(total, canvasSourceMax), "total_characters": total, "truncated": total > canvasSourceMax}, nil
 				}
 				if in.Token != token {
 					return nil, errCanvasConsent

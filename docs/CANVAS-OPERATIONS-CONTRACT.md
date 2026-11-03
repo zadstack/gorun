@@ -50,8 +50,28 @@ Extend GET `/admin/canvases/{id}/references?q=...` with optional `type` filter. 
 {"review_token":"opaque","expires_at":"RFC3339","board_version":7,"node_id":"uuid",
  "provider":{"id":"native-text","title":"Provider","endpoint":"https://provider.example/v1"},
  "prompt":"reviewable instruction","context":"bounded plain text",
- "items":[{"title":"Source title","type":"post"}],"bytes":1234}
+ "items":[{"title":"Source title","type":"post"}],"bytes":1234,
+ "spill":{"sources":1,"characters":22000,"on_request":true}}
 ```
+
+### Context format: inline and spill
+
+The context joins the connected sources in board order, separated by a blank line. Prompts are not sources. Each source starts with a reference header line:
+
+```
+## [ref:content/<content id>] <title>
+## [ref:note/<card id>] <title>
+```
+
+Content cards and source-query items use `content/`; note cards use `note/`. Each source is inlined in full up to 8,000 characters (runes). The whole context stays within 64,000 characters: every source first gets its minimum (the header, its first 500 characters and a marker), then the rest is shared fairly, so small sources stay whole and large ones split what remains. A shortened source is cut on a rune boundary, on a paragraph or line break near the limit when there is one, and ends with one marker line, always in English:
+
+```
+[… 9,412 more characters. Full text: ref:content/<id>]
+```
+
+Preparation fails as invalid only when the headers and minimums alone exceed 64,000 characters. The prompt limit (16,000 bytes) is unchanged. The run records `refs` (every ref in its context) and `spilled` (`{ref,kept,total}` per shortened source). The review hash covers the final context, so a source edit still requires a fresh review. The preview's `spill` summary drives one line in the review dialog: `on_request` is true for an external MCP agent, which can call `canvases.source`; providers and managed agents receive only the shortened text. A content item reached twice (a content card and a source query) is inlined once, at its first occurrence.
+
+Upgrade note: runs prepared before this context format (`queued` or `waiting_agent`) no longer match their review hash and fail closed: queued runs fail at dispatch, waiting runs are refused by `canvases.context` and `canvases.source` and are stopped by the watchdog after 24 hours. The owner reviews and runs them again.
 
 2. Explicit Run POST `/admin/canvases/{id}/operations/runs` with `{request_id:"UUID",review_token:"opaque"}`. Returns202 `{run:<run>}`. Tokens bind board/actor/node/provider version/context/graph and expire. Repeated identical request returns the same run; changed destination/graph/consent fails409. No secrets enter browser state. Worker rechecks current grants, source access and provider identity before execution.
 3. GET `/admin/canvases/{id}/operations/runs` returns `{runs:[...]}` (newest20, no sensitive raw provider errors):
@@ -80,6 +100,7 @@ GET `/admin/canvases/{id}/operations/grants` returns `{grants:[{agent_id,title,r
 The UI picks explicitly exposed note/content/source/prompt node IDs. Both current named-key scope and board grant are mandatory. MCP operations use the existing authenticated operation registry with no changes to the content publishing/approval system:
 
 - `canvases.context`: board ID; returns only granted nodes' bounded text and current board version, not every board or every content row.
+- `canvases.source`: `{board_id,run_id,ref}`; returns `{run_id,ref,text,characters,total_characters,truncated}`, the full current sanitized text of one ref listed in that run's `refs`, at most 200,000 characters (`characters` returned, `total_characters` the full length, `truncated:true` when cut). Same run, grant, status and review checks as `canvases.context`, and the source is re-read with execution's visibility rules (readable item, public type, author restriction). Any other ref is refused with the generic error.
 - `canvases.request_run`: requires run grant; an external key request creates status requested for explicit human review, never dispatches automatically.
 - `canvases.pending`: only delegated waiting_agent runs targeted to the current named key and matching its current board grant. A manual reviewed run targeting an agent waits until this client claims it. Context and result append are tied to that delegated run; unrelated keys cannot fetch or complete it.
 - `canvases.append_result`: board/run/version-bound, idempotent new result note only. Requires append grant, run ownership and the tied context/version; cannot edit/delete existing cards. Server authenticates provenance rather than trusting supplied author fields.
