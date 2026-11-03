@@ -122,6 +122,7 @@
       {{end}}
       <p class="mt-1 flex flex-wrap gap-3 text-xs">
         {{if .More}}<a href="{{.More}}" class="text-blue underline underline-offset-2">{{t "analytics.table.show_all"}}</a>{{end}}
+        {{if .All}}<span class="text-muted" data-show-all-hint{{if .Capped}} data-capped{{end}}>{{t "analytics.table.capped" .Max}}</span>{{end}}
         <a href="{{.CSV}}" class="text-blue underline underline-offset-2">{{t "analytics.table.export"}}</a>
       </p>
     </div>

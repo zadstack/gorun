@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/csv"
+	"fmt"
 	"html"
 	"net/http"
 	"net/http/httptest"
@@ -423,5 +424,42 @@ func TestDashboardEmptyAfterFileLoss(t *testing.T) {
 	}
 	if m := cardRe("visitors").FindStringSubmatch(body); m == nil || strings.TrimSpace(m[1]) != "0" {
 		t.Errorf("visitors card after file loss: %v", m)
+	}
+}
+
+func TestShowAllCapped(t *testing.T) {
+	e := bootAdmin(t, nil)
+	e.login("admin@example.com", "admin")
+	now := time.Now().UTC()
+	evs := make([]Event, 0, showAllLimit+2)
+	for i := range showAllLimit + 2 {
+		evs = append(evs, viewAt(now, fmt.Sprintf("/p%04d", i), "v1"))
+	}
+	e.seed(evs...)
+	panelOf := func(body string) string {
+		return regexp.MustCompile(`(?s)id="t-page".*?data-tab-panel.*?</table>.*?</p>`).FindString(body)
+	}
+	_, body := e.get("/admin/analytics?period=7d")
+	p := panelOf(body)
+	if n := strings.Count(p, "<tr class=\"border-t"); n != topLimit {
+		t.Errorf("default rows = %d, want %d", n, topLimit)
+	}
+	if !strings.Contains(p, "all=page") || strings.Contains(p, "data-show-all-hint") {
+		t.Error("default view: want a Show all link and no cap hint")
+	}
+	_, body = e.get("/admin/analytics?period=7d&all=page")
+	p = panelOf(body)
+	if n := strings.Count(p, "<tr class=\"border-t"); n != showAllLimit {
+		t.Errorf("show all rows = %d, want %d", n, showAllLimit)
+	}
+	if !strings.Contains(p, "data-capped") || !strings.Contains(p, "Download the CSV for every row") || !strings.Contains(p, "table=page") {
+		t.Error("capped show all: want the hint and the CSV link")
+	}
+	resp, csvBody := e.get("/admin/analytics/export.csv?period=7d&table=page")
+	if resp.StatusCode != 200 {
+		t.Fatalf("csv: %d", resp.StatusCode)
+	}
+	if n := strings.Count(strings.TrimSpace(csvBody), "\n") + 1; n != showAllLimit+3 { // header + every row
+		t.Errorf("csv lines = %d, want %d", n, showAllLimit+3)
 	}
 }

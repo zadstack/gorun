@@ -51,6 +51,7 @@
   "table.devices": "Devices",
   "table.empty": "Nothing in this period.",
   "table.show_all": "Show all",
+  "table.capped": "Shows at most %d rows. Download the CSV for every row.",
   "table.export": "Download CSV",
   "tab.page": "Pages",
   "tab.ref": "Sources",

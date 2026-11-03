@@ -51,6 +51,7 @@
   "table.devices": "الأجهزة",
   "table.empty": "لا شيء في هذه الفترة.",
   "table.show_all": "عرض الكل",
+  "table.capped": "يُعرض %d صفًا على الأكثر. نزّل ملف CSV للحصول على كل الصفوف.",
   "table.export": "تنزيل CSV",
   "tab.page": "الصفحات",
   "tab.ref": "المصادر",

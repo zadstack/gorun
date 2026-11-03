@@ -100,14 +100,14 @@ func polyline(vs []float64, top, w, h float64, rtl bool, attrs string) string {
 
 func num(f float64) string { return strconv.FormatFloat(f, 'f', 1, 64) }
 
-// Locale number formatting: en groups with "," and uses ".", ar uses
-// Arabic-Indic digits with "٬" and "٫" (what Intl.NumberFormat("ar") gives).
-
-var arabicDigits = [10]rune{'٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'}
+// Locale number formatting: digits are always Latin (0-9), like the rest
+// of the admin. en groups with "," and uses "." and "%"; ar keeps its own
+// separators "٬", "٫" and "٪".
 
 func arabic(loc string) bool { return strings.HasPrefix(strings.ToLower(loc), "ar") }
 
-// localize maps an ASCII number ("1,234.5") to the locale's digits and marks.
+// localize maps the separators of an ASCII number ("1,234.5") to the
+// locale's; digits stay Latin.
 func localize(loc, s string) string {
 	if !arabic(loc) {
 		return s
@@ -115,8 +115,6 @@ func localize(loc, s string) string {
 	var b strings.Builder
 	for _, r := range s {
 		switch {
-		case r >= '0' && r <= '9':
-			b.WriteRune(arabicDigits[r-'0'])
 		case r == ',':
 			b.WriteRune('٬')
 		case r == '.':
@@ -202,11 +200,15 @@ func changeOf(loc string, cur, prev float64) change {
 }
 
 // displayPath decodes a stored (percent-encoded) path for display. A value
-// that does not decode to clean UTF-8 text is shown as stored.
+// that does not decode to clean UTF-8 text, or that holds a control or a
+// format character (bidi overrides such as U+202E, zero-width characters),
+// is shown as stored.
 func displayPath(p string) string {
 	d, err := url.PathUnescape(p)
-	if err != nil || !utf8.ValidString(d) || strings.IndexFunc(d, unicode.IsControl) >= 0 {
+	if err != nil || !utf8.ValidString(d) || strings.IndexFunc(d, unsafeRune) >= 0 {
 		return p
 	}
 	return d
 }
+
+func unsafeRune(r rune) bool { return unicode.IsControl(r) || unicode.Is(unicode.Cf, r) }

@@ -12,6 +12,14 @@ import (
 // apiSummaryPath is GET /api/v1/analytics/summary.
 const apiSummaryPath = "/v1/analytics/summary"
 
+// API limits: the longest range one request may ask for (the dashboard's
+// own custom range is bounded by maxSeriesDays) and the longest filter
+// value (the same bound as the dashboard's filters).
+const (
+	maxAPIDays      = 400
+	maxFilterLength = 512
+)
+
 // SummaryJSON is a period's headline numbers in the API.
 type SummaryJSON struct {
 	Visitors        int          `json:"visitors"`
@@ -64,7 +72,7 @@ func (m *Module) registerAPI(d *kernel.Deps) {
 	d.API.Add(kernel.APIOperation{Method: "GET", Path: apiSummaryPath, Summary: "Site analytics for a period: headline numbers with the previous period, the visitors/views series and the top 10 of each table",
 		Tags: []string{"analytics"}, Scopes: []string{PermView}, Params: params, Response: SummaryResponse{}, Handler: m.apiSummary,
 		Contract: &kernel.APIContract{SuccessStatuses: []int{http.StatusOK}, Errors: []kernel.APIErrorResponse{
-			{Status: http.StatusBadRequest, Code: "validation_failed", Description: "from or to is not a date or time, or the range is empty or longer than ten years"}}}})
+			{Status: http.StatusBadRequest, Code: "validation_failed", Description: "from or to is not a date or time, the range is empty or longer than 400 days, or a filter is longer than 512 bytes"}}}})
 }
 
 // apiRange reads from/to. A bare day for to includes that day.
@@ -96,10 +104,26 @@ func apiRange(r *http.Request, now time.Time) (Filter, map[string]string) {
 	if !okFrom {
 		from = startOfDay(to.Add(-time.Nanosecond)).AddDate(0, 0, -6)
 	}
-	if len(bad) == 0 && (!to.After(from) || to.Sub(from) > maxSeriesDays*24*time.Hour) {
-		bad["to"] = "must be after from, at most ten years later"
+	switch {
+	case len(bad) > 0:
+	case !to.After(from):
+		bad["to"] = "must be after from"
+	case to.Sub(from) > maxAPIDays*24*time.Hour:
+		bad["to"] = "the range is longer than 400 days; ask for at most 400 days per request"
 	}
-	return Filter{From: from, To: to, Page: q.Get("page"), Ref: q.Get("ref"), Country: q.Get("country"), Device: q.Get("device")}, bad
+	f := Filter{From: from, To: to}
+	for _, p := range []struct {
+		name string
+		dst  *string
+	}{{"page", &f.Page}, {"ref", &f.Ref}, {"country", &f.Country}, {"device", &f.Device}} {
+		v := q.Get(p.name)
+		if len(v) > maxFilterLength {
+			bad[p.name] = "longer than 512 bytes"
+			continue
+		}
+		*p.dst = v
+	}
+	return f, bad
 }
 
 func (m *Module) apiSummary(w http.ResponseWriter, r *http.Request) {

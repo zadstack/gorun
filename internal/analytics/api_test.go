@@ -84,6 +84,26 @@ func TestAPISummary(t *testing.T) {
 		t.Errorf("reversed range: %d, want 400", resp.StatusCode)
 	}
 
+	long := now.AddDate(0, 0, -400).Format(time.DateOnly) // 401 days with to included
+	resp, body = e.do("GET", "/api/v1/analytics/summary?from="+long+"&to="+to, nil, "Authorization", "Bearer "+key)
+	if resp.StatusCode != http.StatusBadRequest || !strings.Contains(body, "400 days") {
+		t.Errorf("401-day range: %d %s, want 400 with a clear message", resp.StatusCode, body)
+	}
+	ok400 := now.AddDate(0, 0, -399).Format(time.DateOnly)
+	if resp, body := e.do("GET", "/api/v1/analytics/summary?from="+ok400+"&to="+to, nil, "Authorization", "Bearer "+key); resp.StatusCode != 200 {
+		t.Errorf("400-day range: %d %s", resp.StatusCode, body)
+	}
+	for _, p := range []string{"page", "ref", "country", "device"} {
+		v := "/" + strings.Repeat("x", 512)
+		resp, body := e.do("GET", "/api/v1/analytics/summary?"+p+"="+v, nil, "Authorization", "Bearer "+key)
+		if resp.StatusCode != http.StatusBadRequest || !strings.Contains(body, p) {
+			t.Errorf("%s of 513 bytes: %d %s, want 400", p, resp.StatusCode, body)
+		}
+	}
+	if resp, _ := e.do("GET", "/api/v1/analytics/summary?page=/"+strings.Repeat("x", 511), nil, "Authorization", "Bearer "+key); resp.StatusCode != 200 {
+		t.Errorf("page of 512 bytes: %d", resp.StatusCode)
+	}
+
 	other := e.apiKey("content.view")
 	if resp, _ := e.do("GET", "/api/v1/analytics/summary", nil, "Authorization", "Bearer "+other); resp.StatusCode != http.StatusForbidden {
 		t.Errorf("without scope: %d, want 403", resp.StatusCode)

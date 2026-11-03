@@ -81,7 +81,7 @@ func TestFormatNumberAndChange(t *testing.T) {
 		loc  string
 		n    int
 		want string
-	}{{"en", 0, "0"}, {"en", 1234567, "1,234,567"}, {"en", -1200, "-1,200"}, {"ar", 1234, "١٬٢٣٤"}}
+	}{{"en", 0, "0"}, {"en", 1234567, "1,234,567"}, {"en", -1200, "-1,200"}, {"ar", 1234, "1٬234"}}
 	for _, c := range cases {
 		if got := formatInt(c.loc, c.n); got != c.want {
 			t.Errorf("formatInt(%s, %d) = %q, want %q", c.loc, c.n, got, c.want)
@@ -90,7 +90,7 @@ func TestFormatNumberAndChange(t *testing.T) {
 	if got := formatFloat("en", 1.25); got != "1.3" && got != "1.2" {
 		t.Errorf("formatFloat = %q", got)
 	}
-	if got := formatFloat("ar", 2.5); got != "٢٫٥" {
+	if got := formatFloat("ar", 2.5); got != "2٫5" {
 		t.Errorf("formatFloat ar = %q", got)
 	}
 	ch := []struct {
@@ -103,13 +103,14 @@ func TestFormatNumberAndChange(t *testing.T) {
 			t.Errorf("changeOf(%v, %v) = %+v, want %s %q", c.cur, c.prev, got, c.dir, c.pct)
 		}
 	}
-	if got := changeOf("ar", 2, 1); got.Pct != "+١٠٠٪" {
+	if got := changeOf("ar", 2, 1); got.Pct != "+100٪" {
 		t.Errorf("ar change = %q", got.Pct)
 	}
 }
 
 func TestDisplayPath(t *testing.T) {
-	for in, want := range map[string]string{"/caf%C3%A9": "/café", "/a%2": "/a%2", "/plain": "/plain", "/a%20b": "/a b"} {
+	for in, want := range map[string]string{"/caf%C3%A9": "/café",
+		"/a%E2%80%AEb": "/a%E2%80%AEb", "/a%E2%80%8Bb": "/a%E2%80%8Bb", "/a%E2%81%A6b": "/a%E2%81%A6b", "/a%EF%BB%BFb": "/a%EF%BB%BFb", "/a%2": "/a%2", "/plain": "/plain", "/a%20b": "/a b"} {
 		if got := displayPath(in); got != want {
 			t.Errorf("displayPath(%q) = %q, want %q", in, got, want)
 		}

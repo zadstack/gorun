@@ -26,8 +26,12 @@ const (
 	exportPath = "/analytics/export.csv"
 )
 
-// topLimit is how many rows a dashboard table shows before "Show all".
-const topLimit = 10
+// topLimit is how many rows a dashboard table shows before "Show all";
+// showAllLimit caps "Show all" (the CSV export has every row).
+const (
+	topLimit     = 10
+	showAllLimit = 500
+)
 
 // adminUI serves the dashboard, its CSV export, the "now" counter, the
 // dashboard widget and the settings page.
@@ -141,7 +145,7 @@ func (a *adminUI) viewOf(r *http.Request) dashView {
 	f := Filter{From: p.From, To: p.To}
 	for _, dim := range filterDims {
 		v := q.Get(dim)
-		if v == "" || len(v) > 512 {
+		if v == "" || len(v) > maxFilterLength {
 			continue
 		}
 		base.Set(dim, v)
@@ -210,6 +214,8 @@ type panel struct {
 	Dim, CSV, More string
 	Rows           []tableRow
 	All            bool
+	Capped         bool // "Show all" stopped at Max rows
+	Max            int  // the "Show all" cap, when All
 }
 
 type tableGroup struct {
@@ -361,21 +367,21 @@ func (a *adminUI) dashboard(w http.ResponseWriter, r *http.Request) {
 		for _, dim := range g.dims {
 			limit := topLimit
 			if all == dim {
-				limit = 0
+				limit = showAllLimit
 			}
-			n := limit + 1 // one more tells whether "Show all" is needed
-			if limit == 0 {
-				n = 0
-			}
-			rows, err := st.Top(ctx, v.f, dim, n)
+			rows, err := st.Top(ctx, v.f, dim, limit+1) // one more tells whether rows were left out
 			if err != nil {
 				a.fail(w, r, err)
 				return
 			}
-			pn := panel{Dim: dim, CSV: v.link(exportPath, "table", dim), All: limit == 0}
-			if limit > 0 && len(rows) > limit {
+			pn := panel{Dim: dim, CSV: v.link(exportPath, "table", dim), All: all == dim, Max: showAllLimit}
+			if len(rows) > limit {
 				rows = rows[:limit]
-				pn.More = v.link(dashPath, "all", dim) + "#t-" + dim
+				if pn.All {
+					pn.Capped = true
+				} else {
+					pn.More = v.link(dashPath, "all", dim) + "#t-" + dim
+				}
 			}
 			for _, row := range rows {
 				tr := tableRow{Key: row.Key, Display: a.display(ctx, dim, row.Key),
