@@ -23,3 +23,5 @@
 @keyframes canvas-edge-flow{to{stroke-dashoffset:-32}}
 @keyframes canvas-edge-packet{from{offset-distance:0%}to{offset-distance:100%}}
 @media (prefers-reduced-motion:reduce){.canvas-workspace .canvas-edges path[data-state=flowing]{animation:none}.canvas-workspace .canvas-edges circle.canvas-edge-packet{animation:none;display:none}}
+.canvas-workspace .canvas-edges g.canvas-edge-clock circle{fill:#fff;stroke:#a16477;stroke-width:1.5}
+.canvas-workspace .canvas-edges g.canvas-edge-clock path{fill:none;stroke:#a16477;stroke-width:1.5;stroke-linecap:round}

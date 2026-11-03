@@ -84,6 +84,17 @@
     else text = fmt.format(Math.max(1, Math.round(minutes / 1440)), 'day');
     return {kind: 'in', text};
   }
+  // The clock time beside a relative label: time only today, weekday and time within the week, else the date.
+  // Calendar days are compared in the display time zone, so 23:50 to 00:10 reads as tomorrow, not today.
+  function atLabel(iso, now, lang, timeZone) {
+    const t = Date.parse(iso || '');
+    if (!iso || Number.isNaN(t)) return null;
+    const day = ms => Date.parse(new Intl.DateTimeFormat('en-CA', {timeZone, year: 'numeric', month: '2-digit', day: '2-digit'}).format(ms));
+    const days = Math.round((day(t) - day(now)) / 86400000), time = {hour: '2-digit', minute: '2-digit', timeZone};
+    if (days === 0) return new Intl.DateTimeFormat(lang, time).format(t);
+    if (days > 0 && days < 7) return new Intl.DateTimeFormat(lang, {...time, weekday: 'short'}).format(t);
+    return new Intl.DateTimeFormat(lang, {...time, month: 'short', day: 'numeric'}).format(t);
+  }
   // Lanes view: positions are computed for display only and never written back to the cards.
   const LANE = {source: 0, content: 0, link: 0, checklist: 0, widget: 0, note: 0, prompt: 1, schedule: 1, agent: 2, provider: 2, result: 3};
   function laneOf(card, provenance) {
@@ -92,8 +103,10 @@
   }
   const savedOrder = (a, b) => a.y - b.y || a.x - b.x || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   const laneOrder = (cards, provenance) => [...(cards || [])].sort((a, b) => laneOf(a, provenance) - laneOf(b, provenance) || savedOrder(a, b));
-  function lanes(cards, heights, provenance, dir) {
-    const columns = [0, 1, 2, 3].map(lane => ({lane, x: 24 + (dir === 'rtl' ? 3 - lane : lane) * 336, count: 0}));
+  // Lane cards shrink from 300px to 240px so four columns fit the viewport: 24px start, 36px gutters, 18px end.
+  const laneCardWidth = available => Math.max(240, Math.min(300, Math.floor((available - 150) / 4)));
+  function lanes(cards, heights, provenance, dir, pitch = 336) {
+    const columns = [0, 1, 2, 3].map(lane => ({lane, x: 24 + (dir === 'rtl' ? 3 - lane : lane) * pitch, count: 0}));
     const positions = {}, next = [72, 72, 72, 72];
     for (const card of [...(cards || [])].sort(savedOrder)) {
       const lane = laneOf(card, provenance);
@@ -103,5 +116,5 @@
     }
     return {positions, columns};
   }
-  return Object.freeze({nodeStates, doneExpiry, isActive, edgeStates, scheduleGroups, nextRunLabel, laneOf, laneOrder, lanes});
+  return Object.freeze({nodeStates, doneExpiry, isActive, edgeStates, scheduleGroups, nextRunLabel, atLabel, laneOf, laneOrder, laneCardWidth, lanes});
 });
