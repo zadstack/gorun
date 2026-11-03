@@ -24,7 +24,7 @@ async function presetBoard(page: Page, width = 1440): Promise<{path: string, boa
 const owner=()=>{const d=db();const o=d.prepare('SELECT id FROM users WHERE email=?').get('admin@e2e.test') as {id:string};d.close();return o.id;};
 const cardID=(page:Page,kind:string)=>page.locator(`.canvas-card[data-kind=${kind}]`).first().getAttribute('data-card-id') as Promise<string>;
 async function insertRun(board:string,node:string,status:string,id:string){
- const d=db();d.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at) VALUES(?,?,?,?,?,?,?,?)").run(id,board,owner(),'gaps-'+id,node,status,JSON.stringify({candidate:{input:{kind:'text'}}}),new Date(Date.now()-5000).toISOString());d.close();
+ const d=db();d.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at,started_at) VALUES(?,?,?,?,?,?,?,?,?)").run(id,board,owner(),'gaps-'+id,node,status,JSON.stringify({candidate:{input:{kind:'text'}}}),new Date(Date.now()-5000).toISOString(),status==='running'?new Date().toISOString():'');d.close();
 }
 async function enableSchedule(board:string,schedule:string,agent:string){
  const d=db();d.prepare("INSERT INTO admin_canvas_schedules(board_id,node_id,provider_node_id,interval,consent_hash,enabled,next_run_at,status) VALUES(?,?,?,'daily','e2e-hash',1,?,'enabled')").run(board,schedule,agent,new Date(Date.now()+42*60_000).toISOString());d.close();
