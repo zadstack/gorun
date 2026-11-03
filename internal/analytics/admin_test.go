@@ -452,7 +452,7 @@ func TestShowAllCapped(t *testing.T) {
 	if n := strings.Count(p, "<tr class=\"border-t"); n != showAllLimit {
 		t.Errorf("show all rows = %d, want %d", n, showAllLimit)
 	}
-	if !strings.Contains(p, "data-capped") || !strings.Contains(p, "Download the CSV for every row") || !strings.Contains(p, "table=page") {
+	if !strings.Contains(p, "data-capped") || !strings.Contains(p, "Shows at most 500 rows. Download the CSV for every row.") || !strings.Contains(p, "table=page") {
 		t.Error("capped show all: want the hint and the CSV link")
 	}
 	resp, csvBody := e.get("/admin/analytics/export.csv?period=7d&table=page")

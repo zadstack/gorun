@@ -177,9 +177,9 @@ func changeOf(loc string, cur, prev float64) change {
 }
 
 // displayPath decodes a stored (percent-encoded) path for display. A value
-// that does not decode to clean UTF-8 text, or that holds a control or a
-// format character (bidi overrides such as U+202E, zero-width characters),
-// is shown as stored.
+// that does not decode to clean UTF-8 text, or that holds a control
+// character, a bidi control or an invisible spacing mark (unsafeRune), is
+// shown as stored.
 func displayPath(p string) string {
 	d, err := url.PathUnescape(p)
 	if err != nil || !utf8.ValidString(d) || strings.IndexFunc(d, unsafeRune) >= 0 {
@@ -188,4 +188,20 @@ func displayPath(p string) string {
 	return d
 }
 
-func unsafeRune(r rune) bool { return unicode.IsControl(r) || unicode.Is(unicode.Cf, r) }
+// unsafeRune reports a rune that could disguise a path when shown: Cc
+// controls, the bidi embeddings, overrides, isolates and marks (U+200E,
+// U+200F, U+202A-U+202E, U+2066-U+2069), and the invisible U+200B, U+2060
+// and U+FEFF. Other format characters are legitimate in text and stay:
+// ZWNJ/ZWJ (U+200C/U+200D) in Persian and Arabic slugs and emoji, and the
+// Arabic letter mark (U+061C).
+func unsafeRune(r rune) bool {
+	switch {
+	case unicode.IsControl(r),
+		r == 0x200E, r == 0x200F,
+		r >= 0x202A && r <= 0x202E,
+		r >= 0x2066 && r <= 0x2069,
+		r == 0x200B, r == 0x2060, r == 0xFEFF:
+		return true
+	}
+	return false
+}

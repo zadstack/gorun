@@ -110,7 +110,12 @@ func TestFormatNumberAndChange(t *testing.T) {
 
 func TestDisplayPath(t *testing.T) {
 	for in, want := range map[string]string{"/caf%C3%A9": "/café",
-		"/a%E2%80%AEb": "/a%E2%80%AEb", "/a%E2%80%8Bb": "/a%E2%80%8Bb", "/a%E2%81%A6b": "/a%E2%81%A6b", "/a%EF%BB%BFb": "/a%EF%BB%BFb", "/a%2": "/a%2", "/plain": "/plain", "/a%20b": "/a b"} {
+		// Bidi controls and invisible marks fall back to the stored value.
+		"/a%E2%80%8Eb": "/a%E2%80%8Eb", "/a%E2%80%8Fb": "/a%E2%80%8Fb", "/a%E2%80%AAb": "/a%E2%80%AAb", "/a%E2%80%AEb": "/a%E2%80%AEb",
+		"/a%E2%81%A6b": "/a%E2%81%A6b", "/a%E2%81%A9b": "/a%E2%81%A9b", "/a%E2%80%8Bb": "/a%E2%80%8Bb", "/a%E2%81%A0b": "/a%E2%81%A0b",
+		"/a%EF%BB%BFb": "/a%EF%BB%BFb", "/a%07b": "/a%07b",
+		// ZWNJ (Persian), ZWJ (emoji) and the Arabic letter mark decode.
+		"/%D9%85%DB%8C%E2%80%8C%D8%B1%D9%88%D9%85": "/می\u200cروم", "/%F0%9F%91%A8%E2%80%8D%F0%9F%92%BB": "/👨\u200d💻", "/a%D8%9Cb": "/a\u061cb", "/a%2": "/a%2", "/plain": "/plain", "/a%20b": "/a b"} {
 		if got := displayPath(in); got != want {
 			t.Errorf("displayPath(%q) = %q, want %q", in, got, want)
 		}
