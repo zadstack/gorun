@@ -998,6 +998,8 @@
   "modules.desc.admin": "اللوحة والمستخدمون والأدوار والإعدادات والصحة والمهام والنسخ الاحتياطي والتحديثات والتكاملات واللوحات وخدمة البريد.",
   "modules.name.webhooks": "الويبهوكس",
   "modules.desc.webhooks": "ويبهوكس صادرة: اشتراكات وتسليم موقّع وإعادة محاولة.",
+  "modules.name.analytics": "إحصائيات الموقع",
+  "modules.desc.analytics": "مشاهدات الصفحات والزوار والمصادر وإرسال النماذج بلا ملفات تعريف ارتباط، محفوظة في analytics.db.",
   "modules.name.commerce": "المتجر",
   "modules.desc.commerce": "المنتجات والسلة والدفع والطلبات والاستحقاقات وStripe وخوادم الفوترة.",
   "modules.name.saas": "SaaS",

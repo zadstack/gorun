@@ -998,6 +998,8 @@
   "modules.desc.admin": "Dashboard, users, roles, settings, health, jobs, backups, updates, integrations, canvases and the mail service.",
   "modules.name.webhooks": "Webhooks",
   "modules.desc.webhooks": "Outgoing webhooks: subscriptions, signed deliveries and retries.",
+  "modules.name.analytics": "Site analytics",
+  "modules.desc.analytics": "Cookieless page views, visitors, referrers and form submits, stored in analytics.db.",
   "modules.name.commerce": "Store",
   "modules.desc.commerce": "Products, cart and checkout, orders, entitlements, Stripe and billing servers.",
   "modules.name.saas": "SaaS",

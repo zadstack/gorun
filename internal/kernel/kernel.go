@@ -53,6 +53,25 @@ type Deps struct {
 	Perms    *PermissionRegistry
 	Audit    *audit.Writer
 	Services *ServiceRegistry // Set(name, v) / Get[T](d, name): reach earlier modules' services without import cycles
+
+	closers []func() // OnClose functions, run last-registered first by App.Close
+}
+
+// OnClose registers fn to run when the app closes: after the job workers
+// and crons have stopped, before the main database closes, in reverse
+// registration order. A module uses it to stop goroutines it started in
+// Register and to close resources it owns (its own database file). It also
+// runs when boot fails after the module registered. Call it only from
+// Register.
+func (d *Deps) OnClose(fn func()) { d.closers = append(d.closers, fn) }
+
+// runClosers runs the OnClose functions once, newest first.
+func (d *Deps) runClosers() {
+	fns := d.closers
+	d.closers = nil
+	for i := len(fns) - 1; i >= 0; i-- {
+		fns[i]()
+	}
 }
 
 // Router holds the chi sub-routers modules register on during Register.
@@ -91,7 +110,8 @@ func (r *Router) Authenticator() string {
 }
 
 // App is a booted GoRun instance. Close stops the job workers, waits for
-// them, then closes the database; it is safe to call more than once.
+// them, runs the modules' OnClose functions, then closes the database; it is
+// safe to call more than once.
 type App struct {
 	Deps    *Deps
 	Handler http.Handler

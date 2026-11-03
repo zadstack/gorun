@@ -402,3 +402,38 @@ func TestBootDiagnosticsDoNotStartOnWireFailure(t *testing.T) {
 		t.Fatal("failed-boot collector cleanup stalled")
 	}
 }
+
+// OnClose functions run once on App.Close, newest first, while the main
+// database is still open, and also when boot fails after they registered.
+func TestOnCloseRunsBeforeDatabaseCloses(t *testing.T) {
+	var order []string
+	reg := func(name string) fakeModule {
+		return fakeModule{name: name, register: func(d *kernel.Deps) error {
+			d.OnClose(func() {
+				if err := d.DB.Ping(); err != nil {
+					t.Errorf("%s: main database closed before OnClose: %v", name, err)
+				}
+				order = append(order, name)
+			})
+			return nil
+		}}
+	}
+	app, err := kernel.Boot(context.Background(), testConfig(t), []kernel.Module{settingsmod.New(), reg("first"), reg("second")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	app.Close()
+	app.Close()
+	if strings.Join(order, ",") != "second,first" {
+		t.Fatalf("OnClose order = %v, want [second first] once", order)
+	}
+
+	order = nil
+	failing := fakeModule{name: "failing", register: func(*kernel.Deps) error { return errors.New("boom") }}
+	if _, err := kernel.Boot(context.Background(), testConfig(t), []kernel.Module{settingsmod.New(), reg("opened"), failing}); err == nil {
+		t.Fatal("boot succeeded with a failing module")
+	}
+	if strings.Join(order, ",") != "opened" {
+		t.Fatalf("OnClose after failed boot = %v, want [opened]", order)
+	}
+}
