@@ -130,7 +130,7 @@
   "form_settings": "Form settings",
   "form_slug": "Form address (slug)",
   "form_slug_help": "Lowercase English letters, digits and dashes, up to 40. Entries are sent to /forms/ followed by this slug.",
-  "form_slug_required": "The title has no English letters, so no slug was made from it. Type a slug, for example booking. Saving waits until it is set.",
+  "form_slug_required": "The title has no English letters, so no slug was made from it. Type a slug, for example booking. Publishing waits until it is set.",
   "form_slug_invalid": "Use only lowercase English letters, digits and dashes, up to 40.",
   "form_slug_reserved": "The site already uses contact and comment. Choose another slug.",
   "form_slug_repeated": "Another form on this page uses this slug.",
@@ -142,7 +142,7 @@
   "form_file_once": "A form takes one file field.",
   "field_label": "Field label",
   "field_name": "Field name (used in entries and CSV)",
-  "field_name_required": "The label has no English letters, so no name was made from it. Type a name, for example full_name. Saving waits until it is set.",
+  "field_name_required": "The label has no English letters, so no name was made from it. Type a name, for example full_name. Publishing waits until it is set.",
   "field_name_invalid": "Use lowercase English letters, digits and underscores, up to 40. The name cannot start with an underscore or be website.",
   "field_name_repeated": "Another field of this form uses this name.",
   "field_type": "Field type",
@@ -163,7 +163,7 @@
   "remove_field": "Remove field",
   "field_up": "Move field up",
   "field_down": "Move field down",
-  "form_fix_errors": "Fix the form settings marked below before saving.",
   "form_preview_submit": "Send",
-  "form_preview_choose": "Choose…"
+  "form_preview_choose": "Choose…",
+  "form_field_type_unknown": "This field type is not supported. Choose one from the list."
 }

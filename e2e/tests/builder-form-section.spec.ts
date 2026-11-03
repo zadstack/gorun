@@ -45,11 +45,14 @@ test("form section: slug from title, field add/reorder/remove, persisted, disabl
     await fields.first().getByRole("button", { name: "Remove field" }).click();
   }
   await expect(form.locator('[data-form-hint="fields"]')).toBeVisible();
-  await expect(page.locator('[data-action="save"]')).toBeDisabled();
+  // An incomplete form still saves as a draft; only publishing waits.
+  await expect(page.locator('[data-action="save"]')).toBeEnabled();
+  await expect(page.locator('[data-action="publish"]')).toBeDisabled();
   const addField = form.getByRole("button", { name: "Add field" });
   const add = async (label: string, type: string, required: boolean) => {
     await addField.click();
     const field = fields.last();
+    await expect(field.locator('input[data-form="name"]')).toHaveValue(/^field_\d+$/);
     await field.locator('input[data-form="label"]').fill(label);
     await field.locator('select[data-form="type"]').selectOption(type);
     if (required) await fields.last().locator('input[data-form="required"]').check();
@@ -81,7 +84,7 @@ test("form section: slug from title, field add/reorder/remove, persisted, disabl
   expect(await names()).toEqual(["name", "email", "plan"]);
   await expect(form).toBeFocused();
 
-  await expect(page.locator('[data-action="save"]')).toBeEnabled();
+  await expect(page.locator('[data-action="publish"]')).toBeEnabled();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator("#builder-status")).toContainText(saved);
   await page.reload();
@@ -106,7 +109,7 @@ test("form section: slug from title, field add/reorder/remove, persisted, disabl
   expect(errors).toEqual([]);
 });
 
-test("form section: an Arabic title leaves the slug empty and blocks saving until one is set", async ({ page }) => {
+test("form section: an Arabic title leaves the slug empty; the draft saves and publishing waits for a slug", async ({ page }) => {
   await page.goto("/admin");
   await setLocale(page, "ar");
   await newBuilderPage(page, "e2e-builder-form-ar");
@@ -118,24 +121,63 @@ test("form section: an Arabic title leaves the slug empty and blocks saving unti
   await expect(hint).toBeVisible();
   await expect(hint).toContainText("booking");
   await expect(slug).toHaveAttribute("aria-invalid", "true");
-  await expect(page.locator('[data-action="save"]')).toBeDisabled();
-  await expect(page.locator("#builder-status")).toContainText("صحّح إعدادات النموذج");
-  // An Arabic field label gives an empty name with the same kind of hint.
+  await expect(page.locator('[data-action="publish"]')).toBeDisabled();
+  await page.locator('[data-action="save"]').click();
+  await expect(page.locator("#builder-status")).toContainText(saved);
+  // A new field's default name is field_N, not the digits of "حقل N".
   await form.getByRole("button", { name: "إضافة حقل" }).click();
   const field = form.locator("fieldset[data-form-field]").last();
+  await expect(field.locator('input[data-form="name"]')).toHaveValue("field_4");
+  // An Arabic field label gives an empty name with the same kind of hint.
   await field.locator('input[data-form="label"]').fill("رقم الهاتف");
   await expect(field.locator('input[data-form="name"]')).toHaveValue("");
   await expect(field.locator('[data-form-hint="name"]')).toBeVisible();
   await field.locator('input[data-form="name"]').fill("phone");
   await expect(field.locator('[data-form-hint="name"]')).toBeHidden();
-  await expect(page.locator('[data-action="save"]')).toBeDisabled();
+  await expect(page.locator('[data-action="publish"]')).toBeDisabled();
   await slug.fill("booking");
   await expect(hint).toBeHidden();
-  await expect(page.locator('[data-action="save"]')).toBeEnabled();
+  await expect(page.locator('[data-action="publish"]')).toBeEnabled();
   await page.locator('[data-action="save"]').click();
   await expect(page.locator("#builder-status")).toContainText(saved);
   await page.reload();
   await expect(page.locator('#builder-sections input[data-form="slug"]')).toHaveValue("booking");
+});
+
+test("form section: a hidden incomplete form blocks neither saving nor publishing", async ({ page }) => {
+  await page.goto("/admin");
+  await setLocale(page, "en");
+  await newBuilderPage(page, "e2e-builder-form-hidden");
+  await page.locator("#builder-kind").selectOption("hero");
+  await page.locator('[data-action="add"]').click();
+  const form = await addForm(page);
+  await form.locator('input[data-form="slug"]').fill("");
+  await expect(form.locator('[data-form-hint="slug"]')).toBeVisible();
+  await expect(page.locator('[data-action="publish"]')).toBeDisabled();
+  await form.getByRole("checkbox", { name: /Hide section/ }).check();
+  await expect(page.locator('[data-action="save"]')).toBeEnabled();
+  await expect(page.locator('[data-action="publish"]')).toBeEnabled();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator('[data-action="publish"]').click();
+  await expect(page.locator("#builder-status")).toContainText("Page published");
+});
+
+test("form section: an imported unknown field type gets its own hint", async ({ page }) => {
+  await page.goto("/admin");
+  await setLocale(page, "en");
+  await newBuilderPage(page, "e2e-builder-form-unknown");
+  const form = await addForm(page);
+  const type = form.locator("fieldset[data-form-field]").first().locator('select[data-form="type"]');
+  // Simulate an imported layout whose field type the editor does not offer.
+  await type.evaluate((select: HTMLSelectElement) => {
+    const option = document.createElement("option");
+    option.value = "mystery";
+    select.append(option);
+    select.value = "mystery";
+    select.dispatchEvent(new Event("change"));
+  });
+  await expect(form.locator('[data-form-hint="type"]').first()).toHaveText("This field type is not supported. Choose one from the list.");
+  await expect(page.locator('[data-action="publish"]')).toBeDisabled();
 });
 
 test("form section: publishing a slug another page uses names the slug", async ({ page }) => {

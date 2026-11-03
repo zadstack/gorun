@@ -39,8 +39,9 @@
       doc.sections.length >= 60;
     root.querySelector('[data-action="reset"]').disabled =
       doc.sections.length === 0 && !dirty;
-    const invalid = formsInvalid();
-    root.querySelector('[data-action="save"]').disabled = invalid;
+    // Drafts save whatever the form state (the server checks only sizes);
+    // publishing waits for every visible form to be complete.
+    const invalid = formsUnpublishable();
     const publish = root.querySelector('[data-action="publish"]');
     const acknowledge = document.getElementById("builder-convert");
     if (publish) {
@@ -56,12 +57,11 @@
   function changed() {
     dirty = true;
     serial++;
-    const invalid = formsInvalid();
-    if (!blocked) notify(invalid ? "form_fix_errors" : "unsaved", invalid);
+    if (!blocked) notify("unsaved");
     buttons();
     clearTimeout(timer);
     clearTimeout(previewTimer);
-    if (!blocked && !invalid) timer = setTimeout(() => save().catch(() => {}), 900);
+    if (!blocked) timer = setTimeout(() => save().catch(() => {}), 900);
     previewTimer = setTimeout(preview, 250);
   }
   // focusKeys name controls (data-focus-key) to focus after the re-render,
@@ -274,7 +274,8 @@
     if (!slug) slugError = "form_slug_required";
     else if (!formSlugPattern.test(slug)) slugError = "form_slug_invalid";
     else if (slug === "contact" || slug === "comment") slugError = "form_slug_reserved";
-    else if (doc.sections.some((other) => other !== section && other.kind === "form" && other.form?.slug === slug)) slugError = "form_slug_repeated";
+    // ValidatePublication compares visible forms only.
+    else if (!section.hidden && doc.sections.some((other) => other !== section && !other.hidden && other.kind === "form" && other.form?.slug === slug)) slugError = "form_slug_repeated";
     let files = 0;
     const field = fields.map((entry, index) => {
       const name = entry.name || "";
@@ -282,15 +283,17 @@
       if (!name) nameError = "field_name_required";
       else if (!formNamePattern.test(name) || name.startsWith("_") || name === "website") nameError = "field_name_invalid";
       else if (fields.some((other, otherIndex) => otherIndex < index && other.name === name)) nameError = "field_name_repeated";
-      const typeError = entry.type === "file" && ++files > 1 ? "form_file_once" : !formTypes.includes(entry.type) ? "field_type" : "";
+      const typeError = entry.type === "file" && ++files > 1 ? "form_file_once" : !formTypes.includes(entry.type) ? "form_field_type_unknown" : "";
       const choicesError = entry.type === "choice" && !(entry.choices || []).some((choice) => choice.trim()) ? "field_choices_required" : "";
       return {name: nameError, type: typeError, choices: choicesError};
     });
     return {slug: slugError, fields: fields.length ? "" : "form_fields_required", field};
   }
-  function formsInvalid() {
+  // formsUnpublishable mirrors validateFormsForPublish: hidden form
+  // sections are skipped, as ValidatePublication skips them.
+  function formsUnpublishable() {
     return doc.sections.some((section) => {
-      if (section.kind !== "form") return false;
+      if (section.kind !== "form" || section.hidden) return false;
       const errors = formErrors(section);
       return !!(errors.slug || errors.fields || errors.field.some((entry) => entry.name || entry.type || entry.choices));
     });
@@ -397,7 +400,10 @@
       row.append(el("legend", "", `${text("form_field")} ${index + 1}`));
       formInput(entry, "label", row, section.id, {label: "field_label", max: 200, focusKey: key("label"), onInput: (value) => {
         const name = row.querySelector('input[data-form="name"]');
-        if ((entry.name || "") === nameFromLabel(entry.label)) {
+        // The name follows the label until edited; a new field's field_N
+        // default counts as unedited while its label is still "Field N".
+        const name0 = entry.name || "";
+        if (name0 === nameFromLabel(entry.label) || (/^field_\d+$/.test(name0) && entry.label === `${text("form_field")} ${name0.slice(6)}`)) {
           entry.name = nameFromLabel(value);
           if (name) name.value = entry.name;
         }
@@ -463,7 +469,8 @@
     hint(fieldList, "fields", null, `builder-form-${section.id}-fields-hint`);
     fieldList.append(button("add_field", () => mutate(() => {
       const label = `${text("form_field")} ${form.fields.length + 1}`;
-      form.fields.push({name: uniqueName(form.fields, nameFromLabel(label)), label, type: "text", required: false, help: "", choices: []});
+      // field_N in every locale: an Arabic "حقل N" would derive just "N".
+      form.fields.push({name: uniqueName(form.fields, `field_${form.fields.length + 1}`), label, type: "text", required: false, help: "", choices: []});
     }), form.fields.length >= 30));
     group.append(fieldList);
     parent.append(group);
@@ -666,11 +673,6 @@
     pending = pending.catch(() => {}).then(async () => {
       if (blocked) throw new Error("Conflict requires reloading");
       if (!dirty) return;
-      if (formsInvalid()) {
-        const error = new Error("Form settings need fixing");
-        error.formInvalid = true;
-        throw error;
-      }
       const snapshot = copy(doc), savedSerial = serial;
       notify("saving");
       const response = await request("save", {
@@ -686,7 +688,7 @@
         timer = setTimeout(() => save().catch(() => {}), 900);
       }
     }).catch((error) => {
-      notify(blocked ? "conflict" : error.formInvalid ? "form_fix_errors" : "error", true);
+      notify(blocked ? "conflict" : "error", true);
       throw error;
     });
     return pending;
@@ -782,7 +784,7 @@
         notify("published");
       } catch (error) {
         if (error.slug !== undefined) takenSlug = error.slug;
-        else if (!error.formInvalid) notify(blocked ? "conflict" : "error", true);
+        else notify(blocked ? "conflict" : "error", true);
       } finally {
         publishing = false;
         controls.forEach(([node, disabled]) => node.disabled = disabled);
