@@ -1,0 +1,9 @@
+{{/* Explicit page template; custom overrides retain precedence. */}}
+{{part "header" .}}
+{{if publicUI .}}
+  {{$view := publicDetail .Content}}{{if $view}}
+  {{component "public-navigation" (publicNavigation "primary")}}
+  {{component "public-detail" (dict "View" $view "Back" (publicReturn (index .Query "back")) "Action" (dict "label" (t "public_ui_full_content") "url" "#public-content"))}}
+  {{with .Content}}<div id="public-content" tabindex="-1" class="prose-gp gp-public-content">{{safe .Body}}</div>{{end}}{{end}}
+{{else}}{{with .Content}}<article class="reading-article mx-auto"><h1>{{.Title}}</h1><div class="prose-gp mt-6">{{safe .Body}}</div></article>{{end}}{{end}}
+{{part "footer" .}}

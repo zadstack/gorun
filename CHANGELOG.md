@@ -10,6 +10,11 @@ All notable changes to GoRun are recorded here. The format follows
 - Canvas agent and provider cards list their inputs and the schedule that triggers them. A running agent turns a ring around its avatar and shows a short writing line, a failed node says why under its heading, and the toolbar counts running runs.
 - Schedule cards and the scheduled tasks panel show the next run as a clock time with a relative label, such as "Next 14:20 · in 42 minutes".
 - The flow and lanes views carry an edge legend, and an edge from an enabled schedule shows a clock mark.
+- Native task-entry search, choice and service layouts, with compact rows, image-led and featured/secondary result layouts in the page builder.
+- Shared opt-in public navigation, detail/action and feedback components, plus a default `public-detail` page template.
+- Search, taxonomy/field filters and pagination in native directories, including independent query state for multiple directories on one page.
+- Directory results that open an opted-in detail return to the same search, filters and page, and a filtered directory with no results offers a reset link.
+- **Suggest improvement** on every builder section offers validated layout alternatives that keep the section's text, links and media; preview renders in the sandbox, apply changes only the unsaved draft, and a configured AI provider may pick one of the allowed alternatives from layout metadata alone.
 
 ### Fixed
 

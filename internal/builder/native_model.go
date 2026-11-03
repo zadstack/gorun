@@ -2,9 +2,11 @@ package builder
 
 import (
 	"errors"
+	"net/url"
 	"regexp"
 	"slices"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -15,18 +17,28 @@ const (
 	maxNativeTextBytes   = 12000
 )
 
-// NativeOptions describes only editable content/options supported by the
-// existing gp-s section stylesheet. It accepts no arbitrary class, CSS or HTML.
+// NativeSearchOptions describes a local GET destination; rendering preserves a
+// safe link fallback until the theme expands the sanitized search marker.
+type NativeSearchOptions struct {
+	Action      string `json:"action"`
+	Label       string `json:"label"`
+	Placeholder string `json:"placeholder,omitempty"`
+	Param       string `json:"param,omitempty"`
+}
+
+// NativeOptions accepts typed content only, never arbitrary classes, CSS or HTML.
 type NativeOptions struct {
-	Eyebrow        string          `json:"eyebrow,omitempty"`
-	Background     string          `json:"background,omitempty" enum:",inherit,none,dots,grid,lines,circles,waves,paper,solid"`
-	SecondaryLink  string          `json:"secondary_link,omitempty"`
-	SecondaryLabel string          `json:"secondary_label,omitempty"`
-	Facts          []SectionFact   `json:"facts,omitempty"`
-	Columns        []string        `json:"columns,omitempty"`
-	Rows           []ComparisonRow `json:"rows,omitempty"`
-	Caption        string          `json:"caption,omitempty"`
-	Illustration   bool            `json:"illustration,omitempty"`
+	Search         *NativeSearchOptions `json:"search,omitempty"`
+	EmptyText      string               `json:"empty_text,omitempty"`
+	Eyebrow        string               `json:"eyebrow,omitempty"`
+	Background     string               `json:"background,omitempty" enum:",inherit,none,dots,grid,lines,circles,waves,paper,solid"`
+	SecondaryLink  string               `json:"secondary_link,omitempty"`
+	SecondaryLabel string               `json:"secondary_label,omitempty"`
+	Facts          []SectionFact        `json:"facts,omitempty"`
+	Columns        []string             `json:"columns,omitempty"`
+	Rows           []ComparisonRow      `json:"rows,omitempty"`
+	Caption        string               `json:"caption,omitempty"`
+	Illustration   bool                 `json:"illustration,omitempty"`
 	// ListType is the content type a directory section lists and searches
 	// (a type slug; a type that is not public renders nothing).
 	ListType string `json:"list_type,omitempty"`
@@ -44,8 +56,8 @@ type ComparisonCell struct {
 	Status string `json:"status,omitempty" enum:",yes,no"`
 }
 
-var nativeKinds = []string{"hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher", "directory"}
-var nativeOnlyKinds = []string{"steps", "comparison", "product_preview", "media_text", "switcher", "directory"}
+var nativeKinds = []string{"hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher", "directory", "task_entry"}
+var nativeOnlyKinds = []string{"steps", "comparison", "product_preview", "media_text", "switcher", "directory", "task_entry"}
 
 var listTypePattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,39}$`)
 
@@ -66,6 +78,10 @@ func validNativeVariant(kind, variant string) bool {
 		return variant == "split"
 	case "directory":
 		return variant == "compact"
+	case "task_entry":
+		return variant == "search_first" || variant == "choice_first" || variant == "service_first"
+	case "features":
+		return variant == "compact_rows" || variant == "image_led" || variant == "featured_secondary"
 	case "media_text":
 		return variant == "image_start" || variant == "image_end"
 	}
@@ -117,8 +133,8 @@ func validateNative(s Section) error {
 			return fail()
 		}
 		// Entry images: feature cards, steps, text-and-media rows and switcher
-		// panels; links, icons and featuring: feature cards only.
-		if s.Kind != "features" && (e.Link != "" || e.Icon != "" || e.Featured) {
+		// panels. Task choices may link and carry icons; featuring belongs to results.
+		if s.Kind != "features" && s.Kind != "task_entry" && (e.Link != "" || e.Icon != "" || e.Featured) {
 			return fail()
 		}
 		if !slices.Contains(nativeEntryImageKinds, s.Kind) && (e.Image != "" || e.ImageAlt != "") {
@@ -126,12 +142,15 @@ func validateNative(s Section) error {
 		}
 	}
 	if s.Native == nil {
-		if s.Kind == "comparison" || s.Kind == "directory" {
+		if s.Kind == "comparison" || s.Kind == "directory" || s.Kind == "task_entry" {
 			return fail()
 		}
 		return nil
 	}
 	n := s.Native
+	if err := validateTaskAndResultOptions(s); err != nil {
+		return err
+	}
 	if !slices.Contains(sectionBackgrounds, n.Background) {
 		return fail()
 	}
@@ -192,10 +211,54 @@ func validateNative(s Section) error {
 	return nil
 }
 
+func validateTaskAndResultOptions(s Section) error {
+	n := s.Native
+	fail := func() error { return errors.New("builder: unsupported task or result option") }
+	if n.Search != nil {
+		search := n.Search
+		if s.Kind != "task_entry" || s.Variant != "search_first" || strings.TrimSpace(search.Label) == "" || len(search.Label) > maxNativeLabelBytes || len(search.Placeholder) > maxNativeLabelBytes || strings.ContainsFunc(search.Label+search.Placeholder, unicode.IsControl) {
+			return fail()
+		}
+		if err := safeURL(search.Action, false); err != nil {
+			return err
+		}
+		u, err := url.Parse(search.Action)
+		if err != nil || !strings.HasPrefix(search.Action, "/") || u.Scheme != "" || u.Host != "" || u.RawQuery != "" || u.Fragment != "" || strings.ContainsAny(search.Action, "?#") || strings.HasPrefix(u.Path, "//") || strings.Contains(u.Path, "\\") || strings.ContainsFunc(u.Path, unicode.IsControl) {
+			return fail()
+		}
+		if search.Param != "" && !listTypePattern.MatchString(search.Param) {
+			return fail()
+		}
+	}
+	if s.Kind == "task_entry" {
+		if s.Variant == "search_first" && n.Search == nil {
+			return fail()
+		}
+		if s.Variant != "search_first" && len(s.Items) == 0 {
+			return errors.New("builder: task choices need a destination")
+		}
+		for _, entry := range s.Items {
+			if strings.TrimSpace(entry.Title) == "" || entry.Link == "" || entry.Featured {
+				return fail()
+			}
+		}
+	}
+	if len(n.EmptyText) > maxNativeTextBytes || (n.EmptyText != "" && (s.Kind != "features" || s.Variant == "" || s.Variant == "default")) {
+		return fail()
+	}
+	return nil
+}
+
 func defaultNative(s *Section, locale string) {
 	s.Library = SectionLibrary
 	s.Native = &NativeOptions{}
 	switch s.Kind {
+	case "task_entry":
+		s.Variant = "choice_first"
+		s.Items = []Entry{{Title: "Explore", Text: "Choose a published destination", Link: "/"}}
+		if locale == "ar" {
+			s.Items = []Entry{{Title: "استكشف", Text: "اختر وجهة منشورة", Link: "/"}}
+		}
 	case "steps":
 		for i := 0; i < 3; i++ {
 			s.Items = append(s.Items, Entry{Title: []string{"Write", "Review", "Publish"}[i], Text: "Describe this step"})

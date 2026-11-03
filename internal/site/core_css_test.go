@@ -43,3 +43,22 @@ func TestCoreStylesheetIsLinkedAndServed(t *testing.T) {
 		t.Fatalf("core.css in maintenance: %d", resp.StatusCode)
 	}
 }
+
+func TestNativeUIStylesheetIsAvailableWithoutLoadingOnUnrelatedPages(t *testing.T) {
+	e := boot(t)
+	_, home := e.get("/")
+	if strings.Contains(home, theme.NativeUICSSPath) {
+		t.Fatal("unrelated page loads native UI assets")
+	}
+	response, stylesheet := e.get(theme.NativeUICSSURL())
+	if response.StatusCode != 200 || !strings.Contains(response.Header.Get("Content-Type"), "text/css") {
+		t.Fatal("native UI stylesheet unavailable")
+	}
+	if !strings.Contains(response.Header.Get("Cache-Control"), "immutable") || stylesheet != string(theme.NativeUICSS()) {
+		t.Fatal("native stylesheet identity/cache mismatch")
+	}
+	e.setting("site.maintenance", true)
+	if response, _ := e.get(theme.NativeUICSSURL()); response.StatusCode != 200 {
+		t.Fatal("maintenance blocks public native styling")
+	}
+}
