@@ -10,10 +10,12 @@
   const el = (tag, text) => { const node = document.createElement(tag); if (text !== undefined) node.textContent = text; return node; };
   const identity = item => item.href;
   const title = item => item.title || labels.unnamed;
+  // Rail initials come from the first two words, so "03 · Prepare the draft" reads "PT", not "03".
+  const initials = item => (title(item).match(/\p{L}[\p{L}\p{N}]*/gu) || []).slice(0,2).map(word => [...word][0]).join('').toLocaleUpperCase() || [...title(item)].slice(0,2).join('');
   const valid = item => item && typeof item.id === 'string' && typeof item.title === 'string' && typeof item.board === 'string' && /^\/admin\/canvases\/[A-Za-z0-9]+#card-[a-f0-9-]{36}$/i.test(item.href) && ['agent','provider'].includes(item.kind);
   function showDetail(item, focus = false) {
     const focusedTab = detail.contains(document.activeElement) ? document.activeElement.dataset.dockTab : '';
-    selected = identity(item); detail.replaceChildren(); detail.hidden = false;
+    selected = identity(item); detail.replaceChildren(); detail.hidden = false; detail.dataset.dockKind = item.kind;
     const heading = el('h3', title(item)); heading.tabIndex = -1; heading.dataset.dockFocus = 'heading'; detail.append(heading);
     const state = el('p', item.configured ? labels.configured : labels.setup); state.className='agents-dock-state'; detail.append(state);
     const next = el('a', item.configured ? labels.open : labels.integrationSetup); next.href=item.href; next.className='agents-dock-next'; next.dataset.dockFocus='open'; detail.append(next);
@@ -80,13 +82,13 @@
     list.replaceChildren(); shortcuts.replaceChildren();
     status.textContent = data.truncated ? labels.truncated : entries.length ? '' : labels.empty;
     entries.forEach((item,index) => {
-      const button = el('button'); button.type = 'button'; button.dataset.identity = identity(item);
+      const button = el('button'); button.type = 'button'; button.dataset.identity = identity(item); button.dataset.dockKind = item.kind;
       button.dataset.dockFocus = 'entry-'+identity(item);
       button.setAttribute('aria-pressed', String(identity(item) === selected));
       button.append(el('strong', title(item)), el('small', `${item.board} · ${item.configured ? labels.configured : labels.setup}`));
       button.addEventListener('click', () => showDetail(item, true)); list.append(button);
       if (index < 5) {
-        const shortcut = el('button', [...title(item)].slice(0,2).join('')); shortcut.type = 'button';
+        const shortcut = el('button', initials(item)); shortcut.type = 'button';
         shortcut.title = `${title(item)} · ${item.board}`; shortcut.setAttribute('aria-label', shortcut.title);
         shortcut.setAttribute('aria-haspopup','dialog'); shortcut.addEventListener('click', () => open(shortcut,identity(item))); shortcuts.append(shortcut);
       }

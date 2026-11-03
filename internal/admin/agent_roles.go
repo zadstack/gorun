@@ -109,7 +109,9 @@ func agentRoles(locale string) []agentRole {
 		roles[i].Setup = pick(setup[roles[i].ID][0], setup[roles[i].ID][1])
 		roles[i].Skills = append(roles[i].Skills, extra[roles[i].ID]...)
 	}
-	return roles
+	// The orchestrator starts the team handoff, so it leads the list.
+	last := len(roles) - 1
+	return append([]agentRole{roles[last]}, roles[:last]...)
 }
 func findAgentRole(locale, id string) (agentRole, bool) {
 	for _, role := range agentRoles(locale) {

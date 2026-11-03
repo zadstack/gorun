@@ -33,5 +33,6 @@
   "short_intro": "Choose a role, inspect its skills and prepare a draft with your existing agent.",
   "skill_count": "skills",
   "available_help": "Available saved configuration for explicit selection; this is not live agent readiness.",
-  "execution_details": "Execution details"
+  "execution_details": "Execution details",
+  "badge": "Agent role"
 }

@@ -302,9 +302,11 @@ test('capture current README product screens with synthetic campaign data', asyn
   const weeklyAgent=await page.locator('.canvas-card[data-kind=agent]').first().getAttribute('data-card-id');
   const weeklySchedule=await page.locator('.canvas-card[data-kind=schedule]').first().getAttribute('data-card-id');
   const weeklyDB=db();
-  // Keep the floating panel (top right) clear of the cards: lower the schedule and note cards beneath it.
+  // Keep the floating panel (top right) clear of the cards: lower the schedule and note cards beneath it, keeping
+  // the note inside the viewport. Only a configured agent can be running, so the agent card gets the campaign
+  // assistant, and the source card reads the latest posts instead of waiting for a selection.
   const weeklyRow=weeklyDB.prepare('SELECT document_json FROM admin_canvases WHERE id=?').get(weeklyID) as any;
-  const weeklyCards=JSON.parse(weeklyRow.document_json).map((c:any)=>c.id===weeklySchedule?{...c,y:190}:c.kind==='note'?{...c,y:520}:c);
+  const weeklyCards=JSON.parse(weeklyRow.document_json).map((c:any)=>c.id===weeklySchedule?{...c,y:190}:c.kind==='note'?{...c,y:470}:c.kind==='agent'?{...c,title:'Editorial assistant',agent_id:agentID}:c.kind==='source'?{...c,title:'Recent posts',source_type:'post'}:c);
   weeklyDB.prepare('UPDATE admin_canvases SET document_json=? WHERE id=?').run(JSON.stringify(weeklyCards),weeklyID);
   weeklyDB.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at,started_at) VALUES(?,?,?,?,?,'running',?,?,?)").run(randomUUID(),weeklyID,owner,'readme-running',weeklyAgent,JSON.stringify({candidate:{input:{kind:'text'}}}),new Date(Date.now()-5000).toISOString(),new Date().toISOString());
   weeklyDB.prepare("INSERT INTO admin_canvas_schedules(board_id,node_id,provider_node_id,interval,consent_hash,enabled,next_run_at,status) VALUES(?,?,?,'daily','readme-hash',1,?,'enabled')").run(weeklyID,weeklySchedule,weeklyAgent,new Date(Date.now()+42*60_000).toISOString());

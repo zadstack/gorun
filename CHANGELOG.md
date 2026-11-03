@@ -5,9 +5,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Agent role templates, the canvas list and the agents drawer use the canvas card design: a kind avatar, a tinted heading and a written badge. The orchestrator role now comes first, and canvases in the list show a readable save time and their last run state.
+
 ### Fixed
 
 - Extension HTTP responses from an earlier activation no longer change a reactivated extension's delivery log, failure counters or error status.
+- Canvas template choices are a grid of cards again instead of seven narrow columns.
+- Agents rail shortcuts use the initials of the first two words, so a card titled "03 · Prepare the draft" shows PT instead of 03.
 
 ## [0.19.0] - 2026-11-03
 
