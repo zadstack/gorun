@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/zadstack/gorun/internal/admin"
+	"github.com/zadstack/gorun/internal/analytics"
 	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/builder"
@@ -51,6 +52,7 @@ func CoreModules() []kernel.Module {
 		api.New(),
 		admin.New(),
 		webhooks.New(),
+		analytics.New(),
 		commerce.New(),
 		saas.New(),
 		membership.New(),

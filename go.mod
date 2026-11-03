@@ -13,6 +13,7 @@ require (
 	github.com/minio/sio v0.5.1
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/oklog/ulid/v2 v2.1.2
+	github.com/oschwald/maxminddb-golang/v2 v2.8.0
 	github.com/pb33f/libopenapi v0.41.8
 	github.com/stripe/stripe-go/v82 v82.5.1
 	golang.org/x/crypto v0.58.0

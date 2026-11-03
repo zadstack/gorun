@@ -144,6 +144,15 @@ If a tool requests approval, report its request ID and wait for the decision.
 - **تكرار دوري بعد المراجعة.** الجدولة كل ساعة أو يوم أو أسبوع تبدأ معطّلة، وتحتاج تفعيلًا صريحًا، وتعيد التحقق من الصلاحيات في كل تشغيل.
 - **صلاحيات صريحة للوكلاء.** أنت تحدد العناصر التي يستطيع كل وكيل قراءتها أو الإضافة إليها أو التشغيل عليها في كل لوحة.
 
+يرسم عرض سير العمل كل نوع بطاقة بشكل خاص به ويعرض حالة التشغيل على اللوحة: يظهر للوكيل الجاري حلقة دوارة وخط اتصال متدفق وعدّاد في شريط الأدوات، مع مفتاح لحالات الخطوط. يرتب عرض المسارات البطاقات نفسها في أربعة أعمدة (المدخلات، التعليمات، التنفيذ، النتائج) للعرض فقط، وتسرد لوحة **المهام المجدولة** العائمة جداول اللوحة. [عروض اللوحة والجداول](docs/CANVASES.md).
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/canvas-lanes-en.png"><img src="assets/branding/screenshots/canvas-lanes-en.png" alt="لوحة في عرض المسارات: المدخلات والتعليمات والتنفيذ والنتائج في أربعة أعمدة" /></a><br /><sub>المسارات: البطاقات نفسها في أربعة أعمدة</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/canvas-schedules-en.png"><img src="assets/branding/screenshots/canvas-schedules-en.png" alt="لوحة فيها وكيل قيد التشغيل وخط اتصال متدفق ومفتاح الحالات ولوحة المهام المجدولة مفتوحة" /></a><br /><sub>وكيل قيد التشغيل ومفتاح الحالات والمهام المجدولة</sub></td>
+  </tr>
+</table>
+
 تعرض بطاقة الوكيل أو المزود معرّفها وهوية الوكيل أو المزود المختار، مع رابط استقبال لحدث موقّع يطابق الأمر المحفوظ والتعليمات التي راجعتها. تبدأ قواعد الأحداث الواردة غير مفعلة، وتحتاج إلى مراجعة وتفعيل صريحين. ويظل الوكيل الخارجي بحاجة إلى عميل MCP يعمل لديه. [إعداد أحداث اللوحة](docs/CANVASES.md#incoming-events-on-agent-and-provider-cards).
 
 #### اقتراحات تبدأ بالمراجعة
@@ -190,13 +199,24 @@ If a tool requests approval, report its request ID and wait for the decision.
 
 [القصة على الموبايل: الإعداد](assets/branding/screenshots/researcher-setup-ar-mobile.png) · [المراجعة](assets/branding/screenshots/researcher-review-ar-mobile.png) · [النتيجة](assets/branding/screenshots/researcher-result-ar-mobile.png).
 
-بدّل بين **سير العمل** و**الشبكة** و**القائمة** دون تغيير المحتوى أو الروابط المحفوظة. [القصة بالإنجليزية: الإعداد](assets/branding/screenshots/researcher-setup-en.png) · [المراجعة](assets/branding/screenshots/researcher-review-en.png) · [النتيجة](assets/branding/screenshots/researcher-result-en.png).
+بدّل بين **سير العمل** و**الشبكة** و**القائمة** و**المسارات** دون تغيير المحتوى أو الروابط المحفوظة. [القصة بالإنجليزية: الإعداد](assets/branding/screenshots/researcher-setup-en.png) · [المراجعة](assets/branding/screenshots/researcher-review-en.png) · [النتيجة](assets/branding/screenshots/researcher-result-en.png).
 
 *اللقطات ببيانات أطلس ستوديو الخيالية، والوصفة وكروتها متاحة في الإصدارات منذ 0.11.0. يرسل عميل اختبار الطلب الذي تمت مراجعته إلى مزوّد HTTP محلي برد تجريبي محدد، ثم يعيد الرد عبر مسار MCP الفعلي. تثبت التجربة الإعداد والموافقة ووصول النتيجة الخاصة، ولا تقيس جلب أخبار حية أو جودة نموذج. تشغيل الوصفة يدوي دون متابعة يومية تلقائية.*
 
 **حزم الوكلاء:** أضف تعليمات مهارات ومراجع نصية محدودة إلى الطلبات الفعلية بعد مراجعتها، للوكيل الخارجي أو توليد النص المُدار. اربط ملفات اتصالات MCP بإصدارات إعدادها وحالة فحصها المحفوظة. [إدارة المهارات ومراجع MCP](docs/AGENT-BUNDLES.md). يضبط العميل الخارجي روابطه وبيانات اتصاله وصلاحيات أدواته. يستطيع الوكيل النصي المُدار بنموذج مسمّى متوافق مع OpenAI استخدام [أدوات MCP تختارها صراحةً](docs/MANAGED-MCP-TOOLS.md)، مع مراجعة صاحب الوكيل لكل استدعاء وحفظ الإجابة النهائية كملاحظة خاصة. يبدأ هذا الوضع معطلًا ويدعم التشغيل اليدوي فقط.
 
 [مساحة اللوحات](docs/CANVASES.md) · [عمليات اللوحات](docs/CANVAS-OPERATIONS-CONTRACT.md) · [استوديو المحتوى](docs/CONTENT_STUDIO.md)
+
+### النماذج
+
+يمكن لكل نموذج في الموقع حفظ إرسالاته. تعرض **الوارد ← النماذج** نماذجك، ولكل نموذج جدول خاص أعمدته هي حقوله. أضف قسم **نموذج** في منشئ الصفحات لتحديد الحقول ونص الزر ورسالة الشكر، أو أرسل POST إلى `/forms/{slug}` مع رمز CSRF لالتقاط نموذج من قالب. [نماذج الموقع](docs/FORMS.md).
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/forms-ar.png"><img src="assets/branding/screenshots/forms-ar.png" alt="إدارة النماذج بالعربية: جدول نموذج واحد بإدخالات تجريبية وحالة وعمود لكل حقل" /></a><br /><sub>جدول إدخالات نموذج واحد</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/builder-form-en.png"><img src="assets/branding/screenshots/builder-form-en.png" alt="منشئ الصفحات وفيه قسم نموذج مفتوح يعرض العنوان المختصر ورسالة الشكر ومحرر الحقول" /></a><br /><sub>قسم النموذج في منشئ الصفحات (الواجهة بالإنجليزية)</sub></td>
+  </tr>
+</table>
 
 ### وأيضًا
 

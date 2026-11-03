@@ -137,6 +137,9 @@ func (s *service) Render(ctx context.Context, w http.ResponseWriter, req kernel.
 	if err != nil {
 		return s.fail(ctx, w, set, tc, err)
 	}
+	// Tell a page-mark middleware (analytics injection) that this response
+	// is a theme page; the 500 page and every non-theme handler stay unmarked.
+	httpx.MarkThemePage(ctx)
 	writeHTML(w, tc.Status, buf.Bytes())
 	return nil
 }

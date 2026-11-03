@@ -1,19 +1,19 @@
 # GoRun product screenshots
 
-The canonical PNGs were last refreshed for 0.17 (after the v0.17.0 tag) from the actual GoRun
+The canonical PNGs were last refreshed for 0.18 (from main at 0.18.x, after #195) from the actual GoRun
 application, using fictional Atlas Studio content and the sample
 editor Amira Hassan. One fresh local fixture supplies the editor, content list,
 site design, role catalog, canvas story, navigation, agent drawer, approvals,
-public theme and four new AI-suggestion/extension-method views. Existing user or
+public theme, AI-suggestion/extension-method views, the canvas Lanes and schedules views, and site forms. Existing user or
 production data is never opened or changed. These local images do not establish
 which application version runs on GoCloud or any other hosted site.
 
-From `e2e/`, with a supported Node runtime and Go available:
+From `e2e/`, with a supported Node runtime and Go available (the `setup` project signs in the first admin):
 
 ```sh
 npm ci
 npx playwright install chromium
-README_SCREENSHOTS=1 npm test -- tests/readme-screenshots.spec.ts --project=chromium
+README_SCREENSHOTS=1 npx playwright test tests/global.setup.ts tests/readme-screenshots.spec.ts --project=setup --project=chromium
 ```
 
 The nine `researcher-*.png` images come from the Updates Researcher story test. Run it, then
@@ -21,7 +21,7 @@ copy its output: `recipe` becomes `setup`, `recipe-review` becomes `review`, `re
 becomes `result`; `-en` stays, `-ar` (390 px) becomes `-ar-mobile` and `-ar-desktop` becomes `-ar`.
 
 ```sh
-npm test -- tests/agent-recipes.spec.ts --project=chromium -g "Updates Researcher recipe EN/AR"
+npx playwright test tests/global.setup.ts tests/agent-recipes.spec.ts --project=setup --project=chromium -g "Updates Researcher recipe EN/AR|first admin"
 ```
 
 The READMEs show desktop screenshots two per row (HTML tables at 50% width, each image linking
@@ -64,3 +64,18 @@ scrolling, canvas overlap, media loading and credential leakage. Images are
 ordinary browser screenshots, not composited UI, performance measurements or
 pixel-perfect test baselines. The capture does not deploy software or publish a
 site.
+
+Five screens were added for 0.18. All are seeded into the same fresh fixture, with synthetic data only:
+
+- `canvas-lanes-en.png`: the Atlas Studio campaign board in the Lanes view. The capture checks that
+  switching to Lanes leaves the saved board version unchanged.
+- `canvas-schedules-en.png`: a separate "Weekly editorial brief" board from the periodic-brief preset,
+  in the Workflow view. One `running` row (with `started_at`) is inserted into `admin_canvas_runs` and
+  one enabled row into `admin_canvas_schedules`, the way the canvas specs seed them, so the agent shows
+  its live state and the edges flow, with the edge legend and the expanded Scheduled tasks panel. Nothing
+  is run and no provider is called; the schedule and note cards are moved below the floating panel.
+- `forms-en.png` and `forms-ar.png`: two forms are built and published through the page builder (an English
+  "Book a call" and an Arabic "طلب موعد"), then five fictional entries each (two unread) are inserted into
+  `form_entries`. This avoids the shared per-IP limit on public `/forms/*` posts; no visitor submits anything.
+- `builder-form-en.png`: the page builder with the English Form section open, scrolled to the form
+  settings and field editor. The live preview uses the fixture theme.

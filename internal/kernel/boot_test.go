@@ -402,3 +402,61 @@ func TestBootDiagnosticsDoNotStartOnWireFailure(t *testing.T) {
 		t.Fatal("failed-boot collector cleanup stalled")
 	}
 }
+
+// OnClose functions run once on App.Close, newest first, while the main
+// database is still open, and also when boot fails after they registered.
+func TestOnCloseRunsBeforeDatabaseCloses(t *testing.T) {
+	var order []string
+	reg := func(name string) fakeModule {
+		return fakeModule{name: name, register: func(d *kernel.Deps) error {
+			d.OnClose(func() {
+				if err := d.DB.Ping(); err != nil {
+					t.Errorf("%s: main database closed before OnClose: %v", name, err)
+				}
+				order = append(order, name)
+			})
+			return nil
+		}}
+	}
+	app, err := kernel.Boot(context.Background(), testConfig(t), []kernel.Module{settingsmod.New(), reg("first"), reg("second")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	app.Close()
+	app.Close()
+	if strings.Join(order, ",") != "second,first" {
+		t.Fatalf("OnClose order = %v, want [second first] once", order)
+	}
+
+	order = nil
+	failing := fakeModule{name: "failing", register: func(*kernel.Deps) error { return errors.New("boom") }}
+	if _, err := kernel.Boot(context.Background(), testConfig(t), []kernel.Module{settingsmod.New(), reg("opened"), failing}); err == nil {
+		t.Fatal("boot succeeded with a failing module")
+	}
+	if strings.Join(order, ",") != "opened" {
+		t.Fatalf("OnClose after failed boot = %v, want [opened]", order)
+	}
+}
+
+// A panicking OnClose function is recovered: the others still run and the
+// main database still closes.
+func TestOnClosePanicDoesNotStopShutdown(t *testing.T) {
+	var ran []string
+	mod := fakeModule{name: "closers", register: func(d *kernel.Deps) error {
+		d.OnClose(func() { ran = append(ran, "first") })
+		d.OnClose(func() { panic("closer boom") })
+		d.OnClose(func() { ran = append(ran, "third") })
+		return nil
+	}}
+	app, err := kernel.Boot(context.Background(), testConfig(t), []kernel.Module{settingsmod.New(), mod})
+	if err != nil {
+		t.Fatal(err)
+	}
+	app.Close()
+	if strings.Join(ran, ",") != "third,first" {
+		t.Fatalf("closers that ran = %v, want [third first]", ran)
+	}
+	if err := app.Deps.DB.Ping(); err == nil {
+		t.Fatal("main database still open after Close")
+	}
+}

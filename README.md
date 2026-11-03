@@ -239,6 +239,15 @@ With a configured AI provider, review the exact destination and site context bef
 
 [Arabic suggestions on mobile](assets/branding/screenshots/canvas-ai-suggestions-ar-mobile.png). These documentation examples come from a scripted local HTTP provider, not a live model or evidence of provider availability.
 
+Workflow view draws each card kind with its own shape and shows run state on the board: a running agent has a turning ring, a flowing edge and a count in the toolbar, with a legend for edge states. Lanes arranges the same cards in four columns (inputs, instructions, execution, results) for display only, and a floating **Scheduled tasks** panel lists the board's schedules. [Canvas views and schedules](docs/CANVASES.md).
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/canvas-lanes-en.png"><img src="assets/branding/screenshots/canvas-lanes-en.png" alt="Canvas in the Lanes view: inputs, instructions, execution and results in four columns" /></a><br /><sub>Lanes: the same cards in four columns</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/canvas-schedules-en.png"><img src="assets/branding/screenshots/canvas-schedules-en.png" alt="Canvas with a running agent, a flowing edge, the edge legend and the Scheduled tasks panel expanded" /></a><br /><sub>Running agent, edge legend and scheduled tasks</sub></td>
+  </tr>
+</table>
+
 Each agent or provider card shows its own ID and selected agent/provider identity, with a signed webhook matched to a saved command and reviewed instructions. Incoming-event rules start disabled and require explicit review and enablement; external agents still need their MCP client running. [Configure canvas events](docs/CANVASES.md#incoming-events-on-agent-and-provider-cards).
 
 ### Your saved actions, within reach
@@ -273,7 +282,7 @@ The opposite-side agents rail opens your own canvas cards. Inspect **Integration
   </tr>
 </table>
 
-Switch between **Workflow**, **Grid** and **List** views without changing the saved content or connections. [Arabic mobile story: setup](assets/branding/screenshots/researcher-setup-ar-mobile.png) · [Review](assets/branding/screenshots/researcher-review-ar-mobile.png) · [Result](assets/branding/screenshots/researcher-result-ar-mobile.png).
+Switch between **Workflow**, **Grid**, **List** and **Lanes** views without changing the saved content or connections. [Arabic mobile story: setup](assets/branding/screenshots/researcher-setup-ar-mobile.png) · [Review](assets/branding/screenshots/researcher-review-ar-mobile.png) · [Result](assets/branding/screenshots/researcher-result-ar-mobile.png).
 
 *These screenshots use fictional Atlas Studio data. The recipe and its cards ship in releases since 0.11.0. A test client sends the reviewed request to a scripted local HTTP provider, then returns its response through the real MCP workflow. This demonstrates setup, consent and private delivery; it does not demonstrate live news retrieval or model quality. This recipe is manually run, with no daily polling.*
 
@@ -291,6 +300,17 @@ Switch between **Workflow**, **Grid** and **List** views without changing the sa
 [Arabic mobile roles](assets/branding/screenshots/agent-roles-ar-mobile.png). The catalog shows example instructions; it is not a team of running agents.
 
 [MCP and permissions](docs/MCP.md) · [Canvases](docs/CANVASES.md) · [REST API](docs/API.md)
+
+### Forms
+
+Every form on the site can store its submissions. **Inbox → Forms** lists your forms, and each one has its own table whose columns are that form's fields. Add a **Form** section in the page builder to define fields, a button label and a thank-you message, or post to `/forms/{slug}` with the CSRF token to capture a form from a theme. [Site forms](docs/FORMS.md).
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/forms-en.png"><img src="assets/branding/screenshots/forms-en.png" alt="Forms admin showing one form's table with fictional entries, status, and one column per field" /></a><br /><sub>One form's table of entries</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/builder-form-en.png"><img src="assets/branding/screenshots/builder-form-en.png" alt="Page builder with a Form section open, showing its slug, thank-you message and field editor" /></a><br /><sub>Form section in the page builder</sub></td>
+  </tr>
+</table>
 
 ## Operate with confidence
 

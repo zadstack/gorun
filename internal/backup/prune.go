@@ -9,8 +9,8 @@ import (
 // Prune deletes the oldest complete local backup pairs under dataDir so that
 // at most keep complete pairs remain (newest first). A complete pair has both
 // .db and .tar.gz. Incomplete stamps are left alone. keep < 1 is a no-op.
-// Each pruned stamp removes .db, .tar.gz, .manifest.json and .remote.json when
-// present. Create is unchanged: callers opt into Prune after Create.
+// Each pruned stamp removes .db, .tar.gz, -analytics.db, .manifest.json and
+// .remote.json when present. Create is unchanged: callers opt into Prune after Create.
 func Prune(dataDir string, keep int) (removed int, err error) {
 	if keep < 1 {
 		return 0, nil
@@ -48,6 +48,7 @@ func removeStamp(dir, stamp string) (int, error) {
 	for _, name := range []string{
 		stamp + ".db",
 		stamp + ".tar.gz",
+		stamp + analyticsSuffix,
 		stamp + ".manifest.json",
 		stamp + ".remote.json",
 	} {

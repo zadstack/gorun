@@ -24,13 +24,16 @@ type ExternalRequirement struct {
 }
 
 type Inspection struct {
-	Stamp                string                `json:"stamp"`
-	CheckedAt            string                `json:"checked_at"`
-	LocalComplete        bool                  `json:"local_complete"`
-	IntegrityOK          bool                  `json:"integrity_ok"`
-	ForeignKeyViolations int                   `json:"foreign_key_violations"`
-	ArchiveFiles         int                   `json:"archive_files"`
-	RecoveryKeyArchived  bool                  `json:"recovery_key_archived"`
+	Stamp                string `json:"stamp"`
+	CheckedAt            string `json:"checked_at"`
+	LocalComplete        bool   `json:"local_complete"`
+	IntegrityOK          bool   `json:"integrity_ok"`
+	ForeignKeyViolations int    `json:"foreign_key_violations"`
+	ArchiveFiles         int    `json:"archive_files"`
+	RecoveryKeyArchived  bool   `json:"recovery_key_archived"`
+	// Analytics reports that the backup has the optional analytics.db
+	// member (restore puts it back as <destination>/analytics.db).
+	Analytics            bool                  `json:"analytics_included"`
 	Consistency          string                `json:"consistency"`
 	Readiness            string                `json:"readiness"`
 	Errors               []string              `json:"errors"`
@@ -59,7 +62,7 @@ func InspectWith(manifestPath string, key []byte) (*Inspection, error) {
 		return nil, err
 	}
 	dir := filepath.Dir(manifestPath)
-	r := &Inspection{Stamp: m.Stamp, CheckedAt: time.Now().UTC().Format(time.RFC3339), Consistency: m.Consistency, Readiness: "local_ok",
+	r := &Inspection{Stamp: m.Stamp, CheckedAt: time.Now().UTC().Format(time.RFC3339), Consistency: m.Consistency, Readiness: "local_ok", Analytics: m.Analytics != nil,
 		Errors: []string{}, Warnings: []string{}, CutoverChecklist: append([]string{}, backupLimitations...),
 		ExternalRequirements: []ExternalRequirement{}, Remote: receiptAtWithKey(dir, m.Stamp, key)}
 	if len(key) == 32 {
@@ -87,7 +90,7 @@ func InspectWith(manifestPath string, key []byte) (*Inspection, error) {
 		return r, nil
 	}
 	r.LocalComplete = true
-	for _, f := range []FileDigest{m.Database, m.Archive} {
+	for _, f := range m.Members() {
 		p := filepath.Join(dir, f.Name)
 		actual, err := digest(p)
 		if err != nil {
@@ -102,9 +105,15 @@ func InspectWith(manifestPath string, key []byte) (*Inspection, error) {
 			r.Warnings = append(r.Warnings, "encrypted_upload_limit_exceeded")
 		}
 	}
-	for _, suffix := range []string{"-wal", "-shm"} {
-		if _, err := os.Lstat(filepath.Join(dir, m.Database.Name) + suffix); err == nil || !os.IsNotExist(err) {
-			r.Errors = append(r.Errors, "stale_sqlite_sidecar")
+	sqliteFiles := []string{m.Database.Name}
+	if m.Analytics != nil {
+		sqliteFiles = append(sqliteFiles, m.Analytics.Name)
+	}
+	for _, name := range sqliteFiles {
+		for _, suffix := range []string{"-wal", "-shm"} {
+			if _, err := os.Lstat(filepath.Join(dir, name) + suffix); err == nil || !os.IsNotExist(err) {
+				r.Errors = append(r.Errors, "stale_sqlite_sidecar")
+			}
 		}
 	}
 	if len(r.Errors) == 0 {
@@ -122,6 +131,9 @@ func InspectWith(manifestPath string, key []byte) (*Inspection, error) {
 			if err := d.Close(); err != nil {
 				r.Errors = append(r.Errors, "database_close_failed")
 			}
+		}
+		if m.Analytics != nil {
+			r.checkAnalytics(filepath.Join(dir, m.Analytics.Name))
 		}
 	}
 	if !r.RecoveryKeyArchived {
@@ -196,6 +208,24 @@ func (r *Inspection) checkDatabase(d *sql.DB) {
 		r.Errors = append(r.Errors, "foreign_key_violations")
 	}
 	r.checkExternalMedia(d)
+}
+
+// checkAnalytics runs SQLite's integrity check on the analytics copy. Its
+// schema belongs to the analytics module, so nothing else is inspected. It
+// runs only when the manifest lists the member: Create never lists a copy
+// that failed this check, so a failure here means the copy was changed
+// after the backup and it blocks like any other tampered member.
+func (r *Inspection) checkAnalytics(path string) {
+	d, err := openReadOnlyDB(path)
+	if err != nil {
+		r.Errors = append(r.Errors, "analytics_unreadable")
+		return
+	}
+	defer d.Close()
+	var answer string
+	if err := d.QueryRow(`PRAGMA integrity_check`).Scan(&answer); err != nil || answer != "ok" {
+		r.Errors = append(r.Errors, "analytics_integrity_failed")
+	}
 }
 
 func (r *Inspection) checkExternalMedia(d *sql.DB) {
