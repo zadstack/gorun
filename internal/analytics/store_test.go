@@ -156,6 +156,9 @@ func TestStoreRecreatesMissingFile(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	if n := countEvents(t, s); n != 0 {
+		t.Fatalf("reads after file loss see %d events of the deleted file, want an empty database", n)
+	}
 	if err := s.Insert(ctx, ev); err != nil {
 		t.Fatalf("insert after file loss: %v", err)
 	}

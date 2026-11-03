@@ -89,8 +89,14 @@ func openDB(path string) (*sql.DB, error) {
 // Path is the analytics.db file path.
 func (s *Store) Path() string { return s.path }
 
-// DB returns the current analytics.db handle.
+// DB returns the current analytics.db handle. Like Insert it recreates a
+// file deleted while running, so reads see an empty database instead of the
+// unlinked one. It returns nil after Close; when recreating fails it
+// returns the handle it has (possibly nil) and the query reports the error.
 func (s *Store) DB() *sql.DB {
+	if d, err := s.ensure(); err == nil {
+		return d
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.db
