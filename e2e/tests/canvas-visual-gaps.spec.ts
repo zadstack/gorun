@@ -111,6 +111,8 @@ test('chips, next run, legend and the scheduled-edge clock', async ({page})=>{
  const chips=page.locator(`#card-${agent} .canvas-node-chips li`);
  await expect(chips.first()).toHaveText(/^المدخلات: /);
  await expect(chips).toHaveCount(1);
+ // Chips must not reuse data-card-id: selectors and run-state code treat that attribute as a card.
+ await expect(page.locator('[data-canvas-cards] [data-card-id]')).toHaveCount(await page.locator('[data-canvas-cards] .canvas-card').count());
  await expect(page.locator('.canvas-legend')).toBeVisible();
  await expect(page.locator('.canvas-legend li')).toHaveCount(4);
  await enableSchedule(board,schedule,agent);

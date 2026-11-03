@@ -129,7 +129,7 @@
     function chips(card) {
       const document = api.document(), list = el('ul', undefined, 'canvas-node-chips'), number = new Intl.NumberFormat(lang());
       const inbound = (document?.edges || []).filter(edge => edge.to === card.id);
-      list.dataset.cardId = card.id;
+      list.dataset.chipsFor = card.id;
       const inputs = inbound.filter(edge => document.cards.find(c => c.id === edge.from)?.kind !== 'schedule').length;
       list.append(el('li', `${t('chip_inputs')}: ${number.format(inputs)}`));
       for (const edge of inbound) {
@@ -140,7 +140,7 @@
     }
     function updateChips() {
       for (const list of cardsEl.querySelectorAll('.canvas-node-chips')) {
-        const card = api.document()?.cards.find(c => c.id === list.dataset.cardId);
+        const card = api.document()?.cards.find(c => c.id === list.dataset.chipsFor);
         if (card) list.replaceWith(chips(card));
       }
     }
