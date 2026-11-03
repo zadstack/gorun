@@ -191,10 +191,10 @@ theme (non-control-flow), from a grep of `{{ … }}` across `themes/<slug>/**/*.
 | business | default set + `excerpt` | `{{with products}}` on the front page (services strip), degrades to nothing | none |
 | magazine, portfolio | default set | none | none |
 | docs | `t url asset part component brandImg date` | none | none |
+| patterns (company, editorial, guidebook, showcase) | `t url asset part img date excerpt` | company: `{{with products}}` offerings strip | none |
 
 Site registers one theme function, `form` (`{{form "slug" csrf .Request.URL.Path}}`, see [FORMS.md](FORMS.md)).
 The theme engine wraps it so templates pass no locale, and defines a stub that returns nothing when site is absent.
-| patterns (company, editorial, guidebook, showcase) | `t url asset part img date excerpt` | company: `{{with products}}` offerings strip | none |
 
 The theme engine (`internal/theme/funcs.go`) registers `products` and `product` fallbacks that
 return nil, then overlays `Deps.Theme.Funcs()`; commerce replaces them when booted. This is the

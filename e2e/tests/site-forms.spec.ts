@@ -60,14 +60,15 @@ async function buildFormPage(page: Page, opts: { pageSlug: string; formSlug: str
 
 // post clicks a submit control (or runs a request) and retries after the
 // shared rate-limit window when the server answers 429.
-async function submitUI(page: Page, formSlug: string, click: () => Promise<void>) {
+// prepare opens the page and fills the form; it runs again after a 429 so no field depends on history restore.
+async function submitUI(page: Page, formSlug: string, prepare: () => Promise<void>, click: () => Promise<void>) {
   for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await prepare();
     const posted = page.waitForResponse((r) => r.request().method() === "POST" && new URL(r.url()).pathname === `/forms/${formSlug}`);
     await click();
     const response = await posted;
     if (response.status() !== 429) return response;
     await page.waitForTimeout(61_000);
-    await page.goBack().catch(() => {});
   }
   throw new Error("rate limited three times");
 }
@@ -141,10 +142,14 @@ test.describe.serial("site forms", () => {
       await expect(form.locator(`#sf-${formSlugAr}-email`)).toBeFocused();
       expect(posts).toBe(0);
 
-      await form.locator(`#sf-${formSlugAr}-email`).fill("mona@e2e.test");
-      await form.locator(`#sf-${formSlugAr}-plan`).selectOption("pro");
-      await form.locator(`#sf-${formSlugAr}-notes`).fill("ملاحظة, بفاصلة");
-      const response = await submitUI(visit, formSlugAr, () => form.locator('button[type="submit"]').click());
+      const fillAr = async () => {
+        await form.locator(`#sf-${formSlugAr}-name`).fill("منى");
+        await form.locator(`#sf-${formSlugAr}-email`).fill("mona@e2e.test");
+        await form.locator(`#sf-${formSlugAr}-plan`).selectOption("pro");
+        await form.locator(`#sf-${formSlugAr}-notes`).fill("ملاحظة, بفاصلة");
+      };
+      await fillAr();
+      const response = await submitUI(visit, formSlugAr, async () => { await visit.goto(`/${pageAr}`); await fillAr(); }, () => form.locator('button[type="submit"]').click());
       expect([200, 303]).toContain(response.status());
       await visit.waitForLoadState("load");
       await expect(visit.locator("body")).toContainText("وصلنا طلبك");
@@ -159,10 +164,13 @@ test.describe.serial("site forms", () => {
       await expect(form).toBeVisible();
       await expect(visit.locator("html")).toHaveAttribute("dir", "ltr");
       await expect(form.locator('button[type="submit"]')).toHaveText(/Send/);
-      await form.locator(`#sf-${formSlugEn}-name`).fill("Sam");
-      await form.locator(`#sf-${formSlugEn}-email`).fill("sam@e2e.test");
-      await form.locator(`#sf-${formSlugEn}-plan`).selectOption("basic");
-      const response = await submitUI(visit, formSlugEn, () => form.locator('button[type="submit"]').click());
+      const fillEn = async () => {
+        await form.locator(`#sf-${formSlugEn}-name`).fill("Sam");
+        await form.locator(`#sf-${formSlugEn}-email`).fill("sam@e2e.test");
+        await form.locator(`#sf-${formSlugEn}-plan`).selectOption("basic");
+      };
+      await fillEn();
+      const response = await submitUI(visit, formSlugEn, async () => { await visit.goto(`/en/${pageEn}`); await fillEn(); }, () => form.locator('button[type="submit"]').click());
       expect([200, 303]).toContain(response.status());
       await visit.waitForLoadState("load");
       await expect(visit.locator("body")).toContainText("We got your request");

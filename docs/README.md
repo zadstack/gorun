@@ -55,7 +55,6 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | [AGENT-MODELS.md](AGENT-MODELS.md) | How agent models connect |
 | [API.md](API.md) | REST `/api/v1` |
 | [CANVASES.md](CANVASES.md) | Canvases as operational workspaces |
-| [FORMS.md](FORMS.md) | Site forms: builder and captured forms, entry tables, CSV, webhook |
 | [CANVAS-AI-SUGGESTIONS.md](CANVAS-AI-SUGGESTIONS.md) | Reviewed AI canvas suggestions: exact destination and context confirmed first |
 | [CANVAS-INBOUND-WEBHOOKS.md](CANVAS-INBOUND-WEBHOOKS.md) | Signed inbound commands for a canvas card, disabled by default |
 | [CANVAS-OPERATIONS-CONTRACT.md](CANVAS-OPERATIONS-CONTRACT.md) | Operational canvas frontend/backend contract v1 |
@@ -76,6 +75,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | [CONTENT_STUDIO.md](CONTENT_STUDIO.md) | Reviewable AI text/media candidates |
 | [MIGRATION.md](MIGRATION.md) | WordPress REST / WXR import |
 | [STORAGE.md](STORAGE.md) | Data directory layout and media |
+| [FORMS.md](FORMS.md) | Site forms: builder and captured forms, entry tables, CSV, webhook |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | Integrations hub: Cloudflare token and discovery, bucket binding, mail test |
 | [LOGIN-SECURITY.md](LOGIN-SECURITY.md) | Trusted proxies and login IP restrictions |
 | [private-intake.md](private-intake.md) | Private report intake, disabled by default: a limited human-operated queue, not an emergency channel |

@@ -99,7 +99,7 @@ unknown, closed or captured form. Builder pages inject their forms automatically
 
 - **CSRF:** `POST /forms/{slug}` needs the token. A request without it is refused and stores nothing.
 - **Honeypot:** a filled hidden `website` field gets a silent success and stores nothing.
-- **Rate limit:** 5 submissions a minute per IP across all `/forms/*`, shared with the contact form.
+- **Rate limit:** 5 submissions a minute per IP, shared with the contact form (comments and reports have their own limits).
 - **Values are text.** They are stored as text, escaped wherever they are shown, and never evaluated. Numbers, dates
   and choices are checked on pinned fields.
 - **No files on captured forms.** Only a builder form with a file field takes one: one file, checked against the contact
@@ -147,5 +147,5 @@ unknown, closed or captured form. Builder pages inject their forms automatically
 يعرض النموذج المنشور من المنشئ بنفس الشكل والتحقق، ولا يعرض شيئًا لنموذج غير موجود أو مغلق أو ملتقط.
 
 **الأمان:** رمز CSRF مطلوب (بدونه يُرفض الطلب ولا يُحفظ شيء). حقل `website` المخفي فخّ للروبوتات فيُقبل بصمت ولا يُحفظ شيء.
-الحد 5 رسائل في الدقيقة لكل IP عبر كل `/forms/*` مشتركًا مع نموذج التواصل. القيم تُحفظ نصوصًا وتُعرض مُهرَّبة. النماذج الملتقطة لا تقبل
+الحد 5 رسائل في الدقيقة لكل IP، مشتركًا مع نموذج التواصل (للتعليقات والبلاغات حدودها الخاصة). القيم تُحفظ نصوصًا وتُعرض مُهرَّبة. النماذج الملتقطة لا تقبل
 ملفات. الضغط المزدوج على زر الإرسال ينتج رسالة واحدة. التدقيق يسجّل الإرسال بدون القيم.
