@@ -149,7 +149,12 @@ func (h *handlers) updateBackup(ctx context.Context) (update.Report, error) {
 	}
 	_ = h.d.Settings.Set(ctx, SettingBackupLastSuccess, success)
 	h.d.Audit.Record(ctx, "system.update.backup", "system", "update", map[string]any{"stamp": res.Stamp, "files": res.Count})
-	return update.Report{OK: true, Data: map[string]any{"stamp": res.Stamp, "bytes": success.Bytes, "files": res.Count, "verified": true}}, nil
+	data := map[string]any{"stamp": res.Stamp, "bytes": success.Bytes, "files": res.Count, "verified": true, "analytics": res.Analytics != ""}
+	// Analytics is optional: a skipped copy is recorded, never blocking.
+	if noteAnalyticsSkipped(ctx, h.d, res, "update") {
+		data["analytics_skipped"] = res.AnalyticsSkipped
+	}
+	return update.Report{OK: true, Data: data}, nil
 }
 
 func (h *handlers) updateHealth(ctx context.Context) (update.Report, error) {

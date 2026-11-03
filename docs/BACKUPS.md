@@ -59,20 +59,34 @@ keeps collecting, so recent writes still in the WAL are included.
   sites with analytics turned off, and backups that excluded it all keep
   `format_version` 1 and verify, prune and restore as before.
 - Releases older than this one reject a manifest that has the member, because
-  they refuse unknown manifest fields. Inspect and restore such a backup with
-  this release or a newer one, including after rolling back an update.
+  they refuse unknown manifest fields. See [Rolling back](#rolling-back-to-an-older-release).
 - Retention deletes `<stamp>-analytics.db` together with its stamp. Encrypted
   remote uploads send it as a third object, `<stamp>-analytics.db.gorb`, and the
   upload counts as complete only when all three files are uploaded and read back.
-  `gorun backup-decrypt` recovers it like the others.
+  `gorun backup-decrypt` recovers it like the others. A large `analytics.db` can
+  push an upload past its time limit, so the upload ends `partial` (database
+  and archive uploaded, analytics not). If that
+  keeps happening, turn on the exclude setting below.
 - The Backups list offers it for download next to the database.
 
 **Excluding analytics.** Turn on **Settings → Analytics → Leave analytics out of
 backups** (setting `analytics.backup_exclude`, off by default) to leave
 `analytics.db` out of all backups. For one CLI run, pass
 `gorun backup --skip-analytics`. The CLI also reads the setting from the site
-database. If `analytics.db` exists but cannot be copied, the backup fails and
-says so. Fix the file or exclude analytics to keep backing up.
+database. The setting fails closed: if it cannot be read, analytics is left
+out and the backup warns.
+
+**When analytics cannot be copied.** Analytics never stops a core backup or an
+update. If `analytics.db` is not a regular file (a symlink or a directory),
+cannot be copied, or its copy fails `PRAGMA integrity_check`, the copy is
+discarded and the backup completes without the member. The skip is always
+reported: **Back up now** shows a notice, a scheduled backup records a warning
+(stage `analytics`) on the Backups page and in System Health, the pre-update
+backup records `analytics_skipped` in its report, and `gorun backup` prints
+`analytics: skipped (<reason>)`. Each skip is audited as
+`system.backup_analytics_skipped` and logged. Repair or remove the file, or turn
+on the exclude setting. Inspection blocks on an analytics error only when the
+manifest lists the member, which means the copy changed after the backup.
 
 **Restoring analytics.** A restore of a backup that has the member writes
 `analytics.db` into the new directory beside `gorun.db`, checksum-verified and
@@ -106,6 +120,20 @@ permissions. `backup.local.last_success` records the last verified admin/manual
 or scheduled copy. Creation is audited as `system.backup` or
 `system.backup_scheduled`; failures use `system.backup_failed`,
 `system.backup_schedule_failed` and `system.backup_retention_failed`.
+
+## Rolling back to an older release
+
+Rolling back GoRun swaps the binary only. It never restores data, so restore a
+backup deliberately when you need older data.
+
+- Restore a backup that has the analytics member with the CLI of the newer
+  release that made it: `gorun backup-inspect` and `gorun backup-restore` from
+  that release (or a later one). Older releases refuse its manifest.
+- On an older binary, stamps written in the new format show as
+  `legacy_unverified`. Retention never prunes them, so delete them by hand when
+  they are no longer needed. That binary does not recognise
+  `<stamp>-analytics.db` at all: it is not listed, downloaded or pruned, so
+  remove those files by hand with their stamps.
 
 ## Preview before cutover
 
@@ -203,3 +231,6 @@ See [storage](STORAGE.md), [production recovery](PRODUCTION.md) and
 استبعاد الإحصائيات من النسخ الاحتياطية**، أو استخدم `gorun backup --skip-analytics`.
 الاستعادة تضع `analytics.db` في المجلد الجديد إن كان في النسخة، ولا تمس الملف الحالي
 إن لم يكن فيها؛ انسخه يدويًا إلى المجلد الجديد قبل النقل إن أردت الاحتفاظ به.
+إن تعذّر نسخ `analytics.db` أو فشل فحص سلامته، تكتمل النسخة دونه مع تحذير، ولا يتوقف
+النسخ الاحتياطي ولا التحديث. الرجوع إلى إصدار أقدم لا يستعيد البيانات؛ استعد النسخ التي
+تضم الإحصائيات بأداة سطر الأوامر من الإصدار الأحدث.

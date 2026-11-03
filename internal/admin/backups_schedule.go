@@ -191,6 +191,12 @@ func backupScheduleWithClient(ctx context.Context, d *kernel.Deps, now time.Time
 		return fail("record", err)
 	}
 	d.Audit.Record(ctx, "system.backup_scheduled", "backup", res.Stamp, map[string]any{"files": res.Count, "verified": true})
+	// The core pair is verified; an involuntary analytics skip is a warning.
+	// A later remote, lease or prune warning takes the alert's stage (the
+	// skip stays in the audit log).
+	if noteAnalyticsSkipped(ctx, d, res, "schedule") {
+		state.Status, state.Stage = "warning", "analytics"
+	}
 	var remoteErr error
 	if remoteID := d.Settings.GetString(ctx, SettingBackupRemoteSchedule, ""); remoteID != "" {
 		remoteErr = scheduledRemoteUpload(ctx, d, res, remoteID, client)
@@ -245,7 +251,11 @@ func verifiedBackup(res backup.Result, now time.Time, key []byte) (backupSuccess
 	if err != nil {
 		return backupSuccess{}, err
 	}
-	return backupSuccess{At: now.UTC().Format(time.RFC3339), Stamp: res.Stamp, Bytes: manifest.Database.Size + manifest.Archive.Size}, nil
+	var bytes int64
+	for _, f := range manifest.Members() {
+		bytes += f.Size
+	}
+	return backupSuccess{At: now.UTC().Format(time.RFC3339), Stamp: res.Stamp, Bytes: bytes}, nil
 }
 
 func backupScheduleDue(ctx context.Context, d *kernel.Deps, now time.Time) bool {
@@ -263,6 +273,8 @@ func (state backupScheduleState) WarningKey() string {
 		return "remotebackup.warning"
 	case "lease":
 		return "remotebackup.lease_warning"
+	case "analytics":
+		return "admin.backups.alert_analytics"
 	default:
 		return "admin.backups.alert_retention"
 	}

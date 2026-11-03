@@ -211,7 +211,10 @@ func (r *Inspection) checkDatabase(d *sql.DB) {
 }
 
 // checkAnalytics runs SQLite's integrity check on the analytics copy. Its
-// schema belongs to the analytics module, so nothing else is inspected.
+// schema belongs to the analytics module, so nothing else is inspected. It
+// runs only when the manifest lists the member: Create never lists a copy
+// that failed this check, so a failure here means the copy was changed
+// after the backup and it blocks like any other tampered member.
 func (r *Inspection) checkAnalytics(path string) {
 	d, err := openReadOnlyDB(path)
 	if err != nil {

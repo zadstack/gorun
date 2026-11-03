@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -115,7 +116,12 @@ func (h *handlers) backupCreate(w http.ResponseWriter, r *http.Request) {
 		httpx.SetFlash(w, "error", "admin.backups.failed")
 	} else {
 		h.d.Audit.Record(r.Context(), "system.backup", "backup", res.Stamp, map[string]any{"files": res.Count, "verified": true})
-		httpx.SetFlash(w, "success", "admin.backups.created")
+		if noteAnalyticsSkipped(r.Context(), h.d, res, "manual") {
+			// httpx has no warning kind; info carries the warning text.
+			httpx.SetFlash(w, "info", "admin.backups.analytics_skipped")
+		} else {
+			httpx.SetFlash(w, "success", "admin.backups.created")
+		}
 	}
 	http.Redirect(w, r, "/admin/system/backups", http.StatusSeeOther)
 }
@@ -153,12 +159,34 @@ func humanSize(n int64) string {
 // backupOptions are the Create options every admin backup uses: the site
 // secret for the manifest HMAC, and SkipAnalytics from the setting
 // analytics.backup_exclude (read by name; admin never imports analytics).
-// An unreadable setting keeps the default and includes analytics.db.
+// The setting fails closed: if it cannot be read (or is not a JSON bool),
+// analytics.db is left out and the skip is reported as a warning, so an
+// operator who excluded analytics never gets it copied by accident.
 func backupOptions(ctx context.Context, d *kernel.Deps) backup.Options {
+	opts := backup.Options{SecretKey: d.Config.SecretKey}
 	var skip bool
-	if err := d.Settings.Get(ctx, backup.SettingSkipAnalytics, &skip); err != nil && !errors.Is(err, settings.ErrNotFound) {
-		d.Log.Warn("admin: backup: cannot read analytics exclusion; including analytics.db", "err", err)
-		skip = false
+	err := d.Settings.Get(ctx, backup.SettingSkipAnalytics, &skip)
+	switch {
+	case err == nil:
+		opts.SkipAnalytics = skip
+	case errors.Is(err, settings.ErrNotFound):
+	default:
+		d.Log.Warn("admin: backup: cannot read analytics exclusion; leaving analytics.db out", "err", err)
+		opts.SkipAnalytics = true
+		opts.SkipAnalyticsReason = backup.AnalyticsSettingUnread + ": " + err.Error()
 	}
-	return backup.Options{SecretKey: d.Config.SecretKey, SkipAnalytics: skip}
+	return opts
+}
+
+// noteAnalyticsSkipped audits and logs a backup that left analytics.db out
+// involuntarily (see backup.Result.AnalyticsSkipped). It reports whether
+// there was such a skip. Only the reason's code reaches the audit log.
+func noteAnalyticsSkipped(ctx context.Context, d *kernel.Deps, res backup.Result, source string) bool {
+	if res.AnalyticsSkipped == "" {
+		return false
+	}
+	code, _, _ := strings.Cut(res.AnalyticsSkipped, ":")
+	d.Audit.Record(ctx, "system.backup_analytics_skipped", "backup", res.Stamp, map[string]string{"source": source, "code": code})
+	d.Log.Warn("backup: analytics.db left out of the backup", "stamp", res.Stamp, "source", source, "reason", res.AnalyticsSkipped)
+	return true
 }

@@ -44,7 +44,20 @@ type Options struct {
 	// SkipAnalytics leaves <dataDir>/analytics.db out of the backup.
 	// Callers set it from the setting named by SettingSkipAnalytics.
 	SkipAnalytics bool
+	// SkipAnalyticsReason, when set with SkipAnalytics, marks the skip as
+	// involuntary (for example the setting could not be read): it is copied
+	// to Result.AnalyticsSkipped so callers warn about it. A deliberate
+	// exclusion leaves it empty.
+	SkipAnalyticsReason string
 }
+
+// Codes that start Result.AnalyticsSkipped ("<code>: <detail>").
+const (
+	AnalyticsNotRegular      = "analytics_not_regular"
+	AnalyticsCopyFailed      = "analytics_copy_failed"
+	AnalyticsIntegrityFailed = "analytics_integrity_failed"
+	AnalyticsSettingUnread   = "analytics_setting_unreadable"
+)
 
 // AnalyticsFile is the analytics database in the data directory. Backup
 // knows it only by this name (it never imports the analytics module): when
@@ -81,7 +94,13 @@ type Result struct {
 	// Analytics is the <stamp>-analytics.db copy, or "" when the backup
 	// has no analytics member (skipped, or no analytics.db to copy).
 	Analytics string
-	Count     int // archived files
+	// AnalyticsSkipped is "<code>: <detail>" when analytics.db existed (or
+	// may have) but was left out against the operator's choice: the copy
+	// failed, the copy failed its integrity check, or the exclusion setting
+	// could not be read. The core backup still succeeds without the member;
+	// callers must surface this as a warning. Empty otherwise.
+	AnalyticsSkipped string
+	Count            int // archived files
 }
 
 // Entry is one backup in the backups directory (either file may be missing).
@@ -147,13 +166,13 @@ func CreateWith(dataDir, dbPath string, now time.Time, opts Options) (Result, er
 		os.Remove(res.DB)
 		return Result{}, fmt.Errorf("backup: database: %w", err)
 	}
-	if !opts.SkipAnalytics {
-		copied, err := copyAnalytics(dataDir, filepath.Join(dir, stamp+analyticsSuffix))
-		if err != nil {
-			os.Remove(res.DB)
-			return Result{}, fmt.Errorf("backup: analytics (set %s to skip it): %w", SettingSkipAnalytics, err)
-		}
-		res.Analytics = copied
+	// Analytics is optional: a failed or damaged copy never fails the core
+	// backup. It is left out (no manifest member) and reported instead.
+	if opts.SkipAnalytics {
+		res.AnalyticsSkipped = opts.SkipAnalyticsReason
+	} else {
+		copied, skipped := copyAnalytics(dataDir, filepath.Join(dir, stamp+analyticsSuffix))
+		res.Analytics, res.AnalyticsSkipped = copied, skipped
 	}
 	// removeAll undoes a failed backup: never leave half a backup behind.
 	removeAll := func() {
@@ -288,33 +307,67 @@ func vacuumInto(src, dst string) error {
 // copyAnalytics snapshots <dataDir>/analytics.db into dst with VACUUM INTO
 // on a separate read-only connection: the analytics module keeps its own
 // handle, and under WAL the copy is a consistent read transaction that
-// includes committed WAL frames. It returns "" when there is no
-// analytics.db (nothing about analytics is then recorded).
-func copyAnalytics(dataDir, dst string) (string, error) {
+// includes committed WAL frames. The copy must pass PRAGMA integrity_check
+// before it becomes a manifest member.
+//
+// It returns the copy's path, or "" with no reason when there is no
+// analytics.db (nothing about analytics is then recorded), or "" with a
+// skip reason ("<code>: <detail>") when the copy could not be made or is
+// damaged; the partial copy is then removed.
+func copyAnalytics(dataDir, dst string) (path, skipped string) {
 	src := filepath.Join(dataDir, AnalyticsFile)
 	st, err := os.Lstat(src)
 	if errors.Is(err, fs.ErrNotExist) {
-		return "", nil
+		return "", ""
 	}
 	if err != nil {
-		return "", err
+		return "", AnalyticsCopyFailed + ": " + err.Error()
 	}
 	if !st.Mode().IsRegular() {
-		return "", fmt.Errorf("%s must be a regular file", AnalyticsFile)
+		return "", AnalyticsNotRegular + ": " + AnalyticsFile + " is not a regular file"
 	}
 	f, err := os.OpenFile(dst, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
-		return "", err
+		return "", AnalyticsCopyFailed + ": " + err.Error()
 	}
 	if err := f.Close(); err != nil {
 		os.Remove(dst)
-		return "", err
+		return "", AnalyticsCopyFailed + ": " + err.Error()
 	}
 	if err := vacuumInto(src, dst); err != nil {
 		os.Remove(dst)
-		return "", err
+		return "", AnalyticsCopyFailed + ": " + err.Error()
 	}
-	return dst, nil
+	if err := checkAnalyticsCopy(dst); err != nil {
+		os.Remove(dst)
+		return "", AnalyticsIntegrityFailed + ": " + err.Error()
+	}
+	return dst, ""
+}
+
+// checkAnalyticsCopy runs PRAGMA integrity_check on a fresh analytics copy.
+// It is a variable so tests can simulate a copy that fails the check.
+var checkAnalyticsCopy = func(path string) error {
+	d, err := openReadOnlyDB(path)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	rows, err := d.Query(`PRAGMA integrity_check`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var answer string
+		if err := rows.Scan(&answer); err != nil {
+			return err
+		}
+		if answer != "ok" {
+			return fmt.Errorf("integrity_check: %s", answer)
+		}
+	}
+	return rows.Err()
 }
 
 // writeTar archives the regular files under each root-relative path (paths

@@ -60,12 +60,16 @@ func stagingCmd(args []string, out io.Writer) error {
 		secret = readDataDirSecret(from)
 		// The source site's analytics.backup_exclude also keeps analytics.db
 		// out of a staging copy.
-		res, createErr := gpbackup.CreateWith(from, dbPath, time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: secret, SkipAnalytics: analyticsBackupExcluded(dbPath)})
+		skipAnalytics, skipReason := analyticsBackupOptions(dbPath)
+		res, createErr := gpbackup.CreateWith(from, dbPath, time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: secret, SkipAnalytics: skipAnalytics, SkipAnalyticsReason: skipReason})
 		if createErr != nil {
 			return createErr
 		}
 		manifest = res.Manifest
 		fmt.Fprintf(out, "backup:   %s\n", res.Manifest)
+		if res.AnalyticsSkipped != "" {
+			fmt.Fprintf(out, "analytics: skipped (%s)\n", res.AnalyticsSkipped)
+		}
 		if includeSecrets {
 			fmt.Fprintln(out, "secrets:  secret.key and gorun.toml are in the archive in plain text; keep it offline")
 		} else {

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/zadstack/gorun/internal/analytics"
 	gpbackup "github.com/zadstack/gorun/internal/backup"
 	"github.com/zadstack/gorun/internal/db"
 )
@@ -93,5 +94,46 @@ func TestStagingAnalyticsFollowsSourceSetting(t *testing.T) {
 		if got := err == nil; got != tc.want {
 			t.Fatalf("setting %q: analytics.db restored = %v, want %v", tc.setting, got, tc.want)
 		}
+	}
+}
+
+// The backup package knows the setting only by name; it must stay the name
+// the analytics settings page writes.
+func TestAnalyticsExcludeSettingNameMatches(t *testing.T) {
+	if gpbackup.SettingSkipAnalytics != analytics.SettingBackupExclude {
+		t.Fatalf("backup reads %q, analytics writes %q", gpbackup.SettingSkipAnalytics, analytics.SettingBackupExclude)
+	}
+	if gpbackup.AnalyticsFile != analytics.DBFile {
+		t.Fatalf("backup copies %q, analytics owns %q", gpbackup.AnalyticsFile, analytics.DBFile)
+	}
+}
+
+// An unreadable exclusion setting fails closed: analytics is left out and the
+// skip is reported, while the core backup succeeds.
+func TestBackupCLIUnreadableSettingSkipsAnalytics(t *testing.T) {
+	dir := analyticsDataDir(t, `"yes"`)
+	var out bytes.Buffer
+	if err := backup([]string{"--data", dir}, &out); err != nil {
+		t.Fatal(err)
+	}
+	if backupHasAnalytics(t, dir) || !strings.Contains(out.String(), "analytics: skipped ("+gpbackup.AnalyticsSettingUnread) {
+		t.Fatalf("unreadable setting did not fail closed:\n%s", out.String())
+	}
+}
+
+func TestBackupCLICorruptAnalyticsStillBacksUp(t *testing.T) {
+	dir := analyticsDataDir(t, "")
+	if err := os.WriteFile(filepath.Join(dir, gpbackup.AnalyticsFile), []byte(strings.Repeat("garbage ", 600)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{"-wal", "-shm"} {
+		os.Remove(filepath.Join(dir, gpbackup.AnalyticsFile+s))
+	}
+	var out bytes.Buffer
+	if err := backup([]string{"--data", dir}, &out); err != nil {
+		t.Fatalf("core backup failed because of analytics: %v", err)
+	}
+	if backupHasAnalytics(t, dir) || !strings.Contains(out.String(), "analytics: skipped ("+gpbackup.AnalyticsCopyFailed) {
+		t.Fatalf("corrupt analytics not reported:\n%s", out.String())
 	}
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/update"
 )
 
 // GuardDelete exposes guardDelete to the external tests.
@@ -42,4 +43,9 @@ func BackupScheduleTick(ctx context.Context, d *kernel.Deps) error {
 
 func RunScheduledBackup(ctx context.Context, d *kernel.Deps, client *http.Client) error {
 	return runScheduledBackup(ctx, d, client)
+}
+
+// UpdateBackup runs the pre-update backup step.
+func UpdateBackup(ctx context.Context, d *kernel.Deps) (update.Report, error) {
+	return (&handlers{d: d}).updateBackup(ctx)
 }

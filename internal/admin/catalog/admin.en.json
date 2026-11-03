@@ -326,6 +326,8 @@
   "backups.database": "Database",
   "backups.files": "Files",
   "backups.analytics_copy": "Analytics",
+  "backups.analytics_skipped": "Backup created and verified, but analytics.db was left out because it could not be copied safely. Check the server log, or turn on Leave analytics out of backups in Analytics settings.",
+  "backups.alert_analytics": "The scheduled backup was verified, but analytics.db was left out because it could not be copied safely. Check the server log, or turn on Leave analytics out of backups in Analytics settings.",
   "backups.empty": "No backups yet",
   "backups.restore_help": "Backups do not contain secret.key or gorun.toml by default: keep your own protected copy. Online: Inspect / Restore writes a confined copy under data/restores/<stamp>/ while the site keeps running. Offline: stop the service and run gorun backup-restore --input … --dest <new-directory-path> outside the data directory (the path must not exist). For a staging site or promote-to-live cutover use gorun staging seed|promote (docs/STAGING.md). Before serving a restore, move it out of the live data directory, copy the secrets, and stop every process on the old one. See docs/PRODUCTION.md.",
   "backups.actions": "Actions",

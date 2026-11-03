@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"maps"
 	"os"
 	"os/signal"
@@ -129,8 +130,11 @@ func backup(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	skipAnalytics = skipAnalytics || analyticsBackupExcluded(cfg.DBPath())
-	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: cfg.SecretKey, SkipAnalytics: skipAnalytics})
+	opts := gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: cfg.SecretKey, SkipAnalytics: skipAnalytics}
+	if !skipAnalytics {
+		opts.SkipAnalytics, opts.SkipAnalyticsReason = analyticsBackupOptions(cfg.DBPath())
+	}
+	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), opts)
 	if err != nil {
 		return err
 	}
@@ -145,7 +149,11 @@ func backup(args []string, out io.Writer) error {
 	switch {
 	case res.Analytics != "":
 		fmt.Fprintf(out, "analytics: %s\n", res.Analytics)
-	case skipAnalytics:
+	case res.AnalyticsSkipped != "":
+		// Optional member: the verified core backup still succeeds.
+		slog.Warn("backup: analytics.db left out of the backup", "stamp", res.Stamp, "reason", res.AnalyticsSkipped)
+		fmt.Fprintf(out, "analytics: skipped (%s)\n", res.AnalyticsSkipped)
+	case opts.SkipAnalytics:
 		fmt.Fprintln(out, "analytics: skipped (--skip-analytics or analytics.backup_exclude)")
 	default:
 		fmt.Fprintln(out, "analytics: none (no analytics.db)")
