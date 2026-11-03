@@ -437,3 +437,26 @@ func TestOnCloseRunsBeforeDatabaseCloses(t *testing.T) {
 		t.Fatalf("OnClose after failed boot = %v, want [opened]", order)
 	}
 }
+
+// A panicking OnClose function is recovered: the others still run and the
+// main database still closes.
+func TestOnClosePanicDoesNotStopShutdown(t *testing.T) {
+	var ran []string
+	mod := fakeModule{name: "closers", register: func(d *kernel.Deps) error {
+		d.OnClose(func() { ran = append(ran, "first") })
+		d.OnClose(func() { panic("closer boom") })
+		d.OnClose(func() { ran = append(ran, "third") })
+		return nil
+	}}
+	app, err := kernel.Boot(context.Background(), testConfig(t), []kernel.Module{settingsmod.New(), mod})
+	if err != nil {
+		t.Fatal(err)
+	}
+	app.Close()
+	if strings.Join(ran, ",") != "third,first" {
+		t.Fatalf("closers that ran = %v, want [third first]", ran)
+	}
+	if err := app.Deps.DB.Ping(); err == nil {
+		t.Fatal("main database still open after Close")
+	}
+}

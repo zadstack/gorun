@@ -2,6 +2,8 @@ package analytics
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -35,7 +37,9 @@ func openTestStore(t *testing.T) (*Store, string) {
 func countEvents(t *testing.T, s *Store) int {
 	t.Helper()
 	var n int
-	if err := s.DB().QueryRow(`SELECT count(*) FROM events`).Scan(&n); err != nil {
+	if err := s.With(context.Background(), func(d *sql.DB) error {
+		return d.QueryRow(`SELECT count(*) FROM events`).Scan(&n)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	return n
@@ -196,6 +200,9 @@ func TestModuleDisabled(t *testing.T) {
 	}
 	srv := httptest.NewServer(app.Handler)
 	defer srv.Close()
+	// Task 1 serves no /_a routes even when enabled, so this 404 only
+	// becomes meaningful once Task 2 adds /_a/s.js and its enabled
+	// counterpart test (200 when the module is on).
 	resp, err := http.Get(srv.URL + "/_a/s.js")
 	if err != nil {
 		t.Fatal(err)
@@ -259,5 +266,100 @@ func TestModuleStoreFailureLeavesSiteServing(t *testing.T) {
 	defer app.Close()
 	if slices.Contains(app.Deps.Jobs.CronNames(), CronRollup) {
 		t.Error("rollup cron registered without a store")
+	}
+}
+
+// An insert holding a connection of the old handle while the file is
+// deleted must finish before the reopen closes that handle: otherwise the
+// late close of the in-use connection unlinks the new database's -wal by
+// path and rows committed to the new file vanish.
+func TestReopenWaitsForInFlightInsert(t *testing.T) {
+	s, dir := openTestStore(t)
+	ctx := context.Background()
+	path := filepath.Join(dir, DBFile)
+	inside, release := make(chan struct{}), make(chan struct{})
+	var once bool
+	s.inTx = func() error {
+		if !once {
+			once = true
+			close(inside)
+			<-release // the transaction stays open, its connection in use
+		}
+		return nil
+	}
+	insertDone := make(chan error, 1)
+	go func() { insertDone <- s.Insert(ctx, []Event{{TS: time.Now(), Kind: KindView, Path: "/old"}}) }()
+	<-inside
+	for _, p := range []string{path, path + "-wal", path + "-shm"} {
+		_ = os.Remove(p)
+	}
+	reopened := make(chan error, 1)
+	go func() { reopened <- s.Reopen() }()
+	select {
+	case err := <-reopened:
+		t.Fatalf("Reopen returned (%v) while an insert held the old handle", err)
+	case <-time.After(100 * time.Millisecond):
+	}
+	close(release)
+	if err := <-insertDone; err != nil {
+		t.Fatalf("in-flight insert: %v", err)
+	}
+	if err := <-reopened; err != nil {
+		t.Fatalf("reopen: %v", err)
+	}
+	s.inTx = nil
+
+	evs := make([]Event, 50)
+	for i := range evs {
+		evs[i] = Event{TS: time.Now(), Kind: KindView, Path: "/new"}
+	}
+	if err := s.Insert(ctx, evs); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path + "-wal"); err != nil {
+		t.Fatalf("new database's WAL missing after reopen: %v", err)
+	}
+	var check string
+	if err := s.With(ctx, func(d *sql.DB) error { return d.QueryRow(`PRAGMA integrity_check`).Scan(&check) }); err != nil || check != "ok" {
+		t.Fatalf("integrity_check = %q, %v", check, err)
+	}
+	// A second process (another Store) sees the rows: they reached the new
+	// file and its WAL, not an unlinked one.
+	other, err := OpenStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer other.Close()
+	if n := countEvents(t, other); n != 50 {
+		t.Fatalf("new database holds %d events, want 50", n)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if n := countEvents(t, other); n != 50 {
+		t.Fatalf("after closing the writer: %d events, want 50", n)
+	}
+}
+
+func TestStoreClosedRefusesUse(t *testing.T) {
+	s, dir := openTestStore(t)
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Insert(context.Background(), []Event{{Kind: KindView, Path: "/"}}); !errors.Is(err, ErrClosed) {
+		t.Fatalf("Insert after Close = %v, want ErrClosed", err)
+	}
+	if err := s.With(context.Background(), func(*sql.DB) error { return nil }); !errors.Is(err, ErrClosed) {
+		t.Fatalf("With after Close = %v, want ErrClosed", err)
+	}
+	if s.DB() == nil {
+		t.Fatal("DB() returned nil")
+	}
+	_ = os.Remove(filepath.Join(dir, DBFile))
+	if err := s.Reopen(); !errors.Is(err, ErrClosed) {
+		t.Fatalf("Reopen after Close = %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, DBFile)); !os.IsNotExist(err) {
+		t.Fatal("a closed store recreated its file")
 	}
 }

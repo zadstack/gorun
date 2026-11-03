@@ -5,6 +5,7 @@ package kernel
 
 import (
 	"database/sql"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -59,19 +60,29 @@ type Deps struct {
 
 // OnClose registers fn to run when the app closes: after the job workers
 // and crons have stopped, before the main database closes, in reverse
-// registration order. A module uses it to stop goroutines it started in
+// registration order. A panic in fn is logged and does not stop the others. A module uses it to stop goroutines it started in
 // Register and to close resources it owns (its own database file). It also
 // runs when boot fails after the module registered. Call it only from
 // Register.
 func (d *Deps) OnClose(fn func()) { d.closers = append(d.closers, fn) }
 
-// runClosers runs the OnClose functions once, newest first.
+// runClosers runs the OnClose functions once, newest first. A closer that
+// panics is logged and the others still run, so shutdown always completes.
 func (d *Deps) runClosers() {
 	fns := d.closers
 	d.closers = nil
 	for i := len(fns) - 1; i >= 0; i-- {
-		fns[i]()
+		d.runCloser(fns[i])
 	}
+}
+
+func (d *Deps) runCloser(fn func()) {
+	defer func() {
+		if p := recover(); p != nil && d.Log != nil {
+			d.Log.Error("kernel: OnClose function panicked", "panic", fmt.Sprint(p))
+		}
+	}()
+	fn()
 }
 
 // Router holds the chi sub-routers modules register on during Register.

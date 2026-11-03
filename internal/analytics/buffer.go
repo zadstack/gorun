@@ -18,6 +18,10 @@ const (
 // dropWarnEvery rate-limits the "buffer full" warning.
 const dropWarnEvery = time.Minute
 
+// maxFlushFailures is how many flushes in a row may fail before the queued
+// events are dropped, so one bad batch cannot hold the buffer forever.
+const maxFlushFailures = 5
+
 // Buffer queues events in memory and writes them to the store in batches,
 // so a burst of page views costs one transaction per batch instead of one
 // per request. When it holds cap events, Add drops new ones. It is safe for
@@ -34,7 +38,9 @@ type Buffer struct {
 	q        []Event
 	dropped  int       // drops since the last warning
 	lastWarn time.Time // zero: never warned
+	stopped  bool      // Run returned or is doing its final flush: Add refuses
 	flushMu  sync.Mutex
+	failures int // consecutive failed flushes, guarded by flushMu
 }
 
 // NewBuffer returns a buffer of capacity cap that Run flushes every every,
@@ -58,11 +64,20 @@ func NewBuffer(s *Store, cap int, every time.Duration, batch int, log *slog.Logg
 
 // Add queues e and reports whether it was kept. A zero TS is set to the
 // time of the call, so an event keeps the day it happened on however late it
-// is flushed. When the buffer is full the event is dropped and a warning is
-// logged at most once per minute, with the number dropped since the last one.
+// is flushed. An event whose Kind is neither KindView nor KindSubmit is
+// refused (the events CHECK would fail its whole batch), as is every event
+// once Run has stopped. When the buffer is full the event is dropped and a
+// warning is logged at most once per minute, with the number dropped since
+// the last one.
 func (b *Buffer) Add(e Event) bool {
+	if e.Kind != KindView && e.Kind != KindSubmit {
+		return false
+	}
 	b.mu.Lock()
 	defer b.mu.Unlock()
+	if b.stopped {
+		return false
+	}
 	now := b.now()
 	if len(b.q) >= b.cap {
 		b.dropped++
@@ -88,7 +103,8 @@ func (b *Buffer) Len() int {
 
 // Flush writes every queued event, batch events per Insert. Events of a
 // batch that fails go back to the front of the queue as far as the capacity
-// allows, and the error is returned.
+// allows, and the error is returned; after maxFlushFailures failed flushes
+// in a row they are dropped instead, with an error log.
 func (b *Buffer) Flush(ctx context.Context) error {
 	b.flushMu.Lock() // one flush at a time keeps the requeue in order
 	defer b.flushMu.Unlock()
@@ -99,10 +115,17 @@ func (b *Buffer) Flush(ctx context.Context) error {
 	for start := 0; start < len(pending); start += b.batch {
 		end := min(start+b.batch, len(pending))
 		if err := b.s.Insert(ctx, pending[start:end]); err != nil {
+			b.failures++
+			if b.failures >= maxFlushFailures {
+				b.log.Error("analytics: flush keeps failing, events dropped", "err", err, "failures", b.failures, "dropped", len(pending)-start)
+				b.failures = 0
+				return err
+			}
 			b.requeue(pending[start:])
 			return err
 		}
 	}
+	b.failures = 0
 	return nil
 }
 
@@ -129,6 +152,9 @@ func (b *Buffer) Run(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			b.mu.Lock()
+			b.stopped = true // nothing would flush a later Add
+			b.mu.Unlock()
 			fctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), stopTimeout)
 			if err := b.Flush(fctx); err != nil {
 				b.log.Error("analytics: final flush failed, events lost", "err", err, "events", b.Len())

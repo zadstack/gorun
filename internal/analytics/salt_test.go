@@ -3,6 +3,7 @@ package analytics
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"path/filepath"
 	"testing"
@@ -106,5 +107,66 @@ func TestSaltRotationDeletesOldSalts(t *testing.T) {
 	}
 	if len(days) != 1 || days[0] != "2026-11-03" {
 		t.Fatalf("salts = %v, want only 2026-11-03", days)
+	}
+}
+
+// A request for a day older than the newest salt (one that straddled
+// midnight) uses the newest salt; a rotated-out salt is never recreated,
+// in this process or after a restart.
+func TestPastDayUsesNewestSalt(t *testing.T) {
+	s, dir := openTestStore(t)
+	ctx := context.Background()
+	today := time.Date(2026, 11, 3, 0, 0, 5, 0, time.UTC)
+	yesterday := time.Date(2026, 11, 2, 23, 59, 59, 0, time.UTC)
+	now, err := s.VisitorHash(ctx, today, "site", "ip", "ua")
+	if err != nil {
+		t.Fatal(err)
+	}
+	late, err := s.VisitorHash(ctx, yesterday, "site", "ip", "ua")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if late != now {
+		t.Fatalf("past day hashed with a different salt: %q != %q", late, now)
+	}
+	saltDays := func(st *Store) []string {
+		var days []string
+		err := st.With(ctx, func(d *sql.DB) error {
+			rows, err := d.Query(`SELECT day FROM salts ORDER BY day`)
+			if err != nil {
+				return err
+			}
+			defer rows.Close()
+			for rows.Next() {
+				var d string
+				if err := rows.Scan(&d); err != nil {
+					return err
+				}
+				days = append(days, d)
+			}
+			return rows.Err()
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return days
+	}
+	if got := saltDays(s); len(got) != 1 || got[0] != "2026-11-03" {
+		t.Fatalf("salts = %v, want only 2026-11-03", got)
+	}
+	s2, err := OpenStore(dir) // empty cache: the rule comes from the table
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s2.Close()
+	again, err := s2.VisitorHash(ctx, yesterday, "site", "ip", "ua")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again != now {
+		t.Fatalf("after restart past day hashed %q, want the newest salt's %q", again, now)
+	}
+	if got := saltDays(s2); len(got) != 1 || got[0] != "2026-11-03" {
+		t.Fatalf("salts after restart = %v, want only 2026-11-03", got)
 	}
 }

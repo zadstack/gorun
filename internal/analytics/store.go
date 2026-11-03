@@ -46,26 +46,33 @@ type Event struct {
 	Locale, Form                      string
 }
 
-// Store owns analytics.db. It is safe for concurrent use. DB returns the
-// current handle, which Reopen replaces, so callers fetch it per use and do
-// not keep it.
+// Store owns analytics.db. It is safe for concurrent use.
+//
+// Every use of the handle (Insert, VisitorHash, With) holds the read lock
+// for its whole duration, and Reopen takes the write lock, so the old handle
+// is closed only once no connection of it is in use. Closing an in-use
+// connection later would let SQLite's WAL close unlink the -wal and -shm
+// files by path, which by then belong to the recreated database.
 type Store struct {
 	path string
 
 	mu     sync.RWMutex
-	db     *sql.DB
-	closed bool // Close was called: no reopen, every call fails with ErrClosed
+	db     *sql.DB // never nil once OpenStore returned; closed after Close or a failed reopen
+	broken bool    // the last reopen failed: db is closed, the next use retries
+	closed bool    // Close was called: no reopen, every use fails with ErrClosed
 
-	saltMu sync.Mutex
-	salts  map[string][]byte // day (YYYY-MM-DD) -> salt, cache of the salts table
+	saltMu   sync.Mutex // inside mu (read or write), never the other way round
+	saltDay  string     // newest day with a salt (YYYY-MM-DD), cached; "" unknown
+	saltData []byte
 
-	onTx func() // test hook: called once per committed Insert transaction
+	onTx func()       // test hook: called once per committed Insert transaction
+	inTx func() error // test hook: called inside each Insert transaction, after the rows
 }
 
 // OpenStore opens (creating it when missing) <dataDir>/analytics.db and
 // applies the module's migrations to it.
 func OpenStore(dataDir string) (*Store, error) {
-	s := &Store{path: filepath.Join(dataDir, DBFile), salts: map[string][]byte{}}
+	s := &Store{path: filepath.Join(dataDir, DBFile)}
 	d, err := openDB(s.path)
 	if err != nil {
 		return nil, err
@@ -89,52 +96,69 @@ func openDB(path string) (*sql.DB, error) {
 // Path is the analytics.db file path.
 func (s *Store) Path() string { return s.path }
 
-// DB returns the current analytics.db handle. Like Insert it recreates a
-// file deleted while running, so reads see an empty database instead of the
-// unlinked one. It returns nil after Close; when recreating fails it
-// returns the handle it has (possibly nil) and the query reports the error.
+// ErrClosed is returned by Store methods called after Close.
+var ErrClosed = errors.New("analytics: store closed")
+
+// With runs fn with the analytics.db handle while holding the store's read
+// lock, recreating the file first when it was deleted, so a read after a
+// file loss sees an empty database. fn must not keep the handle, and must
+// not call other Store methods (the lock is not reentrant).
+func (s *Store) With(ctx context.Context, fn func(*sql.DB) error) error {
+	d, release, err := s.acquire()
+	if err != nil {
+		return err
+	}
+	defer release()
+	return fn(d)
+}
+
+// DB returns the current handle without holding any lock: a Reopen may
+// close it at any moment. It exists for tests and diagnostics; everything
+// else uses With. It is never nil (a closed handle reports
+// "sql: database is closed").
 func (s *Store) DB() *sql.DB {
-	if d, err := s.ensure(); err == nil {
-		return d
+	if _, release, err := s.acquire(); err == nil { // recreate a lost file, as With does
+		release()
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.db
 }
 
-// ErrClosed is returned by Store methods called after Close.
-var ErrClosed = errors.New("analytics: store closed")
-
-// Close closes analytics.db. The store stays closed: later calls fail with
-// ErrClosed instead of recreating the file.
+// Close closes analytics.db, waiting for in-flight uses. The store stays
+// closed: later calls fail with ErrClosed instead of recreating the file.
 func (s *Store) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.closed = true
-	if s.db == nil {
+	if s.closed {
 		return nil
 	}
-	err := s.db.Close()
-	s.db = nil
-	return err
+	s.closed = true
+	if s.broken {
+		return nil
+	}
+	return s.db.Close()
 }
 
-// Reopen closes the current handle and opens the file again, creating and
-// migrating it when it is missing. It is the recreate path for a file that
-// was deleted while running, and what a restore uses to pick up the new file.
+// Reopen waits for in-flight uses, closes the handle and opens the file
+// again, creating and migrating it when it is missing. It is the recreate
+// path for a file deleted while running, and what a restore uses to pick
+// up a replaced file.
 func (s *Store) Reopen() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.reopenLocked()
 }
 
+// reopenLocked needs s.mu held for writing: no connection of the old handle
+// is in use, so Close closes them all now, before the files are touched.
 func (s *Store) reopenLocked() error {
 	if s.closed {
 		return ErrClosed
 	}
-	if s.db != nil {
+	if !s.broken {
 		_ = s.db.Close()
-		s.db = nil
+		s.broken = true
 	}
 	if _, err := os.Stat(s.path); errors.Is(err, fs.ErrNotExist) {
 		// A WAL left beside a deleted file belongs to the old database;
@@ -146,52 +170,65 @@ func (s *Store) reopenLocked() error {
 	if err != nil {
 		return err
 	}
-	s.db = d
+	s.db, s.broken = d, false
 	s.saltMu.Lock()
-	s.salts = map[string][]byte{}
+	s.saltDay, s.saltData = "", nil
 	s.saltMu.Unlock()
 	return nil
 }
 
-// ensure returns a handle to a file that exists on disk: when analytics.db
-// was deleted (an open handle would keep writing to the unlinked inode) or
-// an earlier reopen failed, it reopens, recreating the file.
-func (s *Store) ensure() (*sql.DB, error) {
-	s.mu.RLock()
-	d := s.db
-	s.mu.RUnlock()
-	if d != nil {
-		if _, err := os.Stat(s.path); err == nil {
-			return d, nil
+// acquire returns a handle to a file that exists on disk, holding the read
+// lock until release is called. When analytics.db was deleted (an open
+// handle would keep using the unlinked inode) or the last reopen failed,
+// it reopens under the write lock first.
+func (s *Store) acquire() (*sql.DB, func(), error) {
+	for attempt := 0; ; attempt++ {
+		s.mu.RLock()
+		if s.closed {
+			s.mu.RUnlock()
+			return nil, nil, ErrClosed
+		}
+		if !s.broken && s.exists() {
+			return s.db, s.mu.RUnlock, nil
+		}
+		s.mu.RUnlock()
+		if attempt > 0 { // reopened, yet the file is gone again or still broken
+			return nil, nil, fmt.Errorf("analytics: %s unavailable after reopen", s.path)
+		}
+		s.mu.Lock()
+		var err error
+		if s.closed {
+			err = ErrClosed
+		} else if s.broken || !s.exists() { // nobody reopened while we waited
+			err = s.reopenLocked()
+		}
+		s.mu.Unlock()
+		if err != nil {
+			return nil, nil, err
 		}
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.closed {
-		return nil, ErrClosed
-	}
-	if s.db != nil && s.db != d { // another caller already reopened
-		return s.db, nil
-	}
-	if err := s.reopenLocked(); err != nil {
-		return nil, err
-	}
-	return s.db, nil
+}
+
+func (s *Store) exists() bool {
+	_, err := os.Stat(s.path)
+	return err == nil
 }
 
 const insertSQL = `INSERT INTO events (ts, kind, path, visitor, ref_host, utm_source, utm_medium, utm_campaign, browser, os, device, country, locale, form)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-// Insert stores evs, InsertBatch rows per transaction. A batch that fails
-// stops the call; earlier batches stay committed.
+// Insert stores evs, InsertBatch rows per transaction, holding the read
+// lock throughout. A batch that fails stops the call; earlier batches stay
+// committed.
 func (s *Store) Insert(ctx context.Context, evs []Event) error {
 	if len(evs) == 0 {
 		return nil
 	}
-	d, err := s.ensure()
+	d, release, err := s.acquire()
 	if err != nil {
 		return err
 	}
+	defer release()
 	for start := 0; start < len(evs); start += InsertBatch {
 		end := min(start+InsertBatch, len(evs))
 		if err := s.insertTx(ctx, d, evs[start:end]); err != nil {
@@ -213,6 +250,9 @@ func (s *Store) insertTx(ctx context.Context, d *sql.DB, evs []Event) error {
 				e.Browser, e.OS, e.Device, e.Country, e.Locale, e.Form); err != nil {
 				return err
 			}
+		}
+		if s.inTx != nil {
+			return s.inTx()
 		}
 		return nil
 	})

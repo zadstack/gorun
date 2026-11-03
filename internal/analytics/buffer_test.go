@@ -3,6 +3,7 @@ package analytics
 import (
 	"bytes"
 	"context"
+	"errors"
 	"log/slog"
 	"strings"
 	"sync"
@@ -130,5 +131,70 @@ func TestBufferDefaultsZeroTimestamp(t *testing.T) {
 	}
 	if ts != "2026-11-03T09:00:00Z" {
 		t.Fatalf("ts = %q, want the Add time", ts)
+	}
+}
+
+func TestBufferRejectsUnknownKind(t *testing.T) {
+	s, _ := openTestStore(t)
+	b := NewBuffer(s, 10, time.Hour, 500, nil)
+	for _, k := range []string{"", "click", "VIEW"} {
+		if b.Add(Event{Kind: k, Path: "/"}) {
+			t.Errorf("kind %q accepted", k)
+		}
+	}
+	if !b.Add(Event{Kind: KindSubmit, Path: "/", Form: "contact"}) {
+		t.Fatal("submit refused")
+	}
+	if err := b.Flush(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBufferDropsBatchAfterRepeatedFailures(t *testing.T) {
+	s, _ := openTestStore(t)
+	var logs syncBuf
+	b := NewBuffer(s, 10, time.Hour, 500, slog.New(slog.NewTextHandler(&logs, nil)))
+	s.inTx = func() error { return errors.New("disk on fire") }
+	b.Add(Event{Kind: KindView, Path: "/a"})
+	b.Add(Event{Kind: KindView, Path: "/b"})
+	ctx := context.Background()
+	for i := 1; i < maxFlushFailures; i++ {
+		if err := b.Flush(ctx); err == nil {
+			t.Fatalf("flush %d succeeded", i)
+		}
+		if b.Len() != 2 {
+			t.Fatalf("after %d failures %d queued, want 2 kept for retry", i, b.Len())
+		}
+	}
+	if err := b.Flush(ctx); err == nil {
+		t.Fatal("5th flush succeeded")
+	}
+	if b.Len() != 0 {
+		t.Fatalf("after %d failures %d still queued, want the batch dropped", maxFlushFailures, b.Len())
+	}
+	if !strings.Contains(logs.String(), "level=ERROR") || !strings.Contains(logs.String(), "events dropped") {
+		t.Fatalf("no error log for the dropped batch:\n%s", logs.String())
+	}
+	// The counter restarts: the buffer works again once the store does.
+	s.inTx = nil
+	b.Add(Event{Kind: KindView, Path: "/c"})
+	if err := b.Flush(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if n := countEvents(t, s); n != 1 {
+		t.Fatalf("%d events, want 1", n)
+	}
+}
+
+func TestBufferAddAfterStopRefused(t *testing.T) {
+	s, _ := openTestStore(t)
+	b := NewBuffer(s, 10, time.Hour, 500, nil)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { b.Run(ctx); close(done) }()
+	cancel()
+	<-done
+	if b.Add(Event{Kind: KindView, Path: "/"}) {
+		t.Fatal("Add accepted after Run stopped; the event would never be flushed")
 	}
 }
