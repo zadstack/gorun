@@ -328,7 +328,7 @@
     function extra(card, heading, state, run) {
       let line = card.querySelector(':scope > .canvas-node-extra');
       const writing = state === 'running' && ['agent','provider'].includes(card.dataset.kind);
-      const reason = state === 'failed' && run?.error ? (run.error === 'run_stopped' ? t('run_stopped') : run.error) : '';
+      const reason = state === 'failed' && run?.error ? (/^run_[a-z_]+$/.test(run.error) ? t(run.error) : run.error) : '';
       const key = writing ? 'writing' : reason ? `failed|${reason}` : '';
       if (!key || !heading) { line?.remove(); return; }
       if (line?.dataset.key === key) return;
@@ -354,7 +354,7 @@
       for (const run of runs) {
         const item = el('li'); item.append(el('strong', t(run.status)), el('span', [run.provider_title,run.actor_name].filter(Boolean).join(' · ')), el('small', new Date(run.created_at).toLocaleString()));
         if (run.tool_calls_attempted) item.append(el('p', `${t('tool_attempts')}: ${run.tool_calls_attempted}. ${t('tool_effect_warning')}`));
-        if (run.error) item.append(el('p', run.error === 'run_stopped' ? t('run_stopped') : run.error));
+        if (run.error) item.append(el('p', /^run_[a-z_]+$/.test(run.error) ? t(run.error) : run.error));
         const act = tag(runAction(run), run.id, 'run'); if (act) item.append(act);
         if (['requested','queued','waiting_agent','waiting','waiting_tool'].includes(run.status)) item.append(tag(btn(t('cancel_run'), () => action(async () => {
           if (!window.confirm(t('cancel_run_help'))) return;
