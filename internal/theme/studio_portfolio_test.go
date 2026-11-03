@@ -108,11 +108,12 @@ func TestStudioPortfolioTaxonomyAndFormStates(t *testing.T) {
 	}
 	mustContain(t, rec.Body.String(), "studio-taxonomy-title", "Design archive", "Portfolio notes", "studio-footer")
 	e.app.Deps.Theme.AddKind("form-result", func(kernel.KindRequest) []string { return []string{"form-result.html"} })
-	type result struct {
-		OK     bool
-		Errors map[string]string
-		Values map[string]string
-		Back   string
+	type result struct { // mirrors site.FormState
+		OK      bool
+		Errors  map[string]string
+		Values  map[string]string
+		Back    string
+		Message string
 	}
 	for _, success := range []bool{true, false} {
 		data := result{OK: success, Errors: map[string]string{"email": "contact_email"}, Values: map[string]string{"name": "Saved name"}, Back: "/contact"}

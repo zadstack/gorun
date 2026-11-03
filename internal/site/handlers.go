@@ -90,9 +90,15 @@ func (h *handlers) newContext(w http.ResponseWriter, r *http.Request) *theme.Con
 		}
 	}
 	tc := &theme.Context{Request: r, Query: q, Locale: i18n.Locale(r.Context()), Extra: map[string]any{}}
-	if c, err := r.Cookie(formFlashCookie); err == nil && (c.Value == "ok" || c.Value == "error") {
-		tc.Extra["form_flash"] = c.Value
-		http.SetCookie(w, &http.Cookie{Name: formFlashCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+	if c, err := r.Cookie(formFlashCookie); err == nil {
+		flash, slug, _ := strings.Cut(c.Value, ".")
+		if (flash == "ok" && (slug == "" || formSlugRe.MatchString(slug))) || c.Value == "error" {
+			tc.Extra["form_flash"] = flash
+			if msg := h.successMessage(r.Context(), slug); msg != "" {
+				tc.Extra["form_message"] = msg
+			}
+			http.SetCookie(w, &http.Cookie{Name: formFlashCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+		}
 	}
 	if c, err := r.Cookie(commentFlashCookie); err == nil && commentFlashes[c.Value] {
 		tc.Extra["comment_flash"] = c.Value

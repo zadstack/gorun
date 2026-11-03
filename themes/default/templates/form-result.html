@@ -1,11 +1,11 @@
-{{/* After POST /forms/contact: .Extra.form is {OK, Errors, Values, Back}. */}}
+{{/* After POST /forms/contact or /forms/{slug}: .Extra.form is {OK, Errors, Values, Back, Message}; Message is a builder form's success text. */}}
 {{part "header" .}}<div class="gp-core">
 {{with .Extra.form}}
 <section class="mx-auto max-w-2xl">
   {{if .OK}}
   <div class="rounded border border-green bg-green-soft p-6">
     <h1 class="text-[22px] font-bold text-green">{{t "form_sent_title"}}</h1>
-    <p class="mt-2">{{t "form_sent_body"}}</p>
+    <p class="mt-2">{{with .Message}}{{.}}{{else}}{{t "form_sent_body"}}{{end}}</p>
     <a href="{{.Back}}" class="mt-4 inline-block text-blue hover:text-blue-hover underline underline-offset-2">{{t "back"}}</a>
   </div>
   {{else}}

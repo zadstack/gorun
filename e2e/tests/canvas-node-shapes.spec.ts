@@ -178,7 +178,8 @@ test('waiting state offers the existing check action', async ({page})=>{
 
 async function insertRun(board:string,node:string,id:string,status:string,created=new Date().toISOString()){
  const database=db();const owner=database.prepare('SELECT id FROM users WHERE email=?').get('admin@e2e.test') as {id:string};
- database.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at) VALUES(?,?,?,?,?,?,?,?)").run(id,board,owner.id,'req-'+id,node,status,JSON.stringify({candidate:{input:{kind:'text'}}}),created);database.close();
+ // A real run gets started_at when it turns running; without it the minute watchdog sees '' < cutoff and stops it mid-test.
+ database.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at,started_at) VALUES(?,?,?,?,?,?,?,?,?)").run(id,board,owner.id,'req-'+id,node,status,JSON.stringify({candidate:{input:{kind:'text'}}}),created,status==='running'?new Date().toISOString():'');database.close();
 }
 const refresh=async(page:Page)=>{await page.locator('[data-canvas-operations] details').nth(1).locator('summary').click();await page.locator('[data-canvas-operations] details').nth(1).locator('button').first().click();};
 

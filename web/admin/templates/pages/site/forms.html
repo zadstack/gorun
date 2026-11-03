@@ -1,0 +1,36 @@
+{{/* Data: site.formsListPage */}}
+{{define "title"}}{{t "site.forms.title"}}{{end}}
+{{define "content"}}
+<div class="mb-4">
+  <h1 class="text-[22px] font-bold">{{t "site.forms.title"}}</h1>
+  <p class="text-muted">{{t "site.forms.intro"}}</p>
+  <p class="mt-2 text-sm"><span class="text-muted">{{t "site.forms.new_total"}}:</span> <span class="font-mono font-bold" data-new-total="{{.NewTotal}}">{{.NewTotal}}</span></p>
+</div>
+<div class="overflow-x-auto rounded border border-line bg-panel">
+  <table class="w-full text-start">
+    <thead class="bg-panel-2 text-muted text-xs">
+      <tr>
+        <th scope="col" class="px-3 py-2 text-start font-medium">{{t "site.forms.col.form"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-medium">{{t "site.forms.col.source"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-medium">{{t "site.forms.col.entries"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-medium">{{t "site.forms.col.new"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-medium whitespace-nowrap">{{t "site.forms.col.last"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-medium">{{t "site.forms.col.state"}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Rows}}
+      <tr class="border-t border-line">
+        <td class="px-3 py-2"><a href="{{.Href}}" class="font-medium text-blue hover:text-blue-hover underline underline-offset-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft"><bdi>{{.Title}}</bdi></a></td>
+        <td class="px-3 py-2 text-muted">{{t (printf "site.forms.source.%s" .Source)}}</td>
+        <td class="px-3 py-2 font-mono" data-entries="{{.Entries}}">{{.Entries}}</td>
+        <td class="px-3 py-2 font-mono {{if .New}}font-bold{{end}}" data-new="{{.New}}">{{.New}}</td>
+        <td class="px-3 py-2 font-mono whitespace-nowrap text-muted" data-last="{{.LastEntry}}">{{if .LastEntry}}<time datetime="{{.LastEntry}}">{{.LastEntry}}</time>{{else}}—{{end}}</td>
+        <td class="px-3 py-2 text-muted">{{if .Open}}{{t "site.forms.state.open"}}{{else}}{{t "site.forms.state.closed"}}{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{if eq (len .Rows) 1}}<p class="mt-3 text-muted">{{t "site.forms.empty"}}</p>{{end}}
+{{end}}

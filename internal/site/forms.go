@@ -41,18 +41,22 @@ const (
 
 // FormSubmission is the HookFormSubmitted payload. It carries attachment
 // metadata only; delivery reads the file from <data>/form-uploads/<id>.
+// For the contact form ID is the form_submissions row and Name, Email and
+// Message are set; for any other form (Form is its slug) ID is the
+// form_entries row and Fields holds the stored values.
 type FormSubmission struct {
-	ID             string `json:"id"` // form_submissions row
-	Form           string `json:"form"`
-	Name           string `json:"name"`
-	Email          string `json:"email"`
-	Message        string `json:"message"`
-	Page           string `json:"page"`
-	IP             string `json:"ip"`
-	SubmittedAt    string `json:"submitted_at"`
-	AttachmentName string `json:"attachment_name,omitempty"`
-	AttachmentType string `json:"attachment_type,omitempty"`
-	AttachmentSize int64  `json:"attachment_size,omitempty"`
+	ID             string            `json:"id"`
+	Form           string            `json:"form"`
+	Fields         map[string]string `json:"fields,omitempty"`
+	Name           string            `json:"name"`
+	Email          string            `json:"email"`
+	Message        string            `json:"message"`
+	Page           string            `json:"page"`
+	IP             string            `json:"ip"`
+	SubmittedAt    string            `json:"submitted_at"`
+	AttachmentName string            `json:"attachment_name,omitempty"`
+	AttachmentType string            `json:"attachment_type,omitempty"`
+	AttachmentSize int64             `json:"attachment_size,omitempty"`
 }
 
 // FormState is passed to form-result.html as .Extra.form.
@@ -61,6 +65,11 @@ type FormState struct {
 	Errors map[string]string // field → i18n key
 	Values map[string]string
 	Back   string
+	// Message is a builder form's own success text (plain text, escaped by
+	// the template), shown instead of the generic one when set; Form is
+	// that form's slug, which the flash fallback carries.
+	Message string
+	Form    string
 }
 
 type formConfigKey struct{}
@@ -273,6 +282,8 @@ func (h *handlers) formResult(w http.ResponseWriter, r *http.Request, status int
 	flash := "ok"
 	if !st.OK {
 		flash = "error"
+	} else if st.Message != "" && formSlugRe.MatchString(st.Form) {
+		flash = "ok." + st.Form // newContext reads the message back from the form
 	}
 	if status == http.StatusTooManyRequests {
 		http.Error(w, http.StatusText(status), status)

@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/httpx"
-	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/theme"
 )
@@ -40,6 +38,8 @@ func (h *adminHandlers) revisionPreview(w http.ResponseWriter, r *http.Request) 
 	}
 	previewItem := *item
 	previewItem.Body = html
+	locale := previewLocale(h.d, r.Context(), item)
+	ctx := h.previewContext(r, rev.Document, locale)
 	options, themed, err := previewOptions(h.d, r.Context(), item.ID)
 	if err != nil {
 		h.fail(w, r, err)
@@ -50,7 +50,7 @@ func (h *adminHandlers) revisionPreview(w http.ResponseWriter, r *http.Request) 
 			RenderBuilderThemePreview(context.Context, *content.Item, theme.BuilderPreviewOptions) (string, error)
 		}](h.d, kernel.ServiceTheme)
 		if ok {
-			html, err = renderer.RenderBuilderThemePreview(r.Context(), &previewItem, options)
+			html, err = renderer.RenderBuilderThemePreview(ctx, &previewItem, options)
 			if err != nil {
 				h.d.Log.Error("builder: revision preview", "err", err)
 				http.Error(w, "Preview unavailable", http.StatusUnprocessableEntity)
@@ -63,19 +63,12 @@ func (h *adminHandlers) revisionPreview(w http.ResponseWriter, r *http.Request) 
 	if renderer, ok := kernel.Get[interface {
 		RenderBuilderBody(context.Context, *content.Item) (string, error)
 	}](h.d, kernel.ServiceTheme); ok {
-		html, err = renderer.RenderBuilderBody(r.Context(), &previewItem)
+		html, err = renderer.RenderBuilderBody(ctx, &previewItem)
 		if err != nil {
 			h.d.Log.Error("builder: revision preview", "err", err)
 			http.Error(w, "Preview unavailable", http.StatusUnprocessableEntity)
 			return
 		}
-	}
-	locale := item.Locale
-	if locale == "" {
-		locale = h.d.Settings.GetString(r.Context(), "site.locale", i18n.DefaultLocale)
-	}
-	if !slices.Contains(i18n.Supported, locale) {
-		locale = i18n.DefaultLocale
 	}
 	dir := "ltr"
 	if locale == "ar" {

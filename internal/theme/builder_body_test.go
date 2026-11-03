@@ -2,10 +2,17 @@ package theme
 
 import (
 	"context"
-	"github.com/zadstack/gorun/internal/content"
-	"github.com/zadstack/gorun/internal/kernel"
+	"html/template"
+	"net/http"
+	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/brand"
+	"github.com/zadstack/gorun/internal/content"
+	"github.com/zadstack/gorun/internal/kernel"
 )
 
 func TestBuilderDynamicContentRendersAtItsSectionPosition(t *testing.T) {
@@ -73,4 +80,145 @@ func TestBuilderHeroLoadsTrustedModuleOnlyWhenPresent(t *testing.T) {
 			t.Fatalf("fallback lost: %s", body)
 		}
 	}
+}
+
+const formSectionBody = `<div class="gp-builder"><section class="gp-section gp-form gp-default" data-form="booking"><div class="gp-inner"><div class="gp-heading"><h2>Book</h2></div></div></section></div>`
+
+// fakeForm registers a "form" func like site's and records its arguments.
+func fakeForm(e *env, got *[]string) {
+	e.app.Deps.Theme.AddFunc("form", func(slug, csrf, back string, locale ...string) template.HTML {
+		*got = append([]string{slug, csrf, back}, locale...)
+		return template.HTML(`<form class="sb-form" method="post" action="/forms/` + slug + `"><input type="hidden" name="_csrf" value="` + csrf +
+			`"><label for="sf-booking-name">Name</label><input id="sf-booking-name" name="name" required><select name="room"><option>A</option></select><textarea name="note"></textarea><button type="submit">Book</button></form>`)
+	})
+}
+
+func TestBuilderBodyInjectsForm(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", map[string]string{"templates/page-builder.html": `{{builderBody .Content}}`})
+	e := bootRealTheme(t, root)
+	cs, _ := kernel.Get[content.Service](e.app.Deps, kernel.ServiceContent)
+	it, err := cs.Create(context.Background(), content.Input{Type: "page", Title: "Book", Status: "published", Template: "builder", Body: formSectionBody})
+	if err != nil {
+		t.Fatal(err)
+	}
+	render := func() (string, string) {
+		var body, token string
+		h := auth.CSRFMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			token = auth.CSRFToken(r.Context())
+			rec, err := e.render(kernel.KindRequest{Kind: KindPage, Template: "builder"}, &Context{Content: it, Locale: "en", Request: r}, r.Context())
+			if err != nil {
+				t.Fatal(err)
+			}
+			body = rec.Body.String()
+		}))
+		h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/book", nil))
+		return body, token
+	}
+	// Without a registered form func the section stays as it is.
+	body, _ := render()
+	mustContain(t, body, `data-form="booking"`, "Book")
+	mustNotContain(t, body, "<form")
+
+	var got []string
+	fakeForm(e, &got)
+	body, token := render()
+	if token == "" || len(got) != 4 || got[0] != "booking" || got[1] != token || got[2] != "/book" || got[3] != "en" {
+		t.Fatalf("form func called with %q (request token %q)", got, token)
+	}
+	mustContain(t, body, `name="_csrf" value="`+token+`"`, `action="/forms/booking"`)
+	inner := strings.Index(body, `class="gp-inner"`)
+	heading := strings.Index(body, "</h2>")
+	form := strings.Index(body, "<form")
+	if inner < 0 || form < heading || form < inner || strings.Index(body, "</form>") > strings.LastIndex(body, "</section>") {
+		t.Fatalf("form not appended inside .gp-inner: %s", body)
+	}
+	mustNotContain(t, body, "disabled")
+}
+
+func TestBuilderBodyFormEmptyLeavesSection(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", map[string]string{"templates/page-builder.html": `{{builderBody .Content}}`})
+	e := bootRealTheme(t, root)
+	e.app.Deps.Theme.AddFunc("form", func(slug, csrf, back string, locale ...string) template.HTML { return "" })
+	cs, _ := kernel.Get[content.Service](e.app.Deps, kernel.ServiceContent)
+	it, err := cs.Create(context.Background(), content.Input{Type: "page", Title: "Book", Status: "published", Template: "builder", Body: formSectionBody})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec, err := e.render(kernel.KindRequest{Kind: KindPage, Template: "builder"}, &Context{Content: it})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustContain(t, rec.Body.String(), `data-form="booking"`)
+	mustNotContain(t, rec.Body.String(), "<form")
+}
+
+func TestPreviewFormDisabled(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", map[string]string{"templates/page-builder.html": `<!doctype html><html><head></head><body>{{builderBody .Content}}</body></html>`})
+	e := newEnv(t, root)
+	var got []string
+	fakeForm(e, &got)
+	item := &content.Item{ID: "preview", Type: "page", Slug: "book", Title: "Book", Body: formSectionBody, Locale: "ar"}
+	page, err := e.svc.RenderBuilderThemePreview(t.Context(), item, BuilderPreviewOptions{Theme: "default", Identity: brand.Default()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 4 || got[3] != "ar" {
+		t.Fatalf("form func args %q", got)
+	}
+	for _, tag := range regexp.MustCompile(`<(input|select|textarea|button)\b[^>]*>`).FindAllString(page, -1) {
+		if !strings.Contains(tag, "disabled") {
+			t.Fatalf("preview control not disabled: %s\n%s", tag, page)
+		}
+	}
+	mustContain(t, page, `<button type="submit" disabled="">`, `name="name" required="" disabled=""`)
+}
+
+const draftFormSectionBody = `<div class="gp-builder"><section id="gp-s1" class="gp-section gp-form gp-default" data-form="booking"><div class="gp-inner"><div class="gp-heading"><h2>Book</h2></div></div></section><section id="gp-s2" class="gp-section gp-form gp-default"><div class="gp-inner"><h2>Unnamed</h2></div></section></div>`
+
+// A builder preview with draft form markup shows the draft fields, never the
+// published form, and the published render ignores draft markup entirely.
+func TestPreviewUsesDraftFormMarkup(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", map[string]string{"templates/page-builder.html": `<!doctype html><html><head></head><body>{{builderBody .Content}}</body></html>`})
+	e := newEnv(t, root)
+	var got []string
+	fakeForm(e, &got)
+	draft := map[string]string{"s1": `<form class="sb-form gp-form-fields"><div class="sf-field sf-text"><label for="d1">Draft field</label><input id="d1" name="d1" type="text"></div><button type="submit">Go</button></form>`, "s2": `<form class="sb-form gp-form-fields"><label for="d2">Second draft</label><input id="d2"></form>`}
+	ctx := WithDraftForms(t.Context(), draft)
+	item := &content.Item{ID: "preview", Type: "page", Slug: "book", Title: "Book", Body: draftFormSectionBody, Locale: "en"}
+	themed, err := e.svc.RenderBuilderThemePreview(ctx, item, BuilderPreviewOptions{Theme: "default", Identity: brand.Default()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := e.svc.RenderBuilderBody(ctx, item)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, page := range []string{themed, body} {
+		mustContain(t, page, "Draft field", "Second draft")
+		mustNotContain(t, page, `action="/forms/booking"`)
+		for _, tag := range regexp.MustCompile(`<(input|select|textarea|button)\b[^>]*>`).FindAllString(page, -1) {
+			if !strings.Contains(tag, "disabled") {
+				t.Fatalf("draft control not disabled: %s\n%s", tag, page)
+			}
+		}
+	}
+	if len(got) != 0 {
+		t.Fatalf("published form rendered in a draft preview: %q", got)
+	}
+	// Outside the preview, draft markup carried on the context is ignored.
+	cs, _ := kernel.Get[content.Service](e.app.Deps, kernel.ServiceContent)
+	it, err := cs.Create(context.Background(), content.Input{Type: "page", Title: "Book", Status: "published", Template: "builder", Body: formSectionBody})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec, err := e.render(kernel.KindRequest{Kind: KindPage, Template: "builder"}, &Context{Content: it, Locale: "en"}, WithDraftForms(context.Background(), map[string]string{"s1": "<p>LEAK</p>"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustNotContain(t, rec.Body.String(), "LEAK", "Draft field")
+	mustContain(t, rec.Body.String(), `action="/forms/booking"`)
 }

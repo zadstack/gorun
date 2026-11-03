@@ -169,6 +169,10 @@ func (s *service) Publish(ctx context.Context, id, expected string) error {
 	if err := ValidatePublication(draft.Document); err != nil {
 		return err
 	}
+	forms := publishedForms(draft.Document)
+	if err := s.checkFormSlugsFree(ctx, id, forms); err != nil {
+		return err
+	}
 	body, err := Render(draft.Document)
 	if err != nil {
 		return err
@@ -206,7 +210,12 @@ func (s *service) Publish(ctx context.Context, id, expected string) error {
 	if errors.Is(err, content.ErrConflict) {
 		return ErrConflict
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	// After the commit, never inside the transaction (see hooks.Emit).
+	s.emitFormsPublished(ctx, FormsPublished{PageID: id, Forms: forms})
+	return nil
 }
 
 // Reset restores published sections or discards a legacy draft without changing the page.

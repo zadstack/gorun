@@ -80,6 +80,7 @@
         const entry = (provider ? options.providers : options.agents).find(p => p.id === (provider ? card.provider_id : card.agent_id));
         body.append(el('p', entry?.title || t('preset_incomplete')));
         if (provider) body.append(el('small', t(card.generation_kind || 'text')));
+        body.append(chips(card));
 
         if (provider && !entry?.configured) body.append(el('small', entry?.reason || t('unconfigured')));
 
@@ -88,7 +89,8 @@
       if (card.kind === 'schedule') {
         const state = document.schedules?.[card.id];
         body.append(el('p', t(card.interval)), el('p', state ? t(state.status) : t('schedule_inactive')));
-        if (state?.next_run_at) body.append(el('small', new Date(state.next_run_at).toLocaleString()));
+        const next = state?.next_run_at && nextRun(state.next_run_at);
+        if (next) body.append(next);
         if (state?.reason) body.append(el('p', state.reason));
         body.append(btn(t(state?.enabled ? 'disable_schedule' : 'enable_schedule'), () => toggleSchedule(card), 'canvas-operation-button'));
       }
@@ -101,9 +103,9 @@
           media.src = url.href; media.className = 'canvas-result-media';
           if (result.kind === 'image') { media.alt = card.title; media.loading = 'lazy'; }
           else { media.controls = true; media.preload = 'metadata'; media.playsInline = true; }
-          media.addEventListener('error', () => { media.replaceWith(el('p', t('media_error'))); });
-          body.append(media,el('small',t('private_media')));
-        } else body.append(el('p', t('media_error')));
+          media.addEventListener('error', () => { body.dataset.result = 'missing'; media.replaceWith(missing()); });
+          body.dataset.result = 'ready'; body.append(media,el('small',t('private_media')));
+        } else { body.dataset.result = 'missing'; body.append(missing()); }
       }
       const provenance = document.provenance?.[card.id];
       if (provenance) {
@@ -113,6 +115,33 @@
         const time = el('time', Number.isFinite(date.getTime()) ? date.toLocaleString(root.ownerDocument.documentElement.lang || undefined) : String(provenance.created_at || ''));
         time.dateTime = provenance.created_at; time.dir = 'auto';
         source.append(root.ownerDocument.createTextNode(t('attributed') + ' '), actor, root.ownerDocument.createTextNode(' · '), time); body.append(source);
+      }
+    }
+    const lang = () => root.ownerDocument.documentElement.lang || undefined;
+    const missing = () => { const box = el('p', undefined, 'canvas-result-missing'); box.append(el('span', t('media_error'))); return box; };
+    // "Next 14:20 · in 42 minutes": the clock time first, the full date on hover, as the schedules panel shows it.
+    function nextRun(iso) {
+      const now = Date.now(), label = window.CanvasState?.nextRunLabel(iso, now, lang()); if (!label) return null;
+      const time = el('time', label.kind === 'due' ? t('schedules_due') : `${t('schedules_next')} ${window.CanvasState.atLabel(iso, now, lang())} · ${label.text}`, 'canvas-schedule-next');
+      time.dateTime = iso; time.title = new Date(iso).toLocaleString(lang()); return time;
+    }
+    // What feeds an agent or provider node, and the schedule that triggers it, read from the saved graph.
+    function chips(card) {
+      const document = api.document(), list = el('ul', undefined, 'canvas-node-chips'), number = new Intl.NumberFormat(lang());
+      const inbound = (document?.edges || []).filter(edge => edge.to === card.id);
+      list.dataset.chipsFor = card.id;
+      const inputs = inbound.filter(edge => document.cards.find(c => c.id === edge.from)?.kind !== 'schedule').length;
+      list.append(el('li', `${t('chip_inputs')}: ${number.format(inputs)}`));
+      for (const edge of inbound) {
+        const schedule = document.cards.find(c => c.id === edge.from && c.kind === 'schedule');
+        if (schedule && document.schedules?.[schedule.id]?.enabled) { const chip = el('li', `${t('chip_scheduled')} · ${t(schedule.interval)}`); chip.dataset.chip = 'schedule'; list.append(chip); }
+      }
+      return list;
+    }
+    function updateChips() {
+      for (const list of cardsEl.querySelectorAll('.canvas-node-chips')) {
+        const card = api.document()?.cards.find(c => c.id === list.dataset.chipsFor);
+        if (card) list.replaceWith(chips(card));
       }
     }
     // The one enable/disable path for a schedule node, shared by its card button and the schedules panel.
@@ -155,7 +184,9 @@
         path.setAttribute('d',d);path.setAttribute('marker-end','url(#canvas-edge-arrow)');path.dataset.state=edgeState;
         path.dataset.from=pair.edge.from;path.dataset.to=pair.edge.to;svg.append(path);
         if(edgeState==='flowing'){const packet=documentNode('circle');packet.setAttribute('r','4');packet.setAttribute('class','canvas-edge-packet');packet.style.offsetPath=`path('${d}')`;svg.append(packet);}
-        if(edgeState==='failed'){const mid=points[Math.floor((points.length-1)/2)],next=points[Math.floor((points.length-1)/2)+1]||mid,mark=documentNode('text');mark.setAttribute('x',(mid.x+next.x)/2);mark.setAttribute('y',(mid.y+next.y)/2);mark.setAttribute('class','canvas-edge-mark');mark.setAttribute('text-anchor','middle');mark.setAttribute('dominant-baseline','central');mark.textContent='\u00d7';svg.append(mark);}
+        const mid=points[Math.floor((points.length-1)/2)],next=points[Math.floor((points.length-1)/2)+1]||mid,mx=(mid.x+next.x)/2,my=(mid.y+next.y)/2;
+        if(edgeState==='failed'){const mark=documentNode('text');mark.setAttribute('x',mx);mark.setAttribute('y',my);mark.setAttribute('class','canvas-edge-mark');mark.setAttribute('text-anchor','middle');mark.setAttribute('dominant-baseline','central');mark.textContent='\u00d7';svg.append(mark);}
+        if(edgeState==='scheduled'){const clock=documentNode('g'),face=documentNode('circle'),hands=documentNode('path');clock.setAttribute('class','canvas-edge-clock');clock.setAttribute('transform',`translate(${mx} ${my})`);face.setAttribute('r','9');hands.setAttribute('d','M0 -4.5 V0 L3 2');clock.append(face,hands);svg.append(clock);}
         for(const [end,point] of [['from',pair.from],['to',pair.to]]) {
           const dot=documentNode('circle');dot.setAttribute('cx',point.x);dot.setAttribute('cy',point.y);dot.setAttribute('r','4.25');dot.dataset.port=end;dot.dataset.cardId=pair.edge[end];svg.append(dot);
         }
@@ -170,7 +201,7 @@
       const from = select('edge_from', sources), to = select('edge_to', targets);
       const row = el('div', undefined, 'canvas-connect-controls');
       const add = btn(t('connect'), () => {
-        try { document.edges = CanvasGraph.add(document.cards, document.edges, {from:from.value,to:to.value}); api.changed(); renderConnections(); drawEdges(); announce(''); }
+        try { document.edges = CanvasGraph.add(document.cards, document.edges, {from:from.value,to:to.value}); api.changed(); renderConnections(); updateChips(); drawEdges(); announce(''); }
         catch (_) { announce(t('connection_error')); }
       }); add.disabled = !sources.length || !targets.length;
       row.append(label(t('from'), from), label(t('to'), to), add); connections.append(row);
@@ -178,7 +209,7 @@
       for (const edge of document.edges) {
         const title = id => document.cards.find(c => c.id === id)?.title || t('unavailable');
         const item = el('li'); item.append(el('span', `${title(edge.from)} → ${title(edge.to)}`));
-        item.append(btn(t('disconnect'), () => { document.edges = document.edges.filter(e => e.from !== edge.from || e.to !== edge.to); api.changed(); renderConnections(); drawEdges(); })); list.append(item);
+        item.append(btn(t('disconnect'), () => { document.edges = document.edges.filter(e => e.from !== edge.from || e.to !== edge.to); api.changed(); renderConnections(); updateChips(); drawEdges(); })); list.append(item);
       }
       connections.append(list); if (!document.edges.length) connections.append(el('p', t('no_connections')));
     }
@@ -268,6 +299,7 @@
       for (const card of cardsEl.querySelectorAll('[data-card-id]')) {
         const id = card.dataset.cardId, state = states[id] || '', heading = card.querySelector('.canvas-card-heading');
         let span = heading && heading.querySelector(':scope > .canvas-node-state');
+        extra(card, heading, state, newest.get(id));
         if (!state) { delete card.dataset.state; span?.remove(); } else if (heading) {
           card.dataset.state = state;
           if (!span) { span = el('span', undefined, 'canvas-node-state'); heading.append(span); }
@@ -288,7 +320,23 @@
         }
       }
       if (messages.length && !silent) live.textContent = messages.filter(m => !m.endsWith(': ')).join('. ');
+      const counter = root.querySelector('[data-run-count]'), active = Object.values(states).filter(s => s === 'running' || s === 'queued').length;
+      if (counter) { counter.hidden = !active; counter.textContent = active ? `${t('runs_active')}: ${new Intl.NumberFormat(lang()).format(active)}` : ''; }
       drawEdges();
+    }
+    // One line under a node's heading: why its latest run failed, or a short skeleton while an agent or provider runs.
+    function extra(card, heading, state, run) {
+      let line = card.querySelector(':scope > .canvas-node-extra');
+      const writing = state === 'running' && ['agent','provider'].includes(card.dataset.kind);
+      const reason = state === 'failed' && run?.error ? (/^run_[a-z_]+$/.test(run.error) ? t(run.error) : run.error) : '';
+      const key = writing ? 'writing' : reason ? `failed|${reason}` : '';
+      if (!key || !heading) { line?.remove(); return; }
+      if (line?.dataset.key === key) return;
+      if (!line) { line = el(writing ? 'div' : 'p', undefined, 'canvas-node-extra'); heading.after(line); }
+      else if (line.tagName !== (writing ? 'DIV' : 'P')) { const next = el(writing ? 'div' : 'p', undefined, 'canvas-node-extra'); line.replaceWith(next); line = next; }
+      line.dataset.key = key; line.dataset.kind = writing ? 'writing' : 'failed';
+      if (writing) { const label = el('small', t('state_writing')); line.replaceChildren(label, el('span'), el('span'), el('span')); for (const bar of line.querySelectorAll('span')) bar.setAttribute('aria-hidden', 'true'); }
+      else line.replaceChildren(reason);
     }
     // Polling calls this every few seconds: skip the rebuild when nothing shown has changed, and keep focus on
     // the same run's control (data-run-id + data-action) when it must rebuild, as canvas-schedules.js does.
@@ -367,7 +415,7 @@
         const element = [...cardsEl.children].find(el => el.dataset.cardId === card.id)?.querySelector('.canvas-card-body');
         if (element) { element.replaceChildren(); cardBody(element, card); }
       }
-      drawEdges();
+      updateChips(); drawEdges();
     }
     return {editCard,readCard,cardBody,drawEdges,render,saved,applyRunStates,toggleSchedule};
   }

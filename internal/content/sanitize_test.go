@@ -31,3 +31,15 @@ func TestSanitizeStripsScriptKeepsDetails(t *testing.T) {
 		}
 	}
 }
+
+// A builder form section names its site form with data-form (a form slug);
+// no other data-* attribute or value survives.
+func TestSanitizeKeepsFormSectionSlug(t *testing.T) {
+	out := Sanitize(`<section class="gp-section gp-form" data-form="booking"><div data-form="x">a</div></section><section data-form="Bad Slug!">b</section>`)
+	if !strings.Contains(out, `data-form="booking"`) {
+		t.Fatalf("form slug lost: %s", out)
+	}
+	if strings.Count(out, "data-form") != 1 {
+		t.Fatalf("data-form kept outside a section or with an invalid slug: %s", out)
+	}
+}

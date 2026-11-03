@@ -146,7 +146,10 @@
     const active = view === 'lanes' && !mobile.matches;
     if (!active) { laneBands?.remove(); laneBands = null; return false; }
     const dir = getComputedStyle(root).direction === 'rtl' ? 'rtl' : 'ltr';
-    const size = heights(), {positions, columns} = CanvasState.lanes(documentState.cards, size, documentState.provenance || {}, dir);
+    // Narrow the cards before measuring them, so four columns fit the viewport without sideways scrolling.
+    const width = CanvasState.laneCardWidth(root.querySelector('.canvas-viewport').clientWidth), pitch = width + 36;
+    root.style.setProperty('--lane-card-width', `${width}px`); root.style.setProperty('--lane-pitch', `${pitch}px`);
+    const size = heights(), {positions, columns} = CanvasState.lanes(documentState.cards, size, documentState.provenance || {}, dir, pitch);
     let bottom = 0;
     for (const el of cardsEl.children) {
       const at = positions[el.dataset.cardId]; if (!at) continue;
@@ -162,7 +165,7 @@
       header.append(element('strong', `${number.format(column.lane + 1)} · ${t(laneKeys[column.lane])}`), document.createTextNode(' '), element('span', `(${number.format(column.count)})`));
       band.append(header); return band;
     }));
-    surface.style.minWidth = `${Math.max(1050, ...columns.map(column => column.x + 318))}px`;
+    surface.style.minWidth = `${Math.max(...columns.map(column => column.x + width + 18))}px`;
     surface.style.minHeight = `${Math.max(850, bottom + 72)}px`;
     return true;
   }
@@ -423,6 +426,7 @@
   root.querySelector('[data-canvas-leave]').addEventListener('click', event => { event.preventDefault(); leave('/admin/canvases'); });
   window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
   mobile.addEventListener('change', () => { if (documentState) render(); });
+  window.addEventListener('resize', () => { if (documentState && view === 'lanes') updateBounds(); });
   operations = window.CanvasOperations?.create({root, t, element, button, request, csrf, form, surface, cardsEl, document: () => documentState, applyPreset: data => { if (!documentState || documentState.version !== 1 || documentState.cards.length || documentState.edges.length) return false; documentState.cards = data.cards; documentState.edges = data.edges; changed(); render(); return true; }, changed, render, save, reload: async () => { if (dirty() && !confirm(t('reload_confirm'))) return false; clearTimeout(timer); await load(); return true; }});
   schedules = window.CanvasSchedules?.create({root,t,element,button,document:()=>documentState,toggle:card=>operations?.toggleSchedule(card)});
   root.querySelectorAll('[data-canvas-view]').forEach(button=>button.addEventListener('click',()=>selectView(button.dataset.canvasView)));

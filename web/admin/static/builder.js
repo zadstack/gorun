@@ -39,10 +39,13 @@
       doc.sections.length >= 60;
     root.querySelector('[data-action="reset"]').disabled =
       doc.sections.length === 0 && !dirty;
+    // Drafts save whatever the form state (the server checks only sizes);
+    // publishing waits for every visible form to be complete.
+    const invalid = formsUnpublishable();
     const publish = root.querySelector('[data-action="publish"]');
     const acknowledge = document.getElementById("builder-convert");
     if (publish) {
-      publish.disabled = doc.sections.length === 0 ||
+      publish.disabled = doc.sections.length === 0 || invalid ||
         (acknowledge && !acknowledge.checked);
     }
   };
@@ -61,13 +64,18 @@
     if (!blocked) timer = setTimeout(() => save().catch(() => {}), 900);
     previewTimer = setTimeout(preview, 250);
   }
-  function mutate(fn) {
+  // focusKeys name controls (data-focus-key) to focus after the re-render,
+  // the first enabled one winning; without one, focus returns to the section.
+  function mutate(fn, ...focusKeys) {
     const focused = document.activeElement.closest("[data-section-id]")?.dataset
       .sectionId;
     remember();
     fn();
     render();
-    if (focused) {
+    const nodes = focusKeys.length ? [...list.querySelectorAll("[data-focus-key]")] : [];
+    const keyed = focusKeys.map((key) => nodes.find((node) => node.dataset.focusKey === key && !node.disabled)).find(Boolean);
+    if (keyed) keyed.focus();
+    else if (focused) {
       const destination = [...list.children].find((node) =>
         node.dataset.sectionId === focused
       );
@@ -102,9 +110,12 @@
     if (entryIndex !== undefined) input.dataset.item = entryIndex;
     if (key === "text") input.rows = 3;
     else input.type = "text";
+    if (target.kind === "form" && key === "title") input.maxLength = 200;
     input.addEventListener("input", () => {
       remember();
+      const before = target[key];
       target[key] = input.value;
+      if (target.kind === "form" && key === "title") followTitle(target, before);
       refreshNativeEligibility(sectionID);
       changed();
     });
@@ -243,6 +254,236 @@
       group.append(button("remove_item", () => mutate(() => options.rows.splice(index, 1)))); parent.append(group);
     });
     parent.append(button("add_row", () => mutate(() => { options.rows = options.rows || []; options.rows.push({label: text("comparison_row"), cells: options.columns.slice(1).map(() => ({text: "", status: ""}))}); }), (options.rows || []).length >= 24));
+  }
+
+  // Form sections. internal/builder/forms.go is the authority; these
+  // mirrors only explain problems before the server rejects them.
+  const formTypes = ["text", "textarea", "email", "number", "date", "choice", "checkbox", "file"];
+  const formSlugPattern = /^[a-z0-9-]{1,40}$/, formNamePattern = /^[a-z0-9_]{1,40}$/;
+  // asciiKey mirrors SlugFromTitle: lowercase ASCII letters and digits, any
+  // other run joined by sep, capped at 40 with no trailing sep. A title with
+  // no ASCII letter or digit (Arabic, say) gives "".
+  function asciiKey(value, sep) {
+    let out = "", gap = false;
+    for (const ch of String(value || "").toLowerCase()) {
+      if ((ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9")) {
+        if (gap && out) out += sep;
+        gap = false;
+        out += ch;
+      } else gap = true;
+    }
+    if (out.length > 40) out = out.slice(0, 40).replace(sep === "-" ? /-+$/ : /_+$/, "");
+    return out;
+  }
+  const slugFromTitle = (title) => asciiKey(title, "-");
+  const nameFromLabel = (label) => asciiKey(label, "_");
+  function formErrors(section) {
+    const form = section.form || {fields: []}, fields = form.fields || [];
+    const slug = form.slug || "";
+    let slugError = "";
+    if (!slug) slugError = "form_slug_required";
+    else if (!formSlugPattern.test(slug)) slugError = "form_slug_invalid";
+    else if (slug === "contact" || slug === "comment") slugError = "form_slug_reserved";
+    // ValidatePublication compares visible forms only.
+    else if (!section.hidden && doc.sections.some((other) => other !== section && !other.hidden && other.kind === "form" && other.form?.slug === slug)) slugError = "form_slug_repeated";
+    let files = 0;
+    const field = fields.map((entry, index) => {
+      const name = entry.name || "";
+      let nameError = "";
+      if (!name) nameError = "field_name_required";
+      else if (!formNamePattern.test(name) || name.startsWith("_") || name === "website") nameError = "field_name_invalid";
+      else if (fields.some((other, otherIndex) => otherIndex < index && other.name === name)) nameError = "field_name_repeated";
+      const typeError = entry.type === "file" && ++files > 1 ? "form_file_once" : !formTypes.includes(entry.type) ? "form_field_type_unknown" : "";
+      const choicesError = entry.type === "choice" && !(entry.choices || []).some((choice) => choice.trim()) ? "field_choices_required" : "";
+      return {name: nameError, type: typeError, choices: choicesError};
+    });
+    return {slug: slugError, fields: fields.length ? "" : "form_fields_required", field};
+  }
+  // formsUnpublishable mirrors validateFormsForPublish: hidden form
+  // sections are skipped, as ValidatePublication skips them.
+  function formsUnpublishable() {
+    return doc.sections.some((section) => {
+      if (section.kind !== "form" || section.hidden) return false;
+      const errors = formErrors(section);
+      return !!(errors.slug || errors.fields || errors.field.some((entry) => entry.name || entry.type || entry.choices));
+    });
+  }
+  // refreshFormHints updates hints and aria-invalid in place: typing never
+  // re-renders the editor, so focus and selection stay put.
+  function refreshFormHints() {
+    for (const node of list.querySelectorAll("[data-section-id]")) {
+      const section = doc.sections.find((entry) => entry.id === node.dataset.sectionId);
+      if (section?.kind !== "form") continue;
+      const errors = formErrors(section);
+      const show = (hint, key) => {
+        if (!hint) return;
+        hint.hidden = !key;
+        hint.textContent = key ? text(key) : "";
+        const control = hint.dataset.control && node.querySelector(`[data-hint-id="${hint.id}"]`);
+        if (control) {
+          if (key) control.setAttribute("aria-invalid", "true");
+          else control.removeAttribute("aria-invalid");
+        }
+      };
+      show(node.querySelector('[data-form-hint="slug"]'), errors.slug);
+      show(node.querySelector('[data-form-hint="fields"]'), errors.fields);
+      node.querySelectorAll("fieldset[data-form-field]").forEach((group) => {
+        const entry = errors.field[Number(group.dataset.formField)] || {};
+        show(group.querySelector('[data-form-hint="name"]'), entry.name);
+        show(group.querySelector('[data-form-hint="type"]'), entry.type);
+        show(group.querySelector('[data-form-hint="choices"]'), entry.choices);
+      });
+    }
+    buttons();
+  }
+  // A slug or name the author has not edited keeps following its source text.
+  function followTitle(section, before) {
+    const form = section.form || (section.form = {slug: "", submit_label: "", success: "", fields: []});
+    if ((form.slug || "") !== slugFromTitle(before)) return;
+    form.slug = slugFromTitle(section.title);
+    const input = [...list.querySelectorAll('input[data-form="slug"]')].find((node) => node.dataset.section === section.id);
+    if (input) input.value = form.slug;
+    refreshFormHints();
+  }
+  function hint(parent, kind, control, id) {
+    const node = el("p", "builder-form-hint");
+    node.id = id;
+    node.dataset.formHint = kind;
+    node.hidden = true;
+    if (control) {
+      node.dataset.control = "true";
+      control.dataset.hintId = id;
+      control.setAttribute("aria-describedby", [control.getAttribute("aria-describedby"), id].filter(Boolean).join(" "));
+    }
+    parent.append(node);
+    return node;
+  }
+  function formInput(target, key, parent, sectionID, options = {}) {
+    const wrap = el("label", "block text-sm space-y-1", text(options.label || key));
+    const input = el(options.multiline ? "textarea" : "input", "w-full bg-panel border border-line p-2");
+    if (options.multiline) input.rows = 3;
+    else input.type = "text";
+    input.value = options.value ?? (target[key] || "");
+    input.maxLength = options.max;
+    input.dir = options.ltr ? "ltr" : "auto";
+    input.dataset.form = key;
+    input.dataset.section = sectionID;
+    if (options.focusKey) input.dataset.focusKey = options.focusKey;
+    input.addEventListener("input", () => {
+      remember();
+      if (options.onInput) options.onInput(input.value);
+      else target[key] = input.value;
+      refreshFormHints();
+      changed();
+    });
+    wrap.append(input);
+    parent.append(wrap);
+    return input;
+  }
+  function uniqueName(fields, base) {
+    if (!base || !fields.some((entry) => entry.name === base)) return base;
+    for (let n = 2; ; n++) {
+      const candidate = `${base.slice(0, 37)}_${n}`;
+      if (!fields.some((entry) => entry.name === candidate)) return candidate;
+    }
+  }
+  function formFields(section, parent) {
+    const form = section.form || (section.form = {slug: slugFromTitle(section.title), submit_label: "", success: "", fields: []});
+    form.fields = form.fields || [];
+    const group = el("fieldset", "builder-form border border-line p-3 space-y-2");
+    group.append(el("legend", "font-medium", text("form_settings")));
+    const slug = formInput(form, "slug", group, section.id, {label: "form_slug", max: 40, ltr: true});
+    slug.setAttribute("aria-describedby", `builder-form-${section.id}-slug-help`);
+    const slugHelp = el("p", "text-muted text-sm", text("form_slug_help"));
+    slugHelp.id = `builder-form-${section.id}-slug-help`;
+    group.append(slugHelp);
+    hint(group, "slug", slug, `builder-form-${section.id}-slug-hint`);
+    formInput(form, "submit_label", group, section.id, {max: 200});
+    formInput(form, "success", group, section.id, {max: 1000, multiline: true});
+    const fieldList = el("div", "space-y-2");
+    fieldList.append(el("h3", "font-medium", text("form_fields")));
+    const files = form.fields.filter((entry) => entry.type === "file").length;
+    form.fields.forEach((entry, index) => {
+      const prefix = `builder-form-${section.id}-${index}`, key = (part, at = index) => `${section.id}:field:${at}:${part}`;
+      const row = el("fieldset", "border border-line p-3 space-y-2");
+      row.dataset.formField = index;
+      row.append(el("legend", "", `${text("form_field")} ${index + 1}`));
+      formInput(entry, "label", row, section.id, {label: "field_label", max: 200, focusKey: key("label"), onInput: (value) => {
+        const name = row.querySelector('input[data-form="name"]');
+        // The name follows the label until edited; a new field's field_N
+        // default counts as unedited while its label is still "Field N".
+        const name0 = entry.name || "";
+        if (name0 === nameFromLabel(entry.label) || (/^field_\d+$/.test(name0) && entry.label === `${text("form_field")} ${name0.slice(6)}`)) {
+          entry.name = nameFromLabel(value);
+          if (name) name.value = entry.name;
+        }
+        entry.label = value;
+      }});
+      const name = formInput(entry, "name", row, section.id, {label: "field_name", max: 40, ltr: true, focusKey: key("name")});
+      hint(row, "name", name, `${prefix}-name-hint`);
+      const typeLabel = el("label", "block text-sm", text("field_type"));
+      const type = el("select", "bg-panel border border-line p-2");
+      type.dataset.form = "type";
+      type.dataset.focusKey = key("type");
+      for (const value of formTypes) {
+        const option = el("option", "", text("type_" + value));
+        option.value = value;
+        option.disabled = value === "file" && entry.type !== "file" && files > 0;
+        type.append(option);
+      }
+      type.value = entry.type || "text";
+      type.addEventListener("change", () => mutate(() => {
+        entry.type = type.value;
+        if (entry.type === "choice") entry.choices = entry.choices || [];
+      }, key("type")));
+      typeLabel.append(type);
+      row.append(typeLabel);
+      hint(row, "type", type, `${prefix}-type-hint`);
+      const requiredLabel = el("label", "builder-form-check flex items-center gap-2", text("field_required"));
+      const required = el("input");
+      required.type = "checkbox";
+      required.dataset.form = "required";
+      required.dataset.focusKey = key("required");
+      required.checked = !!entry.required;
+      required.addEventListener("change", () => mutate(() => entry.required = required.checked, key("required")));
+      requiredLabel.prepend(required);
+      row.append(requiredLabel);
+      formInput(entry, "help", row, section.id, {label: "field_help", max: 500, focusKey: key("help")});
+      if (entry.type === "choice") {
+        const choices = formInput(entry, "choices", row, section.id, {label: "field_choices", multiline: true, max: 4200, value: (entry.choices || []).join("\n"), onInput: (value) => {
+          // The server caps a choice at 200 characters and a field at 20.
+          const lines = value.split("\n").map((line) => line.trim().slice(0, 200)).filter(Boolean);
+          entry.choices = lines.slice(0, 20);
+          row.querySelector("[data-choices-limit]").hidden = lines.length <= 20;
+        }});
+        hint(row, "choices", choices, `${prefix}-choices-hint`);
+        const limit = el("p", "builder-form-hint", text("field_choices_limit"));
+        limit.dataset.choicesLimit = "true";
+        limit.hidden = true;
+        row.append(limit);
+      }
+      const actions = el("div", "flex flex-wrap gap-1");
+      // The moved field keeps focus: on the same button, or the other one
+      // when it reached an end.
+      const move = (to, part) => () => mutate(() => {
+        [form.fields[to], form.fields[index]] = [form.fields[index], form.fields[to]];
+      }, key(part, to), key(part === "up" ? "down" : "up", to));
+      const up = button("field_up", move(index - 1, "up"), index === 0);
+      const down = button("field_down", move(index + 1, "down"), index === form.fields.length - 1);
+      up.dataset.focusKey = key("up");
+      down.dataset.focusKey = key("down");
+      actions.append(up, down, button("remove_field", () => mutate(() => form.fields.splice(index, 1))));
+      row.append(actions);
+      fieldList.append(row);
+    });
+    hint(fieldList, "fields", null, `builder-form-${section.id}-fields-hint`);
+    fieldList.append(button("add_field", () => mutate(() => {
+      const label = `${text("form_field")} ${form.fields.length + 1}`;
+      // field_N in every locale: an Arabic "حقل N" would derive just "N".
+      form.fields.push({name: uniqueName(form.fields, `field_${form.fields.length + 1}`), label, type: "text", required: false, help: "", choices: []});
+    }), form.fields.length >= 30));
+    group.append(fieldList);
+    parent.append(group);
   }
   function suggestionCurrent(original) {
     return doc.sections.find(section => section.id === original.id);
@@ -444,6 +685,7 @@
         (key) => field(section, key, article, section.id),
       );
       if (native) nativeFields(section, article);
+      if (section.kind === "form") formFields(section, article);
       article.append(advanced);
  const hideLabel = el("label", "flex items-center gap-2", text("hidden")),
         hide = el("input");
@@ -455,7 +697,7 @@
       );
       hideLabel.prepend(hide);
       article.append(hideLabel);
-      if (!native || ["features", "steps", "faq", "media_text", "switcher", "task_entry"].includes(section.kind)) {
+      if (section.kind !== "form" && (!native || ["features", "steps", "faq", "media_text", "switcher", "task_entry"].includes(section.kind))) {
       (section.items || []).forEach((entry, itemIndex) => {
         const group = el("fieldset", "border border-line p-3 space-y-2");
         group.append(el("legend", "", `${text("item")} ${itemIndex + 1}`));
@@ -489,7 +731,7 @@
       }
       list.append(article);
     });
-    buttons();
+    refreshFormHints();
   }
   async function request(action, body) {
     const response = await fetch(
@@ -501,11 +743,19 @@
       },
     );
     if (!response.ok) {
+      const error = new Error(`Builder ${action}: ${response.status}`);
       if (response.status === 409) {
         blocked = true;
         notify("conflict", true);
-      } else if (action !== "preview") notify("error", true);
-      throw new Error(`Builder ${action}: ${response.status}`);
+      } else if (action !== "preview") {
+        const body = await response.json().catch(() => null);
+        if (body?.error === "builder.form_slug_taken" && typeof body.slug === "string") {
+          error.slug = body.slug;
+          status.textContent = text("form_slug_taken").replace("{slug}", body.slug);
+          status.setAttribute("role", "alert");
+        } else notify("error", true);
+      }
+      throw error;
     }
     return response;
   }
@@ -607,6 +857,7 @@
       } catch {}
     }
     if (action === "publish" && confirm(text("confirm_publish"))) {
+      let takenSlug;
       publishing = true;
       clearTimeout(timer);
       const controls = [
@@ -622,12 +873,16 @@
         token = result.updated_at;
         contentToken = result.content_token;
         notify("published");
-      } catch {
-        notify(blocked ? "conflict" : "error", true);
+      } catch (error) {
+        if (error.slug !== undefined) takenSlug = error.slug;
+        else notify(blocked ? "conflict" : "error", true);
       } finally {
         publishing = false;
         controls.forEach(([node, disabled]) => node.disabled = disabled);
         buttons();
+      }
+      if (takenSlug !== undefined) {
+        [...list.querySelectorAll('input[data-form="slug"]')].find((node) => node.value === takenSlug)?.focus();
       }
     }
     if (action === "reset" && confirm(text("confirm_reset"))) {

@@ -7,6 +7,9 @@ import (
 )
 
 func TestRenderEscapesAndSupportsCatalog(t *testing.T) {
+	if len(Catalog("ar")) != 20 {
+		t.Fatal("expected twenty sections")
+	}
 	if len(Catalog("ar")) != len(Catalog("en")) {
 		t.Fatal("Arabic and English section catalogs differ")
 	}

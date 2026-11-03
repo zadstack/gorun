@@ -243,3 +243,59 @@
 .canvas-workspace .canvas-lane-header strong { font-weight: 700; }
 .canvas-workspace .canvas-lane-header span { font-weight: 500; }
 @media (max-width: 767px) { .canvas-workspace .canvas-lanes { display: none; } }
+
+/* Flow keeps a margin above and before the board, so decoration that sits outside a card (agent avatar, note tape,
+   result seal, stacked sheets) is never clipped by the viewport when the card is at x=0 or y=0. */
+@media (min-width: 768px) {
+  .canvas-workspace[data-view=flow] .canvas-surface { margin: 24px 0 0 16px; }
+  /* Footer buttons stay inside rounded corners: the inline padding grows with the card's radius. */
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card-footer { padding-inline: max(.375rem, calc(var(--card-radius) * .5)); }
+  /* Lanes narrows cards so the four columns fit the viewport (canvas.js sets the width and pitch). */
+  .canvas-workspace[data-view=lanes] .canvas-card { width: var(--lane-card-width, 300px); }
+  .canvas-workspace[data-view=lanes] .canvas-lane { width: var(--lane-pitch, 336px); }
+  /* A result whose media is missing gets a red seal with an exclamation mark instead of the green check. */
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=result]:has(> .canvas-card-body[data-result=missing])::before { background: #a3292d url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round'%3E%3Cpath d='M12 6v7M12 18h.01'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=result]:has(> .canvas-card-body[data-result=missing]) { box-shadow: 0 0 0 3px #fff, 0 0 0 4px #e7b4ae, 0 2px 5px #17202c08; }
+  /* A running agent: a turning ring around its avatar and a stronger halo around the card. */
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=agent][data-state=running] { box-shadow: 0 0 0 5px #dfe2f7, 0 8px 22px #464d8829; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=agent][data-state=running] .canvas-card-heading::after { content: ""; position: absolute; z-index: 0; top: -25px; inset-inline-start: 10px; width: 42px; height: 42px; border-radius: 50%; pointer-events: none; background: conic-gradient(var(--card-accent) 0 30%, var(--card-soft) 30% 100%); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px)); animation: canvas-agent-ring 1.6s linear infinite; }
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=agent] .canvas-card-heading::before { z-index: 1; }
+}
+@keyframes canvas-agent-ring { to { transform: rotate(1turn); } }
+@media (prefers-reduced-motion: reduce) { .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-card[data-kind=agent][data-state=running] .canvas-card-heading::after { animation: none; } }
+
+/* Chips on agent and provider cards: what feeds the node and whether a schedule triggers it. */
+.canvas-workspace .canvas-node-chips { display: flex; flex-wrap: wrap; gap: .25rem; margin-block: .25rem .5rem; padding: 0; list-style: none; }
+.canvas-workspace .canvas-node-chips li { padding: .05rem .45rem; border-radius: 4px; background: #f0f3f6; color: #39475c; font-size: .6875rem; line-height: 1.6; }
+.canvas-workspace .canvas-node-chips li[data-chip=schedule] { background: #faedf1; color: #804457; }
+
+/* Below the heading: the reason a node failed, or a short "writing" skeleton while it runs. */
+.canvas-workspace .canvas-node-extra { margin: 0; padding: .375rem .75rem; font-size: .75rem; line-height: 1.6; border-block-end: 1px solid #eef1f4; overflow-wrap: anywhere; }
+.canvas-workspace .canvas-node-extra[data-kind=failed] { color: #8a2a1f; background: #fdf3f2; }
+.canvas-workspace .canvas-node-extra[data-kind=writing] { display: grid; gap: .3rem; color: #464d88; }
+.canvas-workspace .canvas-node-extra[data-kind=writing] span { display: block; height: 6px; border-radius: 3px; background: #e3e6f6; animation: canvas-state-pulse 1.8s ease-in-out infinite; }
+.canvas-workspace .canvas-node-extra[data-kind=writing] span:nth-of-type(2) { width: 82%; }
+.canvas-workspace .canvas-node-extra[data-kind=writing] span:nth-of-type(3) { width: 60%; }
+@media (prefers-reduced-motion: reduce) { .canvas-workspace .canvas-node-extra[data-kind=writing] span { animation: none; } }
+
+/* A result whose media is unavailable shows a striped placeholder instead of a bare sentence. */
+.canvas-workspace .canvas-result-missing { display: flex; align-items: center; gap: .625rem; margin: 0; padding: .625rem; border-radius: 6px; color: #8a2a1f; background: repeating-linear-gradient(45deg, #fbeeec 0 8px, #f6dcd8 8px 16px); font-size: .75rem; line-height: 1.6; }
+.canvas-workspace .canvas-result-missing::before { content: ""; flex: none; width: 22px; height: 22px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a2a1f' stroke-width='2' stroke-linecap='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M3 15l5-4 4 3 3-2 6 4'/%3E%3C/svg%3E") center / contain no-repeat; }
+.canvas-workspace .canvas-result-missing span { padding: .1rem .35rem; border-radius: 3px; background: #fffffff0; }
+
+/* Toolbar chip with the number of active runs; hidden when none. */
+.canvas-workspace .canvas-run-count { display: inline-flex; align-items: center; gap: .3rem; padding: .05rem .5rem; border: 1px solid #b9c7e6; border-radius: 999px; color: #1a5a9e; background: #f2f6fd; font-weight: 600; }
+.canvas-workspace .canvas-run-count::before { content: ""; width: .45rem; height: .45rem; border-radius: 50%; background: currentColor; animation: canvas-state-pulse 1.4s ease-in-out infinite; }
+.canvas-workspace .canvas-run-count[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .canvas-workspace .canvas-run-count::before { animation: none; } }
+
+/* Edge legend: decorative, like the edges it explains; shown in flow and lanes once the board has an edge. */
+.canvas-workspace .canvas-legend { position: absolute; z-index: 3; inset-block-end: .75rem; inset-inline-start: .75rem; display: none; gap: .875rem; margin: 0; padding: .375rem .625rem; border: 1px solid #e1e6eb; border-radius: 6px; background: #fffffff2; color: #39475c; font-size: .6875rem; list-style: none; pointer-events: none; }
+.canvas-workspace .canvas-legend li { display: flex; align-items: center; gap: .375rem; white-space: nowrap; }
+.canvas-workspace .canvas-legend svg line { stroke: #6386a3; stroke-width: 2; }
+.canvas-workspace .canvas-legend [data-legend=scheduled] line { stroke-dasharray: 2 5; }
+.canvas-workspace .canvas-legend [data-legend=flowing] line { stroke-dasharray: 7 9; }
+.canvas-workspace .canvas-legend [data-legend=failed] line { stroke: #b42318; stroke-dasharray: 4 5; }
+@media (min-width: 768px) {
+  .canvas-workspace:is([data-view=flow],[data-view=lanes]) .canvas-stage:has(.canvas-edges path) .canvas-legend { display: flex; }
+}

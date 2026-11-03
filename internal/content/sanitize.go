@@ -32,6 +32,8 @@ var cmsPolicy = sync.OnceValue(func() *bluemonday.Policy {
 	p.AllowAttrs("aria-label").Matching(regexp.MustCompile(`^[^\x00-\x1f\x7f]{1,300}$`)).OnElements("div")
 	p.AllowAttrs("scope").Matching(regexp.MustCompile(`^(col|row)$`)).OnElements("th")
 	p.AllowAttrs("id").Matching(regexp.MustCompile(`^gp-[A-Za-z0-9_-]{1,80}$`)).OnElements("section")
+	// A builder form section names the site form rendered into it (a form slug).
+	p.AllowAttrs("data-form").Matching(regexp.MustCompile(`^[a-z0-9-]{1,40}$`)).OnElements("section")
 	p.AllowAttrs("loading", "width", "height", "srcset", "sizes").OnElements("img")
 	// bluemonday's UGC base matches img alt against a Latin-only pattern, so a
 	// localized alt with an Arabic comma (،), guillemets («») or a diacritic was
@@ -57,7 +59,7 @@ var cmsPolicy = sync.OnceValue(func() *bluemonday.Policy {
 // Policy returns the "cms" sanitizer policy (spec §4.2): bluemonday's UGC
 // base (headings, lists, tables, links, images, code) plus figure/figcaption,
 // details/summary, iframes from an allowlist, editor classes and dir.
-// data-* attributes, inline styles, scripts and event handlers are stripped.
+// data-* attributes (except a form section's data-form slug), inline styles, scripts and event handlers are stripped.
 func Policy() *bluemonday.Policy { return cmsPolicy() }
 
 // iframeSandbox is the fixed sandbox every embedded iframe gets.
