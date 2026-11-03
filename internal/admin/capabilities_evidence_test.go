@@ -201,10 +201,17 @@ func TestCapabilityOperationTestsRunInBackgroundWithIsolatedSamples(t *testing.T
 		t.Fatalf("%d %s", w.Code, w.Body.String())
 	}
 	drain(t, app)
+	// The app's own job worker may have claimed the check before drain did,
+	// so wait (bounded) until it is no longer in progress.
+	st = connectionState(capabilityReport(t, tester), aiID)
+	for deadline := time.Now().Add(15 * time.Second); st.LastCheck != nil && st.LastCheck.Status == "running" && time.Now().Before(deadline); {
+		time.Sleep(50 * time.Millisecond)
+		drain(t, app)
+		st = connectionState(capabilityReport(t, tester), aiID)
+	}
 	// The connectivity check applies the strict profile validation (a
 	// loopback HTTP endpoint is not a valid saved connection), so it fails
 	// honestly: reflected as connected=false, never promoted to tested.
-	st = connectionState(capabilityReport(t, tester), aiID)
 	if st.Connected == nil || *st.Connected || st.LastCheck == nil || st.LastCheck.Status != "failed" || st.LastCheck.Kind != "connectivity" || st.Tested || st.LastCheck.CheckedAt == nil {
 		t.Fatalf("connectivity check not reflected or promoted: %+v", st.LastCheck)
 	}

@@ -115,8 +115,7 @@ func (h *handlers) canvasTick(ctx context.Context) error {
 	if _, e := h.d.DB.ExecContext(ctx, `DELETE FROM admin_canvas_reviews WHERE expires_at<?`, db.Now()); e != nil {
 		return e
 	}
-	// Interrupted external requests are uncertain and must never be repeated automatically.
-	if _, e := h.d.DB.ExecContext(ctx, `UPDATE admin_canvas_runs SET status='uncertain',finished_at=? WHERE status='running' AND started_at<?`, db.Now(), time.Now().Add(-5*time.Minute).UTC().Format(time.RFC3339)); e != nil {
+	if e := h.canvasWatchdog(ctx, time.Now()); e != nil {
 		return e
 	}
 	rows, e := h.d.DB.QueryContext(ctx, `SELECT s.board_id,s.node_id,s.provider_node_id,s.interval,s.consent_hash,s.next_run_at,b.owner_id FROM admin_canvas_schedules s JOIN admin_canvases b ON b.id=s.board_id WHERE s.enabled=1 AND s.next_run_at<=? LIMIT 100`, db.Now())

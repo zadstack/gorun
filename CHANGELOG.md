@@ -21,6 +21,7 @@ All notable changes to GoRun are recorded here. The format follows
 - A canvas result whose media is missing shows a red seal and a placeholder, not the green check.
 - Decoration on canvas cards at the board's top or start edge is no longer clipped, and footer buttons stay inside rounded card corners.
 - The lanes view narrows its cards (down to 240px) so the four columns fit a 1440px screen without sideways scrolling.
+- A canvas watchdog closes runs that stopped making progress and records why. Runs left queued for 15 minutes fail as never started. Runs waiting more than 24 hours for an external agent become uncertain. Interrupted runs (running past 5 minutes, already swept) now say so. Stuck runs no longer count against the board's run limit, and the run history explains each stop in Arabic and English. Nothing is retried automatically.
 
 ## [0.18.7] - 2026-11-03
 
