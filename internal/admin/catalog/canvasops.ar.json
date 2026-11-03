@@ -106,5 +106,13 @@
   "lane_inputs": "المدخلات",
   "lane_instructions": "التعليمات والمشغّلات",
   "lane_execution": "التنفيذ",
-  "lane_results": "النتائج"
+  "lane_results": "النتائج",
+  "chip_inputs": "المدخلات",
+  "chip_scheduled": "مجدول",
+  "runs_active": "قيد التشغيل الآن",
+  "state_writing": "يكتب الناتج الآن…",
+  "legend_idle": "خامل",
+  "legend_scheduled": "مُجدول",
+  "legend_flowing": "بيانات تتدفق",
+  "legend_failed": "فشل"
 }

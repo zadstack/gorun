@@ -106,5 +106,13 @@
   "lane_inputs": "Inputs",
   "lane_instructions": "Instructions and triggers",
   "lane_execution": "Execution",
-  "lane_results": "Results"
+  "lane_results": "Results",
+  "chip_inputs": "Inputs",
+  "chip_scheduled": "Scheduled",
+  "runs_active": "Running now",
+  "state_writing": "Writing output…",
+  "legend_idle": "Idle",
+  "legend_scheduled": "Scheduled",
+  "legend_flowing": "Data flowing",
+  "legend_failed": "Failed"
 }

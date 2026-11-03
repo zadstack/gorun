@@ -118,3 +118,22 @@ test('nextRunLabel picks the unit after rounding (never "24 hours" or "60 minute
   assert.equal(label(59.6), 'in 1 hour');
   assert.equal(label(59.4), 'in 59 minutes');
 });
+test('atLabel: time today, weekday this week, date beyond', () => {
+  const at = ms => state.atLabel(new Date(now + ms).toISOString(), now, 'en-GB', 'UTC');
+  assert.equal(at(42 * 60_000), '14:28');
+  assert.match(at(2 * 86_400_000), /^Wed,? 13:46$/);
+  assert.match(at(10 * 86_400_000), /^22 Jan,? 13:46$/);
+  assert.equal(state.atLabel('', now, 'en', 'UTC'), null);
+  assert.equal(state.atLabel('nope', now, 'en', 'UTC'), null);
+});
+test('atLabel compares calendar days, not 24-hour spans', () => {
+  const late = Date.parse('2026-11-03T23:50:00Z');
+  assert.match(state.atLabel('2026-11-04T00:10:00Z', late, 'en-GB', 'UTC'), /^Wed,? 00:10$/);
+});
+test('laneCardWidth fits four columns, between 240 and 300', () => {
+  assert.equal(state.laneCardWidth(2000), 300);
+  assert.equal(state.laneCardWidth(1150), 250);
+  assert.equal(state.laneCardWidth(600), 240);
+  const width = state.laneCardWidth(1150), {columns} = state.lanes([], {}, {}, 'ltr', width + 36);
+  assert.ok(columns[3].x + width + 18 <= 1150);
+});
