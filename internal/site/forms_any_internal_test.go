@@ -10,7 +10,7 @@ func TestBuilderFormValidatesErrors(t *testing.T) {
 		{Name: "size", Type: fieldChoice, Choices: []string{"S", "M"}, State: statePinned},
 		{Name: "old", Type: fieldText, State: stateDiscovered},
 	}}
-	data, errs := validateBuilder(def, map[string]string{"count": "x", "day": "2026-13-40", "size": "XL", "old": "v", "extra": "e"})
+	_, errs := validateBuilder(def, map[string]string{"count": "x", "day": "2026-13-40", "size": "XL", "old": "v", "extra": "e"})
 	for _, f := range []string{"email", "count", "day", "size"} {
 		if errs[f] == "" {
 			t.Errorf("no error for %s: %v", f, errs)
@@ -19,7 +19,7 @@ func TestBuilderFormValidatesErrors(t *testing.T) {
 	if errs["email"] != "core.validation.required" {
 		t.Errorf("email error = %q", errs["email"])
 	}
-	data, errs = validateBuilder(def, map[string]string{"email": "a@example.com", "count": "2.5", "day": "2026-11-03", "size": "M", "old": "v", "extra": "e"})
+	data, errs := validateBuilder(def, map[string]string{"email": "a@example.com", "count": "2.5", "day": "2026-11-03", "size": "M", "old": "v", "extra": "e"})
 	if len(errs) != 0 {
 		t.Fatalf("errors: %v", errs)
 	}
