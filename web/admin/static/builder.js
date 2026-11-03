@@ -244,6 +244,82 @@
     });
     parent.append(button("add_row", () => mutate(() => { options.rows = options.rows || []; options.rows.push({label: text("comparison_row"), cells: options.columns.slice(1).map(() => ({text: "", status: ""}))}); }), (options.rows || []).length >= 24));
   }
+  function suggestionCurrent(original) {
+    return doc.sections.find(section => section.id === original.id);
+  }
+  async function suggestionRequest(original, mode, binding = "") {
+    const response = await fetch(`/admin/builder/${encodeURIComponent(root.dataset.id)}/suggest`, {
+      method: "POST", headers: {"Content-Type": "application/json", "X-CSRF-Token": csrf},
+      body: JSON.stringify({section: original, mode, ai_binding: binding}),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "suggest_invalid");
+    return result;
+  }
+  async function previewSuggestion(original, candidate, message) {
+    if (JSON.stringify(suggestionCurrent(original)) !== JSON.stringify(original)) {message.textContent = text("suggest_stale"); return;}
+    clearTimeout(previewTimer);
+    const sequence = ++previewSerial;
+    const proposed = copy(doc);
+    proposed.sections[proposed.sections.findIndex(section => section.id === original.id)] = copy(candidate.section);
+    try {
+      const response = await request("preview", {document: proposed});
+      const html = await response.text();
+      if (sequence === previewSerial) {frame.srcdoc = html; message.textContent = text("suggest_preview_notice");}
+    } catch {message.textContent = text("preview_error");}
+  }
+  async function applySuggestion(original, candidate, message) {
+    clearTimeout(timer);
+    await pending.catch(() => {});
+    const index = doc.sections.findIndex(section => section.id === original.id);
+    if (blocked || index < 0 || JSON.stringify(doc.sections[index]) !== JSON.stringify(original)) {message.textContent = text("suggest_stale"); return;}
+    clearTimeout(timer); clearTimeout(previewTimer);
+    remember();
+    doc.sections[index] = copy(candidate.section);
+    dirty = true; serial++;
+    render(); buttons(); notify("suggest_applied");
+    [...list.children].find(node => node.dataset.sectionId === original.id)?.focus();
+    await preview();
+  }
+  function suggestionCards(original, result, target, message) {
+    target.replaceChildren();
+    for (const candidate of result.candidates) {
+      const card = el("div", "border border-line p-3 space-y-2");
+      card.append(el("h3", "font-semibold", `${config.defaults[candidate.section.kind]?.title || candidate.section.kind}: ${text(candidate.label_key)}`));
+      card.append(el("p", "text-sm", text(candidate.reason_key)));
+      card.append(button("suggest_preview", () => previewSuggestion(original, candidate, message)), button("suggest_apply", () => applySuggestion(original, candidate, message)));
+      target.append(card);
+    }
+    if (!result.candidates.length) target.append(el("p", "text-sm", text("suggest_empty")));
+  }
+  async function openSuggestions(section, article) {
+    const original = copy(section);
+    article.querySelector("[data-suggestions]")?.remove();
+    const panel = el("details", "border border-line p-3 space-y-3"); panel.open = true; panel.dataset.suggestions = "true";
+    panel.append(el("summary", "font-semibold cursor-pointer", text("suggest_improvement")));
+    const source = el("p", "text-sm", text("suggest_local_source"));
+    const message = el("p", "text-sm", text("suggest_loading")); message.setAttribute("role", "status");
+    const cards = el("div", "space-y-2"); panel.append(source, message, cards); article.insertBefore(panel, article.children[1] || null);
+    try {
+      const result = await suggestionRequest(original, "local");
+      if (!panel.isConnected) return;
+      message.textContent = ""; suggestionCards(original, result, cards, message);
+      if (result.ai_destination && result.ai_binding && result.candidates.length) {
+        panel.append(el("p", "text-sm", `${text("suggest_ai_disclosure")} ${result.ai_destination}`));
+        const ai = button("suggest_ai", async () => {
+          if (JSON.stringify(suggestionCurrent(original)) !== JSON.stringify(original)) {message.textContent = text("suggest_stale"); return;}
+          ai.disabled = true; message.textContent = text("suggest_loading");
+          try {
+            const selected = await suggestionRequest(original, "ai", result.ai_binding);
+            if (!panel.isConnected) return;
+            source.textContent = text("suggest_ai_source"); message.textContent = ""; suggestionCards(original, selected, cards, message);
+          } catch (error) {message.textContent = text(labels[error.message] ? error.message : "suggest_invalid");}
+          finally {ai.disabled = false;}
+        }); panel.append(ai);
+      } else panel.append(el("p", "text-muted text-sm", text(result.candidates.length ? "suggest_ai_unavailable" : "suggest_ai_no_candidates")));
+    } catch (error) {message.textContent = text(labels[error.message] ? error.message : "suggest_invalid");}
+  }
+
   function render() {
     imageTargets.clear();
  list.replaceChildren();
@@ -302,6 +378,7 @@
           }
         }),
       );
+      actions.append(button("suggest_improvement", () => openSuggestions(section, article)));
       heading.append(actions);
       article.append(heading);
       libraryControl(section, article);
