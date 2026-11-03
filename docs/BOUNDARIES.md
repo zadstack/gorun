@@ -129,7 +129,7 @@ finds no service degrades (see the *Absent* column). Hooks: `Hooks.Action`/`Filt
 |---|---|---|
 | `content.before_save` (filter), `content.after_save`, `content.published`, `content.deleted` | content | webhooks (every catalog event), ext bridge |
 | `content.authorize_save` (filter) | content | **membership** (quota check) |
-| `taxonomy.term_saved`, `media.uploaded`, `media.deleted`, `menus.saved`, `redirects.saved`, `user.login`, `site.form.submitted` | the core module | webhooks, ext bridge; site (form mail) |
+| `taxonomy.term_saved`, `media.uploaded`, `media.deleted`, `menus.saved`, `redirects.saved`, `user.login`, `site.form.submitted` | the core module | webhooks, ext bridge; site (form mail); analytics (submit events) |
 | `menus.resolve_url`, `seo.sitemap_entry`, `theme.render.context` (filters) | menus, seo, theme | theme (links) |
 | `system.health.checks` (filter) | admin | commerce, saas, wpmigrate, mcp, ext, workagents |
 | `system.capabilities.modules` (filter) | admin | commerce (`requirements`: Stripe keys present or not) |

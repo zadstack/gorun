@@ -39,6 +39,8 @@ type Module struct {
 	siteID   string // siteIDFor(secret key)
 	origin   string // configured site origin (scheme://host)
 	siteHost string // configured site host name
+
+	seen *seenIDs // recent form submission ids (forms.go)
 }
 
 // New returns the analytics module.
@@ -62,8 +64,8 @@ func (*Module) Enabled(ctx context.Context, d *sql.DB) (bool, error) {
 
 // Register opens analytics.db, starts the write buffer (stopped and flushed
 // when the app closes), serves the beacon script and endpoint, injects the
-// script into public HTML, declares analytics.view and adds the hourly
-// rollup cron. A store that fails to open is logged and the module registers
+// script into public HTML, records form submissions (site.form.submitted),
+// declares analytics.view and adds the hourly rollup cron. A store that fails to open is logged and the module registers
 // nothing else, so the site keeps serving with collection off.
 func (m *Module) Register(d *kernel.Deps) error {
 	store, err := OpenStore(d.Config.DataDir)
@@ -100,11 +102,15 @@ func (m *Module) Register(d *kernel.Deps) error {
 	pub.Post(BeaconPath, m.beacon)
 	pub.Use(m.inject)
 
+	m.seen = newSeenIDs(seenSubmissions)
+	d.Hooks.Action(hookFormSubmitted, 50, m.formSubmitted)
+
 	d.Perms.Declare(PermView, map[string]string{"en": "View analytics", "ar": "عرض الإحصائيات"})
 	d.Jobs.Cron(CronRollup, rollupEvery, m.rollup)
 	return nil
 }
 
-// rollup is the analytics.rollup cron: it recomputes daily for today and
-// yesterday and backfills an empty daily (Task 3).
-func (m *Module) rollup(context.Context) error { return nil }
+// rollup is the analytics.rollup cron body (Store.Rollup). The cron's
+// first run happens on the scheduler's first tick after boot, which is
+// what backfills daily on first start.
+func (m *Module) rollup(ctx context.Context) error { return m.store.Rollup(ctx, time.Now()) }

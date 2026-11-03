@@ -65,6 +65,8 @@ type Store struct {
 	saltDay  string     // newest day with a salt (YYYY-MM-DD), cached; "" unknown
 	saltData []byte
 
+	now func() time.Time // the queries' clock (which day is today); nil is time.Now
+
 	onTx func()       // test hook: called once per committed Insert transaction
 	inTx func() error // test hook: called inside each Insert transaction, after the rows
 }
