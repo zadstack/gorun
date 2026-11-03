@@ -51,7 +51,7 @@ jobs:
       # Every shard reports, so one failure does not hide another.
       fail-fast: false
       matrix:
-        shard: ['rest', 'admin 1 2', 'admin 2 2']
+        shard: ['rest 1 3', 'rest 2 3', 'rest 3 3', 'admin 1 2', 'admin 2 2']
     name: race (${{ matrix.shard }})
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -63,8 +63,9 @@ jobs:
       - name: race suite shard
         # Keep production Argon2 and every package; no coverage instrumentation
         # in the race run. CGO stays enabled for the race detector. The shards
-        # together cover every package; internal/admin is split in two because
-        # it alone takes 15 minutes under race.
+        # together cover every package: three share the packages, slowest
+        # spread first, and two share the internal/admin tests, which alone
+        # take 15 minutes under race.
         run: sh tools/race-shard.sh ${{ matrix.shard }}
 
   coverage:
