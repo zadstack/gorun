@@ -45,15 +45,36 @@ func appendHTML(target *html.Node, markup string) error {
 // imports site, so the builder injector calls it by name.
 const formFunc = "form"
 
+type draftFormsKey struct{}
+
+// WithDraftForms carries a builder draft's form markup, keyed by section ID,
+// into a preview render. Site knows only published forms, so the builder
+// renders each draft form section itself; the preview shows that markup
+// (disabled) instead of the published form. Renders that are not builder
+// previews ignore it.
+func WithDraftForms(ctx context.Context, forms map[string]string) context.Context {
+	return context.WithValue(ctx, draftFormsKey{}, forms)
+}
+
 // formMarkup renders the site form named by a gp-form section's data-form,
 // or "" when the section names none, the func is missing, or the form is
-// unknown or closed. In the builder preview every control is disabled.
+// unknown or closed. In the builder preview every control is disabled, and
+// a preview carrying draft forms shows the draft's markup for the section.
 func (f *funcs) formMarkup(section *html.Node) (string, error) {
-	slug := ""
+	slug, id := "", ""
 	for _, attribute := range section.Attr {
-		if attribute.Key == "data-form" {
+		switch attribute.Key {
+		case "data-form":
 			slug = attribute.Val
+		case "id":
+			id = strings.TrimPrefix(attribute.Val, "gp-")
 		}
+	}
+	if drafts, ok := f.st.ctx.Value(draftFormsKey{}).(map[string]string); ok && f.st.inertForms {
+		if markup := drafts[id]; id != "" && markup != "" {
+			return disableControls(markup)
+		}
+		return "", nil
 	}
 	render, ok := f.fm[formFunc].(func(string, string, string) template.HTML)
 	if slug == "" || !ok {

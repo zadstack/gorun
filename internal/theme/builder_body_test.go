@@ -175,3 +175,50 @@ func TestPreviewFormDisabled(t *testing.T) {
 	}
 	mustContain(t, page, `<button type="submit" disabled="">`, `name="name" required="" disabled=""`)
 }
+
+const draftFormSectionBody = `<div class="gp-builder"><section id="gp-s1" class="gp-section gp-form gp-default" data-form="booking"><div class="gp-inner"><div class="gp-heading"><h2>Book</h2></div></div></section><section id="gp-s2" class="gp-section gp-form gp-default"><div class="gp-inner"><h2>Unnamed</h2></div></section></div>`
+
+// A builder preview with draft form markup shows the draft fields, never the
+// published form, and the published render ignores draft markup entirely.
+func TestPreviewUsesDraftFormMarkup(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", map[string]string{"templates/page-builder.html": `<!doctype html><html><head></head><body>{{builderBody .Content}}</body></html>`})
+	e := newEnv(t, root)
+	var got []string
+	fakeForm(e, &got)
+	draft := map[string]string{"s1": `<form class="sb-form gp-form-fields"><div class="sf-field sf-text"><label for="d1">Draft field</label><input id="d1" name="d1" type="text"></div><button type="submit">Go</button></form>`, "s2": `<form class="sb-form gp-form-fields"><label for="d2">Second draft</label><input id="d2"></form>`}
+	ctx := WithDraftForms(t.Context(), draft)
+	item := &content.Item{ID: "preview", Type: "page", Slug: "book", Title: "Book", Body: draftFormSectionBody, Locale: "en"}
+	themed, err := e.svc.RenderBuilderThemePreview(ctx, item, BuilderPreviewOptions{Theme: "default", Identity: brand.Default()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := e.svc.RenderBuilderBody(ctx, item)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, page := range []string{themed, body} {
+		mustContain(t, page, "Draft field", "Second draft")
+		mustNotContain(t, page, `action="/forms/booking"`)
+		for _, tag := range regexp.MustCompile(`<(input|select|textarea|button)\b[^>]*>`).FindAllString(page, -1) {
+			if !strings.Contains(tag, "disabled") {
+				t.Fatalf("draft control not disabled: %s\n%s", tag, page)
+			}
+		}
+	}
+	if len(got) != 0 {
+		t.Fatalf("published form rendered in a draft preview: %q", got)
+	}
+	// Outside the preview, draft markup carried on the context is ignored.
+	cs, _ := kernel.Get[content.Service](e.app.Deps, kernel.ServiceContent)
+	it, err := cs.Create(context.Background(), content.Input{Type: "page", Title: "Book", Status: "published", Template: "builder", Body: formSectionBody})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec, err := e.render(kernel.KindRequest{Kind: KindPage, Template: "builder"}, &Context{Content: it, Locale: "en"}, WithDraftForms(context.Background(), map[string]string{"s1": "<p>LEAK</p>"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustNotContain(t, rec.Body.String(), "LEAK", "Draft field")
+	mustContain(t, rec.Body.String(), `action="/forms/booking"`)
+}

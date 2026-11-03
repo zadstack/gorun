@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/zadstack/gorun/internal/auth"
@@ -94,7 +93,7 @@ func builderMediaAvailable(d *kernel.Deps) bool {
 	return ok
 }
 
-var editorKeys = []string{"question_default", "library", "library_native", "library_legacy", "library_blocked", "confirm_library_change", "background", "eyebrow", "secondary_link", "secondary_label", "caption", "illustration", "illustration_help", "fact", "label", "value", "add_fact", "column", "add_column", "remove_column", "comparison_row", "add_row", "icon", "featured", "status", "none", "advanced", "choose_image", "title", "text", "image", "image_alt", "link", "link_label", "price", "variant", "hidden", "drag", "up", "down", "duplicate", "remove", "add_item", "remove_item", "saving", "saved", "error", "conflict", "published", "confirm_publish", "confirm_remove", "empty", "item", "section", "preview_error", "hero_scene", "scene_off", "scene_orbit", "scene_ribbons", "scene_blocks", "scene_help", "layout_default", "layout_split", "layout_centered", "layout_compact", "layout_image_start", "layout_image_end", "unsaved", "confirm_reset", "discarded", "source", "manual", "published_posts", "feed_help", "import_error", "importing", "history", "history_empty", "history_preview", "history_restore", "history_kind_save", "history_kind_publish", "history_kind_restore", "history_kind_reset", "history_sections"}
+var editorKeys = []string{"question_default", "library", "library_native", "library_legacy", "library_blocked", "confirm_library_change", "background", "eyebrow", "secondary_link", "secondary_label", "caption", "illustration", "illustration_help", "fact", "label", "value", "add_fact", "column", "add_column", "remove_column", "comparison_row", "add_row", "icon", "featured", "status", "none", "advanced", "choose_image", "title", "text", "image", "image_alt", "link", "link_label", "price", "variant", "hidden", "drag", "up", "down", "duplicate", "remove", "add_item", "remove_item", "saving", "saved", "error", "conflict", "published", "confirm_publish", "confirm_remove", "empty", "item", "section", "preview_error", "hero_scene", "scene_off", "scene_orbit", "scene_ribbons", "scene_blocks", "scene_help", "layout_default", "layout_split", "layout_centered", "layout_compact", "layout_image_start", "layout_image_end", "unsaved", "confirm_reset", "discarded", "source", "manual", "published_posts", "feed_help", "import_error", "importing", "history", "history_empty", "history_preview", "history_restore", "history_kind_save", "history_kind_publish", "history_kind_restore", "history_kind_reset", "history_sections", "form_settings", "form_slug", "form_slug_help", "form_slug_required", "form_slug_invalid", "form_slug_reserved", "form_slug_repeated", "submit_label", "success", "form_fields", "form_field", "form_fields_required", "form_file_once", "field_label", "field_name", "field_name_required", "field_name_invalid", "field_name_repeated", "field_type", "field_required", "field_help", "field_choices", "field_choices_required", "field_choices_limit", "type_text", "type_textarea", "type_email", "type_number", "type_date", "type_choice", "type_checkbox", "type_file", "add_field", "remove_field", "field_up", "field_down", "form_fix_errors", "form_preview_submit", "form_preview_choose", "form_slug_taken"}
 
 type saveRequest struct {
 	Document      Document `json:"document"`
@@ -173,6 +172,8 @@ func (h *adminHandlers) preview(w http.ResponseWriter, r *http.Request) {
 	}
 	previewItem := *item
 	previewItem.Body = html
+	locale := previewLocale(h.d, r.Context(), item)
+	ctx := h.previewContext(r, req.Document, locale)
 	options, themed, err := previewOptions(h.d, r.Context(), item.ID)
 	if err != nil {
 		h.fail(w, r, err)
@@ -183,7 +184,7 @@ func (h *adminHandlers) preview(w http.ResponseWriter, r *http.Request) {
 			RenderBuilderThemePreview(context.Context, *content.Item, theme.BuilderPreviewOptions) (string, error)
 		}](h.d, kernel.ServiceTheme)
 		if ok {
-			html, err = renderer.RenderBuilderThemePreview(r.Context(), &previewItem, options)
+			html, err = renderer.RenderBuilderThemePreview(ctx, &previewItem, options)
 			if err != nil {
 				h.d.Log.Error("builder: themed preview", "err", err)
 				http.Error(w, "Preview unavailable", 422)
@@ -201,7 +202,7 @@ func (h *adminHandlers) preview(w http.ResponseWriter, r *http.Request) {
 	if renderer, ok := kernel.Get[interface {
 		RenderBuilderBody(context.Context, *content.Item) (string, error)
 	}](h.d, kernel.ServiceTheme); ok {
-		html, err = renderer.RenderBuilderBody(r.Context(), &previewItem)
+		html, err = renderer.RenderBuilderBody(ctx, &previewItem)
 		if err != nil {
 			h.d.Log.Error("builder: dynamic preview", "err", err)
 			http.Error(w, "Preview unavailable", 422)
@@ -211,13 +212,6 @@ func (h *adminHandlers) preview(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; img-src 'self' https: data:; style-src 'unsafe-inline'; form-action 'none'; sandbox")
 	w.Header().Set("Cache-Control", "no-store")
-	locale := item.Locale
-	if locale == "" {
-		locale = h.d.Settings.GetString(r.Context(), "site.locale", i18n.DefaultLocale)
-	}
-	if !slices.Contains(i18n.Supported, locale) {
-		locale = i18n.DefaultLocale
-	}
 	dir := "ltr"
 	if locale == "ar" {
 		dir = "rtl"
