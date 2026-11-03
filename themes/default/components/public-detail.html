@@ -1,0 +1,7 @@
+{{/* View from publicDetail; optional Back/Action descriptors, SecondaryTitle/Text plain strings. */}}
+{{with .View}}<article class="gp-public-detail" lang="{{.Locale}}" dir="{{if eq .Locale "ar"}}rtl{{else}}ltr{{end}}">
+  {{with $.Back}}{{if .URL}}<a class="gp-public-action" href="{{.URL}}">{{.Label}}</a>{{end}}{{end}}
+  <header><h1 tabindex="-1">{{.Title}}</h1>{{if .Fallback}}<p class="gp-public-locale">{{t "public_ui_other_language"}}: <bdi>{{.Locale}}</bdi></p>{{end}}{{with .Summary}}<p>{{.}}</p>{{end}}</header>
+  {{if and $.SecondaryTitle $.SecondaryText}}<details><summary>{{$.SecondaryTitle}}</summary><p>{{$.SecondaryText}}</p></details>{{end}}
+  {{with $.Action}}<footer>{{component "public-action" .}}</footer>{{end}}
+</article>{{end}}

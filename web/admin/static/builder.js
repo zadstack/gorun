@@ -95,7 +95,7 @@
       "w-full bg-panel border border-line p-2",
     );
     input.value = target[key] || "";
-    input.maxLength = key === "link" || key === "image" || key === "secondary_link" ? 2048 : ["label", "value", "column"].includes(labelKey) ? 300 : 12000;
+    input.maxLength = key === "link" || key === "image" || key === "secondary_link" || key === "action" ? 2048 : ["label", "value", "column", "search_label", "search_placeholder"].includes(labelKey) ? 300 : 12000;
     input.dir = "auto";
     input.dataset.field = key;
     input.dataset.section = sectionID;
@@ -112,13 +112,15 @@
  if(key==="image"&&root.dataset.canPickMedia==="true") {const id=`builder-image-${sectionID}-${entryIndex??"section"}`;imageTargets.set(id,input);const choose=button("choose_image",()=>window.dispatchEvent(new CustomEvent("media:open",{detail:{target:id}})));wrap.append(choose);}
  parent.append(wrap);
   }
-  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher", "directory"];
-  const nativeOnlyKinds = ["steps", "comparison", "product_preview", "media_text", "switcher", "directory"];
-  // Native kinds whose entries may carry an image (links stay on feature cards).
+  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher", "directory", "task_entry"];
+  const nativeOnlyKinds = ["steps", "comparison", "product_preview", "media_text", "switcher", "directory", "task_entry"];
+  // Entry images stay on these kinds; task choices use text, links and icons.
   const entryImageKinds = ["features", "steps", "media_text", "switcher"];
   function nativeVariants(kind) {
     if (kind === "hero") return ["default", "split", "centered"];
     if (kind === "faq") return ["default", "split"];
+    if (kind === "task_entry") return ["default", "search_first", "choice_first", "service_first"];
+    if (kind === "features") return ["default", "compact_rows", "image_led", "featured_secondary"];
     if (kind === "directory") return ["default", "compact"];
     if (kind === "media_text") return ["default", "image_start", "image_end"];
     return ["default"];
@@ -207,6 +209,14 @@
       checkbox(options, "illustration", group);
       group.append(el("p", "text-muted text-sm", text("illustration_help")));
     }
+    if (section.kind === "task_entry") {
+      group.append(el("p", "text-muted text-sm", text("task_entry_help")));
+      if (section.variant === "search_first") {
+        const search = options.search || (options.search = {action: "", label: text("search_label_default"), param: "q"});
+        for (const key of ["action", "label", "placeholder", "param"]) field(search, key, group, section.id, undefined, "search_" + key);
+      }
+    }
+    if (section.kind === "features" && ["compact_rows", "image_led", "featured_secondary"].includes(section.variant)) field(options, "empty_text", group, section.id);
     if (section.kind === "comparison") comparisonFields(section, options, group);
     if (section.kind === "directory") {
       if (!options.list_type) options.list_type = "post";
@@ -234,6 +244,82 @@
     });
     parent.append(button("add_row", () => mutate(() => { options.rows = options.rows || []; options.rows.push({label: text("comparison_row"), cells: options.columns.slice(1).map(() => ({text: "", status: ""}))}); }), (options.rows || []).length >= 24));
   }
+  function suggestionCurrent(original) {
+    return doc.sections.find(section => section.id === original.id);
+  }
+  async function suggestionRequest(original, mode, binding = "") {
+    const response = await fetch(`/admin/builder/${encodeURIComponent(root.dataset.id)}/suggest`, {
+      method: "POST", headers: {"Content-Type": "application/json", "X-CSRF-Token": csrf},
+      body: JSON.stringify({section: original, mode, ai_binding: binding}),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "suggest_invalid");
+    return result;
+  }
+  async function previewSuggestion(original, candidate, message) {
+    if (JSON.stringify(suggestionCurrent(original)) !== JSON.stringify(original)) {message.textContent = text("suggest_stale"); return;}
+    clearTimeout(previewTimer);
+    const sequence = ++previewSerial;
+    const proposed = copy(doc);
+    proposed.sections[proposed.sections.findIndex(section => section.id === original.id)] = copy(candidate.section);
+    try {
+      const response = await request("preview", {document: proposed});
+      const html = await response.text();
+      if (sequence === previewSerial) {frame.srcdoc = html; message.textContent = text("suggest_preview_notice");}
+    } catch {message.textContent = text("preview_error");}
+  }
+  async function applySuggestion(original, candidate, message) {
+    clearTimeout(timer);
+    await pending.catch(() => {});
+    const index = doc.sections.findIndex(section => section.id === original.id);
+    if (blocked || index < 0 || JSON.stringify(doc.sections[index]) !== JSON.stringify(original)) {message.textContent = text("suggest_stale"); return;}
+    clearTimeout(timer); clearTimeout(previewTimer);
+    remember();
+    doc.sections[index] = copy(candidate.section);
+    dirty = true; serial++;
+    render(); buttons(); notify("suggest_applied");
+    [...list.children].find(node => node.dataset.sectionId === original.id)?.focus();
+    await preview();
+  }
+  function suggestionCards(original, result, target, message) {
+    target.replaceChildren();
+    for (const candidate of result.candidates) {
+      const card = el("div", "border border-line p-3 space-y-2");
+      card.append(el("h3", "font-semibold", `${config.defaults[candidate.section.kind]?.title || candidate.section.kind}: ${text(candidate.label_key)}`));
+      card.append(el("p", "text-sm", text(candidate.reason_key)));
+      card.append(button("suggest_preview", () => previewSuggestion(original, candidate, message)), button("suggest_apply", () => applySuggestion(original, candidate, message)));
+      target.append(card);
+    }
+    if (!result.candidates.length) target.append(el("p", "text-sm", text("suggest_empty")));
+  }
+  async function openSuggestions(section, article) {
+    const original = copy(section);
+    article.querySelector("[data-suggestions]")?.remove();
+    const panel = el("details", "border border-line p-3 space-y-3"); panel.open = true; panel.dataset.suggestions = "true";
+    panel.append(el("summary", "font-semibold cursor-pointer", text("suggest_improvement")));
+    const source = el("p", "text-sm", text("suggest_local_source"));
+    const message = el("p", "text-sm", text("suggest_loading")); message.setAttribute("role", "status");
+    const cards = el("div", "space-y-2"); panel.append(source, message, cards); article.insertBefore(panel, article.children[1] || null);
+    try {
+      const result = await suggestionRequest(original, "local");
+      if (!panel.isConnected) return;
+      message.textContent = ""; suggestionCards(original, result, cards, message);
+      if (result.ai_destination && result.ai_binding && result.candidates.length) {
+        panel.append(el("p", "text-sm", `${text("suggest_ai_disclosure")} ${result.ai_destination}`));
+        const ai = button("suggest_ai", async () => {
+          if (JSON.stringify(suggestionCurrent(original)) !== JSON.stringify(original)) {message.textContent = text("suggest_stale"); return;}
+          ai.disabled = true; message.textContent = text("suggest_loading");
+          try {
+            const selected = await suggestionRequest(original, "ai", result.ai_binding);
+            if (!panel.isConnected) return;
+            source.textContent = text("suggest_ai_source"); message.textContent = ""; suggestionCards(original, selected, cards, message);
+          } catch (error) {message.textContent = text(labels[error.message] ? error.message : "suggest_invalid");}
+          finally {ai.disabled = false;}
+        }); panel.append(ai);
+      } else panel.append(el("p", "text-muted text-sm", text(result.candidates.length ? "suggest_ai_unavailable" : "suggest_ai_no_candidates")));
+    } catch (error) {message.textContent = text(labels[error.message] ? error.message : "suggest_invalid");}
+  }
+
   function render() {
     imageTargets.clear();
  list.replaceChildren();
@@ -292,6 +378,7 @@
           }
         }),
       );
+      actions.append(button("suggest_improvement", () => openSuggestions(section, article)));
       heading.append(actions);
       article.append(heading);
       libraryControl(section, article);
@@ -307,7 +394,11 @@
       variant.value = section.variant || "default";
       variant.addEventListener(
         "change",
-        () => mutate(() => section.variant = variant.value),
+        () => mutate(() => {
+          section.variant = variant.value;
+          if (section.kind === "task_entry" && section.variant !== "search_first" && section.native) delete section.native.search;
+          if (section.kind === "features" && section.variant === "default" && section.native) delete section.native.empty_text;
+        }),
       );
       variantLabel.append(variant);
       advanced.append(variantLabel);
@@ -364,16 +455,16 @@
       );
       hideLabel.prepend(hide);
       article.append(hideLabel);
-      if (!native || ["features", "steps", "faq", "media_text", "switcher"].includes(section.kind)) {
+      if (!native || ["features", "steps", "faq", "media_text", "switcher", "task_entry"].includes(section.kind)) {
       (section.items || []).forEach((entry, itemIndex) => {
         const group = el("fieldset", "border border-line p-3 space-y-2");
         group.append(el("legend", "", `${text("item")} ${itemIndex + 1}`));
-        (native ? section.kind === "features" ? ["title", "text", "image", "image_alt", "link"] : entryImageKinds.includes(section.kind) ? ["title", "text", "image", "image_alt"] : ["title", "text"] : ["title", "text", "image", "image_alt", "link", "price"]).forEach(
+        (native ? section.kind === "features" ? ["title", "text", "image", "image_alt", "link"] : section.kind === "task_entry" ? ["title", "text", "link"] : entryImageKinds.includes(section.kind) ? ["title", "text", "image", "image_alt"] : ["title", "text"] : ["title", "text", "image", "image_alt", "link", "price"]).forEach(
           (key) => field(entry, key, group, section.id, itemIndex),
         );
-        if (native && section.kind === "features") {
+        if (native && ["features", "task_entry"].includes(section.kind)) {
           selectField(entry, "icon", ["", "bolt", "shield", "chart", "globe", "clock", "check", "layers"], group);
-          checkbox(entry, "featured", group);
+          if (section.kind === "features") checkbox(entry, "featured", group);
         }
         group.append(
           button(

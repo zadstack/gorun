@@ -14,7 +14,7 @@
   {{component "pagination" .}}
   {{else}}{{component "list-variant" .}}{{end}}
   {{if not .Items}}
-  <p class="default-empty rounded border border-line bg-panel p-6 text-muted">{{t "no_results"}}</p>
+  {{if publicUI .}}{{component "public-state" (dict "Kind" "empty" "Title" (t "no_results") "Action" (dict "label" (t "search_results") "url" "/search"))}}{{else}}<p class="default-empty rounded border border-line bg-panel p-6 text-muted">{{t "no_results"}}</p>{{end}}
   {{end}}
 {{end}}
 {{part "footer" .}}
