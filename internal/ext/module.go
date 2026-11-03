@@ -75,7 +75,7 @@ type service struct {
 	content  func() content.Service // nil result when the content module is not booted
 	client   *http.Client
 	now      func() time.Time
-	mu       sync.Mutex // serialises lifecycle operations
+	mu       sync.Mutex // serialises lifecycle changes and delivery completion writes
 	rt       *bridge
 }
 

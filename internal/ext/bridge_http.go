@@ -134,6 +134,12 @@ func (b *bridge) lookup(slug, hook, registry string) (*extState, HookSpec, bool)
 	return st, spec, ok
 }
 
+func (b *bridge) isCurrent(st *extState) bool {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	return b.states[st.slug] == st && st.active.Load()
+}
+
 // subscribe registers the hooks subscription for (slug, h) and returns its
 // token. Delivery still re-checks the active flag (belt and braces).
 func (s *service) subscribe(slug string, h HookSpec) hooks.Token {
@@ -346,7 +352,7 @@ func (s *service) send(ctx context.Context, st *extState, hook, kind string, pay
 	}
 	if len(body) > maxEnvelopeSize {
 		s.log.Warn("ext.deliver.too_large", "ext", st.slug, "hook", hook, "bytes", len(body))
-		s.recordDelivery(ctx, st.slug, Delivery{ID: db.NewID(), DeliveryID: deliveryID, Hook: hook, Kind: kind, Status: "error",
+		s.completeDelivery(ctx, st, Delivery{ID: db.NewID(), DeliveryID: deliveryID, Hook: hook, Kind: kind, Status: "error",
 			Error: errTooLarge.Error(), CreatedAt: db.FormatTime(now)})
 		return nil, errTooLarge
 	}
@@ -363,12 +369,25 @@ func (s *service) send(ctx context.Context, st *extState, hook, kind string, pay
 			d.Status = "timeout"
 		}
 	}
-	s.recordDelivery(ctx, st.slug, d)
+	s.completeDelivery(ctx, st, d)
 	if err != nil {
 		return nil, err // callers decide whether it counts as a failure
 	}
-	s.succeeded(ctx, st.slug)
 	return resp, nil
+}
+
+// Lifecycle changes may replace a state while its HTTP request is in flight.
+// Keep the old response out of the new activation's log and failure counters.
+func (s *service) completeDelivery(ctx context.Context, st *extState, d Delivery) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.rt.isCurrent(st) {
+		return
+	}
+	s.recordDelivery(ctx, st.slug, d)
+	if d.Status == "ok" {
+		s.succeeded(ctx, st.slug)
+	}
 }
 
 func (s *service) post(ctx context.Context, st *extState, ts string, body []byte, deliveryID string, timeout time.Duration) ([]byte, int, error) {
@@ -417,6 +436,11 @@ func (s *service) succeeded(ctx context.Context, slug string) {
 // failed counts a failure; at errorThreshold consecutive failures the
 // extension is switched to status error and delivery stops.
 func (s *service) failed(ctx context.Context, st *extState, msg string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.rt.isCurrent(st) {
+		return
+	}
 	ctx = context.WithoutCancel(ctx)
 	var failures int
 	var status string
