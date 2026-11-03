@@ -129,6 +129,7 @@ finds no service degrades (see the *Absent* column). Hooks: `Hooks.Action`/`Filt
 | `content.before_save` (filter), `content.after_save`, `content.published`, `content.deleted` | content | webhooks (every catalog event), ext bridge |
 | `content.authorize_save` (filter) | content | **membership** (quota check) |
 | `taxonomy.term_saved`, `media.uploaded`, `media.deleted`, `menus.saved`, `redirects.saved`, `user.login`, `site.form.submitted` | the core module | webhooks, ext bridge; site (form mail) |
+| `builder.forms.published` | builder (after a page with form sections publishes; payload `page_id`, `published_at`, `forms`) | **site** (`onBuilderForms` upserts the `forms` rows; site never imports builder) |
 | `menus.resolve_url`, `seo.sitemap_entry`, `theme.render.context` (filters) | menus, seo, theme | theme (links) |
 | `system.health.checks` (filter) | admin | commerce, saas, wpmigrate, mcp, ext, workagents |
 | `system.capabilities.modules` (filter) | admin | commerce (`requirements`: Stripe keys present or not) |
@@ -166,7 +167,7 @@ Public paths are mounted at `/`, admin paths under `/admin`, API operations unde
 | auth | `/auth/magic/{token}`, static assets | `/login`, `/setup`, `/onboarding`, `/reauth`, `/locale`, `/navigation`, `/security/*` | — | — | core role catalog (`auth/perms.go`) |
 | content, taxonomy, media, menus, redirects, seo | `/media/*` (media), redirects middleware | `/content/*`, `/types/*`, `/comments`, `/taxonomies/*`, `/media/*`, `/menus/*`, `/redirects/*`, `/settings/seo` | content 1 set, taxonomy 1, media 5, menus 5, redirects 3 | — | `content.*`, `types.manage`, `media.*`, `taxonomy.manage`, `menus.manage`, `redirects.manage` |
 | theme, pattern, builder | `/themes/*/assets`, `/patterns/{slug}/assets/*`, `/static/builder/*` | `/appearance/*`, `/site-design`, `/site-builder`, `/builder/{id}/*` | theme 1, builder 6 | builder 6 (page layouts) | `themes.manage` |
-| site | `/`, `/forms/contact`, `/forms/comment`, `/_page/{id}/unlock`, `/reports/{form}` (front controller) | `/reports/*`, `/settings/availability`, `/settings/page-access`, `/settings/reports` | — | — | `settings.manage` (reuse), `reports.review` |
+| site | `/`, `/forms/contact`, `/forms/comment`, `/forms/{slug}`, `/_page/{id}/unlock`, `/reports/{form}` (front controller) | `/forms*`, `/reports/*`, `/settings/availability`, `/settings/page-access`, `/settings/reports` | — | — | `settings.manage` (reuse), `reports.review` |
 | api | — | — | `/v1/openapi.json`, `/docs`, `/v1/*` mount, `site/info` | — | — |
 | admin | `/webhooks/canvas/{endpoint}` | dashboard, `/users/*`, `/roles/*`, `/settings/*` (general, mail, storage, ai, connections, edge, integrations, studio, metricool), `/system/*` (health, jobs, backups, updates, errors), `/canvases/*`, `/agents/*`, `/metricool`, `/workspace` | 22 (+ keys, roles, canvas read) | canvas read/operations 3 | `users.manage`, `settings.manage`, `api_keys.manage`, `system.health`, `system.backup`, `system.update` |
 | webhooks | — | `/webhooks/*` | 1 | — | `webhooks.manage` |
@@ -190,6 +191,9 @@ theme (non-control-flow), from a grep of `{{ … }}` across `themes/<slug>/**/*.
 | business | default set + `excerpt` | `{{with products}}` on the front page (services strip), degrades to nothing | none |
 | magazine, portfolio | default set | none | none |
 | docs | `t url asset part component brandImg date` | none | none |
+
+Site registers one theme function, `form` (`{{form "slug" csrf .Request.URL.Path}}`, see [FORMS.md](FORMS.md)).
+The theme engine wraps it so templates pass no locale, and defines a stub that returns nothing when site is absent.
 | patterns (company, editorial, guidebook, showcase) | `t url asset part img date excerpt` | company: `{{with products}}` offerings strip | none |
 
 The theme engine (`internal/theme/funcs.go`) registers `products` and `product` fallbacks that
