@@ -47,6 +47,12 @@ jobs:
 
   race:
     runs-on: ubuntu-latest
+    strategy:
+      # Every shard reports, so one failure does not hide another.
+      fail-fast: false
+      matrix:
+        shard: ['rest', 'admin 1 2', 'admin 2 2']
+    name: race (${{ matrix.shard }})
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -54,11 +60,12 @@ jobs:
           go-version: '1.27.x'
           check-latest: true
           cache-dependency-path: go.sum
-      - name: full race suite
+      - name: race suite shard
         # Keep production Argon2 and every package; no coverage instrumentation
-        # in the race run. CGO stays enabled for the race detector. internal/admin
-        # alone takes 15 minutes under race and more on a slow runner.
-        run: go test -timeout=35m -race ./...
+        # in the race run. CGO stays enabled for the race detector. The shards
+        # together cover every package; internal/admin is split in two because
+        # it alone takes 15 minutes under race.
+        run: sh tools/race-shard.sh ${{ matrix.shard }}
 
   coverage:
     runs-on: ubuntu-latest
