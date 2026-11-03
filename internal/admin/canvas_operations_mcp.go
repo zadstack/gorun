@@ -30,7 +30,7 @@ const canvasMCPDescription = "Selected-board operations only. Named-agent tasks 
 func (h *handlers) canvasMCPTools() {
 	for _, spec := range []struct{ name, scope, description string }{
 		{"canvases.context", "canvas.read", canvasMCPDescription + " Context sources start with a \"## [ref:…]\" header; a shortened source ends with a \"[… N more characters. Full text: ref:…]\" marker."},
-		{"canvases.source", "canvas.read", canvasMCPDescription + " Returns the full current text of one ref (board_id, run_id, ref) listed in that run's context, at most 200,000 characters (truncated: true when cut)."},
+		{"canvases.source", "canvas.read", canvasMCPDescription + " Returns the full current text of one ref (board_id, run_id, ref) listed in that run's context, at most 200,000 characters: characters is the returned length, total_characters the full length, truncated is true when cut."},
 		{"canvases.pending", "canvas.read", canvasMCPDescription},
 		{"canvases.request_run", "canvas.run", canvasMCPDescription},
 		{"canvases.append_result", "canvas.append", canvasMCPDescription},
@@ -115,11 +115,11 @@ func (h *handlers) canvasMCPTools() {
 					if !slices.Contains(p.Refs, in.Ref) || !slices.Contains(current.Refs, in.Ref) || !ok {
 						return nil, errCanvasConsent
 					}
-					truncated := utf8.RuneCountInString(text) > canvasSourceMax
-					if truncated {
+					total := utf8.RuneCountInString(text)
+					if total > canvasSourceMax {
 						text = string([]rune(text)[:canvasSourceMax])
 					}
-					return map[string]any{"run_id": in.RunID, "ref": in.Ref, "text": text, "characters": utf8.RuneCountInString(text), "truncated": truncated}, nil
+					return map[string]any{"run_id": in.RunID, "ref": in.Ref, "text": text, "characters": min(total, canvasSourceMax), "total_characters": total, "truncated": total > canvasSourceMax}, nil
 				}
 				if in.Token != token {
 					return nil, errCanvasConsent

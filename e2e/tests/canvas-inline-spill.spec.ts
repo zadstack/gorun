@@ -47,7 +47,7 @@ test('a long source is shortened and the review dialog says so, in en and ar',as
  const key=await agentKey(page);const {path,agent}=await spillBoard(page,key);
  const expected={
   en:/^Shortened 1 source; [\d,]+ more characters are available to the agent on request\.$/,
-  ar:/^اختُصر مصدر واحد؛ [\d,]+ حرف إضافي متاح للوكيل عند الطلب\.$/,
+  ar:/^مصادر مختصرة: 1؛ أحرف إضافية متاحة للوكيل عند الطلب: [\d,]+\.$/,
  } as const;
  for(const locale of ['en','ar'] as const){
   await page.goto(path);await setLocale(page,locale);

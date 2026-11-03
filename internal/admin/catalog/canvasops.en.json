@@ -120,6 +120,6 @@
   "run_agent_timeout": "The agent did not respond within 24 hours. Check the agent is connected before running again.",
   "spill_on_request": "Shortened {sources} sources; {chars} more characters are available to the agent on request.",
   "spill_on_request_one": "Shortened 1 source; {chars} more characters are available to the agent on request.",
-  "spill_only": "Shortened {sources} sources to fit; the provider receives only the shortened text.",
-  "spill_only_one": "Shortened 1 source to fit; the provider receives only the shortened text."
+  "spill_only": "Shortened {sources} sources to fit; the destination receives only the shortened text.",
+  "spill_only_one": "Shortened 1 source to fit; the destination receives only the shortened text."
 }

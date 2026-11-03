@@ -53,7 +53,7 @@ func canvasGroup(n int) string {
 	return s
 }
 
-// canvasInline joins sources in their given order, each starting with its
+// canvasInline joins distinct sources in their given order, each starting with its
 // reference header, into a context of at most canvasContextLimit characters.
 //
 // Budget (fair share, "water filling"): every source first receives its
@@ -70,6 +70,17 @@ func canvasGroup(n int) string {
 // near the limit when one is close, and the marker gives the exact number of
 // characters left out.
 func canvasInline(items []canvasSourceItem) (string, []canvasSpill, error) {
+	// A source reached twice (a content card and a source query) is inlined
+	// once, at its first occurrence.
+	seen := map[string]bool{}
+	unique := []canvasSourceItem{}
+	for _, it := range items {
+		if !seen[it.Ref] {
+			seen[it.Ref] = true
+			unique = append(unique, it)
+		}
+	}
+	items = unique
 	n := len(items)
 	if n == 0 {
 		return "", nil, nil

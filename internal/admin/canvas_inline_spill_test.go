@@ -3,6 +3,7 @@ package admin
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -88,8 +89,8 @@ func TestCanvasInlineSpillKeepsSmallSourceWhole(t *testing.T) {
 
 func TestCanvasInlineSpillFailsWhenMinimumsExceedLimit(t *testing.T) {
 	items := []canvasSourceItem{}
-	for range 120 {
-		items = append(items, canvasSourceItem{Ref: "content/" + spillID, Title: "Source", Body: strings.Repeat("q", 2000)})
+	for i := range 120 {
+		items = append(items, canvasSourceItem{Ref: "content/" + spillID[:29] + strconv.Itoa(100+i), Title: "Source", Body: strings.Repeat("q", 2000)})
 	}
 	if _, _, err := canvasInline(items); err != errCanvasInvalid {
 		t.Fatal("minimums over limit must fail", err)
@@ -126,7 +127,7 @@ func TestCanvasInlineSpillPrefersLineBoundary(t *testing.T) {
 }
 
 // spillBoard connects a content item to the fixture agent and grants it.
-func spillBoard(t *testing.T, body string) (*handlers, context.Context, *canvasBoard, canvasPrepared, *content.Item) {
+func spillBoard(t *testing.T, body string, extra ...canvasCard) (*handlers, context.Context, *canvasBoard, canvasPrepared, *content.Item) {
 	t.Helper()
 	h, ctx, b, _ := canvasOperationFixture(t, content.New())
 	cs, _ := h.contentService()
@@ -137,10 +138,19 @@ func spillBoard(t *testing.T, body string) (*handlers, context.Context, *canvasB
 	card := canvasCard{ID: "44444444-4444-4444-8444-444444444444", Kind: "content", ContentID: it.ID, Title: "Long article"}
 	cards := append(b.Cards, card)
 	edges := append(b.Edges, canvasEdge{card.ID, b.Cards[1].ID})
+	granted := []string{b.Cards[0].ID, card.ID}
+	for _, c := range extra {
+		if c.Kind == "source" {
+			c.SourceIDs = []string{it.ID}
+		}
+		cards = append(cards, c)
+		edges = append(edges, canvasEdge{c.ID, b.Cards[1].ID})
+		granted = append(granted, c.ID)
+	}
 	if _, e = h.d.DB.Exec(`UPDATE admin_canvases SET document_json=?,edges_json=? WHERE id=?`, canvasEncode(cards), canvasEncode(edges), b.ID); e != nil {
 		t.Fatal(e)
 	}
-	if _, e = h.d.DB.Exec(`UPDATE admin_canvas_grants SET node_ids=? WHERE board_id=?`, canvasEncode([]string{b.Cards[0].ID, card.ID}), b.ID); e != nil {
+	if _, e = h.d.DB.Exec(`UPDATE admin_canvas_grants SET node_ids=? WHERE board_id=?`, canvasEncode(granted), b.ID); e != nil {
 		t.Fatal(e)
 	}
 	if b, e = h.canvasOwned(ctx, b.ID); e != nil {
@@ -200,10 +210,17 @@ func canvasSourceCall(t *testing.T, h *handlers, keyID string, in map[string]any
 }
 
 func TestCanvasSourceTool(t *testing.T) {
-	for _, which := range []string{"full", "outside", "revoked", "private", "other_board"} {
+	note := canvasCard{ID: "55555555-5555-4555-8555-555555555555", Kind: "note", Title: "Brief note", Body: "Note body in scope."}
+	for _, which := range []string{"full", "cap", "note", "outside", "revoked", "private", "other_board", "no_refs", "prefix", "suffix", "edited"} {
 		t.Run(which, func(t *testing.T) {
 			body := spillDigits(30000)
-			h, ctx, b, p, it := spillBoard(t, body)
+			if which == "cap" {
+				body = spillDigits(210000)
+			}
+			h, ctx, b, p, it := spillBoard(t, body, note)
+			if which == "no_refs" {
+				p.Refs = nil // a run prepared before refs were recorded
+			}
 			run, e := h.canvasEnqueue(ctx, p, "spill-source")
 			if e != nil || run.Status != "waiting_agent" {
 				t.Fatal(run, e)
@@ -217,6 +234,14 @@ func TestCanvasSourceTool(t *testing.T) {
 					t.Fatal(e)
 				}
 				in["ref"] = "content/" + other.ID
+			case "note":
+				in["ref"] = "note/" + note.ID
+			case "prefix":
+				in["ref"] = "content/" + it.ID[:len(it.ID)-1]
+			case "suffix":
+				in["ref"] = "content/" + it.ID + "x"
+			case "edited":
+				_, e = h.d.DB.Exec(`UPDATE content SET body='Changed after review' WHERE id=?`, it.ID)
 			case "revoked":
 				_, e = h.d.DB.Exec(`UPDATE admin_canvas_grants SET can_read=0 WHERE board_id=?`, b.ID)
 			case "private":
@@ -233,7 +258,7 @@ func TestCanvasSourceTool(t *testing.T) {
 				t.Fatal(e)
 			}
 			out, err := canvasSourceCall(t, h, p.KeyID, in)
-			if which != "full" {
+			if which != "full" && which != "cap" && which != "note" {
 				if err == nil {
 					t.Fatalf("%s ref served: %v", which, out)
 				}
@@ -245,8 +270,19 @@ func TestCanvasSourceTool(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if out["text"] != body || out["truncated"] != false || out["ref"] != "content/"+it.ID {
-				t.Fatalf("full text not returned: %v %v", out["truncated"], out["ref"])
+			switch which {
+			case "note":
+				if out["text"] != note.Body || out["ref"] != "note/"+note.ID || out["truncated"] != false {
+					t.Fatalf("note text not returned: %v", out)
+				}
+			case "cap":
+				if out["text"] != body[:200000] || out["characters"] != 200000 || out["total_characters"] != 210000 || out["truncated"] != true {
+					t.Fatalf("cap not applied: %v %v %v", out["characters"], out["total_characters"], out["truncated"])
+				}
+			default:
+				if out["text"] != body || out["characters"] != 30000 || out["total_characters"] != 30000 || out["truncated"] != false || out["ref"] != "content/"+it.ID {
+					t.Fatalf("full text not returned: %v %v", out["truncated"], out["ref"])
+				}
 			}
 		})
 	}
@@ -264,5 +300,28 @@ func TestCanvasSpillSummary(t *testing.T) {
 	}
 	if canvasSpillSummary(canvasPrepared{})["on_request"] != false {
 		t.Fatal("provider cannot fetch spilled text")
+	}
+}
+
+func TestCanvasInlineSpillDuplicateInlinedOnce(t *testing.T) {
+	big := canvasSourceItem{Ref: "content/" + spillID, Title: "Twice", Body: strings.Repeat("d", 20000)}
+	out, spilled, err := canvasInline([]canvasSourceItem{big, {Ref: "note/n", Title: "Mid", Body: "between"}, big})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(out, "## [ref:content/"+spillID+"]") != 1 || strings.Count(out, "Full text: ref:content/"+spillID) != 1 || len(spilled) != 1 {
+		t.Fatalf("duplicate inlined or spilled twice: %d", len(spilled))
+	}
+	if strings.Index(out, "ref:content/") > strings.Index(out, "ref:note/n") {
+		t.Fatal("first occurrence not kept")
+	}
+}
+
+func TestCanvasPrepareDuplicateCardAndQuery(t *testing.T) {
+	query := canvasCard{ID: "66666666-6666-4666-8666-666666666666", Kind: "source", Title: "Posts", SourceType: "post", SourceLimit: 5}
+	_, _, _, p, it := spillBoard(t, spillDigits(30000), query)
+	ref := "content/" + it.ID
+	if strings.Count(p.Context, "## [ref:"+ref+"]") != 1 || strings.Count(p.Context, "Full text: ref:"+ref+"]") != 1 || len(p.Spilled) != 1 || strings.Count(strings.Join(p.Refs, " "), ref) != 1 {
+		t.Fatalf("card plus query inlined twice: spilled=%v refs=%v", p.Spilled, p.Refs)
 	}
 }
