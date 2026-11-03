@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -64,10 +65,22 @@ type PublishedForm struct {
 	Fields      []FormFieldSpec `json:"fields"`
 }
 
-// FormsPublished is the HookFormsPublished payload.
+// FormsPublished is the HookFormsPublished payload. PublishedAt
+// (RFC3339Nano, set when the event is emitted after the commit) lets the
+// subscriber ignore an older publish delivered out of order.
 type FormsPublished struct {
-	PageID string          `json:"page_id"`
-	Forms  []PublishedForm `json:"forms"`
+	PageID      string          `json:"page_id"`
+	PublishedAt string          `json:"published_at"`
+	Forms       []PublishedForm `json:"forms"`
+}
+
+// emitFormsPublished announces ev; call it only after the publish commits.
+func (s *service) emitFormsPublished(ctx context.Context, ev FormsPublished) {
+	if s.d.Hooks == nil {
+		return
+	}
+	ev.PublishedAt = time.Now().UTC().Format(time.RFC3339Nano)
+	s.d.Hooks.Emit(ctx, HookFormsPublished, ev)
 }
 
 // FormSlugTakenError rejects a publish whose form slug another published

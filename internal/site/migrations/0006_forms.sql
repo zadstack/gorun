@@ -10,12 +10,22 @@ CREATE TABLE forms (
     title       TEXT NOT NULL,
     source      TEXT NOT NULL CHECK (source IN ('builder', 'captured', 'contact')),
     page_id     TEXT NOT NULL DEFAULT '',
+    -- Builder forms: the section's submit button label and success message.
+    submit_label TEXT NOT NULL DEFAULT '',
+    success     TEXT NOT NULL DEFAULT '',
     fields_json TEXT NOT NULL CHECK (json_valid(fields_json)),
     open        INTEGER NOT NULL DEFAULT 1 CHECK (open IN (0, 1)),
     created_at  TEXT NOT NULL,
     updated_at  TEXT NOT NULL
 );
 CREATE INDEX forms_page ON forms (source, page_id);
+
+-- The publish time of the last builder.forms.published event applied per
+-- page: a queued event that is older (delivered out of order) is ignored.
+CREATE TABLE form_page_publishes (
+    page_id      TEXT PRIMARY KEY,
+    published_at TEXT NOT NULL
+);
 
 CREATE TABLE form_entries (
     id              TEXT PRIMARY KEY,

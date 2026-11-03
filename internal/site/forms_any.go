@@ -64,6 +64,9 @@ var (
 	errFormCap     = errors.New("site: captured form limit reached")
 	errFormClosed  = errors.New("site: form is closed")
 	errFormChanged = errors.New("site: form changed during submission")
+	// errInvalidBuilderForms marks a builder.forms.published payload or
+	// definition that can never be stored: it is logged and dropped.
+	errInvalidBuilderForms = errors.New("site: invalid builder forms")
 )
 
 // FormField is one column of a form's table, in display order.
@@ -81,27 +84,31 @@ type FormField struct {
 // FormDefinition is a forms row. PageID is the builder page that declares
 // it ("" for captured forms).
 type FormDefinition struct {
-	ID        string      `json:"id"`
-	Slug      string      `json:"slug"`
-	Title     string      `json:"title"`
-	Source    string      `json:"source"`
-	PageID    string      `json:"page_id"`
-	Fields    []FormField `json:"fields"`
-	Open      bool        `json:"open"`
-	CreatedAt string      `json:"created_at"`
-	UpdatedAt string      `json:"updated_at"`
+	ID     string `json:"id"`
+	Slug   string `json:"slug"`
+	Title  string `json:"title"`
+	Source string `json:"source"`
+	PageID string `json:"page_id"`
+	// SubmitLabel and Success are a builder form's button label and success
+	// message ("" for captured forms).
+	SubmitLabel string      `json:"submit_label"`
+	Success     string      `json:"success"`
+	Fields      []FormField `json:"fields"`
+	Open        bool        `json:"open"`
+	CreatedAt   string      `json:"created_at"`
+	UpdatedAt   string      `json:"updated_at"`
 }
 
 type queryRower interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-const formCols = `id, slug, title, source, page_id, fields_json, open, created_at, updated_at`
+const formCols = `id, slug, title, source, page_id, submit_label, success, fields_json, open, created_at, updated_at`
 
 func scanForm(row *sql.Row) (FormDefinition, error) {
 	var f FormDefinition
 	var raw string
-	err := row.Scan(&f.ID, &f.Slug, &f.Title, &f.Source, &f.PageID, &raw, &f.Open, &f.CreatedAt, &f.UpdatedAt)
+	err := row.Scan(&f.ID, &f.Slug, &f.Title, &f.Source, &f.PageID, &f.SubmitLabel, &f.Success, &raw, &f.Open, &f.CreatedAt, &f.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return f, errNoForm
 	}
@@ -538,24 +545,56 @@ func validateDefinition(d FormDefinition) error {
 // old entries keep their column. Builder forms of pageID missing from defs
 // are closed (open = 0); their entries stay.
 func (h *handlers) upsertBuilderForms(ctx context.Context, pageID string, defs []FormDefinition) error {
+	_, err := h.upsertBuilderFormsAt(ctx, pageID, time.Time{}, defs)
+	return err
+}
+
+// upsertBuilderFormsAt is upsertBuilderForms for the publish at publishedAt.
+// A non-zero publishedAt that is not newer than the last one applied for
+// pageID changes nothing and reports applied=false (an out-of-order queued
+// event). Invalid input wraps errInvalidBuilderForms: retrying cannot help.
+func (h *handlers) upsertBuilderFormsAt(ctx context.Context, pageID string, publishedAt time.Time, defs []FormDefinition) (applied bool, err error) {
 	if pageID == "" {
-		return errors.New("site: upsert builder forms: empty page id")
+		return false, fmt.Errorf("%w: empty page id", errInvalidBuilderForms)
 	}
 	slugs := make([]any, 0, len(defs))
 	for _, d := range defs {
 		if err := validateDefinition(d); err != nil {
-			return err
+			return false, fmt.Errorf("%w: %w", errInvalidBuilderForms, err)
 		}
 		if slices.Contains(slugs, any(d.Slug)) {
-			return fmt.Errorf("site: form slug %q declared twice", d.Slug)
+			return false, fmt.Errorf("%w: form slug %q declared twice", errInvalidBuilderForms, d.Slug)
 		}
 		slugs = append(slugs, d.Slug)
 	}
 	now := db.Now()
-	return db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
-		for _, d := range defs {
-			if err := upsertBuilderForm(ctx, tx, pageID, d, now); err != nil {
+	var moved []string
+	err = db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
+		moved = moved[:0]
+		if !publishedAt.IsZero() {
+			var last string
+			err := tx.QueryRowContext(ctx, `SELECT published_at FROM form_page_publishes WHERE page_id = ?`, pageID).Scan(&last)
+			if err != nil && !errors.Is(err, sql.ErrNoRows) {
 				return err
+			}
+			if err == nil {
+				if prev, perr := time.Parse(time.RFC3339Nano, last); perr == nil && !publishedAt.After(prev) {
+					return nil
+				}
+			}
+			if _, err := tx.ExecContext(ctx, `INSERT INTO form_page_publishes (page_id, published_at) VALUES (?, ?)
+				ON CONFLICT(page_id) DO UPDATE SET published_at = excluded.published_at`, pageID, publishedAt.UTC().Format(time.RFC3339Nano)); err != nil {
+				return err
+			}
+		}
+		applied = true
+		for _, d := range defs {
+			from, err := upsertBuilderForm(ctx, tx, pageID, d, now)
+			if err != nil {
+				return err
+			}
+			if from != "" {
+				moved = append(moved, d.Slug+" from page "+from)
 			}
 		}
 		q := `UPDATE forms SET open = 0, updated_at = ? WHERE source = 'builder' AND page_id = ? AND open = 1`
@@ -567,9 +606,21 @@ func (h *handlers) upsertBuilderForms(ctx context.Context, pageID string, defs [
 		_, err := tx.ExecContext(ctx, q, args...)
 		return err
 	})
+	if err != nil {
+		applied = false
+		return false, err
+	}
+	for _, m := range moved {
+		h.d.Log.Info("site: builder form reassigned", "page", pageID, "form", m)
+	}
+	return applied, nil
 }
 
-func upsertBuilderForm(ctx context.Context, tx *sql.Tx, pageID string, d FormDefinition, now string) error {
+// upsertBuilderForm stores d for pageID and returns the page the slug was
+// taken from when it belonged to another page's builder form. The builder's
+// slug check across its published pages (ruling R5) is the only authority,
+// so a slug another page released (or still lists, after a race) moves here.
+func upsertBuilderForm(ctx context.Context, tx *sql.Tx, pageID string, d FormDefinition, now string) (movedFrom string, err error) {
 	fields := make([]FormField, 0, len(d.Fields))
 	for _, f := range d.Fields {
 		f.State = statePinned
@@ -584,17 +635,15 @@ func upsertBuilderForm(ctx context.Context, tx *sql.Tx, pageID string, d FormDef
 	}
 	cur, err := formBySlugQ(ctx, tx, d.Slug)
 	if err != nil && !errors.Is(err, errNoForm) {
-		return err
+		return "", err
 	}
 	exists := err == nil
 	if exists {
 		if cur.Source == formContact {
-			return fmt.Errorf("site: form slug %q is reserved", d.Slug)
+			return "", fmt.Errorf("%w: form slug %q is reserved", errInvalidBuilderForms, d.Slug)
 		}
-		// The builder checks slug uniqueness across its published pages
-		// (ruling R5); this refusal is the defense in depth behind it.
 		if cur.Source == formBuilder && cur.PageID != "" && cur.PageID != pageID {
-			return fmt.Errorf("site: form slug %q belongs to another page", d.Slug)
+			movedFrom = cur.PageID
 		}
 		var extras []FormField
 		for _, old := range cur.Fields {
@@ -611,16 +660,16 @@ func upsertBuilderForm(ctx context.Context, tx *sql.Tx, pageID string, d FormDef
 	}
 	raw, err := json.Marshal(fields)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if exists {
-		_, err = tx.ExecContext(ctx, `UPDATE forms SET title = ?, source = 'builder', page_id = ?, fields_json = ?, open = 1, updated_at = ? WHERE id = ?`,
-			title, pageID, string(raw), now, cur.ID)
-		return err
+		_, err = tx.ExecContext(ctx, `UPDATE forms SET title = ?, source = 'builder', page_id = ?, submit_label = ?, success = ?, fields_json = ?, open = 1, updated_at = ? WHERE id = ?`,
+			title, pageID, d.SubmitLabel, d.Success, string(raw), now, cur.ID)
+		return movedFrom, err
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO forms (id, slug, title, source, page_id, fields_json, open, created_at, updated_at)
-		VALUES (?, ?, ?, 'builder', ?, ?, 1, ?, ?)`, db.NewID(), d.Slug, title, pageID, string(raw), now, now)
-	return err
+	_, err = tx.ExecContext(ctx, `INSERT INTO forms (id, slug, title, source, page_id, submit_label, success, fields_json, open, created_at, updated_at)
+		VALUES (?, ?, ?, 'builder', ?, ?, ?, ?, 1, ?, ?)`, db.NewID(), d.Slug, title, pageID, d.SubmitLabel, d.Success, string(raw), now, now)
+	return "", err
 }
 
 // builderFormsPublished is the builder's HookFormsPublished. Site does not
@@ -630,8 +679,9 @@ const builderFormsPublished = "builder.forms.published"
 
 // builderFormsPayload mirrors the builder's FormsPublished JSON.
 type builderFormsPayload struct {
-	PageID string `json:"page_id"`
-	Forms  []struct {
+	PageID      string `json:"page_id"`
+	PublishedAt string `json:"published_at"`
+	Forms       []struct {
 		Slug        string `json:"slug"`
 		Title       string `json:"title"`
 		SubmitLabel string `json:"submit_label"`
@@ -647,10 +697,17 @@ type builderFormsPayload struct {
 	} `json:"forms"`
 }
 
+// builderFormsEvent is a decoded builder.forms.published payload.
+type builderFormsEvent struct {
+	PageID      string
+	PublishedAt time.Time // zero when the payload carries none
+	Defs        []FormDefinition
+}
+
 // decodeBuilderForms reads a builder.forms.published payload: JSON when
 // delivered through the queue (Emit), or any JSON-encodable value when a
-// caller passes it to Do directly.
-func decodeBuilderForms(payload any) (string, []FormDefinition, error) {
+// caller passes it to Do directly. Errors wrap errInvalidBuilderForms.
+func decodeBuilderForms(payload any) (builderFormsEvent, error) {
 	var raw []byte
 	switch v := payload.(type) {
 	case json.RawMessage:
@@ -660,36 +717,52 @@ func decodeBuilderForms(payload any) (string, []FormDefinition, error) {
 	default:
 		b, err := json.Marshal(v)
 		if err != nil {
-			return "", nil, fmt.Errorf("site: builder forms payload %T: %w", payload, err)
+			return builderFormsEvent{}, fmt.Errorf("%w: payload %T: %w", errInvalidBuilderForms, payload, err)
 		}
 		raw = b
 	}
 	var p builderFormsPayload
 	if err := json.Unmarshal(raw, &p); err != nil {
-		return "", nil, fmt.Errorf("site: builder forms payload: %w", err)
+		return builderFormsEvent{}, fmt.Errorf("%w: payload: %w", errInvalidBuilderForms, err)
 	}
-	defs := make([]FormDefinition, 0, len(p.Forms))
+	ev := builderFormsEvent{PageID: p.PageID, Defs: make([]FormDefinition, 0, len(p.Forms))}
+	if p.PublishedAt != "" {
+		at, err := time.Parse(time.RFC3339Nano, p.PublishedAt)
+		if err != nil {
+			return builderFormsEvent{}, fmt.Errorf("%w: published_at: %w", errInvalidBuilderForms, err)
+		}
+		ev.PublishedAt = at
+	}
 	for _, f := range p.Forms {
-		def := FormDefinition{Slug: f.Slug, Title: f.Title, Source: formBuilder, PageID: p.PageID, Fields: make([]FormField, 0, len(f.Fields))}
+		def := FormDefinition{Slug: f.Slug, Title: f.Title, Source: formBuilder, PageID: p.PageID, SubmitLabel: f.SubmitLabel, Success: f.Success, Fields: make([]FormField, 0, len(f.Fields))}
 		for _, fl := range f.Fields {
 			def.Fields = append(def.Fields, FormField{Name: fl.Name, Label: fl.Label, Type: fl.Type, Required: fl.Required, Help: fl.Help, Choices: fl.Choices})
 		}
-		defs = append(defs, def)
+		ev.Defs = append(ev.Defs, def)
 	}
-	return p.PageID, defs, nil
+	return ev, nil
 }
 
 // onBuilderForms stores the forms of a page the builder just published. A
-// malformed payload is logged and dropped; a store error is returned so the
-// queued event is retried (the upsert is idempotent).
+// malformed payload or a definition that can never be stored is logged and
+// dropped, and so is an event older than the last one applied for the page;
+// only a store (database) error is returned, so the queued event is retried
+// (the upsert is idempotent).
 func (h *handlers) onBuilderForms(ctx context.Context, payload any) error {
-	pageID, defs, err := decodeBuilderForms(payload)
-	if err != nil {
-		h.d.Log.Error("site: builder forms: bad payload", "err", err)
+	ev, err := decodeBuilderForms(payload)
+	if err == nil {
+		var applied bool
+		applied, err = h.upsertBuilderFormsAt(ctx, ev.PageID, ev.PublishedAt, ev.Defs)
+		if err == nil && !applied {
+			h.d.Log.Info("site: builder forms: stale publish ignored", "page", ev.PageID, "published_at", ev.PublishedAt)
+		}
+	}
+	if errors.Is(err, errInvalidBuilderForms) {
+		h.d.Log.Error("site: builder forms: dropped", "page", ev.PageID, "err", err)
 		return nil
 	}
-	if err := h.upsertBuilderForms(ctx, pageID, defs); err != nil {
-		h.d.Log.Error("site: builder forms: upsert refused", "page", pageID, "err", err)
+	if err != nil {
+		h.d.Log.Error("site: builder forms: store failed", "page", ev.PageID, "err", err)
 		return err
 	}
 	return nil

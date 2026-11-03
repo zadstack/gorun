@@ -383,9 +383,7 @@ func (h *starterHandler) activateReviewed(ctx context.Context, token string, rev
 	}
 	// After the commit, as Publish does: one announcement per published page.
 	for _, ev := range announced {
-		if h.d.Hooks != nil {
-			h.d.Hooks.Emit(ctx, HookFormsPublished, ev)
-		}
+		h.svc.emitFormsPublished(ctx, ev)
 	}
 	return nil
 }

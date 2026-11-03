@@ -221,13 +221,16 @@ func TestPublishEmitsFormsHook(t *testing.T) {
 		t.Fatal(err)
 	}
 	ev := nextEvent(t, events)
-	want := FormsPublished{PageID: id, Forms: []PublishedForm{{Slug: "booking", Title: "Book a call", SubmitLabel: "Send", Success: "Thanks", Fields: formSection("f", "booking").Form.Fields}}}
+	if at, err := time.Parse(time.RFC3339Nano, ev.PublishedAt); err != nil || time.Since(at) > time.Minute {
+		t.Fatalf("published_at = %q %v", ev.PublishedAt, err)
+	}
+	want := FormsPublished{PageID: id, PublishedAt: ev.PublishedAt, Forms: []PublishedForm{{Slug: "booking", Title: "Book a call", SubmitLabel: "Send", Success: "Thanks", Fields: formSection("f", "booking").Form.Fields}}}
 	if got, _ := json.Marshal(ev); string(got) != string(mustJSON(t, want)) {
 		t.Fatalf("event:\n got %s\nwant %s", got, mustJSON(t, want))
 	}
 	// The wire names are snake_case (ruling P1).
 	raw := string(mustJSON(t, want))
-	for _, key := range []string{`"page_id":`, `"forms":`, `"submit_label":`, `"success":`, `"fields":`, `"name":`, `"label":`, `"type":`, `"required":`, `"help":`, `"choices":`} {
+	for _, key := range []string{`"page_id":`, `"published_at":`, `"forms":`, `"submit_label":`, `"success":`, `"fields":`, `"name":`, `"label":`, `"type":`, `"required":`, `"help":`, `"choices":`} {
 		if !strings.Contains(raw, key) {
 			t.Errorf("payload lacks %s: %s", key, raw)
 		}
@@ -369,6 +372,9 @@ func TestStarterActivationAnnouncesForms(t *testing.T) {
 			slugs = append(slugs, f.Slug)
 		}
 		got[ev.PageID] = strings.Join(slugs, ",")
+		if ev.PublishedAt == "" {
+			t.Fatalf("starter event without published_at: %+v", ev)
+		}
 	}
 	if got[run.Pages["home"]] != "booking" || got[run.Pages["contact"]] != "quote" || len(got) != len(run.Pages) {
 		t.Fatalf("announced %v", got)

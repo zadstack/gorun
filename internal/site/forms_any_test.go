@@ -403,31 +403,137 @@ func TestUpsertBuilderFormsRejectsInvalid(t *testing.T) {
 	}
 }
 
-func TestUpsertRefusesSlugOfAnotherPage(t *testing.T) {
-	e, _ := formsEnv(t)
+// The builder's slug check (ruling R5) is the only authority on builder
+// slugs: a slug another page's builder form holds moves to the publishing
+// page, reopened, with its entries.
+func TestUpsertReassignsSlugOfAnotherPage(t *testing.T) {
+	e, tok := formsEnv(t)
 	def := site.FormDefinition{Slug: "booking", Title: "Booking", Fields: []site.FormField{{Name: "name", Type: "text"}}}
 	if err := site.UpsertBuilderForms(e.app.Deps, "p1", []site.FormDefinition{def}); err != nil {
 		t.Fatal(err)
 	}
+	if resp, _ := e.postForm("booking", tok, "name", "A"); !okStatus(resp.StatusCode) {
+		t.Fatalf("submit: %d", resp.StatusCode)
+	}
+	before, _ := site.FormBySlug(e.app.Deps, "booking")
 	other := def
-	other.Title = "Stolen"
-	if err := site.UpsertBuilderForms(e.app.Deps, "p2", []site.FormDefinition{other}); err == nil || !strings.Contains(err.Error(), "booking") {
-		t.Fatalf("slug of another page reassigned: %v", err)
+	other.Title = "Moved"
+	if err := site.UpsertBuilderForms(e.app.Deps, "p2", []site.FormDefinition{other}); err != nil {
+		t.Fatalf("reassign: %v", err)
 	}
 	f, err := site.FormBySlug(e.app.Deps, "booking")
-	if err != nil || f.PageID != "p1" || f.Title != "Booking" || !f.Open {
-		t.Fatalf("owner's form changed: %+v %v", f, err)
+	if err != nil || f.ID != before.ID || f.PageID != "p2" || f.Title != "Moved" || !f.Open {
+		t.Fatalf("form after reassign: %+v %v", f, err)
 	}
-	// The refusal rolls back the whole publish: p2's other forms are not stored either.
-	if err := site.UpsertBuilderForms(e.app.Deps, "p2", []site.FormDefinition{{Slug: "quote", Title: "Quote"}, other}); err == nil {
-		t.Fatal("mixed publish accepted")
+	if got := e.entryData("booking"); len(got) != 1 {
+		t.Fatalf("entries lost on reassign: %v", got)
+	}
+	// p1 republishing without the form no longer closes p2's form.
+	if err := site.UpsertBuilderForms(e.app.Deps, "p1", nil); err != nil {
+		t.Fatal(err)
+	}
+	if f, _ = site.FormBySlug(e.app.Deps, "booking"); !f.Open || f.PageID != "p2" {
+		t.Fatalf("p1 closed p2's form: %+v", f)
+	}
+}
+
+// P1 publishes booking, removes it (open=0), then P2 publishes booking
+// with another form: both of P2's forms are stored and open, delivered as
+// the hook delivers them.
+func TestRemovedSlugReusedByAnotherPage(t *testing.T) {
+	e, _ := formsEnv(t)
+	ctx := context.Background()
+	publish := func(page, at, forms string) {
+		t.Helper()
+		raw := json.RawMessage(`{"page_id":"` + page + `","published_at":"` + at + `","forms":[` + forms + `]}`)
+		if err := e.app.Deps.Hooks.Do(ctx, "builder.forms.published", raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	booking := `{"slug":"booking","title":"Booking","fields":[{"name":"name","label":"Name","type":"text"}]}`
+	publish("p1", "2026-11-03T10:00:00Z", booking)
+	publish("p1", "2026-11-03T10:01:00Z", "")
+	if f, _ := site.FormBySlug(e.app.Deps, "booking"); f.Open {
+		t.Fatal("removed form still open")
+	}
+	publish("p2", "2026-11-03T10:02:00Z", booking+`,{"slug":"quote","title":"Quote","fields":[{"name":"budget","label":"Budget","type":"number"}]}`)
+	for _, slug := range []string{"booking", "quote"} {
+		f, err := site.FormBySlug(e.app.Deps, slug)
+		if err != nil || f.PageID != "p2" || !f.Open {
+			t.Fatalf("%s: %+v %v", slug, f, err)
+		}
+	}
+}
+
+func TestUpsertStoresSubmitLabelAndSuccess(t *testing.T) {
+	e, _ := formsEnv(t)
+	def := site.FormDefinition{Slug: "booking", Title: "Booking", SubmitLabel: "احجز", Success: "Thanks, see you soon.", Fields: []site.FormField{{Name: "name", Type: "text"}}}
+	if err := site.UpsertBuilderForms(e.app.Deps, "p1", []site.FormDefinition{def}); err != nil {
+		t.Fatal(err)
+	}
+	f, err := site.FormBySlug(e.app.Deps, "booking")
+	if err != nil || f.SubmitLabel != "احجز" || f.Success != "Thanks, see you soon." {
+		t.Fatalf("stored: %+v %v", f, err)
+	}
+	def.SubmitLabel, def.Success = "Book", ""
+	if err := site.UpsertBuilderForms(e.app.Deps, "p1", []site.FormDefinition{def}); err != nil {
+		t.Fatal(err)
+	}
+	if f, _ = site.FormBySlug(e.app.Deps, "booking"); f.SubmitLabel != "Book" || f.Success != "" {
+		t.Fatalf("updated: %+v", f)
+	}
+}
+
+func TestBuilderFormsStaleEventIgnored(t *testing.T) {
+	e, _ := formsEnv(t)
+	ctx := context.Background()
+	do := func(at, forms string) {
+		t.Helper()
+		raw := json.RawMessage(`{"page_id":"p1","published_at":"` + at + `","forms":[` + forms + `]}`)
+		if err := e.app.Deps.Hooks.Do(ctx, "builder.forms.published", raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	newer := `{"slug":"booking","title":"Newer","fields":[{"name":"name","label":"Name","type":"text"}]}`
+	older := `{"slug":"booking","title":"Older","fields":[{"name":"email","label":"Email","type":"email"}]},{"slug":"quote","title":"Quote","fields":[]}`
+	do("2026-11-03T10:00:00.5Z", newer)
+	do("2026-11-03T10:00:00.25Z", older)  // queued earlier, delivered later
+	do("2026-11-03T10:00:00.500Z", older) // the same instant is not newer either
+	f, err := site.FormBySlug(e.app.Deps, "booking")
+	if err != nil || f.Title != "Newer" || fieldNames(f.Fields) != "name:pinned" || !f.Open {
+		t.Fatalf("stale event applied: %+v %v", f, err)
 	}
 	if _, err := site.FormBySlug(e.app.Deps, "quote"); !errors.Is(err, site.ErrNoForm) {
-		t.Fatalf("partial upsert stored quote: %v", err)
+		t.Fatalf("stale event created quote: %v", err)
 	}
-	// Once p1 closes it the slug is still p1's; p1 itself can always reopen it.
-	if err := site.UpsertBuilderForms(e.app.Deps, "p1", []site.FormDefinition{def}); err != nil {
-		t.Fatalf("owner republish: %v", err)
+	// A later publish still applies.
+	do("2026-11-03T10:00:01Z", "")
+	if f, _ = site.FormBySlug(e.app.Deps, "booking"); f.Open {
+		t.Fatal("newer empty publish ignored")
+	}
+}
+
+func TestBuilderFormsInvalidDefinitionDropped(t *testing.T) {
+	e, _ := formsEnv(t)
+	ctx := context.Background()
+	for name, raw := range map[string]string{
+		"bad field": `{"page_id":"p1","published_at":"2026-11-03T10:00:00Z","forms":[{"slug":"booking","title":"B","fields":[{"name":"Bad-Name","type":"text"}]}]}`,
+		"reserved":  `{"page_id":"p1","published_at":"2026-11-03T10:00:00Z","forms":[{"slug":"contact","title":"C","fields":[]}]}`,
+		"no page":   `{"page_id":"","forms":[{"slug":"booking","title":"B","fields":[]}]}`,
+		"bad time":  `{"page_id":"p1","published_at":"yesterday","forms":[{"slug":"booking","title":"B","fields":[]}]}`,
+		"twice":     `{"page_id":"p1","forms":[{"slug":"booking","title":"B","fields":[]},{"slug":"booking","title":"B","fields":[]}]}`,
+		"not json":  `{"forms":`,
+	} {
+		if err := e.app.Deps.Hooks.Do(ctx, "builder.forms.published", json.RawMessage(raw)); err != nil {
+			t.Errorf("%s: returned %v (would be retried)", name, err)
+		}
+	}
+	var forms, publishes int
+	if err := e.app.Deps.DB.QueryRow(`SELECT (SELECT count(*) FROM forms), (SELECT count(*) FROM form_page_publishes)`).Scan(&forms, &publishes); err != nil {
+		t.Fatal(err)
+	}
+	if forms != 0 || publishes != 0 {
+		t.Fatalf("invalid events wrote forms=%d publishes=%d", forms, publishes)
 	}
 }
 
@@ -475,7 +581,7 @@ func TestBuilderFormsHookUpserts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if f.Source != "builder" || f.PageID != "p1" || f.Title != "Book a call" || !f.Open || len(f.Fields) != 2 {
+	if f.Source != "builder" || f.PageID != "p1" || f.Title != "Book a call" || f.SubmitLabel != "Send" || f.Success != "Thanks" || !f.Open || len(f.Fields) != 2 {
 		t.Fatalf("form = %+v", f)
 	}
 	topic := f.Fields[1]

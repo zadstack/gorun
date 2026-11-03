@@ -214,9 +214,7 @@ func (s *service) Publish(ctx context.Context, id, expected string) error {
 		return err
 	}
 	// After the commit, never inside the transaction (see hooks.Emit).
-	if s.d.Hooks != nil {
-		s.d.Hooks.Emit(ctx, HookFormsPublished, FormsPublished{PageID: id, Forms: forms})
-	}
+	s.emitFormsPublished(ctx, FormsPublished{PageID: id, Forms: forms})
 	return nil
 }
 
