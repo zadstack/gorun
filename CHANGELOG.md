@@ -11,6 +11,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Extension HTTP responses from an earlier activation no longer change a reactivated extension's delivery log, failure counters or error status.
 - Canvas template choices are a grid of cards again instead of seven narrow columns.
 - Agents rail shortcuts use the initials of the first two words, so a card titled "03 · Prepare the draft" shows PT instead of 03.
 
