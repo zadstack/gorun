@@ -68,6 +68,9 @@ func TestIPBlockRejectsUnsafeTargets(t *testing.T) {
 func TestFailedLoginAuditSamplingIsBounded(t *testing.T) {
 	d := newDB(t)
 	s := testService(d)
+	// A fixed clock keeps the loop inside one sampling minute.
+	at := time.Now()
+	s.securityAudit.now = func() time.Time { return at }
 	for range 1000 {
 		s.failedLogin(withIP("203.0.113.9"), "", "name@example.com", "ip_locked")
 	}
