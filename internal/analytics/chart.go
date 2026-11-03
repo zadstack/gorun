@@ -100,33 +100,10 @@ func polyline(vs []float64, top, w, h float64, rtl bool, attrs string) string {
 
 func num(f float64) string { return strconv.FormatFloat(f, 'f', 1, 64) }
 
-// Locale number formatting: digits are always Latin (0-9), like the rest
-// of the admin. en groups with "," and uses "." and "%"; ar keeps its own
-// separators "٬", "٫" and "٪".
-
-func arabic(loc string) bool { return strings.HasPrefix(strings.ToLower(loc), "ar") }
-
-// localize maps the separators of an ASCII number ("1,234.5") to the
-// locale's; digits stay Latin.
-func localize(loc, s string) string {
-	if !arabic(loc) {
-		return s
-	}
-	var b strings.Builder
-	for _, r := range s {
-		switch {
-		case r == ',':
-			b.WriteRune('٬')
-		case r == '.':
-			b.WriteRune('٫')
-		case r == '%':
-			b.WriteRune('٪')
-		default:
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
+// Locale number formatting: every locale, ar included, uses the plain
+// Western form (1,234, 2.5, +100%), like the rest of the admin. localize is
+// the single place a locale-specific form would go.
+func localize(_, s string) string { return s }
 
 func group(digits string) string {
 	if len(digits) <= 3 {

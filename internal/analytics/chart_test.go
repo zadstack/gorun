@@ -81,7 +81,7 @@ func TestFormatNumberAndChange(t *testing.T) {
 		loc  string
 		n    int
 		want string
-	}{{"en", 0, "0"}, {"en", 1234567, "1,234,567"}, {"en", -1200, "-1,200"}, {"ar", 1234, "1٬234"}}
+	}{{"en", 0, "0"}, {"en", 1234567, "1,234,567"}, {"en", -1200, "-1,200"}, {"ar", 1234, "1,234"}}
 	for _, c := range cases {
 		if got := formatInt(c.loc, c.n); got != c.want {
 			t.Errorf("formatInt(%s, %d) = %q, want %q", c.loc, c.n, got, c.want)
@@ -90,7 +90,7 @@ func TestFormatNumberAndChange(t *testing.T) {
 	if got := formatFloat("en", 1.25); got != "1.3" && got != "1.2" {
 		t.Errorf("formatFloat = %q", got)
 	}
-	if got := formatFloat("ar", 2.5); got != "2٫5" {
+	if got := formatFloat("ar", 2.5); got != "2.5" {
 		t.Errorf("formatFloat ar = %q", got)
 	}
 	ch := []struct {
@@ -103,7 +103,7 @@ func TestFormatNumberAndChange(t *testing.T) {
 			t.Errorf("changeOf(%v, %v) = %+v, want %s %q", c.cur, c.prev, got, c.dir, c.pct)
 		}
 	}
-	if got := changeOf("ar", 2, 1); got.Pct != "+100٪" {
+	if got := changeOf("ar", 2, 1); got.Pct != "+100%" {
 		t.Errorf("ar change = %q", got.Pct)
 	}
 }
