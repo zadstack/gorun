@@ -254,6 +254,15 @@ func (h *handlers) formSubmit(w http.ResponseWriter, r *http.Request) {
 			h.formResult(w, r, http.StatusUnprocessableEntity, FormState{Errors: map[string]string{"form": "site.form.invalid"}, Back: back})
 			return
 		}
+		if known {
+			// Fields an admin pinned on a captured form are validated; the
+			// entry still keeps every posted field.
+			if _, errs := validateBuilder(def, values); len(errs) > 0 {
+				errs["form"] = "site.form.check_fields"
+				h.formResult(w, r, http.StatusUnprocessableEntity, FormState{Errors: errs, Values: data, Back: back})
+				return
+			}
+		}
 	}
 
 	page := formSourcePath(back)

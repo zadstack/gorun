@@ -53,6 +53,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Theme.AddKind(KindFormResult, func(kernel.KindRequest) []string { return []string{"form-result.html"} })
 	d.Hooks.Action(HookFormSubmitted, 10, h.deliverForm)
 	registerSubmissionsAdmin(d, h)
+	registerFormsAdmin(d, h)
 	registerAvailabilityAdmin(d, h)
 	registerPageAccessAdmin(d, h)
 	registerIntakeAdmin(d, h)
