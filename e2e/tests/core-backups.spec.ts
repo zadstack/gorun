@@ -44,9 +44,12 @@ test('native backup presence and upload receipts remain distinct from verified r
   writeFileSync(join(backups, `${manifest.stamp}.remote.json`), JSON.stringify({
     state: 'partial', read_back_verified: false,
     database_sha256: manifest.database.sha256, archive_sha256: manifest.archive.sha256,
+    // The backup includes the optional analytics member (analytics is on by default), so the receipt lists it too.
+    ...(manifest.analytics ? { analytics_sha256: manifest.analytics.sha256 } : {}),
     files: [
       { name: `${manifest.stamp}.db`, state: 'uploaded', checked_at: '2020-01-01T00:00:00Z' },
       { name: `${manifest.stamp}.tar.gz`, state: 'failed', code: 'provider_upload_failed', checked_at: '2020-01-01T00:00:00Z' },
+      ...(manifest.analytics ? [{ name: `${manifest.stamp}-analytics.db`, state: 'not_attempted', checked_at: '2020-01-01T00:00:00Z' }] : []),
     ],
   }));
   writeFileSync(join(backups, '20000101T000000Z.db'), 'legacy fixture');

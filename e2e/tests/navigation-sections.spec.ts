@@ -14,7 +14,7 @@ for (const locale of ['en', 'ar'] as const) {
     await sidebar.locator('[data-navigation-section="site"] a').click();
     await expect(page).toHaveURL(/\/admin\/website$/);
     await expect(page.locator('[data-website-group]')).toHaveCount(3);
-    await expect(page.locator('.admin-section-categories a')).toHaveCount(3);
+    await expect(page.locator('.admin-section-categories a')).toHaveCount(4);
     await page.locator('[data-navigation-category="site-pages"]').click();
     await expect(page.locator('.admin-section-pages a[href="/admin/menus"]')).toBeVisible();
     await page.locator('[data-navigation-category="site-search"]').click();
