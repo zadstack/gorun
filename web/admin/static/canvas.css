@@ -20,3 +20,30 @@
 .canvas-card-footer{flex-wrap:wrap}.canvas-move-controls button{min-width:44px}.canvas-card-heading .canvas-handle{width:44px;flex:none}.canvas-move-controls{margin-inline-start:auto}.canvas-workspace:dir(rtl) .canvas-empty{direction:rtl}
 @media(max-width:767px){.canvas-move-controls button{min-width:44px}.canvas-move-controls [data-direction=left],.canvas-move-controls [data-direction=right]{display:none}}
 @media(max-width:767px){.canvas-heading{display:block;position:relative}.canvas-heading-title>a{padding-inline-end:110px}.canvas-heading>button{position:absolute;inset-inline-end:0;top:0}.admin-workspace #main .canvas-heading h1{font-size:1.2rem;margin-top:.5rem}.canvas-heading input{text-overflow:ellipsis}}
+
+/* Canvas list: each board is a card with a dotted-board mark, a readable save time and its last run as a word plus
+   a dot, like run state on the board itself. */
+.canvas-board-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:.75rem;border-top:0}
+.canvas-board-list li{border:1px solid var(--cv-line);border-radius:8px;background:#fff;box-shadow:0 2px 5px #17202c08}
+.canvas-board-list a{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:.5rem .875rem;min-height:0;padding:.875rem 1rem;border-radius:inherit}
+.canvas-board-list a:hover{background:#f6f9fc}
+.canvas-board-list strong{font-size:.95rem;line-height:1.4}
+.canvas-board-list small{margin-top:.2rem}
+.canvas-list-mark{grid-row:span 2;width:44px;height:44px;border-radius:8px;border:1px solid #c9d6e2;background-color:#f5f7f8;background-image:radial-gradient(#9fb3c4 1px,transparent 1px);background-size:8px 8px}
+.canvas-list-run{display:inline-flex!important;align-items:center;gap:.35rem;width:fit-content;margin:0!important;padding:.1rem .5rem;border:1px solid currentColor;border-radius:999px;font-weight:600;color:#4a5568!important}
+.canvas-list-run::before{content:"";flex:none;width:.45rem;height:.45rem;border-radius:50%;background:currentColor}
+.canvas-list-run[data-run-status=""]{border-style:dashed}
+.canvas-list-run[data-run-status=succeeded]{color:#1c6b3a!important}
+.canvas-list-run[data-run-status=failed],.canvas-list-run[data-run-status=uncertain]{color:#a3292d!important}
+.canvas-list-run:is([data-run-status=running],[data-run-status=queued]){color:#1a5a9e!important}
+.canvas-list-run:is([data-run-status=waiting_agent],[data-run-status=waiting_tool]){color:#8a4b00!important}
+
+/* Template choices: a grid of cards, never squeezed by the form's flex rows. */
+.canvas-create{max-width:1040px}
+.canvas-create>.audit-preset-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr));gap:.625rem}
+.canvas-create .audit-preset-cards button{align-content:start;gap:.35rem;min-height:96px;padding:.75rem .875rem;border:1px solid var(--cv-line);border-block-start:3px solid #b7c7d5;border-radius:8px;background:#fff;color:inherit;font-size:.875rem}
+.canvas-create .audit-preset-cards button strong{font-size:.9rem;line-height:1.35}
+.canvas-create .audit-preset-cards button small{font-size:.75rem;line-height:1.5}
+.canvas-create .audit-preset-cards button:hover{border-color:#57816c;color:inherit}
+.canvas-create .audit-preset-cards button[aria-pressed=true]{border-color:#57816c;border-block-start-color:var(--green);background:#f0f8f4}
+.canvas-board-list,.canvas-list-empty{margin-block-end:2rem}

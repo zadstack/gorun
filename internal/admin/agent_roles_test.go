@@ -8,6 +8,9 @@ func TestAgentRoleExamplesStayWithinBundleBoundsWithoutBindings(t *testing.T) {
 		if len(roles) != 7 {
 			t.Fatal(len(roles))
 		}
+		if roles[0].ID != "orchestrator" {
+			t.Fatal("the orchestrator starts the handoff and must lead", roles[0].ID)
+		}
 		ids := map[string]bool{}
 		for _, role := range roles {
 			if role.ID == "" || ids[role.ID] || role.Name == "" || role.Goal == "" || role.Example == "" || role.Setup == "" || len(role.Skills) != 5 {

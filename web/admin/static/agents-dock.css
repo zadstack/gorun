@@ -18,3 +18,15 @@
 @media(max-width:767px){.agents-dock-header{padding:10px 12px}.agents-dock-header h2{font-size:16px}.agents-dock-header p{display:none}.agents-dock-body{padding:10px}.agents-dock-dialog:has(.agents-dock-detail:not([hidden])) .agents-dock-list{max-height:120px}.agents-dock-detail{padding:10px}.agents-dock-detail p{margin-block:.5rem}}
 .canvas-inbound-card>details{font-size:.75rem}.canvas-inbound-card>details>summary{min-height:36px;display:list-item;cursor:pointer;color:var(--muted)}
 .agents-dock-bundle{display:grid;gap:.5rem;margin-block:.75rem}.agents-dock-bundle h4{font-size:.8rem;font-weight:650}.agents-dock-bundle ul{display:grid;gap:.4rem;list-style:none;padding:0}.agents-dock-bundle li{padding:.5rem;border:1px solid var(--line);border-radius:5px;font-size:.8rem}.agents-dock-bundle small,.agents-dock-bundle time{display:block;color:var(--muted);font-size:.7rem;margin-top:.2rem}
+
+/* Entries and details use the canvas agent and provider card language: a round avatar, the kind's accent and a
+   tinted heading band. */
+.agents-dock-list button,.agents-dock-detail{--dock-accent:#6268a6;--dock-soft:#eef0fc;--dock-ink:#464d88;--dock-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'%3E%3Crect x='4' y='8' width='16' height='11' rx='3'/%3E%3Cpath d='M12 4v4M9 13h.01M15 13h.01'/%3E%3C/svg%3E")}
+:is(.agents-dock-list button,.agents-dock-detail)[data-dock-kind=provider]{--dock-accent:#2c6a70;--dock-soft:#e2f0f0;--dock-ink:#1d5257;--dock-icon:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5'/%3E%3C/svg%3E")}
+.agents-dock-list button{position:relative;padding-inline-start:52px;border-radius:10px}
+.agents-dock-list button::before{content:"";position:absolute;top:50%;inset-inline-start:11px;width:30px;height:30px;margin-top:-15px;border-radius:50%;background:var(--dock-ink) var(--dock-icon) center/16px no-repeat}
+.agents-dock-list button[aria-pressed=true]{border-color:var(--dock-accent);background:var(--dock-soft)}
+.agents-dock-detail{position:relative;margin-top:22px;border:2px solid var(--dock-accent);border-block-start-width:3px;border-radius:14px;box-shadow:0 0 0 4px var(--dock-soft)}
+.agents-dock-detail::before{content:"";position:absolute;top:-20px;inset-inline-start:14px;width:32px;height:32px;border-radius:50%;background:var(--dock-ink) var(--dock-icon) center/17px no-repeat;box-shadow:0 0 0 3px #fff}
+.agents-dock-detail h3{margin:-13px -13px 0;padding:22px 13px 8px;border-start-start-radius:11px;border-start-end-radius:11px;background:var(--dock-soft)}
+.agents-dock-detail .agents-dock-state{margin:0 -13px 10px;padding:0 13px 10px;background:var(--dock-soft);color:var(--dock-ink)}
