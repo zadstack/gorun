@@ -342,9 +342,13 @@ func TestDeleteCapturedForm(t *testing.T) {
 	}
 
 	// A builder form that is still open cannot be deleted.
-	if resp := e.adminPost("/admin/forms/book/delete", "/admin/forms/book"); resp.StatusCode != http.StatusConflict {
+	_, bp := e.get("/admin/forms/book/delete")
+	resp, blocked := e.do("POST", "/admin/forms/book/delete", url.Values{"_csrf": {csrfFrom(t, bp)}})
+	_ = bp
+	if resp.StatusCode != http.StatusConflict {
 		t.Fatalf("open builder delete: %d", resp.StatusCode)
 	}
+	mustContain(t, blocked, "هذا النموذج ما زال في صفحة")
 	if _, _, ok := e.formRow("book"); !ok {
 		t.Fatal("open builder form deleted")
 	}
@@ -403,4 +407,56 @@ func (e *env) loginEditor() {
 		"password": {"correct horse battery"}}); resp.StatusCode != http.StatusSeeOther {
 		e.t.Fatalf("editor login: %d", resp.StatusCode)
 	}
+}
+
+func TestPinChoiceFieldSetsChoices(t *testing.T) {
+	e, tok := formsEnv(t)
+	if resp, _ := e.postForm("poll", tok, "name", "Sara", "plan", "a"); !okStatus(resp.StatusCode) {
+		t.Fatalf("capture: %d", resp.StatusCode)
+	}
+	e.loginAdmin()
+	pin := func(kv ...string) int {
+		return e.adminPost("/admin/forms/poll/fields/plan/pin", "/admin/forms/poll", kv...).StatusCode
+	}
+	if c := pin("type", "choice"); c != http.StatusBadRequest {
+		t.Fatalf("choice without choices: %d", c)
+	}
+	if c := pin("type", "choice", "choices", strings.Repeat("x\n", 0)+strings.Join(func() []string {
+		var l []string
+		for i := 0; i < 21; i++ {
+			l = append(l, fmt.Sprintf("c%d", i))
+		}
+		return l
+	}(), "\n")); c != http.StatusBadRequest {
+		t.Fatalf("21 choices: %d", c)
+	}
+	if c := pin("type", "choice", "choices", "a\nb"); c != http.StatusSeeOther {
+		t.Fatalf("pin: %d", c)
+	}
+	_, fields, _ := e.formRow("poll")
+	for _, f := range fields {
+		if f.Name == "plan" && strings.Join(f.Choices, ",") != "a,b" {
+			t.Fatalf("choices = %v", f.Choices)
+		}
+	}
+	v, vtok := formsEnvFor(t, e)
+	if resp, _ := v.postForm("poll", vtok, "name", "X", "plan", "c"); resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("c accepted: %d", resp.StatusCode)
+	}
+	if resp, _ := v.postForm("poll", vtok, "name", "X", "plan", "b"); !okStatus(resp.StatusCode) {
+		t.Fatalf("b rejected: %d", resp.StatusCode)
+	}
+	_, page := e.get("/admin/forms/poll")
+	mustContain(t, page, `name="choices"`, "يُفشل كل رسالة")
+}
+
+func TestExportLinkHasNoPage(t *testing.T) {
+	e := boot(t)
+	id := e.seedForm("quote", "captured", true, pinned("a"))
+	e.seedEntry(id, map[string]string{"a": "1"}, "new", "2026-03-01T10:00:00Z")
+	e.loginAdmin()
+	_, body := e.get("/admin/forms/quote?status=new&q=x&page=2")
+	mustContain(t, body, `href="/admin/forms/quote/export.csv?q=x&amp;status=new"`)
+	_, plain := e.get("/admin/forms/quote")
+	mustContain(t, plain, `href="/admin/forms/quote/export.csv"`)
 }

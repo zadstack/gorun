@@ -103,8 +103,10 @@
             <input type="hidden" name="_csrf" value="{{csrf}}">
             <select name="type" aria-label="{{t "site.forms.fields.type"}}" class="h-8 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{range $.Types}}{{if ne . "file"}}<option value="{{.}}">{{t (printf "site.forms.type.%s" .)}}</option>{{end}}{{end}}</select>
             <input name="label" value="{{$f.Label}}" maxlength="120" dir="auto" aria-label="{{t "site.forms.fields.label"}}" class="h-8 w-32 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+            <textarea name="choices" rows="3" dir="auto" aria-label="{{t "site.forms.fields.choices"}}" placeholder="{{t "site.forms.fields.choices"}}" class="w-full rounded border border-line bg-panel px-2 py-1 focus:outline-none focus:ring-[3px] focus:ring-green-soft"></textarea>
             <label class="inline-flex items-center gap-1"><input type="checkbox" name="required" value="1" class="h-4 w-4 accent-[var(--green)]">{{t "site.forms.fields.required"}}</label>
             <button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.forms.fields.pin"}}</button>
+            <p class="w-full text-xs text-muted">{{t "site.forms.fields.choices_help"}} {{t "site.forms.fields.required_warning"}}</p>
           </form>
           {{end}}
         </td>

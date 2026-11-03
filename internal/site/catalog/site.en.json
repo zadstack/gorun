@@ -195,5 +195,7 @@
   "forms.flash.deleted": "Entry deleted.",
   "forms.flash.field": "Field saved.",
   "forms.flash.form_deleted": "Form deleted.",
-  "forms.flash.open": "This form is still on a page and cannot be deleted."
+  "forms.flash.open": "This form is still on a page and cannot be deleted.",
+  "forms.fields.choices_help": "Choices apply to the Choice type only (1 to 20).",
+  "forms.fields.required_warning": "A required field makes every submission fail if the page's form no longer sends it."
 }

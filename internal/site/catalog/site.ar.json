@@ -195,5 +195,7 @@
   "forms.flash.deleted": "تم حذف الرسالة.",
   "forms.flash.field": "تم حفظ الحقل.",
   "forms.flash.form_deleted": "تم حذف النموذج.",
-  "forms.flash.open": "هذا النموذج ما زال في صفحة ولا يمكن حذفه."
+  "forms.flash.open": "هذا النموذج ما زال في صفحة ولا يمكن حذفه.",
+  "forms.fields.choices_help": "الخيارات تخص نوع الاختيار فقط (من 1 إلى 20).",
+  "forms.fields.required_warning": "الحقل المطلوب يُفشل كل رسالة إذا توقف نموذج الصفحة عن إرساله."
 }

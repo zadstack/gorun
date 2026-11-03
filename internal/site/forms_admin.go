@@ -27,6 +27,7 @@ const (
 	formEntriesPerPage = 50
 	maxEntryColumns    = 6 // visible field columns in the table
 	maxLabelLen        = 120
+	maxChoices         = 20
 )
 
 var entryStatuses = []string{statusNew, statusRead, statusSpam}
@@ -71,6 +72,13 @@ type formEntriesPage struct {
 
 // Link returns the table's URL for page n with the current filters.
 func (p formEntriesPage) Link(n int) string {
+	v := p.query()
+	v.Set("page", strconv.Itoa(n))
+	return "?" + v.Encode()
+}
+
+// query is the current filters as URL values (no page).
+func (p formEntriesPage) query() url.Values {
 	v := url.Values{}
 	if p.Filter.Status != "" {
 		v.Set("status", p.Filter.Status)
@@ -84,13 +92,16 @@ func (p formEntriesPage) Link(n int) string {
 	if p.Filter.Q != "" {
 		v.Set("q", p.Filter.Q)
 	}
-	v.Set("page", strconv.Itoa(n))
-	return "?" + v.Encode()
+	return v
 }
 
 // CSVLink is the export URL with the current filters.
 func (p formEntriesPage) CSVLink() string {
-	return "/admin" + formsPath + "/" + p.Form.Slug + "/export.csv" + strings.TrimSuffix(p.Link(1), "&page=1")
+	base := "/admin" + formsPath + "/" + p.Form.Slug + "/export.csv"
+	if q := p.query().Encode(); q != "" {
+		return base + "?" + q
+	}
+	return base
 }
 
 type entryField struct {
@@ -475,10 +486,13 @@ func (a *formsAdmin) field(w http.ResponseWriter, r *http.Request) {
 			f.Type, f.State, f.Required = typ, statePinned, r.PostFormValue("required") == "1"
 			f.Choices = nil
 			if typ == fieldChoice {
-				for _, c := range strings.FieldsFunc(r.PostFormValue("choices"), func(r rune) bool { return r == '\n' || r == ',' }) {
+				for _, c := range strings.FieldsFunc(r.PostFormValue("choices"), func(r rune) bool { return r == '\n' }) {
 					if c = strings.TrimSpace(c); c != "" && !slices.Contains(f.Choices, c) {
 						f.Choices = append(f.Choices, c)
 					}
+				}
+				if n := len(f.Choices); n < 1 || n > maxChoices {
+					return nil, errBadField
 				}
 			}
 		default:
@@ -533,7 +547,6 @@ func (a *formsAdmin) deleteForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if p.Blocked {
-		httpx.SetFlash(w, "error", "site.forms.flash.open")
 		a.tpl.RenderWith(w, r, http.StatusConflict, "admin", "pages/site/form_delete.html", p)
 		return
 	}
