@@ -46,9 +46,15 @@ are checked against current permissions on every server request.
 القائمة لتكمل مكان ما توقفت. كل كانفاس خاص بحساب صاحبه؛ المشاركة بين الفريق
 ليست جزءًا من هذه النسخة.
 
+كل نوع بطاقة له شكل مختلف، ومكتوب عليه اسم النوع كمان. البطاقة بتعرض حالة آخر
+تشغيل ليها: «في قائمة الانتظار» أو «قيد التشغيل» أو «بانتظارك» أو «تم» أو «فشل». الخطوط بين البطاقات
+بتتحرك وقت التشغيل. لوحة **المهام المجدولة** بتجمع جدولة الكانفاس الحالي حسب
+الإيجنت، وبتعرض موعد التشغيل الجاي. وعرض **مسارات** بيرتب البطاقات في أربع
+أعمدة ثابتة من غير ما يغيّر أماكنها المحفوظة.
+
 ## Views, layout and connection ports
 
-The editor offers Workflow, Grid and List views. Changing view stores only a
+The editor offers Workflow, Lanes, Grid and List views. Changing view stores only a
 browser-tab preference and does not submit a document update. Grid and List
 keep editing available and hide movement controls and graph lines. Workflow
 keeps the saved connections visible and gives each link a separate port on the
@@ -64,6 +70,56 @@ change card content, graph edges, grants or agent authority.
 
 If the bounded router cannot find a clear path, the editor shows a spacing
 warning rather than drawing through a card. Arrange cards to provide more room.
+
+Lanes shows the same cards in four fixed columns: inputs (sources, content,
+links, checklists, widgets and unattributed notes), instructions and triggers
+(prompts, schedules), execution (agents, providers), and results (result cards
+and agent-attributed notes). Within a column, cards keep their saved order.
+Positions are computed for display only: Lanes never moves or saves a card, and
+dragging is disabled as in Grid and List. Edges and run state draw as in
+Workflow. Below 768 pixels Lanes renders as a list ordered by column.
+
+## Node shapes, run state and live edges
+
+Each card kind has its own shape and colour, such as stacked sheets for sources,
+a folded corner for prompts, an avatar badge for agents and a clock badge for
+schedules. The kind is still written on the card, so shape is never the only
+cue. Edit, remove and move controls appear when you hover over or focus a card;
+on touch screens and below 768 pixels they stay visible.
+
+A node's run state comes from its latest run in the run history. It reads
+`idle`, `queued`, `running`, `waiting`, `done` or `failed`, shown as a dot plus
+a word in the card heading. `done` shows for 60 seconds after success, then the
+card returns to `idle`. A running agent shows elapsed time, not invented
+progress. A waiting node offers its review action inline, labelled with the
+card title. State changes are announced once through a polite live region; the
+initial page load announces nothing.
+
+Edges show direction with an arrowhead. An edge into a running node animates,
+an edge leaving an enabled schedule is dotted, and an edge into a failed node
+is dashed red with a × mark. With reduced motion there is no animation; the
+stroke pattern and the node's state word still carry the meaning.
+
+While any run on the board is queued or running, the editor refreshes the run
+history every 4 seconds. It stops when no run is active and pauses while the
+tab is hidden. Refreshing changes only state attributes and keeps keyboard
+focus. It adds no endpoint and never starts or changes a run.
+
+## Scheduled tasks panel
+
+When the board has schedule cards, a **Scheduled tasks** panel floats over the
+Workflow and Lanes views (in Lanes it sits at the bottom so column headers stay
+readable). It starts collapsed, showing the count and the next run. Expanded,
+it groups schedules by the agent or provider each one is connected to, with
+the interval, status, next run time and a **Show on board** button that
+focuses the card. Unconnected schedules are listed under **Not connected**.
+Schedules that need review offer **Review and enable**, which opens the same
+review as the schedule card; the panel adds no new way to enable a schedule.
+
+The panel covers the current board only. `Escape` collapses it and returns
+focus to its toggle. Its open or closed state is a browser-tab preference.
+On touch screens and below 768 pixels it sits under the toolbar instead of
+floating.
 
 ## Agent capability scope
 
