@@ -137,7 +137,7 @@ test('screenshots', async ({page})=>{
   const path=await lanesBoard(page,locale),board=path.split('/').pop()!;
   const agent=page.locator('.canvas-card[data-kind=agent]');const node=(await agent.getAttribute('data-card-id'))!;
   const database=db();const owner=database.prepare('SELECT id FROM users WHERE email=?').get('admin@e2e.test') as {id:string};
-  database.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at) VALUES(?,?,?,?,?,'running',?,?)").run(locale==='ar'?'77777777-7777-4777-8777-0000000000a1':'77777777-7777-4777-8777-0000000000a2',board,owner.id,'lanes-run-'+locale,node,JSON.stringify({candidate:{input:{kind:'text'}}}),new Date().toISOString());database.close();
+  database.prepare("INSERT INTO admin_canvas_runs(id,board_id,owner_id,request_id,node_id,status,document,created_at,started_at) VALUES(?,?,?,?,?,'running',?,?,?)").run(locale==='ar'?'77777777-7777-4777-8777-0000000000a1':'77777777-7777-4777-8777-0000000000a2',board,owner.id,'lanes-run-'+locale,node,JSON.stringify({candidate:{input:{kind:'text'}}}),new Date().toISOString(),new Date().toISOString());database.close();
   await page.reload();await lanes(page);
   await expect(agent).toHaveAttribute('data-state','running');
   const toggle=page.locator('[data-canvas-schedules] button[aria-expanded][aria-controls]');
