@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-11-03
+
 ### Added
 
 - Canvas run context inlines each source under a `## [ref:…]` header and shortens long sources to fit 64,000 characters with a marker giving the exact characters left out, instead of failing the run or silently cutting items over 12,000 bytes to 3,000 characters. The review dialog says how many sources were shortened, and external agents fetch the full text with the new `canvases.source` MCP tool. Upgrade note: runs prepared before the upgrade (`queued` or `waiting_agent`) were reviewed against the old context format, so their review-hash recheck fails closed: queued runs fail at dispatch, waiting runs are refused by `canvases.context` and the watchdog stops them after 24 hours. Review and run them again.
@@ -1250,7 +1252,9 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.18.6...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/zadstack/gorun/compare/v0.18.7...v0.19.0
+[0.18.7]: https://github.com/zadstack/gorun/compare/v0.18.6...v0.18.7
 [0.18.6]: https://github.com/zadstack/gorun/compare/v0.18.5...v0.18.6
 [0.18.5]: https://github.com/zadstack/gorun/compare/v0.18.4...v0.18.5
 [0.18.4]: https://github.com/zadstack/gorun/compare/v0.18.3...v0.18.4
