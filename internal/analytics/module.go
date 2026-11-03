@@ -8,6 +8,7 @@ package analytics
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"io/fs"
 	"log/slog"
 	"time"
@@ -15,6 +16,9 @@ import (
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/settings"
 )
+
+//go:embed catalog/*.json
+var catalogs embed.FS
 
 // Module name, permission and cron.
 const (
@@ -49,6 +53,9 @@ func New() *Module { return &Module{} }
 // Name implements kernel.Module.
 func (*Module) Name() string { return ModuleName }
 
+// Catalogs implements kernel.CatalogProvider (the analytics.* strings).
+func (*Module) Catalogs() fs.FS { return catalogs }
+
 // Migrations implements kernel.Module. The module has no tables in the main
 // database: its migrations (migrations/) belong to analytics.db and
 // OpenStore applies them there.
@@ -65,7 +72,8 @@ func (*Module) Enabled(ctx context.Context, d *sql.DB) (bool, error) {
 // Register opens analytics.db, starts the write buffer (stopped and flushed
 // when the app closes), serves the beacon script and endpoint, injects the
 // script into public HTML, records form submissions (site.form.submitted),
-// declares analytics.view and adds the hourly rollup cron. A store that fails to open is logged and the module registers
+// declares analytics.view, adds the hourly rollup cron and registers the
+// admin pages, the dashboard widget and the summary API operation. A store that fails to open is logged and the module registers
 // nothing else, so the site keeps serving with collection off.
 func (m *Module) Register(d *kernel.Deps) error {
 	store, err := OpenStore(d.Config.DataDir)
@@ -107,6 +115,8 @@ func (m *Module) Register(d *kernel.Deps) error {
 
 	d.Perms.Declare(PermView, map[string]string{"en": "View analytics", "ar": "عرض الإحصائيات"})
 	d.Jobs.Cron(CronRollup, rollupEvery, m.rollup)
+	m.registerAdmin(d)
+	m.registerAPI(d)
 	return nil
 }
 

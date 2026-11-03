@@ -70,7 +70,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/api` | core | `auth` `config` `content` `db` `httpx` `i18n` `jobs` `kernel` `media` `menus` `settings` `taxonomy` `theme` |
 | `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `observe` `seo` `settings` `theme` `update` |
 | `internal/webhooks` | core | `audit` `auth` `db` `httpx` `i18n` `jobs` `kernel` |
-| `internal/analytics` | feature | `audit` `auth` `db` `httpx` `kernel` `settings` |
+| `internal/analytics` | feature | `audit` `auth` `db` `httpx` `i18n` `kernel` `settings` |
 | `internal/commerce` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `redirects` `seo` `settings` `theme` |
 | `internal/saas` | feature | `admin` `api` `audit` `auth` `commerce` `db` `httpx` `kernel` `theme` |
 | `internal/membership` | feature | `api` `audit` `auth` `content` `db` `httpx` `kernel` `theme` |
@@ -172,7 +172,7 @@ Public paths are mounted at `/`, admin paths under `/admin`, API operations unde
 | api | — | — | `/v1/openapi.json`, `/docs`, `/v1/*` mount, `site/info` | — | — |
 | admin | `/webhooks/canvas/{endpoint}` | dashboard, `/users/*`, `/roles/*`, `/settings/*` (general, mail, storage, ai, connections, edge, integrations, studio, metricool), `/system/*` (health, jobs, backups, updates, errors), `/canvases/*`, `/agents/*`, `/metricool`, `/workspace` | 22 (+ keys, roles, canvas read) | canvas read/operations 3 | `users.manage`, `settings.manage`, `api_keys.manage`, `system.health`, `system.backup`, `system.update` |
 | webhooks | — | `/webhooks/*` | 1 | — | `webhooks.manage` |
-| **analytics** | `/_a/s.js`, `/_a/e` (beacon); script-injection middleware on public HTML | — | — | — | `analytics.view` |
+| **analytics** | `/_a/s.js`, `/_a/e` (beacon); script-injection middleware on public HTML | `/analytics`, `/analytics/now`, `/analytics/export.csv`, `/settings/analytics` (+ `/delete`); dashboard widget `analytics` | 1 (`analytics/summary`) | — | `analytics.view`; settings reuse `settings.manage` |
 | **commerce** | `/shop`, `/product/{slug}`, `/cart*`, `/checkout*`, `/account*`; `/webhooks/stripe{,/test,/live}` | `/commerce/*` (products, orders, entitlements, servers, settings, setup) | 14 | `list_products` (registered by mcp when the service exists) | `commerce.manage`, `commerce.view_orders` |
 | **saas** | `/saas`, `/saas/assets.css` | `/saas`, `/saas/new`, `/saas/apps/*`, `/saas/subscriptions/*` | 8 | — | `saas.read`, `saas.use`, `saas.manage` |
 | **membership** | `/membership`, `/membership/assets.css`, `/membership/submissions` | `/membership`, `/membership/grants` | 7 | — | `membership.manage`, `membership.read`, `membership.unlimited`, `membership.submit` |

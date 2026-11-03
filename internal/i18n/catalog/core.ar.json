@@ -57,5 +57,7 @@
   "nav.section.categories": "تصنيفات القسم",
   "nav.group.site-pages": "الصفحات والتنقل",
   "nav.group.site-design": "التصميم",
-  "nav.group.site-search": "البحث والجاهزية"
+  "nav.group.site-search": "البحث والجاهزية",
+  "nav.group.site-analytics": "الإحصائيات",
+  "nav.group.site": "الموقع"
 }

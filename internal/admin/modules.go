@@ -130,7 +130,7 @@ var moduleCatalogTable = map[string]builtin{
 	"api":          {kind: CatalogKindCore, dependencies: []string{"auth"}},
 	"admin":        {kind: CatalogKindCore, dependencies: []string{"auth", "api", "content", "media", "theme"}},
 	"webhooks":     {kind: CatalogKindCore, dependencies: []string{"auth"}},
-	"analytics":    {kind: CatalogKindFeature},
+	"analytics":    {kind: CatalogKindFeature, dependencies: []string{"admin", "api", "auth"}, optional: []string{"site"}},
 	"commerce":     {kind: CatalogKindFeature, dependencies: []string{"admin", "api", "theme", "media", "redirects", "content"}},
 	"saas":         {kind: CatalogKindFeature, dependencies: []string{"admin", "api", "auth"}, optional: []string{"commerce"}},
 	"membership":   {kind: CatalogKindFeature, dependencies: []string{"api", "auth", "content"}, optional: []string{"commerce", "saas", "workagents"}},

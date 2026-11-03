@@ -16,11 +16,13 @@ func TestNavigationSectionsKeepDestinationsAndRouteOwnership(t *testing.T) {
 		{ID: "users", Href: "/admin/users", Group: "settings"}, {ID: "roles", Href: "/admin/roles", Group: "settings"},
 		{ID: "jobs", Href: "/admin/system/jobs", Group: "system"}, {ID: "ext", Href: "/admin/ext", Group: "integrations"},
 		{ID: "plugin", Href: "/admin/plugin", Group: "field_kit"}, {ID: "ungrouped", Href: "/admin/extra"},
+		{ID: "site.analytics", Href: "/admin/analytics", Group: "site"},
 	}
 	for _, tc := range []struct{ path, section, group string }{
 		{"/admin", "home", "home"}, {"/admin/website", "site", "site-pages"}, {"/admin/content/post/new", "content", "content"},
 		{"/admin/taxonomies/tags", "content", "structure"}, {"/admin/menus/new", "site", "site-pages"},
 		{"/admin/settings/seo/audit", "site", "site-search"}, {"/admin/redirects", "site", "site-search"}, {"/admin/builder/42", "site", "site-design"},
+		{"/admin/analytics", "site", "site-analytics"},
 		{"/agents", "canvas", "canvas"}, {"/admin/canvases/42", "canvas", "canvas"}, {"/admin/agents/keys/new", "canvas", "canvas"},
 		{"/admin/reports/1", "inbox", "inbox"}, {"/admin/users/1", "settings", "team"}, {"/admin/roles", "settings", "team"},
 		{"/admin/settings/mail", "settings", "settings"}, {"/admin/settings/ai", "settings", "settings"},

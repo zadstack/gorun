@@ -1,0 +1,168 @@
+{{/* Data: analytics.dashPage */}}
+{{define "title"}}{{t "analytics.title"}}{{end}}
+{{define "content"}}
+<script defer src="{{asset "analytics.js"}}"></script>
+<div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+  <div class="min-w-0">
+    <h1 class="text-[22px] font-bold">{{t "analytics.title"}}</h1>
+    <p class="text-muted">{{t "analytics.intro"}}</p>
+  </div>
+  <p class="rounded border border-line bg-panel px-3 py-2" data-now data-now-url="{{.NowURL}}">
+    <span class="text-muted">{{t "analytics.now.label"}}</span>
+    <strong class="font-mono text-lg ms-1" data-now-value>{{.Now}}</strong>
+  </p>
+</div>
+
+<section aria-labelledby="an-period" class="mb-4 rounded border border-line bg-panel p-3">
+  <h2 id="an-period" class="sr-only">{{t "analytics.period.label"}}</h2>
+  <div class="flex flex-wrap items-end gap-3">
+    <nav aria-label="{{t "analytics.period.label"}}" class="flex flex-wrap gap-1">
+      {{range .Periods}}
+      <a href="{{.Href}}" {{if .Current}}aria-current="page"{{end}}
+         class="h-8 [@media(pointer:coarse)]:h-11 px-3 inline-flex items-center rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}}">{{t (printf "analytics.period.%s" .Key)}}</a>
+      {{end}}
+    </nav>
+    <form method="get" action="/admin/analytics" class="flex flex-wrap items-end gap-2">
+      <input type="hidden" name="period" value="custom">
+      {{range .Hidden}}<input type="hidden" name="{{.Name}}" value="{{.Value}}">{{end}}
+      <label class="flex flex-col text-xs text-muted">{{t "analytics.period.from"}}
+        <input type="date" name="from" value="{{.CustomFrom}}" required class="h-8 [@media(pointer:coarse)]:h-11 rounded border border-line bg-bg px-2 text-sm text-ink"></label>
+      <label class="flex flex-col text-xs text-muted">{{t "analytics.period.to"}}
+        <input type="date" name="to" value="{{.CustomTo}}" required class="h-8 [@media(pointer:coarse)]:h-11 rounded border border-line bg-bg px-2 text-sm text-ink"></label>
+      <button type="submit" class="h-8 [@media(pointer:coarse)]:h-11 px-3 rounded border {{if eq .Period.Key "custom"}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel{{end}}">{{t "analytics.period.apply"}}</button>
+    </form>
+  </div>
+  <p class="mt-2 text-xs text-muted">{{t "analytics.period.range" .Period.First .Period.Last}}</p>
+  {{if .Period.Invalid}}<p class="mt-2 text-sm text-amber-text" role="status">{{t "analytics.period.invalid"}}</p>{{end}}
+  {{if .Chips}}
+  <div class="mt-3 flex flex-wrap items-center gap-2">
+    <span class="text-xs text-muted">{{t "analytics.filters.label"}}</span>
+    <ul class="flex flex-wrap gap-2">
+      {{range .Chips}}
+      <li data-chip="{{.Dim}}" class="inline-flex items-center gap-1 rounded-chip border border-line-strong bg-panel-2 ps-2 text-sm">
+        <span class="text-muted">{{t (printf "analytics.filter.%s" .Dim)}}:</span> <bdi dir="auto">{{.Value}}</bdi>
+        <a data-remove="{{.Dim}}" href="{{.Remove}}" class="inline-flex h-8 w-8 [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 items-center justify-center rounded-chip hover:bg-panel" aria-label="{{t "analytics.filter.remove" (t (printf "analytics.filter.%s" .Dim))}}">{{icon "x" "w-3.5 h-3.5"}}</a>
+      </li>
+      {{end}}
+    </ul>
+    <a href="{{.Clear}}" class="text-sm text-blue underline underline-offset-2">{{t "analytics.filter.clear"}}</a>
+  </div>
+  {{end}}
+</section>
+
+<section aria-labelledby="an-cards" class="mb-4">
+  <h2 id="an-cards" class="sr-only">{{t "analytics.cards.title"}}</h2>
+  <dl class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+    {{range .Cards}}
+    <div class="rounded border border-line bg-panel p-3" data-card="{{.Name}}">
+      <dt class="text-sm text-muted">{{t (printf "analytics.card.%s" .Name)}}</dt>
+      {{if .NA}}
+      <dd class="font-mono text-2xl" data-value>—</dd>
+      <dd class="text-xs text-muted" data-change="na">{{t "analytics.card.na"}}</dd>
+      {{else}}
+      <dd class="font-mono text-2xl" data-value>{{.Value}}</dd>
+      <dd class="text-xs text-muted">{{template "analytics_change" .Change}} <span class="sr-only">{{t "analytics.change.vs_prev"}}</span></dd>
+      {{end}}
+    </div>
+    {{end}}
+  </dl>
+  <p class="mt-1 text-xs text-muted">{{t "analytics.change.vs_prev"}}</p>
+</section>
+
+<section aria-labelledby="an-chart" class="mb-4 rounded border border-line bg-panel p-3">
+  <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+    <h2 id="an-chart" class="text-base font-bold">{{t "analytics.chart.title"}}</h2>
+    <ul class="flex flex-wrap gap-3 text-xs" aria-hidden="true">
+      <li class="inline-flex items-center gap-1"><svg width="20" height="4" focusable="false"><line x1="0" x2="20" y1="2" y2="2" stroke="var(--blue)" stroke-width="2.5"/></svg>{{t "analytics.card.views"}}</li>
+      <li class="inline-flex items-center gap-1"><svg width="20" height="4" focusable="false"><line x1="0" x2="20" y1="2" y2="2" stroke="var(--green)" stroke-width="2.5" stroke-dasharray="6 4"/></svg>{{t "analytics.card.visitors"}}</li>
+    </ul>
+  </div>
+  {{.Chart}}
+  {{if .Series}}
+  <div class="mt-1 flex justify-between text-xs text-muted font-mono" aria-hidden="true"><span>{{.FirstLabel}}</span><span>{{.LastLabel}}</span></div>
+  {{end}}
+  <table class="sr-only" data-series>
+    <caption>{{t "analytics.chart.table_caption"}} ({{if .Hourly}}{{t "analytics.col.hour"}}{{else}}{{t "analytics.col.day"}}{{end}}, UTC)</caption>
+    <tr><th scope="col">{{if .Hourly}}{{t "analytics.col.hour"}}{{else}}{{t "analytics.col.day"}}{{end}}</th><th scope="col">{{t "analytics.card.visitors"}}</th><th scope="col">{{t "analytics.card.views"}}</th></tr>
+    {{range .Series}}<tr><th scope="row">{{.Label}}</th><td>{{.Visitors}}</td><td>{{.Views}}</td></tr>
+    {{end}}
+  </table>
+  <p class="mt-2 text-xs"><a href="{{.SeriesCSV}}" class="text-blue underline underline-offset-2">{{t "analytics.table.export"}}</a></p>
+</section>
+
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+  {{range $g := .Groups}}
+  <section class="min-w-0 rounded border border-line bg-panel p-3" aria-labelledby="g-{{.ID}}" data-tabs data-tabs-label="{{t (printf "analytics.table.%s" .ID)}}">
+    <h2 id="g-{{.ID}}" class="mb-2 text-base font-bold">{{t (printf "analytics.table.%s" .ID)}}</h2>
+    {{range .Panels}}
+    <div id="t-{{.Dim}}" data-tab-panel data-tab-label="{{t (printf "analytics.tab.%s" .Dim)}}" class="mb-3">
+      {{if gt (len $g.Panels) 1}}<h3 class="mb-1 text-sm font-semibold" data-tab-heading>{{t (printf "analytics.tab.%s" .Dim)}}</h3>{{end}}
+      {{if .Rows}}
+      <table class="w-full text-sm">
+        <thead><tr class="text-xs text-muted">
+          <th scope="col" class="py-1 text-start font-normal">{{t (printf "analytics.col.%s" .Dim)}}</th>
+          <th scope="col" class="py-1 text-end font-normal">{{t "analytics.card.visitors"}}</th>
+          <th scope="col" class="py-1 text-end font-normal">{{t "analytics.card.views"}}</th>
+        </tr></thead>
+        <tbody>
+        {{range .Rows}}
+        <tr class="border-t border-line">
+          <td class="relative max-w-0 w-full py-1 pe-2">
+            <span class="absolute inset-y-0.5 start-0 rounded bg-blue-soft" style="width: {{.Share}}%" aria-hidden="true"></span>
+            <span class="relative block truncate">{{if .Href}}<a href="{{.Href}}" class="underline-offset-2 hover:underline [@media(pointer:coarse)]:inline-flex [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:items-center"><bdi dir="auto">{{.Display}}</bdi></a>{{else}}<bdi dir="auto">{{.Display}}</bdi>{{end}}</span>
+          </td>
+          <td class="py-1 ps-2 text-end font-mono">{{.Visitors}}</td>
+          <td class="py-1 ps-2 text-end font-mono">{{.Views}}</td>
+        </tr>
+        {{end}}
+        </tbody>
+      </table>
+      {{else}}
+      <p class="text-sm text-muted">{{t "analytics.table.empty"}}</p>
+      {{end}}
+      <p class="mt-1 flex flex-wrap gap-3 text-xs">
+        {{if .More}}<a href="{{.More}}" class="text-blue underline underline-offset-2">{{t "analytics.table.show_all"}}</a>{{end}}
+        <a href="{{.CSV}}" class="text-blue underline underline-offset-2">{{t "analytics.table.export"}}</a>
+      </p>
+    </div>
+    {{end}}
+  </section>
+  {{end}}
+</div>
+
+{{if .FormsShown}}
+<section class="mt-4 rounded border border-line bg-panel p-3" aria-labelledby="an-forms" data-forms>
+  <h2 id="an-forms" class="mb-1 text-base font-bold">{{t "analytics.forms.title"}}</h2>
+  {{if .FormsUnfiltered}}
+  <p class="text-sm text-muted" data-forms-unfiltered>{{t "analytics.forms.unfiltered"}}</p>
+  {{else}}
+  <p class="mb-2 text-xs text-muted">{{t "analytics.forms.hint"}}</p>
+  <div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead><tr class="text-xs text-muted">
+      <th scope="col" class="py-1 text-start font-normal">{{t "analytics.forms.col.form"}}</th>
+      <th scope="col" class="py-1 text-start font-normal">{{t "analytics.forms.col.page"}}</th>
+      <th scope="col" class="py-1 text-end font-normal">{{t "analytics.forms.col.views"}}</th>
+      <th scope="col" class="py-1 text-end font-normal">{{t "analytics.forms.col.submits"}}</th>
+      <th scope="col" class="py-1 text-end font-normal">{{t "analytics.forms.col.rate"}}</th>
+    </tr></thead>
+    <tbody>
+    {{range .Forms}}
+    <tr class="border-t border-line">
+      <td class="py-1 pe-2"><a href="{{.Href}}" class="text-blue underline underline-offset-2"><bdi dir="auto">{{.Form}}</bdi></a></td>
+      <td class="py-1 pe-2"><bdi dir="auto">{{.Page}}</bdi></td>
+      <td class="py-1 ps-2 text-end font-mono">{{.Views}}</td>
+      <td class="py-1 ps-2 text-end font-mono">{{.Submits}}</td>
+      <td class="py-1 ps-2 text-end font-mono">{{.Rate}}</td>
+    </tr>
+    {{end}}
+    </tbody>
+  </table>
+  </div>
+  <p class="mt-1 text-xs"><a href="{{.FormsCSV}}" class="text-blue underline underline-offset-2">{{t "analytics.table.export"}}</a></p>
+  {{end}}
+</section>
+{{end}}
+<p class="mt-4 text-xs text-muted">{{t "analytics.utc_note"}}</p>
+{{end}}
+{{define "analytics_change"}}<span data-change="{{.Dir}}"><bdi dir="ltr">{{.Pct}}</bdi> {{if and (eq .Dir "up") (not .Pct)}}{{t "analytics.change.up_new"}}{{else}}{{t (printf "analytics.change.%s" .Dir)}}{{end}}</span>{{end}}

@@ -1,0 +1,71 @@
+{{/* Data: analytics.settingsData */}}
+{{define "title"}}{{t "analytics.settings.title"}}{{end}}
+{{define "content"}}
+<div class="mb-4">
+  <h1 class="text-[22px] font-bold">{{t "analytics.settings.title"}}</h1>
+  <p class="text-muted">{{t "analytics.settings.intro"}}</p>
+  <p class="mt-1"><a href="/admin/analytics" class="text-blue underline underline-offset-2">{{t "analytics.widget.open"}}</a></p>
+</div>
+
+<form method="post" action="/admin/settings/analytics" class="max-w-3xl space-y-4 rounded border border-line bg-panel p-4">
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <div class="flex items-start gap-3">
+    <input id="an-enabled" type="checkbox" name="enabled" value="1" {{if .Enabled}}checked{{end}} class="mt-1 h-4 w-4 [@media(pointer:coarse)]:h-6 [@media(pointer:coarse)]:w-6" aria-describedby="an-enabled-help">
+    <div><label for="an-enabled" class="font-medium">{{t "analytics.settings.tracking"}}</label>
+      <p id="an-enabled-help" class="text-sm text-muted">{{t "analytics.settings.tracking_help"}}</p></div>
+  </div>
+  <div>
+    <label for="an-exclude" class="block font-medium">{{t "analytics.settings.exclude"}}</label>
+    <p id="an-exclude-help" class="text-sm text-muted">{{t "analytics.settings.exclude_help"}}</p>
+    <textarea id="an-exclude" name="exclude" rows="5" dir="ltr" spellcheck="false" aria-describedby="an-exclude-help"
+      class="mt-1 w-full rounded border border-line bg-bg p-2 font-mono text-sm">{{.Exclude}}</textarea>
+  </div>
+  <div class="flex items-start gap-3">
+    <input id="an-backup" type="checkbox" name="backup_exclude" value="1" {{if .BackupExclude}}checked{{end}} class="mt-1 h-4 w-4 [@media(pointer:coarse)]:h-6 [@media(pointer:coarse)]:w-6" aria-describedby="an-backup-help">
+    <div><label for="an-backup" class="font-medium">{{t "analytics.settings.backup"}}</label>
+      <p id="an-backup-help" class="text-sm text-muted">{{t "analytics.settings.backup_help"}}</p></div>
+  </div>
+  <button type="submit" class="h-9 [@media(pointer:coarse)]:h-11 px-4 rounded bg-green text-white hover:bg-green-hover font-medium">{{t "analytics.settings.save"}}</button>
+</form>
+
+<section class="mt-4 max-w-3xl rounded border border-line bg-panel p-4" aria-labelledby="an-geo">
+  <h2 id="an-geo" class="font-bold">{{t "analytics.settings.geo.title"}}</h2>
+  {{if .GeoFound}}
+  <p data-geo="found" class="mt-1">{{icon "check" "w-4 h-4 inline"}} {{t "analytics.settings.geo.found"}}</p>
+  {{else}}
+  <p data-geo="missing" class="mt-1">{{icon "circle-alert" "w-4 h-4 inline"}} {{t "analytics.settings.geo.missing"}}</p>
+  {{end}}
+  <p class="mt-1 text-sm text-muted">{{t "analytics.settings.geo.help"}} <code dir="ltr" class="break-all font-mono text-xs">{{.GeoPath}}</code></p>
+</section>
+
+<section class="mt-4 max-w-3xl rounded border border-red bg-panel p-4" aria-labelledby="an-delete">
+  <h2 id="an-delete" class="font-bold">{{t "analytics.settings.delete.title"}}</h2>
+  <p class="text-sm text-muted">{{if .Events}}{{t "analytics.settings.events" .EventsText .First}}{{else}}{{t "analytics.settings.events_empty"}}{{end}}</p>
+  <p class="mt-1 text-sm">{{t "analytics.settings.delete.intro"}}</p>
+
+  <form method="post" action="/admin/settings/analytics/delete" class="mt-3 space-y-2">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="mode" value="before">
+    <h3 class="font-semibold">{{t "analytics.settings.delete.before"}}</h3>
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="flex flex-col text-sm">{{t "analytics.settings.delete.date"}}
+        <input type="date" name="date" max="{{.Today}}" required class="h-9 [@media(pointer:coarse)]:h-11 rounded border border-line bg-bg px-2"></label>
+      <label class="flex flex-col text-sm">{{t "analytics.settings.delete.confirm" .Confirm}}
+        <input type="text" name="confirm" required autocomplete="off" dir="ltr" pattern="{{.Confirm}}" class="h-9 [@media(pointer:coarse)]:h-11 rounded border border-line bg-bg px-2 font-mono"></label>
+      <button type="submit" class="h-9 [@media(pointer:coarse)]:h-11 px-4 rounded border border-red text-red hover:bg-red-soft font-medium">{{t "analytics.settings.delete.before_submit"}}</button>
+    </div>
+  </form>
+
+  <form method="post" action="/admin/settings/analytics/delete" class="mt-4 space-y-2">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="mode" value="all">
+    <h3 class="font-semibold">{{t "analytics.settings.delete.all"}}</h3>
+    <p class="text-sm text-muted">{{t "analytics.settings.delete.all_help"}}</p>
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="flex flex-col text-sm">{{t "analytics.settings.delete.confirm" .Confirm}}
+        <input type="text" name="confirm" required autocomplete="off" dir="ltr" pattern="{{.Confirm}}" class="h-9 [@media(pointer:coarse)]:h-11 rounded border border-line bg-bg px-2 font-mono"></label>
+      <button type="submit" class="h-9 [@media(pointer:coarse)]:h-11 px-4 rounded bg-red text-white font-medium">{{t "analytics.settings.delete.all_submit"}}</button>
+    </div>
+  </form>
+</section>
+{{end}}

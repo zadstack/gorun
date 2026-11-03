@@ -45,6 +45,8 @@ type collectEnv struct {
 	mod *Module
 	srv *httptest.Server
 	c   *http.Client
+
+	lang string // Accept-Language for every request, when set
 }
 
 // bootCollect starts settings + auth + fake content + theme (repo themes/)
@@ -78,6 +80,9 @@ func newJarClient() *http.Client {
 func (e *collectEnv) do(method, path string, body io.Reader, hdr ...string) (*http.Response, string) {
 	e.t.Helper()
 	req, _ := http.NewRequest(method, e.srv.URL+path, body)
+	if e.lang != "" {
+		req.Header.Set("Accept-Language", e.lang)
+	}
 	for i := 0; i+1 < len(hdr); i += 2 {
 		req.Header.Set(hdr[i], hdr[i+1])
 	}
