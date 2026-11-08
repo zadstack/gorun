@@ -47,7 +47,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/httpx` | infra | `audit` `db` `i18n` |
 | `internal/kernel` | infra | `audit` `config` `db` `diagnostics` `hooks` `httpx` `i18n` `jobs` `metrics` `observe` `settings` `update` |
 | `internal/mailer` | infra | `db` `settings` |
-| `internal/metrics` | infra | `backup` `jobs` `settings` |
+| `internal/metrics` | infra | `backup` `db` `jobs` `settings` |
 | `internal/observe` | infra | `db` `jobs` |
 | `internal/starter` | infra | — |
 | `internal/update` | infra | `db` `jobs` |

@@ -31,6 +31,9 @@ func TestHandlerOpenAndToken(t *testing.T) {
 		"gorun_jobs{status=\"dead\"}",
 		"gorun_backup_last_success_timestamp_seconds 0",
 		"# TYPE gorun_jobs gauge",
+		"# TYPE gorun_db_begin_busy_total counter",
+		"gorun_db_begin_retries_total 0",
+		"gorun_db_begin_exhausted_total 0",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("missing %q in:\n%s", want, body)

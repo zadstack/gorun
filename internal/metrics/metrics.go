@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/zadstack/gorun/internal/backup"
+	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/jobs"
 	"github.com/zadstack/gorun/internal/settings"
 )
@@ -135,6 +136,20 @@ func render(ctx context.Context, httpm *HTTP, q *jobs.Queue, st *settings.Store,
 		{"5xx", httpm.c5xx.Load()},
 	} {
 		fmt.Fprintf(&b, "gorun_http_requests_total{code_class=%q} %s\n", row.class, strconv.FormatUint(row.n, 10))
+	}
+
+	contention := db.Contention()
+	for _, counter := range []struct {
+		name string
+		help string
+		n    uint64
+	}{
+		{"gorun_db_begin_busy_total", "SQLite busy errors while acquiring InTx write locks.", contention.Busy},
+		{"gorun_db_begin_retries_total", "InTx lock acquisition retries after backoff.", contention.Retries},
+		{"gorun_db_begin_exhausted_total", "InTx lock acquisitions that exhausted the retry limit.", contention.Exhausted},
+	} {
+		writeHelpType(&b, counter.name, "counter", counter.help)
+		fmt.Fprintf(&b, "%s %d\n", counter.name, counter.n)
 	}
 
 	var stats jobs.Stats
