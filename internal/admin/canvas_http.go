@@ -21,11 +21,13 @@ func (h *handlers) canvasRoutes() {
 	r := h.d.Router.Admin
 	r.Get("/canvases", h.canvasList)
 	r.Post("/canvases", h.canvasNew)
+	r.Get("/canvases/search", h.canvasSearchHTTP)
 	r.Get("/canvases/{id}", h.canvasEditor)
 	r.Delete("/canvases/{id}", h.canvasDelete)
 	r.Get("/canvases/{id}/references", h.canvasReferences)
 	r.Get("/canvases/{id}/document", h.canvasDocument)
 	r.Post("/canvases/{id}/document", h.canvasSave)
+	r.Post("/canvases/{id}/recovery-copy", h.canvasRecoveryCopyHTTP)
 	r.Get("/canvases/{id}/widgets/{widgetID}", h.canvasWidget)
 }
 func (h *handlers) canvasList(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +85,8 @@ func (h *handlers) canvasEditor(w http.ResponseWriter, r *http.Request) {
 		Board    *canvasBoard
 		Widgets  []canvasWidgetOption
 		CanDraft bool
-	}{b, h.canvasWidgetOptions(r), auth.Can(r.Context(), "content.create")})
+		OwnerID  string
+	}{b, h.canvasWidgetOptions(r), auth.Can(r.Context(), "content.create"), auth.UserFromContext(r.Context()).ID})
 }
 func (h *handlers) canvasError(w http.ResponseWriter, r *http.Request, e error) {
 	if errors.Is(e, sql.ErrNoRows) {

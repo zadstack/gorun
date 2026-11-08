@@ -1,0 +1,16 @@
+{{define "partials/canvas_search.html"}}
+<div class="canvas-search" data-canvas-search>
+ <button type="button" class="canvas-search-trigger" data-canvas-search-open aria-haspopup="dialog" aria-controls="canvas-search-dialog" aria-keyshortcuts="Control+k Meta+k" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+  <span>{{t "canvassearch.open"}}</span><kbd dir="ltr" data-canvas-search-shortcut>Ctrl K</kbd>
+ </button>
+ <dialog class="canvas-search-dialog" id="canvas-search-dialog" data-canvas-search-dialog aria-labelledby="canvas-search-title" aria-describedby="canvas-search-help">
+  <header><h2 id="canvas-search-title">{{t "canvassearch.title"}}</h2><button type="button" class="canvas-search-close" data-canvas-search-close>{{t "canvassearch.close"}}</button></header>
+  <div class="canvas-search-query"><label for="canvas-search-query">{{t "canvassearch.query"}}</label><input id="canvas-search-query" data-canvas-search-input type="search" role="combobox" autocomplete="off" spellcheck="false" maxlength="1000" dir="auto" placeholder="{{t "canvassearch.placeholder"}}" aria-autocomplete="list" aria-expanded="false" aria-controls="canvas-search-results" aria-describedby="canvas-search-status canvas-search-help"></div>
+  <div class="canvas-search-feedback"><p id="canvas-search-status" data-canvas-search-status role="status" aria-live="polite">{{t "canvassearch.prompt"}}</p><button type="button" class="canvas-search-retry" data-canvas-search-retry hidden>{{t "canvassearch.retry"}}</button></div>
+  <div class="canvas-search-results" id="canvas-search-results" data-canvas-search-results role="listbox" aria-label="{{t "canvassearch.result_label"}}" aria-busy="false"></div>
+  <p class="canvas-search-help" id="canvas-search-help">{{t "canvassearch.help"}}</p>
+ </dialog>
+ <div hidden><span data-canvas-search-label="prompt">{{t "canvassearch.prompt"}}</span><span data-canvas-search-label="loading">{{t "canvassearch.loading"}}</span><span data-canvas-search-label="empty">{{t "canvassearch.empty"}}</span><span data-canvas-search-label="error">{{t "canvassearch.error"}}</span><span data-canvas-search-label="denied">{{t "canvassearch.denied"}}</span><span data-canvas-search-label="long">{{t "canvassearch.long"}}</span><span data-canvas-search-label="results">{{t "canvassearch.results"}}</span><span data-canvas-search-label="canvas">{{t "canvassearch.canvas"}}</span><span data-canvas-search-label="untitled">{{t "canvassearch.untitled"}}</span></div>
+</div>
+{{end}}

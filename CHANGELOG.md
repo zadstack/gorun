@@ -5,6 +5,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Add owner-scoped Arabic-aware canvas search with keyboard navigation and direct card links, browser-local recovery with safe personal copies, and version-checked canvas Undo/Redo. Recovery never replays runs or publishing actions; saved result identity remains immutable.
+
 ### Changed
 
 - The admin uses warm neutral surfaces and petrol actions, Classic uses cream paper and charcoal, and Serif uses white paper with deep-blue links. Saved site identities keep precedence.
