@@ -14,9 +14,11 @@
       {{if ne .Status.Latest.Status "unknown"}}{{template "updates_status_chip" .Status.Latest.Status}}{{end}}
       {{if .Status.Latest.Error}}<span class="block text-xs text-red">{{.Status.Latest.Error}}</span>{{end}}
     </dd>
-    <dt class="text-muted">{{t "admin.updates.source"}}</dt><dd class="font-mono text-xs">{{or .Status.Source "—"}}</dd>
+    <dt class="text-muted">{{t "admin.updates.source"}}</dt><dd class="font-mono text-xs">{{if .OfficialSource}}{{t "admin.updates.official_source"}}{{else}}{{or .Status.Source "—"}}{{end}}</dd>
     <dt class="text-muted">{{t "admin.updates.adapter"}}</dt><dd class="font-mono text-xs">{{.Status.Adapter}}</dd>
+    {{if .ArtifactSelector}}<dt class="text-muted">{{t "admin.updates.artifact"}}</dt><dd dir="ltr" class="font-mono text-xs break-all">{{.ArtifactSelector}}</dd>{{end}}
   </dl>
+  {{if .DeploymentInvalid}}<p role="status" class="text-sm text-amber-text" data-update-deployment-invalid>{{t "admin.updates.coolify_invalid"}}</p>{{end}}
   {{if not .Status.IsRelease}}<p role="status" class="text-sm text-amber-text">{{t "admin.updates.not_release"}}</p>
   {{else if .Status.UpdateAvailable}}<p role="status" class="text-sm">{{if deref .Status.UpdateAvailable}}{{t "admin.updates.available"}}{{else}}{{t "admin.updates.up_to_date"}}{{end}}</p>{{end}}
   <p><a href="https://github.com/zadstack/gorun/releases" target="_blank" rel="noopener noreferrer" class="text-green underline">{{t "admin.health.releases_link"}}</a></p>
@@ -25,6 +27,8 @@
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "admin.updates.refresh_latest"}}</button>
   </form>
+  {{if eq .Status.Latest.Status "unknown"}}<p class="text-sm text-muted">{{t "admin.updates.check_pending"}}</p>{{end}}
+  {{if eq .Status.Adapter "manual"}}<p class="text-sm text-muted">{{t "admin.updates.manual_hint"}}</p>{{end}}
   {{if .CanRequest}}
   <form method="post" action="/admin/system/updates" class="space-y-3 max-w-xl">
     <input type="hidden" name="_csrf" value="{{csrf}}">
@@ -35,11 +39,22 @@
     <label class="flex gap-2 items-start text-sm"><input type="checkbox" name="confirm" value="yes" required><span>{{t "admin.updates.confirm"}}</span></label>
     <button type="submit" class="h-9 px-3 rounded bg-green text-white font-medium">{{t "admin.updates.request"}}</button>
   </form>
-  {{end}}
-  {{if eq .Status.Adapter "manual"}}<p class="text-sm text-muted">{{t "admin.updates.manual_hint"}}</p>{{end}}
+  {{else if not .Status.Active}}<button type="button" disabled class="h-9 px-3 rounded border border-line opacity-50">{{t "admin.updates.request"}}</button>{{end}}
   {{else}}
   <p role="status">{{t "admin.updates.setup"}} {{t "admin.updates.source_missing"}} <a href="https://github.com/zadstack/gorun/blob/main/docs/UPGRADE.md" class="underline">{{t "operator.updates_guide"}}</a></p>
   <button type="button" disabled class="h-9 px-3 rounded border border-line opacity-50">{{t "admin.updates.request"}}</button>
+  {{end}}
+  {{if eq .Status.Adapter "manual"}}
+  <details class="text-sm max-w-3xl" data-update-coolify-setup>
+    <summary class="cursor-pointer font-medium py-3">{{t "admin.updates.coolify_setup"}}</summary>
+    <p class="mt-2 text-muted">{{t "admin.updates.coolify_help"}}</p>
+    <ul class="mt-2 space-y-1">
+      <li><code dir="ltr">GORUN_UPDATE_COOLIFY_URL</code> — {{t "admin.updates.coolify_url"}}</li>
+      <li><code dir="ltr">GORUN_UPDATE_COOLIFY_TOKEN</code> — {{t "admin.updates.coolify_token"}}</li>
+      <li><code dir="ltr">GORUN_UPDATE_COOLIFY_RESOURCE</code> — {{t "admin.updates.coolify_resource"}}</li>
+    </ul>
+    <a href="https://github.com/zadstack/gorun/blob/main/deploy/coolify.md#optional-update-button-in-gorun-admin" class="inline-flex items-center min-h-11 underline">{{t "operator.updates_guide"}}</a>
+  </details>
   {{end}}
   <p class="text-sm text-muted">{{t "admin.updates.verify"}}</p>
   <p class="text-sm text-muted">{{t "admin.updates.rollback_note"}}</p>

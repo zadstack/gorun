@@ -30,11 +30,12 @@ var (
 	tmplKeyRe   = regexp.MustCompile(`\bt "admin\.([a-z_.]+)"`)
 	goKeyRe     = regexp.MustCompile(`"admin\.((?:nav|common|locale|dashboard|users|settings|mail|health|jobs|keys|audit|search|api|ai|workspace)\.[a-z_.]+)"`)
 	dynamicKeys = map[string][]string{ // printf "admin.<prefix>%s" expansions
-		"audit.kind_":   {"user", "api_key", "system", "extension"},
-		"jobs.status_":  {"queued", "retrying", "running", "dead", "done"},
-		"locale.":       {"ar", "en"},
-		"mail.tls_":     {"starttls", "tls", "none"},
-		"users.status_": {"active", "disabled"},
+		"audit.kind_":     {"user", "api_key", "system", "extension"},
+		"jobs.status_":    {"queued", "retrying", "running", "dead", "done"},
+		"updates.status_": {"fresh", "stale", "waiting", "unknown", "pending", "running", "passed", "failed", "skipped", "interrupted", "succeeded", "rolled_back", "rollback_failed"},
+		"locale.":         {"ar", "en"},
+		"mail.tls_":       {"starttls", "tls", "none"},
+		"users.status_":   {"active", "disabled"},
 	}
 )
 

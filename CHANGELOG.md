@@ -7,12 +7,14 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Add owner-scoped Arabic-aware canvas search with keyboard navigation and direct card links, browser-local recovery with safe personal copies, and version-checked canvas Undo/Redo. Recovery never replays runs or publishing actions; saved result identity remains immutable.
 - Configurable public content languages in Settings → General and the settings API (`site.content_locales`), independently of Arabic/English admin catalogs. BCP-47 language, script and region tags retain canonical routes, translation groups and menu language selection. Changes apply without restart; transactional guards reject disabled language writes, removal of used languages and conflicting route prefixes. Recovery CLI and MCP default-language changes use the same guards. Legacy sites keep their content-language defaulting policy until an explicit list is saved.
 
 ### Changed
 
 - SQLite `db.InTx` lock acquisition retries typed busy errors up to three attempts with cancellable jittered backoff. Transaction callbacks and commits are never replayed. The existing five-second per-attempt busy timeout is unchanged; acquisition may now take about 15 seconds under sustained contention. Prometheus counters expose busy errors, retries and exhausted acquisitions. Content slug normalization runs before taking the write lock.
 
+- System updates discover official releases by default and select native or container artifacts. An empty source opts out; custom sources remain supported. The page explains manual and Coolify activation, Compose forwards update settings, and incomplete Coolify configuration blocks requests.
 - Sitemaps reuse in-memory XML snapshots, regenerate in the background, and split into an index and `/sitemaps/{number}.xml` parts above 50,000 URLs or 50 MiB. Transactional domain-write invalidation and host-exclusion-aware cache keys prevent reuse after content visibility changes. Sitemap responses support ETags and conditional GET/HEAD. Permalink generation shares settings and ancestor lookups, content listings batch taxonomy assignments, and native sitemap enumeration uses indexed keyset scans.
 
 - The admin uses warm neutral surfaces and petrol actions, Classic uses cream paper and charcoal, and Serif uses white paper with deep-blue links. Saved site identities keep precedence.

@@ -15,6 +15,11 @@
   const widgetCache = new Map();
   const widgetLoading = new Set();
   let operations = null, lifecycle = null, inbound = null, schedules = null;
+  const editing = new CanvasEditing.History();
+  let storage;
+  try { storage=localStorage; } catch (_) { storage={get length(){throw Error('storage');},getItem(){throw Error('storage');},setItem(){throw Error('storage');},removeItem(){throw Error('storage');}}; }
+  const journal=new CanvasEditing.Journal(storage,{origin:location.origin,owner:root.dataset.owner,board:root.dataset.id});
+  let recovery=null, serverBase=null, generation=0, historyBusy=false, recording=false, saveFailed=false;
   let revealHash = true, revealScheduled = false;
   function revealCardHash() {
     if (!revealHash || revealScheduled || !/^#card-[a-f0-9]{8}-[a-f0-9-]{27}$/.test(location.hash)) return;
@@ -41,8 +46,14 @@
   function normalizePositions() {
     if (!documentState || mobile.matches || view !== 'flow') return;
     const positions=CanvasLayout.resolve(documentState.cards,heights());
-    for (const card of documentState.cards) { Object.assign(card,positions[card.id]); const el=cardsEl.querySelector(`[data-card-id="${card.id}"]`); if(el)place(el,card); }
+    let moved=false;
+    for (const card of documentState.cards) { const at=positions[card.id];if(card.x!==at.x||card.y!==at.y)moved=true; Object.assign(card,at); const el=cardsEl.querySelector(`[data-card-id="${card.id}"]`); if(el)place(el,card); }
     updateBounds();
+    if (moved && serverBase && !recording) {
+      editing.settle(documentState);
+      if(dirty()) { serial++;protect();clearTimeout(timer);if(!blocked)timer=setTimeout(save,900); }
+      updateHistory();
+    }
   }
   const resizeCards = new ResizeObserver(() => { if (view === 'lanes') updateBounds(); else normalizePositions(); });
   function canPlace(card,x,y) {
@@ -74,8 +85,19 @@
     root.querySelector('[data-action=retry]').hidden = !['error', 'load_error'].includes(key);
     root.querySelector('[data-action=reload]').hidden = key !== 'conflict';
   }
-  function changed() {
+  function updateHistory() {
+    root.querySelector('[data-action=undo]').disabled=historyBusy||blocked||!documentState||!editing.canUndo(documentState);
+    root.querySelector('[data-action=redo]').disabled=historyBusy||blocked||!documentState||!editing.canRedo(documentState);
+  }
+  function protect() {
+    if(documentState&&serverBase)journal.capture(documentState,documentState);
+    recovery?.render();
+  }
+  function changed(record = true) {
+    recording=true;normalizePositions();recording=false;
+    if(record)editing.record(documentState);else editing.settle(documentState);
     serial++;
+    protect();updateHistory();
     status(blocked ? 'conflict' : 'unsaved');
     clearTimeout(timer);
     if (!blocked) timer = setTimeout(save, 900);
@@ -87,34 +109,46 @@
     finally { clearTimeout(timeout); }
   }
   async function load() {
+    let epoch=++generation;
+    const at=serial, version=documentState?.version;
     status('loading');
     try {
       const response = await request(endpoint);
       if (!response.ok) throw new Error('load');
       const data = await response.json();
+      if(epoch!==generation||at!==serial||version!==documentState?.version)return;
       if (!Array.isArray(data.cards) || typeof data.version !== 'number') throw new Error('document');
+      // A successful replacement begins another document lifetime. A save
+      // started while its GET was pending must not acknowledge into this one.
+      epoch=++generation;
+      journal.release();serverBase=data;saveFailed=false;
       documentState = {...data, edges: data.edges || []}; serial = 0; savedSerial = 0; blocked = false;
       titleInput.value = data.title;
       titleInput.disabled = false;
       root.querySelectorAll('[data-action=add],[data-action=close]').forEach(el => { el.disabled = false; });
-      render(); status('saved');
-    } catch (_) { status('load_error'); }
+      recording=true;render();recording=false;editing.reset(documentState);updateHistory();recovery?.render();status('saved');
+    } catch (_) { if(epoch===generation)status('load_error'); }
   }
   async function save() {
     clearTimeout(timer);
     if (blocked || !documentState) return false;
     if (pending) { await pending; if (blocked) return false; return dirty() ? save() : true; }
     if (!dirty()) return true;
-    const capturedSerial = serial;
+    const capturedSerial = serial, epoch=generation, ticket=journal.current();
     const payload = {version: documentState.version, title: documentState.title, cards: structuredClone(documentState.cards), edges: structuredClone(documentState.edges)};
     if (!payload.title.trim() || bytes(payload.title) > 120) { status('error'); return false; }
     status('saving');
     pending = (async () => {
       try {
         const response = await request(endpoint, {method: 'POST', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrf}, body: JSON.stringify(payload)});
-        if (response.status === 409) { blocked = true; status('conflict'); return false; }
+        if(epoch!==generation)return false;
+        if (response.status === 409) { blocked = true;saveFailed=true;status('conflict');updateHistory();recovery?.render();return false; }
         if (!response.ok) throw new Error('save');
         const data = await response.json();
+        if(epoch!==generation)return false;
+        serverBase=data;saveFailed=false;journal.acknowledge(ticket,data);
+        const couldUndo=editing.canUndo(documentState);editing.acknowledge(data);
+        if(couldUndo&&!editing.canUndo(documentState))root.querySelector('[data-editing-message]').textContent=t('result_history_limit');
         documentState.version = data.version;
         documentState.updated_at = data.updated_at;
         documentState.references = data.references || {};
@@ -123,9 +157,10 @@
         documentState.schedules = data.schedules || {};
         savedSerial = capturedSerial;
         status(dirty() ? 'unsaved' : 'saved');
+        updateHistory();recovery?.render();
         refreshReferences(); operations?.saved(); inbound?.saved(); schedules?.render();
         return true;
-      } catch (_) { status('error'); return false; }
+      } catch (_) { if(epoch===generation){saveFailed=true;status('error');recovery?.render();}return false; }
       finally { pending = null; }
     })();
     const success = await pending;
@@ -321,7 +356,7 @@
     const footer = element('footer', undefined, 'canvas-card-footer');
     const actions = element('div', undefined, 'canvas-card-actions'); if (card.kind !== 'result') actions.append(button(t('edit'), () => editCard(card.id)));
     lifecycle?.cardActions(actions,card);
-    const remove = button(t('remove'), () => { if (!confirm(t('remove_confirm'))) return; documentState.cards = documentState.cards.filter(c => c.id !== card.id); documentState.edges = CanvasGraph.withoutNode(documentState.edges, card.id); changed(); render(); root.querySelector('[data-action=add]').focus(); }); remove.dataset.remove = ''; actions.append(remove);
+    const remove = button(t('remove'), () => { if (!confirm(t(card.kind==='result'?'result_delete_confirm':'remove_confirm'))) return; documentState.cards = documentState.cards.filter(c => c.id !== card.id); documentState.edges = CanvasGraph.withoutNode(documentState.edges, card.id); changed(); render(); root.querySelector('[data-action=add]').focus(); }); remove.dataset.remove = ''; actions.append(remove);
     const moves = element('div', undefined, 'canvas-move-controls');
     [['left', '←', -24, 0], ['up', '↑', 0, -24], ['down', '↓', 0, 24], ['right', '→', 24, 0]].forEach(([key, symbol, dx, dy]) => { const control = button(symbol, () => move(card, dx, dy, el)); control.dataset.direction = key; control.title = t(key); control.setAttribute('aria-label', `${t(key)}: ${card.title}`); moves.append(control); });
     footer.append(actions, moves); el.append(heading); const identity=inbound?.cardHeader(card);if(identity)el.append(identity);el.append(body,footer); return el;
@@ -336,7 +371,7 @@
     normalizePositions();
     for(const el of cardsEl.children)resizeCards.observe(el);
     revealCardHash();
-    schedules?.render();
+    schedules?.render();updateHistory();
   }
   function placeNewCard(card) {
     const existing = documentState.cards.filter(c => c.id !== card.id).map(c => ({...c, height: Math.max(200, cardsEl.querySelector(`[data-card-id="${c.id}"]`)?.offsetHeight || 520)}));
@@ -412,9 +447,54 @@
     }
     if (operations) valid = operations.readCard(form, card) && valid;
     if (!valid) { const error = root.querySelector('[data-form-error]'); error.textContent = t('invalid'); error.hidden = false; return; }
+    recording=true;
     if (prior) documentState.cards = documentState.cards.map(c => c.id === card.id ? card : c); else documentState.cards.push(card);
-    render(); if (!prior) placeNewCard(card); changed(); dialog.close();
+    render(); if (!prior) placeNewCard(card); recording=false;changed();dialog.close();
     cardsEl.querySelector(`[data-card-id="${card.id}"] .canvas-handle`)?.focus({preventScroll: true});
+  });
+  async function historyStep(direction) {
+    if(historyBusy||blocked||!documentState)return;
+    historyBusy=true;updateHistory();
+    try {
+      clearTimeout(timer);
+      const started=generation,startedSerial=serial;
+      if(pending&&!await pending)return;
+      if(started!==generation||startedSerial!==serial)return;
+      const epoch=generation, at=serial, version=documentState.version;
+      const response=await request(endpoint);if(!response.ok)throw Error('history');const fresh=await response.json();
+      if(epoch!==generation||at!==serial)return;
+      if(fresh.version!==version){blocked=true;serverBase=fresh;saveFailed=dirty();status('conflict');recovery?.render();return;}
+      const target=editing[direction](documentState);
+      Object.assign(documentState,target);titleInput.value=documentState.title;
+      changed(false);render();await save();
+    } catch(_){root.querySelector('[data-editing-message]').textContent=t('history_error');}
+    finally{historyBusy=false;updateHistory();if(dirty()&&!blocked){clearTimeout(timer);timer=setTimeout(save,900);}}
+  }
+  recovery=window.CanvasRecovery.create({root,t,journal,base:()=>serverBase,dirty,failed:()=>saveFailed,
+    async recover(entry,asCopy) {
+      if(!journal.entries().some(item=>item.key===entry.key&&item.revision===entry.revision))return false;
+      if(asCopy) {
+        const response=await request(`/admin/canvases/${encodeURIComponent(root.dataset.id)}/recovery-copy`,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(entry.document)});
+        if(!response.ok)return false;const data=await response.json();
+        if(!/^[0-9A-HJKMNP-TV-Z]{26}$/.test(data.id))return false;
+        journal.discard(entry.key,entry.revision);location.assign('/admin/canvases/'+data.id);return true;
+      }
+      if(dirty()||historyBusy)return false;
+      const epoch=generation,at=serial,response=await request(endpoint);if(!response.ok)return false;const fresh=await response.json();
+      if(epoch!==generation||at!==serial||!journal.entries().some(item=>item.key===entry.key&&item.revision===entry.revision))return false;
+      serverBase=fresh;
+      if(fresh.version!==entry.baseVersion){recovery.render();return false;}
+      documentState={...fresh,...CanvasEditing.snapshot(entry.document)};blocked=false;editing.reset(fresh);editing.record(documentState);titleInput.value=documentState.title;changed(false);render();
+      if(!await save())return false;
+      journal.discard(entry.key,entry.revision);return true;
+    }
+  });
+  root.querySelector('[data-action=undo]').addEventListener('click',()=>historyStep('undo'));
+  root.querySelector('[data-action=redo]').addEventListener('click',()=>historyStep('redo'));
+  window.addEventListener('keydown',event=>{
+    if(!(event.metaKey||event.ctrlKey)||event.altKey||event.isComposing||document.querySelector('dialog[open]')||event.target.closest('input,textarea,select,[contenteditable=true]'))return;
+    if(event.code==='KeyZ'||event.key.toLowerCase()==='z'){event.preventDefault();historyStep(event.shiftKey?'redo':'undo');}
+    else if(event.code==='KeyY'||event.key.toLowerCase()==='y'){event.preventDefault();historyStep('redo');}
   });
   root.querySelectorAll('[data-action=cancel]').forEach(el => el.addEventListener('click', () => dialog.close()));
   root.querySelector('[data-action=add]').addEventListener('click', () => editCard());

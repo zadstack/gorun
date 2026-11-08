@@ -74,6 +74,7 @@ Module operations add their own codes (found by grepping `api.WriteError` / `htt
 
 | Status | Code | Returned by |
 |---|---|---|
+| 503 | `deployment_not_configured` | `POST /api/v1/system/update`: partial or invalid Coolify settings; no operation is created |
 | 400 | `invalid_name` | themes: invalid template name |
 | 409 | `conflict` | builder, content types, taxonomies, users/settings (admin), migrations: the change collides with existing state (e.g. a taken slug) |
 | 409 | `period_ended` | commerce: resuming an entitlement whose period has ended |
@@ -380,6 +381,45 @@ Object patches merge by key. Field defaults and required-field validation still 
 the type's schema remain preserved. SEO key null is a stored null, not a deletion operator.
 Content listing uses `order=price:desc,title`, `taxonomy.{tax}` and `fields.{key}.{op}` filters; it does not
 use the generic helper's `sort` syntax. Its page/per_page defaults remain 1/20, capped at 100.
+
+## Canvas editor search
+
+The canvas editor also uses the session-only admin endpoint
+`GET /admin/canvases/search?q=<text>` (not a REST operation or MCP tool). It
+returns `{"items":[{"board_id":"…","board_title":"…","card_id":"…","title":"…","snippet":"…","href":"/admin/canvases/…#card-…"}]}`.
+Only the signed-in owner's boards are searched, including board/card titles,
+card body text and checklist text. Linked content bodies, URLs, credentials,
+provider settings and run documents are excluded. Results use the original
+spelling; matching ignores case, Arabic marks/tatweel and common Arabic letter
+variants, and folds Arabic/Persian digits to ASCII. All terms must match one
+board or one card with its board title as context. Exact board titles rank
+before card titles and body matches, with newest boards first for ties.
+
+Responses are not cached and contain at most 20 results. Empty queries return
+up to eight recent owned boards. Queries shorter than two normalized characters
+return an empty list; repeated/object-shaped queries, invalid UTF-8/NUL, more
+than 1,000 raw UTF-8 bytes or 160 normalized characters return `422 {"error":"invalid"}`.
+Anonymous callers follow the normal admin sign-in redirect. The response is the
+admin JSON shape above, rather than the `/api/v1` envelope.
+
+## Canvas recovery copies
+
+`POST /admin/canvases/{id}/recovery-copy` is a session-only admin endpoint with
+the normal `X-CSRF-Token` requirement. The source board must still belong to the
+signed-in user. It accepts only `{"title":"…","cards":[…],"edges":[…]}` up to
+256 KiB, using the existing canvas card fields and validation limits. Success
+is `201 {"id":"…","href":"/admin/canvases/…"}` in the admin JSON shape.
+
+The server inserts one complete private board at version 1 without changing the
+source board. Every card receives a new UUID. Notes, prompts, checklists and safe
+links retain their text/layout fields. Result, agent, provider, source, content,
+widget and schedule cards become plain notes retaining only their title, body
+and position. All execution/reference/run identities and all edges are removed;
+grants, schedules, inbound endpoints, private media and provenance are never
+copied. No run or publication is requested. The insertion is atomic and audited
+as `canvas.recovery_copy` with the source ID; it respects the 100-board owner
+limit (`422 {"error":"board_limit"}`). Invalid input returns
+`422 {"error":"invalid"}` and a missing or foreign source returns 404.
 
 ## Operations
 

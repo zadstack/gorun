@@ -4,6 +4,8 @@
 <script defer src="{{asset "audit-workspace.js"}}"></script>
 <link rel="stylesheet" href="{{asset "canvas.css"}}">
 <link rel="stylesheet" href="{{asset "canvas-operations.css"}}">
+<link rel="stylesheet" href="{{asset "canvas-search.css"}}">
+<script defer src="{{asset "canvas-search.js"}}"></script>
 <section class="canvas-list">
  <header class="admin-page-heading"><p class="admin-eyebrow">{{t "admin.canvas.private"}}</p><h1>{{t "admin.canvas.title"}}</h1><p class="text-muted">{{t "admin.canvas.description"}}</p></header>
  <section class="canvas-ai-suggestions" data-canvas-ai-suggestions hidden>
@@ -33,6 +35,7 @@
 
  <script defer src="{{asset "canvas-ai-suggestions.js"}}"></script>
  {{if .Error}}<p role="alert" class="canvas-list-error">{{.Error}}</p>{{end}}
+ {{template "partials/canvas_search.html" .}}
  <label class="audit-board-search">{{t "auditworkspace.find_canvas"}}<input type="search" data-board-search></label><p data-board-search-empty hidden>{{t "auditworkspace.no_matching_canvas"}}</p>
  {{if .Boards}}<ul class="canvas-board-list">{{range .Boards}}<li><a href="/admin/canvases/{{.ID}}"><span class="canvas-list-mark" aria-hidden="true"></span><span><strong>{{.Title}}</strong><small>{{t "admin.canvas.updated"}} · <time datetime="{{.UpdatedAt}}" dir="ltr">{{date .UpdatedAt}}</time></small></span><small class="canvas-list-run" data-run-status="{{.LastRunStatus}}">{{t "auditworkspace.last_run"}} · {{if eq .LastRunStatus "waiting_tool"}}{{t "managedtools.waiting_tool"}}{{else if .LastRunStatus}}{{t (printf "canvasops.%s" .LastRunStatus)}}{{else}}{{t "auditworkspace.no_run"}}{{end}}</small></a></li>{{end}}</ul>{{else}}<p class="canvas-list-empty">{{t "admin.canvas.empty_list"}}</p>{{end}}
  <h2 class="font-bold">{{t "auditworkspace.start_canvas"}}</h2>
