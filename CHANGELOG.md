@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-11-09
+
 ### Added
 
 - Add owner-scoped Arabic-aware canvas search with keyboard navigation and direct card links, browser-local recovery with safe personal copies, and version-checked canvas Undo/Redo. Recovery never replays runs or publishing actions; saved result identity remains immutable.
@@ -1273,7 +1275,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.19.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.20.0...HEAD
+[0.20.0]: https://github.com/zadstack/gorun/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/zadstack/gorun/compare/v0.18.7...v0.19.0
 [0.18.7]: https://github.com/zadstack/gorun/compare/v0.18.6...v0.18.7
 [0.18.6]: https://github.com/zadstack/gorun/compare/v0.18.5...v0.18.6
