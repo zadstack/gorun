@@ -65,6 +65,9 @@ key or disabling its owner ends a running session. The next call returns `unauth
 Rate limits are per key (`rate_per_min`, default 60). Over HTTP, exceeding the limit returns HTTP 429
 with `Retry-After`. Over stdio, a per-process token bucket at the key's rate makes the tool call return
 a `rate_limited` error. The `/mcp` and `/api` endpoints keep separate budgets for the same key.
+API-key budgets are in memory, are not shared across serving processes and reset on restart
+(or a new stdio session). HTTP limiters lazily discard fully refilled idle buckets. Login
+lockouts are stored separately in SQLite and survive restarts.
 
 DNS-rebinding protection in the SDK is turned off for `/mcp`. Every request needs a bearer key (there
 are no ambient credentials), and reverse proxies on the same host connect from 127.0.0.1 using the

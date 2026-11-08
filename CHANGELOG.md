@@ -5,6 +5,16 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Security support covers only the current stable minor release line, currently 0.20.x; older releases are unsupported.
+
+### Fixed
+
+- API-key rotation validates the current key while holding the transaction write lock, keeping retirement and replacement atomic with concurrent revocation or immediate rotation.
+- MCP authorization looks up API keys directly by ID rather than decoding every stored key. An unrelated key with malformed scope data no longer blocks a valid approval.
+- API-key rate limiters lazily discard fully refilled idle buckets, reclaiming memory without resetting active budgets. API and MCP documentation now distinguishes process-local key limits from persistent login lockouts.
+
 ## [0.20.0] - 2026-11-09
 
 ### Added

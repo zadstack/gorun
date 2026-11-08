@@ -59,9 +59,10 @@ func (l *loginLimiter) reset(ctx context.Context, key string) error {
 // bucketLimiter is an in-memory token bucket per key (API keys): capacity
 // and refill are rate per minute.
 type bucketLimiter struct {
-	mu      sync.Mutex
-	buckets map[string]*bucket
-	now     func() time.Time
+	mu        sync.Mutex
+	buckets   map[string]*bucket
+	now       func() time.Time
+	nextSweep time.Time
 }
 
 type bucket struct {
@@ -83,6 +84,7 @@ func (b *bucketLimiter) allow(key string, perMin int) (bool, time.Duration) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	now := b.now()
+	b.sweep(now)
 	bk, ok := b.buckets[key]
 	if !ok {
 		bk = &bucket{tokens: capacity, last: now}
@@ -95,4 +97,19 @@ func (b *bucketLimiter) allow(key string, perMin int) (bool, time.Duration) {
 		return true, 0
 	}
 	return false, time.Duration((1 - bk.tokens) / perSec * float64(time.Second))
+}
+
+// sweep runs with mu held. A minute of inactivity fully refills any bucket,
+// so forgetting it cannot grant tokens that its next refill would not grant.
+func (b *bucketLimiter) sweep(now time.Time) {
+	if now.Before(b.nextSweep) {
+		return
+	}
+	cutoff := now.Add(-time.Minute)
+	for key, bk := range b.buckets {
+		if !bk.last.After(cutoff) {
+			delete(b.buckets, key)
+		}
+	}
+	b.nextSweep = now.Add(time.Minute)
 }

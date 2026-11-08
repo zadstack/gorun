@@ -225,7 +225,7 @@ func (s *server) selfApproved(ctx context.Context) bool {
 	if actor.Kind != "api_key" || !auth.Can(ctx, PermApproveSelf) {
 		return false
 	}
-	k, err := s.findKey(ctx, actor.ID)
+	k, err := s.keys.Get(ctx, actor.ID)
 	if err != nil {
 		return false
 	}

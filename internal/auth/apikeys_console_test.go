@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"errors"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -92,4 +94,80 @@ func keyConsoleFixture(t *testing.T) (*keyService, *User) {
 	d := newDB(t)
 	u := mustUser(t, testService(d), "console@example.com", "admin")
 	return testKeys(d).(*keyService), u
+}
+
+func TestConcurrentImmediateRotationsIssueOnlyOneReplacement(t *testing.T) {
+	s, u := keyConsoleFixture(t)
+	_, key, err := s.Create(t.Context(), "rotate once", u.ID, []string{"content.view"}, 30, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := make(chan struct{})
+	attempts := make(chan error, 8)
+	for range cap(attempts) {
+		go func() {
+			<-start
+			_, _, err := s.Rotate(t.Context(), key.ID, 0)
+			attempts <- err
+		}()
+	}
+	close(start)
+	var issued int
+	for range cap(attempts) {
+		if err := <-attempts; err == nil {
+			issued++
+		} else if !errors.Is(err, ErrKeyRevoked) {
+			t.Errorf("rotation failed unexpectedly: %v", err)
+		}
+	}
+	var stored int
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM api_keys WHERE rotated_from = ?`, key.ID).Scan(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if issued != 1 || stored != 1 {
+		t.Fatalf("one-time rotation issued=%d stored=%d replacements, want one", issued, stored)
+	}
+}
+
+func TestRevocationDuringRotationPreparationCannotIssueReplacement(t *testing.T) {
+	s, u := keyConsoleFixture(t)
+	_, key, err := s.Create(t.Context(), "revoked during rotation", u.ID, []string{"content.view"}, 30, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	prepared, resume := make(chan struct{}), make(chan struct{})
+	var releaseOnce sync.Once
+	release := func() { releaseOnce.Do(func() { close(resume) }) }
+	defer release()
+	var clockCalls atomic.Int32
+	now := time.Now()
+	// Pause the request's creation timestamp at the clock boundary, allowing
+	// revocation to commit before the replacement transaction starts.
+	s.now = func() time.Time {
+		if clockCalls.Add(1) == 1 {
+			close(prepared)
+			<-resume
+		}
+		return now
+	}
+	done := make(chan error, 1)
+	go func() { _, _, err := s.Rotate(ctx, key.ID, 0); done <- err }()
+	select {
+	case <-prepared:
+	case <-ctx.Done():
+		t.Fatal("rotation did not reach preparation")
+	}
+	if err := s.Revoke(ctx, key.ID); err != nil {
+		t.Fatal(err)
+	}
+	release()
+	if err := <-done; !errors.Is(err, ErrKeyRevoked) {
+		t.Fatalf("rotation issued a replacement after revocation: %v", err)
+	}
+	var replacements int
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM api_keys WHERE rotated_from = ?`, key.ID).Scan(&replacements); err != nil || replacements != 0 {
+		t.Fatalf("revoked key has %d replacements: %v", replacements, err)
+	}
 }

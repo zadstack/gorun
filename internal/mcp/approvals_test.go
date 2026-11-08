@@ -103,3 +103,20 @@ func healthLine(t *testing.T, e *env) admin.HealthCheck {
 	t.Fatal("no mcp_approvals health check")
 	return admin.HealthCheck{}
 }
+
+func TestUnrelatedMalformedKeyDoesNotBlockApproval(t *testing.T) {
+	e := newEnv(t, nil)
+	requester := e.agent("content.view")
+	approvalID := str(requester.ok("fake_sensitive", map[string]any{}), "approval_id")
+	decider := apitest.NewClient(t, e.app, "mcp.approve")
+	unrelated := apitest.NewClient(t, e.app, "content.view")
+	if _, err := e.app.Deps.DB.Exec(`UPDATE api_keys SET scopes_json = '{}' WHERE id = ?`, unrelated.Key.ID); err != nil {
+		t.Fatal(err)
+	}
+	if status, response := decider.Post("/v1/mcp/approvals/"+approvalID+"/approve", nil); status != http.StatusOK {
+		t.Fatalf("unrelated key blocked approval: status=%d response=%v", status, response)
+	}
+	if e.fake.calls.Load() != 1 || e.approvalStatus(approvalID) != StatusApproved {
+		t.Fatalf("approved call did not execute once: calls=%d status=%s", e.fake.calls.Load(), e.approvalStatus(approvalID))
+	}
+}

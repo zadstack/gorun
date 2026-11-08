@@ -252,7 +252,7 @@ func (st *approvalStore) checkDecider(ctx context.Context, id string) error {
 	if actor.ID == a.APIKeyID {
 		return ErrDecisionForbidden
 	}
-	k, err := st.s.findKey(ctx, actor.ID)
+	k, err := st.s.keys.Get(ctx, actor.ID)
 	if err != nil || !slices.Contains(k.Scopes, PermApprove) {
 		return ErrDecisionForbidden
 	}
@@ -261,7 +261,7 @@ func (st *approvalStore) checkDecider(ctx context.Context, id string) error {
 	}
 	requester := a.RequestedBy
 	if requester == "" { // rows parked without an owner: look the key up
-		rk, err := st.s.findKey(ctx, a.APIKeyID)
+		rk, err := st.s.keys.Get(ctx, a.APIKeyID)
 		if err != nil {
 			return ErrDecisionForbidden
 		}
@@ -309,19 +309,6 @@ func (st *approvalStore) pendingCounts(ctx context.Context) (pending, stale int,
 	err = st.s.d.DB.QueryRowContext(ctx, `SELECT count(*), coalesce(sum(expires_at <= ?), 0) FROM mcp_approvals WHERE status = 'pending'`,
 		db.Now()).Scan(&pending, &stale)
 	return pending, stale, err
-}
-
-// findKey returns the API key id (revoked or not).
-func (s *server) findKey(ctx context.Context, id string) (*auth.APIKey, error) {
-	keys, err := s.keys.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-	i := slices.IndexFunc(keys, func(k auth.APIKey) bool { return k.ID == id })
-	if i < 0 {
-		return nil, auth.ErrNotFound
-	}
-	return &keys[i], nil
 }
 
 // runApproved executes an approved call as the requesting API key: the key

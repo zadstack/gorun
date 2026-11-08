@@ -20,6 +20,9 @@ modules register, and served at `GET /api/v1/openapi.json`. The interactive refe
   (`/admin/agents/keys`, permission `api_keys.manage`). A key acts as its owner: it never exceeds the owner's
   role, and only what its scopes list (`*` = all of the owner's permissions). Keys have a per-key rate limit
   (`rate_per_min`, default 60); over it the API answers `429 rate_limited` with `Retry-After`.
+  API-key budgets are in memory per serving process and reset on restart; `/api` and `/mcp`
+  have separate budgets. Fully refilled idle key buckets are pruned lazily. Login lockouts
+  use SQLite and survive restarts.
 - **Key kinds.** Only keys of kind `api` (**REST API** in the admin) work on `/api`. Keys of kind `agent`
   (**AI agent**, the admin default) work only on `/mcp` and get `403 agent_key_not_allowed` on every `/api`
   path, so an agent cannot, for example, approve its own sensitive MCP calls over REST.
@@ -31,7 +34,9 @@ modules register, and served at `GET /api/v1/openapi.json`. The interactive refe
 - **Key console.** Keys can also be managed over the API (`/v1/keys`: list, create, rotate with a grace period,
   revoke) and with `gorun key`. Creating a key over the API needs a signed-in session (an API key caller gets
   `403 session_required`); a key created or rotated through the API never carries scopes beyond the caller's,
-  and only a key's owner can rotate it. See [WEBHOOKS.md](WEBHOOKS.md#key-console).
+  and only a key's owner can rotate it. Rotation validates the original key and issues its
+  replacement in one write transaction; with zero grace, concurrent rotations can issue
+  only one replacement. See [WEBHOOKS.md](WEBHOOKS.md#key-console).
 - **Webhooks.** Signed outgoing notifications of site events (`/v1/webhooks`, `gorun webhook`); payload,
   headers and signature verification are in [WEBHOOKS.md](WEBHOOKS.md).
 
