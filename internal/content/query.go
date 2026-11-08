@@ -2,6 +2,7 @@ package content
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -87,21 +88,15 @@ func (s *service) Query(ctx context.Context, q Query) (Page[Item], error) {
 	if err != nil {
 		return page, fmt.Errorf("content: query: %w", err)
 	}
-	defer rows.Close()
-	for rows.Next() {
-		it, err := scanItem(rows)
-		if err != nil {
-			return page, err
-		}
-		page.Items = append(page.Items, *it)
-	}
-	if err := rows.Err(); err != nil {
+
+	page.Items, err = readQueryItems(rows)
+	if err != nil {
 		return page, err
 	}
-	rows.Close()
-	for i := range page.Items {
-		s.fillTerms(ctx, &page.Items[i])
+	if err := s.fillQueryTerms(ctx, page.Items); err != nil {
+		return page, err
 	}
+
 	return page, nil
 }
 
@@ -301,4 +296,42 @@ func buildOrder(b *queryBuilder, order []Order, typ *Type) (string, error) {
 		return strings.Join(parts, ", ") + ", c.id DESC", nil
 	}
 	return strings.Join(parts, ", ") + ", c.id", nil
+}
+
+func readQueryItems(rows *sql.Rows) ([]Item, error) {
+	defer rows.Close()
+	items := []Item{}
+	for rows.Next() {
+		it, err := scanItem(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, *it)
+	}
+	return items, rows.Err()
+}
+
+func (s *service) fillQueryTerms(ctx context.Context, items []Item) error {
+	if batch, ok := s.terms().(BatchTermBackend); ok && len(items) > 0 {
+		ids := make([]string, len(items))
+		for i := range items {
+			ids[i] = items[i].ID
+		}
+		assignments, err := batch.ContentTermsBatch(ctx, ids)
+		if err != nil {
+			return fmt.Errorf("content: load query terms: %w", err)
+		}
+		for i := range items {
+			items[i].Terms = assignments[items[i].ID]
+			if items[i].Terms == nil {
+				items[i].Terms = map[string][]string{}
+			}
+		}
+	} else {
+		for i := range items {
+			s.fillTerms(ctx, &items[i])
+		}
+	}
+
+	return nil
 }

@@ -312,5 +312,6 @@
   "editor.tool_center": "Align center",
   "editor.tool_right": "Align right",
   "editor.tool_clean": "Remove formatting",
-  "editor.tool_body": "Writing area"
+  "editor.tool_body": "Writing area",
+  "types.error_locale_route": "This public route is reserved for a content language. Choose another type or archive slug."
 }

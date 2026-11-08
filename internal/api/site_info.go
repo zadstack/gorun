@@ -32,10 +32,11 @@ type PublicSiteIdentity struct {
 }
 
 type SiteLanguages struct {
-	Default   InformationValue `json:"default"`
-	Supported []string         `json:"supported" doc:"Locales accepted by the running i18n router; not a claim that every page is translated"`
-	Source    string           `json:"source"`
-	Direction string           `json:"direction"`
+	AdminSupported []string         `json:"admin_supported" doc:"Admin interface catalogs; independent of content languages"`
+	Default        InformationValue `json:"default"`
+	Supported      []string         `json:"supported" doc:"Locales accepted by the running i18n router; not a claim that every page is translated"`
+	Source         string           `json:"source"`
+	Direction      string           `json:"direction"`
 }
 
 // SiteLogo resolves one logo variant. Value is the media URL templates use
@@ -146,8 +147,14 @@ func siteInformationHandler(d *kernel.Deps, version string) http.HandlerFunc {
 		w.Header().Set("Cache-Control", "no-store")
 		ctx := r.Context()
 		out := SiteInformation{Version: information(version, "process.build"),
-			Languages:   SiteLanguages{Supported: append([]string{}, i18n.Supported...), Source: "runtime:i18n.Supported"},
+			Languages:   SiteLanguages{AdminSupported: append([]string{}, i18n.Supported...), Supported: i18n.ContentLocales(ctx, d.Settings), Source: "core:content_locales_default"},
 			Limitations: []string{"supported_languages_do_not_imply_translated_content", "logo_variants_fall_back_to_site.logo_then_theme_manifest", "rendered_logo_is_the_thumbnail_variant_themes_print"}}
+		var configured []string
+		if d.Settings.Get(ctx, i18n.ContentLocalesSetting, &configured) == nil {
+			if _, err := i18n.ParseContentLocales(configured); err == nil {
+				out.Languages.Source = "settings:" + i18n.ContentLocalesSetting
+			}
+		}
 		for _, field := range []struct {
 			target                *InformationValue
 			key, fallback, source string
@@ -155,7 +162,7 @@ func siteInformationHandler(d *kernel.Deps, version string) http.HandlerFunc {
 			{&out.Identity.Title, "site.title", "", ""},
 			{&out.Identity.Tagline, "site.tagline", "", ""},
 			{&out.Identity.BaseURL, "site.base_url", d.Config.BaseURL, "config:base_url"},
-			{&out.Languages.Default, "site.locale", "ar", "core:site_locale_default"},
+			{&out.Languages.Default, "site.locale", i18n.ContentLocale(ctx, d.Settings), "core:site_locale_default"},
 		} {
 			value, err := settingInformation(ctx, d, field.key, field.fallback, field.source)
 			if err != nil {

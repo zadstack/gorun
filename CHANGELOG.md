@@ -5,15 +5,20 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Configurable public content languages in Settings → General and the settings API (`site.content_locales`), independently of Arabic/English admin catalogs. BCP-47 language, script and region tags retain canonical routes, translation groups and menu language selection. Changes apply without restart; transactional guards reject disabled language writes, removal of used languages and conflicting route prefixes. Recovery CLI and MCP default-language changes use the same guards. Legacy sites keep their content-language defaulting policy until an explicit list is saved.
+
 ### Changed
 
 - System updates discover official releases by default and select native or container artifacts. An empty source opts out; custom sources remain supported. The page explains manual and Coolify activation, Compose forwards update settings, and incomplete Coolify configuration blocks requests.
+- Sitemaps reuse in-memory XML snapshots, regenerate in the background, and split into an index and `/sitemaps/{number}.xml` parts above 50,000 URLs or 50 MiB. Transactional domain-write invalidation and host-exclusion-aware cache keys prevent reuse after content visibility changes. Sitemap responses support ETags and conditional GET/HEAD. Permalink generation shares settings and ancestor lookups, content listings batch taxonomy assignments, and native sitemap enumeration uses indexed keyset scans.
+
 - The admin uses warm neutral surfaces and petrol actions, Classic uses cream paper and charcoal, and Serif uses white paper with deep-blue links. Saved site identities keep precedence.
 - Agent role templates, the canvas list and the agents drawer use the canvas card design: a kind avatar, a tinted heading and a written badge. The orchestrator role now comes first, and canvases in the list show a readable save time and their last run state.
 
 ### Fixed
 
-- Classic comparison tables retain a distinct background for the highlighted column on cream surfaces.
 - Extension HTTP responses from an earlier activation no longer change a reactivated extension's delivery log, failure counters or error status.
 - Canvas template choices are a grid of cards again instead of seven narrow columns.
 - Agents rail shortcuts use the initials of the first two words, so a card titled "03 · Prepare the draft" shows PT instead of 03.

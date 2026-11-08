@@ -14,6 +14,7 @@ import (
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/hooks"
+	"github.com/zadstack/gorun/internal/settings"
 )
 
 var (
@@ -186,6 +187,15 @@ func (s *service) Save(ctx context.Context, t Taxonomy) error {
 		t.Singular = map[string]string{}
 	}
 	err := db.InTx(ctx, s.db, func(tx *sql.Tx) error {
+		if t.Public {
+			locales, err := settings.ContentLocalesTx(ctx, tx)
+			if err != nil {
+				return err
+			}
+			if slices.ContainsFunc(locales, func(locale string) bool { return strings.EqualFold(locale, t.Slug) }) {
+				return validationError(map[string]string{"slug": "taxonomy.validation.locale_route"})
+			}
+		}
 		_, err := tx.ExecContext(ctx, `INSERT INTO taxonomies (`+taxColumns+`) VALUES (?, ?, ?, ?, ?, ?, 0)
 			ON CONFLICT (slug) DO UPDATE SET name_json = excluded.name_json, singular_json = excluded.singular_json,
 			hierarchical = excluded.hierarchical, types_json = excluded.types_json, public = excluded.public`,

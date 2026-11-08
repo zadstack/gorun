@@ -76,7 +76,7 @@ func (h *handlers) renderForm(slug, csrf, back string, locale ...string) templat
 		return ""
 	}
 	loc := ""
-	if len(locale) > 0 && slices.Contains(i18n.Supported, locale[0]) {
+	if len(locale) > 0 && slices.Contains(i18n.ContentLocales(ctx, h.d.Settings), locale[0]) {
 		loc = locale[0]
 	} else {
 		loc = h.siteLocaleOf(ctx)

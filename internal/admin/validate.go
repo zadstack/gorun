@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/seo"
 )
 
@@ -45,10 +46,11 @@ func ValidateGeneralSetting(key, value string) (string, error) {
 		}
 		return v, nil
 	case "site.locale":
-		if !validLocale(value) {
+		locale, err := i18n.CanonicalLocale(value)
+		if err != nil {
 			return fail("admin.users.error_locale")
 		}
-		return value, nil
+		return locale, nil
 	case "site.timezone":
 		tz := strings.TrimSpace(value)
 		if !validTimezone(tz) {

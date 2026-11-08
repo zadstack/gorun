@@ -1,11 +1,14 @@
 package site
 
 import (
+	"bytes"
+	"errors"
 	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -89,6 +92,35 @@ func themeDir(r *http.Request, svc theme.Service, slug string) (string, bool) {
 func (h *handlers) sitemap(w http.ResponseWriter, r *http.Request) {
 	svc, ok := kernel.Get[seo.Service](h.d, kernel.ServiceSEO)
 	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	if documents, ok := svc.(seo.SitemapDocuments); ok {
+		doc, err := documents.SitemapDocument(r.Context(), chi.URLParam(r, "part"))
+		if err != nil {
+			if errors.Is(err, seo.ErrSitemapPartNotFound) {
+				http.NotFound(w, r)
+				return
+			}
+			h.d.Log.Error("site: sitemap", "err", err)
+			w.Header().Set("Retry-After", "30")
+			w.Header().Set("Cache-Control", "no-store")
+			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+			return
+		}
+		w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("ETag", doc.ETag)
+		modified := doc.Modified
+		// Date validators have one-second precision. A just-built replacement must
+		// not validate an older representation generated in the same second.
+		if time.Since(modified) < time.Second {
+			modified = time.Time{}
+		}
+		http.ServeContent(w, r, "sitemap.xml", modified, bytes.NewReader(doc.XML))
+		return
+	}
+	if chi.URLParam(r, "part") != "" {
 		http.NotFound(w, r)
 		return
 	}

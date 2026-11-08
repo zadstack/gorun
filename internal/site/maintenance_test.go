@@ -57,7 +57,7 @@ func TestMaintenanceMode(t *testing.T) {
 		t.Fatalf("inner page: %d", code)
 	}
 	// What stays up: health, robots, sitemap, theme assets and the admin.
-	for _, p := range []string{"/healthz", "/robots.txt", "/sitemap.xml", "/themes/mini/assets/a.css"} {
+	for _, p := range []string{"/healthz", "/robots.txt", "/sitemap.xml", "/sitemaps/1.xml", "/themes/mini/assets/a.css"} {
 		if code, _, _ := get(p); code == http.StatusServiceUnavailable {
 			t.Errorf("%s is under maintenance", p)
 		}

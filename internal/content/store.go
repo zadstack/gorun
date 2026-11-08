@@ -30,6 +30,11 @@ type TermBackend interface {
 	ContentIDs(ctx context.Context, taxonomy string, termSlugs []string) ([]string, error)
 }
 
+// BatchTermBackend lets listing queries load all assignments in one call.
+type BatchTermBackend interface {
+	ContentTermsBatch(context.Context, []string) (map[string]map[string][]string, error)
+}
+
 // TxTermBackend is optionally implemented by the taxonomy service so content
 // can write an item's terms inside its own save transaction.
 type TxTermBackend interface {
@@ -167,19 +172,30 @@ func checkOwner(ctx context.Context, it *Item) error {
 	return nil
 }
 
-// defaultLocale picks the locale for a new item when Input.Locale is empty.
-// Prefer the request/admin content locale (editor chrome) when one is on the
-// context; otherwise fall back to site.locale. This keeps bilingual hosters
-// from storing EN-authored drafts as ar merely because the public site default
-// is Arabic.
+// Public content languages are independent of the admin catalogs.
+func (s *service) publicLocales(ctx context.Context) []string {
+	if s.settings == nil {
+		return i18n.ContentLocales(ctx, nil)
+	}
+	return i18n.ContentLocales(ctx, s.settings)
+}
+
 func (s *service) defaultLocale(ctx context.Context) string {
-	if loc, ok := i18n.RequestLocale(ctx); ok && slices.Contains(i18n.Supported, loc) {
+	locales := s.publicLocales(ctx)
+	if s.settings != nil {
+		var configured []string
+		if s.settings.Get(ctx, i18n.ContentLocalesSetting, &configured) == nil {
+			return i18n.ContentLocale(ctx, s.settings)
+		}
+	}
+	// Preserve existing draft defaults until the site opts into content languages.
+	if loc, ok := i18n.RequestLocale(ctx); ok && slices.Contains(locales, loc) {
 		return loc
 	}
 	if s.settings == nil {
-		return i18n.DefaultLocale
+		return locales[0]
 	}
-	return s.settings.GetString(ctx, "site.locale", i18n.DefaultLocale)
+	return i18n.ContentLocale(ctx, s.settings)
 }
 
 func (s *service) revisionsKeep(ctx context.Context) int {
@@ -255,6 +271,13 @@ func (s *service) save(ctx context.Context, existing *Item, in Input, opts saveO
 				return err
 			}
 		}
+		locales, err := settings.ContentLocalesTx(ctx, tx)
+		if err != nil {
+			return err
+		}
+		if !slices.Contains(locales, it.Locale) {
+			return invalid(FieldErrors{"locale": "content.validation.locale"})
+		}
 		base := Slugify(in.Slug, ascii)
 		if base == "" {
 			base = Slugify(it.Title, ascii)
@@ -262,7 +285,7 @@ func (s *service) save(ctx context.Context, existing *Item, in Input, opts saveO
 		if base == "" {
 			base = strings.ToLower(it.ID)
 		}
-		if it.Type == "page" && it.ParentID == "" && slices.Contains(i18n.Supported, base) {
+		if it.Type == "page" && it.ParentID == "" && slices.ContainsFunc(locales, func(locale string) bool { return strings.EqualFold(locale, base) }) {
 			base += "-page" // a top-level page at /en would sit where the English site is
 		}
 		slug, err := uniqueSlug(ctx, tx, it.Type, it.Locale, base, it.ID)
@@ -417,10 +440,12 @@ func (s *service) prepare(ctx context.Context, existing *Item, in Input, extraPr
 			it.Locale = s.defaultLocale(ctx)
 		}
 	}
-	if !slices.Contains(i18n.Supported, it.Locale) {
+	canonical, localeErr := i18n.CanonicalLocale(it.Locale)
+	if localeErr != nil || !slices.Contains(s.publicLocales(ctx), canonical) {
 		errs["locale"] = "content.validation.locale"
 		return nil, nil, invalid(errs)
 	}
+	it.Locale = canonical
 	s.applyAuthor(ctx, existing, it)
 
 	var prev []map[string]any

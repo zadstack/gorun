@@ -179,7 +179,7 @@ func (f *funcs) destination(p string) Destination {
 		return found(it, false)
 	}
 	others := f.purposePages(p, "*")
-	for _, l := range i18n.Supported {
+	for _, l := range i18n.ContentLocales(f.st.ctx, f.s.d.Settings) {
 		if l == cur {
 			continue
 		}

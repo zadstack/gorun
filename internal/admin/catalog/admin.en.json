@@ -1048,5 +1048,12 @@
   "modules.name.identityai": "Identity AI",
   "modules.desc.identityai": "AI identity suggestions (text only) written to the identity draft after a reviewed, approved request.",
   "modules.name.identitylogo": "Identity logo",
-  "modules.desc.identitylogo": "Reviewed static PNG generation with private staging and explicit identity draft selection."
+  "modules.desc.identitylogo": "Reviewed static PNG generation with private staging and explicit identity draft selection.",
+  "settings.content_locales": "Content languages",
+  "settings.content_locales_help": "Comma-separated language tags, such as ar, en, fr, pt-BR. These languages are for content; the admin interface stays Arabic or English. A language used by content or menus cannot be removed.",
+  "settings.content_default_help": "Choose a tag from the content languages below. This language uses URLs without a language prefix.",
+  "settings.error_content_locales": "Enter 1–32 distinct BCP-47 language tags, separated by commas (for example: ar, en, fr, pt-BR).",
+  "settings.error_content_locale": "Choose a default language from the configured content languages.",
+  "settings.error_locale_in_use": "This language is used by content or menus. Keep it enabled or move those records to another language first.",
+  "settings.error_locale_route": "A language tag conflicts with an existing page, content type, taxonomy, archive or reserved route. Rename that route or choose another language tag."
 }

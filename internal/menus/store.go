@@ -16,6 +16,7 @@ import (
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/hooks"
 	"github.com/zadstack/gorun/internal/i18n"
+	"github.com/zadstack/gorun/internal/settings"
 	"github.com/zadstack/gorun/internal/taxonomy"
 )
 
@@ -68,12 +69,13 @@ type SavedEvent struct {
 var slugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 type service struct {
-	db       *sql.DB
-	hooks    *hooks.Registry
-	audit    *audit.Writer
-	log      *slog.Logger
-	content  func() (content.Service, bool)
-	taxonomy func() (taxonomy.Service, bool)
+	localeSettings *settings.Store
+	db             *sql.DB
+	hooks          *hooks.Registry
+	audit          *audit.Writer
+	log            *slog.Logger
+	content        func() (content.Service, bool)
+	taxonomy       func() (taxonomy.Service, bool)
 }
 
 // ContentPath is the fallback permalink of a content item ("/{slug}"),
@@ -263,8 +265,13 @@ func (s *service) saveGuarded(ctx context.Context, m Menu, expected *string) (*M
 	if m.Location != "" && (!slugPattern.MatchString(m.Location) || len(m.Location) > 64) {
 		fields["location"] = "menus.error.location_invalid"
 	}
-	if m.Locale != "" && !slices.Contains(i18n.Supported, m.Locale) {
-		fields["locale"] = "menus.error.locale_invalid"
+	if m.Locale != "" {
+		canonical, err := i18n.CanonicalLocale(m.Locale)
+		if err != nil || !slices.Contains(s.publicLocales(ctx), canonical) {
+			fields["locale"] = "menus.error.locale_invalid"
+		} else {
+			m.Locale = canonical
+		}
 	}
 	var flat []Item
 	if m.Items != nil {
@@ -281,6 +288,19 @@ func (s *service) saveGuarded(ctx context.Context, m Menu, expected *string) (*M
 	}
 	created := m.ID == ""
 	err := db.InTx(ctx, s.db, func(tx *sql.Tx) error {
+		if m.Locale != "" {
+			locales := i18n.ReadContentLocales(ctx, nil)
+			if s.localeSettings != nil {
+				var err error
+				locales, err = settings.ContentLocalesTx(ctx, tx)
+				if err != nil {
+					return err
+				}
+			}
+			if !slices.Contains(locales, m.Locale) {
+				return &ValidationError{Fields: map[string]string{"locale": "menus.error.locale_invalid"}}
+			}
+		}
 		if expected != nil {
 			if err := checkMenuToken(ctx, tx, m.ID, *expected); err != nil {
 				return err
@@ -566,4 +586,11 @@ func Slugify(s string) string {
 		}
 	}
 	return strings.TrimSuffix(b.String(), "-")
+}
+
+func (s *service) publicLocales(ctx context.Context) []string {
+	if s.localeSettings == nil {
+		return i18n.ContentLocales(ctx, nil)
+	}
+	return i18n.ContentLocales(ctx, s.localeSettings)
 }

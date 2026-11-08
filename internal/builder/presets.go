@@ -82,7 +82,7 @@ func PurposePreset(purpose, title, locale string) (Document, error) {
 type PurposePageInput struct {
 	Purpose string `json:"purpose" enum:"about,service,methodology,contact" doc:"What the page is for; stored in the page's purpose field."`
 	Title   string `json:"title" doc:"The page title, 1 to 200 characters; it becomes the hero heading."`
-	Locale  string `json:"locale,omitempty" enum:",ar,en" doc:"The page language; empty for the site language."`
+	Locale  string `json:"locale,omitempty" doc:"The page language; empty for the site language."`
 }
 
 // PurposePage is a created draft page and its builder draft.
@@ -98,12 +98,16 @@ func (s *service) CreatePurposePage(ctx context.Context, in PurposePageInput) (*
 	if !auth.Can(ctx, "content.create") || !auth.Can(ctx, "content.edit") {
 		return nil, ErrForbidden
 	}
-	if in.Locale != "" && !slices.Contains(i18n.Supported, in.Locale) {
-		return nil, ErrPreset
+	if in.Locale != "" {
+		canonical, err := i18n.CanonicalLocale(in.Locale)
+		if err != nil || !slices.Contains(i18n.ContentLocales(ctx, s.d.Settings), canonical) {
+			return nil, ErrPreset
+		}
+		in.Locale = canonical
 	}
 	locale := in.Locale
 	if locale == "" {
-		locale = s.d.Settings.GetString(ctx, "site.locale", "ar")
+		locale = i18n.ContentLocale(ctx, s.d.Settings)
 	}
 	doc, err := PurposePreset(in.Purpose, in.Title, locale)
 	if err != nil {

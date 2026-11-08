@@ -40,6 +40,9 @@ func (l *Linker) content() (content.Service, bool) {
 // FrontPageID returns the static front page's content id (setting
 // site.front_page), or "".
 func (l *Linker) FrontPageID(ctx context.Context) string {
+	if batch, ok := ctx.Value(sitemapLinksKey{}).(*sitemapLinks); ok {
+		return batch.frontID
+	}
 	if l.d.Settings == nil {
 		return ""
 	}
@@ -53,10 +56,13 @@ func (l *Linker) Item(ctx context.Context, it *content.Item) string {
 
 // SiteLocale is the public site locale (setting site.locale): its URLs carry no locale prefix.
 func (l *Linker) SiteLocale(ctx context.Context) string {
+	if batch, ok := ctx.Value(sitemapLinksKey{}).(*sitemapLinks); ok {
+		return batch.locale
+	}
 	if l.d.Settings == nil {
 		return defaultSiteLocale
 	}
-	return l.d.Settings.GetString(ctx, SettingLocale, defaultSiteLocale)
+	return i18n.ContentLocale(ctx, l.d.Settings)
 }
 
 // ItemWithFront is Item with the front page id already known (renders
@@ -66,7 +72,7 @@ func (l *Linker) ItemWithFront(ctx context.Context, it *content.Item, frontID st
 	if it == nil {
 		return "/"
 	}
-	return i18n.LocalizePath(it.Locale, l.SiteLocale(ctx), l.itemPath(ctx, it, frontID))
+	return i18n.LocalizePath(it.Locale, l.SiteLocale(ctx), l.itemPath(ctx, it, frontID), l.ContentLocales(ctx))
 }
 
 // itemPath is the unprefixed path of it.
@@ -84,7 +90,7 @@ func (l *Linker) itemPath(ctx context.Context, it *content.Item, frontID string)
 	svc, ok := l.content()
 	parent := it.ParentID
 	for i := 0; ok && parent != "" && i < maxParentDepth; i++ {
-		p, err := svc.Get(ctx, parent)
+		p, err := permalinkParent(ctx, svc, parent)
 		if err != nil {
 			break
 		}
@@ -99,6 +105,9 @@ func (l *Linker) itemPath(ctx context.Context, it *content.Item, frontID string)
 
 // inFrontGroup reports whether it is a translation of the front page.
 func (l *Linker) inFrontGroup(ctx context.Context, it *content.Item, frontID string) bool {
+	if batch, ok := ctx.Value(sitemapLinksKey{}).(*sitemapLinks); ok && batch.frontID == frontID {
+		return batch.frontGroup == it.TranslationGroup
+	}
 	svc, ok := l.content()
 	if !ok {
 		return false
@@ -191,4 +200,67 @@ func (l *Linker) sitemapEntry(ctx context.Context, v any) (any, error) {
 		e.Loc = archivePath(e.Type)
 	}
 	return v, nil
+}
+
+// Sitemap batches share settings, the front-page group and ancestor lookups.
+// This state is confined to one generation, never shared between requests.
+type sitemapLinksKey struct{}
+type sitemapLinks struct {
+	frontID, frontGroup, locale string
+	items                       map[string]*content.Item
+	locales                     []string
+}
+
+func (l *Linker) sitemapBatch(ctx context.Context, v any) (any, error) {
+	batch, ok := v.(*seo.SitemapBatch)
+	if !ok {
+		return v, nil
+	}
+	links := &sitemapLinks{frontID: l.FrontPageID(ctx), locale: l.SiteLocale(ctx),
+		items: map[string]*content.Item{}, locales: l.ContentLocales(ctx)}
+	for i := range batch.Entries {
+		if it := batch.Entries[i].Item; it != nil {
+			links.items[it.ID] = it
+		}
+	}
+	if links.frontID != "" {
+		front := links.items[links.frontID]
+		if front == nil {
+			if svc, ok := l.content(); ok {
+				front, _ = svc.Get(ctx, links.frontID)
+			}
+		}
+		if front != nil {
+			links.frontGroup = front.TranslationGroup
+		}
+	}
+	batch.Context = context.WithValue(batch.Context, sitemapLinksKey{}, links)
+	return v, nil
+}
+
+func permalinkParent(ctx context.Context, svc content.Service, id string) (*content.Item, error) {
+	batch, batched := ctx.Value(sitemapLinksKey{}).(*sitemapLinks)
+	if batched {
+		if parent, loaded := batch.items[id]; loaded {
+			if parent == nil {
+				return nil, content.ErrNotFound
+			}
+			return parent, nil
+		}
+	}
+	parent, err := svc.Get(ctx, id)
+	if batched {
+		batch.items[id] = parent
+	}
+	return parent, err
+}
+
+func (l *Linker) ContentLocales(ctx context.Context) []string {
+	if batch, ok := ctx.Value(sitemapLinksKey{}).(*sitemapLinks); ok {
+		return batch.locales
+	}
+	if l.d.Settings == nil {
+		return i18n.ContentLocales(ctx, nil)
+	}
+	return i18n.ContentLocales(ctx, l.d.Settings)
 }

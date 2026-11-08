@@ -18,7 +18,7 @@ import (
 	"github.com/zadstack/gorun/internal/taxonomy"
 )
 
-func testService(t *testing.T) *service {
+func testService(t testing.TB) *service {
 	t.Helper()
 	d, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
 	if err != nil {
@@ -34,7 +34,7 @@ func testService(t *testing.T) *service {
 		taxonomy: func() (taxonomy.Service, bool) { return nil, false }}
 }
 
-func set(t *testing.T, s *service, kv ...string) {
+func set(t testing.TB, s *service, kv ...string) {
 	t.Helper()
 	for i := 0; i+1 < len(kv); i += 2 {
 		if err := s.settings.Set(context.Background(), kv[i], kv[i+1]); err != nil {
@@ -232,22 +232,41 @@ func (c countingContent) Query(_ context.Context, q content.Query) (content.Page
 	for i := range items {
 		items[i] = content.Item{Type: "post", Status: "published", Slug: fmt.Sprintf("p-%d-%d", q.Page, i)}
 	}
-	return content.Page[content.Item]{Items: items, Total: 1_000_000, Page: q.Page, PerPage: q.PerPage}, nil
+	return content.Page[content.Item]{Items: items, Total: 50_100, Page: q.Page, PerPage: q.PerPage}, nil
 }
 
-func TestSitemapStopsAtCap(t *testing.T) {
+func TestSitemapContinuesBeyondFirstPart(t *testing.T) {
 	s := testService(t)
 	calls := 0
 	s.content = func() (content.Service, bool) { return countingContent{calls: &calls}, true }
-	out, err := s.Sitemap(context.Background())
+	entries, err := s.Entries(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if n := strings.Count(string(out), "<url>"); n != sitemapMaxEntries {
-		t.Fatalf("entries: %d", n)
+	if len(entries) != 50_101 {
+		t.Fatalf("truncated entries: %d", len(entries))
 	}
-	if want := (sitemapMaxEntries + sitemapPageSize - 1) / sitemapPageSize; calls > want {
-		t.Fatalf("kept paging after the cap: %d calls (want <= %d)", calls, want)
+	if calls != 501 {
+		t.Fatalf("query pages: %d", calls)
+	}
+	s.sitemapRevision = func(context.Context) (int64, error) { return 1, nil }
+	part, err := s.SitemapDocument(context.Background(), "2.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var urls xmlURLSet
+	if err := xml.Unmarshal(part.XML, &urls); err != nil {
+		t.Fatal(err)
+	}
+	if len(urls.URLs) != 101 {
+		t.Fatalf("wrong second part: %d", len(urls.URLs))
+	}
+	root, err := s.Sitemap(context.Background())
+	if err != nil || !strings.Contains(string(root), "<sitemapindex") {
+		t.Fatalf("root is not an index: %v", err)
+	}
+	if _, err := s.SitemapDocument(context.Background(), "3.xml"); err != ErrSitemapPartNotFound {
+		t.Fatalf("unknown part: %v", err)
 	}
 }
 

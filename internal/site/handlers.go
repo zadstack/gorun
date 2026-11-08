@@ -50,13 +50,14 @@ func (h *handlers) taxonomy() (taxonomy.Service, bool) {
 // siteLocale returns the public site locale (setting site.locale, default
 // "ar"); public pages never follow the admin user's language.
 func (h *handlers) siteLocaleOf(ctx context.Context) string {
-	return h.d.Settings.GetString(ctx, theme.SettingLocale, "ar")
+	return i18n.ContentLocale(ctx, h.d.Settings)
 }
 
 // siteLocale puts the site locale into the request context.
 func (h *handlers) siteLocale(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r.WithContext(i18n.WithLocale(r.Context(), h.siteLocaleOf(r.Context()))))
+		ctx := i18n.WithContentLocales(r.Context(), i18n.ContentLocales(r.Context(), h.d.Settings))
+		next.ServeHTTP(w, r.WithContext(i18n.WithLocale(ctx, h.siteLocaleOf(ctx))))
 	})
 }
 
@@ -64,8 +65,27 @@ func (h *handlers) siteLocale(next http.Handler) http.Handler {
 // its context and the prefix cut off its path. The site locale's own prefix redirects (301) to
 // the unprefixed URL.
 func (h *handlers) localePrefix(next http.Handler) http.Handler {
+	fallback := auth.CSRFMiddleware()(http.HandlerFunc(h.dispatch))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		loc, rest := i18n.SplitLocalePath(r.URL.Path)
+		locales := i18n.ContentLocales(r.Context(), h.d.Settings)
+		loc, rest := i18n.SplitLocalePath(r.URL.Path, locales)
+		if loc == "" {
+			if r.Method != http.MethodGet && r.Method != http.MethodHead {
+				http.NotFound(w, r)
+				return
+			}
+			fallback.ServeHTTP(w, r)
+			return
+		}
+		segment, _, _ := strings.Cut(strings.TrimPrefix(r.URL.Path, "/"), "/")
+		if segment != loc {
+			target := "/" + loc + rest
+			if r.URL.RawQuery != "" {
+				target += "?" + r.URL.RawQuery
+			}
+			http.Redirect(w, r, target, http.StatusMovedPermanently)
+			return
+		}
 		if loc == h.siteLocaleOf(r.Context()) {
 			// Browsers interpret leading double slashes and backslashes as authorities.
 			rest = "/" + strings.TrimLeft(strings.ReplaceAll(rest, "\\", "/"), "/")
