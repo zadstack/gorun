@@ -146,7 +146,7 @@ func TestAppearanceConditionalTokensAreUnknown(t *testing.T) {
 func TestAppearanceShippedDefaultDeclarations(t *testing.T) {
 	e := newEnv(t, "../../themes")
 	report := e.svc.Appearance(context.Background())
-	assertAppearanceValue(t, report.Colors["background"], "#f5f7fa", "theme:default:css-token:--bg")
+	assertAppearanceValue(t, report.Colors["background"], "#fffef2", "theme:default:css-token:--bg")
 	if report.Fonts["body"].Value == nil || !strings.Contains(*report.Fonts["body"].Value, "Zad") {
 		t.Fatalf("shipped font unavailable: %+v", report.Fonts)
 	}
