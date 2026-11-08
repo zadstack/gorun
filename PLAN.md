@@ -1,13 +1,17 @@
 # GoRun core and independent WordPress importer
 
-Status: staged implementation. PR #208 implements sitemap snapshots, revision
+Status: staged implementation. Merged PR #208 implements sitemap snapshots, revision
 invalidation, background refresh, index/parts, indexed keyset enumeration and
 batched permalink/term lookups, while retaining newest-first entry ordering for
-admin previews. This follow-up implements configurable BCP-47 public content
+admin previews. Merged PR #212 implements configurable BCP-47 public content
 languages independent of admin catalogs, dynamic routes and transactional guards.
-Term translation relationships, independent importer distribution, multilingual
-source adapters, reconciliation and SQLite write retry policy remain subsequent
-changes. The WordPress importer is still bundled and optional.
+This follow-up adds bounded, cancellable retries only for busy `InTx` lock
+acquisition, process counters exposed through metrics, and moves content slug
+normalization outside the write transaction. Callback and commit replay are
+excluded. Full transaction-duration instrumentation, wider transaction audits,
+term translation relationships, independent importer distribution, multilingual
+source adapters and reconciliation remain subsequent changes. The WordPress
+importer is still bundled and optional.
 
 ## Goal
 

@@ -49,6 +49,16 @@ Infrastructure packages are importable by every module and never import a domain
 `jobs.EnqueueTx`, `settings.SetTx`, `settings.DeletePrefixTx`). The pool variants (`Record`,
 `Enqueue`, `Emit`, `Set`, `Delete`) must run after commit, or they wait on the transaction's lock.
 
+`InTx` retries only typed SQLite `SQLITE_BUSY` errors from `BeginTx`, including
+extended busy codes. It makes at most three attempts with jittered backoff
+(25–50 ms, then 50–100 ms); it never replays the callback or commit. Each
+attempt retains the existing connection busy timeout (5 seconds by default),
+so an uncancelled contended acquisition can take about 15 seconds plus backoff.
+The caller context stops backoff and remains the transaction context; it also
+controls cancellation within the SQLite driver. `SQLITE_LOCKED` and other
+errors return immediately without retries. Counters cover `InTx` acquisition
+only; direct `Exec` and manually opened transactions retain their behavior.
+
 ## Modules and boot order
 
 `kernel.BootOrder` is the canonical order. A module may import only modules earlier in the list.

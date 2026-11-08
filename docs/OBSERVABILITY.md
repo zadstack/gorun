@@ -26,6 +26,9 @@ cannot claim `/metrics`.
 | Metric | Type | Meaning |
 | --- | --- | --- |
 | `gorun_http_requests_total{code_class}` | counter | Responses since process start: `2xx` / `3xx` / `4xx` / `5xx` (includes scrapes) |
+| `gorun_db_begin_busy_total` | counter | SQLite busy errors while `db.InTx` acquires its write lock, including retry attempts |
+| `gorun_db_begin_retries_total` | counter | Additional `db.InTx` lock acquisition attempts after backoff |
+| `gorun_db_begin_exhausted_total` | counter | `db.InTx` acquisitions that fail after all three attempts; cancellation is excluded |
 | `gorun_jobs{status}` | gauge | `queued`, `running`, `failed` (queued awaiting retry), `dead`, `done` |
 | `gorun_backup_last_success_timestamp_seconds` | gauge | Unix time of newest successful **local** backup (max of `backup.schedule.last` and newest complete on-disk pair); `0` if none |
 

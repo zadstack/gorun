@@ -11,6 +11,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- SQLite `db.InTx` lock acquisition retries typed busy errors up to three attempts with cancellable jittered backoff. Transaction callbacks and commits are never replayed. The existing five-second per-attempt busy timeout is unchanged; acquisition may now take about 15 seconds under sustained contention. Prometheus counters expose busy errors, retries and exhausted acquisitions. Content slug normalization runs before taking the write lock.
+
 - Sitemaps reuse in-memory XML snapshots, regenerate in the background, and split into an index and `/sitemaps/{number}.xml` parts above 50,000 URLs or 50 MiB. Transactional domain-write invalidation and host-exclusion-aware cache keys prevent reuse after content visibility changes. Sitemap responses support ETags and conditional GET/HEAD. Permalink generation shares settings and ancestor lookups, content listings batch taxonomy assignments, and native sitemap enumeration uses indexed keyset scans.
 
 - The admin uses warm neutral surfaces and petrol actions, Classic uses cream paper and charcoal, and Serif uses white paper with deep-blue links. Saved site identities keep precedence.

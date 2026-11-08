@@ -257,6 +257,13 @@ func (s *service) save(ctx context.Context, existing *Item, in Input, opts saveO
 	}
 	keep := s.revisionsKeep(ctx)
 	ascii := s.transliterate(ctx)
+	base := Slugify(in.Slug, ascii)
+	if base == "" {
+		base = Slugify(it.Title, ascii)
+	}
+	if base == "" {
+		base = strings.ToLower(it.ID)
+	}
 	tb := s.terms()
 	txTerms, _ := tb.(TxTermBackend)
 	err = db.InTx(ctx, s.db, func(tx *sql.Tx) error {
@@ -277,13 +284,6 @@ func (s *service) save(ctx context.Context, existing *Item, in Input, opts saveO
 		}
 		if !slices.Contains(locales, it.Locale) {
 			return invalid(FieldErrors{"locale": "content.validation.locale"})
-		}
-		base := Slugify(in.Slug, ascii)
-		if base == "" {
-			base = Slugify(it.Title, ascii)
-		}
-		if base == "" {
-			base = strings.ToLower(it.ID)
 		}
 		if it.Type == "page" && it.ParentID == "" && slices.ContainsFunc(locales, func(locale string) bool { return strings.EqualFold(locale, base) }) {
 			base += "-page" // a top-level page at /en would sit where the English site is

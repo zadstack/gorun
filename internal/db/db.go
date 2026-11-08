@@ -13,8 +13,8 @@ import (
 )
 
 // maxOpenConns sizes the single connection pool. Writers serialise through
-// SQLite's lock; busy_timeout plus BEGIN IMMEDIATE (_txlock) make them wait
-// instead of failing with SQLITE_BUSY.
+// SQLite's lock; busy_timeout plus BEGIN IMMEDIATE (_txlock) let them wait
+// for competing writers. InTx additionally retries busy lock acquisition.
 const maxOpenConns = 8
 
 // dsnQuery holds the connection pragmas (applied to every pooled connection
