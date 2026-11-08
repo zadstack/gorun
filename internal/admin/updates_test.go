@@ -179,7 +179,8 @@ func TestStagedUpdateLifecycleAcrossRestartThroughAdmin(t *testing.T) {
 		t.Fatalf("%+v", st.Data)
 	}
 	_, page = s.do("GET", "/admin/system/updates", nil)
-	mustContain(t, page, `value="0.15.0"`, "A newer release is available")
+	mustContain(t, page, `value="0.15.0"`, "A newer release is available", ">Fresh</span>")
+	mustNotContain(t, page, "admin.updates.status_fresh")
 
 	resp, _ := s.post("/admin/system/updates", url.Values{"confirm": {"yes"}, "version": {"0.15.0"}})
 	if resp.StatusCode != http.StatusSeeOther {
@@ -413,5 +414,28 @@ func TestUpdateRequestValidationAndLeaseConflicts(t *testing.T) {
 	}
 	if list, _ := backup.List(s.app.Deps.Config.DataDir); len(list) != 0 {
 		t.Fatal("backup taken after verification failed")
+	}
+}
+
+func TestIncompleteCoolifySetupCannotStartManualUpdate(t *testing.T) {
+	setVersion(t, "0.14.1")
+	src := releaseIndex(t)
+	s := bootWith(t, func(c *config.Config) { withSource(src, t.TempDir())(c); c.UpdateURL = "https://coolify.example" })
+	s.login("update-setup@example.invalid", "admin", "en")
+	resp, page := s.do("GET", "/admin/system/updates", nil)
+	if resp.StatusCode != 200 {
+		t.Fatal(resp.StatusCode)
+	}
+	mustContain(t, page, `data-update-deployment-invalid`, `GORUN_UPDATE_COOLIFY_TOKEN`, `GORUN_UPDATE_COOLIFY_RESOURCE`, `disabled`)
+	resp, _ = s.post("/admin/system/updates", url.Values{"confirm": {"yes"}, "version": {"0.15.0"}})
+	if resp.StatusCode != 400 {
+		t.Fatalf("page request: %d", resp.StatusCode)
+	}
+	resp, body := s.jsonPost("/api/v1/system/update", `{"version":"0.15.0"}`)
+	if resp.StatusCode != 503 || !strings.Contains(body, "deployment_not_configured") {
+		t.Fatalf("API request: %d %s", resp.StatusCode, body)
+	}
+	if st := s.updateStatus(); st.Data.Active != nil || st.Data.Last != nil {
+		t.Fatal("incomplete provider created an operation")
 	}
 }

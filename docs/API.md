@@ -74,6 +74,7 @@ Module operations add their own codes (found by grepping `api.WriteError` / `htt
 
 | Status | Code | Returned by |
 |---|---|---|
+| 503 | `deployment_not_configured` | `POST /api/v1/system/update`: partial or invalid Coolify settings; no operation is created |
 | 400 | `invalid_name` | themes: invalid template name |
 | 409 | `conflict` | builder, content types, taxonomies, users/settings (admin), migrations: the change collides with existing state (e.g. a taken slug) |
 | 409 | `period_ended` | commerce: resuming an entitlement whose period has ended |

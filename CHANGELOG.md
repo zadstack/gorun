@@ -12,6 +12,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- System updates discover official releases by default and select native or container artifacts. An empty source opts out; custom sources remain supported. The page explains manual and Coolify activation, Compose forwards update settings, and incomplete Coolify configuration blocks requests.
 - Sitemaps reuse in-memory XML snapshots, regenerate in the background, and split into an index and `/sitemaps/{number}.xml` parts above 50,000 URLs or 50 MiB. Transactional domain-write invalidation and host-exclusion-aware cache keys prevent reuse after content visibility changes. Sitemap responses support ETags and conditional GET/HEAD. Permalink generation shares settings and ancestor lookups, content listings batch taxonomy assignments, and native sitemap enumeration uses indexed keyset scans.
 
 - The admin uses warm neutral surfaces and petrol actions, Classic uses cream paper and charcoal, and Serif uses white paper with deep-blue links. Saved site identities keep precedence.

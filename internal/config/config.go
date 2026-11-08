@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -68,9 +69,12 @@ type Config struct {
 	S3           S3                                        // [s3] / GORUN_S3_*: media in an S3-compatible bucket
 }
 
+// OfficialUpdateSourceURL is the shipped trust default; operators may override or disable it.
+const OfficialUpdateSourceURL = "https://github.com/zadstack/gorun/releases/latest/download/release-index.json"
+
 // UpdateConfig is the operator configuration of staged core updates. An
-// empty SourceURL disables requests; reads still work. Hosts and
-// credentials never come from web requests.
+// empty SourceURL disables release checks and requests; Load defaults to the
+// official index. Hosts and credentials never come from web requests.
 type UpdateConfig struct {
 	SourceURL   string   // GORUN_UPDATE_SOURCE_URL / [update] source_url: HTTPS release index (JSON)
 	SourceToken string   // GORUN_UPDATE_SOURCE_TOKEN / [update] source_token: optional bearer for the index
@@ -147,7 +151,7 @@ func load(args []string, allowGenerate bool) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	c := Config{Env: "dev", DataDir: defaultDataDir, Theme: defaultTheme}
+	c := Config{Env: "dev", DataDir: defaultDataDir, Theme: defaultTheme, Update: UpdateConfig{SourceURL: OfficialUpdateSourceURL}}
 	if v := os.Getenv("GORUN_DATA"); v != "" {
 		c.DataDir = v
 	}
@@ -162,6 +166,14 @@ func load(args []string, allowGenerate bool) (Config, error) {
 		return Config{}, err
 	}
 	applyFlags(&c, fl, set)
+	c.Update.SourceURL = strings.TrimSpace(c.Update.SourceURL)
+	c.Update.Artifact = strings.TrimSpace(c.Update.Artifact)
+	if c.Update.SourceURL == OfficialUpdateSourceURL && c.Update.Artifact == "" {
+		c.Update.Artifact = runtime.GOOS + "-" + runtime.GOARCH
+		if c.UpdateResource != "" {
+			c.Update.Artifact = "ghcr.io/zadstack/gorun"
+		}
+	}
 	if err := applyTrial(&c); err != nil {
 		return Config{}, err
 	}
@@ -346,7 +358,10 @@ func applyEnv(c *Config, secret *string) error {
 	envStr(&c.UpdateURL, "GORUN_UPDATE_COOLIFY_URL")
 	envStr(&c.UpdateToken, "GORUN_UPDATE_COOLIFY_TOKEN")
 	envStr(&c.UpdateResource, "GORUN_UPDATE_COOLIFY_RESOURCE")
-	envStr(&c.Update.SourceURL, "GORUN_UPDATE_SOURCE_URL")
+	// An explicitly empty source is the operator's opt-out from release checks.
+	if v, ok := os.LookupEnv("GORUN_UPDATE_SOURCE_URL"); ok {
+		c.Update.SourceURL = strings.TrimSpace(v)
+	}
 	envStr(&c.Update.SourceToken, "GORUN_UPDATE_SOURCE_TOKEN")
 	envStr(&c.Update.Artifact, "GORUN_UPDATE_ARTIFACT")
 	if v, ok := os.LookupEnv("GORUN_UPDATE_HEALTH_LINKS"); ok {

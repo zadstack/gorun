@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -208,5 +209,51 @@ func TestStagedUpdateConfigurationFromEnvironmentAndFile(t *testing.T) {
 	t.Setenv("GORUN_UPDATE_ACTIVATION_TIMEOUT", "soon")
 	if _, err := Load(nil); err == nil {
 		t.Fatal("invalid activation timeout accepted")
+	}
+}
+
+func TestOfficialUpdateDefaults(t *testing.T) {
+	for _, tc := range []struct{ name, resource, source, artifact string }{
+		{"binary", "", OfficialUpdateSourceURL, runtime.GOOS + "-" + runtime.GOARCH},
+		{"coolify", "resource-id", OfficialUpdateSourceURL, "ghcr.io/zadstack/gorun"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("GORUN_DATA", t.TempDir())
+			t.Setenv("GORUN_UPDATE_COOLIFY_RESOURCE", tc.resource)
+			cfg, err := Load(nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Update.SourceURL != tc.source || cfg.Update.Artifact != tc.artifact {
+				t.Fatalf("source=%q artifact=%q", cfg.Update.SourceURL, cfg.Update.Artifact)
+			}
+		})
+	}
+}
+
+func TestUpdateSourceOverridesAndOptOut(t *testing.T) {
+	for _, tc := range []struct{ name, toml, env, want, artifact string }{
+		{"custom file", "source_url = \"https://releases.example/index.json\"", "", "https://releases.example/index.json", ""},
+		{"disabled file", "source_url = \"\"", "", "", ""},
+		{"disabled env", "source_url = \"https://releases.example/index.json\"", "set-empty", "", ""},
+		{"explicit artifact", "artifact = \"custom-archive\"", "", OfficialUpdateSourceURL, "custom-archive"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			t.Setenv("GORUN_DATA", dir)
+			if err := os.WriteFile(filepath.Join(dir, "gorun.toml"), []byte("[update]\n"+tc.toml+"\n"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			if tc.env == "set-empty" {
+				t.Setenv("GORUN_UPDATE_SOURCE_URL", "")
+			}
+			cfg, err := Load(nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Update.SourceURL != tc.want || cfg.Update.Artifact != tc.artifact {
+				t.Fatalf("source=%q artifact=%q", cfg.Update.SourceURL, cfg.Update.Artifact)
+			}
+		})
 	}
 }

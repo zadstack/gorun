@@ -25,7 +25,8 @@ COPY patterns /app/patterns
 COPY --from=build --chown=65532:65532 /out/data /data
 ENV GORUN_ENV=prod \
     GORUN_DATA=/data \
-    GORUN_ADDR=:8080
+    GORUN_ADDR=:8080 \
+    GORUN_UPDATE_ARTIFACT=ghcr.io/zadstack/gorun
 VOLUME /data
 EXPOSE 8080
 USER nonroot:nonroot

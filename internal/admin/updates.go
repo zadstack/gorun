@@ -281,13 +281,21 @@ func (h *handlers) updateStatus(ctx context.Context) (UpdateStatus, error) {
 	return st, nil
 }
 
+func (h *handlers) coolifySetupInvalid() bool {
+	c := h.d.Config
+	return h.update.AdapterName() == "manual" && (c.UpdateURL != "" || c.UpdateToken != "" || c.UpdateResource != "")
+}
+
 // --- page --------------------------------------------------------------------------
 
 type updatesPage struct {
-	Status     UpdateStatus
-	Operations []update.Operation
-	Prefill    string
-	CanRequest bool
+	Status            UpdateStatus
+	Operations        []update.Operation
+	Prefill           string
+	CanRequest        bool
+	OfficialSource    bool
+	ArtifactSelector  string
+	DeploymentInvalid bool
 }
 
 func (h *handlers) updatesPage(w http.ResponseWriter, r *http.Request) {
@@ -301,7 +309,14 @@ func (h *handlers) updatesPage(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	page := updatesPage{Status: st, Operations: ops, CanRequest: st.Configured && st.Active == nil}
+	deploymentInvalid := h.coolifySetupInvalid()
+	page := updatesPage{
+		Status: st, Operations: ops,
+		CanRequest:        st.Configured && st.IsRelease && st.Active == nil && !deploymentInvalid,
+		DeploymentInvalid: deploymentInvalid,
+		OfficialSource:    h.d.Config.Update.SourceURL == config.OfficialUpdateSourceURL,
+		ArtifactSelector:  h.d.Config.Update.Artifact,
+	}
 	if st.Latest.Version != nil && st.UpdateAvailable != nil && *st.UpdateAvailable {
 		page.Prefill = *st.Latest.Version
 	}
@@ -312,7 +327,7 @@ func (h *handlers) updatesPage(w http.ResponseWriter, r *http.Request) {
 // updateDeploy starts a staged operation from the page; the lifecycle runs
 // in the background and the page shows its phases.
 func (h *handlers) updateDeploy(w http.ResponseWriter, r *http.Request) {
-	if !h.update.Configured() || r.FormValue("confirm") != "yes" {
+	if !h.update.Configured() || h.coolifySetupInvalid() || r.FormValue("confirm") != "yes" {
 		http.Error(w, "Update is not configured or confirmed", http.StatusBadRequest)
 		return
 	}
@@ -387,6 +402,10 @@ func (h *handlers) apiUpdateStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) apiUpdateRequest(w http.ResponseWriter, r *http.Request) {
+	if h.coolifySetupInvalid() {
+		api.WriteError(w, http.StatusServiceUnavailable, "deployment_not_configured", "Coolify integration is incomplete or invalid", nil)
+		return
+	}
 	var req update.Request
 	if err := api.Decode(w, r, &req); err != nil {
 		return

@@ -363,24 +363,37 @@ Production overview: [PRODUCTION.md](../docs/PRODUCTION.md).
 
 ## Optional update button in GoRun admin
 
-After manually deploying a version with **System → System updates**, the site
-owner can request subsequent deployments from that page. This integration is for
-Coolify deployments; it does not run a shell or modify the application's binary.
+The core discovers official releases in the background by default; a release check
+never deploys anything. The published Docker image selects the container artifact
+from the index. An explicitly empty `GORUN_UPDATE_SOURCE_URL` disables discovery
+and staged requests. Use a custom HTTPS index and `GORUN_UPDATE_ARTIFACT` when
+running your own releases.
 
-Configure these **server-side environment secrets** in the GoRun resource:
+For activation from **System → System updates**, configure these server-side
+settings on a **Docker Image application** using `ghcr.io/zadstack/gorun`:
 
 | Variable | Value |
 | --- | --- |
-| `GORUN_UPDATE_COOLIFY_URL` | Your trusted Coolify HTTPS origin, e.g. `https://coolify.example.com` (no path, query or credentials). |
-| `GORUN_UPDATE_COOLIFY_TOKEN` | A Coolify API token permitted to deploy the intended resource. Use the narrowest available permissions. Never place it in a browser URL or client-side configuration. |
-| `GORUN_UPDATE_COOLIFY_RESOURCE` | The single Coolify resource UUID belonging to this site. |
+| `GORUN_UPDATE_COOLIFY_URL` | Your trusted Coolify HTTPS origin (no path, query or credentials). |
+| `GORUN_UPDATE_COOLIFY_TOKEN` | A token permitted to read, update and deploy this application. Use the narrowest available permissions. |
+| `GORUN_UPDATE_COOLIFY_RESOURCE` | This site's application UUID, not a Compose service UUID. |
 
-In Coolify, first verify the repository, branch or image tag configured for that
-resource. The button deploys **that configured source**; it does not select a
-GitHub commit, promise that `main` is tested, or automatically change a pinned
-image tag. A resource pinned to an old release will remain on that release until
-you change its tag in Coolify. Keep the existing `/data` volume and secret key,
-and retain the stop-then-start strategy described above.
+Restart the application after changing its environment. Without these settings,
+activation stays **manual** and the page explains the operator's next steps.
+Partial or invalid Coolify configuration blocks requests rather than silently
+falling back to manual activation. Never put tokens in browser URLs or client-side
+configuration.
+
+**Docker Compose services and repository-built applications are not supported by
+the activation adapter.** They may check releases, but update using the manual
+procedure in §6; do not point the adapter at another application's UUID. A move to
+a Docker Image application requires a planned migration that preserves the same
+`/data` volume and secret key.
+
+The adapter verifies the Docker Image build pack before backup. Activation pins
+`docker_registry_image_name/tag` to the verified release, confirms the pin, then
+requests deployment. Keep the existing `/data` volume and site key and retain the
+stop-then-start strategy described above.
 
 The button requires the `system.update` permission, a recent password sign-in,
 CSRF validation and explicit confirmation. It starts a staged operation
@@ -392,14 +405,12 @@ substitute for an off-host backup and a separate copy of the site secrets. One
 operation owns the data directory at a time; a second request, a backup or a
 restore is refused with the owning operation until it finishes.
 
-An accepted request means **queued**, not deployed. Check progress in Coolify,
-then open GoRun System Health to verify the running version. A timeout can occur
-after Coolify accepts a request; check there before retrying. There is no
-automatic rollback, deployment polling or recovery from incompatible database
-migrations in this first integration. The admin page never exposes the API token,
-the deployment URL or upstream response bodies, and redirects are not followed.
-Without all three environment variables, the page explains setup and keeps its
-button disabled. The integration may reach an operator-selected private Coolify
-host over verified HTTPS without enabling private URL fetching elsewhere.
-
-Protocol reference: [Coolify Deploy API](https://coolify.io/docs/api/endpoints/deployments/deploy-by-tag-or-uuid).
+An accepted request means **queued**, not deployed. The serving process must
+report the expected release identity, pass health and link checks, and record
+acceptance. An activation interrupted by restart reconciles on the new process.
+If health fails, the lifecycle attempts a compatible prior artifact on the current
+data; it never restores a database backup automatically. See
+[UPGRADE.md §7](../docs/UPGRADE.md#7-staged-updates-in-app) for rollback constraints.
+The page never exposes the API token, deployment URL or upstream response bodies;
+redirects are not followed. The integration may reach an operator-selected private
+Coolify host over verified HTTPS without enabling private URL fetching elsewhere.
