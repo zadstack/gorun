@@ -139,3 +139,9 @@ func DirectPageReadAllowed(ctx context.Context, id string) bool {
 	granted, _ := ctx.Value(directPageReadKey{}).(string)
 	return id != "" && granted == id
 }
+
+// PublicExclusions returns a copy of the host restrictions used by public listings.
+// Shared caches must include these restrictions in their cache key.
+func PublicExclusions(ctx context.Context) []string {
+	return append([]string(nil), publicExclusions(ctx)...)
+}

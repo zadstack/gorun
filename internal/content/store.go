@@ -30,6 +30,11 @@ type TermBackend interface {
 	ContentIDs(ctx context.Context, taxonomy string, termSlugs []string) ([]string, error)
 }
 
+// BatchTermBackend lets listing queries load all assignments in one call.
+type BatchTermBackend interface {
+	ContentTermsBatch(context.Context, []string) (map[string]map[string][]string, error)
+}
+
 // TxTermBackend is optionally implemented by the taxonomy service so content
 // can write an item's terms inside its own save transaction.
 type TxTermBackend interface {

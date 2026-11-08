@@ -386,3 +386,40 @@ func (s *service) ContentIDs(ctx context.Context, taxonomy string, termSlugs []s
 	}
 	return out, rows.Err()
 }
+
+// ContentTermsBatch uses bounded queries for public listings and sitemap builds.
+func (s *service) ContentTermsBatch(ctx context.Context, ids []string) (map[string]map[string][]string, error) {
+	assignments := make(map[string]map[string][]string, len(ids))
+	for start := 0; start < len(ids); start += 100 {
+		chunk := ids[start:min(start+100, len(ids))]
+		args := make([]any, len(chunk))
+		for i, id := range chunk {
+			args[i] = id
+		}
+		placeholders := strings.TrimSuffix(strings.Repeat("?,", len(chunk)), ",")
+		rows, err := s.db.QueryContext(ctx, `SELECT ct.content_id,t.taxonomy,t.slug FROM content_terms ct JOIN terms t ON t.id=ct.term_id WHERE ct.content_id IN (`+placeholders+`) ORDER BY ct.content_id,t.taxonomy,t.name`, args...)
+		if err != nil {
+			return nil, err
+		}
+		err = scanTermAssignments(rows, assignments)
+		rows.Close()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return assignments, nil
+}
+
+func scanTermAssignments(rows *sql.Rows, assignments map[string]map[string][]string) error {
+	for rows.Next() {
+		var id, tax, slug string
+		if err := rows.Scan(&id, &tax, &slug); err != nil {
+			return err
+		}
+		if assignments[id] == nil {
+			assignments[id] = map[string][]string{}
+		}
+		assignments[id][tax] = append(assignments[id][tax], slug)
+	}
+	return rows.Err()
+}

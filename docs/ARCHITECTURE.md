@@ -314,6 +314,7 @@ Hooks fired by the core (from `Do`/`Apply`/`Emit` call sites under `internal/`):
 | `menus.saved` | `Emit` | menus | summary |
 | `menus.resolve_url` | `Apply` | menus, theme | a menu item whose URL is being resolved (theme subscribes to resolve content/term links) |
 | `redirects.saved` | `Emit` | redirects | summary (also after a CSV import) |
+| `seo.sitemap_batch` | `Apply` | seo | `*seo.SitemapBatch`; mutate `Context` in place to prepare generation-local permalink lookups before entry filters; entries are read-only |
 | `seo.sitemap_entry` | `Apply` | seo | one sitemap entry (theme subscribes to set `Loc` to the permalink) |
 | `theme.render.context` | `Apply` | theme | the `*theme.Context` before rendering |
 | `site.form.submitted` | `Emit` | site | the contact form submission (stored in `form_submissions` first; payload carries attachment metadata only; site subscribes and, unless `forms.notify` is false, mails it to each of `forms.recipients` (else `contact.email`, else the first active admin) with the file attached up to 8 MB; records `delivery` sent/failed/off; audited `site.form.delivered`/`site.form.failed`) |
@@ -439,3 +440,60 @@ without a dead-job alert. Provider uploads are retried with the next due
 snapshot rather than creating duplicate pairs through queue retries. Job errors
 that cannot be represented by a saved warning are generic and redacted. The API and
 form share one transactional policy writer. No new modules or boot-order changes.
+
+### Sitemap generation and caching
+
+The SEO module owns `seo_sitemap_revision`. At registration it installs triggers
+on the available content, content-type, page-access, content-relation, taxonomy,
+term, term-assignment, settings and redirect tables. These advance the revision
+inside the writer's transaction, including writes through another connection;
+rollback also rolls back invalidation. Redirect hit-counter updates do not
+invalidate snapshots. Hook subscription changes also invalidate them.
+
+Snapshots contain only encoded XML and are held in process memory. They are
+rebuilt after a restart. `seo.sitemap_refresh` checks every 30 seconds and warms
+changed or expired snapshots; unchanged snapshots expire after 15 minutes to
+bound staleness for filters depending on external state. Generation uses an
+anonymous context containing only trusted public content exclusions. Those
+exclusions are part of the cache key, so platform page restrictions cannot reuse
+an unrestricted sitemap. Concurrent callers for the same revision and scope
+share one background build, bounded to three minutes. A cold or invalidated
+request waits for that build and may cancel its wait without cancelling other
+callers. A generation whose revision changes before publication is discarded;
+there is no stale fallback after invalidation. Entry-filter errors also fail the
+generation instead of caching fallback URLs. The HTTP handler responds 503
+with `Retry-After: 30` if generation fails.
+
+`/sitemap.xml` stays a URL set for small sites. Larger sites receive an index
+whose `/sitemaps/{number}.xml` parts each contain at most 50,000 URLs and 50 MiB
+of uncompressed XML. The optional `seo.SitemapDocuments` capability supplies
+parts, ETags and generation time without expanding `seo.Service`. Part numbers
+refer to the current generation; they are not immutable historical snapshots.
+Responses use `Cache-Control: no-cache`; date validators are omitted during the
+first second after generation to avoid same-second false 304 responses. Sitemap
+GET and HEAD use the same documents and validators.
+
+Redirect resolution loads the redirect table in batches for each generation,
+including changes from other connections without waiting for its request-cache
+TTL. `/sitemaps` is reserved from redirects and parts remain reachable under
+legacy maintenance mode, like the root sitemap.
+
+The native content service implements `content.PublishedScanner`, a 100-item
+keyset scan ordered by ID, backed by `content_public_cursor`. It applies public
+visibility and host restrictions without repeated counts, sorts or offsets.
+Alternate content services retain the paged query fallback.
+
+The theme's batch filter caches front-page settings, locale, front translation
+group and ancestor lookups for one generation. Content query pages use the
+optional `content.BatchTermBackend` capability to load assignments in bounded
+batches rather than querying once per result. Alternate backends without that
+capability keep the existing per-item fallback.
+
+Reproduce the synthetic 8,000-entry XML cold/cached comparison with:
+
+```sh
+go test ./internal/seo -run '^$' -bench BenchmarkSitemapSnapshots -benchmem
+```
+
+This benchmark isolates snapshot reuse; it does not measure a deployed site's
+SQLite query plan, network latency or WordPress migration throughput.
