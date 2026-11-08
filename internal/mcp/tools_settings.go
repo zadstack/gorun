@@ -19,7 +19,7 @@ const maxSettingsPerCall = 20
 
 // adminOnlySettings are General settings MCP never changes (they can take
 // the site offline or reroute it).
-var adminOnlySettings = map[string]bool{"site.base_url": true, "site.theme": true, "site.front_page": true}
+var adminOnlySettings = map[string]bool{"site.content_locales": true, "site.base_url": true, "site.theme": true, "site.front_page": true}
 
 // settingValidators is the exact allowlist: the admin General page (minus
 // adminOnlySettings) and the SEO page, validated by the very functions
@@ -126,6 +126,13 @@ func settingsTool(d *kernel.Deps) kernel.MCPTool {
 			}
 			slices.Sort(keys)
 			err := db.InTx(ctx, d.DB, func(tx *sql.Tx) error {
+				localeVals := map[string]any{}
+				if locale, ok := vals["site.locale"]; ok {
+					localeVals["site.locale"] = locale
+				}
+				if err := admin.ValidateContentLocaleSettings(ctx, tx, localeVals); err != nil {
+					return err
+				}
 				for _, k := range keys {
 					var v any = vals[k]
 					if k == "site.posts_per_page" {
@@ -138,6 +145,10 @@ func settingsTool(d *kernel.Deps) kernel.MCPTool {
 				return nil
 			})
 			if err != nil {
+				var se *admin.SettingError
+				if errors.As(err, &se) {
+					return nil, invalid("invalid content locale settings", map[string]string{se.Key: se.Code})
+				}
 				return nil, err
 			}
 			d.Audit.Record(ctx, "settings.update", "settings", "", map[string][]string{"keys": keys})

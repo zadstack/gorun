@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/zadstack/gorun/internal/content"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/menus"
 	"github.com/zadstack/gorun/internal/taxonomy"
 )
@@ -38,6 +39,11 @@ type SitemapEntry struct {
 // terms of public taxonomies, each with its absolute Loc after the
 // FilterSitemapEntry hook. The home page has no Item, Term or Type.
 func (s *service) Entries(ctx context.Context) ([]SitemapEntry, error) {
+	locales := i18n.ContentLocales(ctx, nil)
+	if s.settings != nil {
+		locales = i18n.ContentLocales(ctx, s.settings)
+	}
+	ctx = i18n.WithContentLocales(ctx, locales)
 	base := s.base(ctx)
 	out := []SitemapEntry{{Loc: base + "/"}}
 	seen := map[string]bool{base + "/": true}
@@ -175,10 +181,7 @@ func (s *service) publicHome(ctx context.Context) bool {
 	if err != nil {
 		return true
 	}
-	locale := s.setting(ctx, "site.locale")
-	if locale == "" {
-		locale = "ar"
-	}
+	locale := i18n.ContentLocale(ctx, s.settings)
 	if it.Locale != "" && it.Locale != locale {
 		members, err := svc.Translations(ctx, id)
 		if err != nil {

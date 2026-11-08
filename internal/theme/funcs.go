@@ -314,12 +314,12 @@ func (f *funcs) localized(p string) string {
 	if !localeRoutes[path] {
 		return p
 	}
-	return i18n.LocalizePath(f.st.tc.Locale, f.st.tc.Site.Locale, p)
+	return i18n.LocalizePath(f.st.tc.Locale, f.st.tc.Site.Locale, p, i18n.ContentLocales(f.st.ctx, f.s.d.Settings))
 }
 
 // localizedTerm puts a term archive under the page's locale prefix (term lists exist in every locale).
 func (f *funcs) localizedTerm(p string) string {
-	return i18n.LocalizePath(f.st.tc.Locale, f.st.tc.Site.Locale, p)
+	return i18n.LocalizePath(f.st.tc.Locale, f.st.tc.Site.Locale, p, i18n.ContentLocales(f.st.ctx, f.s.d.Settings))
 }
 
 // asset returns /patterns/<slug>/assets/<p>?v=<mtime> when the active

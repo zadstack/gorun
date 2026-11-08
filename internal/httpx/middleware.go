@@ -124,7 +124,7 @@ var secretPathPrefixes = []string{"/auth/magic/"}
 // Locale-prefixed public paths (/en/auth/magic/…, /ar/auth/magic/…) are
 // treated the same as the unprefixed credential URL.
 func RedactPath(p string) string {
-	loc, rest := i18n.SplitLocalePath(p)
+	loc, rest := i18n.SplitLanguagePath(p)
 	for _, prefix := range secretPathPrefixes {
 		if strings.HasPrefix(rest, prefix) {
 			if loc == "" {

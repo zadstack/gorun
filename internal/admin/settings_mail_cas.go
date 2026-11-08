@@ -83,6 +83,9 @@ func (h *handlers) saveMailSettings(ctx context.Context, vals map[string]any, ex
 				return errGeneralConflict
 			}
 		}
+		if err := ValidateContentLocaleSettings(ctx, tx, vals); err != nil {
+			return err
+		}
 		for _, k := range keys {
 			if err := h.d.Settings.SetTx(ctx, tx, k, vals[k]); err != nil {
 				return err

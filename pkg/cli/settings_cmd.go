@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/config"
+	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/seo"
 	"github.com/zadstack/gorun/internal/settings/settingsmod"
@@ -84,13 +87,31 @@ func settingsCmd(args []string, out io.Writer) error {
 		}
 		fmt.Fprintln(out, string(v))
 	case "set":
-		if err := st.Set(ctx, key, value); err != nil {
+		if err := db.InTx(ctx, app.Deps.DB, func(tx *sql.Tx) error {
+			vals := map[string]any{key: value}
+			if err := admin.ValidateContentLocaleSettings(ctx, tx, vals); err != nil {
+				return err
+			}
+			return st.SetTx(ctx, tx, key, vals[key])
+		}); err != nil {
 			return err
 		}
 		app.Deps.Audit.Record(ctx, "settings.update", "settings", "", map[string]any{"keys": []string{key}, "via": "cli"})
 		fmt.Fprintf(out, "set %s\n", key)
 	case "unset":
-		if err := st.Delete(ctx, key); err != nil {
+		if err := db.InTx(ctx, app.Deps.DB, func(tx *sql.Tx) error {
+			vals := map[string]any{}
+			switch key {
+			case i18n.ContentLocalesSetting:
+				vals[key] = []string{"ar", "en"}
+			case "site.locale":
+				vals[key] = i18n.ContentLocales(ctx, st)[0]
+			}
+			if err := admin.ValidateContentLocaleSettings(ctx, tx, vals); err != nil {
+				return err
+			}
+			return st.DeleteTx(ctx, tx, key)
+		}); err != nil {
 			return err
 		}
 		app.Deps.Audit.Record(ctx, "settings.update", "settings", "", map[string]any{"keys": []string{key}, "via": "cli", "unset": true})
@@ -124,6 +145,16 @@ func cliSettingValue(key, raw string) (any, error) {
 		return v, nil
 	}
 	switch key {
+	case i18n.ContentLocalesSetting:
+		var tags []string
+		if json.Unmarshal([]byte(raw), &tags) != nil {
+			return nil, invalid(errors.New("a JSON array of language tags"))
+		}
+		locales, err := i18n.ParseContentLocales(tags)
+		if err != nil {
+			return nil, invalid(err)
+		}
+		return locales, nil
 	case "site.title", "site.tagline", "site.locale", "site.timezone", "site.base_url", "contact.email":
 		v, err := admin.ValidateGeneralSetting(key, text)
 		if err != nil {

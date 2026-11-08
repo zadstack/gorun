@@ -400,6 +400,7 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 
 	return template.FuncMap{
 		"t":            translate,
+		"localeName":   i18n.LocaleName,
 		"sidebarBrand": func() SidebarBrand { return t.sidebarBrand(ctx) },
 		"locale":       func() string { return locale },
 		"dir": func() string {

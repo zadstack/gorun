@@ -146,7 +146,12 @@ func (h *handlers) workspaceSave(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if strings.TrimSpace(h.d.Settings.GetString(ctx, "site.locale", "")) == "" {
-			_ = h.d.Settings.Set(ctx, "site.locale", i18n.Locale(ctx))
+			locale := i18n.Locale(ctx)
+			var configured []string
+			if h.d.Settings.Get(ctx, i18n.ContentLocalesSetting, &configured) == nil {
+				locale = i18n.ContentLocale(ctx, h.d.Settings)
+			}
+			_ = h.d.Settings.Set(ctx, "site.locale", locale)
 		}
 		h.d.Audit.Record(ctx, "settings.identity", "settings", "site.title", map[string]string{"source": "workspace"})
 	}

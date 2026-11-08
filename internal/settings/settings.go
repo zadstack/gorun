@@ -236,8 +236,15 @@ func (s *Store) All(ctx context.Context, prefix string) (map[string]json.RawMess
 
 // Delete removes key; a missing key is not an error. Like Set, never call
 // it inside db.InTx.
-func (s *Store) Delete(ctx context.Context, key string) error {
-	if _, err := s.db.ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, key); err != nil {
+func (s *Store) Delete(ctx context.Context, key string) error { return s.delete(ctx, s.db, key) }
+
+// DeleteTx removes exactly one key on the transaction's own connection.
+func (s *Store) DeleteTx(ctx context.Context, tx *sql.Tx, key string) error {
+	return s.delete(ctx, tx, key)
+}
+
+func (s *Store) delete(ctx context.Context, ex execer, key string) error {
+	if _, err := ex.ExecContext(ctx, `DELETE FROM settings WHERE key = ?`, key); err != nil {
 		return fmt.Errorf("settings: delete %s: %w", key, err)
 	}
 	s.Invalidate()
@@ -264,5 +271,22 @@ func (s *Store) deletePrefix(ctx context.Context, ex execer, prefix string) erro
 		return fmt.Errorf("settings: delete prefix %q: %w", prefix, err)
 	}
 	s.Invalidate()
+	return nil
+}
+
+// GetTx reads settings on the transaction's own connection, including its
+// uncommitted writes. It bypasses the process memo and revision reads.
+func GetTx(ctx context.Context, tx *sql.Tx, key string, out any) error {
+	var raw string
+	err := tx.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key=?`, key).Scan(&raw)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("settings: get %s: %w", key, err)
+	}
+	if err := json.Unmarshal([]byte(raw), out); err != nil {
+		return fmt.Errorf("settings: decode %s: %w", key, err)
+	}
 	return nil
 }

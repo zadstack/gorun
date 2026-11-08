@@ -28,7 +28,7 @@ func formSourcePath(raw string) string {
 	if !localPath(p) || strings.ContainsAny(p, "\\\x00\r\n") {
 		return ""
 	}
-	_, rest := i18n.SplitLocalePath(p)
+	_, rest := i18n.SplitLanguagePath(p)
 	for _, prefix := range []string{"/admin", "/api", "/forms", "/start"} {
 		if rest == prefix || strings.HasPrefix(rest, prefix+"/") {
 			return ""
@@ -89,7 +89,7 @@ func (h *handlers) contactSources(ctx context.Context) ([]formSource, error) {
 			if path == "" {
 				continue
 			}
-			_, routePath := i18n.SplitLocalePath(path)
+			_, routePath := i18n.SplitLanguagePath(path)
 			if it.Type == "page" && routePath != "/" {
 				parent := it.ParentID
 				valid := true
@@ -135,9 +135,9 @@ func resolveFormSource(raw string, sources []formSource) formSource {
 }
 func (h *handlers) intakeSources(ctx context.Context, enabled bool) []formSource {
 	out := []formSource{}
-	for _, loc := range i18n.Supported {
+	for _, loc := range i18n.ContentLocales(ctx, h.d.Settings) {
 		for _, kind := range []string{"incident", "follow-up"} {
-			out = append(out, formSource{Path: i18n.LocalizePath(loc, h.siteLocaleOf(ctx), "/reports/"+kind), Locale: loc, Kind: kind, Enabled: enabled})
+			out = append(out, formSource{Path: i18n.LocalizePath(loc, h.siteLocaleOf(ctx), "/reports/"+kind, i18n.ContentLocales(ctx, h.d.Settings)), Locale: loc, Kind: kind, Enabled: enabled})
 		}
 	}
 	return out

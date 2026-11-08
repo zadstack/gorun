@@ -41,7 +41,7 @@ type generalPage struct {
 func (h *handlers) currentGeneral(r *http.Request) generalInput {
 	ctx := r.Context()
 	get := func(k, def string) string { return h.d.Settings.GetString(ctx, k, def) }
-	return generalInput{Title: get("site.title", ""), Tagline: get("site.tagline", ""), Locale: get("site.locale", i18n.DefaultLocale),
+	return generalInput{ContentLocales: strings.Join(i18n.ContentLocales(ctx, h.d.Settings), ", "), Title: get("site.title", ""), Tagline: get("site.tagline", ""), Locale: i18n.ContentLocale(ctx, h.d.Settings),
 		Timezone: get("site.timezone", "UTC"), BaseURL: get("site.base_url", h.d.Config.BaseURL),
 		Theme: get("site.theme", h.d.Config.Theme), FrontPage: get("site.front_page", ""),
 		Logo: get("site.logo", ""), LogoDark: get("site.logo_dark", ""), LogoLight: get("site.logo_light", ""), Icon: get("site.icon", ""),
@@ -72,7 +72,7 @@ func (h *handlers) renderGeneral(w http.ResponseWriter, r *http.Request, status 
 	}
 	_, hasMedia := h.mediaService()
 	canPick := hasMedia && auth.Can(r.Context(), "media.upload")
-	data := generalPage{EditToken: token, Form: form, Fields: fields, Locales: i18n.Supported, Timezones: commonTimezones, CanPickMedia: canPick,
+	data := generalPage{EditToken: token, Form: form, Fields: fields, Locales: i18n.ContentLocales(r.Context(), h.d.Settings), Timezones: commonTimezones, CanPickMedia: canPick,
 		Logo:      mediaSlot{Name: "logo", ID: "s-logo", Value: form.Logo, CanPick: canPick},
 		LogoDark:  mediaSlot{Name: "logo_dark", ID: "s-logo-dark", Value: form.LogoDark, CanPick: canPick},
 		LogoLight: mediaSlot{Name: "logo_light", ID: "s-logo-light", Value: form.LogoLight, CanPick: canPick},
@@ -104,6 +104,9 @@ func (h *handlers) settingsGeneralSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vals, fields := h.validateGeneral(r.Context(), in)
+	if _, supplied := r.PostForm["content_locales"]; supplied && strings.TrimSpace(in.ContentLocales) == "" {
+		fields["content_locales"] = "admin.settings.error_content_locales"
+	}
 	if len(fields) > 0 {
 		h.renderGeneral(w, r, http.StatusUnprocessableEntity, in, fields)
 		return
@@ -114,6 +117,11 @@ func (h *handlers) settingsGeneralSave(w http.ResponseWriter, r *http.Request) {
 		expected = &v
 	}
 	if err := h.saveSettingsGuarded(r.Context(), vals, expected); err != nil {
+		var settingErr *SettingError
+		if errors.As(err, &settingErr) {
+			h.renderGeneral(w, r, http.StatusUnprocessableEntity, in, map[string]string{strings.TrimPrefix(settingErr.Key, "site."): settingErr.Code})
+			return
+		}
 		if errors.Is(err, errGeneralConflict) {
 			h.renderGeneral(w, r, http.StatusConflict, in, map[string]string{"conflict": "settingscas.conflict"})
 			return

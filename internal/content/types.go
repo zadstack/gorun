@@ -9,9 +9,11 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/settings"
 )
 
 // Field types (spec §3).
@@ -155,6 +157,17 @@ func (s *service) SaveType(ctx context.Context, t Type) error {
 	t.UpdatedAt = now
 	enc := func(v any) string { b, _ := json.Marshal(v); return string(b) }
 	err = db.InTx(ctx, s.db, func(tx *sql.Tx) error {
+		if t.Public {
+			locales, err := settings.ContentLocalesTx(ctx, tx)
+			if err != nil {
+				return err
+			}
+			for _, locale := range locales {
+				if strings.EqualFold(t.Slug, locale) || (t.HasArchive && strings.EqualFold(t.ArchiveSlug, locale)) {
+					return invalid(FieldErrors{"slug": "content.types.error_locale_route"})
+				}
+			}
+		}
 		_, err := tx.ExecContext(ctx, `INSERT INTO content_types (`+typeColumns+`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 			ON CONFLICT (slug) DO UPDATE SET name_json=excluded.name_json, singular_json=excluded.singular_json,
 			plural_json=excluded.plural_json, icon=excluded.icon, public=excluded.public, has_archive=excluded.has_archive,

@@ -141,6 +141,8 @@ func TestRedactPath(t *testing.T) {
 		"/auth/magic/abcDEF123":    "/auth/magic/…",
 		"/auth/magic/":             "/auth/magic/…",
 		"/en/auth/magic/abcDEF123": "/en/auth/magic/…",
+		"/fr/auth/magic/secret":    "/fr/auth/magic/…",
+		"/pt-BR/auth/magic/secret": "/pt-BR/auth/magic/…",
 		"/ar/auth/magic/tok":       "/ar/auth/magic/…",
 		"/admin/content/01ABC":     "/admin/content/01ABC",
 		"/auth/magicians/abc":      "/auth/magicians/abc",

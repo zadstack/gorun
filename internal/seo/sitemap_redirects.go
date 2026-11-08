@@ -37,7 +37,7 @@ func (s *service) finalSitemapEntries(ctx context.Context, base string, entries 
 			declared[sitemapPath(address.Path)] = entry
 		}
 	}
-	listings := sitemapListingLocales(entries)
+	listings := sitemapListingLocales(ctx, entries)
 	final := make([]SitemapEntry, 0, len(entries))
 	seen := map[string]bool{}
 	for _, entry := range entries {
@@ -45,7 +45,7 @@ func (s *service) finalSitemapEntries(ctx context.Context, base string, entries 
 		if address == nil {
 			continue
 		}
-		if !publicSitemapDestination(address, declared, listings) {
+		if !publicSitemapDestination(address, declared, listings, i18n.ContentLocales(ctx, s.settings)) {
 			continue
 		}
 		address.Fragment, address.RawFragment = "", ""
@@ -110,7 +110,7 @@ type sitemapListing struct{ taxonomy, slug, locale string }
 
 // Published indexable items already loaded for the sitemap also identify the
 // locales with public listing content; no per-term database queries are needed.
-func sitemapListingLocales(entries []SitemapEntry) map[sitemapListing]bool {
+func sitemapListingLocales(ctx context.Context, entries []SitemapEntry) map[sitemapListing]bool {
 	listings := map[sitemapListing]bool{}
 	for _, entry := range entries {
 		if entry.Item == nil {
@@ -118,7 +118,7 @@ func sitemapListingLocales(entries []SitemapEntry) map[sitemapListing]bool {
 		}
 		locales := []string{entry.Item.Locale}
 		if entry.Item.Locale == "" {
-			locales = i18n.Supported
+			locales = i18n.ContentLocales(ctx, nil)
 		}
 		for _, locale := range locales {
 			listings[sitemapListing{slug: entry.Item.Type, locale: locale}] = true
@@ -132,11 +132,11 @@ func sitemapListingLocales(entries []SitemapEntry) map[sitemapListing]bool {
 	return listings
 }
 
-func publicSitemapDestination(address *url.URL, declared map[string]SitemapEntry, listings map[sitemapListing]bool) bool {
+func publicSitemapDestination(address *url.URL, declared map[string]SitemapEntry, listings map[sitemapListing]bool, locales []string) bool {
 	if _, known := declared[sitemapPath(address.Path)]; known {
 		return true
 	}
-	locale, path := i18n.SplitLocalePath(address.Path)
+	locale, path := i18n.SplitLocalePath(address.Path, locales)
 	if locale == "" {
 		return false
 	}

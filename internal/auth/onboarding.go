@@ -114,6 +114,7 @@ func (h *handlers) onboardingSubmit(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
+	siteLocale := h.setupSiteLocale(r.Context(), page.Locale)
 	err = db.InTx(r.Context(), h.deps.DB, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(r.Context(), `UPDATE users SET email = ?, name = ?, password_hash = ?, locale = ?, onboarding_required = 0, updated_at = ? WHERE id = ? AND onboarding_required = 1 AND password_hash = ? AND status = 'active' AND role = 'admin' AND EXISTS (SELECT 1 FROM sessions WHERE sessions.id = ? AND sessions.user_id = users.id AND sessions.expires_at > ?)`, page.Email, page.Name, hash, page.Locale, db.Now(), u.ID, previousHash, hashToken(principalFrom(r.Context()).token), db.Now())
 		if err != nil {
@@ -129,7 +130,7 @@ func (h *handlers) onboardingSubmit(w http.ResponseWriter, r *http.Request) {
 		if n != 1 {
 			return ErrSetupDone
 		}
-		for key, value := range map[string]string{"site.title": page.Title, "site.locale": page.Locale} {
+		for key, value := range map[string]string{"site.title": page.Title, "site.locale": siteLocale} {
 			if err := h.deps.Settings.SetTx(r.Context(), tx, key, value); err != nil {
 				return err
 			}

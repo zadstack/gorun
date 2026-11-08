@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/sha256"
 	"crypto/subtle"
 	"database/sql"
@@ -117,13 +118,14 @@ func (h *handlers) setupSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var u *User
+	siteLocale := h.setupSiteLocale(r.Context(), locale)
 	err := db.InTx(r.Context(), h.deps.DB, func(tx *sql.Tx) error {
 		created, err := h.svc.createFirstAdminTx(r.Context(), tx, f.Email, f.Name, f.Password, locale)
 		if err != nil {
 			return err
 		}
 		u = created
-		for key, value := range map[string]string{"site.title": title, "site.tagline": tagline, "site.locale": locale} {
+		for key, value := range map[string]string{"site.title": title, "site.tagline": tagline, "site.locale": siteLocale} {
 			if err := h.deps.Settings.SetTx(r.Context(), tx, key, value); err != nil {
 				return err
 			}
@@ -162,4 +164,14 @@ func urlPath(raw string) (string, error) {
 		return u.Path + "?" + u.RawQuery, nil
 	}
 	return u.Path, nil
+}
+
+// An already-configured public language is independent of the first admin's
+// interface language. Fresh legacy setup keeps its original language choice.
+func (h *handlers) setupSiteLocale(ctx context.Context, adminLocale string) string {
+	var configured []string
+	if h.deps.Settings.Get(ctx, i18n.ContentLocalesSetting, &configured) == nil {
+		return i18n.ContentLocale(ctx, h.deps.Settings)
+	}
+	return adminLocale
 }
