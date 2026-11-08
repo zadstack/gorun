@@ -18,7 +18,9 @@ import (
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/config"
+	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/seo"
 	"github.com/zadstack/gorun/internal/settings/settingsmod"
 	"github.com/zadstack/gorun/internal/theme/fake"
 )
@@ -210,4 +212,15 @@ func (e *env) login(c *client, email, role string) string {
 		e.t.Fatalf("no csrf meta:\n%s", page)
 	}
 	return m[1]
+}
+
+func registerSEO(t testing.TB, d *kernel.Deps) {
+	t.Helper()
+	mod := seo.New()
+	if err := db.Migrate(context.Background(), d.DB, mod.Name(), mod.Migrations()); err != nil {
+		t.Fatal(err)
+	}
+	if err := mod.Register(d); err != nil {
+		t.Fatal(err)
+	}
 }

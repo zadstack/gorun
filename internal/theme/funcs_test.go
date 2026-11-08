@@ -173,9 +173,7 @@ func TestSEOAppliesSiteTitleTemplateOnce(t *testing.T) {
 	writeTheme(t, root, "default", "", baseTheme(map[string]string{"templates/page.html": `{{seo .}}`, "templates/archive.html": `{{seo .}}`}))
 	e := newEnv(t, root)
 	e.setting(SettingTitle, "Example Co")
-	if err := seo.New().Register(e.app.Deps); err != nil {
-		t.Fatal(err)
-	}
+	registerSEO(t, e.app.Deps)
 	page := e.fake.Content.Add(content.Item{Type: "page", Slug: "pricing", Title: "الباقات والأسعار", Status: "published"})
 	render := func(tc *Context, req kernel.KindRequest, want string) {
 		t.Helper()

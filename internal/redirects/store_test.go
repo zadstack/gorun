@@ -289,14 +289,14 @@ func TestRedirectReservedPrefixes(t *testing.T) {
 	ctx := context.Background()
 	for _, p := range []string{"/admin", "/admin/", "/Admin/users", "/api/v1/x", "/mcp", "/auth/magic/x", "/webhooks/stripe",
 		"/media/2026/a.png", "/static/admin/app.css", "/checkout/pro", "/account", "/account/open/1", "/start", "/start/login",
-		"/healthz", "/readyz", "/metrics"} {
+		"/healthz", "/readyz", "/metrics", "/sitemaps", "/sitemaps/1.xml"} {
 		_, err := s.Save(ctx, Redirect{FromPath: p, ToURL: "/elsewhere", Enabled: true})
 		var ve *ValidationError
 		if !errors.As(err, &ve) || ve.Fields["from_path"] != "redirects.error.from_reserved" {
 			t.Errorf("%s: want from_reserved, got %v", p, err)
 		}
 	}
-	for _, p := range []string{"/administration", "/my-account", "/apis", "/accounting/x", "/media-kit"} {
+	for _, p := range []string{"/administration", "/my-account", "/apis", "/accounting/x", "/media-kit", "/sitemaps-guide"} {
 		if _, err := s.Save(ctx, Redirect{FromPath: p, ToURL: "/elsewhere", Enabled: true}); err != nil {
 			t.Errorf("%s must be allowed: %v", p, err)
 		}

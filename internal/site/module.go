@@ -71,6 +71,7 @@ func (*Module) Register(d *kernel.Deps) error {
 		r.Head(pattern, fn)
 	}
 	get(pub, "/sitemap.xml", h.sitemap)
+	get(pub, `/sitemaps/{part:[1-9][0-9]*\.xml}`, h.sitemap)
 	get(pub, "/robots.txt", h.robots)
 	get(pub, "/themes/{slug}/assets/*", h.asset)
 	get(pub, "/site/identity.css", h.identityCSS)

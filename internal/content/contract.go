@@ -196,3 +196,11 @@ var ErrNotFound = errors.New("content: not found")
 type ValidationError struct {
 	Fields FieldErrors `json:"fields"`
 }
+
+// PublishedScanner is an optional keyset reader for public enumeration. It
+// returns up to 100 published, publicly readable items after ID, ordered by ID.
+// An empty afterID starts the scan. Callers stop when fewer than 100 arrive.
+// It retains host exclusions and term assignments and does not compute a total.
+type PublishedScanner interface {
+	PublishedAfter(ctx context.Context, typeSlug, afterID string) ([]Item, error)
+}
