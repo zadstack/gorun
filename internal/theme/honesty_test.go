@@ -9,7 +9,6 @@ import (
 
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/kernel"
-	"github.com/zadstack/gorun/internal/seo"
 )
 
 const emDash = '\u2014'
@@ -58,9 +57,7 @@ func TestCatalogHomeHasOGAndIsIndexable(t *testing.T) {
 	for _, slug := range []string{"default", "business", "magazine", "portfolio", "docs"} {
 		t.Run(slug, func(t *testing.T) {
 			e := newEnv(t, "../../themes", func(c *config.Config) { c.Theme = slug })
-			if err := seo.New().Register(e.app.Deps); err != nil {
-				t.Fatal(err)
-			}
+			registerSEO(t, e.app.Deps)
 			e.setting(SettingTitle, "GoRun Demo")
 			e.setting(SettingTagline, "A sensible demo site")
 			rec, err := e.render(kernel.KindRequest{Kind: KindHome}, nil)

@@ -79,6 +79,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 	}
 	d.Services.Set(kernel.ServiceTheme, Service(m.svc))
 	d.Hooks.Filter(HookMenuResolveURL, 10, m.svc.links.resolveMenuURL)
+	d.Hooks.Filter(seo.FilterSitemapBatch, 10, m.svc.links.sitemapBatch)
 	d.Hooks.Filter(seo.FilterSitemapEntry, 10, m.svc.links.sitemapEntry)
 	d.Perms.Declare(PermManage, map[string]string{"en": "Manage themes", "ar": "إدارة القوالب"})
 	registerAdmin(d, m.svc)

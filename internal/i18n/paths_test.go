@@ -12,7 +12,7 @@ func TestLocalePaths(t *testing.T) {
 		}
 	}
 	for _, c := range []struct{ p, loc, rest string }{
-		{"/en/post/x", "en", "/post/x"}, {"/en", "en", "/"}, {"/en/", "en", "/"}, {"/english", "", "/english"}, {"/", "", "/"},
+		{"/en/post/x", "en", "/post/x"}, {"/en", "en", "/"}, {"/en/", "en", "/"}, {"/english", "", "/english"}, {"/eng", "", "/eng"}, {"/", "", "/"},
 	} {
 		if loc, rest := SplitLocalePath(c.p); loc != c.loc || rest != c.rest {
 			t.Errorf("SplitLocalePath(%q) = %q %q", c.p, loc, rest)

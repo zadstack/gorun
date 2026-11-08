@@ -119,8 +119,9 @@ guessing missing values. It contains:
   when the storage URL cannot be published), `rendered` (the thumbnail variant themes print in
   headers), `media_id`, `mime` and `variants`. Nothing is invented: a missing setting is
   `not_configured`, a dangling media id is `media_not_found` and does not fall through to the theme.
-- `languages`: default `site.locale` (existing fallback `ar`), direction, and locales accepted by the
-  running `i18n.Supported` registry. Supported locales do not promise every page has a translation.
+- `languages`: default `site.locale` (the first configured content language when unset), direction,
+  public `supported` locales from `site.content_locales` (legacy default `ar`, `en`), and separate
+  `admin_supported` interface catalogs (`ar`, `en`). Supported locales do not promise every page has a translation.
 - `appearance`: active theme identity; `colors` and `fonts` are the **effective** values after site
   identity settings, each with its source; `declared` keeps the theme's own declarations; `overrides`
   lists every effective value a setting supplied together with the declared value it replaced;
@@ -355,8 +356,11 @@ previously assumed the service-level `Input` was the partial REST contract.
 ## Content create and PATCH semantics
 
 Creation requires `type`; title and other writable fields default when omitted (custom content types
-can still require their own fields). Omitted `locale` uses the request/admin content locale when the
-request carries one (admin session), otherwise `site.locale`. `PATCH /content/{id}` merges over the current writable state.
+can still require their own fields). On a site with explicit `site.content_locales`, omitted `locale`
+uses the public `site.locale`, independently of the admin interface language. Legacy sites without
+that setting retain request/admin-locale defaults, falling back to `site.locale` without a request
+locale. Explicit locale tags are canonicalized (for example `pt-br` becomes `pt-BR`) and must be
+configured. `PATCH /content/{id}` merges over the current writable state.
 Unknown keys are ignored by the current content decoder. This endpoint has **no CAS/expected-version
 contract**; a load-modify-write can overwrite an intervening edit. Builder endpoints provide CAS separately.
 
@@ -894,3 +898,42 @@ which callers should inspect rather than assuming every image has every size.
 `PATCH /api/v1/media/{id}` changes metadata only: omitted/null fields are retained,
 while an explicit empty string clears the corresponding field. MCP `get_media`
 exposes the same media object; `update_media` uses the approval pipeline.
+
+## Public content language configuration
+
+`GET /api/v1/settings` includes `site.content_locales` as a JSON array. Change it
+through Settings → General or the existing settings PATCH operation
+(`settings.manage`, normal API authentication and audit rules). The language list
+and public default can be changed atomically:
+
+```json
+{"site.content_locales":["ar","en","fr","pt-BR"],"site.locale":"fr"}
+```
+
+Choose 1–32 distinct canonicalizable BCP-47 tags, at most 63 bytes each. Invalid,
+empty or duplicate lists return 422. The default must belong to the list.
+Removing a language used by content (including drafts/trash) or menus is refused.
+New language prefixes must not collide with existing root pages, public content
+or taxonomy types, archives, or reserved application paths. Rename a conflicting
+route before enabling its language tag. Content and menu saves recheck language
+membership inside their write transaction; public type/taxonomy saves also
+respect prefix reservations.
+
+Language changes take effect without restarting. The default language is
+unprefixed; other configured languages use their complete canonical tag, such
+as `/pt-BR/post/example`. Noncanonical case variants redirect to the canonical
+prefix. Admin user languages and catalog negotiation remain Arabic/English.
+Theme strings without a translated catalog retain their existing fallback;
+configuring a language does not translate theme copy or create translations.
+
+The recovery CLI uses the same guards. Add a language before selecting it as the
+default, for example:
+
+```sh
+gorun settings set site.content_locales '["ar","en","fr","pt-BR"]'
+gorun settings set site.locale fr
+```
+
+Unsetting the language list restores the legacy `ar`, `en` configuration and is
+refused if it would orphan a default, content or menu language. Unrelated settings
+PATCH requests do not opt legacy sites into the new defaulting policy.

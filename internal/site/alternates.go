@@ -19,7 +19,7 @@ func (h *handlers) alternates(r *http.Request, tc *theme.Context) []theme.Altern
 	site := h.siteLocaleOf(ctx)
 	var out []theme.Alternate
 	add := func(loc, path string) {
-		out = append(out, theme.Alternate{Locale: loc, Label: i18n.NativeNames[loc], URL: base + path})
+		out = append(out, theme.Alternate{Locale: loc, Label: i18n.LocaleName(loc), URL: base + path})
 	}
 	if it := tc.Content; it != nil {
 		svc, ok := h.content()
@@ -42,8 +42,8 @@ func (h *handlers) alternates(r *http.Request, tc *theme.Context) []theme.Altern
 		if q := r.URL.Query().Get("q"); q != "" {
 			path += "?" + url.Values{"q": {q}}.Encode()
 		}
-		for _, loc := range i18n.Supported {
-			add(loc, i18n.LocalizePath(loc, site, path))
+		for _, loc := range i18n.ContentLocales(ctx, h.d.Settings) {
+			add(loc, i18n.LocalizePath(loc, site, path, i18n.ContentLocales(ctx, h.d.Settings)))
 		}
 	}
 	if len(out) < 2 {

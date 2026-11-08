@@ -43,6 +43,7 @@ func TestLocalePrefixRouting(t *testing.T) {
 	translate(t, cs, ar, "Hello Planet", true)
 	publish(t, cs, content.Input{Type: "post", Slug: "only-ar", Title: "عربي فقط", Locale: "ar"})
 	publish(t, cs, content.Input{Type: "page", Slug: "english", Title: "صفحة إنجليزي", Locale: "ar"})
+	publish(t, cs, content.Input{Type: "page", Slug: "eng", Title: "Ordinary alias-shaped page", Locale: "ar"})
 
 	resp, body := e.get("/post/hello")
 	if resp.StatusCode != http.StatusOK {
@@ -68,6 +69,9 @@ func TestLocalePrefixRouting(t *testing.T) {
 		t.Fatalf("a slug starting with a locale code is not a prefix: %d", resp.StatusCode)
 	}
 
+	if response, _ := e.get("/eng"); response.StatusCode != 200 {
+		t.Fatalf("language alias captured ordinary page: %d", response.StatusCode)
+	}
 	_, home := e.get("/")
 	mustContain(t, home, "مرحبا بالعالم", "عربي فقط")
 	mustNotContain(t, home, "Hello Planet")

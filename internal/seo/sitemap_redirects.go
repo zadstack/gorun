@@ -22,6 +22,10 @@ func (s *service) finalSitemapEntries(ctx context.Context, base string, entries 
 	if !ok {
 		return entries, nil
 	}
+	table, err := sitemapRedirectTable(ctx, redirectsService)
+	if err != nil {
+		return nil, err
+	}
 	origin, err := url.Parse(base)
 	if err != nil {
 		return nil, fmt.Errorf("seo: sitemap origin: %w", err)
@@ -33,15 +37,15 @@ func (s *service) finalSitemapEntries(ctx context.Context, base string, entries 
 			declared[sitemapPath(address.Path)] = entry
 		}
 	}
-	listings := sitemapListingLocales(entries)
+	listings := sitemapListingLocales(ctx, entries)
 	final := make([]SitemapEntry, 0, len(entries))
 	seen := map[string]bool{}
 	for _, entry := range entries {
-		address := finalSitemapURL(ctx, origin, entry.Loc, redirectsService)
+		address := finalSitemapURL(origin, entry.Loc, table)
 		if address == nil {
 			continue
 		}
-		if !publicSitemapDestination(address, declared, listings) {
+		if !publicSitemapDestination(address, declared, listings, i18n.ContentLocales(ctx, s.settings)) {
 			continue
 		}
 		address.Fragment, address.RawFragment = "", ""
@@ -71,7 +75,7 @@ func sitemapPath(path string) string {
 	return path
 }
 
-func finalSitemapURL(ctx context.Context, origin *url.URL, loc string, redirectsService redirects.Service) *url.URL {
+func finalSitemapURL(origin *url.URL, loc string, table map[string]redirects.Redirect) *url.URL {
 	address, err := url.Parse(loc)
 	if err != nil || !sameSitemapOrigin(origin, address) {
 		return nil
@@ -83,7 +87,7 @@ func finalSitemapURL(ctx context.Context, origin *url.URL, loc string, redirects
 			return nil
 		}
 		seen[path] = true
-		redirect, exists := redirectsService.Lookup(ctx, address.Path)
+		redirect, exists := table[sitemapPath(address.Path)]
 		if !exists {
 			return address
 		}
@@ -106,7 +110,7 @@ type sitemapListing struct{ taxonomy, slug, locale string }
 
 // Published indexable items already loaded for the sitemap also identify the
 // locales with public listing content; no per-term database queries are needed.
-func sitemapListingLocales(entries []SitemapEntry) map[sitemapListing]bool {
+func sitemapListingLocales(ctx context.Context, entries []SitemapEntry) map[sitemapListing]bool {
 	listings := map[sitemapListing]bool{}
 	for _, entry := range entries {
 		if entry.Item == nil {
@@ -114,7 +118,7 @@ func sitemapListingLocales(entries []SitemapEntry) map[sitemapListing]bool {
 		}
 		locales := []string{entry.Item.Locale}
 		if entry.Item.Locale == "" {
-			locales = i18n.Supported
+			locales = i18n.ContentLocales(ctx, nil)
 		}
 		for _, locale := range locales {
 			listings[sitemapListing{slug: entry.Item.Type, locale: locale}] = true
@@ -128,11 +132,11 @@ func sitemapListingLocales(entries []SitemapEntry) map[sitemapListing]bool {
 	return listings
 }
 
-func publicSitemapDestination(address *url.URL, declared map[string]SitemapEntry, listings map[sitemapListing]bool) bool {
+func publicSitemapDestination(address *url.URL, declared map[string]SitemapEntry, listings map[sitemapListing]bool, locales []string) bool {
 	if _, known := declared[sitemapPath(address.Path)]; known {
 		return true
 	}
-	locale, path := i18n.SplitLocalePath(address.Path)
+	locale, path := i18n.SplitLocalePath(address.Path, locales)
 	if locale == "" {
 		return false
 	}
@@ -147,4 +151,24 @@ func publicSitemapDestination(address *url.URL, declared map[string]SitemapEntry
 		return listings[sitemapListing{slug: entry.Type.Slug, locale: locale}]
 	}
 	return false
+}
+
+// Read one consistent-generation input instead of consulting the redirect
+// request cache, which may lag writes made through another database connection.
+func sitemapRedirectTable(ctx context.Context, svc redirects.Service) (map[string]redirects.Redirect, error) {
+	table := map[string]redirects.Redirect{}
+	for page := 1; ; page++ {
+		rows, total, err := svc.List(ctx, redirects.ListQuery{Page: page, PerPage: 100, Sort: "from_path", Order: "asc"})
+		if err != nil {
+			return nil, fmt.Errorf("seo: sitemap redirects: %w", err)
+		}
+		for _, row := range rows {
+			if row.Enabled {
+				table[row.FromPath] = row
+			}
+		}
+		if len(rows) < 100 || page*100 >= total {
+			return table, nil
+		}
+	}
 }

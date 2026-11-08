@@ -265,7 +265,7 @@ func (f *funcs) builderBody(it *content.Item) (template.HTML, error) {
 func (s *service) RenderBuilderBody(ctx context.Context, it *content.Item) (string, error) {
 	locale := it.Locale
 	if locale == "" {
-		locale = s.d.Settings.GetString(ctx, "site.locale", "ar")
+		locale = i18n.ContentLocale(ctx, s.d.Settings)
 	}
 	ctx = i18n.WithLocale(ctx, locale)
 	tc := &Context{Site: s.siteInfo(ctx), Content: it, Locale: locale, Dir: s.d.I18n.Dir(locale), Extra: map[string]any{}, Request: &http.Request{URL: &url.URL{Path: "/" + it.Slug}}}

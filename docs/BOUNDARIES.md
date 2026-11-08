@@ -52,15 +52,15 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/starter` | infra | — |
 | `internal/update` | infra | `db` `jobs` |
 | `internal/db` | infra | — |
-| `internal/settings` | infra | `db` `kernel` |
+| `internal/settings` | infra | `db` `i18n` `kernel` |
 | `internal/i18n` | infra | — |
 | `internal/audit` | infra | `db` |
 | `internal/jobs` | infra | `db` |
 | `internal/auth` | core | `audit` `db` `httpx` `i18n` `kernel` `web` |
 | `internal/content` | core | `audit` `auth` `db` `hooks` `httpx` `i18n` `kernel` `settings` |
-| `internal/taxonomy` | core | `audit` `auth` `content` `db` `hooks` `httpx` `i18n` `kernel` |
+| `internal/taxonomy` | core | `audit` `auth` `content` `db` `hooks` `httpx` `i18n` `kernel` `settings` |
 | `internal/media` | core | `audit` `auth` `db` `hooks` `httpx` `kernel` `mailer` `settings` |
-| `internal/menus` | core | `audit` `auth` `content` `db` `hooks` `httpx` `i18n` `kernel` `taxonomy` |
+| `internal/menus` | core | `audit` `auth` `content` `db` `hooks` `httpx` `i18n` `kernel` `settings` `taxonomy` |
 | `internal/redirects` | core | `audit` `auth` `db` `hooks` `httpx` `kernel` |
 | `internal/seo` | core | `auth` `content` `db` `hooks` `httpx` `i18n` `kernel` `menus` `redirects` `settings` `taxonomy` |
 | `internal/theme` | core | `auth` `brand` `config` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `redirects` `seo` `settings` `taxonomy` `web` |
@@ -68,7 +68,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/builder` | core | `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `mailer` `media` `menus` `settings` `theme` |
 | `internal/site` | core | `audit` `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `mailer` `redirects` `seo` `settings` `taxonomy` `theme` |
 | `internal/api` | core | `auth` `config` `content` `db` `httpx` `i18n` `jobs` `kernel` `media` `menus` `settings` `taxonomy` `theme` |
-| `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `observe` `seo` `settings` `theme` `update` |
+| `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `observe` `redirects` `seo` `settings` `theme` `update` |
 | `internal/webhooks` | core | `audit` `auth` `db` `httpx` `i18n` `jobs` `kernel` |
 | `internal/analytics` | feature | `audit` `auth` `db` `httpx` `i18n` `kernel` `settings` |
 | `internal/commerce` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `redirects` `seo` `settings` `theme` |

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"html/template"
+	"time"
 )
 
 type Meta struct {
@@ -71,4 +72,24 @@ type Service interface {
 	// Entries is the sitemap as data (absolute Locs), for admin screens.
 	Entries(ctx context.Context) ([]SitemapEntry, error)
 	Robots(ctx context.Context) string
+}
+
+// SitemapDocuments is an optional capability for indexed sitemap parts and HTTP validators.
+type SitemapDocuments interface {
+	SitemapDocument(ctx context.Context, part string) (SitemapDocument, error)
+}
+
+type SitemapDocument struct {
+	XML      []byte
+	ETag     string
+	Modified time.Time
+}
+
+// FilterSitemapBatch prepares shared permalink state before per-entry filters.
+// Filters receive *SitemapBatch and mutate Context in place; Entries are read-only.
+const FilterSitemapBatch = "seo.sitemap_batch"
+
+type SitemapBatch struct {
+	Context context.Context
+	Entries []SitemapEntry
 }

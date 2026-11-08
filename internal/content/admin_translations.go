@@ -7,7 +7,6 @@ import (
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/httpx"
-	"github.com/zadstack/gorun/internal/i18n"
 )
 
 // translationView is one supported locale in the editor's translations panel.
@@ -33,8 +32,9 @@ func (h *adminHandlers) translationViews(ctx context.Context, base string, it *I
 		byLocale[m.Locale] = m
 	}
 	canCreate := auth.Can(ctx, "content.create")
-	out := make([]translationView, 0, len(i18n.Supported))
-	for _, loc := range i18n.Supported {
+	locales := h.svc.publicLocales(ctx)
+	out := make([]translationView, 0, len(locales))
+	for _, loc := range locales {
 		v := translationView{Locale: loc, Current: loc == it.Locale}
 		if m, ok := byLocale[loc]; ok && !v.Current {
 			v.EditURL, v.Title, v.Status = base+"/"+m.ID, m.Title, m.Status

@@ -94,7 +94,11 @@ func (r *Registry) Remove(t Token) bool {
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return without(r.actions, t.id) || without(r.filters, t.id)
+	removed := without(r.actions, t.id) || without(r.filters, t.id)
+	if removed {
+		r.nextID++
+	}
+	return removed
 }
 
 // without drops the entry with id from m (copy-on-write, so chains handed
@@ -232,4 +236,12 @@ func (r *Registry) Names() []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// Revision changes whenever subscriptions are added or removed. Derived caches
+// can use it to avoid retaining results from a previous filter chain.
+func (r *Registry) Revision() uint64 {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.nextID
 }

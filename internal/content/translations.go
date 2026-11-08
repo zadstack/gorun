@@ -61,7 +61,9 @@ func (s *service) CreateTranslation(ctx context.Context, id, locale string) (*It
 	if src.Status == "trash" {
 		return nil, invalid(FieldErrors{"translation": msgTranslationTrash})
 	}
-	if locale == src.Locale || !slices.Contains(i18n.Supported, locale) {
+	canonical, localeErr := i18n.CanonicalLocale(locale)
+	locale = canonical
+	if localeErr != nil || locale == src.Locale || !slices.Contains(s.publicLocales(ctx), locale) {
 		return nil, invalid(FieldErrors{"locale": msgTranslationLocale})
 	}
 	in := Input{Type: src.Type, Slug: src.Slug, Title: src.Title, Excerpt: src.Excerpt, Body: src.Body, Fields: src.Fields,

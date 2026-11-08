@@ -1,13 +1,13 @@
 package seo
 
 import (
-	"bytes"
 	"context"
-	"encoding/xml"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/zadstack/gorun/internal/content"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/menus"
 	"github.com/zadstack/gorun/internal/taxonomy"
 )
@@ -34,22 +34,16 @@ type SitemapEntry struct {
 	Type    *content.Type
 }
 
-type xmlURL struct {
-	Loc     string `xml:"loc"`
-	LastMod string `xml:"lastmod,omitempty"`
-}
-
-type xmlURLSet struct {
-	XMLName xml.Name `xml:"urlset"`
-	NS      string   `xml:"xmlns,attr"`
-	URLs    []xmlURL `xml:"url"`
-}
-
 // Entries lists the home page, published items of public content types
 // (minus those whose SEO robots says noindex), public type archives and the
 // terms of public taxonomies, each with its absolute Loc after the
 // FilterSitemapEntry hook. The home page has no Item, Term or Type.
 func (s *service) Entries(ctx context.Context) ([]SitemapEntry, error) {
+	locales := i18n.ContentLocales(ctx, nil)
+	if s.settings != nil {
+		locales = i18n.ContentLocales(ctx, s.settings)
+	}
+	ctx = i18n.WithContentLocales(ctx, locales)
 	base := s.base(ctx)
 	out := []SitemapEntry{{Loc: base + "/"}}
 	seen := map[string]bool{base + "/": true}
@@ -57,15 +51,36 @@ func (s *service) Entries(ctx context.Context) ([]SitemapEntry, error) {
 		out = nil
 		seen = map[string]bool{}
 	}
-	// add appends e and reports whether there is room for more entries.
-	add := func(e *SitemapEntry) bool {
-		if len(out) >= sitemapMaxEntries {
-			return false
+	add := func(e *SitemapEntry) { out = append(out, *e) }
+	if svc, ok := s.content(); ok {
+		if err := s.addContent(ctx, svc, add); err != nil {
+			return nil, err
+		}
+	}
+	if svc, ok := s.taxonomy(); ok {
+		if err := s.addTerms(ctx, svc, add); err != nil {
+			return nil, err
+		}
+	}
+	if s.hooks != nil {
+		batch := &SitemapBatch{Context: ctx, Entries: out}
+		if _, err := s.hooks.Apply(ctx, FilterSitemapBatch, batch); err != nil {
+			return nil, err
+		}
+		ctx = batch.Context
+	}
+	resolved := make([]SitemapEntry, 0, len(out))
+	for i := range out {
+		e := &out[i]
+		// The home page historically bypasses the per-entry filter.
+		if i == 0 && e.Item == nil && e.Term == nil && e.Type == nil {
+			resolved = append(resolved, *e)
+			continue
 		}
 		if s.hooks != nil {
 			v, err := s.hooks.Apply(ctx, FilterSitemapEntry, e)
 			if err != nil {
-				s.log.Error("seo: sitemap filter", "err", err)
+				return nil, fmt.Errorf("seo: sitemap entry filter: %w", err)
 			} else if p, ok := v.(*SitemapEntry); ok && p != nil {
 				e = p
 			}
@@ -75,42 +90,16 @@ func (s *service) Entries(ctx context.Context) ([]SitemapEntry, error) {
 			seen[loc] = true
 			entry := *e
 			entry.Loc = loc
-			out = append(out, entry)
-		}
-		return len(out) < sitemapMaxEntries
-	}
-	if svc, ok := s.content(); ok {
-		if err := s.addContent(ctx, svc, add); err != nil {
-			return nil, err
+			resolved = append(resolved, entry)
 		}
 	}
-	if svc, ok := s.taxonomy(); ok && len(out) < sitemapMaxEntries {
-		if err := s.addTerms(ctx, svc, add); err != nil {
-			return nil, err
-		}
-	}
-	return s.finalSitemapEntries(ctx, base, out)
+	return s.finalSitemapEntries(ctx, base, resolved)
 }
 
-// Sitemap renders Entries as sitemap XML.
+// Sitemap returns the root document: a urlset for small sites, otherwise an index.
 func (s *service) Sitemap(ctx context.Context) ([]byte, error) {
-	entries, err := s.Entries(ctx)
-	if err != nil {
-		return nil, err
-	}
-	set := xmlURLSet{NS: sitemapNS, URLs: make([]xmlURL, len(entries))}
-	for i, e := range entries {
-		set.URLs[i] = xmlURL{Loc: e.Loc, LastMod: e.LastMod}
-	}
-	var buf bytes.Buffer
-	buf.WriteString(xml.Header)
-	enc := xml.NewEncoder(&buf)
-	enc.Indent("", "  ")
-	if err := enc.Encode(set); err != nil {
-		return nil, fmt.Errorf("seo: encode sitemap: %w", err)
-	}
-	buf.WriteString("\n")
-	return buf.Bytes(), nil
+	doc, err := s.SitemapDocument(ctx, "")
+	return doc.XML, err
 }
 
 func noindex(it *content.Item) bool {
@@ -118,7 +107,7 @@ func noindex(it *content.Item) bool {
 	return strings.Contains(strings.ToLower(r), "noindex")
 }
 
-func (s *service) addContent(ctx context.Context, svc content.Service, add func(*SitemapEntry) bool) error {
+func (s *service) addContent(ctx context.Context, svc content.Service, add func(*SitemapEntry)) error {
 	types, err := svc.Types(ctx)
 	if err != nil {
 		return fmt.Errorf("seo: sitemap types: %w", err)
@@ -127,8 +116,14 @@ func (s *service) addContent(ctx context.Context, svc content.Service, add func(
 		if !t.Public {
 			continue
 		}
-		if t.HasArchive && !add(&SitemapEntry{Loc: menus.ArchivePath(&t), Type: &t}) {
-			return nil
+		if t.HasArchive {
+			add(&SitemapEntry{Loc: menus.ArchivePath(&t), Type: &t})
+		}
+		if scanner, ok := svc.(content.PublishedScanner); ok {
+			if err := scanSitemapContent(ctx, scanner, t.Slug, add); err != nil {
+				return err
+			}
+			continue
 		}
 		for page := 1; ; page++ {
 			res, err := svc.Query(ctx, content.Query{PublicOnly: true, Type: t.Slug, Status: "published", Page: page, PerPage: sitemapPageSize,
@@ -141,9 +136,7 @@ func (s *service) addContent(ctx context.Context, svc content.Service, add func(
 				if it.Status != "published" || noindex(it) {
 					continue
 				}
-				if !add(&SitemapEntry{Loc: menus.ContentPath(it), LastMod: first(it.UpdatedAt, it.PublishedAt), Item: it}) {
-					return nil // cap reached: stop paging
-				}
+				add(&SitemapEntry{Loc: menus.ContentPath(it), LastMod: first(it.UpdatedAt, it.PublishedAt), Item: it})
 			}
 			if len(res.Items) < sitemapPageSize || page*sitemapPageSize >= res.Total {
 				break
@@ -153,7 +146,7 @@ func (s *service) addContent(ctx context.Context, svc content.Service, add func(
 	return nil
 }
 
-func (s *service) addTerms(ctx context.Context, svc taxonomy.Service, add func(*SitemapEntry) bool) error {
+func (s *service) addTerms(ctx context.Context, svc taxonomy.Service, add func(*SitemapEntry)) error {
 	taxes, err := svc.Taxonomies(ctx)
 	if err != nil {
 		return fmt.Errorf("seo: sitemap taxonomies: %w", err)
@@ -168,9 +161,7 @@ func (s *service) addTerms(ctx context.Context, svc taxonomy.Service, add func(*
 				return fmt.Errorf("seo: sitemap terms %s: %w", tx.Slug, err)
 			}
 			for i := range terms {
-				if !add(&SitemapEntry{Loc: menus.TermPath(&terms[i]), Term: &terms[i]}) {
-					return nil
-				}
+				add(&SitemapEntry{Loc: menus.TermPath(&terms[i]), Term: &terms[i]})
 			}
 			if len(terms) < sitemapPageSize || page*sitemapPageSize >= total {
 				break
@@ -190,10 +181,7 @@ func (s *service) publicHome(ctx context.Context) bool {
 	if err != nil {
 		return true
 	}
-	locale := s.setting(ctx, "site.locale")
-	if locale == "" {
-		locale = "ar"
-	}
+	locale := i18n.ContentLocale(ctx, s.settings)
 	if it.Locale != "" && it.Locale != locale {
 		members, err := svc.Translations(ctx, id)
 		if err != nil {
@@ -208,4 +196,37 @@ func (s *service) publicHome(ctx context.Context) bool {
 		}
 	}
 	return it == nil || it.Status != "published" || content.PubliclyReadable(ctx, svc, it.ID)
+}
+
+// Keyset reads avoid repeated database sorts. Preserve the existing Entries
+// order for consumers such as the overview's bounded preview groups.
+func scanSitemapContent(ctx context.Context, svc content.PublishedScanner, typeSlug string, add func(*SitemapEntry)) error {
+	afterID := ""
+	var published []*content.Item
+	for {
+		items, err := svc.PublishedAfter(ctx, typeSlug, afterID)
+		if err != nil {
+			return fmt.Errorf("seo: sitemap scan %s: %w", typeSlug, err)
+		}
+		for i := range items {
+			it := &items[i]
+			if !noindex(it) {
+				published = append(published, it)
+			}
+		}
+		if len(items) < sitemapPageSize {
+			break
+		}
+		afterID = items[len(items)-1].ID
+	}
+	sort.Slice(published, func(i, j int) bool {
+		if published[i].PublishedAt == published[j].PublishedAt {
+			return published[i].ID < published[j].ID
+		}
+		return published[i].PublishedAt > published[j].PublishedAt
+	})
+	for _, it := range published {
+		add(&SitemapEntry{Loc: menus.ContentPath(it), LastMod: first(it.UpdatedAt, it.PublishedAt), Item: it})
+	}
+	return nil
 }

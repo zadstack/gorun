@@ -7,6 +7,9 @@ import (
 	"html/template"
 	"log/slog"
 	"strings"
+	"sync"
+
+	"golang.org/x/sync/singleflight"
 
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/hooks"
@@ -32,6 +35,12 @@ const (
 )
 
 type service struct {
+	sitemapMu       sync.Mutex
+	sitemapFlight   singleflight.Group
+	snapshot        *sitemapSnapshot
+	sitemapRevision func(context.Context) (int64, error)
+	sitemapContext  context.Context
+
 	settings  *settings.Store
 	hooks     *hooks.Registry
 	log       *slog.Logger

@@ -297,7 +297,7 @@ func (h *adminHandlers) renderEditor(w http.ResponseWriter, r *http.Request, sta
 	base := "/admin/content/" + t.Slug
 	v := editorView{Type: t, TypeName: localized(t.Singular, locale, localized(t.Name, locale, t.Slug)), Item: it, IsNew: isNew, ListURL: base,
 		Errors: errs, CanPublish: canPublish(ctx), CanDelete: auth.Can(ctx, "content.delete"), FormError: formErr,
-		Locales: i18n.Supported, Supports: map[string]bool{}, PublishAtLocal: localDatetime(it.PublishAt), BodyDir: "auto"}
+		Locales: h.svc.publicLocales(ctx), Supports: map[string]bool{}, PublishAtLocal: localDatetime(it.PublishAt), BodyDir: "auto"}
 	_, reviewAvailable := kernel.Get[any](h.d, "workagents")
 	v.CanRequestReview = reviewAvailable && auth.Can(ctx, "workagents.run") && auth.Can(ctx, "content.view")
 	if v.Errors == nil {

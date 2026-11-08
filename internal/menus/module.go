@@ -40,7 +40,7 @@ func (*Module) Catalogs() fs.FS { return catalogs }
 // Appearance) and the API operations. The content, taxonomy and theme
 // services are looked up per call: they may register later or be absent.
 func (*Module) Register(d *kernel.Deps) error {
-	svc := &service{db: d.DB, hooks: d.Hooks, audit: d.Audit, log: d.Log,
+	svc := &service{localeSettings: d.Settings, db: d.DB, hooks: d.Hooks, audit: d.Audit, log: d.Log,
 		content:  func() (content.Service, bool) { return kernel.Get[content.Service](d, kernel.ServiceContent) },
 		taxonomy: func() (taxonomy.Service, bool) { return kernel.Get[taxonomy.Service](d, kernel.ServiceTaxonomy) },
 	}

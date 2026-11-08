@@ -14,6 +14,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/media"
 	"github.com/zadstack/gorun/internal/theme"
@@ -23,26 +24,27 @@ const maxSettingLen = 500
 
 // generalKeys are the General screen and settings API fields.
 var (
-	generalKeys = []string{"site.title", "site.tagline", "site.locale", "site.timezone", "site.base_url", "site.theme", "site.front_page",
+	generalKeys = []string{"site.title", "site.tagline", "site.locale", i18n.ContentLocalesSetting, "site.timezone", "site.base_url", "site.theme", "site.front_page",
 		"site.logo", "site.logo_dark", "site.logo_light", "site.icon", "contact.email", "site.posts_per_page"}
 	slugRe = regexp.MustCompile(`^[a-z0-9][a-z0-9_-]{0,63}$`)
 )
 
 // generalInput is the Settings → General form.
 type generalInput struct {
-	Title        string `form:"title"`
-	Tagline      string `form:"tagline"`
-	Locale       string `form:"locale"`
-	Timezone     string `form:"timezone"`
-	BaseURL      string `form:"base_url"`
-	Theme        string `form:"theme"`
-	FrontPage    string `form:"front_page"`
-	Logo         string `form:"logo"`           // media id
-	LogoDark     string `form:"logo_dark"`      // media id shown on dark backgrounds (falls back to Logo)
-	LogoLight    string `form:"logo_light"`     // media id shown on light backgrounds (falls back to Logo)
-	Icon         string `form:"icon"`           // media id for the favicon / app icon
-	ContactEmail string `form:"contact_email"`  // contact form recipient
-	PostsPerPage string `form:"posts_per_page"` // 1–100, stored as a number
+	ContentLocales string `form:"content_locales"`
+	Title          string `form:"title"`
+	Tagline        string `form:"tagline"`
+	Locale         string `form:"locale"`
+	Timezone       string `form:"timezone"`
+	BaseURL        string `form:"base_url"`
+	Theme          string `form:"theme"`
+	FrontPage      string `form:"front_page"`
+	Logo           string `form:"logo"`           // media id
+	LogoDark       string `form:"logo_dark"`      // media id shown on dark backgrounds (falls back to Logo)
+	LogoLight      string `form:"logo_light"`     // media id shown on light backgrounds (falls back to Logo)
+	Icon           string `form:"icon"`           // media id for the favicon / app icon
+	ContactEmail   string `form:"contact_email"`  // contact form recipient
+	PostsPerPage   string `form:"posts_per_page"` // 1–100, stored as a number
 }
 
 func (h *handlers) contentService() (content.Service, bool) {
@@ -94,6 +96,16 @@ func validTimezone(tz string) bool {
 func (h *handlers) validateGeneral(ctx context.Context, in generalInput) (map[string]any, map[string]string) {
 	fields := map[string]string{}
 	vals := map[string]any{}
+	rawLocales := in.ContentLocales
+	if rawLocales == "" {
+		rawLocales = strings.Join(i18n.ContentLocales(ctx, h.d.Settings), ", ")
+	}
+	locales, err := parseContentLocales(rawLocales)
+	if err != nil {
+		fields["content_locales"] = "admin.settings.error_content_locales"
+	} else if in.ContentLocales != "" {
+		vals[i18n.ContentLocalesSetting] = locales
+	}
 	if strings.TrimSpace(in.PostsPerPage) == "" {
 		in.PostsPerPage = "10" // the default listing size
 	}
@@ -109,6 +121,9 @@ func (h *handlers) validateGeneral(ctx context.Context, in generalInput) (map[st
 			continue
 		}
 		vals[f.key] = v
+	}
+	if locale, ok := vals["site.locale"].(string); ok && len(locales) > 0 && !slices.Contains(locales, locale) {
+		fields["locale"] = "admin.settings.error_content_locale"
 	}
 	if n, ok := PostsPerPage(in.PostsPerPage); ok {
 		vals["site.posts_per_page"] = n // the site reads it as a JSON number
@@ -172,6 +187,9 @@ func (h *handlers) saveSettingsGuarded(ctx context.Context, vals map[string]any,
 			if *expected == "" || generalEditToken(current) != *expected {
 				return errGeneralConflict
 			}
+		}
+		if err := ValidateContentLocaleSettings(ctx, tx, vals); err != nil {
+			return err
 		}
 		for _, k := range keys {
 			if err := h.d.Settings.SetTx(ctx, tx, k, vals[k]); err != nil {

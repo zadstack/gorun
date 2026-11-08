@@ -40,7 +40,7 @@ var startPrivilegedPrefixes = []string{
 // privileged URL, including locale-prefixed public routes such as
 // /en/account or /ar/reports/incident.
 func startPathPrivileged(clean string) bool {
-	_, rest := i18n.SplitLocalePath(clean)
+	_, rest := i18n.SplitLanguagePath(clean)
 	for _, p := range []string{clean, rest} {
 		for _, prefix := range startPrivilegedPrefixes {
 			if p == prefix || strings.HasPrefix(p, prefix+"/") {
