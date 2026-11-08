@@ -251,3 +251,31 @@ func TestSitemapIndexAndPartsServeEveryURLOnLargeSite(t *testing.T) {
 		t.Fatalf("lost entries: %d of 50001", len(found))
 	}
 }
+
+func TestSitemapKeysetEnumerationRetainsNewestFirstForOverview(t *testing.T) {
+	e := bootReal(t)
+	// Older records have lower IDs, as they do with the native ID generator.
+	for _, row := range []struct{ id, slug, published string }{
+		{"01-older", "older", "2026-10-01T00:00:00Z"},
+		{"02-newer", "newer", "2026-11-01T00:00:00Z"},
+		{"03-newer-tie", "newer-tie", "2026-11-01T00:00:00Z"},
+	} {
+		if _, err := e.app.Deps.DB.Exec(`INSERT INTO content(id,type,slug,status,published_at,created_at,updated_at) VALUES(?,'post',?,'published',?,?,?)`, row.id, row.slug, row.published, row.published, row.published); err != nil {
+			t.Fatal(err)
+		}
+	}
+	svc, _ := kernel.Get[seo.Service](e.app.Deps, kernel.ServiceSEO)
+	entries, err := svc.Entries(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, entry := range entries {
+		if entry.Item != nil {
+			ids = append(ids, entry.Item.ID)
+		}
+	}
+	if !slices.Equal(ids, []string{"02-newer", "03-newer-tie", "01-older"}) {
+		t.Fatalf("overview preview priority changed: %v", ids)
+	}
+}

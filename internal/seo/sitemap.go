@@ -3,6 +3,7 @@ package seo
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/zadstack/gorun/internal/content"
@@ -194,8 +195,11 @@ func (s *service) publicHome(ctx context.Context) bool {
 	return it == nil || it.Status != "published" || content.PubliclyReadable(ctx, svc, it.ID)
 }
 
+// Keyset reads avoid repeated database sorts. Preserve the existing Entries
+// order for consumers such as the overview's bounded preview groups.
 func scanSitemapContent(ctx context.Context, svc content.PublishedScanner, typeSlug string, add func(*SitemapEntry)) error {
 	afterID := ""
+	var published []*content.Item
 	for {
 		items, err := svc.PublishedAfter(ctx, typeSlug, afterID)
 		if err != nil {
@@ -204,12 +208,22 @@ func scanSitemapContent(ctx context.Context, svc content.PublishedScanner, typeS
 		for i := range items {
 			it := &items[i]
 			if !noindex(it) {
-				add(&SitemapEntry{Loc: menus.ContentPath(it), LastMod: first(it.UpdatedAt, it.PublishedAt), Item: it})
+				published = append(published, it)
 			}
 		}
 		if len(items) < sitemapPageSize {
-			return nil
+			break
 		}
 		afterID = items[len(items)-1].ID
 	}
+	sort.Slice(published, func(i, j int) bool {
+		if published[i].PublishedAt == published[j].PublishedAt {
+			return published[i].ID < published[j].ID
+		}
+		return published[i].PublishedAt > published[j].PublishedAt
+	})
+	for _, it := range published {
+		add(&SitemapEntry{Loc: menus.ContentPath(it), LastMod: first(it.UpdatedAt, it.PublishedAt), Item: it})
+	}
+	return nil
 }
