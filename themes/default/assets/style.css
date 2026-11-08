@@ -73,7 +73,7 @@ html[data-theme="default"] .reading-card > a:last-child { min-height: 44px; disp
   --accent-hover: #252525;
   --accent-ink: #333333;
   --accent-soft: #eae8dc;
-  --accent-tint: #f6f5e8;
+  --accent-tint: #edeadd;
   --accent-line: #aaa797;
   --blue: var(--accent);
   --blue-hover: var(--accent-hover);
