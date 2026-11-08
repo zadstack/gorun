@@ -1,0 +1,40 @@
+---
+title: "GoRun"
+description: "Self-hosted CMS with Arabic and English admin, REST and MCP."
+category: "CMS"
+icon: "/docs/images/services/gorun-logo.svg"
+---
+
+## What is GoRun?
+
+GoRun is a self-hosted content management system built with Go and SQLite.
+It includes an Arabic and English administration interface, content publishing,
+REST endpoints and MCP tools for agents.
+
+## Initial setup
+
+1. Set the GoRun service domain in Coolify, using HTTPS and container port
+   `8080`, for example `https://cms.example.com:8080`.
+2. Verify `GORUN_TRUSTED_PROXIES` against the proxy network using the
+   [GoRun Coolify guide](https://github.com/zadstack/gorun/blob/main/deploy/coolify.md#trust-traefiks-forwarded-headers).
+3. Deploy, then open `/admin/setup` on your domain.
+4. Copy `SERVICE_HEX_32_GORUNSETUP` from Coolify's environment variables and
+   enter it to create the first administrator.
+
+Coolify generates the secret key and setup token. Keep the secret key across
+redeployments; it is needed to decrypt stored secrets. The `gorun-data` volume
+holds the database, uploads and site files at `/data`.
+
+## Updates and backups
+
+The template pins image version `0.19.0`. To upgrade, back up the site and retain
+its secret key, then change the image tag in Coolify. Run a single replica and
+stop the old container before starting its replacement: GoRun locks the data
+directory and refuses overlapping processes. See the
+[deployment guide](https://github.com/zadstack/gorun/blob/main/deploy/coolify.md)
+for backup and upgrade instructions.
+
+## Links
+
+- [GitHub](https://github.com/zadstack/gorun)
+- [Coolify deployment guide](https://github.com/zadstack/gorun/blob/main/deploy/coolify.md)

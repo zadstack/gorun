@@ -8,6 +8,10 @@ production rules (HSTS, backup cutover, upgrades) see
 [docs/GORUN-INSTALLATION.md](../docs/GORUN-INSTALLATION.md). Docs index:
 [docs/README.md](../docs/README.md).
 
+A proposed [one-click service template](coolify-template/README.md), with a
+pinned image, logo and upstream documentation files, is also available for
+manual installation. It is not yet listed in Coolify's official library.
+
 ## 1. Create the resource
 
 1. In Coolify choose **+ New → Docker Compose Empty**, then your server.
