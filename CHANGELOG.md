@@ -13,6 +13,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 - Sitemaps reuse in-memory XML snapshots, regenerate in the background, and split into an index and `/sitemaps/{number}.xml` parts above 50,000 URLs or 50 MiB. Transactional domain-write invalidation and host-exclusion-aware cache keys prevent reuse after content visibility changes. Sitemap responses support ETags and conditional GET/HEAD. Permalink generation shares settings and ancestor lookups, content listings batch taxonomy assignments, and native sitemap enumeration uses indexed keyset scans.
 
+- The admin uses warm neutral surfaces and petrol actions, Classic uses cream paper and charcoal, and Serif uses white paper with deep-blue links. Saved site identities keep precedence.
 - Agent role templates, the canvas list and the agents drawer use the canvas card design: a kind avatar, a tinted heading and a written badge. The orchestrator role now comes first, and canvases in the list show a readable save time and their last run state.
 
 ### Fixed
