@@ -6,10 +6,10 @@ import { resolve } from 'node:path';
 import { csrf, db, setLocale, MARKER_500 } from '../lib/helpers.ts';
 
 const themes = [
-  {slug:'default',en:'Classic',ar:'كلاسيكي',accent:'#2f5a78',enNote:'A calm reading identity with room for your voice.',arNote:'هوية قراءة هادئة تترك مساحة لصوت موقعك.'},
+  {slug:'default',en:'Classic',ar:'كلاسيكي',accent:'#333333',enNote:'A calm reading identity with room for your voice.',arNote:'هوية قراءة هادئة تترك مساحة لصوت موقعك.'},
   {slug:'business',en:'Modern',ar:'حديث',accent:'#0f766e',enNote:'Sharp, high-contrast chrome for clear pages.',arNote:'واجهة حادة وتباين واضح لصفحات مفهومة.'},
   {slug:'portfolio',en:'Minimal',ar:'بسيط',accent:'#3f5d4a',enNote:'Quiet earth tones that stay out of the way.',arNote:'ألوان ترابية هادئة لا تنافس محتواك.'},
-  {slug:'magazine',en:'Serif',ar:'سيرف',accent:'#1e3a5f',enNote:'Type-led identity for long-form reading.',arNote:'هوية تعتمد على الخط لقراءة مطوّلة.'},
+  {slug:'magazine',en:'Serif',ar:'سيرف',accent:'#001489',enNote:'Type-led identity for long-form reading.',arNote:'هوية تعتمد على الخط لقراءة مطوّلة.'},
   {slug:'docs',en:'Docs',ar:'توثيق',accent:'#155e75',enNote:'Light steel chrome for guides and reference.',arNote:'واجهة فولاذية خفيفة للأدلة والمراجع.'},
 ];
 

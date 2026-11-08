@@ -19,3 +19,14 @@
 .admin-section-pages li>a[aria-current],.admin-section-pages li:has(a[aria-current]) .dashboard-pin-add{color:var(--nav-ink)}
 .admin-section-pages li>a>svg{color:var(--nav-ink)}
 @media(forced-colors:active){[data-navigation-section] .admin-nav-link.is-active,.admin-section-categories a[aria-current],.admin-section-pages li:has(a[aria-current]){border-color:Highlight;box-shadow:none}}
+
+.admin-workspace :is([data-navigation-section], [data-navigation-context]),
+.admin-workspace [data-navigation-context] [data-navigation-category] {
+  --nav-ink: var(--accent);
+  --nav-soft: var(--accent-soft);
+}
+.admin-workspace [data-navigation-section] .admin-nav-link > svg {
+  color: var(--muted);
+  background: transparent;
+}
+.admin-workspace [data-navigation-section] .admin-nav-link.is-active > svg { color: var(--accent); }

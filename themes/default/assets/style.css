@@ -55,27 +55,30 @@ html[data-theme="default"] .reading-card > a:last-child { min-height: 44px; disp
  html:is([data-theme="default"],[data-theme="docs"]) .reading-article .prose-gp { font-size: 1rem; }
 }
 
-/* Classic identity: editorial tokens (airy cool paper, serif headings, ink-blue). */
+/* Classic identity: editorial tokens (cream paper, serif headings, charcoal ink). */
 :where(html[data-theme="default"]) {
-  --bg: #f5f7fa;
-  --panel: #ffffff;
-  --panel-2: #e9eef4;
-  --panel-3: #d8e0ea;
-  --head: #1a2330;
-  --ink: #1a2330;
-  --ink-2: #2d3a4a;
-  --muted: #5a6878;
-  --muted-tinted: #485667;
-  --line: #ced7e2;
-  --line-2: #e0e6ed;
-  --line-strong: #8f9faf;
-  --accent: #2f5a78;
-  --accent-hover: #244960;
-  --accent-ink: #2f5a78;
-  --accent-soft: #dce8f1;
-  --accent-tint: #eef3f8;
-  --accent-line: #8fadc4;
-  --on-accent: #ffffff;
+  --bg: #fffef2;
+  --panel: #fffef2;
+  --panel-2: #f6f5e8;
+  --panel-3: #eeeddf;
+  --head: #333333;
+  --ink: #333333;
+  --ink-2: #45443e;
+  --muted: #66645c;
+  --muted-tinted: #535149;
+  --line: #d6d5cc;
+  --line-2: #e8e7dc;
+  --line-strong: #8d8b7f;
+  --accent: #333333;
+  --accent-hover: #252525;
+  --accent-ink: #333333;
+  --accent-soft: #eae8dc;
+  --accent-tint: #f6f5e8;
+  --accent-line: #aaa797;
+  --blue: var(--accent);
+  --blue-hover: var(--accent-hover);
+  --blue-soft: var(--accent-soft);
+  --on-accent: #fffef2;
   --green: var(--accent);
   --green-hover: var(--accent-hover);
   --green-soft: var(--accent-soft);
