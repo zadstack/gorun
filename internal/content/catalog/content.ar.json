@@ -312,5 +312,6 @@
   "editor.tool_center": "توسيط",
   "editor.tool_right": "محاذاة لليمين",
   "editor.tool_clean": "إزالة التنسيق",
-  "editor.tool_body": "مساحة الكتابة"
+  "editor.tool_body": "مساحة الكتابة",
+  "types.error_locale_route": "هذا المسار محجوز للغة محتوى. اختر اسمًا آخر لمسار نوع المحتوى أو أرشيفه."
 }

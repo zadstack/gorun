@@ -5,6 +5,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Configurable public content languages in Settings → General and the settings API (`site.content_locales`), independently of Arabic/English admin catalogs. BCP-47 language, script and region tags retain canonical routes, translation groups and menu language selection. Changes apply without restart; transactional guards reject disabled language writes, removal of used languages and conflicting route prefixes. Recovery CLI and MCP default-language changes use the same guards. Legacy sites keep their content-language defaulting policy until an explicit list is saved.
+
 ### Changed
 
 - Sitemaps reuse in-memory XML snapshots, regenerate in the background, and split into an index and `/sitemaps/{number}.xml` parts above 50,000 URLs or 50 MiB. Transactional domain-write invalidation and host-exclusion-aware cache keys prevent reuse after content visibility changes. Sitemap responses support ETags and conditional GET/HEAD. Permalink generation shares settings and ancestor lookups, content listings batch taxonomy assignments, and native sitemap enumeration uses indexed keyset scans.

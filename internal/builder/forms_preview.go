@@ -127,8 +127,8 @@ func previewLocale(d *kernel.Deps, ctx context.Context, item *content.Item) stri
 	if locale == "" {
 		locale = d.Settings.GetString(ctx, "site.locale", i18n.DefaultLocale)
 	}
-	if !slices.Contains(i18n.Supported, locale) {
-		locale = i18n.DefaultLocale
+	if !slices.Contains(i18n.ContentLocales(ctx, d.Settings), locale) {
+		locale = i18n.ContentLocale(ctx, d.Settings)
 	}
 	return locale
 }

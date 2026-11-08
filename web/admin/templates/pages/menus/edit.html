@@ -97,7 +97,7 @@
         <label for="locale" class="block font-medium mb-1">{{t "menus.field.locale"}}</label>
         <select id="locale" name="locale" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
           <option value="">{{t "menus.field.locale_all"}}</option>
-          {{$loc := .Form.Locale}}{{range .Locales}}<option value="{{.}}" {{if eq . $loc}}selected{{end}}>{{t (printf "admin.locale.%s" .)}}</option>{{end}}
+          {{$loc := .Form.Locale}}{{range .Locales}}<option value="{{.}}" {{if eq . $loc}}selected{{end}}>{{localeName .}}</option>{{end}}
         </select>
         <p class="text-xs text-muted mt-1">{{t "menus.field.locale_help"}}</p>
         {{template "partials/field_errors" (index .Fields "locale")}}

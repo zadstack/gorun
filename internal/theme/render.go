@@ -209,7 +209,10 @@ func (s *service) siteInfo(ctx context.Context) SiteInfo {
 		}
 		return s.d.Settings.GetString(ctx, key, def)
 	}
-	locale := get(SettingLocale, defaultSiteLocale)
+	locale := defaultSiteLocale
+	if s.d.Settings != nil {
+		locale = i18n.ContentLocale(ctx, s.d.Settings)
+	}
 	title := "GoRun"
 	if s.d.I18n != nil {
 		title = s.d.I18n.T(locale, "core.app.name")

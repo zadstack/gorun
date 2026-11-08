@@ -1,11 +1,13 @@
 # GoRun core and independent WordPress importer
 
-Status: staged implementation. This PR implements sitemap snapshots, revision
+Status: staged implementation. PR #208 implements sitemap snapshots, revision
 invalidation, background refresh, index/parts, indexed keyset enumeration and
-batched permalink/term lookups.
-Importer extraction, locale configuration, multilingual migration, reconciliation
-and SQLite retry policy remain subsequent changes. The importer is still bundled
-and optional in this PR; it is not yet a separately distributed extension.
+batched permalink/term lookups, while retaining newest-first entry ordering for
+admin previews. This follow-up implements configurable BCP-47 public content
+languages independent of admin catalogs, dynamic routes and transactional guards.
+Term translation relationships, independent importer distribution, multilingual
+source adapters, reconciliation and SQLite write retry policy remain subsequent
+changes. The WordPress importer is still bundled and optional.
 
 ## Goal
 

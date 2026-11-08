@@ -12,6 +12,7 @@ import (
 	"github.com/zadstack/gorun/internal/audit"
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/jobs"
 	"github.com/zadstack/gorun/internal/kernel"
 )
@@ -50,29 +51,30 @@ type userPatchJSON struct {
 // mail.password is never returned; mail.password_set reports whether one
 // is stored.
 type SettingsDTO struct {
-	SiteTitle           string `json:"site.title"`
-	SiteTagline         string `json:"site.tagline"`
-	SiteLocale          string `json:"site.locale"`
-	SiteTimezone        string `json:"site.timezone"`
-	SiteBaseURL         string `json:"site.base_url"`
-	SiteTheme           string `json:"site.theme"`
-	SiteFrontPage       string `json:"site.front_page"`
-	SiteLogo            string `json:"site.logo"`
-	SiteLogoDark        string `json:"site.logo_dark" doc:"Media id shown on dark backgrounds; empty falls back to site.logo"`
-	SiteLogoLight       string `json:"site.logo_light" doc:"Media id shown on light backgrounds; empty falls back to site.logo"`
-	SiteIcon            string `json:"site.icon" doc:"Media id for the favicon / app icon"`
-	ContactEmail        string `json:"contact.email"`
-	PostsPerPage        int    `json:"site.posts_per_page"`
-	MailProvider        string `json:"mail.provider"`
-	MailResendAPIKeySet bool   `json:"mail.resend_api_key_set"`
-	MailHost            string `json:"mail.host"`
-	MailPort            int    `json:"mail.port"`
-	MailUsername        string `json:"mail.username"`
-	MailFrom            string `json:"mail.from"`
-	MailFromName        string `json:"mail.from_name"`
-	MailTLS             string `json:"mail.tls"`
-	MailReplyTo         string `json:"mail.reply_to"`
-	MailPasswordSet     bool   `json:"mail.password_set"`
+	ContentLocales      []string `json:"site.content_locales"`
+	SiteTitle           string   `json:"site.title"`
+	SiteTagline         string   `json:"site.tagline"`
+	SiteLocale          string   `json:"site.locale"`
+	SiteTimezone        string   `json:"site.timezone"`
+	SiteBaseURL         string   `json:"site.base_url"`
+	SiteTheme           string   `json:"site.theme"`
+	SiteFrontPage       string   `json:"site.front_page"`
+	SiteLogo            string   `json:"site.logo"`
+	SiteLogoDark        string   `json:"site.logo_dark" doc:"Media id shown on dark backgrounds; empty falls back to site.logo"`
+	SiteLogoLight       string   `json:"site.logo_light" doc:"Media id shown on light backgrounds; empty falls back to site.logo"`
+	SiteIcon            string   `json:"site.icon" doc:"Media id for the favicon / app icon"`
+	ContactEmail        string   `json:"contact.email"`
+	PostsPerPage        int      `json:"site.posts_per_page"`
+	MailProvider        string   `json:"mail.provider"`
+	MailResendAPIKeySet bool     `json:"mail.resend_api_key_set"`
+	MailHost            string   `json:"mail.host"`
+	MailPort            int      `json:"mail.port"`
+	MailUsername        string   `json:"mail.username"`
+	MailFrom            string   `json:"mail.from"`
+	MailFromName        string   `json:"mail.from_name"`
+	MailTLS             string   `json:"mail.tls"`
+	MailReplyTo         string   `json:"mail.reply_to"`
+	MailPasswordSet     bool     `json:"mail.password_set"`
 }
 
 // SettingsPatchDTO documents the PATCH /v1/settings body: send only the
@@ -183,7 +185,7 @@ func (h *handlers) apiSettingsGet(w http.ResponseWriter, r *http.Request) {
 	}
 	port, _ := strconv.Atoi(m.Port)
 	httpx.JSON(w, http.StatusOK, SettingsDTO{
-		SiteTitle: g.Title, SiteTagline: g.Tagline, SiteLocale: g.Locale, SiteTimezone: g.Timezone,
+		ContentLocales: i18n.ContentLocales(r.Context(), h.d.Settings), SiteTitle: g.Title, SiteTagline: g.Tagline, SiteLocale: g.Locale, SiteTimezone: g.Timezone,
 		SiteBaseURL: g.BaseURL, SiteTheme: g.Theme, SiteFrontPage: g.FrontPage,
 		SiteLogo: g.Logo, SiteLogoDark: g.LogoDark, SiteLogoLight: g.LogoLight, SiteIcon: g.Icon, ContactEmail: g.ContactEmail, PostsPerPage: h.postsPerPage(r),
 		MailProvider: m.Provider, MailResendAPIKeySet: h.d.Settings.GetString(r.Context(), "mail.resend_api_key", "") != "",
@@ -214,6 +216,9 @@ func (h *handlers) apiSettingsPatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	g := h.generalFromSnapshot(generalState)
+	if _, configured := generalState[i18n.ContentLocalesSetting]; !configured {
+		g.ContentLocales = ""
+	}
 	m := mailFromSnapshot(mailState)
 	general := map[string]*string{"site.title": &g.Title, "site.tagline": &g.Tagline, "site.locale": &g.Locale, "site.timezone": &g.Timezone,
 		"site.base_url": &g.BaseURL, "site.theme": &g.Theme, "site.front_page": &g.FrontPage,
@@ -223,6 +228,21 @@ func (h *handlers) apiSettingsPatch(w http.ResponseWriter, r *http.Request) {
 	touchedGeneral, touchedMail := false, false
 	fields := map[string]string{}
 	for k, raw := range body {
+		if k == i18n.ContentLocalesSetting {
+			var tags []string
+			if err := json.Unmarshal(raw, &tags); err != nil || len(tags) == 0 {
+				fields[k] = "admin.settings.error_content_locales"
+				continue
+			}
+			normalized, err := i18n.ParseContentLocales(tags)
+			if err != nil {
+				fields[k] = "admin.settings.error_content_locales"
+				continue
+			}
+			g.ContentLocales = strings.Join(normalized, ", ")
+			touchedGeneral = true
+			continue
+		}
 		dst, isGeneral := general[k]
 		if !isGeneral {
 			dst = mailF[k]
@@ -288,6 +308,11 @@ func (h *handlers) apiSettingsPatch(w http.ResponseWriter, r *http.Request) {
 		}
 		if errors.Is(saveErr, errMailConflict) || errors.Is(saveErr, errGeneralConflict) {
 			httpx.Error(w, http.StatusConflict, "conflict", h.tr(r, "admin.mail.conflict"), nil)
+			return
+		}
+		var settingErr *SettingError
+		if errors.As(saveErr, &settingErr) {
+			h.validationFailed(w, r, map[string]string{settingErr.Key: settingErr.Code})
 			return
 		}
 		if saveErr != nil {

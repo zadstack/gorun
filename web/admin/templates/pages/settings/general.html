@@ -23,9 +23,10 @@
     <h2 class="sm:col-span-2 font-bold">{{t "operator.locale_fields"}}</h2>
     <div>
       <label for="s-locale" class="block font-medium mb-1">{{t "admin.settings.locale"}}</label>
-      <select id="s-locale" name="locale" class="h-9 w-full rounded border {{if index .Fields "locale"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
-        {{range .Locales}}<option value="{{.}}" {{if eq . $.Form.Locale}}selected{{end}}>{{t (printf "admin.locale.%s" .)}}</option>{{end}}
-      </select>
+      <input id="s-locale" name="locale" value="{{.Form.Locale}}" list="s-content-locale-options" dir="ltr" maxlength="63" aria-describedby="s-locale-help" {{if index .Fields "locale"}}aria-invalid="true"{{end}}
+             class="h-9 w-full rounded border {{if index .Fields "locale"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <datalist id="s-content-locale-options">{{range .Locales}}<option value="{{.}}">{{localeName .}}</option>{{end}}</datalist>
+      <p id="s-locale-help" class="mt-1 text-xs text-muted">{{t "admin.settings.content_default_help"}}</p>
       {{template "partials/field_errors" (index .Fields "locale")}}
     </div>
     <div>
@@ -36,6 +37,13 @@
       <p id="s-timezone-help" class="mt-1 text-xs text-muted">{{t "admin.settings.timezone_help"}}</p>
       {{template "partials/field_errors" (index .Fields "timezone")}}
     </div>
+  </div>
+  <div>
+    <label for="s-content-locales" class="block font-medium mb-1">{{t "admin.settings.content_locales"}}</label>
+    <input id="s-content-locales" name="content_locales" value="{{.Form.ContentLocales}}" dir="ltr" maxlength="2048" aria-describedby="s-content-locales-help" {{if index .Fields "content_locales"}}aria-invalid="true"{{end}}
+           class="h-9 w-full rounded border {{if index .Fields "content_locales"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <p id="s-content-locales-help" class="mt-1 text-xs text-muted">{{t "admin.settings.content_locales_help"}}</p>
+    {{template "partials/field_errors" (index .Fields "content_locales")}}
   </div>
   <div>
     <label for="s-base-url" class="block font-medium mb-1">{{t "admin.settings.base_url"}}</label>

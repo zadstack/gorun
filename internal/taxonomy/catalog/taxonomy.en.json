@@ -52,5 +52,6 @@
   "validation.slug": "Use lowercase letters, digits, - or _ (start with a letter)",
   "validation.types": "Unknown content type",
   "validation.unknown": "Unknown taxonomy",
-  "validation.unknown_term": "Unknown term"
+  "validation.unknown_term": "Unknown term",
+  "validation.locale_route": "This taxonomy route is reserved for a content language. Choose another slug."
 }

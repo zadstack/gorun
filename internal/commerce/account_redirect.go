@@ -55,7 +55,7 @@ func accountPathOwned(ctx context.Context, d *kernel.Deps, rs redirects.Service)
 	if !ok {
 		return false, nil
 	}
-	locales := append([]string{d.Settings.GetString(ctx, "site.locale", i18n.DefaultLocale), ""}, i18n.Supported...)
+	locales := append([]string{d.Settings.GetString(ctx, "site.locale", i18n.DefaultLocale), ""}, i18n.ContentLocales(ctx, d.Settings)...)
 	for _, loc := range locales {
 		_, err := cs.GetBySlug(ctx, "page", "my-account", loc)
 		if err == nil {

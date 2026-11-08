@@ -497,3 +497,37 @@ go test ./internal/seo -run '^$' -bench BenchmarkSitemapSnapshots -benchmem
 
 This benchmark isolates snapshot reuse; it does not measure a deployed site's
 SQLite query plan, network latency or WordPress migration throughput.
+
+### Public content languages and admin catalogs
+
+`i18n.Supported` remains the admin interface catalog allowlist. Public language
+configuration lives in `site.content_locales`, defaulting independently to
+`["ar","en"]`. `i18n.CanonicalLocale` uses the pinned `golang.org/x/text/language`
+parser and retains script and region subtags. `i18n.ContentLocales` and
+`i18n.ContentLocale` provide configured languages and the public default.
+Rendering batches pin the list in their context; write paths use
+`settings.ContentLocalesTx` and `settings.GetTx` to avoid stale render context
+or process-cache state. These reads propagate storage/configuration errors
+instead of treating them as legacy defaults. No translated admin catalog is required for a content tag.
+
+The site router recognizes language-shaped prefixes and checks configuration at
+request time. Unconfigured segments fall through to normal content dispatch
+with the same CSRF middleware as unprefixed pages. Links, alternate URLs, menus,
+sitemap redirect resolution and builder page previews use configured tags.
+Canonical prefix redirects retain query parameters. Sensitive-path redaction
+and LAN-preview restrictions recognize BCP-47 prefixes independently of site
+configuration, so new tags cannot bypass those guards.
+
+General settings, mixed settings/mail PATCHes, MCP default-language changes and
+CLI recovery share `admin.ValidateContentLocaleSettings` inside their write
+transaction. It validates default membership, language usage and new route
+collisions. Content and menus independently recheck membership before writes;
+new public content/taxonomy routes cannot claim a configured prefix. First-admin
+setup and workspace initialization preserve an explicitly configured public
+language instead of copying the interface language over it.
+
+Legacy sites retain their existing request-locale content defaults until an
+explicit language list is saved. On configured sites, implicit content languages
+follow the public default. Existing Arabic/English admin catalogs, user language
+validation and type-label translation fields remain separate. This change does
+not add translated taxonomy-term relationships or translate starter/theme copy.

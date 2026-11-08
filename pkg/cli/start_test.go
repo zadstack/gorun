@@ -101,6 +101,8 @@ func TestStartGuard(t *testing.T) {
 		{"dot segments", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/foo/../admin", 403, false},
 		{"account", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/account", 403, false},
 		{"locale account", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/en/account", 403, false},
+		{"French account", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/fr/account", 403, false},
+		{"regional intake", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/pt-BR/reports/incident", 403, false},
 		{"magic login", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/auth/magic/token", 403, false},
 		{"locale magic", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/ar/auth/magic/token", 403, false},
 		{"private intake", "192.168.1.20:1234", "192.168.1.10:8080", "GET", "/reports/incident", 403, false},

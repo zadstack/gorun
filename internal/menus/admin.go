@@ -135,7 +135,7 @@ func (h *adminHandlers) editorItems(ctx context.Context, items []Item, depth int
 }
 
 func (h *adminHandlers) renderEdit(w http.ResponseWriter, r *http.Request, status int, m *Menu, f menuForm, items []Item, fields map[string]string) {
-	d := editData{Menu: m, Form: f, Locations: h.locations(r.Context()), Locales: i18n.Supported, Items: h.editorItems(r.Context(), items, 0), Fields: fields}
+	d := editData{Menu: m, Form: f, Locations: h.locations(r.Context()), Locales: h.svc.publicLocales(r.Context()), Items: h.editorItems(r.Context(), items, 0), Fields: fields}
 	d.EditToken = menuEditToken(m)
 	if token := submittedMenuToken(r); token != nil {
 		d.EditToken = *token

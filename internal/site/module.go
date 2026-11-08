@@ -8,12 +8,10 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/zadstack/gorun/internal/auth"
-	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/theme"
 )
@@ -97,7 +95,7 @@ func (*Module) Register(d *kernel.Deps) error {
 		get(p, "/*", h.dispatch)
 	}
 	mount(pages)
-	pages.Route("/{locale:^("+strings.Join(i18n.Supported, "|")+")$}", func(r chi.Router) {
+	pages.Route(`/{locale:[A-Za-z]{1,8}(?:-[A-Za-z0-9]{1,8})*}`, func(r chi.Router) {
 		r.Use(h.localePrefix)
 		mount(r)
 	})

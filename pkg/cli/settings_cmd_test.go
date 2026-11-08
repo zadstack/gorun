@@ -88,3 +88,37 @@ func TestSettingsCLIRecovery(t *testing.T) {
 		t.Fatalf("system audit rows = %d", n)
 	}
 }
+
+func TestSettingsCLIContentLanguagesUseTheSharedTransactionalGuard(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("GORUN_ENV", "dev")
+	run := func(args ...string) (string, error) {
+		var out bytes.Buffer
+		err := settingsCmd(append(args, "--data", dir), &out)
+		return strings.TrimSpace(out.String()), err
+	}
+	if _, err := run("set", "site.locale", "fr"); err == nil {
+		t.Fatal("selected an unconfigured language")
+	}
+	if _, err := run("set", "site.content_locales", `["ar","en","fr","pt-br"]`); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := run("get", "site.content_locales"); err != nil || got != `["ar","en","fr","pt-BR"]` {
+		t.Fatal(got, err)
+	}
+	if _, err := run("set", "site.locale", "fr"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := run("unset", "site.content_locales"); err == nil {
+		t.Fatal("unset languages orphaned the public default")
+	}
+	if _, err := run("set", "site.content_locales", `["ar","en","api"]`); err == nil {
+		t.Fatal("reserved route accepted")
+	}
+	if _, err := run("set", "site.locale", "en"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := run("unset", "site.content_locales"); err != nil {
+		t.Fatal(err)
+	}
+}
