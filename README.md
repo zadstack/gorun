@@ -81,6 +81,18 @@ Open `/admin/setup` on your site and enter the printed token. For HTTPS, put a r
 
 In Coolify choose **+ New → Docker Compose Empty**, paste [`deploy/coolify-compose.yml`](deploy/coolify-compose.yml), then **Save** and **Deploy**. Coolify generates the secrets and keeps them across deployments. [All steps](deploy/coolify.md#1-create-the-resource).
 
+For the **version-pinned Coolify template**, paste
+[`gorun.yaml`](deploy/coolify-template/coolify/templates/compose/gorun.yaml)
+instead. It uses image `0.19.0`, generates the secret key and setup token,
+and persists site data in a volume. Set your HTTPS domain with port `8080`,
+verify the proxy network using the guide above, then deploy and open
+`/admin/setup`. Enter `SERVICE_HEX_32_GORUNSETUP` from Coolify's environment
+variables to create the first administrator.
+
+The [template bundle](deploy/coolify-template/README.md) includes the logo and
+matching service documentation for an upstream contribution. It is available
+for manual installation; it is not yet listed in Coolify's official library.
+
 ### Guided server setup
 
 For a domain with HTTPS and a persistent service, use the [guided Linux server setup](docs/SERVER-SETUP.md). It asks for your domain and installation directory, verifies DNS, and reports the final URL and data path after acceptance checks. It requires Linux root access, Python 3 and Docker Compose; it uses verified public release downloads without a GHCR login. For an existing proxy or Coolify deployment, follow the [Docker / Coolify guide](deploy/coolify.md). The local preview is intended for development.

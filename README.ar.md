@@ -336,6 +336,15 @@ grep GORUN_SETUP_TOKEN .env
 
 **Coolify:** اختر **+ New ← Docker Compose Empty**، والصق [`deploy/coolify-compose.yml`](deploy/coolify-compose.yml)، ثم **Save** و**Deploy**. يولّد Coolify الأسرار ويحتفظ بها بين عمليات النشر.
 
+**قالب Coolify بإصدار ثابت:** يمكنك بدلًا من ذلك لصق
+[`gorun.yaml`](deploy/coolify-template/coolify/templates/compose/gorun.yaml).
+يستخدم الصورة `0.19.0`، ويولّد مفتاح الأمان ورمز الإعداد، ويحفظ بيانات الموقع في Volume دائم.
+اضبط دومين HTTPS مع المنفذ `8080`، وتحقق من شبكة الوكيل حسب الدليل، ثم انشر وافتح
+`/admin/setup`. أدخل قيمة `SERVICE_HEX_32_GORUNSETUP` من متغيرات البيئة في Coolify لإنشاء المدير الأول.
+
+تضم [حزمة القالب](deploy/coolify-template/README.md) اللوجو وصفحة توثيق الخدمة لتجهيز المساهمة الرسمية.
+القالب متاح للتثبيت اليدوي حاليًا، ولم يُدرج بعد في مكتبة Coolify الرسمية.
+
 **صورة Docker:** الحزمة عامة ولا تحتاج تسجيل دخول. تُبنى للإصدارات صورة متعددة المعماريات (linux/amd64 وlinux/arm64) على GHCR بوسم الإصدار الكامل (مثل `0.17.0`) ووسم الإصدار الفرعي (مثل `0.17`) و`latest`. ضع رقم [أحدث إصدار](https://github.com/zadstack/gorun/releases/latest) مكان `VERSION`:
 
 ```sh
