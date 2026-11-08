@@ -38,6 +38,21 @@ func TestDeployFilesSafety(t *testing.T) {
 			t.Errorf("%s is for real sites and must not enable trial mode", name)
 		}
 	}
+
+	for _, name := range []string{"deploy/docker-compose.yml", "deploy/compose.server.yml", "deploy/coolify-compose.yml"} {
+		compose := repoFile(t, name)
+		for _, key := range []string{"SOURCE_URL", "SOURCE_TOKEN", "ARTIFACT", "COOLIFY_URL", "COOLIFY_TOKEN", "COOLIFY_RESOURCE"} {
+			if key == "SOURCE_URL" {
+				if !strings.Contains(compose, "\n      GORUN_UPDATE_SOURCE_URL:\n") && !strings.Contains(compose, "\n      - GORUN_UPDATE_SOURCE_URL\n") {
+					t.Errorf("%s must preserve an unset source without overriding gorun.toml", name)
+				}
+				continue
+			}
+			if !strings.Contains(compose, "${GORUN_UPDATE_"+key+"-") && !strings.Contains(compose, "${GORUN_UPDATE_"+key+":-") {
+				t.Errorf("%s does not pass update setting %s", name, key)
+			}
+		}
+	}
 	coolifyPaste := repoFile(t, "deploy/coolify-compose.yml")
 	for _, want := range []string{"${SERVICE_URL_GORUN_8080}", "${SERVICE_REALBASE64_32_GORUNKEY}", "${SERVICE_HEX_32_GORUNSETUP}"} {
 		if !strings.Contains(coolifyPaste, want) {

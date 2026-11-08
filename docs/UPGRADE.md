@@ -270,16 +270,18 @@ docker run --rm -v gorun-data:/data -v /var/lib/gorun-rolled-back:/restore \
 ## 7. Staged updates (in-app)
 
 **System → System updates** runs a persisted, phase-by-phase lifecycle instead
-of a single deploy request. It is optional: without a trusted release source the
-page only shows the running version, and the manual procedures above still apply.
+of a single deploy request. GoRun uses the official GitHub release index by default.
+Checks run in the background; discovering a release never deploys it. Explicitly
+set `GORUN_UPDATE_SOURCE_URL=` or `[update] source_url = ""` to disable release
+checks and staged requests. The manual procedures above still apply.
 
 ### Configuration (server side only)
 
 | Setting | Env / `gorun.toml` | Meaning |
 | --- | --- | --- |
-| Release source | `GORUN_UPDATE_SOURCE_URL` / `[update] source_url` | HTTPS JSON index (plain HTTP only on the loopback address, e.g. a local supervisor). Required for requests. |
+| Release source | `GORUN_UPDATE_SOURCE_URL` / `[update] source_url` | HTTPS JSON index; defaults to the official GoRun index below. An explicitly empty value disables checks and requests. Plain HTTP is allowed only on loopback. |
 | Source token | `GORUN_UPDATE_SOURCE_TOKEN` / `source_token` | Optional bearer sent to the index. Never shown in pages or APIs. |
-| Artifact selector | `GORUN_UPDATE_ARTIFACT` / `artifact` | Which artifact of a release to activate (exact id or substring, e.g. `linux-amd64`). A release with one artifact needs none. |
+| Artifact selector | `GORUN_UPDATE_ARTIFACT` / `artifact` | Which artifact to activate (exact id or substring). For the default official index, native binaries select their OS/architecture; the published Docker image and configured Coolify resources select `ghcr.io/zadstack/gorun`. Custom indexes with multiple artifacts need an explicit selector. |
 | Health links | `GORUN_UPDATE_HEALTH_LINKS` / `health_links` | Absolute public or media URLs that must answer 2xx on the new process before acceptance. |
 | Downgrade | `GORUN_UPDATE_ALLOW_DOWNGRADE` / `allow_downgrade` | Lets compatibility pass for a lower target after you reviewed schema, feature and security constraints. Recorded on the operation. |
 | Missing digest | `GORUN_UPDATE_ALLOW_MISSING_DIGEST` / `allow_missing_digest` | Accepts releases whose index publishes no `sha256:` digest. Off by default. |
@@ -306,7 +308,7 @@ When absent the phase records `release_data: unknown` instead of guessing.
 `release-index.json` beside its archives. It lists the container image (with its pushed
 manifest digest), the four binary archives (with the same digests as the `SHA256SUMS` file) and
 every migration the release ships. It does not list themes, because a site may run its own theme,
-so the theme check stays `unknown`. To use it:
+so the theme check stays `unknown`. This is the default source. Explicit configuration, if needed:
 
 ```sh
 GORUN_UPDATE_SOURCE_URL=https://github.com/zadstack/gorun/releases/latest/download/release-index.json
@@ -346,7 +348,7 @@ deployment in progress (`409`).
 **Manual adapter.** When no Coolify configuration exists, the activation phase
 records `manual:<version>` and waits (up to the activation timeout) for you to
 stop the process and start the verified artifact on the same data directory.
-The new process confirms activation on boot. Follow §2/§3 for the swap itself.
+The new process confirms activation on boot. Follow §2/§3 for the swap itself. The page explains the three server-side settings for Coolify activation. Partial or invalid Coolify credentials block page and API update requests instead of silently starting a manual operation.
 
 ### Conflicts and ownership
 
@@ -395,8 +397,10 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ## العربية — ملخص سريع
 
-لا توجد دورة تحديث تلقائية مكتملة للنواة. إجراء النشر الاختياري في الأدمن ينشئ
-نسخة احتياطية موثّقة ويرسل طلب نشر إلى Coolify؛ قبول الطلب لا يعني نجاح التحديث.
+يفحص GoRun الإصدارات الرسمية في الخلفية افتراضيًا، ولا ينشرها تلقائيًا. طلب
+التحديث المرحلي في الأدمن يتحقق من الإصدار وينشئ نسخة احتياطية موثّقة، ثم يطلب
+التفعيل عبر المحوّل المهيأ. اعتماد الإصدار يتطلب نجاح فحوص العملية الجديدة؛
+قبول طلب Coolify وحده لا يعني نجاح التحديث.
 الترقية = نسخة احتياطية ← إيقاف العملية (قفل `gorun.lock`) ← ثنائي أو صورة الوسم
 الجديد على **نفس** مجلد البيانات والمفتاح ← migrations عند `serve` ← فحص الصحة
 ودخول الأدمن. التراجع عن التشغيل يستخدم إصدارًا سابقًا متوافقًا مع **البيانات

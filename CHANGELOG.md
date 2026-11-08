@@ -7,6 +7,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- System updates discover official releases by default and select native or container artifacts. An empty source opts out; custom sources remain supported. The page explains manual and Coolify activation, Compose forwards update settings, and incomplete Coolify configuration blocks requests.
 - The admin uses warm neutral surfaces and petrol actions, Classic uses cream paper and charcoal, and Serif uses white paper with deep-blue links. Saved site identities keep precedence.
 - Agent role templates, the canvas list and the agents drawer use the canvas card design: a kind avatar, a tinted heading and a written badge. The orchestrator role now comes first, and canvases in the list show a readable save time and their last run state.
 

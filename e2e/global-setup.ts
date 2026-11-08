@@ -73,6 +73,8 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     GORUN_PATTERNS: resolve(repo, 'patterns'),
     // Extra theme roots (GORUN_THEMES_EXTRA) only when a downstream suite asks.
     ...(process.env.E2E_THEMES_EXTRA ? { GORUN_THEMES_EXTRA: process.env.E2E_THEMES_EXTRA } : {}),
+    // Hermetic tests do not contact the public release index.
+    GORUN_UPDATE_SOURCE_URL: '',
     GORUN_ENV: 'dev',
     GORUN_ADDR: `127.0.0.1:${port}`,
     GORUN_BASE_URL: base,

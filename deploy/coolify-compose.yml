@@ -12,6 +12,14 @@ services:
       - GORUN_SETUP_TOKEN=${SERVICE_HEX_32_GORUNSETUP}
       # Coolify's default network; confirm it with deploy/coolify.md, section 4.
       - GORUN_TRUSTED_PROXIES=${GORUN_TRUSTED_PROXIES:-10.0.1.0/24}
+      # Optional activation requires a Docker Image application, not this Compose service.
+      # Unset preserves gorun.toml/defaults; an explicit empty source opts out.
+      - GORUN_UPDATE_SOURCE_URL
+      - GORUN_UPDATE_SOURCE_TOKEN=${GORUN_UPDATE_SOURCE_TOKEN:-}
+      - GORUN_UPDATE_ARTIFACT=${GORUN_UPDATE_ARTIFACT:-ghcr.io/zadstack/gorun}
+      - GORUN_UPDATE_COOLIFY_URL=${GORUN_UPDATE_COOLIFY_URL:-}
+      - GORUN_UPDATE_COOLIFY_TOKEN=${GORUN_UPDATE_COOLIFY_TOKEN:-}
+      - GORUN_UPDATE_COOLIFY_RESOURCE=${GORUN_UPDATE_COOLIFY_RESOURCE:-}
     volumes:
       - gorun-data:/data
     healthcheck:
