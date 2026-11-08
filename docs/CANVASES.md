@@ -227,3 +227,22 @@ for multiple links. They are visual markers, not new clickable connection contro
 Use the existing Connections controls to add or remove an edge. Workflow layout
 uses measured card heights; Grid and List provide reading alternatives on narrow
 screens. Explicit Arrange cards saves positions without changing content or grants.
+
+
+## Search, local recovery and edit history
+
+The canvas list and editor include **Search canvases** (`Cmd/Ctrl+K`, including the physical K key with an Arabic keyboard). Search covers your own board titles, card titles, note/prompt bodies and checklist text. Arabic spelling variants, marks, tatweel and Arabic/Persian digits match equivalent queries; stored text is unchanged. Results show original-text excerpts and open the matching card directly. Linked content bodies, provider settings, run documents and grants are excluded. The title filter on the list remains available.
+
+Canvas editing has local **Undo** and **Redo** controls (`Cmd/Ctrl+Z`, `Cmd/Ctrl+Shift+Z`, or `Ctrl+Y` outside text fields). Create/edit/delete, checklist changes, connections, moves and Arrange are logical steps. Automatic collision resolution belongs to the edit that caused it. Undo checks the current server version before applying and uses the same versioned, audited save path. A newer agent/tab write blocks the inverse rather than overwriting that write. History is local to the current editor visit, with up to 100 steps. A generated result can be put back before its deletion is saved; after acknowledgment, the result and its run identity cannot be restored by Undo. The removal confirmation explains this boundary.
+
+Before a debounced save starts, the editor writes a recovery journal in this browser, scoped by origin, signed-in account, board and document lifetime. A crash, failed save or conflict does not automatically replay edits or run anything. Reopening the editor offers **Restore edits**, **Create personal copy**, **Download JSON** and **Discard local copy**. A restore checks the latest saved version; if it changed, keep your text as a personal copy. A personal copy keeps text and layout, converts results and connected tool/reference cards to ordinary notes, and removes connections, run identities and execution settings. No grants, schedules, inbound credentials or provenance are copied. The saved source board stays unchanged. Creating the copy is one atomic, audited server operation.
+
+Journals are retained for up to seven days, with a 256 KiB entry limit and limits of 20 entries / 2 MiB per account and origin. Unexpired copies from other tabs are never silently evicted. If quota, size or browser settings prevent durable storage, the editor keeps the current in-memory text and offers a download; leaving that page can still lose that in-memory copy. Storage is local to the browser and is not an encrypted backup or cross-device sync. A stale save acknowledgment or stale discard action cannot erase a newer revision. Recovery downloads contain document data only and do not import or execute themselves.
+
+### العربية
+
+تتيح قائمة اللوحات والمحرر البحث في اللوحات والكروت عبر `Cmd/Ctrl+K`، مع مطابقة اختلافات الكتابة والتشكيل والأرقام العربية دون تغيير النص الأصلي. يعرض البحث لوحات الحساب الحالي فقط، ولا يفهرس أسرار الأدوات أو سياقات التشغيل أو نصوص المحتوى المرتبط.
+
+التراجع والإعادة خاصان بزيارة المحرر الحالية، ويشملان التحريك والترتيب والتوصيلات وتعديلات الكروت العادية. يتحقق المحرر من نسخة السيرفر قبل تنفيذ التراجع؛ إذا تغيّرت يتوقف لحماية عمل التبويب أو الوكيل الآخر. بعد حفظ حذف نتيجة مُولَّدة، لا يمكن إعادة صلتها بالتشغيل عن طريق التراجع.
+
+تُحفظ التعديلات المحلية في المتصفح قبل بدء الحفظ المؤجل، مع عزل الحساب واللوحة والتبويب. الاستعادة قرار صريح ولا تُشغّل أو تنشر أي شيء. عند اختلاف النسخة المحفوظة يمكن إنشاء نسخة شخصية آمنة أو تنزيل JSON؛ تتحول الأدوات والنتائج والمراجع فيها إلى ملاحظات وتُزال التوصيلات وإعدادات التشغيل. مدة الاحتفاظ تصل إلى ٧ أيام، بحد ٢٥٦ كيلوبايت للنسخة و٢٠ نسخة / ٢ ميجابايت للحساب على هذا الموقع. عند تعذر التخزين تظهر رسالة لتنزيل العمل قبل المغادرة.

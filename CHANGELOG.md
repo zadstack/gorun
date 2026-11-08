@@ -7,6 +7,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Add owner-scoped Arabic-aware canvas search with keyboard navigation and direct card links, browser-local recovery with safe personal copies, and version-checked canvas Undo/Redo. Recovery never replays runs or publishing actions; saved result identity remains immutable.
 - Configurable public content languages in Settings → General and the settings API (`site.content_locales`), independently of Arabic/English admin catalogs. BCP-47 language, script and region tags retain canonical routes, translation groups and menu language selection. Changes apply without restart; transactional guards reject disabled language writes, removal of used languages and conflicting route prefixes. Recovery CLI and MCP default-language changes use the same guards. Legacy sites keep their content-language defaulting policy until an explicit list is saved.
 
 ### Changed

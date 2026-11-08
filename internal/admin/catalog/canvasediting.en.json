@@ -1,0 +1,10 @@
+{
+ "history":"Edit history", "undo":"Undo", "redo":"Redo", "history_error":"Could not change edit history. Your current work is kept. Try again.",
+ "result_delete_confirm":"Remove this generated result? Once this deletion is saved, Undo cannot restore the result or its run identity.",
+ "result_history_limit":"The saved result was removed. Its run identity cannot be restored with Undo.",
+ "recovery_title":"Recover local canvas work", "recovery_help":"These edits are stored in this browser for up to 7 days. Review them before restoring. Nothing runs or publishes automatically.",
+ "recovery_unsaved":"Unsaved local copy", "recovery_conflict":"The saved canvas has changed. Keep your edits as a personal copy.", "recovery_other_tab":"Local copy from an earlier visit or another tab", "recovery_storage":"Browser storage could not protect all local edits. Download a copy before leaving.",
+ "recovery_restore":"Restore edits", "recovery_copy":"Create personal copy", "recovery_download":"Download JSON", "recovery_discard":"Discard local copy", "recovery_busy":"Working…", "recovery_failed":"Could not recover this copy. Your local work is kept; try again or download it.",
+ "recovery_copy_help":"A personal copy keeps text and layout. Generated results and connected tools become notes; connections and execution settings are removed.",
+ "recovery_edit_first":"Save or download your current edits before restoring another local copy.", "recovery_discard_confirm":"Discard this local copy from this browser? The saved canvas will stay as it is."
+}

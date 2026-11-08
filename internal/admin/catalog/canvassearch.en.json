@@ -1,0 +1,19 @@
+{
+  "open": "Search canvases",
+  "title": "Search canvases and cards",
+  "close": "Close",
+  "query": "Search term",
+  "placeholder": "A canvas name, card title or phrase…",
+  "prompt": "Type at least two letters or numbers to search your canvases and card text.",
+  "loading": "Searching your canvases…",
+  "empty": "No matches. Try another name or phrase.",
+  "error": "Could not search your canvases. Try again.",
+  "denied": "Your session cannot search canvases. Sign in again or reload this page.",
+  "long": "Use a shorter search, up to 160 characters.",
+  "retry": "Try again",
+  "results": "Results: {count}",
+  "canvas": "Canvas",
+  "untitled": "Untitled card",
+  "result_label": "Canvas search results",
+  "help": "Use ↑ and ↓ to choose a result, Enter to open it, and Escape to close. Results include only your own canvases."
+}
