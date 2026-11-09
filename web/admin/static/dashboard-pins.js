@@ -65,8 +65,12 @@
       if(!response.ok)throw new Error('unavailable');const text=await response.text();if(text.length>2097152)throw new Error('size');const data=JSON.parse(text);
       if(version!==refreshVersion||generation!==epoch)return false;
       if(!Array.isArray(data.ids)||!data.ids.every(id=>typeof id==='string'&&id.length<=256)||typeof data.quick_html!=='string'||typeof data.widget_html!=='string')throw new Error('projection');
-      const top=nav?.scrollTop, left=scrollX, pageTop=scrollY, origin=preferredFocus||document.activeElement;
-      const quickID=origin?.closest('[data-quick-id]')?.dataset.quickId, quickRemove=origin?.matches('[data-quick-remove]');
+      const top=nav?.scrollTop, left=scrollX, pageTop=scrollY;
+      // The element the user is on right now wins over the control that started the
+      // mutation: a quick-access row focused during a pending save keeps its focus.
+      const active=document.activeElement, activeRow=active?.closest?.('[data-quick-id]');
+      const origin=activeRow||preferredFocus||active;
+      const quickID=activeRow?.dataset.quickId, quickRemove=active?.matches?.('[data-quick-remove]');
       const panelID=origin?.closest('[data-pin-id]')?.dataset.pinId;
       const panelControl=origin?.matches('[data-pin-drag]')?'[data-pin-drag]':origin?.matches('[data-pin-remove]')?'[data-pin-remove]':origin?.matches('[data-pin-move=up]')?'[data-pin-move=up]':origin?.matches('[data-pin-move=down]')?'[data-pin-move=down]':origin?.matches('a')?'footer a':null;
       const root=document.querySelector('[data-sidebar-quick-access]');
