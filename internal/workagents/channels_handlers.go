@@ -229,9 +229,6 @@ func messageViews(members []ChannelMember, msgs []ChannelMessage) []channelMessa
 	for _, m := range members {
 		name[m.MemberID] = m.DisplayName
 	}
-	if name == nil {
-		name = map[string]string{}
-	}
 	out := make([]channelMessageView, 0, len(msgs))
 	for _, m := range msgs {
 		v := channelMessageView{ChannelMessage: m}

@@ -243,6 +243,9 @@ func (s *service) createChannelFor(ctx context.Context, ownerID, title string, m
 			return ErrChannelBusy
 		}
 		if _, e := tx.ExecContext(ctx, `INSERT INTO workagents_channels(id,owner_id,title,status,created_at,updated_at)VALUES(?,?,?,'open',?,?)`, c.ID, ownerID, c.Title, c.CreatedAt, c.UpdatedAt); e != nil {
+			if isUniqueConstraint(e) {
+				return fmt.Errorf("%w: a channel with this title already exists", ErrChannelInvalid)
+			}
 			return e
 		}
 		if _, e := s.insertChannelMember(ctx, tx, c.ID, "user", ownerID, ownerUser.Name, c.CreatedAt); e != nil {
@@ -339,11 +342,6 @@ func (s *service) channelsPage(ctx context.Context, page, perPage int) ([]Channe
 		out = append(out, row)
 	}
 	return out, total, rows.Err()
-}
-
-// channelSummary reads one list row by id.
-func (s *service) channelSummary(ctx context.Context, id string) (ChannelSummary, error) {
-	return scanChannelSummary(s.d.DB.QueryRowContext(ctx, channelSummarySelect+` WHERE c.id=? AND c.owner_id=?`, id, owner(ctx)))
 }
 
 // channelDetail returns the owner's channel including its members.
