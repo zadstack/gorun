@@ -176,6 +176,38 @@ func TestDoctorRedactsConfigurationSecrets(t *testing.T) {
 	}
 }
 
+// A production container that cannot start on a missing public base URL gets a
+// dedicated check with the deployment fix, and no configured value is echoed.
+func TestDoctorNamesThePublicBaseURLFix(t *testing.T) {
+	t.Setenv("GORUN_ENV", "prod")
+	t.Setenv("GORUN_BASE_URL", "")
+	t.Setenv("GORUN_TRIAL", "")
+	t.Setenv("GORUN_SECRET_KEY", "")
+	var out bytes.Buffer
+	if err := doctorCmd([]string{"--data", t.TempDir(), "--json"}, &out); err == nil {
+		t.Fatal("missing public base URL accepted")
+	}
+	var report siteDoctorReport
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+		t.Fatalf("doctor did not return JSON: %v", err)
+	}
+	var found *siteDoctorCheck
+	for i := range report.Checks {
+		if report.Checks[i].ID == "public_base_url" {
+			found = &report.Checks[i]
+		}
+	}
+	if found == nil {
+		t.Fatalf("no public_base_url check: %+v", report.Checks)
+	}
+	if found.Status != "fail" || found.Action == "" {
+		t.Fatalf("check is not actionable: %+v", found)
+	}
+	if !strings.Contains(found.Action, "GORUN_BASE_URL") || !strings.Contains(found.Action, "not a production setup") {
+		t.Fatalf("action does not explain the fix: %s", found.Action)
+	}
+}
+
 func TestDoctorCorruptDatabase(t *testing.T) {
 	cfg, err := config.Load([]string{"--data", t.TempDir()})
 	if err != nil {

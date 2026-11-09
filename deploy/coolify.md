@@ -60,6 +60,27 @@ as below. Images are multi-arch (linux/amd64, linux/arm64).
 the image. Pin the image tag (`0.18.3` or `0.18`) in production rather than
 relying on `latest` alone.
 
+### The container exits with `GORUN_BASE_URL is required in prod`
+
+The image runs `GORUN_ENV=prod`, and production needs the public base URL:
+absolute links, redirects, cookies and HSTS all derive from it. The fix is the
+public URL, not a trial site.
+
+1. **Attach the domain** to the `gorun` service (**Domains**, e.g.
+   `https://example.com:443`). The compose file maps Coolify's
+   `SERVICE_URL_GORUN_8080` into `GORUN_BASE_URL`, so the domain fills the
+   variable on the next deploy. Without a domain that value stays empty.
+2. **Or set it directly** in **Environment Variables**:
+   `GORUN_BASE_URL=https://example.com` (no trailing slash).
+3. Redeploy (stop-then-start) and confirm the container is healthy.
+
+`GORUN_TRIAL=1` starts a disposable dev-mode site: it ignores forwarded proxy
+headers, builds absolute links against `localhost`, and is not a production
+setup. Use it only to look at the product on a throwaway container.
+
+`gorun doctor` reports the same problem under the `public_base_url` check with
+the next step, and it never prints the configured value.
+
 ## 3. Persistent storage
 
 The named volume `gorun-data` is mounted at `/data`. It holds the SQLite

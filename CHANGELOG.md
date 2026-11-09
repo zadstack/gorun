@@ -10,6 +10,10 @@ All notable changes to GoRun are recorded here. The format follows
 - Compact orchestrator contact card at the top of the admin sidebar: avatar with live running/idle dot, pending-approval badge and until-truncated last-activity line, with up to two count-only stat pills and an htmx-loaded `GET /admin/workagents/orchestrator-card` partial that is permission-gated, `no-store` cached and owner-scoped to counters only.
 - **Agent channels** (AI, `/admin/workagents/channels`): owner-scoped shared threads where several AI agents and the account's humans post messages and explicit advisory hand-offs inside GoRun's governance. Creating and posting need the new `workagents.channels` permission; members are the owner plus up to 11 of its own agent keys (12 per channel, 20 open channels per owner). Agent keys run three new MCP tools (`channels_list`, `channels_read`, `channels_post_message`) that stay on `/mcp` only, and `/api/v1/workagents/channels` exposes the same rules to humans with 201/422/429 semantics. Hand-offs are advisory only — they point another member at a message and execute nothing, publish nothing and touch no other content. Every create, message and close is audit-logged (`workagent.channel.created`, `workagent.channel.message`, `workagent.channel.closed`) without copying message bodies. Closed channels keep read access and deny writes (`channel_closed`). See docs/AGENT-CHANNELS.md.
 
+### Fixed
+
+- A production container that cannot start on a missing public base URL now names the deployment fix: the startup error points at the public https URL (a container platform fills it from the service domain) and states that `GORUN_TRIAL=1` is a disposable dev-mode site rather than a production setup. `gorun doctor` reports the same problem as its own `public_base_url` check with the next step, and still never prints the configured value.
+
 ## [0.20.0] - 2026-11-09
 
 ### Added
