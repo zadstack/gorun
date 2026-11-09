@@ -65,6 +65,18 @@ and failed native executions. Raw source provider credentials/configuration
 must remain encrypted and must not be copied into profile prompts, inputs,
 artifacts or API-visible descriptions.
 
+## Orchestrator sidebar card
+
+`GET /admin/workagents/orchestrator-card` (requires `workagents.read`,
+`Cache-Control: no-store`) serves the `partials/orchestrator_card` htmx swap
+for the compact contact card the admin sidebar loads on `hx-trigger="load"`.
+It answers owner-scoped counters only — pending `workagents_approvals`, pending
+MCP tool approvals requested by the owner (plain SQL as in internal/admin,
+skipped when the MCP tables do not exist), live runs, runs finished since the
+UTC day start — plus `running`/`idle` status. The viewer's admin shell emits
+the swap container only when the session can `workagents.read`; message bodies
+and prompt text never leave the module.
+
 ## Verification
 
 `go test -race ./internal/workagents` exercises real SQLite, the job queue,

@@ -78,6 +78,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 	h.api(d)
 	h.registerDesignReviews(d)
 	h.registerChannels(d)
+	d.Router.Admin.With(auth.RequirePerm("workagents.read")).Get("/workagents/orchestrator-card", h.orchestratorCard)
 	if err := seedExampleOrchestratorAgents(context.Background(), d, func() string { return db.FormatTime(time.Now()) }); err != nil {
 		return err
 	}

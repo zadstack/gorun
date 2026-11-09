@@ -1,0 +1,10 @@
+{{define "partials/orchestrator_card"}}<a href="/admin/workagents" class="orchestrator-card{{if .Orchestrator}} is-set{{else}} is-unset{{end}}{{if eq .Status "running"}} is-running{{end}}">
+  <span class="orchestrator-card-avatar" aria-hidden="true">{{icon "bot" "orchestrator-card-icon"}}<span class="orchestrator-card-dot"></span></span>
+  <span class="orchestrator-card-lines">
+    <span class="orchestrator-card-head"><span class="orchestrator-card-name">{{t "workagents.orchestrator.title"}}</span>{{if gt .Pending 0}}<span class="orchestrator-card-badge" title="{{t "workagents.orchestrator.pill_pending"}}">{{.Pending}}</span>{{end}}</span>
+    <span class="orchestrator-card-activity">{{- if not .Orchestrator}} {{t "workagents.orchestrator.enable_hint"}} {{- else if gt .Pending 0}} {{t "workagents.orchestrator.pending" .Pending}}{{if gt .DoneToday 0}} · {{t "workagents.orchestrator.done_today" .DoneToday}}{{end}} {{- else if gt .DoneToday 0}} {{t "workagents.orchestrator.done_today" .DoneToday}} {{- else}} {{t "workagents.orchestrator.activity_none"}} {{- end}}</span>
+    <span class="orchestrator-card-tag">{{if eq .Status "running"}}{{t "workagents.orchestrator.tag_running"}}{{else}}{{t "workagents.orchestrator.tag_idle"}}{{end}}</span>
+  </span>
+</a>{{if or (gt .Pending 0) (gt .DoneToday 0)}}
+<p class="orchestrator-card-pills">{{if gt .Pending 0}}<span class="orchestrator-card-pill"><b>{{.Pending}}</b> {{t "workagents.orchestrator.pill_pending"}}</span>{{end}}{{if gt .DoneToday 0}}<span class="orchestrator-card-pill"><b>{{.DoneToday}}</b> {{t "workagents.orchestrator.pill_done"}}</span>{{end}}</p>
+{{end}}{{end}}
