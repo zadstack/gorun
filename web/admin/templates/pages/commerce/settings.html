@@ -59,19 +59,19 @@
   </div>
   <div class="max-w-40">
     <label for="c-currency" class="block font-medium mb-1">{{t "commerce.field.currency"}}</label>
-    <input id="c-currency" name="currency" value="{{.Currency}}" maxlength="3" dir="ltr" {{with index .Fields "currency"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono uppercase">
+    <input id="c-currency" name="currency" value="{{.Currency}}" maxlength="3" dir="ltr" {{with index .Fields "currency"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono uppercase">
     {{template "partials/field_errors" (index .Fields "currency")}}
   </div>
   <div id="stripe">
     <label for="c-stripe" class="block font-medium mb-1">{{t "commerce.settings.stripe_key"}}</label>
-    <input id="c-stripe" name="stripe_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_live_…" aria-describedby="c-stripe-help" {{with index .Fields "stripe_secret_key"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <input id="c-stripe" name="stripe_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_live_…" aria-describedby="c-stripe-help" {{with index .Fields "stripe_secret_key"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     {{template "partials/field_errors" (index .Fields "stripe_secret_key")}}
     <p id="c-stripe-help" class="mt-1 text-xs text-muted">{{if .StripeSet}}{{t "commerce.settings.secret_set"}}{{else if .StripeFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .StripeSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_secret_key" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>
   <div id="webhook">
     <label for="c-webhook" class="block font-medium mb-1">{{t "commerce.settings.webhook_secret"}}</label>
-    <input id="c-webhook" name="stripe_webhook_secret" type="password" autocomplete="new-password" dir="ltr" placeholder="whsec_…" aria-describedby="c-webhook-help" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <input id="c-webhook" name="stripe_webhook_secret" type="password" autocomplete="new-password" dir="ltr" placeholder="whsec_…" aria-describedby="c-webhook-help" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     <p id="c-webhook-help" class="mt-1 text-xs text-muted">{{if .WebhookSet}}{{t "commerce.settings.secret_set"}}{{else if .WebhookFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .WebhookSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_webhook_secret" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>
@@ -97,7 +97,7 @@
     <code class="mt-1 block font-mono text-xs break-all" dir="ltr">{{.LiveWebhookURL}}</code>
     <p class="mt-1 text-xs text-muted">{{t "commerce.settings.webhook_events"}} <code class="font-mono" dir="ltr">checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, checkout.session.expired, charge.refunded, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted, customer.subscription.trial_will_end, invoice.paid, invoice.payment_failed</code></p>
   </div>
-  <div><button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+  <div><button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.save"}}</button></div>
 </form>
 <form method="post" action="/admin/commerce/settings/test-event" class="mt-4">
   <input type="hidden" name="_csrf" value="{{csrf}}">

@@ -70,7 +70,23 @@
       const panelID=origin?.closest('[data-pin-id]')?.dataset.pinId;
       const panelControl=origin?.matches('[data-pin-drag]')?'[data-pin-drag]':origin?.matches('[data-pin-remove]')?'[data-pin-remove]':origin?.matches('[data-pin-move=up]')?'[data-pin-move=up]':origin?.matches('[data-pin-move=down]')?'[data-pin-move=down]':origin?.matches('a')?'footer a':null;
       const root=document.querySelector('[data-sidebar-quick-access]');if(root)root.innerHTML=data.quick_html;
-      if(workspace&&data.widget_html){const template=document.createElement('template');template.innerHTML=data.widget_html;const replacement=template.content.querySelector('[data-dashboard-pins]');if(!replacement)throw new Error('widget');workspace.replaceWith(replacement);workspace=replacement;grid=workspace.querySelector('[data-pin-grid]');bindPanels();}
+      if (workspace && data.widget_html) {
+        const template = document.createElement('template');
+        template.innerHTML = data.widget_html;
+        const replacement = template.content.querySelector('[data-dashboard-pins]');
+        if (!replacement) throw new Error('widget');
+        const disclosure = workspace.querySelector('.dashboard-disclosure');
+        const nextDisclosure = replacement.querySelector('.dashboard-disclosure');
+        const summaryFocused = origin === disclosure?.querySelector('summary');
+        const hadPins = Boolean(workspace.querySelector('[data-pin-id]'));
+        const hasPins = Boolean(replacement.querySelector('[data-pin-id]'));
+        if (disclosure && nextDisclosure && hadPins === hasPins) nextDisclosure.open = disclosure.open;
+        workspace.replaceWith(replacement);
+        workspace = replacement;
+        grid = workspace.querySelector('[data-pin-grid]');
+        bindPanels();
+        if (summaryFocused) nextDisclosure?.querySelector('summary')?.focus({preventScroll:true});
+      }
       updateButtons(data.ids);if(nav&&Number.isFinite(top))nav.scrollTop=top;window.scrollTo(left,pageTop);
       if(quickID){const row=[...document.querySelectorAll('[data-quick-id]')].find(row=>row.dataset.quickId===quickID);(row?.querySelector(quickRemove?'[data-quick-remove]':'a')||document.querySelector('[data-quick-access] h2'))?.focus({preventScroll:true});}
       else if(panelID&&panelControl){const panel=[...(grid?.querySelectorAll('[data-pin-id]')||[])].find(panel=>panel.dataset.pinId===panelID);(panel?.querySelector(panelControl)||document.querySelector('[data-quick-access] h2'))?.focus({preventScroll:true});}
@@ -92,15 +108,19 @@
     drag = null; workspace?.classList.remove('is-drop-target');
     document.querySelectorAll('.is-dragging,.is-reorder-target').forEach(el => el.classList.remove('is-dragging', 'is-reorder-target'));
   }
-  document.querySelectorAll('[data-nav-id]').forEach(row => {
-    const id = row.dataset.navId;
-    row.querySelector('[data-sidebar-pin-add]')?.addEventListener('click', () => pin(id));
-    row.querySelector('[data-sidebar-pin-drag]')?.addEventListener('dragstart', event => {
-      if (busy || !workspace) { event.preventDefault(); return; }
-      drag = {kind: 'nav', id}; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('application/x-gorun-nav-id', id);
-      workspace.classList.add('is-drop-target');
-    });
+  document.addEventListener('click', event => {
+    const button = event.target.closest('[data-sidebar-pin-add]');
+    if (button) pin(button.closest('[data-nav-id]').dataset.navId);
   });
+  document.addEventListener('dragstart', event => {
+    const handle = event.target.closest('[data-sidebar-pin-drag]');
+    if (!handle) return;
+    if (busy || !workspace) { event.preventDefault(); return; }
+    const id = handle.closest('[data-nav-id]').dataset.navId;
+    drag = {kind: 'nav', id}; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('application/x-gorun-nav-id', id);
+    workspace.classList.add('is-drop-target');
+  });
+
   if (workspace) {
     document.addEventListener('dragover', event => { if (drag?.kind === 'nav' && !busy && event.target.closest('[data-dashboard-pins]')) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } });
     document.addEventListener('drop', event => {

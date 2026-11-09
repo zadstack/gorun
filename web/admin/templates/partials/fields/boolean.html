@@ -3,7 +3,7 @@
   <input type="hidden" name="{{.Name}}" value="0">
   <label for="{{.ID}}" class="inline-flex items-center gap-2 font-medium">
     <input id="{{.ID}}" name="{{.Name}}" type="checkbox" value="1" {{if .Checked}}checked{{end}} {{if .Error}}aria-invalid="true"{{end}}
-           class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+           class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
     <span>{{.Label}}{{if .Required}} <span class="text-red" aria-hidden="true">*</span>{{end}}</span>
   </label>
   {{template "fields/help" .}}

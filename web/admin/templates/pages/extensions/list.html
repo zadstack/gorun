@@ -23,7 +23,7 @@
     <label for="ext-package" class="sr-only">{{t "ext.install.file"}}</label>
     <input id="ext-package" type="file" name="package" accept=".zip,application/zip" required
            class="text-sm file:me-2 file:h-9 file:px-3 file:rounded file:border file:border-line file:bg-panel file:text-ink hover:file:border-line-strong">
-    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium inline-flex items-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "upload"}}{{t "ext.install.submit"}}</button>
+    <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium inline-flex items-center gap-1.5 hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "upload"}}{{t "ext.install.submit"}}</button>
   </form>
   {{if .Available}}
   <div class="mt-4 border-t border-line pt-3">
@@ -35,7 +35,7 @@
         <form method="post" action="/admin/extensions/install-dir" hx-post="/admin/extensions/install-dir" hx-target="#main" hx-swap="innerHTML">
           <input type="hidden" name="_csrf" value="{{csrf}}">
           <input type="hidden" name="slug" value="{{.Slug}}">
-          <button type="submit" class="h-8 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "ext.available.install"}}</button>
+          <button type="submit" class="h-8 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "ext.available.install"}}</button>
         </form>
       </li>
       {{end}}

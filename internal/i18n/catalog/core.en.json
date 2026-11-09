@@ -59,5 +59,11 @@
   "nav.group.site-design": "Design",
   "nav.group.site-search": "Search and readiness",
   "nav.group.site-analytics": "Analytics",
-  "nav.group.site": "Site"
+  "nav.group.site": "Site",
+  "workspace.site_tools": "Site tools",
+  "workspace.view_site": "View site",
+  "workspace.direct_tools": "Open directly",
+  "workspace.all_tools": "Administration tools",
+  "workspace.tools_hint": "Open a tool directly, without navigating through settings sections.",
+  "workspace.more_tools": "More tools"
 }

@@ -16,7 +16,7 @@
   {{if .AttachmentName}}
   <div class="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded border border-line bg-panel-2 p-3">
     <span class="inline-flex items-center gap-2 min-w-0">{{icon "paperclip" "w-4 h-4 shrink-0"}}<span class="truncate" dir="auto">{{.AttachmentName}}</span><span class="font-mono text-xs text-muted">{{.SizeText}}</span></span>
-    <a href="/admin/forms/{{.Form.Slug}}/entries/{{.ID}}/attachment" class="h-8 px-3 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "download" "w-4 h-4"}}{{t "site.submissions.download"}}</a>
+    <a href="/admin/forms/{{.Form.Slug}}/entries/{{.ID}}/attachment" class="h-8 px-3 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "download" "w-4 h-4"}}{{t "site.submissions.download"}}</a>
   </div>
   {{end}}
   <dl class="px-4 pb-4 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_minmax(0,1fr)] border-t border-line pt-4">
@@ -27,13 +27,13 @@
   <div class="p-4 border-t border-line flex flex-wrap gap-2">
     <form method="post" action="/admin/forms/{{.Form.Slug}}/entries/{{.ID}}/status">
       <input type="hidden" name="_csrf" value="{{csrf}}">
-      {{if eq .Status "spam"}}<input type="hidden" name="status" value="read"><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.submissions.action.not_spam"}}</button>
-      {{else}}<input type="hidden" name="status" value="spam"><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.submissions.action.spam"}}</button>{{end}}
+      {{if eq .Status "spam"}}<input type="hidden" name="status" value="read"><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.submissions.action.not_spam"}}</button>
+      {{else}}<input type="hidden" name="status" value="spam"><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.submissions.action.spam"}}</button>{{end}}
     </form>
     {{if ne .Status "spam"}}
     <form method="post" action="/admin/forms/{{.Form.Slug}}/entries/{{.ID}}/status">
       <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="status" value="new">
-      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.submissions.action.unread"}}</button>
+      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.submissions.action.unread"}}</button>
     </form>
     {{end}}
     <form method="post" action="/admin/forms/{{.Form.Slug}}/entries/{{.ID}}/delete" data-confirm="{{t "site.forms.confirm.entry_delete"}}" class="ms-auto">

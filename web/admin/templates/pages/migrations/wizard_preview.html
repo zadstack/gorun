@@ -7,7 +7,7 @@
   <ol class="flex gap-1 min-w-max">
     {{range .Steps}}
     <li>
-      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-green bg-green-soft text-green{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-blue bg-blue-soft text-blue{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
         <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
       </a>
     </li>
@@ -19,7 +19,7 @@
   <p class="text-xs text-muted">{{t "wpmigrate.preview.dry_help"}}</p>
   <form method="post" action="/admin/migrations/{{.M.ID}}/preview" class="ms-auto">
     <input type="hidden" name="_csrf" value="{{csrf}}">
-    <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "flask-conical"}}<span>{{if .Preview}}{{t "wpmigrate.preview.rerun"}}{{else}}{{t "wpmigrate.preview.run"}}{{end}}</span></button>
+    <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "flask-conical"}}<span>{{if .Preview}}{{t "wpmigrate.preview.rerun"}}{{else}}{{t "wpmigrate.preview.run"}}{{end}}</span></button>
   </form>
 </div>
 {{with .Preview}}
@@ -84,7 +84,7 @@
   </section>
 </div>
 <div class="flex justify-end">
-  <a href="/admin/migrations/{{$.M.ID}}/import" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "wpmigrate.next.import"}}</span>{{icon "arrow-right" "w-4 h-4 rtl:rotate-180"}}</a>
+  <a href="/admin/migrations/{{$.M.ID}}/import" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft"><span>{{t "wpmigrate.next.import"}}</span>{{icon "arrow-right" "w-4 h-4 rtl:rotate-180"}}</a>
 </div>
 {{else}}
 <p class="rounded border border-line bg-panel p-6 text-center text-muted">{{t "wpmigrate.preview.empty"}}</p>

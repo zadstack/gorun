@@ -16,7 +16,7 @@
 <aside aria-label="{{t "workagents.review.title"}}" class="mt-3 space-y-3"><p class="text-sm text-muted">{{t "workagents.review.readonly"}}</p>
 <label class="grid gap-1">{{t "workagents.review.orchestrator"}}<select class="border border-line p-2 bg-panel"><option value="">{{t "workagents.review.select"}}</option></select></label>
 <button type="button" data-review-preview class="border border-line px-3 py-2">{{t "workagents.review.preview"}}</button>
-<div data-review-approval hidden class="space-y-3"><p>{{t "workagents.review.destination"}}: <span data-review-destination dir="auto"></span></p><pre data-review-context class="border border-line p-3 whitespace-pre-wrap text-sm" dir="auto"></pre><label class="flex gap-2"><input type="checkbox" data-review-consent required> <span>{{t "workagents.review.consent"}}</span></label><button type="button" data-review-enqueue class="bg-green text-white px-3 py-2">{{t "workagents.review.enqueue"}}</button></div>
+<div data-review-approval hidden class="space-y-3"><p>{{t "workagents.review.destination"}}: <span data-review-destination dir="auto"></span></p><pre data-review-context class="border border-line p-3 whitespace-pre-wrap text-sm" dir="auto"></pre><label class="flex gap-2"><input type="checkbox" data-review-consent required> <span>{{t "workagents.review.consent"}}</span></label><button type="button" data-review-enqueue class="bg-blue text-white px-3 py-2">{{t "workagents.review.enqueue"}}</button></div>
 <p role="status" aria-live="polite" data-review-status></p><a href="/admin/workagents/design-reviews?page_id={{.Item.ID}}" target="_blank" rel="noopener" class="text-blue">{{t "workagents.review.history"}}</a><noscript><a href="/admin/workagents/design-reviews?page_id={{.Item.ID}}">{{t "workagents.review.preview"}}</a></noscript></aside></details>
 {{end}}
 {{with .FormError}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
@@ -31,14 +31,14 @@
           {{if $ai}}{{template "content/ai_suggest" "content.ai.suggest_title"}}{{end}}
         </div>
         <input id="title" name="title" type="text" value="{{.Item.Title}}" dir="auto" {{if index .Errors "title"}}aria-invalid="true"{{end}}
-               class="w-full h-10 rounded border border-line bg-panel px-3 text-base focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+               class="w-full h-10 rounded border border-line bg-panel px-3 text-base focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         {{template "partials/field_errors" (index .Errors "title")}}
         {{if $ai}}{{template "content/ai_suggestion"}}{{end}}
       </div>
       <div>
         <label for="slug" class="block font-medium mb-1">{{t "content.editor.slug"}}</label>
         <input id="slug" name="slug" type="text" value="{{.Item.Slug}}" dir="auto" aria-describedby="slug-help"
-               class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+               class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
         <p id="slug-help" class="mt-1 text-xs text-muted">{{t "content.editor.slug_help"}}</p>
         {{template "partials/field_errors" (index .Errors "slug")}}
       </div>
@@ -52,7 +52,7 @@
         <label for="excerpt" class="block font-medium">{{t "content.editor.excerpt"}}</label>
         {{if $ai}}{{template "content/ai_suggest" "content.ai.write_excerpt"}}{{end}}
       </div>
-      <textarea id="excerpt" name="excerpt" rows="3" dir="auto" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Item.Excerpt}}</textarea>
+      <textarea id="excerpt" name="excerpt" rows="3" dir="auto" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.Item.Excerpt}}</textarea>
       {{if $ai}}{{template "content/ai_suggestion"}}{{end}}
     </section>
     {{end}}
@@ -70,22 +70,22 @@
       {{range .SEODrift}}<p class="rounded border border-line bg-bg px-3 py-2 text-sm" role="status" data-seo-drift="{{.}}">{{if eq . "title"}}{{t "content.seo.drift_title"}}{{else}}{{t "content.seo.drift_description"}}{{end}}</p>{{end}}
       <div>
         <label for="seo-title" class="block font-medium mb-1">{{t "content.seo.meta_title"}}</label>
-        <input x-ref="st" id="seo-title" name="seo[title]" type="text" value="{{.SEO.Title}}" dir="auto" @input="st = $event.target.value" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <input x-ref="st" id="seo-title" name="seo[title]" type="text" value="{{.SEO.Title}}" dir="auto" @input="st = $event.target.value" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       </div>
       <div>
         <label for="seo-description" class="block font-medium mb-1">{{t "content.seo.description"}}</label>
         <textarea x-ref="sd" id="seo-description" name="seo[description]" rows="2" dir="auto" @input="sd = $event.target.value"
-                  class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.SEO.Description}}</textarea>
+                  class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.SEO.Description}}</textarea>
         <p class="mt-1 text-xs text-muted font-mono"><span x-text="sd.length"></span> / 160</p>
       </div>
       <div class="grid gap-3 md:grid-cols-2">
         <div>
           <label for="seo-canonical" class="block font-medium mb-1">{{t "content.seo.canonical"}}</label>
-          <input id="seo-canonical" name="seo[canonical]" type="url" value="{{.SEO.Canonical}}" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+          <input id="seo-canonical" name="seo[canonical]" type="url" value="{{.SEO.Canonical}}" dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
         </div>
         <div>
           <label for="seo-robots" class="block font-medium mb-1">{{t "content.seo.robots"}}</label>
-          <select id="seo-robots" name="seo[robots]" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          <select id="seo-robots" name="seo[robots]" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
             <option value="">{{t "content.seo.robots_default"}}</option>
             {{range $r := .RobotsOptions}}<option value="{{$r}}" {{if eq $r $.SEO.Robots}}selected{{end}}>{{$r}}</option>{{end}}
           </select>
@@ -110,7 +110,7 @@
       {{if .IsNew}}
       <div>
         <label for="editor-locale" class="block font-medium mb-1">{{t "content.editor.locale"}}</label>
-        <select id="editor-locale" name="locale" data-content-locale class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft" {{if index .Errors "locale"}}aria-invalid="true"{{end}}>
+        <select id="editor-locale" name="locale" data-content-locale class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft" {{if index .Errors "locale"}}aria-invalid="true"{{end}}>
           {{$loc := .Item.Locale}}{{range .Locales}}<option value="{{.}}" {{if eq . $loc}}selected{{end}}>{{localeName .}}</option>{{end}}
         </select>
         <p class="mt-1 text-xs text-muted">{{t "content.editor.locale_help"}}</p>
@@ -121,21 +121,21 @@
       {{end}}
       <div>
         <label for="status" class="block font-medium mb-1">{{t "content.list.status"}}</label>
-        <select id="status" name="status" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <select id="status" name="status" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           {{range .Statuses}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{t (printf "content.status.%s" .Value)}}</option>{{end}}
         </select>
         {{template "partials/field_errors" (index .Errors "status")}}
       </div>
       <div>
         <label for="publish_at" class="block font-medium mb-1">{{t "content.publish.publish_at"}}</label>
-        <input id="publish_at" name="publish_at" type="datetime-local" value="{{.PublishAtLocal}}" aria-describedby="publish-at-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+        <input id="publish_at" name="publish_at" type="datetime-local" value="{{.PublishAtLocal}}" aria-describedby="publish-at-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
         <p id="publish-at-help" class="mt-1 text-xs text-muted">{{t "content.publish.publish_at_help"}}</p>
         {{template "partials/field_errors" (index .Errors "publish_at")}}
       </div>
       {{if not .IsNew}}<p class="text-xs text-muted">{{t "content.publish.updated"}} <span class="font-mono">{{date .Item.UpdatedAt}}</span>{{if .Item.PublishedAt}} · {{t "content.publish.published"}} <span class="font-mono">{{date .Item.PublishedAt}}</span>{{end}}</p>{{end}}
       <div class="flex flex-wrap gap-2 pt-1">
-        <button type="submit" name="intent" value="save" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center justify-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft flex-1">{{icon "save"}}<span data-save-label data-published="{{t "content.ux.update_live"}}" data-draft="{{t "content.ux.save_draft"}}" data-unpublish="{{t "content.ux.save_unpublish"}}" data-other="{{t "content.ux.save_status"}}">{{if eq .Item.Status "published"}}{{t "content.ux.update_live"}}{{else}}{{t "content.ux.save_status"}}{{end}}</span></button>
-        {{if and .CanPublish (ne .Item.Status "published")}}<button type="submit" name="intent" value="publish" class="h-9 px-3 rounded bg-green text-white font-medium inline-flex items-center justify-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft flex-1">{{icon "send"}}<span>{{if eq .Item.Status "published"}}{{t "content.publish.update"}}{{else}}{{t "content.publish.publish"}}{{end}}</span></button>{{end}}
+        <button type="submit" name="intent" value="save" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center justify-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft flex-1">{{icon "save"}}<span data-save-label data-published="{{t "content.ux.update_live"}}" data-draft="{{t "content.ux.save_draft"}}" data-unpublish="{{t "content.ux.save_unpublish"}}" data-other="{{t "content.ux.save_status"}}">{{if eq .Item.Status "published"}}{{t "content.ux.update_live"}}{{else}}{{t "content.ux.save_status"}}{{end}}</span></button>
+        {{if and .CanPublish (ne .Item.Status "published")}}<button type="submit" name="intent" value="publish" class="h-9 px-3 rounded bg-blue text-white font-medium inline-flex items-center justify-center gap-1.5 hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft flex-1">{{icon "send"}}<span>{{if eq .Item.Status "published"}}{{t "content.publish.update"}}{{else}}{{t "content.publish.publish"}}{{end}}</span></button>{{end}}
       </div>
       {{if and (not .IsNew) .CanDelete}}
       <div class="pt-2 border-t border-line">
@@ -154,7 +154,7 @@
       {{if .Authors}}
       <div>
         <label for="author_id" class="block font-medium mb-1">{{t "content.editor.author"}}</label>
-        <select id="author_id" name="author_id" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <select id="author_id" name="author_id" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           <option value="">{{t "content.editor.choose"}}</option>
           {{range .Authors}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>{{end}}
         </select>
@@ -163,7 +163,7 @@
       {{if .Templates}}
       <div>
         <label for="template" class="block font-medium mb-1">{{t "content.editor.template"}}</label>
-        <select id="template" name="template" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <select id="template" name="template" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           <option value="">{{t "content.editor.template_default"}}</option>
           {{range .Templates}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>{{end}}
         </select>
@@ -180,7 +180,7 @@
       {{if .Supports.menu_order}}
       <div>
         <label for="menu_order" class="block font-medium mb-1">{{t "content.editor.menu_order"}}</label>
-        <input id="menu_order" name="menu_order" type="number" step="1" value="{{.Item.MenuOrder}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+        <input id="menu_order" name="menu_order" type="number" step="1" value="{{.Item.MenuOrder}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
       </div>
       {{end}}
     </section>
@@ -240,7 +240,7 @@
 
 {{/* AI suggestion button and preview for the title and excerpt (inside an x-data="gpAIField" block). */}}
 {{define "content/ai_suggest"}}
-<button type="button" @click="run()" :disabled="busy" class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-green-soft disabled:opacity-50">
+<button type="button" @click="run()" :disabled="busy" class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-blue-soft disabled:opacity-50">
   {{icon "sparkles"}}<span x-show="!busy">{{t .}}</span><span x-show="busy" x-cloak class="[&[x-cloak]]:hidden" role="status">{{t "content.ai.busy"}}</span>
 </button>
 {{end}}
@@ -248,7 +248,7 @@
 <p x-show="error" x-cloak x-text="error" role="alert" class="[&[x-cloak]]:hidden mt-1 text-xs text-red"></p>
 <div x-show="result" x-cloak class="[&[x-cloak]]:hidden mt-2 flex flex-wrap items-center gap-2 rounded border border-line bg-panel-2 px-3 py-2">
   <span x-text="result" dir="auto" class="flex-1 min-w-0"></span>
-  <button type="button" @click="use()" class="h-8 px-3 rounded border border-green text-green text-xs font-medium hover:bg-green-soft focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.ai.use"}}</button>
-  <button type="button" @click="result = ''" class="h-8 px-3 rounded border border-line bg-panel text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.cancel"}}</button>
+  <button type="button" @click="use()" class="h-8 px-3 rounded border border-blue text-blue text-xs font-medium hover:bg-blue-soft focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "content.ai.use"}}</button>
+  <button type="button" @click="result = ''" class="h-8 px-3 rounded border border-line bg-panel text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.cancel"}}</button>
 </div>
 {{end}}

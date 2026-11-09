@@ -2,7 +2,7 @@
 <div class="gp-field" data-field-type="select" data-field-key="{{.Key}}">
   {{template "fields/label" .}}
   <select id="{{.ID}}" name="{{.Name}}" {{if .Required}}required{{end}} {{if .Error}}aria-invalid="true"{{end}} {{if .Help}}aria-describedby="{{.ID}}-help"{{end}}
-          class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     <option value="">{{t "content.editor.choose"}}</option>
     {{range .Options}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>{{end}}
   </select>

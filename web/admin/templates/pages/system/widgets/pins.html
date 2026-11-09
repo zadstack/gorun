@@ -1,6 +1,8 @@
 {{define "content"}}
 <div class="dashboard-pins" data-widget="dashboard_pins" data-dashboard-pins>
- <header class="dashboard-pins-heading"><div><h2>{{t "dashboardpins.title"}}</h2><p>{{t "dashboardpins.description"}}</p></div><span class="dashboard-drop-label" aria-hidden="true">＋ {{t "dashboardpins.drop"}}</span></header>
+ <details class="dashboard-disclosure" {{if .Pinned}}open{{end}}>
+ <summary><h2>{{t "dashboardpins.title"}}</h2><span class="dashboard-disclosure-hint">{{t "dashboardpins.description"}}</span></summary>
+ <div class="dashboard-disclosure-body">
  <div class="dashboard-pin-grid" data-pin-grid>
  {{range .Pinned}}
   <article class="dashboard-pin-panel" data-pin-id="{{.ID}}">
@@ -19,5 +21,6 @@
  </div>
  {{if not .Pinned}}<div class="dashboard-pins-empty"><span aria-hidden="true">＋</span><h3>{{t "dashboardpins.empty"}}</h3><p>{{t "dashboardpins.empty_help"}}</p></div>{{end}}
  <p class="dashboard-pin-status" role="status" aria-live="polite" data-pin-status></p>
+ </div></details>
 </div>
 {{end}}

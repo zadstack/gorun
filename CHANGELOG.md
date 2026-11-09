@@ -5,6 +5,14 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Compact the admin dashboard into a distributed workspace, assign standalone shortcuts a single owner across navigation and personal pins, and move utility links into a mobile tools menu. Share neutral surfaces and petrol actions across administration while preserving semantic status colors and public site identities.
+
+### Fixed
+
+- Preserve keyboard focus when pinned shortcuts refresh, keep the mobile tools menu within the viewport in Arabic and English, wrap settings tabs on narrow screens, and correct the identity tool’s connections link.
+
 ## [0.20.0] - 2026-11-09
 
 ### Added

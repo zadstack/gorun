@@ -8,11 +8,11 @@
     <p class="text-muted text-sm mt-2">{{t "pattern.note"}}</p>
   </div>
   <div class="flex flex-wrap gap-2">
-    <a href="/admin/appearance/themes" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "palette"}}<span>{{t "pattern.themes_link"}}</span></a>
+    <a href="/admin/appearance/themes" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "palette"}}<span>{{t "pattern.themes_link"}}</span></a>
     {{if .HasActive}}
     <form method="post" action="/admin/appearance/patterns/clear">
       <input type="hidden" name="_csrf" value="{{csrf}}">
-      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft" title="{{t "pattern.clear_help"}}">{{t "pattern.clear"}}</button>
+      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft" title="{{t "pattern.clear_help"}}">{{t "pattern.clear"}}</button>
     </form>
     {{end}}
   </div>
@@ -40,7 +40,7 @@
       {{if not .Active}}
       <form method="post" action="/admin/appearance/patterns/{{.Slug}}/activate" class="mt-4">
         <input type="hidden" name="_csrf" value="{{csrf}}">
-        <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "pattern.activate"}}</button>
+        <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "pattern.activate"}}</button>
       </form>
       {{end}}
     </div>

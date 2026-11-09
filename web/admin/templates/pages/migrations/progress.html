@@ -14,19 +14,19 @@
     </div>
     <div class="mt-4 flex flex-wrap gap-2">
       {{if .CanStart}}
-      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/start" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "play"}}<span>{{if .Status.StartedAt}}{{t "wpmigrate.import.rerun"}}{{else}}{{t "wpmigrate.import.start"}}{{end}}</span></button>
+      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/start" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "play"}}<span>{{if .Status.StartedAt}}{{t "wpmigrate.import.rerun"}}{{else}}{{t "wpmigrate.import.start"}}{{end}}</span></button>
       {{end}}
       {{if .CanPause}}
-      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/pause" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "pause"}}<span>{{t "wpmigrate.import.pause"}}</span></button>
+      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/pause" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "pause"}}<span>{{t "wpmigrate.import.pause"}}</span></button>
       {{end}}
       {{if .CanResume}}
-      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/resume" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "play"}}<span>{{t "wpmigrate.import.resume"}}</span></button>
+      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/resume" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "play"}}<span>{{t "wpmigrate.import.resume"}}</span></button>
       {{end}}
       {{if .CanRetry}}
-      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/retry" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-3 rounded border border-amber bg-panel text-amber-text hover:bg-amber-soft inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "rotate-ccw"}}<span>{{t "wpmigrate.import.retry"}} ({{.Status.Failed}})</span></button>
+      <button type="button" hx-post="/admin/migrations/{{.M.ID}}/retry" hx-target="#mig-progress" hx-swap="outerHTML" class="h-9 px-3 rounded border border-amber bg-panel text-amber-text hover:bg-amber-soft inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "rotate-ccw"}}<span>{{t "wpmigrate.import.retry"}} ({{.Status.Failed}})</span></button>
       {{end}}
       {{if or (eq .Status.Status "validated") (eq .Status.Status "completed")}}
-      <a href="/admin/migrations/{{.M.ID}}/validate" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "clipboard-check"}}<span>{{t "wpmigrate.next.validate"}}</span></a>
+      <a href="/admin/migrations/{{.M.ID}}/validate" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "clipboard-check"}}<span>{{t "wpmigrate.next.validate"}}</span></a>
       {{end}}
     </div>
   </div>

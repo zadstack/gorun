@@ -3,7 +3,7 @@
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "admin-contained.css"}}">
 <div class="admin-contained">
-<p class="mb-2"><a class="text-green underline" href="/admin/webhooks">{{t "webhooks.back"}}</a></p>
+<p class="mb-2"><a class="text-blue underline" href="/admin/webhooks">{{t "webhooks.back"}}</a></p>
 <h1 class="text-[22px] font-bold mb-1">{{.Hook.Name}}</h1>
 <p class="font-mono text-xs text-muted mb-4 break-all" dir="ltr">{{.Hook.URL}}</p>
 {{if .Secret}}
@@ -52,7 +52,7 @@
       {{template "webhook-fields" .}}
       <label class="flex items-center gap-2"><input type="hidden" name="active" value="false"><input type="checkbox" name="active" value="true" {{if .Form.Active}}checked{{end}}> {{t "webhooks.active"}}</label>
       {{if and (not .Hook.Active) .Hook.ConsecutiveFailures}}<p class="text-sm text-red">{{t "webhooks.auto_disabled" .Hook.ConsecutiveFailures}}</p>{{end}}
-      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium">{{t "webhooks.save"}}</button>
+      <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium">{{t "webhooks.save"}}</button>
     </form>
     <section class="rounded border border-line bg-panel p-4 space-y-3" aria-labelledby="wh-actions">
       <h2 id="wh-actions" class="text-base font-bold">{{t "webhooks.actions"}}</h2>

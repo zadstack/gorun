@@ -41,7 +41,7 @@
 <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="review" value="{{.Token}}">
 <input type="hidden" name="connection" value="{{.Brief.Connection}}"><input type="hidden" name="sector" value="{{.Brief.Sector}}"><input type="hidden" name="audience" value="{{.Brief.Audience}}"><input type="hidden" name="tone" value="{{.Brief.Tone}}"><input type="hidden" name="keep" value="{{.Brief.Keep}}"><input type="hidden" name="languages" value="{{.Brief.Languages}}">
 <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="approved" value="1" class="mt-1" required><span>{{t "identityai.approve"}}</span></label>
-<button type="submit" name="action" value="generate" class="h-10 px-4 rounded bg-green text-white font-medium">{{t "identityai.generate"}}</button>
+<button type="submit" name="action" value="generate" class="h-10 px-4 rounded bg-blue text-white font-medium">{{t "identityai.generate"}}</button>
 </form>
 </section>
 {{end}}

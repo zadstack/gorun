@@ -20,10 +20,10 @@
     {{if .CanPick}}
     <button type="button" data-media-open data-target="{{.ID}}" aria-controls="gp-media-picker-body"
             @click="$dispatch('media:open', { target: $el.dataset.target })"
-            class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "image"}}<span>{{t "content.media.choose"}}</span></button>
+            class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "image"}}<span>{{t "content.media.choose"}}</span></button>
     {{end}}
     <button type="button" x-show="value" {{if not .Value}}x-cloak{{end}} @click="value = ''; url = ''; name = ''"
-            class="[&[x-cloak]]:hidden h-9 px-3 rounded border border-line bg-panel text-red hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.media.remove"}}</button>
+            class="[&[x-cloak]]:hidden h-9 px-3 rounded border border-line bg-panel text-red hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "content.media.remove"}}</button>
   </div>
 </div>
 {{end}}

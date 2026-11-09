@@ -27,45 +27,45 @@
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label for="p-name" class="block font-medium mb-1">{{t "commerce.field.name"}}</label>
-          <input id="p-name" name="name" value="{{.Form.Name}}" required {{with index .Fields "name"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          <input id="p-name" name="name" value="{{.Form.Name}}" required {{with index .Fields "name"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           {{template "partials/field_errors" (index .Fields "name")}}
         </div>
         <div>
           <label for="p-slug" class="block font-medium mb-1">{{t "commerce.field.slug"}}</label>
-          <input id="p-slug" name="slug" value="{{.Form.Slug}}" dir="ltr" aria-describedby="p-slug-help" {{with index .Fields "slug"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs">
+          <input id="p-slug" name="slug" value="{{.Form.Slug}}" dir="ltr" aria-describedby="p-slug-help" {{with index .Fields "slug"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono text-xs">
           <p id="p-slug-help" class="mt-1 text-xs text-muted">{{t "commerce.field.slug_help"}}</p>
           {{template "partials/field_errors" (index .Fields "slug")}}
         </div>
       </div>
       <div>
         <label for="p-short" class="block font-medium mb-1">{{t "commerce.field.short_description"}}</label>
-        <input id="p-short" name="short_description" value="{{.Form.ShortDescription}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <input id="p-short" name="short_description" value="{{.Form.ShortDescription}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       </div>
       <div>
         <label for="p-desc" class="block font-medium mb-1">{{t "commerce.field.description"}}</label>
-        <textarea id="p-desc" name="description" rows="8" aria-describedby="p-desc-help" class="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Form.Description}}</textarea>
+        <textarea id="p-desc" name="description" rows="8" aria-describedby="p-desc-help" class="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.Form.Description}}</textarea>
         <p id="p-desc-help" class="mt-1 text-xs text-muted">{{t "commerce.field.description_help"}}</p>
       </div>
       <div x-data="{ items: {{json .Form.Features}} }">
         <span class="block font-medium mb-1">{{t "commerce.field.features"}}</span>
         <template x-for="(item, i) in items" :key="i">
           <div class="flex gap-2 mb-2">
-            <input name="features" x-model="items[i]" :aria-label="'{{t "commerce.field.feature"}} ' + (i + 1)" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
-            <button type="button" @click="items.splice(i, 1)" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft" aria-label="{{t "commerce.action.remove"}}">{{icon "x"}}</button>
+            <input name="features" x-model="items[i]" :aria-label="'{{t "commerce.field.feature"}} ' + (i + 1)" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
+            <button type="button" @click="items.splice(i, 1)" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft" aria-label="{{t "commerce.action.remove"}}">{{icon "x"}}</button>
           </div>
         </template>
-        <button type="button" @click="items.push('')" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}<span>{{t "commerce.action.add_feature"}}</span></button>
+        <button type="button" @click="items.push('')" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "plus"}}<span>{{t "commerce.action.add_feature"}}</span></button>
         {{template "partials/field_errors" (index .Fields "features")}}
       </div>
     </section>
     <details class="rounded border border-line bg-panel" {{if or .Form.SEOTitle .Form.SEODescription}}open{{end}}>
-      <summary class="px-4 py-3 cursor-pointer font-bold rounded focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.seo.title"}}</summary>
+      <summary class="px-4 py-3 cursor-pointer font-bold rounded focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "commerce.seo.title"}}</summary>
       <div class="px-4 pb-4 space-y-3">
-        <div><label for="seo-title" class="block font-medium mb-1">{{t "commerce.seo.meta_title"}}</label><input id="seo-title" name="seo_title" value="{{.Form.SEOTitle}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"></div>
-        <div><label for="seo-desc" class="block font-medium mb-1">{{t "commerce.seo.meta_description"}}</label><textarea id="seo-desc" name="seo_description" rows="2" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Form.SEODescription}}</textarea></div>
+        <div><label for="seo-title" class="block font-medium mb-1">{{t "commerce.seo.meta_title"}}</label><input id="seo-title" name="seo_title" value="{{.Form.SEOTitle}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"></div>
+        <div><label for="seo-desc" class="block font-medium mb-1">{{t "commerce.seo.meta_description"}}</label><textarea id="seo-desc" name="seo_description" rows="2" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.Form.SEODescription}}</textarea></div>
         <div class="grid gap-3 sm:grid-cols-2">
-          <div><label for="seo-og" class="block font-medium mb-1">{{t "commerce.seo.og_image"}}</label><input id="seo-og" name="seo_og_image" value="{{.Form.SEOOGImage}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs"></div>
-          <div><label for="seo-robots" class="block font-medium mb-1">{{t "commerce.seo.robots"}}</label><input id="seo-robots" name="seo_robots" value="{{.Form.SEORobots}}" dir="ltr" placeholder="index,follow" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs"></div>
+          <div><label for="seo-og" class="block font-medium mb-1">{{t "commerce.seo.og_image"}}</label><input id="seo-og" name="seo_og_image" value="{{.Form.SEOOGImage}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono text-xs"></div>
+          <div><label for="seo-robots" class="block font-medium mb-1">{{t "commerce.seo.robots"}}</label><input id="seo-robots" name="seo_robots" value="{{.Form.SEORobots}}" dir="ltr" placeholder="index,follow" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono text-xs"></div>
         </div>
       </div>
     </details>
@@ -77,11 +77,11 @@
       <div class="grid grid-cols-[minmax(0,1fr)_6rem] gap-2">
         <div>
           <label for="p-price" class="block font-medium mb-1">{{t "commerce.field.price"}}</label>
-          <input id="p-price" name="price" value="{{.Form.Price}}" inputmode="decimal" dir="ltr" {{with index .Fields "price"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+          <input id="p-price" name="price" value="{{.Form.Price}}" inputmode="decimal" dir="ltr" {{with index .Fields "price"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
         </div>
         <div>
           <label for="p-currency" class="block font-medium mb-1">{{t "commerce.field.currency"}}</label>
-          <input id="p-currency" name="currency" value="{{.Form.Currency}}" maxlength="3" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono uppercase">
+          <input id="p-currency" name="currency" value="{{.Form.Currency}}" maxlength="3" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono uppercase">
         </div>
       </div>
       {{template "partials/field_errors" (index .Fields "price")}}{{template "partials/field_errors" (index .Fields "currency")}}
@@ -129,7 +129,7 @@
       {{template "partials/field_errors" (index .Fields "price_usd")}}{{template "partials/field_errors" (index .Fields "price_aed")}}{{template "partials/field_errors" (index .Fields "prices")}}
       <div>
         <label for="p-server" class="block font-medium mb-1">{{t "commerce.field.server"}}</label>
-        <select id="p-server" name="server_id" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft px-2">
+        <select id="p-server" name="server_id" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft px-2">
           <option value="">{{t "commerce.field.server_none"}}</option>
           {{$sel := .Form.ServerID}}{{range .Servers}}<option value="{{.ID}}" {{if eq .ID $sel}}selected{{end}}>{{.Name}}</option>{{end}}
         </select>
@@ -138,22 +138,22 @@
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label for="p-plan" class="block font-medium mb-1">{{t "commerce.field.plan_code"}}</label>
-          <input id="p-plan" name="plan_code" value="{{.Form.PlanCode}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono text-xs">
+          <input id="p-plan" name="plan_code" value="{{.Form.PlanCode}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono text-xs">
         </div>
         <div>
           <label for="p-months" class="block font-medium mb-1">{{t "commerce.field.access_months"}}</label>
-          <input id="p-months" name="access_months" type="number" min="1" max="120" value="{{.Form.AccessMonths}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+          <input id="p-months" name="access_months" type="number" min="1" max="120" value="{{.Form.AccessMonths}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
         </div>
       </div>
       {{template "partials/field_errors" (index .Fields "access_months")}}
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label for="p-group" class="block font-medium mb-1">{{t "commerce.field.group"}}</label>
-          <input id="p-group" name="group_name" value="{{.Form.GroupName}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          <input id="p-group" name="group_name" value="{{.Form.GroupName}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         </div>
         <div>
           <label for="p-sort" class="block font-medium mb-1">{{t "commerce.field.sort"}}</label>
-          <input id="p-sort" name="sort" type="number" value="{{.Form.Sort}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft font-mono">
+          <input id="p-sort" name="sort" type="number" value="{{.Form.Sort}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
         </div>
       </div>
       <input type="hidden" name="group_slug" value="{{.Form.GroupSlug}}">
@@ -164,11 +164,11 @@
       <input type="hidden" name="image_media_id" :value="id">
       <template x-if="url"><img :src="url" alt="" class="mb-2 w-full rounded border border-line"></template>
       <div class="flex gap-2">
-        <button type="button" @click="$dispatch('media:open', { target: 'product-image' })" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "image"}}<span>{{t "commerce.action.choose_image"}}</span></button>
-        <button type="button" x-show="id" @click="id = ''; url = ''" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.action.remove"}}</button>
+        <button type="button" @click="$dispatch('media:open', { target: 'product-image' })" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "image"}}<span>{{t "commerce.action.choose_image"}}</span></button>
+        <button type="button" x-show="id" @click="id = ''; url = ''" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "commerce.action.remove"}}</button>
       </div>
     </section>
-    <div class="flex flex-wrap gap-2"><button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+    <div class="flex flex-wrap gap-2"><button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.save"}}</button></div>
   </aside>
 </form>
 <section class="mt-6 rounded border border-line bg-panel p-4 space-y-3" aria-labelledby="digital-upload-title"

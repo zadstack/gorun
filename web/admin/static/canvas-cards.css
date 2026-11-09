@@ -220,9 +220,9 @@
 .canvas-workspace .canvas-card[data-state=queued] .canvas-node-state { color: #4a5568; }
 .canvas-workspace .canvas-card[data-state=running] .canvas-node-state { color: #1a5a9e; }
 .canvas-workspace .canvas-card[data-state=running] .canvas-node-state::before { animation: canvas-state-pulse 1.4s ease-in-out infinite; }
-.canvas-workspace .canvas-card[data-state=waiting] .canvas-node-state { color: #8a4b00; }
-.canvas-workspace .canvas-card[data-state=done] .canvas-node-state { color: #1c6b3a; }
-.canvas-workspace .canvas-card[data-state=failed] .canvas-node-state { color: #a3292d; }
+.canvas-workspace .canvas-card[data-state=waiting] .canvas-node-state { color: var(--amber-text); }
+.canvas-workspace .canvas-card[data-state=done] .canvas-node-state { color: var(--green-hover); }
+.canvas-workspace .canvas-card[data-state=failed] .canvas-node-state { color: var(--red); }
 @keyframes canvas-state-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .canvas-workspace .canvas-card[data-state=running] .canvas-node-state::before { animation: none; } }
 /* The pill may wrap: on a 300px card the title keeps a readable width and the pill (with its 44px action on a coarse

@@ -15,7 +15,7 @@
   {{range .Jobs}}
   <li class="rounded border border-line bg-panel" data-job="{{.ID}}">
     <details>
-      <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-3 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">
+      <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-3 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-blue-soft rounded">
         {{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}
         <span class="text-sm font-medium">{{if .LabelKey}}{{t .LabelKey}}{{else}}{{.Kind}}{{end}}</span>
         <span class="inline-flex rounded-chip border {{if eq .Status "dead"}}border-red bg-red-soft text-red{{else if .Retryable}}border-amber bg-amber-soft text-amber-text{{else if eq .Status "done"}}border-green bg-green-soft text-green{{else}}border-line bg-panel-2{{end}} px-1.5 py-0.5 text-[11px] font-mono">{{if .Retryable}}{{if eq .Status "dead"}}{{t "admin.jobs.status_dead"}}{{else}}{{t "admin.jobs.status_retrying"}}{{end}}{{else}}{{t (printf "admin.jobs.status_%s" .Status)}}{{end}}</span>
@@ -29,7 +29,7 @@
         {{if .Retryable}}
         <form method="post" action="/admin/system/jobs/{{.ID}}/retry">
           <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="back" value="/admin/system/jobs">
-          <button type="submit" class="h-8 px-2.5 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "rotate-ccw"}}<span>{{t "admin.jobs.retry"}}</span></button>
+          <button type="submit" class="h-8 px-2.5 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "rotate-ccw"}}<span>{{t "admin.jobs.retry"}}</span></button>
         </form>
         {{end}}
       </div>

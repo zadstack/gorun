@@ -1,0 +1,3 @@
+/* Only staff-only standalone pages load this bridge; customer identity stays intact. */
+:root { color-scheme: light; --standalone-bg: var(--bg); --standalone-panel: var(--panel); --standalone-ink: var(--ink); --standalone-muted: var(--muted); --standalone-accent: var(--accent); --standalone-link: var(--accent-hover); --standalone-on-accent: var(--panel); --standalone-line: var(--line); --standalone-tint: var(--accent-soft); }
+body { font-family: 'Zad', sans-serif; }

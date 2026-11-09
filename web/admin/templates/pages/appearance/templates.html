@@ -10,10 +10,10 @@
   <form method="get" action="/admin/appearance/templates/edit" class="admin-template-open flex items-end gap-2">
     <div>
       <label for="new-template" class="block font-medium mb-1">{{t "theme.templates.new"}}</label>
-      <input id="new-template" name="name" required pattern="^((parts|components)\.)?[^./]+\.html$" placeholder="page-pricing.html" aria-describedby="new-template-help" class="h-9 w-56 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft" dir="ltr">
+      <input id="new-template" name="name" required pattern="^((parts|components)\.)?[^./]+\.html$" placeholder="page-pricing.html" aria-describedby="new-template-help" class="h-9 w-56 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft" dir="ltr">
       <p id="new-template-help" class="mt-1 text-[12px] text-muted">{{t "theme.templates.new_help"}}</p>
     </div>
-    <button type="submit" class="h-9 px-3 mb-5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.templates.open"}}</button>
+    <button type="submit" class="h-9 px-3 mb-5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "theme.templates.open"}}</button>
   </form>
 </div>
 <div class="flex flex-wrap gap-3 mb-4"><label>{{if eq locale "ar"}}ابحث عن ملف{{else}}Find a template file{{end}}<input data-template-search type="search" class="block border border-line bg-panel rounded p-2" dir="ltr"></label><label>{{if eq locale "ar"}}مجموعة الملفات{{else}}File group{{end}}<select data-template-group class="block border border-line bg-panel rounded p-2"><option value="">{{if eq locale "ar"}}كل الملفات{{else}}All files{{end}}</option><option value="page">{{if eq locale "ar"}}الصفحات{{else}}Pages{{end}}</option><option value="part">{{if eq locale "ar"}}الأجزاء والمكونات{{else}}Parts & components{{end}}</option></select></label></div>

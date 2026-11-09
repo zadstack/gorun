@@ -556,7 +556,7 @@
   "dashboard.preview_hint": "Read-only view of your published homepage. Scripts and forms are disabled.",
   "dashboard.open_site": "Open website",
   "dashboard.load_error": "Content could not be loaded. Refresh to try again.",
-  "dashboard.empty_content": "No content yet. Create your first page or post above.",
+  "dashboard.empty_content": "No content yet. Create your first page or post from Quick actions.",
   "dashboard.refresh_preview": "Refresh preview",
   "canvas.title": "Canvases",
   "canvas.description": "A private workspace for your notes, plans and live operational summaries.",

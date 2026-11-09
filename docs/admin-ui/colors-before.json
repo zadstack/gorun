@@ -1,0 +1,456 @@
+[
+  {
+    "file": "web/admin/static/agent-roles.css",
+    "colors": [
+      "#111827",
+      "#17202c12",
+      "#1c6b3a",
+      "#1e293b",
+      "#275a75",
+      "#345f4d",
+      "#3d4a5c",
+      "#447b96",
+      "#464d88",
+      "#4e7b69",
+      "#5f3f7a",
+      "#6268a6",
+      "#66778a",
+      "#775227",
+      "#804457",
+      "#967145",
+      "#9677b2",
+      "#991b1b",
+      "#a16477",
+      "#c0474b",
+      "#c9d1da",
+      "#eaf3f8",
+      "#edf5ef",
+      "#eef0fc",
+      "#eef1f5",
+      "#f6f7f9",
+      "#f7f2fb",
+      "#faedf1",
+      "#faf1e7",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/audit-workspace.css",
+    "colors": [
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/canvas-cards.css",
+    "colors": [
+      "#000",
+      "#11182780",
+      "#17202c08",
+      "#185e45",
+      "#1a5a9e",
+      "#1c6b3a",
+      "#1d5257",
+      "#225f68",
+      "#232733",
+      "#275a75",
+      "#2c6a70",
+      "#2f8a5f",
+      "#345f4d",
+      "#39475c",
+      "#3d4a5c",
+      "#43367a",
+      "#447b96",
+      "#464d88",
+      "#464d8820",
+      "#464d8829",
+      "#476781",
+      "#4a5568",
+      "#4b3475",
+      "#4e7b69",
+      "#4f5b69",
+      "#4f97a3",
+      "#52728a",
+      "#54468a",
+      "#565064",
+      "#57816c",
+      "#596579",
+      "#5c5865",
+      "#5f3f7a",
+      "#614787",
+      "#6268a6",
+      "#6386a3",
+      "#655090",
+      "#725717",
+      "#775227",
+      "#7760a6",
+      "#804457",
+      "#8a2a1f",
+      "#8a4b00",
+      "#967145",
+      "#9677b2",
+      "#a16477",
+      "#a3292d",
+      "#ac842f",
+      "#b42318",
+      "#b4a8cc",
+      "#b7c7d5",
+      "#b9c7e6",
+      "#b9d2df",
+      "#b9d3c8",
+      "#c8c4d2",
+      "#c8c4df",
+      "#d4dce3",
+      "#d6cbae",
+      "#d9e8f3",
+      "#dcd5e9",
+      "#dceaf2",
+      "#ddd",
+      "#dfe2f7",
+      "#e1e6eb",
+      "#e2f0f0",
+      "#e3e6f6",
+      "#e5dfd3",
+      "#e5f0ea",
+      "#e7b4ae",
+      "#e9e5f5",
+      "#eaf3f8",
+      "#edf5ef",
+      "#eef0fc",
+      "#eef1f4",
+      "#eef8f9",
+      "#f0ebf8",
+      "#f0f3f6",
+      "#f0f8f4",
+      "#f2f6fd",
+      "#f4f7fa",
+      "#f5f7f8",
+      "#f6dcd8",
+      "#f7f2fb",
+      "#f8fafb",
+      "#f9fafbf0",
+      "#faedf1",
+      "#faf1e7",
+      "#faf3dc",
+      "#fbeeec",
+      "#fbfcfd",
+      "#fdf3f2",
+      "#fdfbff",
+      "#fff",
+      "#fffdf5",
+      "#fffdf9",
+      "#fffffff0",
+      "#fffffff2"
+    ]
+  },
+  {
+    "file": "web/admin/static/dashboard-pins.css",
+    "colors": [
+      "#1e56a0",
+      "#34546b",
+      "#5146a1",
+      "#6941a5",
+      "#854d0e",
+      "#9d285b",
+      "#e7effd",
+      "#e7f0f5",
+      "#eeebfb",
+      "#f0e9fb",
+      "#fce8f0",
+      "#fcf0d7"
+    ]
+  },
+  {
+    "file": "web/admin/static/canvas-operations.css",
+    "colors": [
+      "#0f172a",
+      "#101720",
+      "#126b63",
+      "#24628a",
+      "#2563eb",
+      "#286f9d",
+      "#467f60",
+      "#475569",
+      "#476781",
+      "#516dcc",
+      "#526b98",
+      "#527684",
+      "#739fff",
+      "#8293b2",
+      "#8766a5",
+      "#94a3b8",
+      "#9a743e",
+      "#9e2d33",
+      "#a16477",
+      "#b42318",
+      "#d2ddec",
+      "#e2e8f0",
+      "#f0f4fa",
+      "#f1f5f9",
+      "#f4f6f9",
+      "#f4f7fb",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/navigation-sections.css",
+    "colors": [
+      "#116149",
+      "#1e56a0",
+      "#34546b",
+      "#45409e",
+      "#6941a5",
+      "#854d0e",
+      "#9d3153",
+      "#e0f2ea",
+      "#e7effd",
+      "#e7f0f5",
+      "#ecebfc",
+      "#f0e9fb",
+      "#fbe7ee",
+      "#fcf0d7"
+    ]
+  },
+  {
+    "file": "web/admin/static/connection-setup.css",
+    "colors": [
+      "#0d503c",
+      "#116149",
+      "#1e56a0",
+      "#34546b",
+      "#6941a5",
+      "#854d0e",
+      "#9b1c1c",
+      "#abc6ed",
+      "#b9cbd7",
+      "#d8e6fb",
+      "#dbe8f0",
+      "#e0f2ea",
+      "#e7effd",
+      "#e7f0f5",
+      "#e8b2b2",
+      "#f0e9fb",
+      "#fbd7d7",
+      "#fcf0d7",
+      "#fde8e8",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/canvas-editing.css",
+    "colors": [
+      "#17212b",
+      "#627181",
+      "#a3292d",
+      "#cfd7e2",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/builder-admin.css",
+    "colors": [
+      "#14b8a6",
+      "#b91c1c",
+      "#d1d5db"
+    ]
+  },
+  {
+    "file": "web/admin/static/canvas-gallery.css",
+    "colors": [
+      "#698d80",
+      "#7b8db3",
+      "#c4ccd8",
+      "#ced8df"
+    ]
+  },
+  {
+    "file": "web/admin/static/starter-theme.css",
+    "colors": [
+      "#f8fcfa"
+    ]
+  },
+  {
+    "file": "web/admin/static/canvas-schedules.css",
+    "colors": [
+      "#17202c24",
+      "#185e45",
+      "#3f4a58",
+      "#516dcc",
+      "#7a5406",
+      "#804457",
+      "#8766a5",
+      "#a5afbc",
+      "#b07d0c",
+      "#d5dce3",
+      "#e5f0ea",
+      "#edf1f5",
+      "#f0d58c",
+      "#f7eccb",
+      "#f7f8fc",
+      "#fff8e6",
+      "#fffffff7"
+    ]
+  },
+  {
+    "file": "web/admin/static/integrations.css",
+    "colors": [
+      "#166534",
+      "#16a34a",
+      "#6b7280",
+      "#92400e",
+      "#991b1b",
+      "#d97706",
+      "#dc2626",
+      "#dcfce7",
+      "#e5e7eb",
+      "#fee2e2",
+      "#fef3c7",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/agents-dock.css",
+    "colors": [
+      "#0002",
+      "#17201c50",
+      "#1d5257",
+      "#2c6a70",
+      "#464d88",
+      "#6268a6",
+      "#e2f0f0",
+      "#eef0fc",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/canvas-search.css",
+    "colors": [
+      "#167252",
+      "#24282466",
+      "#2b2b2b",
+      "#625f59",
+      "#918d83",
+      "#a3292d",
+      "#dcefe7",
+      "#e4e2dd",
+      "#f1f0ec",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/admin.css",
+    "colors": [
+      "#125e44",
+      "#167252",
+      "#1b555c",
+      "#246b73",
+      "#252b2a",
+      "#2b2b2b",
+      "#625f59",
+      "#6b4b8b",
+      "#7a5406",
+      "#918d83",
+      "#9a6a08",
+      "#ae3c35",
+      "#dcefe7",
+      "#e3eff0",
+      "#e4e2dd",
+      "#e8edf1",
+      "#e8eef0",
+      "#eef1f4",
+      "#eef2f5",
+      "#f1f0ec",
+      "#f7dfdc",
+      "#f7eccb",
+      "#faf9f8",
+      "#ffffff"
+    ]
+  },
+  {
+    "file": "web/admin/static/canvas.css",
+    "colors": [
+      "#164195",
+      "#17202c08",
+      "#17212b",
+      "#17212b80",
+      "#1a5a9e",
+      "#1c6b3a",
+      "#256b9b",
+      "#30714a",
+      "#498064",
+      "#4a5568",
+      "#57816c",
+      "#627181",
+      "#739fff",
+      "#7f91ad",
+      "#84699e",
+      "#8a4b00",
+      "#94784a",
+      "#9fb3c4",
+      "#a3292d",
+      "#b74d50",
+      "#b7c7d5",
+      "#c4ccd8",
+      "#c9d6e2",
+      "#cbd8f1",
+      "#cfd7e2",
+      "#dce1e6",
+      "#e8ecf0",
+      "#edf2fa",
+      "#f0f8f4",
+      "#f3f5f8",
+      "#f5f7f8",
+      "#f6f9fc",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/template-editor.css",
+    "colors": [
+      "#18231e",
+      "#ddd",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/identity-studio.css",
+    "colors": [
+      "#56358a",
+      "#6941a5",
+      "#9b1c1c",
+      "#fff"
+    ]
+  },
+  {
+    "file": "web/admin/static/canvas-inbound.css",
+    "colors": [
+      "#236a4c",
+      "#9b2c2c",
+      "#f4f6f8"
+    ]
+  },
+  {
+    "file": "web/admin/static/dashboard-layout.css",
+    "colors": [
+      "#20252b",
+      "#626a73",
+      "#e3e6e8",
+      "#f7f8fa"
+    ]
+  },
+  {
+    "file": "web/admin/static/site-design.css",
+    "colors": [
+      "#302548",
+      "#56358a",
+      "#624f7c",
+      "#6941a5",
+      "#80748d",
+      "#9b1c1c",
+      "#b9a0da",
+      "#d8c9ee",
+      "#f0e9fb",
+      "#f8f7fc",
+      "#fff"
+    ]
+  }
+]
