@@ -245,15 +245,20 @@ func applyTrial(c *Config) error {
 	return nil
 }
 
+// ErrPublicBaseURL marks a production configuration without a usable public
+// base URL. Callers classify it to show the deployment fix without echoing
+// the configured value.
+var ErrPublicBaseURL = errors.New("config: GORUN_BASE_URL")
+
 // checkPublicBaseURL fails fast when prod has no usable public base URL:
 // links, redirects, cookies and HSTS all derive from it, and a localhost
 // default would silently produce broken absolute URLs.
 func checkPublicBaseURL(raw string) error {
 	fail := func(why string) error {
-		return fmt.Errorf("config: GORUN_BASE_URL %s in prod: set it to the public URL, e.g. https://example.com (got %q)", why, raw)
+		return fmt.Errorf("%w %s in prod: set it to the public URL, e.g. https://example.com (got %q)", ErrPublicBaseURL, why, raw)
 	}
 	if raw == "" {
-		return fmt.Errorf("%w. To try GoRun first with no configuration, set GORUN_TRIAL=1", fail("is required"))
+		return fmt.Errorf("%w is required in prod: set it to the public https URL of the deployment (a container platform fills it from the service domain). GORUN_TRIAL=1 starts a disposable dev-mode site that ignores proxy headers; it is not a production setup", ErrPublicBaseURL)
 	}
 	u, err := url.Parse(raw)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {

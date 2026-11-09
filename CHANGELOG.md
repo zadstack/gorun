@@ -19,6 +19,7 @@ All notable changes to GoRun are recorded here. The format follows
 - Preserve keyboard focus when pinned shortcuts refresh, keep the mobile tools menu within the viewport in Arabic and English, wrap settings tabs on narrow screens, and correct the identity tool’s connections link.
 - Keep the quick access list stable while its projection is unchanged, so a refresh no longer drops the keyboard focus inside it.
 - Fit the canvas lane view into the available workspace: the gutter between the four columns shrinks to the remaining space instead of letting the lanes scroll sideways.
+- A production container that cannot start on a missing public base URL now names the deployment fix: the startup error points at the public https URL (a container platform fills it from the service domain) and states that `GORUN_TRIAL=1` is a disposable dev-mode site rather than a production setup. `gorun doctor` reports the same problem as its own `public_base_url` check with the next step, and still never prints the configured value.
 
 ## [0.20.0] - 2026-11-09
 
