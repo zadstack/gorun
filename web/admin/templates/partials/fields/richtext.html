@@ -56,16 +56,16 @@
   <div class="relative flex flex-wrap items-center gap-1 mb-1">
   <div class="flex gap-1" role="tablist">
     <button type="button" role="tab" :aria-selected="(tab === 'visual').toString()" @click="show('visual')"
-            class="h-8 px-3 rounded border text-xs focus:outline-none focus:ring-[3px] focus:ring-green-soft" :class="tab === 'visual' ? 'border-line-strong bg-panel-2 text-ink' : 'border-line text-muted hover:border-line-strong'">{{t "content.editor.visual"}}</button>
+            class="h-8 px-3 rounded border text-xs focus:outline-none focus:ring-[3px] focus:ring-blue-soft" :class="tab === 'visual' ? 'border-line-strong bg-panel-2 text-ink' : 'border-line text-muted hover:border-line-strong'">{{t "content.editor.visual"}}</button>
     <button type="button" role="tab" :aria-selected="(tab === 'html').toString()" @click="show('html')"
-            class="h-8 px-3 rounded border text-xs font-mono focus:outline-none focus:ring-[3px] focus:ring-green-soft" :class="tab === 'html' ? 'border-line-strong bg-panel-2 text-ink' : 'border-line text-muted hover:border-line-strong'">{{t "content.editor.html"}}</button>
+            class="h-8 px-3 rounded border text-xs font-mono focus:outline-none focus:ring-[3px] focus:ring-blue-soft" :class="tab === 'html' ? 'border-line-strong bg-panel-2 text-ink' : 'border-line text-muted hover:border-line-strong'">{{t "content.editor.html"}}</button>
   </div>
   {{if setting "ai.provider"}}
   <div class="ms-auto" x-data="gpAI" x-show="tab === 'visual'" @keydown.escape="open = false" @click.outside="open = false"
        data-error="{{t "content.ai.error"}}" data-empty="{{t "content.ai.empty"}}">
     <div class="relative">
     <button type="button" @mousedown.prevent @click="toggle()" :disabled="busy || result !== ''" aria-haspopup="menu" :aria-expanded="open.toString()" aria-controls="{{.ID}}-ai-menu"
-            class="h-8 px-3 inline-flex items-center gap-1.5 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-green-soft disabled:opacity-50">
+            class="h-8 px-3 inline-flex items-center gap-1.5 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-blue-soft disabled:opacity-50">
       {{icon "sparkles"}}<span x-show="!busy">{{t "content.ai.menu"}}</span><span x-show="busy" x-cloak class="[&[x-cloak]]:hidden" role="status">{{t "content.ai.busy"}}</span>
     </button>
     <div id="{{.ID}}-ai-menu" role="menu" x-show="open" x-cloak class="[&[x-cloak]]:hidden absolute end-0 top-full z-20 mt-1 w-56 rounded border border-line bg-panel py-1">
@@ -83,9 +83,9 @@
       <p class="border-b border-line px-3 py-2 text-xs font-medium">{{t "content.ai.preview"}}</p>
       <div x-html="result" dir="auto" class="max-h-80 overflow-auto px-3 py-2 leading-relaxed [&_p]:mb-2 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:font-bold [&_ul]:list-disc [&_ul]:ps-6 [&_ol]:list-decimal [&_ol]:ps-6 [&_a]:text-blue [&_a]:underline [&_blockquote]:border-s [&_blockquote]:border-line-strong [&_blockquote]:ps-3"></div>
       <div class="flex flex-wrap gap-2 border-t border-line px-3 py-2">
-        <button type="button" @click="apply('replace')" class="h-8 px-3 rounded border border-green text-green text-xs font-medium hover:bg-green-soft focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.ai.replace"}}</button>
-        <button type="button" @click="apply('insert')" class="h-8 px-3 rounded border border-line text-xs hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "content.ai.insert_below"}}</button>
-        <button type="button" @click="cancel()" class="h-8 px-3 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.cancel"}}</button>
+        <button type="button" @click="apply('replace')" class="h-8 px-3 rounded border border-blue text-blue text-xs font-medium hover:bg-blue-soft focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "content.ai.replace"}}</button>
+        <button type="button" @click="apply('insert')" class="h-8 px-3 rounded border border-line text-xs hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "content.ai.insert_below"}}</button>
+        <button type="button" @click="cancel()" class="h-8 px-3 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.cancel"}}</button>
       </div>
     </div>
   </div>
@@ -108,7 +108,7 @@
     <div x-ref="editor" class="min-h-[12rem]"></div>
   </div>
   <textarea x-ref="src" id="{{.ID}}" name="{{.Name}}" rows="12" x-show="tab === 'html'" {{if not .StartHTML}}x-cloak{{end}} spellcheck="false" dir="ltr"
-            class="[&[x-cloak]]:hidden w-full rounded border border-line bg-panel-dark text-[#e9eeea] font-mono text-xs px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Value}}</textarea>
+            class="[&[x-cloak]]:hidden w-full rounded border border-line bg-panel-dark text-[#e9eeea] font-mono text-xs px-3 py-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.Value}}</textarea>
   {{template "fields/help" .}}
 </div>
 {{end}}

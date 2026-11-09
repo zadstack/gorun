@@ -16,13 +16,13 @@
     <p class="text-sm text-muted">{{t "admin.workspace.identity_help"}}</p>
     <div>
       <label for="title" class="block font-medium mb-1">{{t "admin.workspace.site_title"}}</label>
-      <input id="title" name="title" type="text" autocomplete="organization" required value="{{.Title}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+      <input id="title" name="title" type="text" autocomplete="organization" required value="{{.Title}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
              aria-describedby="title-error" {{with index .Fields "title"}}aria-invalid="true"{{end}}>
       <div id="title-error">{{template "partials/field_errors" (index .Fields "title")}}</div>
     </div>
     <div>
       <label for="tagline" class="block font-medium mb-1">{{t "admin.workspace.tagline"}}</label>
-      <input id="tagline" name="tagline" type="text" value="{{.Tagline}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+      <input id="tagline" name="tagline" type="text" value="{{.Tagline}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
              aria-describedby="tagline-help tagline-error" {{with index .Fields "tagline"}}aria-invalid="true"{{end}}>
       <p id="tagline-help" class="mt-1 text-xs text-muted">{{t "admin.workspace.tagline_help"}}</p>
       <div id="tagline-error">{{template "partials/field_errors" (index .Fields "tagline")}}</div>
@@ -48,7 +48,7 @@
   </fieldset>
   <section class="border border-line bg-panel p-3"><h2 class="font-bold">{{t "operator.workspace_preview"}}</h2><p x-show="mode === 'simple'" class="text-sm mt-2">{{t "operator.workspace_simple"}}</p><p x-show="mode === 'full'" class="text-sm mt-2">{{t "operator.workspace_full"}}</p></section>
   <div class="flex flex-wrap gap-3 items-center">
-    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{if .First}}{{t "admin.workspace.continue"}}{{else}}{{t "core.action.save"}}{{end}}</button>
+    <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{if .First}}{{t "admin.workspace.continue"}}{{else}}{{t "core.action.save"}}{{end}}</button>
     {{if not .First}}<a href="/admin" class="text-muted hover:text-ink text-sm">{{t "admin.workspace.back"}}</a>{{end}}
   </div>
 </form>

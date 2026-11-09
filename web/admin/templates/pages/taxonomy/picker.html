@@ -12,7 +12,7 @@
     <li class="{{.Indent}}">
       <label class="inline-flex items-center gap-2">
         <input type="checkbox" name="terms[{{$tax}}]" value="{{.Slug}}" {{if index $sel .Slug}}checked{{end}}
-               class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+               class="h-4 w-4 rounded border-line accent-[var(--green)] focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
         <span dir="auto">{{.Name}}</span>
       </label>
     </li>
@@ -39,7 +39,7 @@
   <input id="tag-input-{{.Taxonomy.Slug}}" type="text" name="q" x-model="q" dir="auto" autocomplete="off" placeholder="{{t "taxonomy.picker.add"}}"
          @keydown.enter.prevent="add(q)" @keydown.comma.prevent="add(q)"
          hx-get="/admin/x/taxonomy/{{.Taxonomy.Slug}}/terms" hx-trigger="input changed delay:250ms" hx-target="next .gp-suggest" hx-swap="innerHTML"
-         class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+         class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   <div class="gp-suggest mt-1"></div>
   <p class="mt-1 text-xs text-muted">{{t "taxonomy.picker.help"}}</p>
 </div>

@@ -1,0 +1,964 @@
+{
+  "v": 1,
+  "url": "http://127.0.0.1:18219/admin",
+  "title": "لوحة التحكم · GoRun",
+  "at": "2026-11-09T07:37:20.181Z",
+  "viewport": {
+    "w": 390,
+    "h": 844,
+    "innerW": 390,
+    "innerH": 844,
+    "dpr": 1,
+    "docW": 390,
+    "docH": 2253,
+    "scale": 1
+  },
+  "media": {
+    "colorScheme": "light",
+    "reducedMotion": false,
+    "forcedColors": false,
+    "pointer": "fine",
+    "hover": true
+  },
+  "doc": {
+    "lang": "ar",
+    "dir": "rtl",
+    "viewportMeta": "width=device-width, initial-scale=1",
+    "blocksZoom": false,
+    "dataTheme": null,
+    "colorScheme": "normal",
+    "hOverflow": 0,
+    "rootClipsX": false,
+    "elements": 612,
+    "truncated": false
+  },
+  "type": {
+    "sizes": {
+      "11": {
+        "n": 7,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted"
+        ],
+        "chars": 37
+      },
+      "12": {
+        "n": 1,
+        "ex": [
+          "header > button.canvas-activity-refresh > span"
+        ],
+        "chars": 5
+      },
+      "13": {
+        "n": 32,
+        "ex": [
+          "main#main > details.audit-customize > summary"
+        ],
+        "chars": 718
+      },
+      "14": {
+        "n": 7,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 71
+      },
+      "15": {
+        "n": 7,
+        "ex": [
+          "main#main > header.dashboard-page-heading > p"
+        ],
+        "chars": 152
+      },
+      "17": {
+        "n": 7,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 97
+      },
+      "18": {
+        "n": 2,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dd.font-mono.text-lg:nth-of-type(1)"
+        ],
+        "chars": 2
+      },
+      "28": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 11
+      },
+      "12.8": {
+        "n": 1,
+        "ex": [
+          "section.canvas-gallery > header > a"
+        ],
+        "chars": 23
+      }
+    },
+    "lineHeights": {
+      "16": {
+        "n": 6,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dt.text-xs.text-muted"
+        ],
+        "chars": 27
+      },
+      "20": {
+        "n": 33,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 326
+      },
+      "28": {
+        "n": 2,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dd.font-mono.text-lg:nth-of-type(1)"
+        ],
+        "chars": 2
+      },
+      "42": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 11
+      },
+      "23.4": {
+        "n": 15,
+        "ex": [
+          "section.dashboard-worklist > div.dashboard-panel-heading:nth-of-type(1) > p"
+        ],
+        "chars": 643
+      },
+      "27.2": {
+        "n": 6,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 81
+      },
+      "19.8": {
+        "n": 1,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted"
+        ],
+        "chars": 10
+      },
+      "30.6": {
+        "n": 1,
+        "ex": [
+          "summary > span:nth-of-type(1) > strong"
+        ],
+        "chars": 16
+      }
+    },
+    "weights": {
+      "400": {
+        "n": 41,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 767
+      },
+      "600": {
+        "n": 17,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 300
+      },
+      "650": {
+        "n": 1,
+        "ex": [
+          "h3#canvas-activity-title"
+        ],
+        "chars": 11
+      },
+      "700": {
+        "n": 6,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 38
+      }
+    },
+    "families": {
+      "Zad": {
+        "n": 57,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 1108
+      },
+      "ui-monospace": {
+        "n": 8,
+        "ex": [
+          "tbody > tr.border-t.border-line:nth-of-type(1) > td.text-end.font-mono:nth-of-type(2)"
+        ],
+        "chars": 8
+      }
+    },
+    "letterSpacing": {},
+    "tracking": {
+      "13|0|0": {
+        "n": 31,
+        "ex": [
+          "main#main > details.audit-customize > summary"
+        ],
+        "chars": 716
+      },
+      "14|0|0": {
+        "n": 7,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 71
+      },
+      "17|0|0": {
+        "n": 7,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 97
+      },
+      "11|0|0": {
+        "n": 7,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted"
+        ],
+        "chars": 37
+      },
+      "15|0|0": {
+        "n": 6,
+        "ex": [
+          "main#main > header.dashboard-page-heading > p"
+        ],
+        "chars": 138
+      },
+      "18|0|0": {
+        "n": 2,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dd.font-mono.text-lg:nth-of-type(1)"
+        ],
+        "chars": 2
+      },
+      "28|0|0": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 11
+      },
+      "13|0|1": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(1) > span.dashboard-locale"
+        ],
+        "chars": 2
+      },
+      "15|0|1": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(4) > a.h-9.px-3 > span"
+        ],
+        "chars": 14
+      },
+      "12.8|0|0": {
+        "n": 1,
+        "ex": [
+          "section.canvas-gallery > header > a"
+        ],
+        "chars": 23
+      },
+      "12|0|0": {
+        "n": 1,
+        "ex": [
+          "header > button.canvas-activity-refresh > span"
+        ],
+        "chars": 5
+      }
+    },
+    "capsTight": [],
+    "headings": {
+      "checked": 9,
+      "long": []
+    },
+    "smallest": {
+      "px": 11,
+      "sel": "section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted",
+      "text": "آخر 7 أيام"
+    },
+    "lineHeightTight": [],
+    "longLines": [],
+    "textElements": 65
+  },
+  "layout": {
+    "groups": 8,
+    "mixed": [],
+    "offCentre": []
+  },
+  "space": {
+    "values": {
+      "1": {
+        "n": 36,
+        "ex": [
+          "thead > tr.text-muted.font-mono > th.text-start.py-1:nth-of-type(1)"
+        ]
+      },
+      "2": {
+        "n": 2,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ]
+      },
+      "4": {
+        "n": 13,
+        "ex": [
+          "main#main > header.dashboard-page-heading > p"
+        ]
+      },
+      "6": {
+        "n": 27,
+        "ex": [
+          "div.flex.min-h-screen:nth-of-type(1) > div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14"
+        ]
+      },
+      "7": {
+        "n": 2,
+        "ex": [
+          "div:nth-of-type(3) > aside.agents-dock-rail > button.agents-dock-launch"
+        ]
+      },
+      "8": {
+        "n": 32,
+        "ex": [
+          "div.flex.min-h-screen:nth-of-type(1) > div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14"
+        ]
+      },
+      "10": {
+        "n": 4,
+        "ex": [
+          "div#canvas-activity > header > button.canvas-activity-refresh"
+        ]
+      },
+      "12": {
+        "n": 91,
+        "ex": [
+          "div.flex.min-h-screen:nth-of-type(1) > div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14"
+        ]
+      },
+      "16": {
+        "n": 24,
+        "ex": [
+          "main#main"
+        ]
+      },
+      "18": {
+        "n": 2,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(7) > section.canvas-gallery > p.dashboard-empty:nth-of-type(1)"
+        ]
+      },
+      "5.6": {
+        "n": 9,
+        "ex": [
+          "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3"
+        ]
+      },
+      "3.2": {
+        "n": 5,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary"
+        ]
+      },
+      "7.2": {
+        "n": 2,
+        "ex": [
+          "details.dashboard-setup.onboarding > summary > span.onboarding-state"
+        ]
+      },
+      "6.4": {
+        "n": 2,
+        "ex": [
+          "div.dashboard-pins:nth-of-type(2) > div.dashboard-pins-empty:nth-of-type(2) > h3"
+        ]
+      },
+      "109.23": {
+        "n": 1,
+        "ex": [
+          "div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14 > div.admin-account-actions.ms-auto"
+        ]
+      }
+    },
+    "negativeMargins": [
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginTop",
+        "v": -1
+      },
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginRight",
+        "v": -1
+      },
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginBottom",
+        "v": -1
+      },
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginLeft",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginTop",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginRight",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginBottom",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginLeft",
+        "v": -1
+      }
+    ]
+  },
+  "radius": {
+    "4": {
+      "n": 3,
+      "ex": [
+        "tr > td:nth-of-type(2) > span.dashboard-status"
+      ]
+    },
+    "6": {
+      "n": 1,
+      "ex": [
+        "div#canvas-activity"
+      ]
+    },
+    "7": {
+      "n": 25,
+      "ex": [
+        "div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14 > button.md\\:hidden.p-1\\.5"
+      ]
+    },
+    "8": {
+      "n": 1,
+      "ex": [
+        "div:nth-of-type(3) > aside.agents-dock-rail > button.agents-dock-launch"
+      ]
+    }
+  },
+  "shadows": {
+    "rgba(0, 0, 0, 0.133) 0px 3px 12px 0px": {
+      "n": 1,
+      "ex": [
+        "div:nth-of-type(3) > aside.agents-dock-rail > button.agents-dock-launch"
+      ]
+    }
+  },
+  "colors": {
+    "text": {
+      "#2b2b2b": {
+        "n": 33,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ]
+      },
+      "#625f59": {
+        "n": 22,
+        "ex": [
+          "main#main > header.dashboard-page-heading > p"
+        ]
+      },
+      "#7a5406": {
+        "n": 3,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary"
+        ]
+      },
+      "#246b73": {
+        "n": 3,
+        "ex": [
+          "tr.border-t.border-line:nth-of-type(1) > td.py-1\\.5:nth-of-type(1) > a.text-blue.hover\\:text-blue-hover"
+        ]
+      },
+      "#1b555c": {
+        "n": 2,
+        "ex": [
+          "main#main > details.audit-customize > summary"
+        ]
+      },
+      "#125e44": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ]
+      },
+      "#ffffff": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(1) > a.h-9.px-3 > span"
+        ]
+      }
+    },
+    "bg": {
+      "#ffffff": {
+        "n": 17,
+        "ex": [
+          "div.flex.min-h-screen:nth-of-type(1) > div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14"
+        ]
+      },
+      "#faf9f8": {
+        "n": 5,
+        "ex": [
+          "body"
+        ]
+      },
+      "#f0f4f3": {
+        "n": 2,
+        "ex": [
+          "main#main"
+        ]
+      },
+      "#e3eff0": {
+        "n": 2,
+        "ex": [
+          "thead > tr > th:nth-of-type(1)"
+        ]
+      },
+      "#f7eccb": {
+        "n": 2,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary"
+        ]
+      },
+      "#dcefe7": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ]
+      },
+      "#246b73": {
+        "n": 1,
+        "ex": [
+          "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3"
+        ]
+      },
+      "#fcfbfa": {
+        "n": 1,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(7) > section.canvas-gallery > p.dashboard-empty:nth-of-type(1)"
+        ]
+      }
+    },
+    "border": {
+      "#e4e2dd": {
+        "n": 15,
+        "ex": [
+          "div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14 > button.md\\:hidden.p-1\\.5"
+        ]
+      },
+      "#cbd6d3": {
+        "n": 13,
+        "ex": [
+          "main#main > div.dashboard-grid > section.min-w-0.rounded:nth-of-type(1)"
+        ]
+      },
+      "#9a6a08": {
+        "n": 2,
+        "ex": [
+          "main#main > div.dashboard-grid > section.min-w-0.rounded:nth-of-type(2)"
+        ]
+      },
+      "#167252": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ]
+      },
+      "#246b73": {
+        "n": 1,
+        "ex": [
+          "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3"
+        ]
+      }
+    }
+  },
+  "contrast": {
+    "checked": 15,
+    "failing": [],
+    "lowest": [
+      {
+        "sel": "main#main > header.dashboard-page-heading > p",
+        "ratio": 5.74,
+        "fg": "#625f59",
+        "bg": "#f0f4f3",
+        "fs": 15,
+        "large": false,
+        "symbol": false,
+        "backdrop": "solid",
+        "n": 2
+      },
+      {
+        "sel": "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary",
+        "ratio": 5.75,
+        "fg": "#7a5406",
+        "bg": "#f7eccb",
+        "fs": 13,
+        "large": false,
+        "symbol": false,
+        "backdrop": "solid",
+        "n": 3
+      },
+      {
+        "sel": "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dt.text-xs.text-muted",
+        "ratio": 6.05,
+        "fg": "#625f59",
+        "bg": "#faf9f8",
+        "fs": 11,
+        "large": false,
+        "symbol": false,
+        "backdrop": "solid",
+        "n": 8
+      }
+    ]
+  },
+  "overflow": {
+    "list": [],
+    "clipped": [],
+    "scrollers": []
+  },
+  "content": {
+    "placeholders": []
+  },
+  "labels": {
+    "checked": 5,
+    "broken": []
+  },
+  "buttons": {
+    "checked": 15,
+    "filled": [
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3",
+        "text": "إنشاء مقال",
+        "fill": "#246b73",
+        "fg": "#ffffff",
+        "behind": "#ffffff",
+        "ratio": 6.13,
+        "gradient": false,
+        "x": 199,
+        "y": 664.92,
+        "w": 162,
+        "h": 44,
+        "first": true,
+        "group": "div:nth-of-type(2) > ul.flex.flex-wrap > li:nth-of-type(1)",
+        "fs": 15,
+        "upper": false,
+        "word": true
+      }
+    ],
+    "styles": [
+      {
+        "sel": "div.admin-account-actions.ms-auto > form:nth-of-type(1) > button.h-9.px-3",
+        "text": "English",
+        "kind": "outline",
+        "h": 44,
+        "radius": 7,
+        "fs": 14,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "div.admin-account-actions.ms-auto > form:nth-of-type(2) > button.h-9.px-3",
+        "text": "تسجيل الخروج",
+        "kind": "outline",
+        "h": 44,
+        "radius": 7,
+        "fs": 14,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3",
+        "text": "إنشاء مقال",
+        "kind": "filled",
+        "h": 44,
+        "radius": 7,
+        "fs": 15,
+        "weight": "600",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(2) > a.h-9.px-3",
+        "text": "إنشاء صفحة",
+        "kind": "outline",
+        "h": 44,
+        "radius": 7,
+        "fs": 15,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(3) > a.h-9.px-3",
+        "text": "مستخدم جديد",
+        "kind": "outline",
+        "h": 44,
+        "radius": 7,
+        "fs": 15,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(4) > a.h-9.px-3",
+        "text": "مفتاح API جديد",
+        "kind": "outline",
+        "h": 44,
+        "radius": 7,
+        "fs": 15,
+        "weight": "400",
+        "upper": true
+      },
+      {
+        "sel": "div#canvas-activity > header > button.canvas-activity-refresh",
+        "text": "تحديث",
+        "kind": "outline",
+        "h": 44,
+        "radius": 4,
+        "fs": 12,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "div:nth-of-type(3) > aside.agents-dock-rail > button.agents-dock-launch",
+        "text": "الوكلاء",
+        "kind": "outline",
+        "h": 44,
+        "radius": 8,
+        "fs": 14,
+        "weight": "700",
+        "upper": false
+      }
+    ]
+  },
+  "fixed": [
+    {
+      "sel": "div:nth-of-type(3) > aside.agents-dock-rail",
+      "position": "fixed",
+      "top": 784,
+      "bottom": 16,
+      "h": 44,
+      "w": 89.06
+    }
+  ],
+  "targets": {
+    "count": 22,
+    "small": [
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "w": 1,
+        "h": 1,
+        "spacingException": true
+      },
+      {
+        "sel": "div:nth-of-type(2) > div.flex.items-center > a.text-blue.hover\\:text-blue-hover",
+        "w": 81.47,
+        "h": 20,
+        "spacingException": true
+      }
+    ],
+    "noName": [],
+    "vague": [],
+    "hiddenFocusable": [
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "why": "outside the page",
+        "x": 390,
+        "y": -1
+      }
+    ],
+    "coarse": false
+  },
+  "images": {
+    "total": 0,
+    "broken": [],
+    "noAlt": [],
+    "oversize": [],
+    "blurry": [],
+    "stretched": [],
+    "lazyPending": 0
+  },
+  "media_counts": {
+    "svg": 21,
+    "canvas": 0,
+    "video": 0,
+    "iframe": 0,
+    "iframeCross": 0,
+    "audio": 0,
+    "shadowHosts": 0,
+    "smil": 0,
+    "lottie": 0,
+    "autoplayVideo": 0
+  },
+  "a11y": {
+    "headings": {
+      "levels": [
+        2,
+        1,
+        2,
+        2,
+        2,
+        3,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "h1": 1,
+      "skips": []
+    },
+    "landmarks": {
+      "main": 1,
+      "nav": 3
+    },
+    "duplicateIds": [],
+    "states": {
+      "noHover": [
+        "a.sr-only.focus\\:not-sr-only",
+        "input#gp-search",
+        "main#main > details.audit-customize > summary",
+        "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary",
+        "section.canvas-gallery > header > a",
+        "div#canvas-activity > header > button.canvas-activity-refresh",
+        "section.min-w-0.rounded:nth-of-type(8) > details.workspace-guide > summary",
+        "section.min-w-0.rounded:nth-of-type(9) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(10) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(11) > details > summary.min-h-11.cursor-pointer"
+      ],
+      "noFocusStyle": [
+        "main#main > details.audit-customize > summary",
+        "tr > td:nth-of-type(1) > a",
+        "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary",
+        "tr.border-t.border-line:nth-of-type(1) > td.py-1\\.5:nth-of-type(1) > a.text-blue.hover\\:text-blue-hover",
+        "tr.border-t.border-line:nth-of-type(2) > td.py-1\\.5:nth-of-type(1) > a.text-blue.hover\\:text-blue-hover",
+        "div:nth-of-type(2) > div.flex.items-center > a.text-blue.hover\\:text-blue-hover",
+        "section.canvas-gallery > header > a",
+        "div#canvas-activity > header > button.canvas-activity-refresh",
+        "section.min-w-0.rounded:nth-of-type(9) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(10) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(11) > details > summary.min-h-11.cursor-pointer"
+      ],
+      "focusRingRemoved": [],
+      "noActive": 22,
+      "blockedSheets": 0,
+      "checked": 22
+    }
+  },
+  "fonts": {
+    "faces": [
+      {
+        "family": "Zad",
+        "weight": "300",
+        "style": "normal",
+        "status": "unloaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "400",
+        "style": "normal",
+        "status": "loaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "500",
+        "style": "normal",
+        "status": "unloaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "600",
+        "style": "normal",
+        "status": "loaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "700",
+        "style": "normal",
+        "status": "loaded"
+      }
+    ],
+    "failed": 0,
+    "familyState": {
+      "Zad": "webfont",
+      "ui-monospace": "generic"
+    },
+    "ready": "loaded",
+    "loadedFamilies": 1,
+    "unused": [],
+    "files": 4
+  },
+  "share": {
+    "image": false,
+    "icon": false,
+    "description": false,
+    "robots": "noindex, nofollow"
+  },
+  "motion": {
+    "running": 0,
+    "infinite": 0,
+    "pending": 0,
+    "pendingOn": [],
+    "animations": [],
+    "transitionDurations": {
+      "150": {
+        "n": 2,
+        "ex": [
+          "div.dashboard-grid > section.min-w-0.rounded:nth-of-type(4) > div.dashboard-pins:nth-of-type(2)"
+        ]
+      }
+    },
+    "transitionProps": {
+      "border-color": 1,
+      "background-color": 1
+    },
+    "declared": {
+      "transitionAll": 0,
+      "layoutProps": [],
+      "willChange": 0,
+      "animatedNames": {},
+      "infiniteDeclared": []
+    },
+    "reducedMotionRules": 3,
+    "blockedSheets": 0,
+    "libs": {},
+    "note": "Only CSS and Web Animations are listed. Canvas, WebGL, video, SMIL and script-driven (requestAnimationFrame) motion is not introspectable here: sample frames instead."
+  },
+  "stress": [],
+  "mode": {
+    "theme": null,
+    "density": null,
+    "motion": null
+  }
+}

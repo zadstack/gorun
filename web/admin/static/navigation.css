@@ -43,9 +43,9 @@
 }
 
 .navigation-search-input:focus {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
-  border-color: var(--green);
+  border-color: var(--accent);
 }
 
 /* Preview folds under search so the reorder list stays the main composition. */
@@ -79,7 +79,7 @@
 }
 
 .navigation-preview-heading:focus-visible {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
@@ -325,7 +325,7 @@
 }
 
 .navigation-drag:focus-visible {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 
@@ -375,7 +375,7 @@
 }
 
 .navigation-move button:focus-visible {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
 

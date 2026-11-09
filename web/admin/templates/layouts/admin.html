@@ -2,6 +2,8 @@
 <html lang="{{locale}}" dir="{{dir}}">
 <head>
 {{template "head" .}}
+<link rel="stylesheet" href="{{asset "workspace-tools.css"}}">
+<script defer src="{{asset "workspace-tools.js"}}"></script>
 <title>{{block "title" .}}{{t "core.app.name"}}{{end}} · {{t "core.app.name"}}</title>
 </head>
 <body class="admin-workspace min-h-screen bg-bg text-ink text-sm font-sans antialiased" hx-headers='{"X-CSRF-Token": "{{csrf}}"}' x-data="gpShell" @keydown.window="sidebarKey($event)" @resize.window="if (innerWidth >= 768) sidebarOpen = false" :class="sidebarOpen && 'overflow-hidden md:overflow-auto'">
@@ -11,14 +13,14 @@
   <div class="flex-1 min-w-0 flex flex-col" :inert="sidebarOpen">
     {{template "partials/topbar" .}}
     <main id="main" class="flex-1 p-3 md:p-4">
-      {{template "partials/navigation-tabs" .}}
+      <div data-workspace-context-navigation>{{template "partials/navigation-tabs" .}}</div>
       {{template "partials/flash" .}}
       {{template "content" .}}
     </main>
   </div>
 </div>
 {{template "partials/confirm_modal" .}}
-{{template "partials/agents-dock" .}}
+{{template "partials/workspace-tools-rail" .}}
 <div class="fixed bottom-4 end-4 z-50 space-y-2" aria-live="polite" x-data>
   <template x-for="t in $store.toasts.items" :key="t.id">
     <div class="rounded border px-3 py-2 bg-panel" :class="{'border-green text-green': t.kind === 'success', 'border-red text-red': t.kind === 'error', 'border-line text-ink': t.kind === 'info'}" x-text="t.message"></div>

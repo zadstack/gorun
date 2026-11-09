@@ -36,8 +36,8 @@ func TestDashboardLayoutOwnershipCASResetAndNewWidgets(t *testing.T) {
 	}
 	u := s.login("layout@example.com", "admin", "en")
 	original := layoutIDs(t, s)
-	if original[0] != "setup_status" {
-		t.Fatal("setup attention default order", original)
+	if original[0] != "quick_actions" {
+		t.Fatal("primary actions default order", original)
 	}
 	order := slices.Clone(original)
 	slices.Reverse(order)
@@ -77,12 +77,7 @@ func TestDashboardLayoutOwnershipCASResetAndNewWidgets(t *testing.T) {
 	if code, _ := studioJSON(t, s, "/admin/dashboard/layout", map[string]any{"version": 1, "order": got}, true); code != 409 {
 		t.Fatal("reset replay", code)
 	}
-	defaults := slices.Clone(original)
-	at := slices.Index(defaults, "canvas_gallery")
-	if at < 0 {
-		at = len(defaults)
-	}
-	defaults = slices.Insert(defaults, at, "new_local_widget")
+	defaults := append(slices.Clone(original), "new_local_widget")
 	if !slices.Equal(layoutIDs(t, s), defaults) {
 		t.Fatal("reset defaults")
 	}

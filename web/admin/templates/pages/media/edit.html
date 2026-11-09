@@ -15,16 +15,16 @@
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <div>
         <label for="alt" class="block font-medium mb-1">{{t "media.field.alt"}}</label>
-        <input id="alt" name="alt" type="text" value="{{$m.Alt}}" aria-describedby="alt-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <input id="alt" name="alt" type="text" value="{{$m.Alt}}" aria-describedby="alt-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         <p id="alt-help" class="mt-1 text-xs text-muted">{{t "media.field.alt_help"}}</p>
       </div>
       <div>
         <label for="title" class="block font-medium mb-1">{{t "media.field.title"}}</label>
-        <input id="title" name="title" type="text" value="{{$m.Title}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <input id="title" name="title" type="text" value="{{$m.Title}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       </div>
       <div>
         <label for="caption" class="block font-medium mb-1">{{t "media.field.caption"}}</label>
-        <textarea id="caption" name="caption" rows="3" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{$m.Caption}}</textarea>
+        <textarea id="caption" name="caption" rows="3" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{$m.Caption}}</textarea>
       </div>
       {{if $m.Width}}<fieldset class="rounded border border-line p-3" aria-describedby="focal-help">
         <legend class="font-medium px-1">{{t "media.field.focal"}}</legend>
@@ -37,7 +37,7 @@
           {{if $m.Focal}}<label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" name="clear_focal" value="1"> {{t "media.field.focal_clear"}}</label>{{end}}
         </div>
       </fieldset>{{end}}
-      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button>
+      <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.save"}}</button>
     </form>
     <dl class="rounded border border-line bg-panel p-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2">
       <dt class="text-muted">{{t "media.detail.file"}}</dt><dd class="font-mono break-all"><bdi>{{$m.Filename}}</bdi></dd>
@@ -49,7 +49,7 @@
       <dt class="text-muted">{{t "media.detail.url"}}</dt>
       <dd x-data="{ copied: false }" data-url="{{$m.URL}}">
         <code class="block font-mono text-xs break-all mb-1" dir="ltr">{{$m.URL}}</code>
-        <button type="button" class="h-8 px-2 rounded border border-line hover:border-line-strong inline-flex items-center gap-1 focus:outline-none focus:ring-[3px] focus:ring-green-soft"
+        <button type="button" class="h-8 px-2 rounded border border-line hover:border-line-strong inline-flex items-center gap-1 focus:outline-none focus:ring-[3px] focus:ring-blue-soft"
                 @click="gp.copy(new URL($root.dataset.url, location.origin).href).then((ok) => { copied = ok; setTimeout(() => copied = false, 2000) })">
           {{icon "copy"}}<span x-show="!copied">{{t "media.action.copy"}}</span><span x-show="copied" x-cloak class="[&[x-cloak]]:hidden">{{t "media.action.copied"}}</span>
         </button>

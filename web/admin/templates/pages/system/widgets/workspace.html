@@ -6,7 +6,7 @@
   {{else if .Rows}}
   <div class="dashboard-table-scroll"><table class="dashboard-content-table">
    <thead><tr><th scope="col">{{t "content.list.title"}}</th><th scope="col">{{t "content.list.status"}}</th><th scope="col">{{t "content.list.updated"}}</th></tr></thead>
-   <tbody>{{range .Rows}}<tr><td><a href="{{.Href}}">{{if .Title}}{{.Title}}{{else}}{{t "content.list.untitled"}}{{end}}</a>{{with .Locale}}<span class="dashboard-locale">{{.}}</span>{{end}}</td><td><span class="dashboard-status">{{t .StatusKey}}</span></td><td><time datetime="{{.UpdatedAt}}">{{date .UpdatedAt}}</time></td></tr>{{end}}</tbody>
+   <tbody>{{range .Rows}}<tr><td><a href="{{.Href}}">{{if .Title}}{{.Title}}{{else}}{{t "content.list.untitled"}}{{end}}</a>{{with .Locale}}<span class="dashboard-locale">{{.}}</span>{{end}}</td><td><span class="dashboard-status" data-status="{{.StatusKey}}">{{t .StatusKey}}</span></td><td><time datetime="{{.UpdatedAt}}">{{date .UpdatedAt}}</time></td></tr>{{end}}</tbody>
   </table></div>
   {{else}}<p class="dashboard-empty">{{t "admin.dashboard.empty_content"}}</p>{{end}}
  </section>

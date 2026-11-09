@@ -59,29 +59,37 @@ func (h *handlers) dashboardRendered(r *http.Request, strict bool) ([]dashboardR
 			out = append(out, dashboardRendered{wd.ID, html})
 		}
 	}
-	// Match the existing visual defaults before applying personal order.
+	// Keep source order aligned with the default workspace before applying personal order.
 	rank := func(id string) int {
 		switch id {
-		case "review_queue":
-			return -2
-		case "setup_status":
-			return -1
-		case "workspace_choice":
-			return 6
 		case "quick_actions":
-			return 1
-		case "workspace_guide":
-			return 7
-		case "dashboard_pins":
-			return 2
-		case "workspace":
 			return 0
-		case "canvas_gallery":
-			return 5
-		case "recent_audit", "jobs_summary", "system_summary":
-			return 10
-		default:
+		case "review_queue":
+			return 1
+		case "workspace":
+			return 2
+		case "setup_status":
+			return 3
+		case "content_counts":
 			return 4
+		case "analytics":
+			return 5
+		case "canvas_gallery":
+			return 6
+		case "dashboard_pins":
+			return 7
+		case "recent_audit":
+			return 8
+		case "jobs_summary":
+			return 9
+		case "system_summary":
+			return 10
+		case "workspace_guide":
+			return 11
+		case "workspace_choice":
+			return 12
+		default:
+			return 13
 		}
 	}
 	slices.SortStableFunc(out, func(a, b dashboardRendered) int { return rank(a.ID) - rank(b.ID) })

@@ -13,7 +13,7 @@
   <form method="post" action="/admin/builder/{{.ID}}/revisions/{{.Revision.ID}}/restore" class="flex flex-wrap gap-2">
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <input type="hidden" name="updated_at" value="{{.UpdatedAt}}">
-    <button type="submit" class="bg-green text-white px-3 py-2">{{t "builder.history_restore_confirm"}}</button>
+    <button type="submit" class="bg-blue text-white px-3 py-2">{{t "builder.history_restore_confirm"}}</button>
     <a href="/admin/builder/{{.ID}}" class="border border-line px-3 py-2">{{t "builder.history_cancel"}}</a>
     <a href="/admin/builder/{{.ID}}/revisions/{{.Revision.ID}}/preview" target="_blank" rel="noopener" class="border border-line px-3 py-2">{{t "builder.history_preview"}}</a>
   </form>

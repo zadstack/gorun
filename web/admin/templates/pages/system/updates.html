@@ -21,7 +21,7 @@
   {{if .DeploymentInvalid}}<p role="status" class="text-sm text-amber-text" data-update-deployment-invalid>{{t "admin.updates.coolify_invalid"}}</p>{{end}}
   {{if not .Status.IsRelease}}<p role="status" class="text-sm text-amber-text">{{t "admin.updates.not_release"}}</p>
   {{else if .Status.UpdateAvailable}}<p role="status" class="text-sm">{{if deref .Status.UpdateAvailable}}{{t "admin.updates.available"}}{{else}}{{t "admin.updates.up_to_date"}}{{end}}</p>{{end}}
-  <p><a href="https://github.com/zadstack/gorun/releases" target="_blank" rel="noopener noreferrer" class="text-green underline">{{t "admin.health.releases_link"}}</a></p>
+  <p><a href="https://github.com/zadstack/gorun/releases" target="_blank" rel="noopener noreferrer" class="text-blue underline">{{t "admin.health.releases_link"}}</a></p>
   {{if .Status.Configured}}
   <form method="post" action="/admin/system/updates/refresh" class="inline">
     <input type="hidden" name="_csrf" value="{{csrf}}">
@@ -37,7 +37,7 @@
     <label class="block text-sm"><span class="text-muted">{{t "admin.updates.digest_label"}}</span>
       <input type="text" name="expected_digest" dir="ltr" class="mt-1 h-9 w-full rounded border border-line bg-bg px-2 font-mono text-xs"></label>
     <label class="flex gap-2 items-start text-sm"><input type="checkbox" name="confirm" value="yes" required><span>{{t "admin.updates.confirm"}}</span></label>
-    <button type="submit" class="h-9 px-3 rounded bg-green text-white font-medium">{{t "admin.updates.request"}}</button>
+    <button type="submit" class="h-9 px-3 rounded bg-blue text-white font-medium">{{t "admin.updates.request"}}</button>
   </form>
   {{else if not .Status.Active}}<button type="button" disabled class="h-9 px-3 rounded border border-line opacity-50">{{t "admin.updates.request"}}</button>{{end}}
   {{else}}
@@ -58,7 +58,7 @@
   {{end}}
   <p class="text-sm text-muted">{{t "admin.updates.verify"}}</p>
   <p class="text-sm text-muted">{{t "admin.updates.rollback_note"}}</p>
-  <a href="/admin/system/health" class="text-green underline">{{t "admin.health.title"}}</a>
+  <a href="/admin/system/health" class="text-blue underline">{{t "admin.health.title"}}</a>
 </section>
 
 {{with .Status.Active}}{{template "updates_operation" .}}{{else}}{{with .Status.Last}}{{template "updates_operation" .}}{{end}}{{end}}

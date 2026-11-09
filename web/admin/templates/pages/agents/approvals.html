@@ -31,7 +31,7 @@
           <form method="post" action="/admin/agents/approvals/{{.ID}}/approve" hx-post="/admin/agents/approvals/{{.ID}}/approve" hx-target="#main" hx-swap="innerHTML"
                 hx-confirm="{{t "mcp.approvals.approve_confirm" .Tool}}">
             <input type="hidden" name="_csrf" value="{{csrf}}">
-            <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-green text-green bg-green-soft hover:border-green-hover hover:text-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "check"}}<span>{{t "mcp.approvals.approve"}}</span></button>
+            <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-blue text-blue bg-blue-soft hover:border-blue-hover hover:text-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "check"}}<span>{{t "mcp.approvals.approve"}}</span></button>
           </form>
           <form method="post" action="/admin/agents/approvals/{{.ID}}/deny" hx-post="/admin/agents/approvals/{{.ID}}/deny" hx-target="#main" hx-swap="innerHTML"
                 hx-confirm="{{t "mcp.approvals.deny_confirm" .Tool}}">
@@ -55,7 +55,7 @@
     {{range .Recent}}
     <li class="rounded border border-line bg-panel" data-approval="{{.ID}}">
       <details>
-        <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-3 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">
+        <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-3 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-blue-soft rounded">
           {{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}
           <span class="font-mono text-xs font-medium">{{.Tool}}</span>
           <span class="inline-flex rounded-chip border {{if eq .Status "approved"}}border-green bg-green-soft text-green{{else if or (eq .Status "denied") (eq .Status "failed")}}border-red bg-red-soft text-red{{else}}border-line bg-panel-2 text-muted{{end}} px-1.5 py-0.5 text-[11px] font-mono">{{t (printf "mcp.approvals.status_%s" .Status)}}</span>

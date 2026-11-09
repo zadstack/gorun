@@ -7,7 +7,7 @@
       <input type="hidden" name="target" value="{{.Target}}">
       <label for="gp-picker-q" class="sr-only">{{t "media.search.label"}}</label>
       <input id="gp-picker-q" name="q" type="search" value="{{.Q}}" placeholder="{{t "media.search.placeholder"}}"
-             class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+             class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     </form>
     <form hx-post="/admin/media" hx-encoding="multipart/form-data" hx-target="#gp-media-picker-body"
           x-data="{ busy: false, p: 0 }"
@@ -30,7 +30,7 @@
     <li>
       <button type="button" data-id="{{.ID}}" data-url="{{.URL}}" data-alt="{{.Alt}}" aria-label="{{t "media.picker.select" .Title}}"
               @click="window.dispatchEvent(new CustomEvent('media:selected', { detail: { id: $el.dataset.id, url: $el.dataset.url, alt: $el.dataset.alt, target: $root.dataset.target } }))"
-              class="block w-full rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft overflow-hidden text-start">
+              class="block w-full rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft overflow-hidden text-start">
         <span class="flex aspect-square items-center justify-center bg-panel-2">
           {{if .Thumb}}<img src="{{.Thumb}}" alt="" loading="lazy" class="h-full w-full object-cover">{{else}}{{icon .Icon "w-6 h-6 text-muted"}}{{end}}
         </span>

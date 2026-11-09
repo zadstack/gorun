@@ -378,6 +378,35 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 		}
 		return t.i18n.T(locale, key, args...)
 	}
+	var groups []NavGroup
+	groupsLoaded := false
+	groupView := func() []NavGroup {
+		if groupsLoaded {
+			return groups
+		}
+		groupsLoaded = true
+		if t.funcs.Nav == nil {
+			return nil
+		}
+		groups = groupNav(t.funcs.Nav(ctx), t.preferredNavGroups(ctx))
+		for i := range groups {
+			groups[i].Label = groupLabel(func(k string) string { return translate(k) }, groups[i].LabelKey)
+		}
+		return groups
+	}
+	var pins []QuickAccessItem
+	pinsLoaded := false
+	pinView := func() []QuickAccessItem {
+		if pinsLoaded {
+			return pins
+		}
+		pinsLoaded = true
+		if t.funcs.PinnedNav != nil {
+			pins = quickAccessItems(t.funcs.PinnedNav(ctx), pathOf(r))
+		}
+		return pins
+	}
+
 	var sections []NavigationSection
 	sectionsLoaded := false
 	sectionView := func() []NavigationSection {
@@ -396,6 +425,16 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 		preferred := t.preferredNavGroups(ctx)
 		sections = navigationSections(groupNav(items, preferred), authorized, pathOf(r), preferred)
 		return sections
+	}
+
+	var tools WorkspaceTools
+	toolsLoaded := false
+	toolsView := func() WorkspaceTools {
+		if !toolsLoaded {
+			tools = workspaceTools(groupView(), sectionView(), pinView())
+			toolsLoaded = true
+		}
+		return tools
 	}
 
 	return template.FuncMap{
@@ -431,23 +470,10 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 			}
 			return t.funcs.Setting(ctx, key)
 		},
-		"nav": func() []NavGroup {
-			if t.funcs.Nav == nil {
-				return nil
-			}
-			groups := groupNav(t.funcs.Nav(ctx), t.preferredNavGroups(ctx))
-			for i := range groups {
-				groups[i].Label = groupLabel(func(k string) string { return translate(k) }, groups[i].LabelKey)
-			}
-			return groups
-		},
+		"nav":                groupView,
+		"workspaceTools":     toolsView,
 		"navigationSections": sectionView,
-		"quickAccess": func() []QuickAccessItem {
-			if t.funcs.PinnedNav == nil {
-				return nil
-			}
-			return quickAccessItems(t.funcs.PinnedNav(ctx), pathOf(r))
-		},
+		"quickAccess":        pinView,
 		"allNavigationSections": func() []NavigationSection {
 			if t.funcs.AllNav == nil {
 				return nil

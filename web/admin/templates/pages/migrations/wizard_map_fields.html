@@ -7,7 +7,7 @@
   <ol class="flex gap-1 min-w-max">
     {{range .Steps}}
     <li>
-      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-green bg-green-soft text-green{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-blue bg-blue-soft text-blue{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
         <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
       </a>
     </li>
@@ -34,12 +34,12 @@
             <label for="{{$name}}" class="sr-only">{{t "wpmigrate.fields.target"}} {{.Key}}</label>
             <input id="{{$name}}" name="{{$name}}" type="text" dir="ltr" value="{{.Target}}" placeholder="{{t "wpmigrate.fields.skip_placeholder"}}"
                    {{with index $errs $name}}aria-invalid="true"{{end}}
-                   class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+                   class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
             {{template "partials/field_errors" (index $errs $name)}}
           </td>
           <td class="px-3 py-2">
             <label for="{{$name}}.type" class="sr-only">{{t "wpmigrate.fields.type"}} {{.Key}}</label>
-            <select id="{{$name}}.type" name="{{$name}}.type" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+            <select id="{{$name}}.type" name="{{$name}}.type" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
               {{$sel := .Type}}{{range $types}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{.}}</option>{{end}}
             </select>
           </td>
@@ -52,7 +52,7 @@
     {{end}}
   </section>
   <div class="flex justify-end">
-    <button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft"><span>{{t "wpmigrate.next.preview"}}</span>{{icon "arrow-right" "w-4 h-4 rtl:rotate-180"}}</button>
+    <button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft"><span>{{t "wpmigrate.next.preview"}}</span>{{icon "arrow-right" "w-4 h-4 rtl:rotate-180"}}</button>
   </div>
 </form>
 {{end}}

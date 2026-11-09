@@ -54,9 +54,9 @@
   padding: .5rem .625rem;
   border: 1px solid transparent;
   border-radius: 6px;
-  background: #f7f8fc;
+  background: var(--bg);
 }
-.canvas-workspace .canvas-schedules-row[data-status=needs_review] { background: #fff8e6; border-color: #f0d58c; }
+.canvas-workspace .canvas-schedules-row[data-status=needs_review] { background: var(--amber-soft); border-color: var(--amber); }
 .canvas-workspace .canvas-schedules-info { min-width: 0; }
 .canvas-workspace .canvas-schedules-name { display: block; font-size: .8125rem; font-weight: 600; line-height: 1.5; }
 .canvas-workspace .canvas-schedules-meta,
@@ -71,13 +71,13 @@
   line-height: 1.6;
   white-space: nowrap;
   background: var(--panel-2, #edf1f5);
-  color: #3f4a58;
+  color: var(--ink);
 }
-.canvas-workspace .canvas-schedules-chip[data-status=enabled] { background: #e5f0ea; color: #185e45; }
+.canvas-workspace .canvas-schedules-chip[data-status=enabled] { background: var(--green-soft); color: var(--green-hover); }
 .canvas-workspace .canvas-schedules-chip[data-status=needs_review] { background: var(--amber-soft, #f7eccb); color: var(--amber-text, #7a5406); }
 .canvas-workspace .canvas-schedules-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .375rem; }
 .canvas-workspace .canvas-schedules-actions button { font-size: .75rem; padding: .25rem .625rem; }
-.canvas-workspace .canvas-schedules-review { font-weight: 600; border-color: #b07d0c; color: var(--amber-text, #7a5406); }
+.canvas-workspace .canvas-schedules-review { font-weight: 600; border-color: var(--amber); color: var(--amber-text, #7a5406); }
 .canvas-workspace .canvas-schedules-review:hover { border-color: var(--amber-text, #7a5406); color: var(--amber-text, #7a5406); background: var(--amber-soft, #f7eccb); }
 
 @media (min-width: 768px) and (pointer: fine) {
@@ -92,9 +92,9 @@
     max-height: 60%;
     overflow: auto;
     margin: 0;
-    border-color: #d5dce3;
+    border-color: var(--line);
     border-radius: 12px;
-    background: #fffffff7;
+    background: var(--panel);
     box-shadow: 0 12px 32px #17202c24;
   }
   /* Lanes: anchor at the block end so the four column headers along the top stay readable. */

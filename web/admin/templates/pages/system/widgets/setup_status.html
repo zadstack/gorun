@@ -1,4 +1,10 @@
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "onboarding.css"}}">
-<details data-widget="setup_status" class="dashboard-setup onboarding" {{if .Attention}}open{{end}}><summary><strong>{{t "onboarding.title"}}</strong> · {{t "dashboardlayout.setup_hint"}}</summary><p>{{t "onboarding.intro"}}</p><ul class="onboarding-compact">{{range .Items}}<li data-setup-state="{{.State}}"><a href="{{.Href}}">{{if .Title}}{{.Title}}{{else}}{{t .TitleKey}}{{end}}</a><span class="onboarding-state" data-state="{{.State}}">{{t .StatusKey}}</span></li>{{end}}</ul><a href="/admin/platform-setup">{{t "onboarding.open_checklist"}}</a></details>
+<details data-widget="setup_status" class="dashboard-setup onboarding" data-attention="{{if .Attention}}true{{else}}false{{end}}" open>
+ <summary><strong>{{t "onboarding.dashboard_title"}}</strong>{{if .Attention}} <span class="onboarding-state" data-state="missing">{{t "onboarding.state.error"}}</span>{{end}}</summary>
+ <p>{{t "onboarding.dashboard_hint"}}</p>
+ <ul class="onboarding-compact">{{range $i, $item := .Items}}{{if lt $i 4}}<li data-setup-state="{{.State}}">{{if index workspaceTools.NavigationURLs .Href}}<span class="onboarding-label">{{if .Title}}{{.Title}}{{else}}{{t .TitleKey}}{{end}}</span>{{else}}<a href="{{.Href}}">{{if .Title}}{{.Title}}{{else}}{{t .TitleKey}}{{end}}</a>{{end}}<span class="onboarding-state" data-state="{{.State}}">{{t .StatusKey}}</span></li>{{end}}{{end}}</ul>
+ {{if gt (len .Items) 4}}<details class="dashboard-more-settings"><summary>{{t "onboarding.more_settings"}}</summary><ul class="onboarding-compact">{{range $i, $item := .Items}}{{if ge $i 4}}<li data-setup-state="{{.State}}">{{if index workspaceTools.NavigationURLs .Href}}<span class="onboarding-label">{{if .Title}}{{.Title}}{{else}}{{t .TitleKey}}{{end}}</span>{{else}}<a href="{{.Href}}">{{if .Title}}{{.Title}}{{else}}{{t .TitleKey}}{{end}}</a>{{end}}<span class="onboarding-state" data-state="{{.State}}">{{t .StatusKey}}</span></li>{{end}}{{end}}</ul></details>{{end}}
+ {{if not (index workspaceTools.NavigationURLs "/admin/platform-setup")}}<a class="dashboard-section-link" href="/admin/platform-setup">{{t "onboarding.open_checklist"}}</a>{{end}}
+</details>
 {{end}}

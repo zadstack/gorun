@@ -16,8 +16,9 @@ test('owned canvas actions appear in opposite-side agents drawer without dispatc
   await page.goto('/admin');
   const root=page.locator('[data-agents-dock]'),launcher=root.locator('[data-dock-open]'),dialog=root.locator('dialog');
   await expect(launcher).toBeVisible();
-  expect(await root.locator('.agents-dock-rail').evaluate(el=>Math.round(el.getBoundingClientRect().right))).toBe(await page.evaluate(()=>innerWidth));
-  expect(await page.locator('#main').evaluate(el=>el.getBoundingClientRect().right)).toBeLessThanOrEqual(await root.locator('.agents-dock-rail').evaluate(el=>el.getBoundingClientRect().left));
+  const rail=page.locator('.workspace-tools-rail');
+  expect(await rail.evaluate(el=>Math.round(el.getBoundingClientRect().right))).toBe(await page.evaluate(()=>innerWidth));
+  expect(await page.locator('#main').evaluate(el=>el.getBoundingClientRect().right)).toBeLessThanOrEqual(await rail.evaluate(el=>el.getBoundingClientRect().left));
   await launcher.click();await expect(dialog).toBeVisible();
   await dialog.locator('.agents-dock-all[href="/admin/canvases"]').focus();await page.keyboard.press('Tab');await expect(dialog.locator('[data-dock-close]')).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(dialog.locator('.agents-dock-all[href="/admin/canvases"]')).toBeFocused();
   await dialog.getByRole('button',{name:/Editorial writer/}).click();
@@ -37,8 +38,8 @@ test('owned canvas actions appear in opposite-side agents drawer without dispatc
   await launcher.click();await dialog.getByRole('button',{name:/External reviewer/}).click();await dialog.getByRole('tab',{name:'Integrations',exact:true}).click();await expect(dialog.locator('[data-dock-detail]')).toContainText('An external client must be connected');await expect(dialog.locator('[data-dock-detail]')).toContainText('Setup needed');await expect(dialog.locator('[data-dock-detail]')).not.toContainText('saved-dock-model');
   await dialog.locator('[data-dock-close]').click();
   await setLocale(page,'ar');await expect(launcher).toHaveAttribute('aria-label','الوكلاء');
-  expect(await root.locator('.agents-dock-rail').evaluate(el=>Math.round(el.getBoundingClientRect().left))).toBe(0);
-  expect(await page.locator('#main').evaluate(el=>el.getBoundingClientRect().left)).toBeGreaterThanOrEqual(await root.locator('.agents-dock-rail').evaluate(el=>el.getBoundingClientRect().right));
+  expect(await page.locator('.workspace-tools-rail').evaluate(el=>Math.round(el.getBoundingClientRect().left))).toBe(0);
+  expect(await page.locator('#main').evaluate(el=>el.getBoundingClientRect().left)).toBeGreaterThanOrEqual(await page.locator('.workspace-tools-rail').evaluate(el=>el.getBoundingClientRect().right));
   await launcher.click();expect(await dialog.evaluate(el=>Math.round(el.getBoundingClientRect().left))).toBe(0);await dialog.locator('[data-dock-close]').click();
   await page.setViewportSize({width:390,height:844});
   const menu=page.locator('[data-sidebar-toggle]');await menu.click();await expect(menu).toHaveAttribute('aria-expanded','true');

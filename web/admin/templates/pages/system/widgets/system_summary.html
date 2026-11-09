@@ -2,8 +2,7 @@
 {{define "content"}}
 <details data-widget="system_summary"><summary class="min-h-11 cursor-pointer">{{t "admin.dashboard.system"}} · {{.DBSize}} · {{.Uptime}}</summary>
   <div class="flex items-center justify-between mb-3">
-    <h2 class="text-base font-bold">{{t "admin.dashboard.system"}}</h2>
-    <a href="/admin/system/health" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>
+    {{if not (index workspaceTools.NavigationURLs "/admin/system/health")}}<a href="/admin/system/health" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>{{end}}
   </div>
   <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
     <dt class="text-muted">{{t "admin.health.go_version"}}</dt><dd class="font-mono text-xs">{{.GoVersion}}</dd>
