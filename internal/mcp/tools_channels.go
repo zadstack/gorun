@@ -40,7 +40,7 @@ type channelAgentChannel struct {
 }
 
 type channelAgentRead struct {
-	ChannelID string                    `json:"channel_id"`
+	ChannelID string                      `json:"channel_id"`
 	Messages  []workagents.ChannelMessage `json:"messages"`
 }
 
