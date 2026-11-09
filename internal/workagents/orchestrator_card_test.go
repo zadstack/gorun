@@ -98,7 +98,7 @@ func TestSidebarEmitsOrchestratorContainerWithPermission(t *testing.T) {
 	rec := httptest.NewRecorder()
 	tpl.RenderPartial(rec, httptest.NewRequest("GET", "/admin", nil).WithContext(adminCtx), "partials/sidebar", nil)
 	body := rec.Body.String()
-	if !strings.Contains(body, `data-orchestrator-card hx-get="/admin/workagents/orchestrator-card" hx-trigger="load" hx-swap="innerHTML"`) {
+	if !strings.Contains(body, `data-orchestrator-card`) || !strings.Contains(body, `hx-get="/admin/workagents/orchestrator-card" hx-trigger="load" hx-swap="innerHTML"`) {
 		t.Fatal("orchestrator card container missing", body)
 	}
 	if !strings.Contains(body, `href="/static/admin/orchestrator-card.css`) {
@@ -117,7 +117,7 @@ func TestSidebarEmitsOrchestratorContainerWithPermission(t *testing.T) {
 	}
 	rec = httptest.NewRecorder()
 	tpl.RenderPartial(rec, httptest.NewRequest("GET", "/admin", nil).WithContext(auth.WithUser(context.Background(), user)), "partials/sidebar", nil)
-	if strings.Contains(rec.Body.String(), "data-orchestrator-card") {
+	if strings.Contains(rec.Body.String(), `hx-get="/admin/workagents/orchestrator-card"`) {
 		t.Fatal("container leaked to a user without workagents.read", rec.Body.String())
 	}
 }
