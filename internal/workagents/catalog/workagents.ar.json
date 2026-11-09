@@ -90,5 +90,14 @@
   "review.status_failed": "فشلت",
   "review.status_cancelled": "ملغاة",
   "review.status_done": "مكتملة",
-  "review.no_findings": "لم تُرجع المراجعة ملاحظات صالحة. هذه المراجعة المحدودة لا تؤكد الجودة البصرية."
+  "review.no_findings": "لم تُرجع المراجعة ملاحظات صالحة. هذه المراجعة المحدودة لا تؤكد الجودة البصرية.",
+  "orchestrator.title": "المنسّق",
+  "orchestrator.tag_running": "وكيل مُنسَّق · يعمل الآن",
+  "orchestrator.tag_idle": "وكيل مُنسَّق · ساكن",
+  "orchestrator.pending": "%d بانتظار موافقتك",
+  "orchestrator.done_today": "%d مكتملة اليوم",
+  "orchestrator.activity_none": "لا يوجد نشاط جديد اليوم",
+  "orchestrator.enable_hint": "فعّل المنسّق من مساحة الوكلاء لبدء التنسيق",
+  "orchestrator.pill_pending": "بانتظار موافقتك",
+  "orchestrator.pill_done": "مكتملة اليوم"
 }

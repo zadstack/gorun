@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="{{asset "dashboard-pins.css"}}">
 <link rel="stylesheet" href="{{asset "sidebar-brand.css"}}">
 <link rel="stylesheet" href="{{asset "navigation-sections.css"}}">
+<link rel="stylesheet" href="{{asset "orchestrator-card.css"}}">
 <script defer src="{{asset "dashboard-pins.js"}}"></script>
 <script defer src="{{asset "sidebar-scroll.js"}}"></script>
 <div hidden data-dashboard-pin-config data-csrf="{{csrf}}" data-saving="{{t "dashboardpins.saving"}}" data-error="{{t "dashboardpins.error"}}" data-stale="{{t "dashboardpins.stale"}}" data-saved="{{t "dashboardpins.saved"}}" data-reload="{{t "dashboardpins.reload"}}" data-refreshed="{{t "quickaccess.refreshed"}}" data-add="{{t "dashboardpins.add"}}" data-remove="{{t "quickaccess.remove"}}"></div>
@@ -13,6 +14,7 @@
     <button type="button" class="md:hidden p-1 rounded border border-transparent hover:border-line" @click="toggleSidebar()" aria-label="{{t "core.action.close"}}">{{icon "x"}}</button>
   </div>
   <nav data-admin-navigation class="flex-1 overflow-y-auto p-2">
+    {{if can "workagents.read"}}<div data-orchestrator-card hx-get="/admin/workagents/orchestrator-card" hx-trigger="load" hx-swap="innerHTML"></div>{{end}}
     <ul class="space-y-0.5" data-navigation-sections>
     {{range navigationSections}}
       <li data-navigation-section="{{.Key}}">

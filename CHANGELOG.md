@@ -5,6 +5,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Compact orchestrator contact card at the top of the admin sidebar: avatar with live running/idle dot, pending-approval badge and until-truncated last-activity line, with up to two count-only stat pills and an htmx-loaded `GET /admin/workagents/orchestrator-card` partial that is permission-gated, `no-store` cached and owner-scoped to counters only.
+
 ## [0.20.0] - 2026-11-09
 
 ### Added
