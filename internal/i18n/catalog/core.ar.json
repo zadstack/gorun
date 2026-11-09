@@ -59,5 +59,11 @@
   "nav.group.site-design": "التصميم",
   "nav.group.site-search": "البحث والجاهزية",
   "nav.group.site-analytics": "الإحصائيات",
-  "nav.group.site": "الموقع"
+  "nav.group.site": "الموقع",
+  "workspace.site_tools": "أدوات الموقع",
+  "workspace.view_site": "عرض الموقع",
+  "workspace.direct_tools": "فتح مباشرة",
+  "workspace.all_tools": "كل أدوات الإدارة",
+  "workspace.tools_hint": "افتح الأداة مباشرة دون التنقل بين أقسام الإعدادات.",
+  "workspace.more_tools": "أدوات أخرى"
 }

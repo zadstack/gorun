@@ -1,6 +1,6 @@
 {
-  "title": "Your dashboard",
-  "description": "Pin pages from their section tabs for quick access. Your layout is private to your account.",
+  "title": "Pinned tools",
+  "description": "Shortcuts to the pages you use most.",
   "drop": "Add tools from their page tabs",
   "empty": "Keep the tools you use most within reach.",
   "empty_help": "Open a section, then use Add to quick access beside a page tab.",

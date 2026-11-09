@@ -10,7 +10,7 @@
       <label for="title_template" class="block font-medium mb-1">{{t "seo.field.title_template"}}</label>
       <input id="title_template" name="title_template" type="text" dir="auto" value="{{.Form.TitleTemplate}}" aria-describedby="tt-help tt-error"
              {{with index .Fields "title_template"}}aria-invalid="true"{{end}}
-             class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+             class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       <p id="tt-help" class="mt-1 text-xs text-muted">{{t "seo.field.title_template_help"}}</p>
       <div id="tt-error">{{template "partials/field_errors" (index .Fields "title_template")}}</div>
     </div>
@@ -18,7 +18,7 @@
       <label for="default_description" class="block font-medium mb-1">{{t "seo.field.default_description"}}</label>
       <textarea id="default_description" name="default_description" rows="3" maxlength="500" aria-describedby="dd-help dd-error"
                 {{with index .Fields "default_description"}}aria-invalid="true"{{end}}
-                class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Form.DefaultDescription}}</textarea>
+                class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.Form.DefaultDescription}}</textarea>
       <p id="dd-help" class="mt-1 text-xs text-muted">{{t "seo.field.default_description_help"}}</p>
       <div id="dd-error">{{template "partials/field_errors" (index .Fields "default_description")}}</div>
     </div>
@@ -33,9 +33,9 @@
         </div>
         {{if .CanPickMedia}}
         <button type="button" aria-describedby="og-label" @click="$dispatch('media:open', { target: 'seo_og_image' })"
-                class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "image"}}{{t "seo.image.choose"}}</button>
+                class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "image"}}{{t "seo.image.choose"}}</button>
         {{end}}
-        <button type="button" x-show="url" @click="url = ''" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "seo.image.remove"}}</button>
+        <button type="button" x-show="url" @click="url = ''" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "seo.image.remove"}}</button>
       </div>
       <p class="mt-1 text-xs text-muted">{{t "seo.field.default_og_image_help"}}</p>
       {{template "partials/field_errors" (index .Fields "default_og_image")}}
@@ -47,7 +47,7 @@
       <label for="robots_txt" class="block font-medium mb-1">{{t "seo.field.robots_txt"}}</label>
       <textarea id="robots_txt" name="robots_txt" rows="6" dir="ltr" spellcheck="false" aria-describedby="rb-help rb-error"
                 {{with index .Fields "robots_txt"}}aria-invalid="true"{{end}}
-                class="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Form.RobotsTxt}}</textarea>
+                class="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.Form.RobotsTxt}}</textarea>
       <p id="rb-help" class="mt-1 text-xs text-muted">{{t "seo.field.robots_txt_help"}}</p>
       <div id="rb-error">{{template "partials/field_errors" (index .Fields "robots_txt")}}</div>
     </div>
@@ -56,7 +56,7 @@
       <pre class="rounded bg-panel-dark text-[#dcefe7] p-3 font-mono text-xs overflow-x-auto" dir="ltr">{{.RobotsDefault}}</pre>
     </div>
   </details>
-  <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "seo.save"}}</button>
+  <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "seo.save"}}</button>
 </form>
 {{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}
 {{end}}

@@ -124,5 +124,8 @@
   "step.verify_running": "Verify instance identity · in progress",
   "step.verify_done": "Verify instance identity · recorded",
   "step.complete": "Identity verification complete",
-  "permissions": "Required Cloudflare permissions"
+  "permissions": "Required Cloudflare permissions",
+  "dashboard_title": "Site settings",
+  "dashboard_hint": "Saved settings. Open a service to test its connection.",
+  "more_settings": "More settings"
 }

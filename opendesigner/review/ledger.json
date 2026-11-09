@@ -1,0 +1,118 @@
+{
+  "cells": {
+    "/admin|390x844|light": {
+      "status": "done",
+      "evidence": [
+        "output/playwright/dashboard-after-390.png"
+      ],
+      "why": "",
+      "at": "2026-11-09T11:17:20"
+    },
+    "/admin|768x900|light": {
+      "status": "done",
+      "evidence": [
+        "output/playwright/dashboard-after-768.png"
+      ],
+      "why": "",
+      "at": "2026-11-09T11:17:20"
+    },
+    "/admin|1440x900|light": {
+      "status": "done",
+      "evidence": [
+        "output/playwright/dashboard-after-1440.png"
+      ],
+      "why": "",
+      "at": "2026-11-09T11:17:20"
+    },
+    "task:/admin|scroll-walk": {
+      "status": "done",
+      "evidence": [
+        "output/playwright/dashboard-customize.png",
+        "output/playwright/dashboard-text200.png"
+      ],
+      "why": "",
+      "at": "2026-11-09T11:17:20"
+    },
+    "task:/admin|focus-walk": {
+      "status": "skipped",
+      "evidence": [],
+      "why": "Focused dashboard pass; no exhaustive check of this category.",
+      "at": "2026-11-09T11:17:20"
+    },
+    "task:/admin|hover-and-press": {
+      "status": "skipped",
+      "evidence": [],
+      "why": "Focused dashboard pass; no exhaustive check of this category.",
+      "at": "2026-11-09T11:17:20"
+    },
+    "task:/admin|states-and-data": {
+      "status": "done",
+      "evidence": [
+        "output/playwright/dashboard-customize.png",
+        "output/playwright/dashboard-text200.png"
+      ],
+      "why": "",
+      "at": "2026-11-09T11:17:20"
+    },
+    "task:/admin|motion": {
+      "status": "skipped",
+      "evidence": [],
+      "why": "Focused dashboard pass; no exhaustive check of this category.",
+      "at": "2026-11-09T11:17:20"
+    },
+    "task:/admin|stress-text": {
+      "status": "done",
+      "evidence": [
+        "output/playwright/dashboard-customize.png",
+        "output/playwright/dashboard-text200.png"
+      ],
+      "why": "",
+      "at": "2026-11-09T11:17:20"
+    },
+    "task:/admin|reduced-motion": {
+      "status": "skipped",
+      "evidence": [],
+      "why": "Focused dashboard pass; no exhaustive check of this category.",
+      "at": "2026-11-09T11:17:20"
+    },
+    "task:/admin|forced-colors": {
+      "status": "skipped",
+      "evidence": [],
+      "why": "Focused dashboard pass; no exhaustive check of this category.",
+      "at": "2026-11-09T11:17:20"
+    },
+    "task:/admin|console-and-network": {
+      "status": "skipped",
+      "evidence": [],
+      "why": "Focused dashboard pass; no exhaustive check of this category.",
+      "at": "2026-11-09T11:17:21"
+    },
+    "task:/admin|letter-reveals": {
+      "status": "skipped",
+      "evidence": [],
+      "why": "Focused dashboard pass; no exhaustive check of this category.",
+      "at": "2026-11-09T11:17:21"
+    },
+    "task:/admin|text-pixels": {
+      "status": "skipped",
+      "evidence": [],
+      "why": "Focused dashboard pass; no exhaustive check of this category.",
+      "at": "2026-11-09T11:17:21"
+    },
+    "task:/admin|floating-bars": {
+      "status": "skipped",
+      "evidence": [],
+      "why": "Focused dashboard pass; no exhaustive check of this category.",
+      "at": "2026-11-09T11:17:21"
+    },
+    "task:/admin|toggles": {
+      "status": "done",
+      "evidence": [
+        "output/playwright/dashboard-customize.png",
+        "output/playwright/dashboard-text200.png"
+      ],
+      "why": "",
+      "at": "2026-11-09T11:17:20"
+    }
+  }
+}

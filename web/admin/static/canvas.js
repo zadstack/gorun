@@ -182,7 +182,8 @@
     if (!active) { laneBands?.remove(); laneBands = null; return false; }
     const dir = getComputedStyle(root).direction === 'rtl' ? 'rtl' : 'ltr';
     // Narrow the cards before measuring them, so four columns fit the viewport without sideways scrolling.
-    const width = CanvasState.laneCardWidth(root.querySelector('.canvas-viewport').clientWidth), pitch = width + 36;
+    const available = root.querySelector('.canvas-viewport').clientWidth;
+    const width = CanvasState.laneCardWidth(available), pitch = width + CanvasState.laneGutter(available, width);
     root.style.setProperty('--lane-card-width', `${width}px`); root.style.setProperty('--lane-pitch', `${pitch}px`);
     const size = heights(), {positions, columns} = CanvasState.lanes(documentState.cards, size, documentState.provenance || {}, dir, pitch);
     let bottom = 0;

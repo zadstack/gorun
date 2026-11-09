@@ -12,19 +12,19 @@
     <h2 class="sm:col-span-2 font-bold">{{t "operator.site_fields"}}</h2>
     <div>
       <label for="s-title" class="block font-medium mb-1">{{t "admin.settings.site_title"}}</label>
-      <input id="s-title" name="title" value="{{.Form.Title}}" maxlength="500" class="h-9 w-full rounded border {{if index .Fields "title"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="s-title" name="title" value="{{.Form.Title}}" maxlength="500" class="h-9 w-full rounded border {{if index .Fields "title"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       {{template "partials/field_errors" (index .Fields "title")}}
     </div>
     <div>
       <label for="s-tagline" class="block font-medium mb-1">{{t "admin.settings.tagline"}}</label>
-      <input id="s-tagline" name="tagline" value="{{.Form.Tagline}}" maxlength="500" class="h-9 w-full rounded border {{if index .Fields "tagline"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="s-tagline" name="tagline" value="{{.Form.Tagline}}" maxlength="500" class="h-9 w-full rounded border {{if index .Fields "tagline"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       {{template "partials/field_errors" (index .Fields "tagline")}}
     </div>
     <h2 class="sm:col-span-2 font-bold">{{t "operator.locale_fields"}}</h2>
     <div>
       <label for="s-locale" class="block font-medium mb-1">{{t "admin.settings.locale"}}</label>
       <input id="s-locale" name="locale" value="{{.Form.Locale}}" list="s-content-locale-options" dir="ltr" maxlength="63" aria-describedby="s-locale-help" {{if index .Fields "locale"}}aria-invalid="true"{{end}}
-             class="h-9 w-full rounded border {{if index .Fields "locale"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+             class="h-9 w-full rounded border {{if index .Fields "locale"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       <datalist id="s-content-locale-options">{{range .Locales}}<option value="{{.}}">{{localeName .}}</option>{{end}}</datalist>
       <p id="s-locale-help" class="mt-1 text-xs text-muted">{{t "admin.settings.content_default_help"}}</p>
       {{template "partials/field_errors" (index .Fields "locale")}}
@@ -32,7 +32,7 @@
     <div>
       <label for="s-timezone" class="block font-medium mb-1">{{t "admin.settings.timezone"}}</label>
       <input id="s-timezone" name="timezone" value="{{.Form.Timezone}}" list="s-timezones" dir="ltr" autocomplete="off" aria-describedby="s-timezone-help" {{if index .Fields "timezone"}}aria-invalid="true"{{end}}
-             class="h-9 w-full rounded border {{if index .Fields "timezone"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+             class="h-9 w-full rounded border {{if index .Fields "timezone"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       <datalist id="s-timezones">{{range .Timezones}}<option value="{{.}}">{{end}}</datalist>
       <p id="s-timezone-help" class="mt-1 text-xs text-muted">{{t "admin.settings.timezone_help"}}</p>
       {{template "partials/field_errors" (index .Fields "timezone")}}
@@ -41,14 +41,14 @@
   <div>
     <label for="s-content-locales" class="block font-medium mb-1">{{t "admin.settings.content_locales"}}</label>
     <input id="s-content-locales" name="content_locales" value="{{.Form.ContentLocales}}" dir="ltr" maxlength="2048" aria-describedby="s-content-locales-help" {{if index .Fields "content_locales"}}aria-invalid="true"{{end}}
-           class="h-9 w-full rounded border {{if index .Fields "content_locales"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+           class="h-9 w-full rounded border {{if index .Fields "content_locales"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     <p id="s-content-locales-help" class="mt-1 text-xs text-muted">{{t "admin.settings.content_locales_help"}}</p>
     {{template "partials/field_errors" (index .Fields "content_locales")}}
   </div>
   <div>
     <label for="s-base-url" class="block font-medium mb-1">{{t "admin.settings.base_url"}}</label>
     <input id="s-base-url" name="base_url" type="url" value="{{.Form.BaseURL}}" dir="ltr" aria-describedby="s-base-url-help" {{if index .Fields "base_url"}}aria-invalid="true"{{end}}
-           class="h-9 w-full rounded border {{if index .Fields "base_url"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+           class="h-9 w-full rounded border {{if index .Fields "base_url"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     <p id="s-base-url-help" class="mt-1 text-xs text-muted">{{t "admin.settings.base_url_help"}}</p>
     {{template "partials/field_errors" (index .Fields "base_url")}}
   </div>
@@ -56,11 +56,11 @@
     <div>
       <label for="s-theme" class="block font-medium mb-1">{{t "admin.settings.theme"}}</label>
       {{if .Themes}}
-      <select id="s-theme" name="theme" class="h-9 w-full rounded border {{if index .Fields "theme"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <select id="s-theme" name="theme" class="h-9 w-full rounded border {{if index .Fields "theme"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         {{range .Themes}}<option value="{{.Slug}}" {{if eq .Slug $.Form.Theme}}selected{{end}}>{{.Name}} ({{.Slug}})</option>{{end}}
       </select>
       {{else}}
-      <input id="s-theme" name="theme" value="{{.Form.Theme}}" dir="ltr" class="h-9 w-full rounded border {{if index .Fields "theme"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="s-theme" name="theme" value="{{.Form.Theme}}" dir="ltr" class="h-9 w-full rounded border {{if index .Fields "theme"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       {{end}}
       {{template "partials/field_errors" (index .Fields "theme")}}
     </div>
@@ -71,12 +71,12 @@
       <input id="s-front-page" type="search" name="q" autocomplete="off" placeholder="{{t "admin.settings.front_page_search"}}" x-model="title"
              hx-get="/admin/x/settings/front-page" hx-trigger="input changed delay:300ms" hx-target="#s-front-page-options" @input="open = true"
              role="combobox" aria-controls="s-front-page-options" :aria-expanded="open.toString()"
-             class="h-9 w-full rounded border {{if index .Fields "front_page"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+             class="h-9 w-full rounded border {{if index .Fields "front_page"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       <div id="s-front-page-options" x-show="open" x-cloak class="[&[x-cloak]]:hidden absolute z-20 mt-1 w-full rounded border border-line bg-panel"
            @click="pick($event.target.closest('button[data-id]'))"></div>
       <p class="mt-1 text-xs text-muted">{{t "admin.settings.front_page_help"}}</p>
       {{else}}
-      <input id="s-front-page" name="front_page" value="{{.Form.FrontPage}}" dir="ltr" aria-describedby="s-front-page-help" class="h-9 w-full rounded border {{if index .Fields "front_page"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="s-front-page" name="front_page" value="{{.Form.FrontPage}}" dir="ltr" aria-describedby="s-front-page-help" class="h-9 w-full rounded border {{if index .Fields "front_page"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       <p id="s-front-page-help" class="mt-1 text-xs text-muted">{{t "admin.settings.front_page_no_content"}}</p>
       {{end}}
       {{template "partials/field_errors" (index .Fields "front_page")}}
@@ -111,19 +111,19 @@
       <div>
         <label for="s-contact-email" class="block font-medium mb-1">{{t "admin.settings.contact_email"}}</label>
         <input id="s-contact-email" name="contact_email" type="email" value="{{.Form.ContactEmail}}" dir="ltr" maxlength="254" aria-describedby="s-contact-email-help" {{if index .Fields "contact_email"}}aria-invalid="true"{{end}}
-               class="h-9 w-full rounded border {{if index .Fields "contact_email"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+               class="h-9 w-full rounded border {{if index .Fields "contact_email"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         <p id="s-contact-email-help" class="mt-1 text-xs text-muted">{{t "admin.settings.contact_email_help"}}</p>
         {{template "partials/field_errors" (index .Fields "contact_email")}}
       </div>
       <div>
         <label for="s-per-page" class="block font-medium mb-1">{{t "admin.settings.posts_per_page"}}</label>
         <input id="s-per-page" name="posts_per_page" type="number" min="1" max="100" step="1" value="{{.Form.PostsPerPage}}" dir="ltr" {{if index .Fields "posts_per_page"}}aria-invalid="true"{{end}}
-               class="h-9 w-32 rounded border {{if index .Fields "posts_per_page"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+               class="h-9 w-32 rounded border {{if index .Fields "posts_per_page"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         {{template "partials/field_errors" (index .Fields "posts_per_page")}}
       </div>
     </div>
   </div>
-  <div class="sticky bottom-0 border-t border-line bg-panel py-3"><span x-show="dirty" class="text-sm text-muted me-3">{{t "operator.dirty"}}</span><button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+  <div class="sticky bottom-0 border-t border-line bg-panel py-3"><span x-show="dirty" class="text-sm text-muted me-3">{{t "operator.dirty"}}</span><button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.save"}}</button></div>
 </form>
 {{if .CanPickMedia}}{{template "partials/media_picker.html" .}}{{end}}
 {{end}}

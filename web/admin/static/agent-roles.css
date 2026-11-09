@@ -22,7 +22,7 @@
 .agent-role-setup{border-inline-start:3px solid var(--role-accent);padding:.6rem .8rem;background:var(--role-soft);border-radius:5px;color:#1e293b;font-size:.82rem;line-height:1.65}
 .agent-role-setup strong{color:var(--role-ink)}
 .agent-role-footer{display:flex;padding:.375rem .875rem .75rem;border-end-start-radius:14px;border-end-end-radius:14px;background:var(--panel)}
-.agent-role-primary{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:.4rem .85rem;border-radius:6px;background:var(--green);color:#fff;font-size:.85rem;font-weight:650;text-decoration:none}
+.agent-role-primary{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:.4rem .85rem;border-radius:6px;background:var(--accent);color:#fff;font-size:.85rem;font-weight:650;text-decoration:none}
 .agent-role-primary:hover{filter:brightness(.9)}
 .agent-roles :is(a,button,summary,select):focus-visible{outline:3px solid #111827;outline-offset:3px}
 .agent-role-kind{border-color:#9677b2;color:#5f3f7a}

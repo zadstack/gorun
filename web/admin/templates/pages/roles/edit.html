@@ -12,7 +12,7 @@
       <label for="r-slug" class="block font-medium mb-1">{{t "admin.roles.slug"}}</label>
       <input id="r-slug" name="slug" value="{{.Form.Slug}}" dir="ltr" autocomplete="off" required {{if not .IsNew}}readonly{{end}}
              aria-describedby="r-slug-help"
-             class="h-9 w-full rounded border {{if index .Fields "slug"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft {{if not .IsNew}}opacity-70{{end}}">
+             class="h-9 w-full rounded border {{if index .Fields "slug"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft {{if not .IsNew}}opacity-70{{end}}">
       <p id="r-slug-help" class="mt-1 text-xs text-muted">{{if .IsNew}}{{t "admin.roles.slug_help"}}{{else}}{{t "admin.roles.slug_locked"}}{{end}}</p>
       {{template "partials/field_errors" (index .Fields "slug")}}
     </div>
@@ -20,13 +20,13 @@
       <div>
         <label for="r-name-en" class="block font-medium mb-1">{{t "admin.roles.name_en"}}</label>
         <input id="r-name-en" name="name_en" value="{{.Form.NameEN}}" autocomplete="off" required
-               class="h-9 w-full rounded border {{if index .Fields "name_en"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+               class="h-9 w-full rounded border {{if index .Fields "name_en"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         {{template "partials/field_errors" (index .Fields "name_en")}}
       </div>
       <div>
         <label for="r-name-ar" class="block font-medium mb-1">{{t "admin.roles.name_ar"}}</label>
         <input id="r-name-ar" name="name_ar" value="{{.Form.NameAR}}" autocomplete="off" required dir="rtl"
-               class="h-9 w-full rounded border {{if index .Fields "name_ar"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+               class="h-9 w-full rounded border {{if index .Fields "name_ar"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         {{template "partials/field_errors" (index .Fields "name_ar")}}
       </div>
     </div>
@@ -54,7 +54,7 @@
     </fieldset>
     <section class="border border-line bg-panel-2 p-3" data-role-changes><h2 class="font-bold">{{t "operator.role_diff"}}</h2><p class="text-sm text-muted mt-1">{{t "operator.role_diff_boundary"}}</p><p class="mt-2" data-role-unchanged>{{t "operator.role_no_changes"}}</p><div class="grid gap-3 sm:grid-cols-2 mt-2"><div><h3 class="text-sm font-medium">{{t "operator.role_added"}}</h3><ul data-role-added class="text-xs font-mono break-all"></ul></div><div><h3 class="text-sm font-medium">{{t "operator.role_removed"}}</h3><ul data-role-removed class="text-xs font-mono break-all"></ul></div></div></section>
     <div class="flex gap-2">
-      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{if .IsNew}}{{t "admin.roles.create"}}{{else}}{{t "core.action.save"}}{{end}}</button>
+      <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{if .IsNew}}{{t "admin.roles.create"}}{{else}}{{t "core.action.save"}}{{end}}</button>
       <a href="/admin/roles" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.action.cancel"}}</a>
     </div>
   </form>

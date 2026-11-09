@@ -25,11 +25,11 @@
               class="flex-1 min-h-[480px] resize-y bg-panel px-3 py-2 font-mono text-[12px] leading-5 focus:outline-none">{{.Body}}</textarea>
   </div>
   <div class="mt-4 flex flex-wrap items-center gap-2">
-    <button data-code-exit type="submit" name="action" value="publish" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.editor.publish"}}</button>
-    <button type="submit" name="action" value="draft" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.editor.save_draft"}}</button>
-    <a href="{{.PreviewURL}}" target="_blank" rel="noopener" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong text-blue focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "external-link"}}<span>{{t "theme.editor.preview"}}</span></a>
+    <button data-code-exit type="submit" name="action" value="publish" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "theme.editor.publish"}}</button>
+    <button type="submit" name="action" value="draft" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "theme.editor.save_draft"}}</button>
+    <a href="{{.PreviewURL}}" target="_blank" rel="noopener" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong text-blue focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "external-link"}}<span>{{t "theme.editor.preview"}}</span></a>
     {{if or .HasOverride .HasDraft}}
-    <button type="submit" name="action" value="delete" formnovalidate class="ms-auto h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "theme.editor.delete"}}</button>
+    <button type="submit" name="action" value="delete" formnovalidate class="ms-auto h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "theme.editor.delete"}}</button>
     {{end}}
   </div>
   <p class="mt-2 text-[12px] text-muted">{{t "theme.editor.help"}}</p>

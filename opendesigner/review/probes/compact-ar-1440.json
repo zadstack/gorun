@@ -1,0 +1,1060 @@
+{
+  "v": 1,
+  "url": "http://127.0.0.1:18219/admin",
+  "title": "لوحة التحكم · GoRun",
+  "at": "2026-11-09T08:05:33.386Z",
+  "viewport": {
+    "w": 1440,
+    "h": 900,
+    "innerW": 1440,
+    "innerH": 900,
+    "dpr": 1,
+    "docW": 1440,
+    "docH": 913,
+    "scale": 1
+  },
+  "media": {
+    "colorScheme": "light",
+    "reducedMotion": false,
+    "forcedColors": false,
+    "pointer": "fine",
+    "hover": true
+  },
+  "doc": {
+    "lang": "ar",
+    "dir": "rtl",
+    "viewportMeta": "width=device-width, initial-scale=1",
+    "blocksZoom": false,
+    "dataTheme": null,
+    "colorScheme": "normal",
+    "hOverflow": 0,
+    "rootClipsX": false,
+    "elements": 616,
+    "truncated": false
+  },
+  "type": {
+    "sizes": {
+      "11": {
+        "n": 7,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(5) > div:nth-of-type(2) > p.text-xs.text-muted"
+        ],
+        "chars": 37
+      },
+      "12": {
+        "n": 8,
+        "ex": [
+          "tr > td:nth-of-type(1) > span.dashboard-locale"
+        ],
+        "chars": 92
+      },
+      "13": {
+        "n": 40,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > span"
+        ],
+        "chars": 517
+      },
+      "14": {
+        "n": 7,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 77
+      },
+      "15": {
+        "n": 8,
+        "ex": [
+          "main#main > header.dashboard-page-heading > p"
+        ],
+        "chars": 149
+      },
+      "16": {
+        "n": 4,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 42
+      },
+      "22": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 11
+      },
+      "28": {
+        "n": 2,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dd.font-mono.text-lg:nth-of-type(1)"
+        ],
+        "chars": 2
+      },
+      "11.5": {
+        "n": 1,
+        "ex": [
+          "h2#sidebar-quick-heading"
+        ],
+        "chars": 13
+      },
+      "11.8": {
+        "n": 1,
+        "ex": [
+          "section.sidebar-quick-access > ul > li.sidebar-quick-empty"
+        ],
+        "chars": 42
+      }
+    },
+    "lineHeights": {
+      "16": {
+        "n": 6,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dt.text-xs.text-muted"
+        ],
+        "chars": 27
+      },
+      "20": {
+        "n": 49,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 494
+      },
+      "24": {
+        "n": 2,
+        "ex": [
+          "h2#canvas-gallery-title"
+        ],
+        "chars": 35
+      },
+      "28": {
+        "n": 2,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dd.font-mono.text-lg:nth-of-type(1)"
+        ],
+        "chars": 2
+      },
+      "33": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 11
+      },
+      "22.1": {
+        "n": 10,
+        "ex": [
+          "section.dashboard-worklist > div.dashboard-panel-heading:nth-of-type(1) > p"
+        ],
+        "chars": 279
+      },
+      "25.6": {
+        "n": 3,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 26
+      },
+      "17.5": {
+        "n": 1,
+        "ex": [
+          "div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand > span"
+        ],
+        "chars": 13
+      },
+      "18.9": {
+        "n": 1,
+        "ex": [
+          "section.sidebar-quick-access > ul > li.sidebar-quick-empty"
+        ],
+        "chars": 42
+      },
+      "20.8": {
+        "n": 1,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(1) > div:nth-of-type(2) > h2.text-base.font-bold"
+        ],
+        "chars": 13
+      },
+      "20.4": {
+        "n": 1,
+        "ex": [
+          "details.dashboard-setup.onboarding > summary > span.onboarding-state"
+        ],
+        "chars": 14
+      },
+      "18.7": {
+        "n": 1,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(5) > div:nth-of-type(2) > p.text-xs.text-muted"
+        ],
+        "chars": 10
+      },
+      "27.2": {
+        "n": 1,
+        "ex": [
+          "summary > span:nth-of-type(1) > strong"
+        ],
+        "chars": 16
+      }
+    },
+    "weights": {
+      "400": {
+        "n": 59,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 750
+      },
+      "600": {
+        "n": 14,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > span"
+        ],
+        "chars": 186
+      },
+      "700": {
+        "n": 6,
+        "ex": [
+          "div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand > span"
+        ],
+        "chars": 46
+      }
+    },
+    "families": {
+      "Zad": {
+        "n": 73,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 976
+      },
+      "ui-monospace": {
+        "n": 6,
+        "ex": [
+          "tbody > tr.border-t.border-line:nth-of-type(1) > td.text-end.font-mono:nth-of-type(2)"
+        ],
+        "chars": 6
+      }
+    },
+    "letterSpacing": {},
+    "tracking": {
+      "13|0|0": {
+        "n": 40,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > span"
+        ],
+        "chars": 517
+      },
+      "14|0|0": {
+        "n": 7,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 77
+      },
+      "15|0|0": {
+        "n": 7,
+        "ex": [
+          "main#main > header.dashboard-page-heading > p"
+        ],
+        "chars": 135
+      },
+      "12|0|0": {
+        "n": 7,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ],
+        "chars": 90
+      },
+      "11|0|0": {
+        "n": 7,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(5) > div:nth-of-type(2) > p.text-xs.text-muted"
+        ],
+        "chars": 37
+      },
+      "16|0|0": {
+        "n": 4,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 42
+      },
+      "28|0|0": {
+        "n": 2,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dd.font-mono.text-lg:nth-of-type(1)"
+        ],
+        "chars": 2
+      },
+      "11.5|0|0": {
+        "n": 1,
+        "ex": [
+          "h2#sidebar-quick-heading"
+        ],
+        "chars": 13
+      },
+      "11.8|0|0": {
+        "n": 1,
+        "ex": [
+          "section.sidebar-quick-access > ul > li.sidebar-quick-empty"
+        ],
+        "chars": 42
+      },
+      "22|0|0": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 11
+      },
+      "15|0|1": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(4) > a.h-9.px-3 > span"
+        ],
+        "chars": 14
+      },
+      "12|0|1": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(1) > span.dashboard-locale"
+        ],
+        "chars": 2
+      }
+    },
+    "capsTight": [],
+    "headings": {
+      "checked": 8,
+      "long": []
+    },
+    "smallest": {
+      "px": 11,
+      "sel": "section.min-w-0.rounded:nth-of-type(5) > div:nth-of-type(2) > p.text-xs.text-muted",
+      "text": "آخر 7 أيام"
+    },
+    "lineHeightTight": [],
+    "longLines": [],
+    "textElements": 79
+  },
+  "layout": {
+    "groups": 6,
+    "mixed": [],
+    "offCentre": []
+  },
+  "space": {
+    "values": {
+      "1": {
+        "n": 24,
+        "ex": [
+          "thead > tr.text-muted.font-mono > th.text-start.py-1:nth-of-type(1)"
+        ]
+      },
+      "2": {
+        "n": 6,
+        "ex": [
+          "nav.flex-1.overflow-y-auto > ul.space-y-0\\.5 > li:nth-of-type(2)"
+        ]
+      },
+      "4": {
+        "n": 30,
+        "ex": [
+          "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active"
+        ]
+      },
+      "6": {
+        "n": 28,
+        "ex": [
+          "aside#admin-sidebar > div.admin-brand-header.h-14:nth-of-type(1)"
+        ]
+      },
+      "8": {
+        "n": 87,
+        "ex": [
+          "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active"
+        ]
+      },
+      "10": {
+        "n": 22,
+        "ex": [
+          "aside#admin-sidebar > nav.flex-1.overflow-y-auto"
+        ]
+      },
+      "12": {
+        "n": 56,
+        "ex": [
+          "aside#admin-sidebar > div.admin-brand-header.h-14:nth-of-type(1)"
+        ]
+      },
+      "16": {
+        "n": 27,
+        "ex": [
+          "nav.flex-1.overflow-y-auto > div > section.sidebar-quick-access"
+        ]
+      },
+      "20": {
+        "n": 2,
+        "ex": [
+          "main#main"
+        ]
+      },
+      "24": {
+        "n": 1,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(3) > details.dashboard-setup.onboarding > ul.onboarding-compact"
+        ]
+      },
+      "56": {
+        "n": 1,
+        "ex": [
+          "body"
+        ]
+      },
+      "160": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading"
+        ]
+      },
+      "3.2": {
+        "n": 35,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > svg"
+        ]
+      },
+      "7.2": {
+        "n": 4,
+        "ex": [
+          "aside#admin-sidebar > div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand"
+        ]
+      },
+      "10.4": {
+        "n": 4,
+        "ex": [
+          "h2#sidebar-quick-heading"
+        ]
+      },
+      "2.4": {
+        "n": 2,
+        "ex": [
+          "div > section.sidebar-quick-access > ul"
+        ]
+      },
+      "4.8": {
+        "n": 2,
+        "ex": [
+          "section.sidebar-quick-access > ul > li.sidebar-quick-empty"
+        ]
+      },
+      "28.8": {
+        "n": 2,
+        "ex": [
+          "main#main"
+        ]
+      },
+      "12.8": {
+        "n": 1,
+        "ex": [
+          "nav.flex-1.overflow-y-auto > div > section.sidebar-quick-access"
+        ]
+      },
+      "5.6": {
+        "n": 1,
+        "ex": [
+          "h2#sidebar-quick-heading"
+        ]
+      },
+      "385.3": {
+        "n": 1,
+        "ex": [
+          "div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14 > div.admin-account-actions.ms-auto"
+        ]
+      }
+    },
+    "negativeMargins": [
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginTop",
+        "v": -1
+      },
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginRight",
+        "v": -1
+      },
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginBottom",
+        "v": -1
+      },
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginLeft",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginTop",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginRight",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginBottom",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginLeft",
+        "v": -1
+      }
+    ]
+  },
+  "radius": {
+    "4": {
+      "n": 6,
+      "ex": [
+        "tr > td:nth-of-type(2) > span.dashboard-status"
+      ]
+    },
+    "7": {
+      "n": 29,
+      "ex": [
+        "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active"
+      ]
+    },
+    "8": {
+      "n": 1,
+      "ex": [
+        "div:nth-of-type(3) > aside.agents-dock-rail > button.agents-dock-launch"
+      ]
+    },
+    "10": {
+      "n": 2,
+      "ex": [
+        "div.dashboard-grid > section.min-w-0.rounded:nth-of-type(2) > div.dashboard-workspace:nth-of-type(2)"
+      ]
+    },
+    "5.6": {
+      "n": 7,
+      "ex": [
+        "li:nth-of-type(1) > a.admin-nav-link.is-active > svg"
+      ]
+    }
+  },
+  "shadows": {},
+  "colors": {
+    "text": {
+      "#626a73": {
+        "n": 41,
+        "ex": [
+          "li:nth-of-type(2) > a.admin-nav-link > span"
+        ]
+      },
+      "#20252b": {
+        "n": 31,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ]
+      },
+      "#246b73": {
+        "n": 4,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(3) > details.dashboard-setup.onboarding > a.dashboard-section-link"
+        ]
+      },
+      "#ffffff": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(1) > a.h-9.px-3 > span"
+        ]
+      },
+      "#125e44": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ]
+      },
+      "#7a5406": {
+        "n": 1,
+        "ex": [
+          "details.dashboard-setup.onboarding > summary > span.onboarding-state"
+        ]
+      }
+    },
+    "bg": {
+      "#ffffff": {
+        "n": 11,
+        "ex": [
+          "aside#admin-sidebar"
+        ]
+      },
+      "#f7f8fa": {
+        "n": 6,
+        "ex": [
+          "body"
+        ]
+      },
+      "#f1f0ec": {
+        "n": 1,
+        "ex": [
+          "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active"
+        ]
+      },
+      "#e0f2ea": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > svg"
+        ]
+      },
+      "#e7effd": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(2) > a.admin-nav-link > svg"
+        ]
+      },
+      "#f0e9fb": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(3) > a.admin-nav-link > svg"
+        ]
+      },
+      "#ecebfc": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(4) > a.admin-nav-link > svg"
+        ]
+      },
+      "#fcf0d7": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(5) > a.admin-nav-link > svg"
+        ]
+      },
+      "#e7f0f5": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(6) > a.admin-nav-link > svg"
+        ]
+      },
+      "#fbe7ee": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(7) > a.admin-nav-link > svg"
+        ]
+      },
+      "#246b73": {
+        "n": 1,
+        "ex": [
+          "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3"
+        ]
+      },
+      "#dcefe7": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ]
+      },
+      "#f7eccb": {
+        "n": 1,
+        "ex": [
+          "details.dashboard-setup.onboarding > summary > span.onboarding-state"
+        ]
+      }
+    },
+    "border": {
+      "#e3e6e8": {
+        "n": 27,
+        "ex": [
+          "nav.flex-1.overflow-y-auto > div > section.sidebar-quick-access"
+        ]
+      },
+      "#246b73": {
+        "n": 1,
+        "ex": [
+          "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3"
+        ]
+      }
+    }
+  },
+  "contrast": {
+    "checked": 10,
+    "failing": [],
+    "lowest": [
+      {
+        "sel": "main#main > header.dashboard-page-heading > p",
+        "ratio": 5.16,
+        "fg": "#626a73",
+        "bg": "#f7f8fa",
+        "fs": 15,
+        "large": false,
+        "symbol": false,
+        "backdrop": "solid",
+        "n": 12
+      },
+      {
+        "sel": "li:nth-of-type(2) > a.admin-nav-link > span",
+        "ratio": 5.49,
+        "fg": "#626a73",
+        "bg": "#ffffff",
+        "fs": 13,
+        "large": false,
+        "symbol": false,
+        "backdrop": "solid",
+        "n": 29
+      },
+      {
+        "sel": "details.dashboard-setup.onboarding > summary > span.onboarding-state",
+        "ratio": 5.75,
+        "fg": "#7a5406",
+        "bg": "#f7eccb",
+        "fs": 12,
+        "large": false,
+        "symbol": false,
+        "backdrop": "solid",
+        "n": 1
+      }
+    ]
+  },
+  "overflow": {
+    "list": [],
+    "clipped": [],
+    "scrollers": []
+  },
+  "content": {
+    "placeholders": []
+  },
+  "labels": {
+    "checked": 4,
+    "broken": []
+  },
+  "buttons": {
+    "checked": 25,
+    "filled": [
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3",
+        "text": "إنشاء مقال",
+        "fill": "#246b73",
+        "fg": "#ffffff",
+        "behind": "#f7f8fa",
+        "ratio": 5.77,
+        "gradient": false,
+        "x": 498.11,
+        "y": 159,
+        "w": 111.63,
+        "h": 36,
+        "first": true,
+        "group": "div:nth-of-type(2) > ul.flex.flex-wrap > li:nth-of-type(1)",
+        "fs": 15,
+        "upper": false,
+        "word": true
+      }
+    ],
+    "styles": [
+      {
+        "sel": "div.admin-account-actions.ms-auto > form:nth-of-type(1) > button.h-9.px-3",
+        "text": "English",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 14,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "div.admin-account-actions.ms-auto > form:nth-of-type(2) > button.h-9.px-3",
+        "text": "تسجيل الخروج",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 14,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3",
+        "text": "إنشاء مقال",
+        "kind": "filled",
+        "h": 36,
+        "radius": 7,
+        "fs": 15,
+        "weight": "600",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(2) > a.h-9.px-3",
+        "text": "إنشاء صفحة",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 15,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(3) > a.h-9.px-3",
+        "text": "مستخدم جديد",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 15,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(4) > a.h-9.px-3",
+        "text": "مفتاح API جديد",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 15,
+        "weight": "400",
+        "upper": true
+      },
+      {
+        "sel": "div:nth-of-type(3) > aside.agents-dock-rail > button.agents-dock-launch",
+        "text": "الوكلاء",
+        "kind": "outline",
+        "h": 44,
+        "radius": 8,
+        "fs": 14,
+        "weight": "700",
+        "upper": false
+      }
+    ]
+  },
+  "fixed": [
+    {
+      "sel": "aside#admin-sidebar",
+      "position": "sticky",
+      "top": 0,
+      "bottom": 0,
+      "h": 900,
+      "w": 216
+    },
+    {
+      "sel": "div:nth-of-type(3) > aside.agents-dock-rail",
+      "position": "fixed",
+      "top": 0,
+      "bottom": 0,
+      "h": 900,
+      "w": 56
+    }
+  ],
+  "targets": {
+    "count": 36,
+    "small": [
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "w": 1,
+        "h": 1,
+        "spacingException": true
+      },
+      {
+        "sel": "div:nth-of-type(2) > div.flex.items-center > a.text-blue.hover\\:text-blue-hover",
+        "w": 81.47,
+        "h": 20,
+        "spacingException": true
+      }
+    ],
+    "noName": [],
+    "vague": [],
+    "hiddenFocusable": [
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "why": "outside the page",
+        "x": 1440,
+        "y": -1
+      }
+    ],
+    "coarse": false
+  },
+  "images": {
+    "total": 0,
+    "broken": [],
+    "noAlt": [],
+    "oversize": [],
+    "blurry": [],
+    "stretched": [],
+    "lazyPending": 0
+  },
+  "media_counts": {
+    "svg": 21,
+    "canvas": 0,
+    "video": 0,
+    "iframe": 0,
+    "iframeCross": 0,
+    "audio": 0,
+    "shadowHosts": 0,
+    "smil": 0,
+    "lottie": 0,
+    "autoplayVideo": 0
+  },
+  "a11y": {
+    "headings": {
+      "levels": [
+        2,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        2,
+        3,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        2,
+        2
+      ],
+      "h1": 1,
+      "skips": []
+    },
+    "landmarks": {
+      "main": 1,
+      "nav": 3
+    },
+    "duplicateIds": [],
+    "states": {
+      "noHover": [
+        "a.sr-only.focus\\:not-sr-only",
+        "input#gp-search",
+        "section.min-w-0.rounded:nth-of-type(3) > details.dashboard-setup.onboarding > summary",
+        "details.dashboard-setup.onboarding > details.dashboard-more-settings > summary",
+        "section.min-w-0.rounded:nth-of-type(3) > details.dashboard-setup.onboarding > a.dashboard-section-link",
+        "section.canvas-gallery > details.dashboard-disclosure > summary",
+        "div.dashboard-pins:nth-of-type(2) > details.dashboard-disclosure > summary",
+        "section.min-w-0.rounded:nth-of-type(8) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(9) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(10) > details > summary.min-h-11.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(11) > details.workspace-guide > summary"
+      ],
+      "noFocusStyle": [
+        "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active",
+        "ul.space-y-0\\.5 > li:nth-of-type(2) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(3) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(4) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(5) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(6) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(7) > a.admin-nav-link",
+        "aside#admin-sidebar > div.admin-sidebar-footer:nth-of-type(2) > a.admin-nav-link",
+        "main#main > details.audit-customize > summary",
+        "tr > td:nth-of-type(1) > a",
+        "section.min-w-0.rounded:nth-of-type(3) > details.dashboard-setup.onboarding > summary",
+        "ul.onboarding-compact > li:nth-of-type(1) > a",
+        "ul.onboarding-compact > li:nth-of-type(2) > a",
+        "ul.onboarding-compact > li:nth-of-type(3) > a",
+        "ul.onboarding-compact > li:nth-of-type(4) > a",
+        "details.dashboard-setup.onboarding > details.dashboard-more-settings > summary",
+        "section.min-w-0.rounded:nth-of-type(3) > details.dashboard-setup.onboarding > a.dashboard-section-link",
+        "tr.border-t.border-line:nth-of-type(1) > td.py-1\\.5:nth-of-type(1) > a.text-blue.hover\\:text-blue-hover",
+        "tr.border-t.border-line:nth-of-type(2) > td.py-1\\.5:nth-of-type(1) > a.text-blue.hover\\:text-blue-hover",
+        "div:nth-of-type(2) > div.flex.items-center > a.text-blue.hover\\:text-blue-hover",
+        "section.canvas-gallery > details.dashboard-disclosure > summary",
+        "div.dashboard-pins:nth-of-type(2) > details.dashboard-disclosure > summary",
+        "section.min-w-0.rounded:nth-of-type(8) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(9) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(10) > details > summary.min-h-11.cursor-pointer"
+      ],
+      "focusRingRemoved": [],
+      "noActive": 36,
+      "blockedSheets": 0,
+      "checked": 36
+    }
+  },
+  "fonts": {
+    "faces": [
+      {
+        "family": "Zad",
+        "weight": "300",
+        "style": "normal",
+        "status": "unloaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "400",
+        "style": "normal",
+        "status": "loaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "500",
+        "style": "normal",
+        "status": "unloaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "600",
+        "style": "normal",
+        "status": "loaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "700",
+        "style": "normal",
+        "status": "loaded"
+      }
+    ],
+    "failed": 0,
+    "familyState": {
+      "Zad": "webfont",
+      "ui-monospace": "generic"
+    },
+    "ready": "loaded",
+    "loadedFamilies": 1,
+    "unused": [],
+    "files": 4
+  },
+  "share": {
+    "image": false,
+    "icon": false,
+    "description": false,
+    "robots": "noindex, nofollow"
+  },
+  "motion": {
+    "running": 0,
+    "infinite": 0,
+    "pending": 0,
+    "pendingOn": [],
+    "animations": [],
+    "transitionDurations": {
+      "150": {
+        "n": 2,
+        "ex": [
+          "div.dashboard-grid > section.min-w-0.rounded:nth-of-type(7) > div.dashboard-pins:nth-of-type(2)"
+        ]
+      }
+    },
+    "transitionProps": {
+      "border-color": 1,
+      "background-color": 1
+    },
+    "declared": {
+      "transitionAll": 0,
+      "layoutProps": [],
+      "willChange": 0,
+      "animatedNames": {},
+      "infiniteDeclared": []
+    },
+    "reducedMotionRules": 3,
+    "blockedSheets": 0,
+    "libs": {},
+    "note": "Only CSS and Web Animations are listed. Canvas, WebGL, video, SMIL and script-driven (requestAnimationFrame) motion is not introspectable here: sample frames instead."
+  },
+  "stress": [],
+  "mode": {
+    "theme": null,
+    "density": null,
+    "motion": null
+  }
+}

@@ -16,15 +16,13 @@
 .connections-directory tr[data-kind="ai"] .connections-type{color:#1e56a0;background:#e7effd}
 .connections-directory tr[data-kind="s3"] .connections-type{color:#854d0e;background:#fcf0d7}
 .connections-directory td[data-test-status]>strong{display:inline-flex;align-items:center;min-height:26px;padding:.15rem .5rem;border-radius:5px;font-size:.7rem;font-weight:650;white-space:nowrap}
-.connections-directory td[data-test-status="pass"]>strong{color:#116149;background:#e0f2ea}
-.connections-directory td[data-test-status="fail"]>strong{color:#9b1c1c;background:#fde8e8}
-.connections-directory .connections-row-actions>a{color:#fff;background:#116149;border-color:#116149}
-.connections-directory .connections-row-actions>a:hover{background:#0d503c;border-color:#0d503c}
-.connections-directory .connections-row-actions button{color:#1e56a0;background:#e7effd;border-color:#abc6ed}
-.connections-directory .connections-row-actions button:hover{background:#d8e6fb;border-color:#1e56a0}
-.connections-directory .connections-row-actions summary{color:#34546b;background:#e7f0f5;border-color:#b9cbd7}
-.connections-directory .connections-row-actions summary:hover{background:#dbe8f0;border-color:#34546b}
-.connections-directory .connections-row-actions button.text-red{color:#9b1c1c;background:#fde8e8;border-color:#e8b2b2}
-.connections-directory .connections-row-actions button.text-red:hover{background:#fbd7d7;border-color:#9b1c1c}
-.connections-directory :is(.connections-add,.connections-row-actions a,.connections-row-actions button,.connections-row-actions summary):focus-visible{outline:2px solid #1e56a0;outline-offset:3px}
+.connections-directory td[data-test-status="pass"]>strong{color:var(--green-hover);background:var(--green-soft)}
+.connections-directory td[data-test-status="fail"]>strong{color:var(--red);background:var(--red-soft)}
+.connections-directory .connections-row-actions>a{color:var(--panel);background:var(--accent);border-color:var(--accent)}
+.connections-directory .connections-row-actions>a:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.connections-directory .connections-row-actions :is(button,summary){color:var(--ink);background:var(--panel);border-color:var(--line-strong)}
+.connections-directory .connections-row-actions :is(button,summary):hover{background:var(--panel-2);border-color:var(--accent)}
+.connections-directory .connections-row-actions button.text-red{color:var(--red);background:var(--red-soft);border-color:var(--red)}
+.connections-directory .connections-row-actions button.text-red:hover{background:var(--red-soft);color:var(--red);border-color:var(--red)}
+.connections-directory :is(a,button,input,select,summary):focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(forced-colors:active){.connections-directory :is(.connections-type,td[data-test-status]>strong,.connections-row-actions a,.connections-row-actions button,.connections-row-actions summary){border:1px solid ButtonText}}

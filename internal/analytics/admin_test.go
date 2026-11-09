@@ -288,10 +288,13 @@ func TestWidget(t *testing.T) {
 	if w == "" {
 		t.Fatal("no analytics widget on the dashboard")
 	}
-	for _, want := range []string{`data-stat="visitors">2<`, `data-stat="views">3<`, `href="/admin/analytics"`, "<svg"} {
+	for _, want := range []string{`data-stat="visitors">2<`, `data-stat="views">3<`, "<svg"} {
 		if !strings.Contains(w, want) {
 			t.Errorf("widget lacks %q:\n%s", want, w)
 		}
+	}
+	if strings.Count(body, `href="/admin/analytics"`) != 1 {
+		t.Error("analytics destination should have one navigation owner")
 	}
 	ed := e.as("ed@example.com", "editor")
 	if _, body := ed.get("/admin"); strings.Contains(body, `data-widget="analytics"`) {

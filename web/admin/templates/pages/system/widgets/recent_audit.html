@@ -2,8 +2,7 @@
 {{define "content"}}
 <details data-widget="recent_audit"><summary class="font-semibold cursor-pointer">{{t "admin.dashboard.recent_audit"}}</summary>
   <div class="flex items-center justify-between mb-3">
-    <h2 class="text-base font-bold">{{t "admin.dashboard.recent_audit"}}</h2>
-    <a href="/admin/agents/audit" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>
+    {{if not (index workspaceTools.NavigationURLs "/admin/agents/audit")}}<a href="/admin/agents/audit" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>{{end}}
   </div>
   {{if .}}
   <ul class="divide-y divide-line">

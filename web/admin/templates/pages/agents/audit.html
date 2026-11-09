@@ -6,7 +6,7 @@
       class="mb-4 rounded border border-line bg-panel p-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end">
   <div>
     <label for="a-kind" class="block text-xs font-medium mb-1">{{t "admin.audit.actor_kind"}}</label>
-    <select id="a-kind" name="actor_kind" class="h-9 w-full rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <select id="a-kind" name="actor_kind" class="h-9 w-full rounded border border-line bg-panel px-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       <option value="">{{t "admin.audit.any"}}</option>
       {{range .ActorKinds}}<option value="{{.}}" {{if eq . $.Filter.ActorKind}}selected{{end}}>{{t (printf "admin.audit.kind_%s" .)}}</option>{{end}}
     </select>
@@ -14,26 +14,26 @@
   <div><label for="a-name" class="block text-xs font-medium mb-1">{{t "operator.actor_name"}}</label><input id="a-name" name="actor_name" value="{{.Filter.ActorName}}" class="h-9 w-full rounded border border-line bg-panel px-3"></div>
   <div>
     <label for="a-actor" class="block text-xs font-medium mb-1">{{t "admin.audit.actor_id"}}</label>
-    <input id="a-actor" name="actor_id" value="{{.Filter.ActorID}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <input id="a-actor" name="actor_id" value="{{.Filter.ActorID}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   </div>
   <div>
     <label for="a-action" class="block text-xs font-medium mb-1">{{t "admin.audit.action"}}</label>
-    <input id="a-action" name="action" value="{{.Filter.Action}}" dir="ltr" placeholder="content." class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <input id="a-action" name="action" value="{{.Filter.Action}}" dir="ltr" placeholder="content." class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   </div>
   <div>
     <label for="a-target" class="block text-xs font-medium mb-1">{{t "admin.audit.target_kind"}}</label>
-    <input id="a-target" name="target_kind" value="{{.Filter.TargetKind}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <input id="a-target" name="target_kind" value="{{.Filter.TargetKind}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   </div>
   <div>
     <label for="a-since" class="block text-xs font-medium mb-1">{{t "admin.audit.since"}}</label>
-    <input id="a-since" name="since" type="date" value="{{.Filter.Since}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <input id="a-since" name="since" type="date" value="{{.Filter.Since}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   </div>
   <div>
     <label for="a-until" class="block text-xs font-medium mb-1">{{t "admin.audit.until"}}</label>
-    <input id="a-until" name="until" type="date" value="{{.Filter.Until}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+    <input id="a-until" name="until" type="date" value="{{.Filter.Until}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   </div>
   <div class="flex gap-2 lg:col-span-2">
-    <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "filter"}}<span>{{t "admin.audit.filter"}}</span></button>
+    <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "filter"}}<span>{{t "admin.audit.filter"}}</span></button>
     <a href="/admin/agents/audit" class="h-9 px-3 inline-flex items-center text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.audit.reset"}}</a>
   </div>
 </form>
@@ -43,7 +43,7 @@
   {{range .Entries}}
   <li data-audit="{{.ID}}">
     <details>
-      <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+      <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
         {{if .HasMeta}}{{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}{{else}}<span class="w-4" aria-hidden="true"></span>{{end}}
         <span class="text-sm font-medium">{{if .LabelKey}}{{t .LabelKey}}{{else}}{{.Action}}{{end}}</span>
         <span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{t (printf "admin.audit.kind_%s" .Actor.Kind)}}</span>

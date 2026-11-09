@@ -1,0 +1,9 @@
+ok  	github.com/zadstack/gorun/internal/httpx	(cached)
+ok  	github.com/zadstack/gorun/internal/admin	86.931s
+ok  	github.com/zadstack/gorun/internal/auth	8.261s
+ok  	github.com/zadstack/gorun/internal/content	7.312s
+ok  	github.com/zadstack/gorun/internal/analytics	9.160s
+ok  	github.com/zadstack/gorun/internal/i18n	(cached)
+ok  	github.com/zadstack/gorun/internal/membership	3.493s
+ok  	github.com/zadstack/gorun/internal/identitylogo	(cached)
+ok  	github.com/zadstack/gorun/internal/identityai	5.743s

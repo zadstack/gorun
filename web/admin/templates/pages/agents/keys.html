@@ -13,9 +13,9 @@
   <div class="flex flex-wrap gap-2">
     <label class="sr-only" for="k-plaintext">{{t "admin.keys.plaintext"}}</label>
     <input id="k-plaintext" x-ref="key" readonly value="{{.Plaintext}}" dir="ltr" @focus="$el.select()"
-           class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+           class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     <button type="button" @click="gp.copy($refs.key.value).then((ok) => copied = ok)"
-            class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+            class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
       {{icon "copy"}}<span data-label-copy="{{t "admin.keys.copy"}}" data-label-copied="{{t "admin.keys.copied"}}" x-text="copied ? $el.dataset.labelCopied : $el.dataset.labelCopy">{{t "admin.keys.copy"}}</span>
     </button>
   </div>
@@ -47,7 +47,7 @@
           <td class="px-3 py-2 align-top">
             <p class="font-medium">{{.Name}} <span class="ms-1 inline-flex rounded-chip border border-line {{if eq .Kind "agent"}}bg-blue-soft text-blue{{else}}bg-panel-2 text-muted{{end}} px-1.5 py-0.5 text-[11px]" data-key-kind="{{.Kind}}">{{if eq .Kind "agent"}}{{t "admin.keys.kind_agent"}}{{else}}{{t "admin.keys.kind_api"}}{{end}}</span></p>
             {{if .Model}}<p class="font-mono text-xs text-muted mt-1" dir="ltr" data-agent-selected-model>{{.Model}} · {{.ModelMode}}</p>{{end}}
-            {{if .CanModel}}<a class="inline-block text-xs text-green underline mt-1" href="/admin/agents/keys?agent_model={{.ID}}">{{t "agentmodels.configure"}}</a>{{if ne (setting "site.workspace") "simple"}} · <a class="inline-block text-xs text-green underline mt-1" href="/admin/agents/keys/{{.ID}}/bundle">{{t "agentbundles.title"}}</a>{{end}}{{end}}
+            {{if .CanModel}}<a class="inline-block text-xs text-blue underline mt-1" href="/admin/agents/keys?agent_model={{.ID}}">{{t "agentmodels.configure"}}</a>{{if ne (setting "site.workspace") "simple"}} · <a class="inline-block text-xs text-blue underline mt-1" href="/admin/agents/keys/{{.ID}}/bundle">{{t "agentbundles.title"}}</a>{{end}}{{end}}
             <p class="font-mono text-[11px] text-muted" dir="ltr">gp_{{.Prefix}}…</p>
             <p class="text-[11px] text-muted" dir="ltr">{{.Owner}} · {{t "admin.keys.per_min" .RatePerMin}}</p>
             {{if .RevokedAt}}<span class="mt-1 inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px] font-mono">{{t "admin.keys.revoked_on" (date .RevokedAt)}}</span>
@@ -66,7 +66,7 @@
                 <option value="3600">{{t "admin.keys.grace_hour"}}</option>
                 <option value="86400">{{t "admin.keys.grace_day"}}</option>
               </select>
-              <button type="submit" class="h-8 px-2.5 whitespace-nowrap rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.keys.rotate"}}</button>
+              <button type="submit" class="h-8 px-2.5 whitespace-nowrap rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "admin.keys.rotate"}}</button>
             </form>
             {{end}}
             {{if .Active}}
@@ -106,18 +106,18 @@
     </fieldset>
     <div>
       <label for="k-name" class="block font-medium mb-1">{{t "admin.keys.name"}}</label>
-      <input id="k-name" name="name" value="{{.Form.Name}}" required class="h-9 w-full rounded border {{if index .Fields "name"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="k-name" name="name" value="{{.Form.Name}}" required class="h-9 w-full rounded border {{if index .Fields "name"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       {{template "partials/field_errors" (index .Fields "name")}}
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
         <label for="k-rate" class="block font-medium mb-1">{{t "admin.keys.rate"}}</label>
-        <input id="k-rate" name="rate" type="number" min="0" max="10000" value="{{.Form.Rate}}" dir="ltr" class="h-9 w-full rounded border {{if index .Fields "rate"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <input id="k-rate" name="rate" type="number" min="0" max="10000" value="{{.Form.Rate}}" dir="ltr" class="h-9 w-full rounded border {{if index .Fields "rate"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         {{template "partials/field_errors" (index .Fields "rate")}}
       </div>
       <div>
         <label for="k-expires" class="block font-medium mb-1">{{t "admin.keys.expires"}}</label>
-        <input id="k-expires" name="expires" type="date" value="{{.Form.Expires}}" dir="ltr" aria-describedby="k-expires-help" class="h-9 w-full rounded border {{if index .Fields "expires"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <input id="k-expires" name="expires" type="date" value="{{.Form.Expires}}" dir="ltr" aria-describedby="k-expires-help" class="h-9 w-full rounded border {{if index .Fields "expires"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         <p id="k-expires-help" class="mt-1 text-xs text-muted">{{t "admin.keys.expires_help"}}</p>
         {{template "partials/field_errors" (index .Fields "expires")}}
       </div>
@@ -146,7 +146,7 @@
       {{template "partials/field_errors" (index .Fields "scopes")}}
     </fieldset>
     </details>
-    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "admin.keys.create"}}</button>
+    <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "admin.keys.create"}}</button>
   </form></details>
 </div>
 </div>

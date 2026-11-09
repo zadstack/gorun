@@ -105,6 +105,11 @@
   const laneOrder = (cards, provenance) => [...(cards || [])].sort((a, b) => laneOf(a, provenance) - laneOf(b, provenance) || savedOrder(a, b));
   // Lane cards shrink from 300px to 240px so four columns fit the viewport: 24px start, 36px gutters, 18px end.
   const laneCardWidth = available => Math.max(240, Math.min(300, Math.floor((available - 150) / 4)));
+  // The 240px card width is a floor, so a narrow workspace cannot fit four columns with
+  // fixed 36px gutters (24 + 4 cards + 3 gutters + 18 + lane overhangs). The gutter shrinks
+  // to the remaining space instead of letting the lane view scroll sideways. The last
+  // column ends at 24 + 3*pitch + width + 18, so that sum is what must stay inside the viewport.
+  const laneGutter = (available, width) => Math.max(12, Math.min(36, Math.floor((available - 42 - 4 * width) / 3)));
   function lanes(cards, heights, provenance, dir, pitch = 336) {
     const columns = [0, 1, 2, 3].map(lane => ({lane, x: 24 + (dir === 'rtl' ? 3 - lane : lane) * pitch, count: 0}));
     const positions = {}, next = [72, 72, 72, 72];
@@ -116,5 +121,5 @@
     }
     return {positions, columns};
   }
-  return Object.freeze({nodeStates, doneExpiry, isActive, edgeStates, scheduleGroups, nextRunLabel, atLabel, laneOf, laneOrder, laneCardWidth, lanes});
+  return Object.freeze({nodeStates, doneExpiry, isActive, edgeStates, scheduleGroups, nextRunLabel, atLabel, laneOf, laneOrder, laneCardWidth, laneGutter, lanes});
 });

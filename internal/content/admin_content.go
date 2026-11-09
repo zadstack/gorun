@@ -650,10 +650,10 @@ func (h *adminHandlers) repeaterRow(w http.ResponseWriter, r *http.Request) {
 
 var countsTpl = template.Must(template.New("counts").Funcs(template.FuncMap{"t": func(string) string { return "" }}).Parse(`
 <h2 class="text-base font-bold mb-3">{{t "content.widget.title"}}</h2>
-{{if .}}<table id="content-counts" class="w-full text-sm">
+{{if .}}<div class="dashboard-table-scroll" role="region" aria-label="{{t "content.widget.title"}}" tabindex="0"><table id="content-counts" class="w-full text-sm">
 <thead><tr class="text-muted font-mono text-[11px] uppercase"><th class="text-start py-1">{{t "content.widget.type"}}</th><th class="text-end py-1">{{t "content.status.published"}}</th><th class="text-end py-1">{{t "content.status.draft"}}</th><th class="text-end py-1">{{t "content.status.scheduled"}}</th></tr></thead>
 <tbody>{{range .}}<tr class="border-t border-line"><td class="py-1.5"><a class="text-blue hover:text-blue-hover" href="/admin/content/{{.Slug}}">{{.Name}}</a></td><td class="text-end font-mono">{{.Published}}</td><td class="text-end font-mono">{{.Draft}}</td><td class="text-end font-mono">{{.Scheduled}}</td></tr>{{end}}</tbody>
-</table>{{else}}<p class="text-muted">{{t "content.widget.empty"}}</p>{{end}}`))
+</table></div>{{else}}<p class="text-muted">{{t "content.widget.empty"}}</p>{{end}}`))
 
 type countRow struct {
 	Slug, Name                  string

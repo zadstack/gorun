@@ -3,7 +3,7 @@
 <div data-widget="analytics">
   <div class="flex items-center justify-between gap-2 mb-2">
     <h2 class="text-base font-bold">{{t "analytics.widget.title"}}</h2>
-    <a href="/admin/analytics" class="text-blue hover:text-blue-hover underline underline-offset-2 [@media(pointer:coarse)]:min-h-[44px] inline-flex items-center">{{t "analytics.widget.open"}}</a>
+    {{if not (index workspaceTools.NavigationURLs "/admin/analytics")}}<a href="/admin/analytics" class="text-blue hover:text-blue-hover underline underline-offset-2 [@media(pointer:coarse)]:min-h-[44px] inline-flex items-center">{{t "analytics.widget.open"}}</a>{{end}}
   </div>
   <p class="text-xs text-muted mb-2">{{t "analytics.period.7d"}}</p>
   <dl class="grid grid-cols-2 gap-2 mb-2">

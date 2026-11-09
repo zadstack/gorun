@@ -11,7 +11,7 @@
         hx-trigger="submit, input changed delay:300ms from:find input, change">
     <label for="media-q" class="sr-only">{{t "media.search.label"}}</label>
     <input id="media-q" name="q" type="search" value="{{.Q}}" placeholder="{{t "media.search.placeholder"}}"
-           class="col-span-2 w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+           class="col-span-2 w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
 <label class="text-xs">{{if eq locale "ar"}}نوع الملف{{else}}File type{{end}}<select name="kind" class="block w-full border border-line bg-panel rounded p-2"><option value="">{{if eq locale "ar"}}كل الأنواع{{else}}All types{{end}}</option><option value="image" {{if eq .Kind "image"}}selected{{end}}>{{if eq locale "ar"}}صور{{else}}Images{{end}}</option><option value="video" {{if eq .Kind "video"}}selected{{end}}>{{if eq locale "ar"}}فيديو{{else}}Video{{end}}</option><option value="audio" {{if eq .Kind "audio"}}selected{{end}}>{{if eq locale "ar"}}صوت{{else}}Audio{{end}}</option><option value="document" {{if eq .Kind "document"}}selected{{end}}>{{if eq locale "ar"}}مستندات وأرشيفات{{else}}Documents & archives{{end}}</option></select></label>
 <label class="text-xs">{{if eq locale "ar"}}حجم الملف{{else}}File size{{end}}<select name="size" class="block w-full border border-line bg-panel rounded p-2"><option value="">{{if eq locale "ar"}}كل الأحجام{{else}}All sizes{{end}}</option><option value="small" {{if eq .SizeFilter "small"}}selected{{end}}>{{if eq locale "ar"}}أقل من 1 MB{{else}}Under 1 MB{{end}}</option><option value="large" {{if eq .SizeFilter "large"}}selected{{end}}>1 MB +</option><option value="huge" {{if eq .SizeFilter "huge"}}selected{{end}}>10 MB +</option></select></label><noscript><button type="submit">{{if eq locale "ar"}}تصفية{{else}}Filter{{end}}</button></noscript>
   </form>
@@ -28,7 +28,7 @@
       class="mb-6">
   <label for="media-file"
          class="flex flex-col items-center justify-center gap-2 rounded border border-dashed px-4 py-8 text-center cursor-pointer bg-panel hover:border-line-strong focus-within:ring-[3px] focus-within:ring-green-soft"
-         :class="over ? 'border-green bg-green-soft' : 'border-line'">
+         :class="over ? 'border-blue bg-blue-soft' : 'border-line'">
     {{icon "upload" "w-6 h-6 text-muted"}}
     <span class="font-medium">{{t "media.upload.drop"}}</span>
     <span class="text-xs text-muted font-mono">{{t "media.upload.limits" .MaxUploadMB}}</span>
@@ -36,7 +36,7 @@
            @change="$el.form.requestSubmit()">
   </label>
   <div x-show="busy" x-cloak class="[&[x-cloak]]:hidden mt-2" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="p" aria-label="{{t "media.upload.progress"}}">
-    <div class="h-1.5 rounded-full bg-panel-2 overflow-hidden"><div class="h-full bg-green" :style="'width:' + p + '%'"></div></div>
+    <div class="h-1.5 rounded-full bg-panel-2 overflow-hidden"><div class="h-full bg-blue" :style="'width:' + p + '%'"></div></div>
     <p class="mt-1 text-xs text-muted">{{t "media.upload.progress"}} <span class="font-mono" x-text="p + '%'"></span></p>
   </div>
 </form>
@@ -52,7 +52,7 @@
   <ul data-media-items class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
     {{range .Items}}
     <li>
-      <a href="/admin/media/{{.ID}}" class="group block rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft overflow-hidden">
+      <a href="/admin/media/{{.ID}}" class="group block rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft overflow-hidden">
         <span class="flex aspect-square items-center justify-center bg-panel-2">
           {{if .Thumb}}<img src="{{.Thumb}}" alt="{{.Alt}}" loading="lazy" class="h-full w-full object-cover">{{else}}{{icon .Icon "w-8 h-8 text-muted"}}{{end}}
         </span>

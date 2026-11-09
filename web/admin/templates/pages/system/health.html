@@ -3,7 +3,7 @@
 {{define "content"}}
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <h1 class="text-[22px] font-bold">{{t "admin.health.title"}}</h1>
-  <a href="/admin/system/health" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "refresh-cw"}}<span>{{t "admin.health.refresh"}}</span></a>
+  <a href="/admin/system/health" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "refresh-cw"}}<span>{{t "admin.health.refresh"}}</span></a>
 </div>
 
 <p class="mb-3 text-sm text-muted">{{t "operator.needs_attention"}}</p>
@@ -48,7 +48,7 @@
       <dd class="font-mono text-xs">
         <span data-stat="gorun-version">{{.Version}}</span>
         <span class="text-muted">·</span>
-        <a href="https://github.com/zadstack/gorun/releases" class="text-green hover:underline" dir="ltr" rel="noopener noreferrer" target="_blank">{{t "admin.health.releases_link"}}</a>
+        <a href="https://github.com/zadstack/gorun/releases" class="text-blue hover:underline" dir="ltr" rel="noopener noreferrer" target="_blank">{{t "admin.health.releases_link"}}</a>
       </dd>
       <dt class="text-muted">{{t "admin.health.go_version"}}</dt><dd class="font-mono text-xs">{{.GoVersion}} · {{.OS}}/{{.Arch}}</dd>
       <dt class="text-muted">{{t "admin.health.cpus"}}</dt><dd class="font-mono text-xs">{{.NumCPU}}</dd>
@@ -105,7 +105,7 @@
           <td class="px-2 py-1.5 text-end">
             <form method="post" action="/admin/system/jobs/{{.ID}}/retry">
               <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="back" value="/admin/system/health">
-              <button type="submit" class="h-8 px-2.5 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "rotate-ccw"}}<span>{{t "admin.jobs.retry"}}</span></button>
+              <button type="submit" class="h-8 px-2.5 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "rotate-ccw"}}<span>{{t "admin.jobs.retry"}}</span></button>
             </form>
           </td>
         </tr>

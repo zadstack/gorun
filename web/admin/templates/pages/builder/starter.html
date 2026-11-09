@@ -18,7 +18,7 @@
 </ul>
 {{if not .Run.Active}}
 <p class="text-muted text-sm">{{t "starters.activation_notice"}}</p>
-<form method="post" action="/admin/site-builder/{{.Run.Token}}/activate"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="expected" value="{{.Expected}}"><button type="submit" class="starter-primary bg-green px-4 py-2 font-semibold">{{t "starters.activate"}}</button></form>
+<form method="post" action="/admin/site-builder/{{.Run.Token}}/activate"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="expected" value="{{.Expected}}"><button type="submit" class="starter-primary bg-blue px-4 py-2 font-semibold">{{t "starters.activate"}}</button></form>
 {{end}}
 <a href="/admin/site-builder" class="block underline">{{t "starters.another"}}</a>
 </section>
@@ -59,7 +59,7 @@
 <label>{{t "starters.width"}}<select name="width" class="block w-full mt-2 bg-panel border border-line px-2 py-2"><option value="narrow" {{if eq .Form.Width "narrow"}}selected{{end}}>{{t "starters.narrow"}}</option><option value="standard" {{if eq .Form.Width "standard"}}selected{{end}}>{{t "starters.standard"}}</option><option value="wide" {{if eq .Form.Width "wide"}}selected{{end}}>{{t "starters.wide"}}</option></select></label>
 </div></fieldset>
 </details></div><section data-wizard-step="2" class="border border-line bg-panel p-4"><h2 class="font-bold">{{if $ar}}3 · راجع ثم أنشئ المسودة{{else}}3 · Review and create drafts{{end}}</h2><dl data-wizard-review class="space-y-2 my-4"></dl><p class="text-muted text-sm">{{t "starters.draft_notice"}}</p>
-<button type="submit" class="starter-primary bg-green px-4 py-2 font-semibold">{{t "starters.create"}}</button></section>
+<button type="submit" class="starter-primary bg-blue px-4 py-2 font-semibold">{{t "starters.create"}}</button></section>
 </form>
 {{if .Logo.CanPick}}{{template "partials/media_picker.html" .}}{{end}}
 {{end}}

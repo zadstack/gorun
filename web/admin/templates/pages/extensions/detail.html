@@ -15,12 +15,12 @@
     {{if eq $x.Status "active"}}
     <form method="post" action="/admin/extensions/{{$x.Slug}}/deactivate">
       <input type="hidden" name="_csrf" value="{{csrf}}">
-      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "pause"}}{{t "ext.action.deactivate"}}</button>
+      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "pause"}}{{t "ext.action.deactivate"}}</button>
     </form>
     {{else}}
     <form method="post" action="/admin/extensions/{{$x.Slug}}/activate">
       <input type="hidden" name="_csrf" value="{{csrf}}">
-      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium inline-flex items-center gap-1.5 hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "play"}}{{if eq $x.Status "error"}}{{t "ext.action.reactivate"}}{{else}}{{t "ext.action.activate"}}{{end}}</button>
+      <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium inline-flex items-center gap-1.5 hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "play"}}{{if eq $x.Status "error"}}{{t "ext.action.reactivate"}}{{else}}{{t "ext.action.activate"}}{{end}}</button>
     </form>
     {{end}}
   </div>
@@ -35,9 +35,9 @@
       <label class="block font-medium mb-1" for="ext-secret">{{t "ext.reveal.secret"}}</label>
       <div class="flex flex-wrap gap-2">
         <input id="ext-secret" x-ref="secret" readonly value="{{.Secret}}" dir="ltr" @focus="$el.select()"
-               class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+               class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         <button type="button" @click="gp.copy($refs.secret.value).then((ok) => copied = ok ? 'secret' : '')"
-                class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "copy"}}<span x-text="copied === 'secret' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
+                class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "copy"}}<span x-text="copied === 'secret' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
       </div>
       <p class="mt-1 text-xs text-muted">{{t "ext.reveal.secret_help"}}</p>
     </div>
@@ -46,9 +46,9 @@
       <label class="block font-medium mb-1" for="ext-key">{{t "ext.reveal.key"}}</label>
       <div class="flex flex-wrap gap-2">
         <input id="ext-key" x-ref="key" readonly value="{{.APIKey}}" dir="ltr" @focus="$el.select()"
-               class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+               class="h-9 flex-1 min-w-0 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         <button type="button" @click="gp.copy($refs.key.value).then((ok) => copied = ok ? 'key' : '')"
-                class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "copy"}}<span x-text="copied === 'key' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
+                class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "copy"}}<span x-text="copied === 'key' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
       </div>
       <p class="mt-1 text-xs text-muted">{{t "ext.reveal.key_help"}}</p>
     </div>
@@ -99,22 +99,22 @@
           {{else}}
           <label for="set-{{$f.Key}}" class="block font-medium mb-1">{{with index $f.Label locale}}{{.}}{{else}}{{$f.Key}}{{end}}</label>
           {{if eq (print $f.Type) "textarea"}}
-          <textarea id="set-{{$f.Key}}" name="{{$f.Key}}" rows="3" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">{{.Value}}</textarea>
+          <textarea id="set-{{$f.Key}}" name="{{$f.Key}}" rows="3" class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.Value}}</textarea>
           {{else if eq (print $f.Type) "select"}}
           {{$v := .Value}}
-          <select id="set-{{$f.Key}}" name="{{$f.Key}}" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+          <select id="set-{{$f.Key}}" name="{{$f.Key}}" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
             <option value=""></option>{{range $f.Options}}<option value="{{.Value}}" {{if eq .Value $v}}selected{{end}}>{{with index .Label locale}}{{.}}{{else}}{{.Value}}{{end}}</option>{{end}}
           </select>
           {{else}}
           <input id="set-{{$f.Key}}" name="{{$f.Key}}" type="{{if eq (print $f.Type) "number"}}number{{else}}text{{end}}" value="{{.Value}}" {{if eq (print $f.Type) "number"}}step="any" dir="ltr"{{end}}
-                 class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+                 class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           {{end}}
           {{end}}
           {{with index $f.Help locale}}<p class="mt-1 text-xs text-muted">{{.}}</p>{{end}}
           {{template "partials/field_errors" (index $fields $f.Key)}}
         </div>
         {{end}}
-        <div><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "ext.settings.save"}}</button></div>
+        <div><button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "ext.settings.save"}}</button></div>
       </form>
     </section>
     {{end}}
@@ -146,7 +146,7 @@
     </section>
 
     <details class="rounded border border-line bg-panel">
-      <summary class="px-4 py-3 cursor-pointer font-bold rounded focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "ext.manifest.title"}}</summary>
+      <summary class="px-4 py-3 cursor-pointer font-bold rounded focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "ext.manifest.title"}}</summary>
       <pre class="m-4 mt-0 overflow-x-auto rounded bg-panel-dark text-panel-2 p-3 font-mono text-xs" dir="ltr">{{.ManifestJSON}}</pre>
     </details>
   </div>

@@ -12,7 +12,7 @@ test('workspace categories retain readable color, explicit selection and mobile 
     const luminance=(value:string)=>rgb(value).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;}).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
     return elements.map(element=>{const style=getComputedStyle(element),a=luminance(style.color),b=luminance(style.backgroundColor);return{contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),color:style.color};});
    });
-   expect(result.length).toBeGreaterThan(5);expect(new Set(result.map(r=>r.color)).size).toBeGreaterThanOrEqual(5);
+   expect(result.length).toBeGreaterThan(5);expect(new Set(result.map(r=>r.color)).size).toBeLessThanOrEqual(3);
    for(const item of result)expect(item.contrast).toBeGreaterThanOrEqual(4.5);
    const active=page.locator('.admin-section-categories a[aria-current]');await expect(active).toHaveCount(1);await active.focus();await expect(active).toBeFocused();
    await page.setViewportSize({width:390,height:844});await page.locator('[data-sidebar-toggle]').click();await expect(page.locator('#admin-sidebar')).toBeVisible();

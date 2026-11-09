@@ -1,0 +1,1106 @@
+{
+  "v": 1,
+  "url": "http://127.0.0.1:18219/admin",
+  "title": "Dashboard · GoRun",
+  "at": "2026-11-09T07:36:52.873Z",
+  "viewport": {
+    "w": 1440,
+    "h": 900,
+    "innerW": 1440,
+    "innerH": 900,
+    "dpr": 1,
+    "docW": 1440,
+    "docH": 1742,
+    "scale": 1
+  },
+  "media": {
+    "colorScheme": "light",
+    "reducedMotion": false,
+    "forcedColors": false,
+    "pointer": "fine",
+    "hover": true
+  },
+  "doc": {
+    "lang": "en",
+    "dir": "ltr",
+    "viewportMeta": "width=device-width, initial-scale=1",
+    "blocksZoom": false,
+    "dataTheme": null,
+    "colorScheme": "normal",
+    "hOverflow": 0,
+    "rootClipsX": false,
+    "elements": 612,
+    "truncated": false
+  },
+  "type": {
+    "sizes": {
+      "11": {
+        "n": 7,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted"
+        ],
+        "chars": 36
+      },
+      "12": {
+        "n": 1,
+        "ex": [
+          "header > button.canvas-activity-refresh > span"
+        ],
+        "chars": 7
+      },
+      "13": {
+        "n": 42,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > span"
+        ],
+        "chars": 911
+      },
+      "14": {
+        "n": 8,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 88
+      },
+      "15": {
+        "n": 7,
+        "ex": [
+          "main#main > header.dashboard-page-heading > p"
+        ],
+        "chars": 146
+      },
+      "17": {
+        "n": 7,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 89
+      },
+      "18": {
+        "n": 2,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dd.font-mono.text-lg:nth-of-type(1)"
+        ],
+        "chars": 2
+      },
+      "28": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 9
+      },
+      "11.5": {
+        "n": 1,
+        "ex": [
+          "h2#sidebar-quick-heading"
+        ],
+        "chars": 12
+      },
+      "11.8": {
+        "n": 1,
+        "ex": [
+          "section.sidebar-quick-access > ul > li.sidebar-quick-empty"
+        ],
+        "chars": 42
+      },
+      "12.8": {
+        "n": 1,
+        "ex": [
+          "section.canvas-gallery > header > a"
+        ],
+        "chars": 26
+      }
+    },
+    "lineHeights": {
+      "16": {
+        "n": 6,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dt.text-xs.text-muted"
+        ],
+        "chars": 25
+      },
+      "20": {
+        "n": 44,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 441
+      },
+      "28": {
+        "n": 2,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dd.font-mono.text-lg:nth-of-type(1)"
+        ],
+        "chars": 2
+      },
+      "42": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 9
+      },
+      "23.4": {
+        "n": 15,
+        "ex": [
+          "section.dashboard-worklist > div.dashboard-panel-heading:nth-of-type(1) > p"
+        ],
+        "chars": 736
+      },
+      "27.2": {
+        "n": 6,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 74
+      },
+      "17.5": {
+        "n": 1,
+        "ex": [
+          "div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand > span"
+        ],
+        "chars": 13
+      },
+      "18.9": {
+        "n": 1,
+        "ex": [
+          "section.sidebar-quick-access > ul > li.sidebar-quick-empty"
+        ],
+        "chars": 42
+      },
+      "19.8": {
+        "n": 1,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted"
+        ],
+        "chars": 11
+      },
+      "30.6": {
+        "n": 1,
+        "ex": [
+          "summary > span:nth-of-type(1) > strong"
+        ],
+        "chars": 15
+      }
+    },
+    "weights": {
+      "400": {
+        "n": 51,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 984
+      },
+      "600": {
+        "n": 18,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 304
+      },
+      "650": {
+        "n": 2,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > span"
+        ],
+        "chars": 19
+      },
+      "700": {
+        "n": 7,
+        "ex": [
+          "div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand > span"
+        ],
+        "chars": 61
+      }
+    },
+    "families": {
+      "Zad": {
+        "n": 66,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 1333
+      },
+      "ui-monospace": {
+        "n": 12,
+        "ex": [
+          "thead > tr.text-muted.font-mono > th.text-start.py-1:nth-of-type(1)"
+        ],
+        "chars": 35
+      }
+    },
+    "letterSpacing": {
+      "-0.14": {
+        "n": 1,
+        "ex": [
+          "div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand > span"
+        ]
+      }
+    },
+    "tracking": {
+      "13|0|0": {
+        "n": 37,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > span"
+        ],
+        "chars": 882
+      },
+      "14|0|0": {
+        "n": 7,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ],
+        "chars": 75
+      },
+      "15|0|0": {
+        "n": 7,
+        "ex": [
+          "main#main > header.dashboard-page-heading > p"
+        ],
+        "chars": 146
+      },
+      "17|0|0": {
+        "n": 7,
+        "ex": [
+          "h2#dashboard-content-title"
+        ],
+        "chars": 89
+      },
+      "11|0|0": {
+        "n": 7,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted"
+        ],
+        "chars": 36
+      },
+      "13|0|1": {
+        "n": 5,
+        "ex": [
+          "tr > td:nth-of-type(1) > span.dashboard-locale"
+        ],
+        "chars": 29
+      },
+      "18|0|0": {
+        "n": 2,
+        "ex": [
+          "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dd.font-mono.text-lg:nth-of-type(1)"
+        ],
+        "chars": 2
+      },
+      "14|-0.01|0": {
+        "n": 1,
+        "ex": [
+          "div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand > span"
+        ],
+        "chars": 13
+      },
+      "11.5|0|0": {
+        "n": 1,
+        "ex": [
+          "h2#sidebar-quick-heading"
+        ],
+        "chars": 12
+      },
+      "11.8|0|0": {
+        "n": 1,
+        "ex": [
+          "section.sidebar-quick-access > ul > li.sidebar-quick-empty"
+        ],
+        "chars": 42
+      },
+      "28|0|0": {
+        "n": 1,
+        "ex": [
+          "main#main > header.dashboard-page-heading > h1"
+        ],
+        "chars": 9
+      },
+      "12.8|0|0": {
+        "n": 1,
+        "ex": [
+          "section.canvas-gallery > header > a"
+        ],
+        "chars": 26
+      },
+      "12|0|0": {
+        "n": 1,
+        "ex": [
+          "header > button.canvas-activity-refresh > span"
+        ],
+        "chars": 7
+      }
+    },
+    "capsTight": [],
+    "headings": {
+      "checked": 10,
+      "long": []
+    },
+    "smallest": {
+      "px": 11,
+      "sel": "section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted",
+      "text": "Last 7 days"
+    },
+    "lineHeightTight": [],
+    "longLines": [],
+    "textElements": 78
+  },
+  "layout": {
+    "groups": 8,
+    "mixed": [],
+    "offCentre": []
+  },
+  "space": {
+    "values": {
+      "1": {
+        "n": 36,
+        "ex": [
+          "thead > tr.text-muted.font-mono > th.text-start.py-1:nth-of-type(1)"
+        ]
+      },
+      "2": {
+        "n": 8,
+        "ex": [
+          "nav.flex-1.overflow-y-auto > ul.space-y-0\\.5 > li:nth-of-type(2)"
+        ]
+      },
+      "4": {
+        "n": 31,
+        "ex": [
+          "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active"
+        ]
+      },
+      "6": {
+        "n": 31,
+        "ex": [
+          "aside#admin-sidebar > div.admin-brand-header.h-14:nth-of-type(1)"
+        ]
+      },
+      "8": {
+        "n": 44,
+        "ex": [
+          "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active"
+        ]
+      },
+      "10": {
+        "n": 24,
+        "ex": [
+          "aside#admin-sidebar > nav.flex-1.overflow-y-auto"
+        ]
+      },
+      "12": {
+        "n": 54,
+        "ex": [
+          "aside#admin-sidebar > div.admin-brand-header.h-14:nth-of-type(1)"
+        ]
+      },
+      "16": {
+        "n": 26,
+        "ex": [
+          "nav.flex-1.overflow-y-auto > div > section.sidebar-quick-access"
+        ]
+      },
+      "18": {
+        "n": 2,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(7) > section.canvas-gallery > p.dashboard-empty:nth-of-type(1)"
+        ]
+      },
+      "20": {
+        "n": 44,
+        "ex": [
+          "main#main > div.dashboard-grid > section.min-w-0.rounded:nth-of-type(1)"
+        ]
+      },
+      "32": {
+        "n": 4,
+        "ex": [
+          "main#main"
+        ]
+      },
+      "56": {
+        "n": 1,
+        "ex": [
+          "body"
+        ]
+      },
+      "3.2": {
+        "n": 33,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > svg"
+        ]
+      },
+      "5.6": {
+        "n": 10,
+        "ex": [
+          "h2#sidebar-quick-heading"
+        ]
+      },
+      "7.2": {
+        "n": 4,
+        "ex": [
+          "aside#admin-sidebar > div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand"
+        ]
+      },
+      "10.4": {
+        "n": 4,
+        "ex": [
+          "h2#sidebar-quick-heading"
+        ]
+      },
+      "2.4": {
+        "n": 2,
+        "ex": [
+          "div > section.sidebar-quick-access > ul"
+        ]
+      },
+      "4.8": {
+        "n": 2,
+        "ex": [
+          "section.sidebar-quick-access > ul > li.sidebar-quick-empty"
+        ]
+      },
+      "6.4": {
+        "n": 2,
+        "ex": [
+          "div.dashboard-pins:nth-of-type(2) > div.dashboard-pins-empty:nth-of-type(2) > h3"
+        ]
+      },
+      "12.8": {
+        "n": 1,
+        "ex": [
+          "nav.flex-1.overflow-y-auto > div > section.sidebar-quick-access"
+        ]
+      },
+      "428.77": {
+        "n": 1,
+        "ex": [
+          "div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14 > div.admin-account-actions.ms-auto"
+        ]
+      }
+    },
+    "negativeMargins": [
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginTop",
+        "v": -1
+      },
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginRight",
+        "v": -1
+      },
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginBottom",
+        "v": -1
+      },
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "prop": "marginLeft",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginTop",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginRight",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginBottom",
+        "v": -1
+      },
+      {
+        "sel": "header.admin-topbar.h-14 > form.admin-search-form.relative > label.sr-only",
+        "prop": "marginLeft",
+        "v": -1
+      }
+    ]
+  },
+  "radius": {
+    "4": {
+      "n": 3,
+      "ex": [
+        "tr > td:nth-of-type(2) > span.dashboard-status"
+      ]
+    },
+    "6": {
+      "n": 1,
+      "ex": [
+        "div#canvas-activity"
+      ]
+    },
+    "7": {
+      "n": 32,
+      "ex": [
+        "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active"
+      ]
+    },
+    "8": {
+      "n": 1,
+      "ex": [
+        "div:nth-of-type(3) > aside.agents-dock-rail > button.agents-dock-launch"
+      ]
+    },
+    "5.6": {
+      "n": 7,
+      "ex": [
+        "li:nth-of-type(1) > a.admin-nav-link.is-active > svg"
+      ]
+    }
+  },
+  "shadows": {},
+  "colors": {
+    "text": {
+      "#2b2b2b": {
+        "n": 34,
+        "ex": [
+          "a.sr-only.focus\\:not-sr-only"
+        ]
+      },
+      "#625f59": {
+        "n": 33,
+        "ex": [
+          "li:nth-of-type(2) > a.admin-nav-link > span"
+        ]
+      },
+      "#1b555c": {
+        "n": 3,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > span"
+        ]
+      },
+      "#7a5406": {
+        "n": 3,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary"
+        ]
+      },
+      "#246b73": {
+        "n": 3,
+        "ex": [
+          "tr.border-t.border-line:nth-of-type(1) > td.py-1\\.5:nth-of-type(1) > a.text-blue.hover\\:text-blue-hover"
+        ]
+      },
+      "#125e44": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ]
+      },
+      "#ffffff": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(1) > a.h-9.px-3 > span"
+        ]
+      }
+    },
+    "bg": {
+      "#ffffff": {
+        "n": 19,
+        "ex": [
+          "aside#admin-sidebar"
+        ]
+      },
+      "#faf9f8": {
+        "n": 5,
+        "ex": [
+          "body"
+        ]
+      },
+      "#e3eff0": {
+        "n": 4,
+        "ex": [
+          "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active"
+        ]
+      },
+      "#f0f4f3": {
+        "n": 2,
+        "ex": [
+          "main#main"
+        ]
+      },
+      "#f7eccb": {
+        "n": 2,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary"
+        ]
+      },
+      "#e0f2ea": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(1) > a.admin-nav-link.is-active > svg"
+        ]
+      },
+      "#e7effd": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(2) > a.admin-nav-link > svg"
+        ]
+      },
+      "#f0e9fb": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(3) > a.admin-nav-link > svg"
+        ]
+      },
+      "#ecebfc": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(4) > a.admin-nav-link > svg"
+        ]
+      },
+      "#fcf0d7": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(5) > a.admin-nav-link > svg"
+        ]
+      },
+      "#e7f0f5": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(6) > a.admin-nav-link > svg"
+        ]
+      },
+      "#fbe7ee": {
+        "n": 1,
+        "ex": [
+          "li:nth-of-type(7) > a.admin-nav-link > svg"
+        ]
+      },
+      "#dcefe7": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ]
+      },
+      "#246b73": {
+        "n": 1,
+        "ex": [
+          "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3"
+        ]
+      },
+      "#fcfbfa": {
+        "n": 1,
+        "ex": [
+          "section.min-w-0.rounded:nth-of-type(7) > section.canvas-gallery > p.dashboard-empty:nth-of-type(1)"
+        ]
+      }
+    },
+    "border": {
+      "#e4e2dd": {
+        "n": 16,
+        "ex": [
+          "nav.flex-1.overflow-y-auto > div > section.sidebar-quick-access"
+        ]
+      },
+      "#cbd6d3": {
+        "n": 14,
+        "ex": [
+          "main#main > div.dashboard-grid > section.min-w-0.rounded:nth-of-type(1)"
+        ]
+      },
+      "#246b73": {
+        "n": 2,
+        "ex": [
+          "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active"
+        ]
+      },
+      "#9a6a08": {
+        "n": 2,
+        "ex": [
+          "main#main > div.dashboard-grid > section.min-w-0.rounded:nth-of-type(2)"
+        ]
+      },
+      "#167252": {
+        "n": 1,
+        "ex": [
+          "tr > td:nth-of-type(2) > span.dashboard-status"
+        ]
+      }
+    }
+  },
+  "contrast": {
+    "checked": 16,
+    "failing": [],
+    "lowest": [
+      {
+        "sel": "main#main > header.dashboard-page-heading > p",
+        "ratio": 5.74,
+        "fg": "#625f59",
+        "bg": "#f0f4f3",
+        "fs": 15,
+        "large": false,
+        "symbol": false,
+        "backdrop": "solid",
+        "n": 2
+      },
+      {
+        "sel": "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary",
+        "ratio": 5.75,
+        "fg": "#7a5406",
+        "bg": "#f7eccb",
+        "fs": 13,
+        "large": false,
+        "symbol": false,
+        "backdrop": "solid",
+        "n": 3
+      },
+      {
+        "sel": "dl.grid.grid-cols-2 > div.rounded.border:nth-of-type(1) > dt.text-xs.text-muted",
+        "ratio": 6.05,
+        "fg": "#625f59",
+        "bg": "#faf9f8",
+        "fs": 11,
+        "large": false,
+        "symbol": false,
+        "backdrop": "solid",
+        "n": 8
+      }
+    ]
+  },
+  "overflow": {
+    "list": [],
+    "clipped": [],
+    "scrollers": []
+  },
+  "content": {
+    "placeholders": []
+  },
+  "labels": {
+    "checked": 5,
+    "broken": []
+  },
+  "buttons": {
+    "checked": 22,
+    "filled": [
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3",
+        "text": "New Post",
+        "fill": "#246b73",
+        "fg": "#ffffff",
+        "behind": "#ffffff",
+        "ratio": 6.13,
+        "gradient": false,
+        "x": 833.75,
+        "y": 602.34,
+        "w": 113.64,
+        "h": 36,
+        "first": true,
+        "group": "div:nth-of-type(2) > ul.flex.flex-wrap > li:nth-of-type(1)",
+        "fs": 15,
+        "upper": false,
+        "word": true
+      }
+    ],
+    "styles": [
+      {
+        "sel": "div.admin-account-actions.ms-auto > form:nth-of-type(1) > button.h-9.px-3",
+        "text": "العربية",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 14,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "div.admin-account-actions.ms-auto > form:nth-of-type(2) > button.h-9.px-3",
+        "text": "Log out",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 14,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3",
+        "text": "New Post",
+        "kind": "filled",
+        "h": 36,
+        "radius": 7,
+        "fs": 15,
+        "weight": "600",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(2) > a.h-9.px-3",
+        "text": "New Page",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 15,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(3) > a.h-9.px-3",
+        "text": "New user",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 15,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "ul.flex.flex-wrap > li:nth-of-type(4) > a.h-9.px-3",
+        "text": "New API key",
+        "kind": "outline",
+        "h": 36,
+        "radius": 7,
+        "fs": 15,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "div#canvas-activity > header > button.canvas-activity-refresh",
+        "text": "Refresh",
+        "kind": "outline",
+        "h": 36,
+        "radius": 4,
+        "fs": 12,
+        "weight": "400",
+        "upper": false
+      },
+      {
+        "sel": "div:nth-of-type(3) > aside.agents-dock-rail > button.agents-dock-launch",
+        "text": "Agents",
+        "kind": "outline",
+        "h": 44,
+        "radius": 8,
+        "fs": 14,
+        "weight": "700",
+        "upper": false
+      }
+    ]
+  },
+  "fixed": [
+    {
+      "sel": "aside#admin-sidebar",
+      "position": "sticky",
+      "top": 0,
+      "bottom": 0,
+      "h": 900,
+      "w": 216
+    },
+    {
+      "sel": "div:nth-of-type(3) > aside.agents-dock-rail",
+      "position": "fixed",
+      "top": 0,
+      "bottom": 0,
+      "h": 900,
+      "w": 56
+    }
+  ],
+  "targets": {
+    "count": 30,
+    "small": [
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "w": 1,
+        "h": 1,
+        "spacingException": true
+      },
+      {
+        "sel": "div:nth-of-type(2) > div.flex.items-center > a.text-blue.hover\\:text-blue-hover",
+        "w": 92.81,
+        "h": 20,
+        "spacingException": true
+      }
+    ],
+    "noName": [],
+    "vague": [],
+    "hiddenFocusable": [
+      {
+        "sel": "a.sr-only.focus\\:not-sr-only",
+        "why": "outside the page",
+        "x": -1,
+        "y": -1
+      }
+    ],
+    "coarse": false
+  },
+  "images": {
+    "total": 0,
+    "broken": [],
+    "noAlt": [],
+    "oversize": [],
+    "blurry": [],
+    "stretched": [],
+    "lazyPending": 0
+  },
+  "media_counts": {
+    "svg": 21,
+    "canvas": 0,
+    "video": 0,
+    "iframe": 0,
+    "iframeCross": 0,
+    "audio": 0,
+    "shadowHosts": 0,
+    "smil": 0,
+    "lottie": 0,
+    "autoplayVideo": 0
+  },
+  "a11y": {
+    "headings": {
+      "levels": [
+        2,
+        1,
+        2,
+        2,
+        2,
+        3,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "h1": 1,
+      "skips": []
+    },
+    "landmarks": {
+      "main": 1,
+      "nav": 3
+    },
+    "duplicateIds": [],
+    "states": {
+      "noHover": [
+        "a.sr-only.focus\\:not-sr-only",
+        "input#gp-search",
+        "main#main > details.audit-customize > summary",
+        "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary",
+        "section.canvas-gallery > header > a",
+        "div#canvas-activity > header > button.canvas-activity-refresh",
+        "section.min-w-0.rounded:nth-of-type(8) > details.workspace-guide > summary",
+        "section.min-w-0.rounded:nth-of-type(9) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(10) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(11) > details > summary.min-h-11.cursor-pointer"
+      ],
+      "noFocusStyle": [
+        "ul.space-y-0\\.5 > li:nth-of-type(1) > a.admin-nav-link.is-active",
+        "ul.space-y-0\\.5 > li:nth-of-type(2) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(3) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(4) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(5) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(6) > a.admin-nav-link",
+        "ul.space-y-0\\.5 > li:nth-of-type(7) > a.admin-nav-link",
+        "aside#admin-sidebar > div.admin-sidebar-footer:nth-of-type(2) > a.admin-nav-link",
+        "main#main > details.audit-customize > summary",
+        "tr > td:nth-of-type(1) > a",
+        "section.min-w-0.rounded:nth-of-type(2) > details.dashboard-setup.onboarding > summary",
+        "tr.border-t.border-line:nth-of-type(1) > td.py-1\\.5:nth-of-type(1) > a.text-blue.hover\\:text-blue-hover",
+        "tr.border-t.border-line:nth-of-type(2) > td.py-1\\.5:nth-of-type(1) > a.text-blue.hover\\:text-blue-hover",
+        "div:nth-of-type(2) > div.flex.items-center > a.text-blue.hover\\:text-blue-hover",
+        "section.canvas-gallery > header > a",
+        "div#canvas-activity > header > button.canvas-activity-refresh",
+        "section.min-w-0.rounded:nth-of-type(9) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(10) > details > summary.font-semibold.cursor-pointer",
+        "section.min-w-0.rounded:nth-of-type(11) > details > summary.min-h-11.cursor-pointer"
+      ],
+      "focusRingRemoved": [],
+      "noActive": 30,
+      "blockedSheets": 0,
+      "checked": 30
+    }
+  },
+  "fonts": {
+    "faces": [
+      {
+        "family": "Zad",
+        "weight": "300",
+        "style": "normal",
+        "status": "unloaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "400",
+        "style": "normal",
+        "status": "loaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "500",
+        "style": "normal",
+        "status": "unloaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "600",
+        "style": "normal",
+        "status": "loaded"
+      },
+      {
+        "family": "Zad",
+        "weight": "700",
+        "style": "normal",
+        "status": "loaded"
+      }
+    ],
+    "failed": 0,
+    "familyState": {
+      "Zad": "webfont",
+      "ui-monospace": "generic"
+    },
+    "ready": "loaded",
+    "loadedFamilies": 1,
+    "unused": [],
+    "files": 4
+  },
+  "share": {
+    "image": false,
+    "icon": false,
+    "description": false,
+    "robots": "noindex, nofollow"
+  },
+  "motion": {
+    "running": 0,
+    "infinite": 0,
+    "pending": 0,
+    "pendingOn": [],
+    "animations": [],
+    "transitionDurations": {
+      "150": {
+        "n": 2,
+        "ex": [
+          "div.dashboard-grid > section.min-w-0.rounded:nth-of-type(4) > div.dashboard-pins:nth-of-type(2)"
+        ]
+      }
+    },
+    "transitionProps": {
+      "border-color": 1,
+      "background-color": 1
+    },
+    "declared": {
+      "transitionAll": 0,
+      "layoutProps": [],
+      "willChange": 0,
+      "animatedNames": {},
+      "infiniteDeclared": []
+    },
+    "reducedMotionRules": 3,
+    "blockedSheets": 0,
+    "libs": {},
+    "note": "Only CSS and Web Animations are listed. Canvas, WebGL, video, SMIL and script-driven (requestAnimationFrame) motion is not introspectable here: sample frames instead."
+  },
+  "stress": [],
+  "mode": {
+    "theme": null,
+    "density": null,
+    "motion": null
+  }
+}

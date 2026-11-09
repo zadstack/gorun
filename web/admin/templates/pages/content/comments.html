@@ -5,7 +5,7 @@
 <nav class="flex flex-wrap gap-1 mb-4" aria-label="{{t "content.comments.status"}}">
   {{range .Statuses}}
   <a href="/admin/comments?status={{.}}" {{if eq . $.Status}}aria-current="page"{{end}}
-     class="h-8 px-3 inline-flex items-center gap-1.5 rounded border {{if eq . $.Status}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t (printf "content.comments.status_%s" .)}} <span class="font-mono text-[11px]">{{index $.Counts .}}</span></a>
+     class="h-8 px-3 inline-flex items-center gap-1.5 rounded border {{if eq . $.Status}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t (printf "content.comments.status_%s" .)}} <span class="font-mono text-[11px]">{{index $.Counts .}}</span></a>
   {{end}}
 </nav>
 {{if .Comments}}
@@ -25,12 +25,12 @@
       {{range $.Statuses}}{{if ne . $cur}}
       <form method="post" action="/admin/comments/{{$id}}/status">
         <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="status" value="{{.}}">
-        <button type="submit" class="h-8 px-2.5 inline-flex items-center rounded border border-line bg-panel text-sm hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t (printf "content.comments.to_%s" .)}}</button>
+        <button type="submit" class="h-8 px-2.5 inline-flex items-center rounded border border-line bg-panel text-sm hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t (printf "content.comments.to_%s" .)}}</button>
       </form>
       {{end}}{{end}}
       <form method="post" action="/admin/comments/{{$id}}/delete" class="ms-auto">
         <input type="hidden" name="_csrf" value="{{csrf}}">
-        <button type="submit" class="h-8 px-2.5 inline-flex items-center gap-1 rounded text-sm text-red hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "trash-2" "w-4 h-4"}}<span>{{t "content.comments.delete"}}</span></button>
+        <button type="submit" class="h-8 px-2.5 inline-flex items-center gap-1 rounded text-sm text-red hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "trash-2" "w-4 h-4"}}<span>{{t "content.comments.delete"}}</span></button>
       </form>
     </div>
   </li>

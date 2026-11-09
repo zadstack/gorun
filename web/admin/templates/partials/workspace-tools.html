@@ -1,0 +1,37 @@
+{{/* Every tool comes from nav: module availability, permissions and personal visibility are already applied. */}}
+{{define "partials/workspace-tool-link"}}<a class="workspace-tool-link" data-workspace-tool="{{.ID}}" href="{{.Href}}" {{if active .Href}}aria-current="page"{{end}}>{{icon .Icon}}<span>{{t .LabelKey}}</span></a>{{end}}
+
+{{define "partials/workspace-top-tools"}}
+<nav class="workspace-top-tools" aria-label="{{t "core.workspace.site_tools"}}">
+ <a class="workspace-tool-link" href="/" target="_blank" rel="noopener">{{icon "external-link"}}<span>{{t "core.workspace.view_site"}}</span></a>
+ {{range workspaceTools.Top}}{{template "partials/workspace-tool-link" .}}{{end}}
+</nav>
+{{end}}
+
+{{define "partials/workspace-sidebar-tools"}}
+<section class="workspace-sidebar-tools" aria-labelledby="workspace-sidebar-tools-title">
+ <h2 id="workspace-sidebar-tools-title">{{t "core.workspace.direct_tools"}}</h2>
+ <div>{{range workspaceTools.Sidebar}}{{template "partials/workspace-tool-link" .}}{{end}}</div>
+</section>
+{{end}}
+
+{{define "partials/workspace-tools-rail"}}
+<aside class="workspace-tools-rail" aria-label="{{t "core.workspace.direct_tools"}}">
+ {{template "partials/agents-dock" .}}
+ <nav class="workspace-rail-tools" aria-label="{{t "core.workspace.site_tools"}}">
+  {{range workspaceTools.Rail}}{{template "partials/workspace-tool-link" .}}{{end}}
+ </nav>
+ <nav class="workspace-rail-footer" aria-label="{{t "core.nav.section.settings"}}">
+  {{range workspaceTools.Footer}}{{template "partials/workspace-tool-link" .}}{{end}}
+ </nav>
+</aside>
+{{end}}
+
+{{define "partials/workspace-tool-directory"}}
+<section class="workspace-tool-directory" aria-labelledby="workspace-tool-directory-title">
+ <header><h2 id="workspace-tool-directory-title">{{t "core.workspace.all_tools"}}</h2><p>{{t "core.workspace.tools_hint"}}</p></header>
+ <div class="workspace-tool-groups">{{range workspaceTools.Groups}}
+  <section data-workspace-group="{{.Key}}" style="--workspace-group: {{.Key}}"><h3>{{.Label}}</h3><nav aria-label="{{.Label}}">{{range .Items}}{{template "partials/workspace-tool-link" .}}{{end}}</nav></section>
+ {{end}}</div>
+</section>
+{{end}}
