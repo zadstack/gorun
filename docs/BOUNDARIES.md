@@ -75,11 +75,11 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/saas` | feature | `admin` `api` `audit` `auth` `commerce` `db` `httpx` `kernel` `theme` |
 | `internal/membership` | feature | `api` `audit` `auth` `content` `db` `httpx` `kernel` `theme` |
 | `internal/launch` | feature | `auth` `httpx` `i18n` `kernel` `media` `theme` |
-| `internal/workagents` | feature | `admin` `auth` `content` `db` `httpx` `jobs` `kernel` `theme` |
+| `internal/workagents` | feature | `admin` `api` `auth` `content` `db` `httpx` `jobs` `kernel` `theme` |
 | `internal/identityai` | feature | `auth` `db` `httpx` `i18n` `kernel` `theme` |
 | `internal/identitylogo` | feature | `admin` `auth` `db` `httpx` `kernel` `media` `theme` |
 | `internal/wpmigrate` | feature | `admin` `api` `audit` `auth` `commerce` `config` `content` `db` `hooks` `httpx` `i18n` `jobs` `kernel` `media` `menus` `redirects` `seo` `settings` `taxonomy` `theme` |
-| `internal/mcp` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `seo` `taxonomy` `theme` |
+| `internal/mcp` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `seo` `taxonomy` `theme` `workagents` |
 | `internal/ext` | feature | `admin` `api` `audit` `auth` `config` `content` `db` `hooks` `httpx` `i18n` `jobs` `kernel` `settings` |
 | `pkg/edge` | contract | — |
 | `pkg/patternkit` | contract | — |
@@ -92,9 +92,12 @@ Reading the graph:
 
 - No infrastructure or core package imports a feature module (also implied by `BootOrder`, now
   asserted directly by `TestFeatureModulesImportOnlyDeclaredFeatureEdges`).
-- Two declared feature→feature edges exist: `saas → commerce` (the three `subscription.*` hook
-  names and `commerce.SubscriptionEvent`) and `wpmigrate → commerce` (the product importer adapter
-  in `adapter_commerce.go`, published as `wpmigrate.product_importer` only when commerce booted).
+- Three declared feature→feature edges exist: `saas → commerce` (the three `subscription.*` hook
+  names and `commerce.SubscriptionEvent`), `wpmigrate → commerce` (the product importer adapter
+  in `adapter_commerce.go`, published as `wpmigrate.product_importer` only when commerce booted)
+  and `mcp → workagents` (the exported agent-channels bridge and its sentinel errors in
+  `channels.go`, published as `workagents.channels` only when workagents booted; the bridge is
+  the read/append agent surface for `channels_list`, `channels_read` and `channels_post_message`).
   Any new edge must be added to `featureEdges` with a reason, or go through a service.
 - `pkg/themekit`, `pkg/patternkit` and `pkg/edge` import nothing from `internal/`
   (`TestContractPackagesAndThemesStayStandalone`), so theme and pattern authors build against a

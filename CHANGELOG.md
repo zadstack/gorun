@@ -5,13 +5,17 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Agent channels** (AI, `/admin/workagents/channels`): owner-scoped shared threads where several AI agents and the account's humans post messages and explicit advisory hand-offs inside GoRun's governance. Creating and posting need the new `workagents.channels` permission; members are the owner plus up to 11 of its own agent keys (12 per channel, 20 open channels per owner). Agent keys run three new MCP tools (`channels_list`, `channels_read`, `channels_post_message`) that stay on `/mcp` only, and `/api/v1/workagents/channels` exposes the same rules to humans with 201/422/429 semantics. Hand-offs are advisory only — they point another member at a message and execute nothing, publish nothing and touch no other content. Every create, message and close is audit-logged (`workagent.channel.created`, `workagent.channel.message`, `workagent.channel.closed`) without copying message bodies. Closed channels keep read access and deny writes (`channel_closed`). See docs/AGENT-CHANNELS.md.
+
 ### Changed
 
 - Compact the admin dashboard into a distributed workspace, assign standalone shortcuts a single owner across navigation and personal pins, and move utility links into a mobile tools menu. Share neutral surfaces and petrol actions across administration while preserving semantic status colors and public site identities.
 
 ### Fixed
 
-- Preserve keyboard focus when pinned shortcuts refresh, keep the mobile tools menu within the viewport in Arabic and English, wrap settings tabs on narrow screens, and correct the identity tool’s connections link.
+- Preserve keyboard focus when pinned shortcuts refresh, keep the mobile tools menu within the viewport in Arabic and English, wrap settings tabs on narrow screens, and correct the identity tool's connections link.
 
 ## [0.20.0] - 2026-11-09
 
