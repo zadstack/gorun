@@ -15,7 +15,9 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
-- Preserve keyboard focus when pinned shortcuts refresh, keep the mobile tools menu within the viewport in Arabic and English, wrap settings tabs on narrow screens, and correct the identity tool's connections link.
+- Preserve keyboard focus when pinned shortcuts refresh, keep the mobile tools menu within the viewport in Arabic and English, wrap settings tabs on narrow screens, and correct the identity tool’s connections link.
+- Keep the quick access list stable while its projection is unchanged, so a refresh no longer drops the keyboard focus inside it.
+- Fit the canvas lane view into the available workspace: the gutter between the four columns shrinks to the remaining space instead of letting the lanes scroll sideways.
 
 ## [0.20.0] - 2026-11-09
 

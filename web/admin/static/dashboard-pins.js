@@ -6,7 +6,7 @@
   let grid = workspace?.querySelector('[data-pin-grid]');
   const boundPanels = new WeakSet();
   const requests = new Set();
-  let epoch = 0, refreshVersion = 0, pinned = new Set();
+  let epoch = 0, refreshVersion = 0, pinned = new Set(), appliedQuick = '';
   const canonical = id => id === 'builder.identity' ? 'site-builder' : id;
   let drag = null, busy = false;
   const labels = config.dataset;
@@ -69,7 +69,10 @@
       const quickID=origin?.closest('[data-quick-id]')?.dataset.quickId, quickRemove=origin?.matches('[data-quick-remove]');
       const panelID=origin?.closest('[data-pin-id]')?.dataset.pinId;
       const panelControl=origin?.matches('[data-pin-drag]')?'[data-pin-drag]':origin?.matches('[data-pin-remove]')?'[data-pin-remove]':origin?.matches('[data-pin-move=up]')?'[data-pin-move=up]':origin?.matches('[data-pin-move=down]')?'[data-pin-move=down]':origin?.matches('a')?'footer a':null;
-      const root=document.querySelector('[data-sidebar-quick-access]');if(root)root.innerHTML=data.quick_html;
+      const root=document.querySelector('[data-sidebar-quick-access]');
+      // Replacing identical markup drops the keyboard focus inside the list, so the
+      // quick access keeps its rows unless the projection actually changed.
+      if(root&&appliedQuick!==data.quick_html){appliedQuick=data.quick_html;root.innerHTML=data.quick_html;}
       if (workspace && data.widget_html) {
         const template = document.createElement('template');
         template.innerHTML = data.widget_html;

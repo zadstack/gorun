@@ -238,8 +238,8 @@ test.describe.serial("site forms", () => {
     await expect(page.locator("tbody:has(time)")).toContainText("Alice");
 
     // Pin "budget" as a required number.
-    await page.locator("details summary").first().click();
     const pin = page.locator(`form[action="/admin/forms/${captured}/fields/budget/pin"]`);
+    await page.locator("details", { has: pin }).first().locator("summary").click();
     await pin.locator('select[name="type"]').selectOption("number");
     await pin.locator('input[name="label"]').fill("Budget");
     await pin.locator('input[name="required"]').check();
