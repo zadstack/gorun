@@ -49,6 +49,9 @@ var coreModules = []string{"settings", "auth", "content", "taxonomy", "media", "
 var featureEdges = map[string][]string{
 	"saas":      {"commerce"}, // subscription hook names and event type
 	"wpmigrate": {"commerce"}, // product importer adapter (adapter_commerce.go)
+	// mcp consumes the exported agent-channels bridge (Channels) and its
+	// sentinel errors from workagents.channels for the channels_* tools.
+	"mcp": {"workagents"},
 }
 
 func isCoreModule(m string) bool { return slices.Contains(coreModules, m) }

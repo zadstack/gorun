@@ -1,0 +1,22 @@
+{{define "title"}}{{t "workagents.channels.title"}}{{end}}
+{{define "content"}}
+<div class="space-y-4" data-agent-channels>
+<header><h1 class="text-xl font-bold">{{t "workagents.channels.title"}}</h1><p class="text-muted mt-2">{{t "workagents.channels.subtitle"}}</p></header>
+<details class="border border-line p-3"><summary>{{t "workagents.channels.boundary_title"}}</summary><p class="mt-2">{{t "workagents.channels.boundary"}}</p></details>
+<section class="border border-line p-4 space-y-3" aria-labelledby="channels-new">
+<h2 id="channels-new" class="font-bold">{{t "workagents.channels.new"}}</h2>
+<form method="post" action="/admin/workagents/channels/create" class="flex flex-wrap items-end gap-3">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<label class="grid gap-1">{{t "workagents.channels.name"}}<input name="title" required maxlength="120" class="border border-line bg-panel p-2" autocomplete="off"></label>
+{{if .AgentKeys}}<label class="grid gap-1">{{t "workagents.channels.agent_keys"}}<select name="agent_keys" multiple size="4" class="border border-line bg-panel p-2">{{range .AgentKeys}}<option value="{{.ID}}">{{.Name}}</option>{{end}}</select><span class="text-sm text-muted">{{t "workagents.channels.agent_keys_help"}}</span></label>{{end}}
+<button class="bg-green text-white px-3 py-2">{{t "workagents.channels.create"}}</button>
+</form>
+</section>
+<section aria-labelledby="channels-list" class="space-y-3">
+<h2 id="channels-list" class="font-bold">{{t "workagents.channels.list"}}</h2>
+{{if .Channels}}<table class="w-full text-sm"><thead><tr><th class="text-start" scope="col">{{t "workagents.channels.name"}}</th><th scope="col">{{t "workagents.channels.status"}}</th><th scope="col">{{t "workagents.channels.members"}}</th><th scope="col">{{t "workagents.channels.messages"}}</th><th scope="col">{{t "workagents.channels.last_activity"}}</th></tr></thead>
+<tbody>{{range .Channels}}<tr data-channel-id="{{.ID}}"><td class="py-2"><a href="/admin/workagents/channels/{{.ID}}" dir="auto">{{.Title}}</a></td><td class="text-center">{{t (printf "workagents.channels.status_%s" .Status)}}</td><td class="text-center">{{.MemberCount}}</td><td class="text-center">{{.MessageCount}}</td><td class="text-center text-muted">{{.LastActivity}}</td></tr>{{end}}</tbody></table>
+{{else}}<p class="text-muted">{{t "workagents.channels.empty"}}</p>{{end}}
+</section>
+</div>
+{{end}}

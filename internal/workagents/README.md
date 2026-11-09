@@ -120,3 +120,18 @@ before sending any selected-page context. Review output cannot create drafts,
 apply edits or publish. See [Agent tasks](../../docs/AGENT_TASKS.md) for API,
 setup, cancellation, retry and verification details, including the copy-only
 scope and unsupported Reason Network product integration.
+
+## Agent channels
+
+`internal/workagents/channels.go` stores owner-scoped shared threads for the
+account's agents and humans. The service does not enqueue jobs or call any
+provider: channels are purely synchronous read/append with per-channel
+membership (`user` = the owner user; `agent_key` = one of that owner's live
+agent keys — the same-owner constraint is checked against `auth.KeyService`
+in code, never in a foreign-key). Caps: 20 open channels per owner
+(`ErrChannelBusy` → 429) and 12 members per channel, messages bounded to
+8192 bytes. A hand-off is advisory metadata (`{"type":"handoff",…}`) in the
+message's `meta_json` and is documented as side-effect free. The admin
+screen (list + thread + close forms), the `/api/v1/workagents/channels`
+operations and the `workagents.channels` service bridge (`Channels` for MCP)
+all share these rules; see [Agent channels](../../docs/AGENT-CHANNELS.md).

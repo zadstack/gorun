@@ -1,0 +1,39 @@
+{{define "title"}}{{.Channel.Title}}{{end}}
+{{define "content"}}
+<div class="space-y-4" data-channel-thread>
+<header><h1 class="text-xl font-bold" dir="auto">{{.Channel.Title}}</h1>
+<p class="mt-2">{{t "workagents.channels.status"}}: <strong data-channel-status>{{t (printf "workagents.channels.status_%s" .Channel.Status)}}</strong> · <a href="/admin/workagents/channels" class="text-blue">{{t "workagents.channels.back"}}</a></p>
+<p class="text-sm text-muted">{{t "workagents.channels.thread_note"}}</p></header>
+<section aria-labelledby="ch-members" class="border border-line p-3 space-y-2">
+<h2 id="ch-members" class="font-bold">{{t "workagents.channels.members"}}</h2>
+<ul class="text-sm space-y-1">{{range .Channel.Members}}<li data-member-id="{{.MemberID}}"><span dir="auto">{{.DisplayName}}</span> · {{t (printf "workagents.channels.kind_%s" .Kind)}} · <span class="text-muted">{{.MemberID}}</span></li>{{else}}<li class="text-muted">{{t "workagents.channels.no_members"}}</li>{{end}}</ul>
+{{if .CanClose}}<form method="post" action="/admin/workagents/channels/{{.Channel.ID}}/members" class="flex flex-wrap items-end gap-3">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<label class="grid gap-1">{{t "workagents.channels.kind"}}</label>
+<select name="kind" class="border border-line bg-panel p-2"><option value="agent_key">{{t "workagents.channels.kind_agent_key"}}</option><option value="user">{{t "workagents.channels.kind_user"}}</option></select>
+<label class="grid gap-1">{{t "workagents.channels.member_id"}}<input name="member_id" required class="border border-line bg-panel p-2" autocomplete="off"></label>
+<button class="border border-line px-3 py-2">{{t "workagents.channels.add_member"}}</button>
+</form>{{end}}
+</section>
+<section aria-labelledby="ch-messages" class="space-y-3" data-channel-messages>
+<h2 id="ch-messages" class="font-bold">{{t "workagents.channels.messages"}}</h2>
+{{if .Messages}}{{range .Messages}}<article data-message-id="{{.ID}}" class="border border-line p-3{{if .HandoffTarget}} border-s-4{{end}} space-y-1">
+<div class="text-sm"><strong dir="auto">{{.AuthorName}}</strong> · {{t (printf "workagents.channels.kind_%s" .AuthorKind)}} · <span class="text-muted">{{.CreatedAt}}</span></div>
+{{if .HandoffTarget}}<p class="text-sm font-bold" data-handoff>{{t "workagents.channels.handoff"}} <span dir="auto">{{.HandoffTarget}}</span></p>{{end}}
+<p class="whitespace-pre-wrap" dir="auto">{{.Body}}</p>
+</article>{{end}}{{else}}<p class="text-muted">{{t "workagents.channels.no_messages"}}</p>{{end}}
+</section>
+{{if eq .Channel.Status "open"}}
+{{if .CanPost}}<section class="border border-line p-4 space-y-3" aria-labelledby="ch-post" data-channel-post>
+<h2 id="ch-post" class="font-bold">{{t "workagents.channels.post"}}</h2>
+<form method="post" action="/admin/workagents/channels/{{.Channel.ID}}/messages" class="space-y-3">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<label class="grid gap-1">{{t "workagents.channels.body"}}<textarea name="body" required maxlength="8192" rows="4" class="border border-line bg-panel p-2" dir="auto"></textarea></label>
+<label class="grid gap-1">{{t "workagents.channels.handoff_target"}}<select name="target_member_id" class="border border-line bg-panel p-2"><option value="">{{t "workagents.channels.handoff_none"}}</option>{{range .Channel.Members}}{{if eq .Kind "agent_key"}}<option value="{{.MemberID}}">{{.DisplayName}}</option>{{end}}{{end}}</select><span class="text-sm text-muted">{{t "workagents.channels.handoff_help"}}</span></label>
+<button class="bg-green text-white px-3 py-2">{{t "workagents.channels.send"}}</button>
+</form>
+</section>{{else}}<p class="text-sm text-muted" data-not-member>{{t "workagents.channels.not_member"}}</p>{{end}}
+{{if .CanClose}}<form method="post" action="/admin/workagents/channels/{{.Channel.ID}}/close"><input type="hidden" name="_csrf" value="{{csrf}}"><button class="border border-line px-3 py-2">{{t "workagents.channels.close"}}</button></form>{{end}}
+{{else}}<p class="border border-line p-3 text-muted" data-channel-closed>{{t "workagents.channels.closed_note"}}</p>{{end}}
+</div>
+{{end}}
