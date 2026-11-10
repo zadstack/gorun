@@ -18,13 +18,27 @@
 {{define "partials/workspace-tools-rail"}}
 <aside class="workspace-tools-rail" aria-label="{{t "core.workspace.direct_tools"}}">
  {{template "partials/agents-dock" .}}
- <nav class="workspace-rail-tools" aria-label="{{t "core.workspace.site_tools"}}">
-  {{range workspaceTools.Rail}}{{template "partials/workspace-tool-link" .}}{{end}}
- </nav>
- <nav class="workspace-rail-footer" aria-label="{{t "core.nav.section.settings"}}">
-  {{range workspaceTools.Footer}}{{template "partials/workspace-tool-link" .}}{{end}}
- </nav>
+ {{template "partials/workspace-rail-tools" .}}
 </aside>
+{{end}}
+
+{{define "partials/workspace-rail-tools"}}
+<nav class="workspace-rail-tools" aria-label="{{t "core.workspace.site_tools"}}">
+ {{range workspaceTools.Rail}}{{template "partials/workspace-tool-link" .}}{{end}}
+</nav>
+<nav class="workspace-rail-footer" aria-label="{{t "core.nav.section.settings"}}">
+ {{range workspaceTools.Footer}}{{template "partials/workspace-tool-link" .}}{{end}}
+</nav>
+{{end}}
+
+{{/* Every region the shortcut projection owns, refreshed after a pin change. */}}
+{{define "partials/workspace-navigation"}}
+{{template "partials/workspace-top-tools" .}}
+{{template "partials/workspace-sidebar-tools" .}}
+{{template "partials/workspace-rail-tools" .}}
+{{template "partials/workspace-tool-directory" .}}
+{{template "partials/navigation-section-list" .}}
+<div data-workspace-context-navigation>{{template "partials/navigation-tabs" .}}</div>
 {{end}}
 
 {{define "partials/workspace-tool-directory"}}

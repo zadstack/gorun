@@ -71,7 +71,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	h := &handlers{deps: d, svc: svc, sessions: newSessionStore(d.DB), tpl: tpl}
 	// adminGate before CSRF: an expired-session HTMX POST gets HX-Redirect,
 	// not a CSRF 403.
-	d.Router.Admin.Use(h.securityMiddleware, SessionMiddleware(d), localeMiddleware, adminGate, CSRFMiddleware())
+	d.Router.Admin.Use(h.securityMiddleware, SessionMiddleware(d), localeMiddleware, adminGate, CSRFMiddleware(), httpx.NavigationCache)
 	d.Router.API.Use(h.securityMiddleware, APIKeyMiddleware(d))
 	d.Router.Public.Use(h.securityMiddleware, SessionMiddleware(d))
 	d.Router.Webhooks.Use(h.securityMiddleware)
