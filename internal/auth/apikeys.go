@@ -268,24 +268,27 @@ func (s *keyService) Rotate(ctx context.Context, id string, grace time.Duration)
 	if grace < 0 || grace > MaxRotateGrace {
 		return "", nil, &ValidationError{Fields: map[string]string{"grace": "auth.error.grace_invalid"}}
 	}
-	old, err := s.Get(ctx, id)
-	if err != nil {
-		return "", nil, err
-	}
-	now := s.now()
-	if old.RevokedAt != "" {
-		return "", nil, ErrKeyRevoked
-	}
-	if old.ExpiresAt != "" {
-		if exp, err := db.ParseTime(old.ExpiresAt); err == nil && !now.Before(exp) {
-			return "", nil, ErrKeyExpired
-		}
-	}
-	scopesJSON, _ := json.Marshal(old.Scopes)
-	k := &APIKey{ID: db.NewID(), Name: old.Name, Prefix: randomString(keyPrefixLen), UserID: old.UserID, Kind: old.Kind,
-		Scopes: old.Scopes, RatePerMin: old.RatePerMin, ExpiresAt: old.ExpiresAt, CreatedAt: db.FormatTime(now), RotatedFrom: old.ID}
+	k := &APIKey{ID: db.NewID(), Prefix: randomString(keyPrefixLen), CreatedAt: db.FormatTime(s.now()), RotatedFrom: id}
 	plaintext := "gp_" + k.Prefix + randomString(keySecretLen)
-	err = db.InTx(ctx, s.db, func(tx *sql.Tx) error {
+	err := db.InTx(ctx, s.db, func(tx *sql.Tx) error {
+		// Read and validate under the write lock so a committed revocation or
+		// another immediate rotation cannot be bypassed by a stale snapshot.
+		old, err := scanKey(tx.QueryRowContext(ctx, `SELECT `+keyColumns+` FROM api_keys WHERE id = ?`, id))
+		if err != nil {
+			return err
+		}
+		if old.RevokedAt != "" {
+			return ErrKeyRevoked
+		}
+		now := s.now()
+		if old.ExpiresAt != "" {
+			if exp, err := db.ParseTime(old.ExpiresAt); err == nil && !now.Before(exp) {
+				return ErrKeyExpired
+			}
+		}
+		k.Name, k.UserID, k.Kind = old.Name, old.UserID, old.Kind
+		k.Scopes, k.RatePerMin, k.ExpiresAt = old.Scopes, old.RatePerMin, old.ExpiresAt
+		scopesJSON, _ := json.Marshal(k.Scopes)
 		if _, err := tx.ExecContext(ctx, `INSERT INTO api_keys (id, name, prefix, hash, user_id, kind, scopes_json, rate_per_min, expires_at, created_at, rotated_from)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, k.ID, k.Name, k.Prefix, hashToken(plaintext), k.UserID, k.Kind, string(scopesJSON), k.RatePerMin, k.ExpiresAt, k.CreatedAt, k.RotatedFrom); err != nil {
 			return err
@@ -300,13 +303,13 @@ func (s *keyService) Rotate(ctx context.Context, id string, grace time.Duration)
 				retire = exp
 			}
 		}
-		_, err := tx.ExecContext(ctx, `UPDATE api_keys SET expires_at = ? WHERE id = ?`, db.FormatTime(retire), old.ID)
+		_, err = tx.ExecContext(ctx, `UPDATE api_keys SET expires_at = ? WHERE id = ?`, db.FormatTime(retire), old.ID)
 		return err
 	})
 	if err != nil {
 		return "", nil, fmt.Errorf("auth: rotate api key: %w", err)
 	}
-	s.record(ctx, "api_key.rotate", k.ID, map[string]any{"replaces": old.ID, "grace_seconds": int(grace.Seconds())})
+	s.record(ctx, "api_key.rotate", k.ID, map[string]any{"replaces": id, "grace_seconds": int(grace.Seconds())})
 	return plaintext, k, nil
 }
 

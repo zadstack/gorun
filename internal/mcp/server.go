@@ -324,7 +324,7 @@ func run(ctx context.Context, app *kernel.App, apiKey string, t sdk.Transport) e
 		return err
 	}
 	rate := 60
-	if k, err := s.findKey(ctx, auth.ActorFromContext(principal).ID); err == nil && k.RatePerMin > 0 {
+	if k, err := s.keys.Get(ctx, auth.ActorFromContext(principal).ID); err == nil && k.RatePerMin > 0 {
 		rate = k.RatePerMin
 	}
 	limiter := newBucket(rate, time.Now)

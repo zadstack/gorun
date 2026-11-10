@@ -1,19 +1,19 @@
 # Security policy
 
-> **بالعربية.** الإصدارات المدعومة حاليًا هي 0.12 و0.11 و0.10. للإبلاغ عن ثغرة لا تفتح بلاغًا عامًا: استخدم
+> **بالعربية.** الدعم الأمني للإصدار المستقر الحالي فقط: 0.20.x؛ الإصدارات الأقدم غير مدعومة.
+> للإبلاغ عن ثغرة لا تفتح بلاغًا عامًا: استخدم
 > الإبلاغ الخاص عن الثغرات في GitHub (Security → Report a vulnerability) في مستودع المشروع، مع خطوات
 > إعادة الإنتاج والإصدار المتأثر. نؤكد الاستلام ونعمل على إصلاح وننسق موعد النشر معك.
 
 ## Supported versions
 
+Only the current stable minor release line receives security support. Currently
+that is **0.20.x**.
+
 | Version | Supported |
 |---|---|
-| 0.12.x | yes |
-| 0.11.x | yes |
-| 0.10.x | yes |
-| 0.9.x | no |
-| 0.8.x and older | no |
-| older | no (pre-release builds) |
+| 0.20.x | yes |
+| 0.19.x and older | no |
 
 ## Reporting a vulnerability
 
