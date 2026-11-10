@@ -46,7 +46,7 @@ jobs:
         run: python3 tools/readme-diagrams/generate.py --check
 
   race:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       # Every shard reports, so one failure does not hide another.
       fail-fast: false
@@ -115,7 +115,7 @@ jobs:
           done
 
   browser:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
