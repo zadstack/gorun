@@ -15,7 +15,7 @@ test('capture current README product screens with synthetic campaign data', asyn
   mkdirSync(output,{recursive:true});
   const captured=new Set<string>(),secrets:string[]=[];
   // researcher-*.png come from tests/agent-recipes.spec.ts (see the screenshots README).
-  const expectedImages=[...readdirSync(output).filter(name=>name.endsWith('.png')&&!name.startsWith('researcher-')),'canvas-ai-suggestions-en.png','canvas-ai-suggestions-ar-mobile.png','extensions-methods-en.png','extensions-methods-ar-mobile.png','canvas-lanes-en.png','canvas-schedules-en.png','forms-en.png','forms-ar.png','builder-form-en.png'];
+  const expectedImages=[...readdirSync(output).filter(name=>name.endsWith('.png')&&!name.startsWith('researcher-')),'canvas-ai-suggestions-en.png','canvas-ai-suggestions-ar-mobile.png','extensions-methods-en.png','extensions-methods-ar-mobile.png','canvas-lanes-en.png','canvas-schedules-en.png','forms-en.png','forms-ar.png','builder-form-en.png','dashboard-en.png','agent-channels-en.png','agent-channels-ar.png'];
   const database = db();
   database.prepare("UPDATE users SET name='Amira Hassan' WHERE email='admin@e2e.test'").run();
   database.prepare("INSERT INTO settings(key,value_json,updated_at) VALUES('site.title',?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json").run(JSON.stringify('Atlas Studio'),new Date().toISOString());
@@ -390,6 +390,59 @@ test('capture current README product screens with synthetic campaign data', asyn
   await setLocale(page,'ar');
   await page.goto('/admin/agents/approvals');
   await shot('approvals-ar.png');
+  // The compact dashboard with the same personal pins as the navigation shots.
+  await setLocale(page,'en');
+  await page.setViewportSize({width:1440,height:900});
+  await page.goto('/admin');
+  await expect(page.locator('[data-quick-access] [data-quick-id]').first()).toBeVisible();
+  await shot('dashboard-en.png');
+  await page.setViewportSize({width:1600,height:1040});
+  // An agent channel: the owner and two of its own agent keys. The research key
+  // posts through the governed MCP tool; hand-offs are advisory and run nothing.
+  await key('agent','Research assistant',['content.view','workagents.read','workagents.channels']);
+  const research=secrets[secrets.length-1];
+  const keyDB=db();
+  const keyID=(name:string)=>(keyDB.prepare('SELECT id FROM api_keys WHERE name=? ORDER BY created_at DESC LIMIT 1').get(name) as any).id as string;
+  const campaignID=keyID('Campaign assistant'),researchID=keyID('Research assistant');keyDB.close();
+  const runsBeforeChannel=(()=>{const d=db();const n=(d.prepare('SELECT count(*) n FROM admin_canvas_runs').get() as any).n;d.close();return n;})();
+  await page.goto('/admin/workagents/channels');
+  await page.fill('input[name="title"]','Spring launch coordination');
+  await page.locator('select[name="agent_keys"]').selectOption([campaignID,researchID]);
+  await page.locator('form[action="/admin/workagents/channels/create"] button').click();
+  await expect(page.locator('[data-channel-thread]')).toBeVisible();
+  const channelID=page.url().split('/').pop()!;
+  async function say(body:string,target=''){
+    await page.fill('[data-channel-post] textarea[name="body"]',body);
+    await page.locator('[data-channel-post] select[name="target_member_id"]').selectOption(target);
+    await page.locator('[data-channel-post] form button').click();
+    await expect(page.locator('[data-channel-messages]')).toContainText(body.slice(0,40));
+  }
+  await say('Please collect the three customer quotes for the spring launch brief. Keep sources with each quote.',researchID);
+  const posted=await mcp(request,research,'tools/call',{name:'channels_post_message',arguments:{channel_id:channelID,body:'Three quotes collected from the approved interview notes, each with its source. Handing the outline to the campaign assistant for the draft.',target_member_id:campaignID}});
+  expect(JSON.stringify(posted.body)).not.toContain('"isError":true');
+  await say('Thanks. The draft still goes through approval before anything is published.');
+  await page.reload();
+  await expect(page.locator('[data-channel-messages] article')).toHaveCount(3);
+  await expect(page.locator('[data-handoff]')).toHaveCount(2);
+  await shot('agent-channels-en.png');
+  // The Arabic capture gets its own Arabic thread rather than English messages.
+  await setLocale(page,'ar');
+  await page.goto('/admin/workagents/channels');
+  await page.fill('input[name="title"]','تنسيق حملة الربيع');
+  await page.locator('select[name="agent_keys"]').selectOption([campaignID,researchID]);
+  await page.locator('form[action="/admin/workagents/channels/create"] button').click();
+  await expect(page.locator('[data-channel-thread]')).toBeVisible();
+  const arabicChannelID=page.url().split('/').pop()!;
+  await say('اجمع ثلاثة اقتباسات من العملاء لملخص حملة الربيع، واحتفظ بمصدر كل اقتباس.',researchID);
+  const arabicPost=await mcp(request,research,'tools/call',{name:'channels_post_message',arguments:{channel_id:arabicChannelID,body:'جمعت ثلاثة اقتباسات من ملاحظات المقابلات المعتمدة مع مصادرها. أحوّل المخطط إلى مساعد الحملة لكتابة المسودة.',target_member_id:campaignID}});
+  expect(JSON.stringify(arabicPost.body)).not.toContain('"isError":true');
+  await say('شكرًا. المسودة تمر بالموافقة قبل نشر أي شيء.');
+  await page.reload();
+  await expect(page.locator('[data-channel-messages] article')).toHaveCount(3);
+  await expect(page.locator('[data-channel-messages] time[dir="ltr"]')).toHaveCount(3);
+  await shot('agent-channels-ar.png');
+  const afterChannel=db();expect((afterChannel.prepare('SELECT count(*) n FROM admin_canvas_runs').get() as any).n).toBe(runsBeforeChannel);afterChannel.close();
+  await setLocale(page,'ar');
   // The public theme keeps the same fictional Atlas Studio identity, with neutral
   // synthetic artwork; it is not a customer site or product availability claim.
   await page.goto('/admin/media');

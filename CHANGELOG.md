@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-11-11
+
 ### Added
 
 - Compact orchestrator contact card at the top of the admin sidebar: avatar with live running/idle dot, pending-approval badge and until-truncated last-activity line, with up to two count-only stat pills and an htmx-loaded `GET /admin/workagents/orchestrator-card` partial that is permission-gated, `no-store` cached and owner-scoped to counters only.
@@ -13,7 +15,9 @@ All notable changes to GoRun are recorded here. The format follows
 ### Changed
 
 - Compact the admin dashboard into a distributed workspace, assign standalone shortcuts a single owner across navigation and personal pins, and move utility links into a mobile tools menu. Share neutral surfaces and petrol actions across administration while preserving semantic status colors and public site identities.
-- Security support covers only the current stable minor release line, currently 0.20.x; older releases are unsupported.
+- Security support covers only the current stable minor release line, currently 0.21.x; older releases are unsupported.
+- Pinning or unpinning a tool refreshes the sidebar sections, shortcut slots, tool directory and page tabs from the same `GET /admin/dashboard/pins?navigation=1` response instead of re-fetching the whole page. Navigation, pins and shortcut ownership are computed once per request and shared by the page and every dashboard widget.
+- README screenshots are refreshed for 0.21 and include the compact dashboard and agent channels in English and Arabic.
 
 ### Fixed
 
@@ -23,6 +27,8 @@ All notable changes to GoRun are recorded here. The format follows
 - A production container that cannot start on a missing public base URL now names the deployment fix: the startup error points at the public https URL (a container platform fills it from the service domain) and states that `GORUN_TRIAL=1` is a disposable dev-mode site rather than a production setup. `gorun doctor` reports the same problem as its own `public_base_url` check with the next step, and still never prints the configured value.
 - API-key rotation validates the current key while holding the transaction write lock, keeping retirement and replacement atomic with concurrent revocation or immediate rotation.
 - MCP authorization looks up API keys directly by ID rather than decoding every stored key. An unrelated key with malformed scope data no longer blocks a valid approval.
+- Agent channel timestamps render as left-to-right `<time>` elements in the shared minute format, so dates no longer reorder inside the Arabic thread and channel list.
+- Setup checklist items that are missing or failing keep their link even when navigation already reaches the same page.
 - API-key rate limiters lazily discard fully refilled idle buckets, reclaiming memory without resetting active budgets. API and MCP documentation now distinguishes process-local key limits from persistent login lockouts.
 
 ## [0.20.0] - 2026-11-09
@@ -1295,7 +1301,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.21.0...HEAD
+[0.21.0]: https://github.com/zadstack/gorun/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/zadstack/gorun/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/zadstack/gorun/compare/v0.18.7...v0.19.0
 [0.18.7]: https://github.com/zadstack/gorun/compare/v0.18.6...v0.18.7

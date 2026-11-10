@@ -45,6 +45,8 @@
 
 الصور من موقع تجريبي معزول بمحتوى خيالي. [قائمة الأقسام على الموبايل بالعربية](assets/branding/screenshots/admin-navigation-ar-mobile.png) · [دليل مساحة العمل](docs/ADMIN_WORKSPACE.md).
 
+تجمع لوحة البداية آخر أعمالك والإجراءات السريعة وقائمة إعداد الموقع في شاشة واحدة. لكل اختصار مكان واحد فقط: القائمة الرئيسية أو تبويبات الصفحة أو تثبيتاتك أو شريط الأدوات. وعند تثبيت أداة تتحدث القائمة والاختصارات في مكانها دون إعادة تحميل الصفحة. وتعرض بطاقة المنسّق أعلى القائمة إن كان هناك تشغيل جارٍ وعدد الموافقات التي تنتظرك. [لوحة البداية](assets/branding/screenshots/dashboard-en.png).
+
 تميّز شاشة الإضافات بين **من مجلد الخادم** و**ملف ZIP مرفوع** و**الطريقة القديمة غير المسجلة**. طريقة التثبيت لا تثبت مؤلف الحزمة أو سلامتها. [دليل طرق التثبيت](docs/EXTENSION-INSTALLATION-METHODS.md).
 
 <a href="assets/branding/screenshots/extensions-methods-en.png"><img src="assets/branding/screenshots/extensions-methods-en.png" alt="الإضافات مصنفة حسب طريقة التثبيت المسجلة مع إبقاء السجلات القديمة مجهولة الطريقة" width="49%" /></a>
@@ -116,6 +118,17 @@ If a tool requests approval, report its request ID and wait for the decision.
   <tr>
     <td><strong>مفاتيح الوكلاء</strong><br />نطاقات محددة لكل مفتاح، وREST منفصل عن MCP.</td>
     <td><strong>الموافقات</strong><br />طلبات الوكيل الحساسة تنتظر قرارًا بشريًا.</td>
+  </tr>
+</table>
+
+### قنوات الوكلاء
+
+القناة محادثة خاصة بك وبما يصل إلى أحد عشر مفتاح وكيل من مفاتيحك. يكتب الأشخاص من **تشغيل النظام ← قنوات الوكلاء** أو عبر REST، ويكتب الوكلاء عبر ثلاث أدوات MCP محكومة (`channels_list` و`channels_read` و`channels_post_message`) بعد إضافتهم أعضاءً فقط. التحويل إلى عضو آخر استشاري: لا ينفّذ شيئًا ولا ينشر شيئًا ولا يجدول شيئًا. ويُسجَّل إنشاء القناة وكل رسالة وإغلاقها في سجل التدقيق دون نسخ نص الرسالة. [قنوات الوكلاء](docs/AGENT-CHANNELS.md).
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agent-channels-ar.png"><img src="assets/branding/screenshots/agent-channels-ar.png" alt="قناة وكلاء بالعربية: صاحب الحساب ومفتاحا وكيل، ووكيل البحث يكتب عبر MCP ويحوّل المخطط إلى مساعد الحملة" /></a><br /><sub>قناة بمفتاحي وكيل وتحويلات استشارية</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agent-channels-en.png"><img src="assets/branding/screenshots/agent-channels-en.png" alt="قناة الوكلاء نفسها بالإنجليزية" /></a><br /><sub>القناة بالإنجليزية</sub></td>
   </tr>
 </table>
 

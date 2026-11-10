@@ -18,7 +18,7 @@
 <section aria-labelledby="ch-messages" class="space-y-3" data-channel-messages>
 <h2 id="ch-messages" class="font-bold">{{t "workagents.channels.messages"}}</h2>
 {{if .Messages}}{{range .Messages}}<article data-message-id="{{.ID}}" class="border border-line p-3{{if .HandoffTarget}} border-s-4{{end}} space-y-1">
-<div class="text-sm"><strong dir="auto">{{.AuthorName}}</strong> · {{t (printf "workagents.channels.kind_%s" .AuthorKind)}} · <span class="text-muted">{{.CreatedAt}}</span></div>
+<div class="text-sm"><strong dir="auto">{{.AuthorName}}</strong> · {{t (printf "workagents.channels.kind_%s" .AuthorKind)}} · <time class="text-muted" datetime="{{.CreatedAt}}" dir="ltr">{{date .CreatedAt}}</time></div>
 {{if .HandoffTarget}}<p class="text-sm font-bold" data-handoff>{{t "workagents.channels.handoff"}} <span dir="auto">{{.HandoffTarget}}</span></p>{{end}}
 <p class="whitespace-pre-wrap" dir="auto">{{.Body}}</p>
 </article>{{end}}{{else}}<p class="text-muted">{{t "workagents.channels.no_messages"}}</p>{{end}}

@@ -5,7 +5,7 @@ invalidation, background refresh, index/parts, indexed keyset enumeration and
 batched permalink/term lookups, while retaining newest-first entry ordering for
 admin previews. Merged PR #212 implements configurable BCP-47 public content
 languages independent of admin catalogs, dynamic routes and transactional guards.
-This follow-up adds bounded, cancellable retries only for busy `InTx` lock
+Merged PR #215 adds bounded, cancellable retries only for busy `InTx` lock
 acquisition, process counters exposed through metrics, and moves content slug
 normalization outside the write transaction. Callback and commit replay are
 excluded. Full transaction-duration instrumentation, wider transaction audits,

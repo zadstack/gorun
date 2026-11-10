@@ -157,6 +157,8 @@ Up to six primary sections keep related tools together, with contextual page tab
 
 The screenshots use an isolated demo site with fictional content. The layout mirrors for Arabic and stays usable on mobile. [Arabic mobile menu](assets/branding/screenshots/admin-navigation-ar-mobile.png) · [Workspace guide](docs/ADMIN_WORKSPACE.md).
 
+The dashboard keeps recent work, quick actions and the site setup checklist on one screen. Each standalone shortcut has a single place: primary navigation, the page tabs, your pins or the tools rail. Pinning a tool updates the sidebar and shortcuts in place, without reloading the page. The orchestrator card at the top of the sidebar shows whether a run is live and how many approvals wait for you. [Dashboard](assets/branding/screenshots/dashboard-en.png).
+
 ## Measured, with context
 
 In a controlled minimal article test at **50 requests/s**, median run p95 latency was **2.66 ms for GoRun**, **16.85 ms for WordPress + MariaDB**, and **0.66 ms for Astro static + Nginx**. Sampled peak working set was **114.54 MiB**, **203.78 MiB**, and **4.09 MiB**, respectively.
@@ -274,6 +276,17 @@ The opposite-side agents rail opens your own canvas cards. Inspect **Integration
 </table>
 
 [Arabic mobile drawer](assets/branding/screenshots/agents-drawer-ar-mobile.png). Skills and multiple MCP-server resources are not assembled or verified by this drawer.
+
+### Agent channels
+
+A channel is a private thread for you and up to eleven of your own agent keys. People post from **Operations → Agent channels** or the REST API; agents post through three governed MCP tools (`channels_list`, `channels_read`, `channels_post_message`) and only after you add them as members. A hand-off points another member at a message and is advisory only: it runs nothing, publishes nothing and schedules nothing. Every create, message and close is audited without copying the message text. [Agent channels](docs/AGENT-CHANNELS.md).
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agent-channels-en.png"><img src="assets/branding/screenshots/agent-channels-en.png" alt="An agent channel with the owner and two agent keys, where the research agent posts over MCP and hands the outline to the campaign assistant" /></a><br /><sub>A channel with two agent keys and advisory hand-offs</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/agent-channels-ar.png"><img src="assets/branding/screenshots/agent-channels-ar.png" alt="An Arabic agent channel, mirrored right to left" /></a><br /><sub>An Arabic thread, right to left</sub></td>
+  </tr>
+</table>
 
 ### An updates brief, from setup to review
 
