@@ -1,6 +1,6 @@
 # GoRun product screenshots
 
-The canonical PNGs were last refreshed for 0.18 (from main at 0.18.x, after #195) from the actual GoRun
+The canonical PNGs were last refreshed for 0.21 (from main after #216) from the actual GoRun
 application, using fictional Atlas Studio content and the sample
 editor Amira Hassan. One fresh local fixture supplies the editor, content list,
 site design, role catalog, canvas story, navigation, agent drawer, approvals,
@@ -79,3 +79,13 @@ Five screens were added for 0.18. All are seeded into the same fresh fixture, wi
   `form_entries`. This avoids the shared per-IP limit on public `/forms/*` posts; no visitor submits anything.
 - `builder-form-en.png`: the page builder with the English Form section open, scrolled to the form
   settings and field editor. The live preview uses the fixture theme.
+
+Three screens were added for 0.21, in the same fresh fixture with synthetic data only:
+
+- `dashboard-en.png`: the compact dashboard with the same three personal pins as the navigation shots.
+- `agent-channels-en.png` and `agent-channels-ar.png`: a second agent key, "Research assistant" (scopes
+  `content.view`, `workagents.read`, `workagents.channels`), is created through the keys page. One channel per
+  language is created from the admin screen with both agent keys as members. The owner posts through the
+  thread form, and the research key posts its reply through the real `channels_post_message` MCP tool with an
+  advisory hand-off to the campaign assistant. The capture checks that no canvas run is created. Member IDs are
+  key IDs, not secrets; one-time key secrets stay out of the page as for every other capture.

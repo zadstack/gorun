@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -440,6 +441,15 @@ func TestChannelsAdminScreenArabicListAndThread(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Fatalf("thread page lost %q", want)
 		}
+	}
+	// Timestamps stay left to right inside the Arabic layout, in the shared
+	// minute format rather than raw RFC 3339.
+	stamp := regexp.MustCompile(`<time class="text-muted" datetime="[^"]+" dir="ltr">\d{4}-\d{2}-\d{2} \d{2}:\d{2}</time>`)
+	if !stamp.MatchString(body) {
+		t.Fatal("thread timestamp is not a left-to-right formatted <time>")
+	}
+	if list := get("/admin/workagents/channels").Body.String(); !regexp.MustCompile(`<time datetime="[^"]+" dir="ltr">\d{4}-\d{2}-\d{2} \d{2}:\d{2}</time>`).MatchString(list) {
+		t.Fatal("list last activity is not a left-to-right formatted <time>")
 	}
 	// The human post box is offered for the owner user.
 	if !strings.Contains(body, "data-channel-post") {
