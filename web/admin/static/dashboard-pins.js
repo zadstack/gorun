@@ -60,17 +60,19 @@
     const version=++refreshVersion, generation=epoch, controller=new AbortController(); requests.add(controller);
     const timer=setTimeout(()=>controller.abort(),15000), nav=document.querySelector('[data-admin-navigation]');
     try {
-      const query=new URLSearchParams({page:location.pathname});if(workspace)query.set('widget','1');
+      const query=new URLSearchParams({page:location.pathname});if(workspace)query.set('widget','1');if(document.querySelector('[data-navigation-sections]'))query.set('navigation','1');
       const response=await fetch(`/admin/dashboard/pins?${query}`,{credentials:'same-origin',redirect:'error',signal:controller.signal,headers:{Accept:'application/json'}});
       if(!response.ok)throw new Error('unavailable');const text=await response.text();if(text.length>2097152)throw new Error('size');const data=JSON.parse(text);
       if(version!==refreshVersion||generation!==epoch)return false;
-      if(!Array.isArray(data.ids)||!data.ids.every(id=>typeof id==='string'&&id.length<=256)||typeof data.quick_html!=='string'||typeof data.widget_html!=='string')throw new Error('projection');
+      if(!Array.isArray(data.ids)||!data.ids.every(id=>typeof id==='string'&&id.length<=256)||typeof data.quick_html!=='string'||typeof data.widget_html!=='string'||typeof (data.navigation_html??'')!=='string')throw new Error('projection');
       const top=nav?.scrollTop, left=scrollX, pageTop=scrollY;
       // The element the user is on right now wins over the control that started the
       // mutation: a quick-access row focused during a pending save keeps its focus.
       const active=document.activeElement, activeRow=active?.closest?.('[data-quick-id]');
       const origin=activeRow||preferredFocus||active;
-      const quickID=activeRow?.dataset.quickId, quickRemove=active?.matches?.('[data-quick-remove]');
+      // setBusy disables the focused remove button and the browser moves focus to
+      // <body>, so the control that started the mutation still names the row.
+      const quickOrigin=activeRow?active:preferredFocus, quickID=(activeRow||quickOrigin?.closest?.('[data-quick-id]'))?.dataset.quickId, quickRemove=quickOrigin?.matches?.('[data-quick-remove]');
       const panelID=origin?.closest('[data-pin-id]')?.dataset.pinId;
       const panelControl=origin?.matches('[data-pin-drag]')?'[data-pin-drag]':origin?.matches('[data-pin-remove]')?'[data-pin-remove]':origin?.matches('[data-pin-move=up]')?'[data-pin-move=up]':origin?.matches('[data-pin-move=down]')?'[data-pin-move=down]':origin?.matches('a')?'footer a':null;
       const root=document.querySelector('[data-sidebar-quick-access]');
@@ -94,10 +96,13 @@
         bindPanels();
         if (summaryFocused) nextDisclosure?.querySelector('summary')?.focus({preventScroll:true});
       }
+      // Listeners replace the shortcut regions synchronously, so the pin buttons
+      // painted next include rows they just rendered.
+      document.dispatchEvent(new CustomEvent('gorun:dashboard-pins-changed',{detail:{ids:data.ids,navigationHTML:data.navigation_html||''}}));
       updateButtons(data.ids);if(nav&&Number.isFinite(top))nav.scrollTop=top;window.scrollTo(left,pageTop);
       if(quickID){const row=[...document.querySelectorAll('[data-quick-id]')].find(row=>row.dataset.quickId===quickID);(row?.querySelector(quickRemove?'[data-quick-remove]':'a')||document.querySelector('[data-quick-access] h2'))?.focus({preventScroll:true});}
       else if(panelID&&panelControl){const panel=[...(grid?.querySelectorAll('[data-pin-id]')||[])].find(panel=>panel.dataset.pinId===panelID);(panel?.querySelector(panelControl)||document.querySelector('[data-quick-access] h2'))?.focus({preventScroll:true});}
-      document.dispatchEvent(new CustomEvent('gorun:dashboard-pins-changed',{detail:{ids:data.ids}}));return true;
+      return true;
     } finally { clearTimeout(timer);requests.delete(controller); }
   }
   async function pin(id) {

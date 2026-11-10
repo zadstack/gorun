@@ -15,19 +15,23 @@
   </div>
   <div data-orchestrator-card>{{if can "workagents.read"}}<div hx-get="/admin/workagents/orchestrator-card" hx-trigger="load" hx-swap="innerHTML"></div>{{end}}</div>
   <nav data-admin-navigation class="flex-1 overflow-y-auto p-2">
-    <ul class="space-y-0.5" data-navigation-sections>
-    {{range navigationSections}}
-      <li data-navigation-section="{{.Key}}">
-        <a href="{{.Href}}" class="admin-nav-link {{if .Active}}is-active{{end}}" {{if .Active}}aria-current="true"{{end}}>
-          {{icon .Icon}}<span>{{t .LabelKey}}</span>
-        </a>
-      </li>
-    {{end}}
-    </ul>
+    {{template "partials/navigation-section-list" .}}
     {{template "partials/workspace-sidebar-tools" .}}
     <div data-sidebar-quick-access>{{template "partials/quick-access" .}}</div>
   </nav>
   <div class="admin-sidebar-footer"><a href="/admin/navigation" class="admin-nav-link {{if active "/admin/navigation"}}is-active{{end}}" {{if active "/admin/navigation"}}aria-current="page"{{end}}>{{icon "sliders-horizontal"}}<span>{{t "auth.navigation.title"}}</span></a></div>
 </aside>
 <div x-show="sidebarOpen" x-cloak class="[&[x-cloak]]:hidden fixed inset-0 z-30 bg-[rgba(20,24,22,0.2)] md:hidden" @click="toggleSidebar()"></div>
+{{end}}
+
+{{define "partials/navigation-section-list"}}
+<ul class="space-y-0.5" data-navigation-sections>
+{{range navigationSections}}
+  <li data-navigation-section="{{.Key}}">
+    <a href="{{.Href}}" class="admin-nav-link {{if .Active}}is-active{{end}}" {{if .Active}}aria-current="true"{{end}}>
+      {{icon .Icon}}<span>{{t .LabelKey}}</span>
+    </a>
+  </li>
+{{end}}
+</ul>
 {{end}}
