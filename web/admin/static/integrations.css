@@ -30,7 +30,7 @@
 .integrations-issue { border: 1px solid var(--line, #e5e7eb); border-radius: .375rem; padding: .5rem .75rem; line-height: 1.6; background: var(--amber-soft, #fef3c7); color: var(--amber-text, #92400e); }
 .integrations-form-fields { min-inline-size: 0; display: grid; gap: .75rem; }
 .integrations-form-fields:disabled { opacity: .65; }
-.integrations input:focus-visible, .integrations select:focus-visible, .integrations summary:focus-visible, .integrations a:focus-visible { outline: 2px solid var(--green, #16a34a); outline-offset: 3px; }
+.integrations input:focus-visible, .integrations select:focus-visible, .integrations summary:focus-visible, .integrations a:focus-visible { outline: 2px solid var(--accent, #16a34a); outline-offset: 3px; }
 .integrations-dl dd { min-inline-size: 0; overflow-wrap: anywhere; }
 @media (max-width: 640px) {
   .integrations-jump { gap: .375rem .875rem; }

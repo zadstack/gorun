@@ -39,7 +39,7 @@
 {{if .CanRetry}}
 <form method="post" action="/admin/commerce/orders/{{.Order.ID}}/retry" class="mt-4" data-confirm="{{t "commerce.confirm.retry"}}">
   <input type="hidden" name="_csrf" value="{{csrf}}">
-  <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "rotate-cw"}}<span>{{t "commerce.action.retry"}}</span></button>
+  <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "rotate-cw"}}<span>{{t "commerce.action.retry"}}</span></button>
 </form>
 {{end}}
 <h2 class="text-base font-bold mt-6 mb-2">{{t "commerce.entitlements.title"}}</h2>

@@ -52,5 +52,16 @@ func (h *handlers) sidebarQuickAccess(w http.ResponseWriter, r *http.Request) {
 		}
 		widget = string(html)
 	}
-	h.aiJSON(w, 200, map[string]any{"ids": ids, "quick_html": string(quick), "widget_html": widget})
+	// The shortcut regions come from the same request projection, so a pin change
+	// refreshes them without the client re-fetching and re-rendering the page.
+	navigation := ""
+	if r.URL.Query().Get("navigation") == "1" {
+		html, e := h.fragment(r, "pages/system/fragments/workspace_navigation.html", nil)
+		if e != nil {
+			h.serverError(w, r, e)
+			return
+		}
+		navigation = string(html)
+	}
+	h.aiJSON(w, 200, map[string]any{"ids": ids, "quick_html": string(quick), "widget_html": widget, "navigation_html": navigation})
 }

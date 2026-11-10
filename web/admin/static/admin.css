@@ -1,13 +1,13 @@
 /* Shared admin tokens and workspace layout, isolated from public theme identity. */
 :root {
-  --bg: #faf9f8;
+  --bg: #f7f8fa;
   --panel: #ffffff;
-  --panel-2: #f1f0ec;
+  --panel-2: #eef1f4;
   --panel-dark: #252b2a;
-  --ink: #2b2b2b;
-  --muted: #625f59;
-  --line: #e4e2dd;
-  --line-strong: #918d83;
+  --ink: #20252b;
+  --muted: #626a73;
+  --line: #e3e6e8;
+  --line-strong: #87929d;
   --accent: #246b73;
   --accent-hover: #1b555c;
   --accent-soft: #e3eff0;
@@ -23,6 +23,8 @@
   --amber-soft: #f7eccb;
   --red: #ae3c35;
   --red-soft: #f7dfdc;
+  --green-text: var(--green-hover);
+  --red-text: var(--red);
   --radius: 7px;
   --radius-chip: 4px;
   /* Compact density: desktop controls; mobile keeps 44px via media rules. */
@@ -57,7 +59,7 @@
 .admin-workspace .admin-sidebar nav { padding: .625rem; }
 .admin-nav-link { display: flex; align-items: center; gap: .5rem; min-height: var(--control-h); padding: .375rem .625rem; border: 1px solid transparent; border-radius: var(--radius); color: var(--muted); text-decoration: none; font-size: .8125rem; }
 .admin-nav-link:hover { background: var(--panel-2); color: var(--ink); }
-.admin-nav-link.is-active { background: var(--green-soft); color: var(--green-hover); border-color: var(--green); font-weight: 650; }
+.admin-nav-link.is-active { background: var(--accent-soft); color: var(--accent-hover); border-color: var(--accent); font-weight: 650; }
 .admin-sidebar-footer { padding: .625rem; border-top: 1px solid var(--line); }
 .admin-workspace :is(a,button,input,select,textarea):focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .admin-workspace .admin-sidebar :is(a,button):focus-visible { outline-color: var(--blue); }
@@ -79,8 +81,8 @@
 .admin-navigation-option input { width: 1.125rem; height: 1.125rem; accent-color: var(--blue); flex-shrink: 0; }
 .admin-navigation-option-icon { color: var(--muted); }
 .admin-primary-button,.admin-secondary-button { display: inline-flex; justify-content: center; align-items: center; min-height: var(--control-h); padding: .375rem .875rem; border: 1px solid var(--line-strong); border-radius: var(--radius); font-weight: 600; font-size: .8125rem; }
-.admin-primary-button { color: white; background: var(--green); border-color: var(--green); }
-.admin-primary-button:hover { background: var(--green-hover); }
+.admin-primary-button { color: white; background: var(--accent); border-color: var(--accent); }
+.admin-primary-button:hover { background: var(--accent-hover); }
 .admin-secondary-button { background: var(--panel); color: var(--ink); }
 .admin-secondary-button:hover { background: var(--panel-2); }
 @media(max-width:767px) {
@@ -254,10 +256,10 @@
 }
 [dir="rtl"] .admin-workspace [data-admin-navigation] > p { letter-spacing: normal; }
 .admin-workspace .admin-nav-link.is-active {
-  box-shadow: inset 3px 0 0 var(--green);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 [dir="rtl"] .admin-workspace .admin-nav-link.is-active {
-  box-shadow: inset -3px 0 0 var(--green);
+  box-shadow: inset -3px 0 0 var(--accent);
 }
 .admin-workspace .admin-page-heading .admin-eyebrow {
   display: inline-block;
@@ -368,14 +370,8 @@
 }
 
 /* Admin module pages use the same shell, density and typography as core pages. */
-.module-workspace section{margin-block:1rem}.module-workspace h2{font-size:1rem;font-weight:600;margin-block:.75rem}.module-workspace h3{font-weight:600}.module-workspace article,.module-workspace details{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:.85rem;margin-block:.65rem}.module-workspace article details{background:var(--bg)}.module-workspace summary{cursor:pointer;font-weight:600}.module-workspace label{display:block;margin-block:.65rem}.module-workspace input:not([type=checkbox]):not([type=hidden]),.module-workspace textarea,.module-workspace select{display:block;width:100%;max-width:36rem;border:1px solid var(--line-strong);background:var(--panel);border-radius:var(--radius);padding:.5rem;margin-top:.3rem;font:inherit}.module-workspace textarea{min-height:6rem;resize:vertical}.module-workspace button{padding:.5rem .85rem;border-radius:var(--radius);background:var(--green);color:var(--panel);cursor:pointer}.module-workspace button:disabled{opacity:.55;cursor:not-allowed}.module-workspace pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:36rem;font-size:.8rem}.module-workspace table{width:100%;border-collapse:collapse}.module-workspace td,.module-workspace th{padding:.65rem;text-align:start;border-bottom:1px solid var(--line)}.module-workspace .scroll{overflow-x:auto}.module-workspace dl{display:grid;grid-template-columns:minmax(6rem,auto) minmax(0,1fr);gap:.3rem 1rem}.module-workspace dd{overflow-wrap:anywhere}.module-workspace .warning{padding:.6rem;background:var(--amber-soft);color:var(--amber-text);border-radius:var(--radius)}.module-workspace .state,.module-workspace .hint{color:var(--muted);font-size:.8rem}.workagents-workspace .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:.85rem}.module-views{display:flex;flex-wrap:wrap;gap:.35rem;padding-block:.75rem;margin-block:.5rem;border-bottom:1px solid var(--line)}.module-views a{padding:.45rem .7rem;border-radius:var(--radius);border:1px solid var(--line)}.module-views a[aria-current=page]{background:var(--green-soft);color:var(--green);border-color:var(--green)}
+.module-workspace section{margin-block:1rem}.module-workspace h2{font-size:1rem;font-weight:600;margin-block:.75rem}.module-workspace h3{font-weight:600}.module-workspace article,.module-workspace details{border:1px solid var(--line);background:var(--panel);border-radius:var(--radius);padding:.85rem;margin-block:.65rem}.module-workspace article details{background:var(--bg)}.module-workspace summary{cursor:pointer;font-weight:600}.module-workspace label{display:block;margin-block:.65rem}.module-workspace input:not([type=checkbox]):not([type=hidden]),.module-workspace textarea,.module-workspace select{display:block;width:100%;max-width:36rem;border:1px solid var(--line-strong);background:var(--panel);border-radius:var(--radius);padding:.5rem;margin-top:.3rem;font:inherit}.module-workspace textarea{min-height:6rem;resize:vertical}.module-workspace button{padding:.5rem .85rem;border-radius:var(--radius);background:var(--accent);color:var(--panel);cursor:pointer}.module-workspace button:disabled{opacity:.55;cursor:not-allowed}.module-workspace pre{white-space:pre-wrap;overflow-wrap:anywhere;max-width:36rem;font-size:.8rem}.module-workspace table{width:100%;border-collapse:collapse}.module-workspace td,.module-workspace th{padding:.65rem;text-align:start;border-bottom:1px solid var(--line)}.module-workspace .scroll{overflow-x:auto}.module-workspace dl{display:grid;grid-template-columns:minmax(6rem,auto) minmax(0,1fr);gap:.3rem 1rem}.module-workspace dd{overflow-wrap:anywhere}.module-workspace .warning{padding:.6rem;background:var(--amber-soft);color:var(--amber-text);border-radius:var(--radius)}.module-workspace .state,.module-workspace .hint{color:var(--muted);font-size:.8rem}.workagents-workspace .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,20rem),1fr));gap:.85rem}.module-views{display:flex;flex-wrap:wrap;gap:.35rem;padding-block:.75rem;margin-block:.5rem;border-bottom:1px solid var(--line)}.module-views a{padding:.45rem .7rem;border-radius:var(--radius);border:1px solid var(--line)}.module-views a[aria-current=page]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 
-/* Action controls use petrol; green remains available to status messages. */
-.admin-workspace :is(a, button, input, select, textarea) {
-  --green: var(--accent);
-  --green-hover: var(--accent-hover);
-  --green-soft: var(--accent-soft);
-}
 .admin-workspace ::selection { background: var(--accent); color: var(--panel); }
 .admin-workspace :is(input, textarea) { caret-color: var(--accent); }
 
@@ -384,11 +380,5 @@
   background: var(--panel);
 }
 .admin-workspace .admin-topbar { backdrop-filter: none; }
-.admin-auth-surface :is(a, button, input, select, textarea) {
-  --green: var(--accent);
-  --green-hover: var(--accent-hover);
-  --green-soft: var(--accent-soft);
-}
-
 .admin-workspace .admin-nav-link.is-active,
 [dir="rtl"] .admin-workspace .admin-nav-link.is-active { box-shadow: none; }

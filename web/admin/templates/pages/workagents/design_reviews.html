@@ -21,7 +21,7 @@
 <form method="post" action="/admin/workagents/design-reviews/enqueue" class="space-y-3">
 <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="preview_id" value="{{.ID}}"><input type="hidden" name="request_key" value="{{$.RequestKey}}">
 <label class="flex gap-2 items-start"><input type="checkbox" name="approved" value="yes" required class="mt-1"> <span>{{t "workagents.review.consent"}}</span></label>
-<button class="bg-green text-white px-3 py-2">{{t "workagents.review.enqueue"}}</button>
+<button class="bg-blue text-white px-3 py-2">{{t "workagents.review.enqueue"}}</button>
 </form>
 </section>{{end}}
 <section aria-labelledby="review-history" class="space-y-3"><div class="flex justify-between gap-3"><h2 id="review-history" class="font-bold">{{t "workagents.review.history"}}</h2><a href="/admin/workagents/design-reviews" class="text-blue">{{t "workagents.review.refresh"}}</a></div>

@@ -450,7 +450,7 @@ Example section in a version-1 document:
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **205 operations** in 25 tags.
+Generated from the current locally booted OpenAPI document: **212 operations** in 25 tags.
 
 ### analytics
 
@@ -767,6 +767,9 @@ Generated from the current locally booted OpenAPI document: **205 operations** i
 | GET | `/api/v1/workagents/agents` | List owned agent profiles | `workagents.read` |
 | GET | `/api/v1/workagents/approvals` | List owned approvals | `workagents.read` |
 | GET | `/api/v1/workagents/artifacts` | List owned artifacts | `workagents.read` |
+| GET | `/api/v1/workagents/channels/{id}/messages` | Read messages ascending, optional after cursor | `workagents.read` |
+| GET | `/api/v1/workagents/channels/{id}` | Read channel detail with members | `workagents.read` |
+| GET | `/api/v1/workagents/channels` | List this owner's channels newest first | `workagents.read` |
 | GET | `/api/v1/workagents/design-reviews/{id}` | Read scoped design review status and untrusted findings | `workagents.read`, `content.view` |
 | GET | `/api/v1/workagents/design-reviews` | List scoped read-only design reviews | `workagents.read`, `content.view` |
 | GET | `/api/v1/workagents/linear-flows/{id}` | Read flow output and exact approval step | `workagents.read` |
@@ -774,6 +777,10 @@ Generated from the current locally booted OpenAPI document: **205 operations** i
 | GET | `/api/v1/workagents/workflows` | List owned schedules | `workagents.read` |
 | POST | `/api/v1/workagents/agents/{id}/run` | Queue a text agent run | `workagents.run` |
 | POST | `/api/v1/workagents/agents` | Save a native agent profile | `workagents.manage` |
+| POST | `/api/v1/workagents/channels/{id}/close` | Close the channel: reads keep working, posts stop | `workagents.manage` |
+| POST | `/api/v1/workagents/channels/{id}/members` | Add one of the owner's agent keys as a member | `workagents.manage` |
+| POST | `/api/v1/workagents/channels/{id}/messages` | Post a message (optional advisory hand-off target) | `workagents.channels` |
+| POST | `/api/v1/workagents/channels` | Create an owner-scoped agent channel | `workagents.channels` |
 | POST | `/api/v1/workagents/design-reviews/preview` | Preview exact limited page context before approval | `workagents.run`, `content.view` |
 | POST | `/api/v1/workagents/design-reviews/{id}/cancel` | Request design review cancel | `workagents.run`, `content.view` |
 | POST | `/api/v1/workagents/design-reviews/{id}/retry` | Request design review retry | `workagents.run`, `content.view` |

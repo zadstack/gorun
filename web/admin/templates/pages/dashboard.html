@@ -3,16 +3,19 @@
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "dashboard-layout.css"}}">
 <script src="{{asset "dashboard-layout.js"}}" defer></script>
-<h1 class="text-[22px] font-bold mb-1">{{t "core.dashboard.title"}}</h1>
-{{with user}}<p class="text-muted mb-6">{{t "core.dashboard.welcome" .Name}}</p>{{end}}
+<header class="dashboard-page-heading">
+<h1>{{t "core.dashboard.title"}}</h1>
+{{with user}}<p>{{t "core.dashboard.welcome" .Name}}</p>{{end}}
+</header>
 {{if .Widgets}}
 <details class="audit-customize" data-dashboard-customize><summary>{{t "auditworkspace.customize"}}</summary>
 <div class="dashboard-layout-toolbar" data-layout-toolbar data-saving="{{t "dashboardlayout.saving"}}" data-saved="{{t "dashboardlayout.saved"}}" data-error="{{t "dashboardlayout.error"}}" data-conflict="{{t "dashboardlayout.conflict"}}">
  <p>{{t "dashboardlayout.help"}}</p><button type="button" data-layout-reset>{{t "dashboardlayout.reset"}}</button>
  <span role="status" aria-live="polite" data-layout-status></span><button type="button" data-layout-retry hidden>{{t "dashboardlayout.retry"}}</button><a href="/admin" data-layout-reload hidden>{{t "dashboardlayout.reload"}}</a>
 </div></details>
-<div class="dashboard-grid" data-dashboard-layout>
+<div class="dashboard-grid" data-dashboard-layout data-layout-personal="{{.PersonalLayout}}">
   {{range .Widgets}}{{if .}}{{template "partials/dashboard_widget" .}}{{end}}{{end}}
+{{template "partials/workspace-tool-directory" .}}
 </div>
 {{else}}
 <div class="rounded border border-line bg-panel p-4 text-muted">{{t "core.dashboard.empty"}}</div>

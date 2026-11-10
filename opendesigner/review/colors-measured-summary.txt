@@ -1,0 +1,53 @@
+checked 2 probe run(s) against the floors and practice (no OpenDesigner system found: type and spacing are judged on a 4 px grid, buttons, typefaces, weights and colors by count): 0 error, 7 warn, 5 info
+
+[WARN] Spacing off the 4 px grid (10 value(s), 56 of 252 uses)  (MS-01, measured)
+  where:    /admin · 390x844 · light; /admin · 1440x900 · light
+  measured: 6px x27; 5.6px x9; 3.2px x5; 10px x4; 2px x2; 7px x2
+  expected: multiples of 4 px
+  element:  div.flex.min-h-screen:nth-of-type(1) > div.flex-1.min-w-0:nth-of-type(3) > header.admin-topbar.h-14
+  fix:      use the spacing tokens; 1-2 px values are usually borders or browser defaults
+
+[WARN] 4 font weights on one page  (MS-02, measured)
+  where:    /admin · 390x844 · light; /admin · 1440x900 · light
+  measured: 400 on 41 element(s), 600 on 17 element(s), 650 on 1 element(s), 700 on 6 element(s); 600 and 650 are one step apart, which can read as a mistake rather than a level; 650 and 700 are one step apart, which can read as a mistake rather than a level
+  expected: three weights at most in a system, and two in any one view, clearly apart, such as 400 and 600 (DC-L19-24; it marks two neighbouring weights reading as a mistake as inferred)
+  element:  a.sr-only.focus\:not-sr-only
+  fix:      give each weight a job (body, labels, headings) and merge the near ones; try size or space before a third weight
+
+[WARN] 9 font sizes  (MS-02, measured)
+  where:    /admin · 1440x900 · light
+  measured: 11, 11.5, 12, 13, 14, 15, 17, 18, 28; within 10% of each other: 11/11.5, 11.5/12, 12/13, 13/14
+  expected: about 8 sizes at most, all from one scale, none within 10% of another (preflight 7)
+  fix:      map each size to the nearest step of one scale
+
+[WARN] Font sizes between whole pixels  (MS-02, measured)
+  where:    /admin · 390x844 · light; /admin · 1440x900 · light
+  measured: 12.8 px x1
+  expected: whole-pixel sizes from the scale: a fluid size (clamp, vw) or an rem step that does not land on a pixel gives a different size at every width, so nothing matches (preflight 7)
+  element:  section.canvas-gallery > header > a
+  fix:      step the size at breakpoints instead of a fluid clamp, or round the scale to whole pixels; 13.33 px on a button is the browser default
+
+[WARN] Text smaller than 12 px  (MS-02, measured)
+  where:    /admin · 390x844 · light; /admin · 1440x900 · light
+  measured: 11 px: 'آخر 7 أيام' in section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted
+  expected: at least 12 px
+  element:  section.min-w-0.rounded:nth-of-type(6) > div:nth-of-type(2) > p.text-xs.text-muted
+  fix:      raise it to a text style
+
+[WARN] Tracking gets looser as text gets bigger  (MS-17, measured)
+  where:    /admin · 1440x900 · light
+  measured: 28 px is tracked 0em but 14 px is tracked -0.01em (1 pair(s) like this)
+  expected: tracking tightens as size grows: body near 0, display text slightly negative, only capitals and tiny labels open (preflight 5; the system's tracking per size)
+  element:  main#main > header.dashboard-page-heading > h1
+  fix:      give the large sizes the tighter value; set tracking with each text style, not per element
+
+[WARN] 6 button styles  (MS-19, measured)
+  where:    /admin · 390x844 · light; /admin · 1440x900 · light
+  measured: outline, 7 px corners, 44 px tall, 14 px: "English"; outline, 7 px corners, 44 px tall, 15 px: "إنشاء صفحة"; filled, 7 px corners, 44 px tall, 15 px: "إنشاء مقال"; outline, 7 px corners, 44 px tall, 15 px caps: "مفتاح API جديد"; outline, 4 px corners, 44 px tall, 12 px: "تحديث"; 3 corner shapes, UPPERCASE and normal case mixed
+  expected: a primary, a secondary and at most one quieter style, sharing one corner shape, one case and a height scale such as 32, 40 and 48 px (DC-L08-05; DC-L08-07; STD-visual-details-36)
+  element:  div.admin-account-actions.ms-auto > form:nth-of-type(1) > button.h-9.px-3
+  fix:      make every button from one component with a size and a variant; the corner shape is one decision for all of them
+
+(5 info notes hidden; --all shows them)
+
+(the last check used a different set of files, so nothing is compared. Re-run `check` on the same probe files after a fix to see what was resolved.)

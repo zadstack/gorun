@@ -3,7 +3,7 @@
 <div class="mt-1 flex items-start gap-2" x-data="{ copied: false }">
   <code x-ref="command" dir="ltr" class="min-w-0 flex-1 break-all rounded border border-line bg-panel p-2 font-mono text-xs text-ink">{{.}}</code>
   <button type="button" @click="gp.copy($refs.command.textContent).then((ok) => copied = ok)"
-          class="shrink-0 rounded border border-line bg-panel px-2 py-1 text-xs text-ink hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+          class="shrink-0 rounded border border-line bg-panel px-2 py-1 text-xs text-ink hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
     <span data-label-copy="{{t "auth.setup.copy"}}" data-label-copied="{{t "auth.setup.copied"}}" x-text="copied ? $el.dataset.labelCopied : $el.dataset.labelCopy">{{t "auth.setup.copy"}}</span>
   </button>
 </div>
@@ -27,7 +27,7 @@
     {{if .NeedToken}}
     <div>
       <label for="setup_token" class="block font-medium mb-1">{{t "auth.setup.token"}}</label>
-      <input id="setup_token" name="setup_token" type="password" autocomplete="off" required dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+      <input id="setup_token" name="setup_token" type="password" autocomplete="off" required dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
              aria-describedby="setup_token-help setup_token-error" {{with index .Fields "setup_token"}}aria-invalid="true"{{end}}>
       <p id="setup_token-help" class="mt-1 text-xs text-muted">{{t "auth.setup.token_help"}}</p>
       <div id="setup_token-error">{{template "partials/field_errors" (index .Fields "setup_token")}}</div>
@@ -35,17 +35,17 @@
     {{end}}
     <div>
       <label for="name" class="block font-medium mb-1">{{t "auth.field.name"}}</label>
-      <input id="name" name="name" type="text" autocomplete="name" value="{{.Name}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="name" name="name" type="text" autocomplete="name" value="{{.Name}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     </div>
     <div>
       <label for="email" class="block font-medium mb-1">{{t "auth.field.email"}}</label>
-      <input id="email" name="email" type="email" autocomplete="username" required value="{{.Email}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+      <input id="email" name="email" type="email" autocomplete="username" required value="{{.Email}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
              {{with index .Fields "email"}}aria-invalid="true" aria-describedby="email-error"{{end}}>
       <div id="email-error">{{template "partials/field_errors" (index .Fields "email")}}</div>
     </div>
     <div>
       <label for="password" class="block font-medium mb-1">{{t "auth.field.password"}}</label>
-      <input id="password" name="password" type="password" autocomplete="new-password" required minlength="10" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+      <input id="password" name="password" type="password" autocomplete="new-password" required minlength="10" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
              aria-describedby="password-help password-error" {{with index .Fields "password"}}aria-invalid="true"{{end}}>
       <p id="password-help" class="mt-1 text-xs text-muted">{{t "auth.field.password_help"}}</p>
       <div id="password-error">{{template "partials/field_errors" (index .Fields "password")}}</div>
@@ -54,13 +54,13 @@
       <legend>{{t "auth.setup.site_section"}}</legend>
       <div>
         <label for="title" class="block font-medium mb-1">{{t "auth.setup.site_title"}}</label>
-        <input id="title" name="title" type="text" autocomplete="organization" required value="{{.Title}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+        <input id="title" name="title" type="text" autocomplete="organization" required value="{{.Title}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
                aria-describedby="title-error" {{with index .Fields "title"}}aria-invalid="true"{{end}}>
         <div id="title-error">{{template "partials/field_errors" (index .Fields "title")}}</div>
       </div>
       <div>
         <label for="tagline" class="block font-medium mb-1">{{t "auth.setup.tagline"}}</label>
-        <input id="tagline" name="tagline" type="text" value="{{.Tagline}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft"
+        <input id="tagline" name="tagline" type="text" value="{{.Tagline}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
                aria-describedby="tagline-help tagline-error" {{with index .Fields "tagline"}}aria-invalid="true"{{end}}>
         <p id="tagline-help" class="mt-1 text-xs text-muted">{{t "auth.setup.tagline_help"}}</p>
         <div id="tagline-error">{{template "partials/field_errors" (index .Fields "tagline")}}</div>
@@ -74,7 +74,7 @@
         <div id="locale-error">{{template "partials/field_errors" (index .Fields "locale")}}</div>
       </div>
     </fieldset>
-    <button type="submit" class="w-full h-9 bg-green text-white hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "auth.setup.submit"}}</button>
+    <button type="submit" class="w-full h-9 bg-blue text-white hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "auth.setup.submit"}}</button>
   </form>
   {{end}}
 </div>

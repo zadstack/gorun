@@ -23,49 +23,49 @@
       <div class="flex flex-wrap gap-1 px-4 pt-2" role="tablist">
         <button type="button" role="tab" :aria-selected="(tab === 'custom').toString()" @click="tab = 'custom'"
                 :class="tab === 'custom' ? 'bg-panel-2 border-line text-ink [box-shadow:inset_0_-3px_0_var(--blue)]' : 'border-transparent text-muted hover:text-ink'"
-                class="h-8 px-2 rounded border focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "menus.add.custom"}}</button>
+                class="h-8 px-2 rounded border focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "menus.add.custom"}}</button>
         <button type="button" role="tab" :aria-selected="(tab === 'content').toString()" @click="tab = 'content'"
                 :class="tab === 'content' ? 'bg-panel-2 border-line text-ink [box-shadow:inset_0_-3px_0_var(--blue)]' : 'border-transparent text-muted hover:text-ink'"
-                class="h-8 px-2 rounded border focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "menus.add.content"}}</button>
+                class="h-8 px-2 rounded border focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "menus.add.content"}}</button>
         <button type="button" role="tab" :aria-selected="(tab === 'term').toString()" @click="tab = 'term'"
                 :class="tab === 'term' ? 'bg-panel-2 border-line text-ink [box-shadow:inset_0_-3px_0_var(--blue)]' : 'border-transparent text-muted hover:text-ink'"
-                class="h-8 px-2 rounded border focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "menus.add.term"}}</button>
+                class="h-8 px-2 rounded border focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "menus.add.term"}}</button>
         <button type="button" role="tab" :aria-selected="(tab === 'archive').toString()" @click="tab = 'archive'"
                 :class="tab === 'archive' ? 'bg-panel-2 border-line text-ink [box-shadow:inset_0_-3px_0_var(--blue)]' : 'border-transparent text-muted hover:text-ink'"
-                class="h-8 px-2 rounded border focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "menus.add.archive"}}</button>
+                class="h-8 px-2 rounded border focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "menus.add.archive"}}</button>
       </div>
       <div class="p-4">
         <div x-show="tab === 'custom'" class="space-y-3">
           <div>
             <label for="add-label" class="block font-medium mb-1">{{t "menus.item.label"}}</label>
-            <input id="add-label" type="text" x-model="label" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+            <input id="add-label" type="text" x-model="label" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           </div>
           <div>
             <label for="add-url" class="block font-medium mb-1">{{t "menus.item.url"}}</label>
-            <input id="add-url" type="text" x-model="url" dir="ltr" placeholder="https://" class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+            <input id="add-url" type="text" x-model="url" dir="ltr" placeholder="https://" class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           </div>
           <button type="button" :disabled="!label.trim() || !url.trim()" @click="add({ kind: 'custom', label: label.trim(), url: url.trim() }); label = ''; url = ''"
-                  class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong disabled:opacity-50 inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}{{t "menus.add.submit"}}</button>
+                  class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong disabled:opacity-50 inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "plus"}}{{t "menus.add.submit"}}</button>
         </div>
         <div x-show="tab === 'content'" x-cloak class="[&[x-cloak]]:hidden">
           <label for="add-q-content" class="sr-only">{{t "menus.add.search"}}</label>
           <input id="add-q-content" name="q" type="search" placeholder="{{t "menus.add.search"}}"
                  hx-get="/admin/x/menus/search?kind=content" hx-trigger="load, input changed delay:300ms, search" hx-target="#add-results-content"
-                 class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+                 class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           <div id="add-results-content" class="mt-2 max-h-72 overflow-y-auto" aria-live="polite"></div>
         </div>
         <div x-show="tab === 'term'" x-cloak class="[&[x-cloak]]:hidden">
           <label for="add-q-term" class="sr-only">{{t "menus.add.search"}}</label>
           <input id="add-q-term" name="q" type="search" placeholder="{{t "menus.add.search"}}"
                  hx-get="/admin/x/menus/search?kind=term" hx-trigger="load, input changed delay:300ms, search" hx-target="#add-results-term"
-                 class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+                 class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           <div id="add-results-term" class="mt-2 max-h-72 overflow-y-auto" aria-live="polite"></div>
         </div>
         <div x-show="tab === 'archive'" x-cloak class="[&[x-cloak]]:hidden">
           <label for="add-q-archive" class="sr-only">{{t "menus.add.search"}}</label>
           <input id="add-q-archive" name="q" type="search" placeholder="{{t "menus.add.search"}}"
                  hx-get="/admin/x/menus/search?kind=archive" hx-trigger="load, input changed delay:300ms, search" hx-target="#add-results-archive"
-                 class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+                 class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           <div id="add-results-archive" class="mt-2 max-h-72 overflow-y-auto" aria-live="polite"></div>
         </div>
       </div>
@@ -77,17 +77,17 @@
     <input type="hidden" name="edit_token" value="{{.EditToken}}">
       <div>
         <label for="name" class="block font-medium mb-1">{{t "menus.field.name"}}</label>
-        <input id="name" name="name" type="text" value="{{.Form.Name}}" {{with index .Fields "name"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <input id="name" name="name" type="text" value="{{.Form.Name}}" {{with index .Fields "name"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         {{template "partials/field_errors" (index .Fields "name")}}
       </div>
       <div>
         <label for="slug" class="block font-medium mb-1">{{t "menus.field.slug"}}</label>
-        <input id="slug" name="slug" type="text" value="{{.Form.Slug}}" dir="ltr" {{with index .Fields "slug"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <input id="slug" name="slug" type="text" value="{{.Form.Slug}}" dir="ltr" {{with index .Fields "slug"}}aria-invalid="true"{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         {{template "partials/field_errors" (index .Fields "slug")}}
       </div>
       <div>
         <label for="location" class="block font-medium mb-1">{{t "menus.field.location"}}</label>
-        <select id="location" name="location" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <select id="location" name="location" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           <option value="">{{t "menus.field.location_none"}}</option>
           {{$sel := .Form.Location}}{{range .Locations}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{.}}</option>{{end}}
         </select>
@@ -95,14 +95,14 @@
       </div>
       <div>
         <label for="locale" class="block font-medium mb-1">{{t "menus.field.locale"}}</label>
-        <select id="locale" name="locale" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+        <select id="locale" name="locale" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           <option value="">{{t "menus.field.locale_all"}}</option>
           {{$loc := .Form.Locale}}{{range .Locales}}<option value="{{.}}" {{if eq . $loc}}selected{{end}}>{{localeName .}}</option>{{end}}
         </select>
         <p class="text-xs text-muted mt-1">{{t "menus.field.locale_help"}}</p>
         {{template "partials/field_errors" (index .Fields "locale")}}
       </div>
-      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "menus.settings.submit"}}</button>
+      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "menus.settings.submit"}}</button>
     </form>
   </aside>
 
@@ -113,7 +113,7 @@
     <input type="hidden" name="items" x-ref="json" value="">
     <div class="menu-save-bar flex flex-wrap items-center justify-between gap-2 mb-1">
       <div><h2 class="text-base font-bold">{{t "menus.items.title"}}</h2><small><span x-text="items.length"></span> {{t "menus.col.items"}} · <a class="menu-add-shortcut" href="#menu-add">＋ {{t "menus.add.title"}}</a></small></div>
-      <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "menus.items.save"}}</button>
+      <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "menus.items.save"}}</button>
     </div>
     <p class="text-muted text-xs mb-3">{{t "menus.items.help"}}</p>
     {{if .ItemError}}
@@ -132,19 +132,19 @@
             <template x-for="mode in ['before','inside','after']" :key="mode"><span :class="dropKey === it._k + ':' + mode ? 'is-drop-target' : ''" @dragover="dragOver($event,i,mode)" @drop.stop="drop($event,i,mode)"><span x-show="mode === 'before'">{{t "menus.drop.before"}}</span><span x-show="mode === 'inside'">{{t "menus.drop.inside"}}</span><span x-show="mode === 'after'">{{t "menus.drop.after"}}</span></span></template>
           </div>
           <div class="menu-item-heading">
-            <button type="button" data-handle aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" draggable="true" @dragstart="startDrag($event,it)" @dragend="endDrag()" @keydown.alt.arrow-up.prevent="up(i)" @keydown.alt.arrow-down.prevent="down(i)" class="p-1 cursor-grab text-muted hover:text-ink rounded focus:outline-none focus:ring-[3px] focus:ring-green-soft" aria-label="{{t "menus.item.drag"}}">{{icon "grip-vertical"}}</button>
+            <button type="button" data-handle aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown" draggable="true" @dragstart="startDrag($event,it)" @dragend="endDrag()" @keydown.alt.arrow-up.prevent="up(i)" @keydown.alt.arrow-down.prevent="down(i)" class="p-1 cursor-grab text-muted hover:text-ink rounded focus:outline-none focus:ring-[3px] focus:ring-blue-soft" aria-label="{{t "menus.item.drag"}}">{{icon "grip-vertical"}}</button>
             <button type="button" @click="open = open === i ? -1 : i" :aria-expanded="(open === i).toString()" :aria-controls="'item-panel-' + it._k"
-                    class="menu-item-toggle flex-1 min-w-0 flex items-center gap-2 text-start py-1.5 rounded focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+                    class="menu-item-toggle flex-1 min-w-0 flex items-center gap-2 text-start py-1.5 rounded focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
               <span class="truncate font-medium" x-show="title(it)" x-text="title(it)"></span><span class="truncate text-muted" x-show="!title(it)">{{t "menus.item.untitled"}}</span>
               <span class="shrink-0 inline-flex items-center rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono text-muted">
                 <span x-show="it.kind === 'custom'">{{t "menus.kind.custom"}}</span><span x-show="it.kind === 'content'">{{t "menus.kind.content"}}</span><span x-show="it.kind === 'term'">{{t "menus.kind.term"}}</span><span x-show="it.kind === 'archive'">{{t "menus.kind.archive"}}</span>
               </span>
             </button>
             <div class="menu-item-actions">
-            <button type="button" @click="up(i)" :disabled="sibling(i,-1) < 0" class="p-1 rounded text-muted hover:text-ink disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-green-soft" aria-label="{{t "menus.item.up"}}">{{icon "arrow-up"}}</button>
-            <button type="button" @click="down(i)" :disabled="sibling(i,1) < 0" class="p-1 rounded text-muted hover:text-ink disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-green-soft" aria-label="{{t "menus.item.down"}}">{{icon "arrow-down"}}</button>
-            <button type="button" @click="outdent(i)" :disabled="it.depth === 0" class="p-1 rounded text-muted hover:text-ink disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-green-soft" aria-label="{{t "menus.item.outdent"}}">{{icon "indent-decrease" "w-4 h-4 rtl:-scale-x-100"}}</button>
-            <button type="button" @click="indent(i)" :disabled="!canIndent(i)" class="p-1 rounded text-muted hover:text-ink disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-green-soft" aria-label="{{t "menus.item.indent"}}">{{icon "indent-increase" "w-4 h-4 rtl:-scale-x-100"}}</button>
+            <button type="button" @click="up(i)" :disabled="sibling(i,-1) < 0" class="p-1 rounded text-muted hover:text-ink disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-blue-soft" aria-label="{{t "menus.item.up"}}">{{icon "arrow-up"}}</button>
+            <button type="button" @click="down(i)" :disabled="sibling(i,1) < 0" class="p-1 rounded text-muted hover:text-ink disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-blue-soft" aria-label="{{t "menus.item.down"}}">{{icon "arrow-down"}}</button>
+            <button type="button" @click="outdent(i)" :disabled="it.depth === 0" class="p-1 rounded text-muted hover:text-ink disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-blue-soft" aria-label="{{t "menus.item.outdent"}}">{{icon "indent-decrease" "w-4 h-4 rtl:-scale-x-100"}}</button>
+            <button type="button" @click="indent(i)" :disabled="!canIndent(i)" class="p-1 rounded text-muted hover:text-ink disabled:opacity-50 focus:outline-none focus:ring-[3px] focus:ring-blue-soft" aria-label="{{t "menus.item.indent"}}">{{icon "indent-increase" "w-4 h-4 rtl:-scale-x-100"}}</button>
             </div>
           </div>
           <div class="menu-item-relation"><span>{{t "menus.item.level"}} <span x-text="it.depth + 1"></span></span><span>·</span><span>{{t "menus.item.parent"}}: <span x-text="parentTitle(i)"></span><small x-show="block(i) > 1">· <span x-text="block(i) - 1"></span> {{t "menus.item.descendants"}}</small></div>
@@ -153,15 +153,15 @@
             <p x-show="it.hint" class="font-mono text-xs text-muted" dir="ltr" x-text="it.hint"></p>
             <div>
               <label :for="'label-' + it._k" class="block font-medium mb-1">{{t "menus.item.label"}}</label>
-              <input :id="'label-' + it._k" type="text" x-model="it.label" @input="dirty = true" placeholder="{{t "menus.item.label_placeholder"}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+              <input :id="'label-' + it._k" type="text" x-model="it.label" @input="dirty = true" placeholder="{{t "menus.item.label_placeholder"}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
             </div>
             <div x-show="it.kind === 'custom' || it.kind === 'archive'">
               <label :for="'url-' + it._k" class="block font-medium mb-1">{{t "menus.item.url"}}</label>
-              <input :id="'url-' + it._k" type="text" dir="ltr" x-model="it.url" @input="dirty = true" class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+              <input :id="'url-' + it._k" type="text" dir="ltr" x-model="it.url" @input="dirty = true" class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
             </div>
             <details class="menu-advanced"><summary>{{t "menus.item.advanced"}}</summary><div>
               <label :for="'css-' + it._k" class="block font-medium mb-1">{{t "menus.item.css_class"}}</label>
-              <input :id="'css-' + it._k" type="text" dir="ltr" x-model="it.css_class" @input="dirty = true" class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+              <input :id="'css-' + it._k" type="text" dir="ltr" x-model="it.css_class" @input="dirty = true" class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
             </div>
             <label class="inline-flex items-center gap-2"><input type="checkbox" x-model="it.open_in_new" @change="dirty = true" class="accent-[var(--green)]">{{t "menus.item.open_in_new"}}</label></details>
             <div><button type="button" @click="if(confirm($el.dataset.confirm)) remove(i)" data-confirm="{{t "menus.item.remove_help"}}" class="h-8 px-2 rounded border border-red text-red bg-panel hover:bg-red-soft inline-flex items-center gap-1 focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "x"}}{{t "menus.item.remove"}}</button></div>

@@ -378,25 +378,7 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 		}
 		return t.i18n.T(locale, key, args...)
 	}
-	var sections []NavigationSection
-	sectionsLoaded := false
-	sectionView := func() []NavigationSection {
-		if sectionsLoaded {
-			return sections
-		}
-		sectionsLoaded = true
-		if t.funcs.Nav == nil {
-			return nil
-		}
-		items := t.funcs.Nav(ctx)
-		authorized := items
-		if t.funcs.AllNav != nil {
-			authorized = t.funcs.AllNav(ctx)
-		}
-		preferred := t.preferredNavGroups(ctx)
-		sections = navigationSections(groupNav(items, preferred), authorized, pathOf(r), preferred)
-		return sections
-	}
+	nav := t.navigation(r, translate)
 
 	return template.FuncMap{
 		"t":            translate,
@@ -431,44 +413,15 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 			}
 			return t.funcs.Setting(ctx, key)
 		},
-		"nav": func() []NavGroup {
-			if t.funcs.Nav == nil {
-				return nil
-			}
-			groups := groupNav(t.funcs.Nav(ctx), t.preferredNavGroups(ctx))
-			for i := range groups {
-				groups[i].Label = groupLabel(func(k string) string { return translate(k) }, groups[i].LabelKey)
-			}
-			return groups
-		},
-		"navigationSections": sectionView,
-		"quickAccess": func() []QuickAccessItem {
-			if t.funcs.PinnedNav == nil {
-				return nil
-			}
-			return quickAccessItems(t.funcs.PinnedNav(ctx), pathOf(r))
-		},
-		"allNavigationSections": func() []NavigationSection {
-			if t.funcs.AllNav == nil {
-				return nil
-			}
-			items := t.funcs.AllNav(ctx)
-			preferred := t.preferredNavGroups(ctx)
-			return navigationSections(groupNav(items, preferred), items, pathOf(r), preferred)
-		},
+		"nav":                   nav.Groups,
+		"workspaceTools":        nav.Tools,
+		"navigationSections":    nav.Sections,
+		"quickAccess":           nav.Pins,
+		"allNavigationSections": nav.AllSections,
 		"navigationLabel": func(key string) string {
 			return groupLabel(func(k string) string { return translate(k) }, key)
 		},
-		"allNav": func() []NavGroup {
-			if t.funcs.AllNav == nil {
-				return nil
-			}
-			groups := groupNav(t.funcs.AllNav(ctx), t.preferredNavGroups(ctx))
-			for i := range groups {
-				groups[i].Label = groupLabel(func(k string) string { return translate(k) }, groups[i].LabelKey)
-			}
-			return groups
-		},
+		"allNav": nav.AllGroups,
 		"active": func(href string) bool {
 			if r == nil {
 				return false

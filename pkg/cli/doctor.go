@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -53,7 +54,11 @@ func doctorCmd(args []string, out io.Writer) error {
 	cfg, err := config.LoadReadOnly(args)
 	if err != nil {
 		// Config errors can contain URLs or user-supplied credentials. Do not echo them.
-		report.add("config", "fail", "Configuration is missing or invalid.", "For a new local site run gorun start. Otherwise review flags, environment, gorun.toml and the existing secret; doctor never generates or replaces it.")
+		if errors.Is(err, config.ErrPublicBaseURL) {
+			report.add("public_base_url", "fail", "The production public base URL is missing or unusable.", "Set GORUN_BASE_URL to the public https URL of the deployment (a container platform fills it from the service domain), then restart. GORUN_TRIAL=1 starts a disposable dev-mode site that ignores proxy headers; it is not a production setup.")
+		} else {
+			report.add("config", "fail", "Configuration is missing or invalid.", "For a new local site run gorun start. Otherwise review flags, environment, gorun.toml and the existing secret; doctor never generates or replaces it.")
+		}
 	} else {
 		report.add("config", "ok", "Configuration and existing secret are valid.", "")
 		doctorSite(cfg, &report)

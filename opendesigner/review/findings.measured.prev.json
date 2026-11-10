@@ -1,0 +1,218 @@
+{
+  "made": "2026-11-09T12:06:34",
+  "system": null,
+  "probes": 1,
+  "inputs": [
+    "compact-ar-1440.json"
+  ],
+  "findings": [
+    {
+      "id": "M-MS01-4606",
+      "case": "MS-01",
+      "severity": "warn",
+      "basis": "measured",
+      "title": "Spacing off the 4 px grid (12 value(s), 108 of 337 uses)",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "3.2px x35; 6px x28; 10px x22; 2px x6; 7.2px x4; 10.4px x4",
+      "expected": "multiples of 4 px",
+      "evidence": [
+        "li:nth-of-type(1) > a.admin-nav-link.is-active > svg",
+        "aside#admin-sidebar > div.admin-brand-header.h-14:nth-of-type(1)",
+        "aside#admin-sidebar > nav.flex-1.overflow-y-auto",
+        "nav.flex-1.overflow-y-auto > ul.space-y-0\\.5 > li:nth-of-type(2)",
+        "aside#admin-sidebar > div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand",
+        "h2#sidebar-quick-heading"
+      ],
+      "fix": "use the spacing tokens; 1-2 px values are usually borders or browser defaults",
+      "standard": "tokens",
+      "status": "confirmed"
+    },
+    {
+      "id": "M-MS02-6894",
+      "case": "MS-02",
+      "severity": "warn",
+      "basis": "measured",
+      "title": "9 font sizes",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "11, 11.5, 12, 13, 14, 15, 16, 22, 28; within 10% of each other: 11/11.5, 11.5/12, 12/13, 13/14",
+      "expected": "about 8 sizes at most, all from one scale, none within 10% of another (preflight 7)",
+      "evidence": [],
+      "fix": "map each size to the nearest step of one scale",
+      "standard": "preflight 7",
+      "status": "confirmed"
+    },
+    {
+      "id": "M-MS02-5955",
+      "case": "MS-02",
+      "severity": "warn",
+      "basis": "measured",
+      "title": "Font sizes between whole pixels",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "11.5 px x1; 11.8 px x1",
+      "expected": "whole-pixel sizes from the scale: a fluid size (clamp, vw) or an rem step that does not land on a pixel gives a different size at every width, so nothing matches (preflight 7)",
+      "evidence": [
+        "h2#sidebar-quick-heading",
+        "section.sidebar-quick-access > ul > li.sidebar-quick-empty"
+      ],
+      "fix": "step the size at breakpoints instead of a fluid clamp, or round the scale to whole pixels; 13.33 px on a button is the browser default",
+      "standard": "preflight 7",
+      "status": "confirmed"
+    },
+    {
+      "id": "M-MS02-9112",
+      "case": "MS-02",
+      "severity": "warn",
+      "basis": "measured",
+      "title": "Font weights one step apart",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "400 on 59 element(s), 600 on 14 element(s), 700 on 6 element(s); 600 and 700 are one step apart, which can read as a mistake rather than a level",
+      "expected": "three weights at most in a system, and two in any one view, clearly apart, such as 400 and 600 (DC-L19-24; it marks two neighbouring weights reading as a mistake as inferred)",
+      "evidence": [
+        "a.sr-only.focus\\:not-sr-only",
+        "li:nth-of-type(1) > a.admin-nav-link.is-active > span",
+        "div.admin-brand-header.h-14:nth-of-type(1) > a.admin-site-brand > span"
+      ],
+      "fix": "give each weight a job (body, labels, headings) and merge the near ones; try size or space before a third weight",
+      "standard": "DC-L19-24",
+      "status": "confirmed"
+    },
+    {
+      "id": "M-MS02-1083",
+      "case": "MS-02",
+      "severity": "warn",
+      "basis": "measured",
+      "title": "Text smaller than 12 px",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "11 px: 'آخر 7 أيام' in section.min-w-0.rounded:nth-of-type(5) > div:nth-of-type(2) > p.text-xs.text-muted",
+      "expected": "at least 12 px",
+      "evidence": [
+        "section.min-w-0.rounded:nth-of-type(5) > div:nth-of-type(2) > p.text-xs.text-muted"
+      ],
+      "fix": "raise it to a text style",
+      "standard": null,
+      "status": "confirmed"
+    },
+    {
+      "id": "M-MS19-6925",
+      "case": "MS-19",
+      "severity": "warn",
+      "basis": "measured",
+      "title": "5 button styles",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "outline, 7 px corners, 36 px tall, 14 px: \"English\"; outline, 7 px corners, 36 px tall, 15 px: \"إنشاء صفحة\"; filled, 7 px corners, 36 px tall, 15 px: \"إنشاء مقال\"; outline, 7 px corners, 36 px tall, 15 px caps: \"مفتاح API جديد\"; outline, 8 px corners, 44 px tall, 14 px: \"الوكلاء\"; 2 corner shapes, UPPERCASE and normal case mixed",
+      "expected": "a primary, a secondary and at most one quieter style, sharing one corner shape, one case and a height scale such as 32, 40 and 48 px (DC-L08-05; DC-L08-07; STD-visual-details-36)",
+      "evidence": [
+        "div.admin-account-actions.ms-auto > form:nth-of-type(1) > button.h-9.px-3",
+        "ul.flex.flex-wrap > li:nth-of-type(2) > a.h-9.px-3",
+        "ul.flex.flex-wrap > li:nth-of-type(1) > a.h-9.px-3",
+        "ul.flex.flex-wrap > li:nth-of-type(4) > a.h-9.px-3"
+      ],
+      "fix": "make every button from one component with a size and a variant; the corner shape is one decision for all of them",
+      "standard": "DC-L08-07",
+      "status": "confirmed"
+    },
+    {
+      "id": "M-EN08-7888",
+      "case": "EN-08",
+      "severity": "info",
+      "basis": "measured",
+      "title": "Before launch: share image, favicon or indexing",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "missing a share image (og:image), a favicon, a meta description; robots says noindex, nofollow",
+      "expected": "a public page has a share image, a favicon and a description; noindex only on drafts",
+      "evidence": [],
+      "fix": null,
+      "standard": null,
+      "status": "confirmed"
+    },
+    {
+      "id": "M-IN08-2014",
+      "case": "IN-08",
+      "severity": "info",
+      "basis": "measured",
+      "title": "Controls placed outside the page box",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "a.sr-only.focus\\:not-sr-only",
+      "expected": "a skip link that appears on focus is fine; anything else is off-canvas content",
+      "evidence": [
+        "a.sr-only.focus\\:not-sr-only"
+      ],
+      "fix": "Tab to it and confirm it appears",
+      "standard": null,
+      "status": "confirmed"
+    },
+    {
+      "id": "M-MS08-1758",
+      "case": "MS-08",
+      "severity": "info",
+      "basis": "measured",
+      "title": "3 color families on one page",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "teal (#246b73) x6; yellow (#7a5406, #fcf0d7, #f7eccb) x3; green (#125e44) x1",
+      "expected": "grays, one accent with one job, and status colors (DC-L01-08), with the danger color only on the part that is going wrong (making.md section 12: \"More visual\" means more information, not more colour)",
+      "evidence": [
+        "section.min-w-0.rounded:nth-of-type(3) > details.dashboard-setup.onboarding > a.dashboard-section-link",
+        "details.dashboard-setup.onboarding > summary > span.onboarding-state",
+        "tr > td:nth-of-type(2) > span.dashboard-status"
+      ],
+      "fix": "pick the one accent; turn decorative colors gray; keep status colors for status, and red only on the part that is going wrong",
+      "standard": "DC-L01-08",
+      "status": "confirmed"
+    },
+    {
+      "id": "M-MS08-2077",
+      "case": "MS-08",
+      "severity": "info",
+      "basis": "measured",
+      "title": "Colors that look the same but are typed differently (2 groups)",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "#e0f2ea x1 = #dcefe7 x1; #e7effd x1 = #ecebfc x1 = #e7f0f5 x1 (18 opaque colors in all)",
+      "expected": "one value per color, named once and reused (STD-visual-details-26: never a parallel set; preflight 2: count the values that do not come from one system)",
+      "evidence": [
+        "tr > td:nth-of-type(2) > span.dashboard-status",
+        "li:nth-of-type(4) > a.admin-nav-link > svg"
+      ],
+      "fix": "keep the most used value in each group and replace the others with it: the first step towards a palette",
+      "standard": "STD-visual-details-26",
+      "status": "confirmed"
+    },
+    {
+      "id": "M-MS11-5224",
+      "case": "MS-11",
+      "severity": "info",
+      "basis": "measured",
+      "title": "Negative margins in use",
+      "where": [
+        "/admin · 1440x900 · light"
+      ],
+      "measured": "a.sr-only.focus\\:not-sr-only marginTop -1 px",
+      "expected": "usually a workaround that overlaps neighbours",
+      "evidence": [
+        "a.sr-only.focus\\:not-sr-only"
+      ],
+      "fix": null,
+      "standard": null,
+      "status": "confirmed"
+    }
+  ]
+}

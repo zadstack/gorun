@@ -1,0 +1,50 @@
+[
+  {
+    "role": "primary",
+    "foreground": "#ffffff",
+    "background": "#246b73",
+    "contrast": 6.130218880242608
+  },
+  {
+    "role": "primary hover",
+    "foreground": "#ffffff",
+    "background": "#1b555c",
+    "contrast": 8.39817417920886
+  },
+  {
+    "role": "body",
+    "foreground": "#20252b",
+    "background": "#f7f8fa",
+    "contrast": 14.521155194513105
+  },
+  {
+    "role": "secondary",
+    "foreground": "#626a73",
+    "background": "#f7f8fa",
+    "contrast": 5.16185787385194
+  },
+  {
+    "role": "focus on white",
+    "foreground": "#246b73",
+    "background": "#ffffff",
+    "contrast": 6.130218880242608
+  },
+  {
+    "role": "success",
+    "foreground": "#125e44",
+    "background": "#dcefe7",
+    "contrast": 6.473015651970475
+  },
+  {
+    "role": "warning",
+    "foreground": "#7a5406",
+    "background": "#f7eccb",
+    "contrast": 5.750095121205485
+  },
+  {
+    "role": "error",
+    "foreground": "#ae3c35",
+    "background": "#f7dfdc",
+    "contrast": 4.730072900763357
+  }
+]

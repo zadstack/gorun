@@ -12,7 +12,7 @@
   <p class="mb-3 text-ink">{{t "webhooks.secret_help"}}</p>
   <label class="sr-only" for="wh-secret">{{t "webhooks.secret"}}</label>
   <input id="wh-secret" readonly value="{{.Secret}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3 font-mono text-xs">
-  <p class="mt-2"><a class="text-green underline" href="/admin/webhooks/{{.NewID}}">{{t "webhooks.open"}}</a></p>
+  <p class="mt-2"><a class="text-blue underline" href="/admin/webhooks/{{.NewID}}">{{t "webhooks.open"}}</a></p>
 </section>
 {{end}}
 <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_26rem]">
@@ -29,7 +29,7 @@
       {{range .Hooks}}
         <tr data-webhook="{{.ID}}">
           <td class="px-3 py-2 align-top">
-            <a class="font-medium text-green underline" href="/admin/webhooks/{{.ID}}">{{.Name}}</a>
+            <a class="font-medium text-blue underline" href="/admin/webhooks/{{.ID}}">{{.Name}}</a>
             {{if not .Active}}<span class="ms-1 inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px]">{{t "webhooks.disabled"}}</span>{{end}}
             <p class="font-mono text-[11px] text-muted break-all" dir="ltr">{{.URL}}</p>
           </td>
@@ -47,7 +47,7 @@
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <h2 id="wh-new" class="text-base font-bold">{{t "webhooks.new"}}</h2>
     {{template "webhook-fields" .}}
-    <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "webhooks.create"}}</button>
+    <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "webhooks.create"}}</button>
   </form>
 </div>
 </div>

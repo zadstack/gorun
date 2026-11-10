@@ -14,7 +14,7 @@ test('saved skills reach reviewed external execution, references export no crede
  for(const p of profiles)database.prepare('INSERT INTO settings(key,value_json,updated_at) VALUES(?,?,?)').run('connections.profile.'+p.id,JSON.stringify(p),new Date().toISOString());
  const path='/admin/agents/keys/'+key+'/bundle';let boardPath='';
  try {
-  await page.goto(path);await page.locator('details').first().locator('summary').click();
+  await page.goto(path);await page.locator('details',{has:page.locator('[name=skill_name]')}).first().locator('summary').click();
   await page.locator('[name=skill_name]').first().fill('Evidence policy');await page.locator('[name=skill_instructions]').first().fill('Use only the supplied evidence.');await page.locator('[name=resource_name]').first().fill('Editorial reference');await page.locator('[name=resource_text]').first().fill('Keep all output private for human review.');
   for(const p of profiles)await page.locator(`input[name=mcp][value="${p.id}"]`).check();
   await expect(page.locator('[data-agent-bundle]')).toContainText('Last tool discovery passed');await expect(page.locator('[data-agent-bundle]')).toContainText('Configured; not tested');

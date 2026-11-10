@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="{{asset "dashboard-pins.css"}}">
 <link rel="stylesheet" href="{{asset "sidebar-brand.css"}}">
 <link rel="stylesheet" href="{{asset "navigation-sections.css"}}">
+<link rel="stylesheet" href="{{asset "orchestrator-card.css"}}">
 <script defer src="{{asset "dashboard-pins.js"}}"></script>
 <script defer src="{{asset "sidebar-scroll.js"}}"></script>
 <div hidden data-dashboard-pin-config data-csrf="{{csrf}}" data-saving="{{t "dashboardpins.saving"}}" data-error="{{t "dashboardpins.error"}}" data-stale="{{t "dashboardpins.stale"}}" data-saved="{{t "dashboardpins.saved"}}" data-reload="{{t "dashboardpins.reload"}}" data-refreshed="{{t "quickaccess.refreshed"}}" data-add="{{t "dashboardpins.add"}}" data-remove="{{t "quickaccess.remove"}}"></div>
@@ -12,19 +13,25 @@
     {{$brand := sidebarBrand}}<a href="/admin" class="admin-site-brand" data-sidebar-brand title="{{if $brand.Title}}{{$brand.Title}}{{else if $brand.LogoPath}}{{t "core.nav.dashboard"}}{{else}}{{t "core.app.name"}}{{end}}">{{if $brand.LogoPath}}<img src="{{$brand.LogoPath}}" alt="" width="32" height="32" x-init="if ($el.complete &amp;&amp; !$el.naturalWidth) $el.hidden = true" @error="$el.hidden = true">{{end}}<span>{{if $brand.Title}}{{$brand.Title}}{{else if $brand.LogoPath}}{{t "core.nav.dashboard"}}{{else}}{{t "core.app.name"}}{{end}}</span></a>
     <button type="button" class="md:hidden p-1 rounded border border-transparent hover:border-line" @click="toggleSidebar()" aria-label="{{t "core.action.close"}}">{{icon "x"}}</button>
   </div>
+  <div data-orchestrator-card>{{if can "workagents.read"}}<div hx-get="/admin/workagents/orchestrator-card" hx-trigger="load" hx-swap="innerHTML"></div>{{end}}</div>
   <nav data-admin-navigation class="flex-1 overflow-y-auto p-2">
-    <ul class="space-y-0.5" data-navigation-sections>
-    {{range navigationSections}}
-      <li data-navigation-section="{{.Key}}">
-        <a href="{{.Href}}" class="admin-nav-link {{if .Active}}is-active{{end}}" {{if .Active}}aria-current="true"{{end}}>
-          {{icon .Icon}}<span>{{t .LabelKey}}</span>
-        </a>
-      </li>
-    {{end}}
-    </ul>
+    {{template "partials/navigation-section-list" .}}
+    {{template "partials/workspace-sidebar-tools" .}}
     <div data-sidebar-quick-access>{{template "partials/quick-access" .}}</div>
   </nav>
   <div class="admin-sidebar-footer"><a href="/admin/navigation" class="admin-nav-link {{if active "/admin/navigation"}}is-active{{end}}" {{if active "/admin/navigation"}}aria-current="page"{{end}}>{{icon "sliders-horizontal"}}<span>{{t "auth.navigation.title"}}</span></a></div>
 </aside>
 <div x-show="sidebarOpen" x-cloak class="[&[x-cloak]]:hidden fixed inset-0 z-30 bg-[rgba(20,24,22,0.2)] md:hidden" @click="toggleSidebar()"></div>
+{{end}}
+
+{{define "partials/navigation-section-list"}}
+<ul class="space-y-0.5" data-navigation-sections>
+{{range navigationSections}}
+  <li data-navigation-section="{{.Key}}">
+    <a href="{{.Href}}" class="admin-nav-link {{if .Active}}is-active{{end}}" {{if .Active}}aria-current="true"{{end}}>
+      {{icon .Icon}}<span>{{t .LabelKey}}</span>
+    </a>
+  </li>
+{{end}}
+</ul>
 {{end}}

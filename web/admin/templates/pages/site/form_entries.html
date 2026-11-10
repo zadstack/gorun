@@ -7,13 +7,13 @@
     <h1 class="text-[22px] font-bold"><bdi>{{.Form.Title}}</bdi></h1>
     <p class="text-muted">{{t (printf "site.forms.source.%s" .Form.Source)}} · <span class="font-mono" dir="ltr">{{.Form.Slug}}</span>{{if not .Form.Open}} · {{t "site.forms.state.closed"}}{{end}}</p>
   </div>
-  <a href="{{.CSVLink}}" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "download" "w-4 h-4"}}{{t "site.forms.export"}}</a>
+  <a href="{{.CSVLink}}" class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "download" "w-4 h-4"}}{{t "site.forms.export"}}</a>
 </div>
 
 <form method="get" class="mb-4 flex flex-wrap items-end gap-3 rounded border border-line bg-panel p-3" aria-label="{{t "site.forms.filter.title"}}">
   <div>
     <label for="f-status" class="block text-xs text-muted mb-1">{{t "site.forms.filter.status"}}</label>
-    <select id="f-status" name="status" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+    <select id="f-status" name="status" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
       <option value="">{{t "site.forms.filter.all"}}</option>
       <option value="new" {{if eq .Filter.Status "new"}}selected{{end}}>{{t "site.submissions.status.new"}}</option>
       <option value="read" {{if eq .Filter.Status "read"}}selected{{end}}>{{t "site.submissions.status.read"}}</option>
@@ -22,18 +22,18 @@
   </div>
   <div>
     <label for="f-from" class="block text-xs text-muted mb-1">{{t "site.forms.filter.from"}}</label>
-    <input id="f-from" name="from" type="date" dir="ltr" value="{{.Filter.From}}" class="h-9 rounded border border-line bg-panel px-2 font-mono focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+    <input id="f-from" name="from" type="date" dir="ltr" value="{{.Filter.From}}" class="h-9 rounded border border-line bg-panel px-2 font-mono focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
   </div>
   <div>
     <label for="f-to" class="block text-xs text-muted mb-1">{{t "site.forms.filter.to"}}</label>
-    <input id="f-to" name="to" type="date" dir="ltr" value="{{.Filter.To}}" class="h-9 rounded border border-line bg-panel px-2 font-mono focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+    <input id="f-to" name="to" type="date" dir="ltr" value="{{.Filter.To}}" class="h-9 rounded border border-line bg-panel px-2 font-mono focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
   </div>
   <div class="grow">
     <label for="f-q" class="block text-xs text-muted mb-1">{{t "site.forms.filter.q"}}</label>
-    <input id="f-q" name="q" type="search" dir="auto" maxlength="200" value="{{.Filter.Q}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:ring-[3px] focus:ring-green-soft">
+    <input id="f-q" name="q" type="search" dir="auto" maxlength="200" value="{{.Filter.Q}}" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
   </div>
-  <button type="submit" class="h-9 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.forms.filter.apply"}}</button>
-  <a href="/admin/forms/{{.Form.Slug}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.forms.filter.clear"}}</a>
+  <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.forms.filter.apply"}}</button>
+  <a href="/admin/forms/{{.Form.Slug}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.forms.filter.clear"}}</a>
 </form>
 
 {{if .Rows}}
@@ -49,7 +49,7 @@
     <tbody>
       {{range $row := .Rows}}
       <tr class="border-t border-line hover:bg-panel-2">
-        <td class="px-3 py-2 whitespace-nowrap"><a href="/admin/forms/{{$.Form.Slug}}/entries/{{$row.ID}}" class="font-mono text-blue hover:text-blue-hover underline underline-offset-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft"><time datetime="{{$row.CreatedAt}}">{{$row.CreatedAt}}</time></a></td>
+        <td class="px-3 py-2 whitespace-nowrap"><a href="/admin/forms/{{$.Form.Slug}}/entries/{{$row.ID}}" class="font-mono text-blue hover:text-blue-hover underline underline-offset-2 focus:outline-none focus:ring-[3px] focus:ring-blue-soft"><time datetime="{{$row.CreatedAt}}">{{$row.CreatedAt}}</time></a></td>
         <td class="px-3 py-2 whitespace-nowrap">{{if eq $row.Status "new"}}<span class="inline-flex items-center gap-2 font-bold"><span class="h-2 w-2 rounded-full bg-green" aria-hidden="true"></span>{{t "site.submissions.status.new"}}</span>{{else if eq $row.Status "spam"}}<span class="rounded-chip border border-red bg-red-soft text-red px-2 text-xs">{{t "site.submissions.status.spam"}}</span>{{else}}<span class="text-muted">{{t "site.submissions.status.read"}}</span>{{end}}</td>
         {{range $i, $c := $row.Cells}}<td data-field="{{(index $.Columns $i).Name}}" class="px-3 py-2 max-w-xs truncate" dir="auto"><bdi>{{$c}}</bdi></td>{{end}}
       </tr>
@@ -72,7 +72,7 @@
 {{end}}
 
 <details class="mt-5 rounded border border-line bg-panel"{{if .Error}} open{{end}}>
-  <summary class="px-4 py-3 cursor-pointer font-bold focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">{{t "site.forms.fields.title"}}</summary>
+  <summary class="px-4 py-3 cursor-pointer font-bold focus:outline-none focus:ring-[3px] focus:ring-blue-soft rounded">{{t "site.forms.fields.title"}}</summary>
   <div class="px-4 pb-4">
     <p class="text-xs text-muted mb-3">{{t "site.forms.fields.help"}}</p>
     {{with .Error}}<p role="alert" class="mb-3 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</p>{{end}}
@@ -88,25 +88,25 @@
         <td class="py-2 pe-3">
           <form method="post" action="/admin/forms/{{$.Form.Slug}}/fields/{{$f.Name}}/rename" class="flex gap-1">
             <input type="hidden" name="_csrf" value="{{csrf}}">
-            <input name="label" value="{{$f.DisplayLabel}}" maxlength="120" dir="auto" aria-label="{{t "site.forms.fields.label"}}" class="h-8 w-40 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft">
-            <button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.forms.fields.rename"}}</button>
+            <input name="label" value="{{$f.DisplayLabel}}" maxlength="120" dir="auto" aria-label="{{t "site.forms.fields.label"}}" class="h-8 w-40 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
+            <button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.forms.fields.rename"}}</button>
           </form>
         </td>
         <td class="py-2 pe-3 text-muted">{{if eq $f.State "pinned"}}{{t "site.forms.fields.pinned"}} · {{t (printf "site.forms.type.%s" $f.Type)}}{{else}}{{t "site.forms.fields.discovered"}}{{end}}{{if $f.Hidden}} · {{t "site.forms.fields.hidden"}}{{end}}</td>
         <td class="py-2">
           <div class="flex flex-wrap gap-1">
-            <form method="post" action="/admin/forms/{{$.Form.Slug}}/fields/{{$f.Name}}/{{if $f.Hidden}}show{{else}}hide{{end}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{if $f.Hidden}}{{t "site.forms.fields.show"}}{{else}}{{t "site.forms.fields.hide"}}{{end}}</button></form>
-            <form method="post" action="/admin/forms/{{$.Form.Slug}}/fields/{{$f.Name}}/up"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.forms.fields.up"}}</button></form>
-            <form method="post" action="/admin/forms/{{$.Form.Slug}}/fields/{{$f.Name}}/down"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.forms.fields.down"}}</button></form>
+            <form method="post" action="/admin/forms/{{$.Form.Slug}}/fields/{{$f.Name}}/{{if $f.Hidden}}show{{else}}hide{{end}}"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{if $f.Hidden}}{{t "site.forms.fields.show"}}{{else}}{{t "site.forms.fields.hide"}}{{end}}</button></form>
+            <form method="post" action="/admin/forms/{{$.Form.Slug}}/fields/{{$f.Name}}/up"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.forms.fields.up"}}</button></form>
+            <form method="post" action="/admin/forms/{{$.Form.Slug}}/fields/{{$f.Name}}/down"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.forms.fields.down"}}</button></form>
           </div>
           {{if and (ne $f.State "pinned") (ne $.Form.Source "builder")}}
           <form method="post" action="/admin/forms/{{$.Form.Slug}}/fields/{{$f.Name}}/pin" class="mt-2 flex flex-wrap items-center gap-2">
             <input type="hidden" name="_csrf" value="{{csrf}}">
-            <select name="type" aria-label="{{t "site.forms.fields.type"}}" class="h-8 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{range $.Types}}{{if ne . "file"}}<option value="{{.}}">{{t (printf "site.forms.type.%s" .)}}</option>{{end}}{{end}}</select>
-            <input name="label" value="{{$f.Label}}" maxlength="120" dir="auto" aria-label="{{t "site.forms.fields.label"}}" class="h-8 w-32 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft">
-            <textarea name="choices" rows="3" dir="auto" aria-label="{{t "site.forms.fields.choices"}}" placeholder="{{t "site.forms.fields.choices"}}" class="w-full rounded border border-line bg-panel px-2 py-1 focus:outline-none focus:ring-[3px] focus:ring-green-soft"></textarea>
+            <select name="type" aria-label="{{t "site.forms.fields.type"}}" class="h-8 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{range $.Types}}{{if ne . "file"}}<option value="{{.}}">{{t (printf "site.forms.type.%s" .)}}</option>{{end}}{{end}}</select>
+            <input name="label" value="{{$f.Label}}" maxlength="120" dir="auto" aria-label="{{t "site.forms.fields.label"}}" class="h-8 w-32 rounded border border-line bg-panel px-2 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
+            <textarea name="choices" rows="3" dir="auto" aria-label="{{t "site.forms.fields.choices"}}" placeholder="{{t "site.forms.fields.choices"}}" class="w-full rounded border border-line bg-panel px-2 py-1 focus:outline-none focus:ring-[3px] focus:ring-blue-soft"></textarea>
             <label class="inline-flex items-center gap-1"><input type="checkbox" name="required" value="1" class="h-4 w-4 accent-[var(--green)]">{{t "site.forms.fields.required"}}</label>
-            <button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.forms.fields.pin"}}</button>
+            <button type="submit" class="h-8 px-2 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.forms.fields.pin"}}</button>
             <p class="w-full text-xs text-muted">{{t "site.forms.fields.choices_help"}} {{t "site.forms.fields.required_warning"}}</p>
           </form>
           {{end}}
@@ -119,5 +119,5 @@
     <p class="mt-3 text-xs text-muted">{{if eq .Form.Source "builder"}}{{t "site.forms.fields.builder_help"}}{{else}}{{t "site.forms.fields.pin_help"}}{{end}}</p>
   </div>
 </details>
-<p class="mt-4"><a href="/admin/forms/{{.Form.Slug}}/delete" class="inline-flex h-9 px-3 items-center gap-1 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "trash-2" "w-4 h-4"}}{{t "site.forms.delete_form"}}</a></p>
+<p class="mt-4"><a href="/admin/forms/{{.Form.Slug}}/delete" class="inline-flex h-9 px-3 items-center gap-1 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "trash-2" "w-4 h-4"}}{{t "site.forms.delete_form"}}</a></p>
 {{end}}

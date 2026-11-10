@@ -65,6 +65,18 @@ and failed native executions. Raw source provider credentials/configuration
 must remain encrypted and must not be copied into profile prompts, inputs,
 artifacts or API-visible descriptions.
 
+## Orchestrator sidebar card
+
+`GET /admin/workagents/orchestrator-card` (requires `workagents.read`,
+`Cache-Control: no-store`) serves the `partials/orchestrator_card` htmx swap
+for the compact contact card the admin sidebar loads on `hx-trigger="load"`.
+It answers owner-scoped counters only — pending `workagents_approvals`, pending
+MCP tool approvals requested by the owner (plain SQL as in internal/admin,
+skipped when the MCP tables do not exist), live runs, runs finished since the
+UTC day start — plus `running`/`idle` status. The viewer's admin shell emits
+the swap container only when the session can `workagents.read`; message bodies
+and prompt text never leave the module.
+
 ## Verification
 
 `go test -race ./internal/workagents` exercises real SQLite, the job queue,
@@ -120,3 +132,18 @@ before sending any selected-page context. Review output cannot create drafts,
 apply edits or publish. See [Agent tasks](../../docs/AGENT_TASKS.md) for API,
 setup, cancellation, retry and verification details, including the copy-only
 scope and unsupported Reason Network product integration.
+
+## Agent channels
+
+`internal/workagents/channels.go` stores owner-scoped shared threads for the
+account's agents and humans. The service does not enqueue jobs or call any
+provider: channels are purely synchronous read/append with per-channel
+membership (`user` = the owner user; `agent_key` = one of that owner's live
+agent keys — the same-owner constraint is checked against `auth.KeyService`
+in code, never in a foreign-key). Caps: 20 open channels per owner
+(`ErrChannelBusy` → 429) and 12 members per channel, messages bounded to
+8192 bytes. A hand-off is advisory metadata (`{"type":"handoff",…}`) in the
+message's `meta_json` and is documented as side-effect free. The admin
+screen (list + thread + close forms), the `/api/v1/workagents/channels`
+operations and the `workagents.channels` service bridge (`Channels` for MCP)
+all share these rules; see [Agent channels](../../docs/AGENT-CHANNELS.md).

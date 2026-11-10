@@ -1,0 +1,24 @@
+/* Orchestrator contact card at the top of the admin sidebar (light, compact,
+   RTL-friendly via logical properties; hover is the only state change). */
+.orchestrator-card{display:flex;align-items:flex-start;gap:.5rem;min-width:0;margin-block-end:.5rem;padding:.5rem 0;border-block-end:1px solid var(--line);border-radius:var(--radius);background:transparent;color:var(--ink);text-decoration:none}
+.orchestrator-card:hover{background:var(--panel-2)}
+.orchestrator-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:var(--radius)}
+.orchestrator-card-avatar{position:relative;display:grid;place-items:center;flex-shrink:0;width:2rem;height:2rem;border-radius:50%;background:var(--green-soft);color:var(--green-hover)}
+.orchestrator-card .orchestrator-card-icon{width:1.05rem;height:1.05rem}
+.orchestrator-card-dot{position:absolute;inset-block-end:0;inset-inline-end:0;width:10px;height:10px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 2px var(--panel)}
+.orchestrator-card.is-running .orchestrator-card-dot{background:var(--green)}
+.orchestrator-card-lines{display:flex;flex-direction:column;gap:.125rem;min-width:0;flex:1}
+.orchestrator-card-head{display:flex;align-items:center;gap:.375rem;min-width:0}
+.orchestrator-card-name{font-size:.8125rem;font-weight:700;line-height:1.3}
+.orchestrator-card-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.125rem;min-height:1.125rem;padding:0 .3rem;border-radius:999px;background:var(--amber-soft);color:var(--amber-text);font-size:.6875rem;font-weight:700}
+.orchestrator-card-activity{font-size:.6875rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.orchestrator-card-tag{font-size:.6875rem;color:var(--muted)}
+.orchestrator-card.is-running .orchestrator-card-tag{color:var(--green-hover);font-weight:650}
+.orchestrator-card.is-unset{color:var(--muted)}
+.orchestrator-card.is-unset .orchestrator-card-avatar{background:var(--panel-2);color:var(--muted);border:1px dashed var(--line-strong)}
+.orchestrator-card.is-unset .orchestrator-card-name{color:var(--muted)}
+.orchestrator-card-pills{display:flex;flex-wrap:wrap;gap:.375rem;margin:0 0 .5rem;padding:0}
+.orchestrator-card-pill{display:inline-flex;align-items:center;gap:.25rem;padding:.2rem .5rem;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);color:var(--muted);font-size:.6875rem}
+.orchestrator-card-pill b{color:var(--ink);font-weight:700}
+@media(max-width:767px){.orchestrator-card,.orchestrator-card-pill{min-height:44px}.orchestrator-card{align-items:center}}
+@media(forced-colors:active){.orchestrator-card-dot,.orchestrator-card-badge,.orchestrator-card-pill{border:1px solid CanvasText;box-shadow:none}}

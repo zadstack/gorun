@@ -1,0 +1,55 @@
+{
+  "url": "http://127.0.0.1:18219",
+  "routes": [
+    "/admin"
+  ],
+  "viewports": [
+    "390x844",
+    "768x900",
+    "1440x900"
+  ],
+  "themes": [
+    "light"
+  ],
+  "tasks": [
+    "scroll-walk",
+    "focus-walk",
+    "hover-and-press",
+    "states-and-data",
+    "motion",
+    "stress-text",
+    "reduced-motion",
+    "forced-colors",
+    "console-and-network",
+    "letter-reveals",
+    "text-pixels",
+    "floating-bars",
+    "toggles"
+  ],
+  "system": null,
+  "made": "2026-11-09",
+  "cells": [
+    "/admin|390x844|light",
+    "/admin|768x900|light",
+    "/admin|1440x900|light"
+  ],
+  "task_cells": [
+    "task:/admin|scroll-walk",
+    "task:/admin|focus-walk",
+    "task:/admin|hover-and-press",
+    "task:/admin|states-and-data",
+    "task:/admin|motion",
+    "task:/admin|stress-text",
+    "task:/admin|reduced-motion",
+    "task:/admin|forced-colors",
+    "task:/admin|console-and-network",
+    "task:/admin|letter-reveals",
+    "task:/admin|text-pixels",
+    "task:/admin|floating-bars",
+    "task:/admin|toggles"
+  ],
+  "notes": [
+    "cells: run probe.js, then screenshot the top and every scroll step; tasks: things a static capture cannot show",
+    "skip a cell only with a reason (mark ... skipped --why); the report lists every skip"
+  ]
+}

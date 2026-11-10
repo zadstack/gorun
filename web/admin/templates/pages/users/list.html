@@ -6,7 +6,7 @@
 <div class="admin-contained admin-user-directory">
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <h1 class="text-[22px] font-bold">{{t "admin.users.title"}}</h1>
-  <a href="/admin/users/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "user-plus"}}<span>{{t "admin.users.new"}}</span></a>
+  <a href="/admin/users/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "user-plus"}}<span>{{t "admin.users.new"}}</span></a>
 </div>
 <p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.users_boundary"}}</p>
 <nav class="flex flex-wrap gap-2 mb-3" aria-label="{{t "admin.users.title"}}"><a href="/admin/users" class="border border-line rounded px-3 py-2" {{if eq .Audience ""}}aria-current="page"{{end}}>{{t "operator.users_all"}}</a><a href="/admin/users?audience=team" class="border border-line rounded px-3 py-2" {{if eq .Audience "team"}}aria-current="page"{{end}}>{{t "operator.users_team"}}</a><a href="/admin/users?audience=customers" class="border border-line rounded px-3 py-2" {{if eq .Audience "customers"}}aria-current="page"{{end}}>{{t "operator.users_customers"}}</a></nav><p class="text-sm text-muted mb-3">{{t "operator.users_audience_note"}}</p>
@@ -15,9 +15,9 @@
   <input type="hidden" name="audience" value="{{.Audience}}">
   <label class="sr-only" for="users-q">{{t "admin.users.search"}}</label>
   <input id="users-q" name="q" type="search" value="{{.Query}}" placeholder="{{t "admin.users.search"}}"
-         class="h-9 w-64 max-w-full rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+         class="h-9 w-64 max-w-full rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   <label class="sr-only" for="users-role">{{t "admin.users.role"}}</label>
-  <select id="users-role" name="role" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+  <select id="users-role" name="role" class="h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     <option value="">{{t "admin.users.all_roles"}}</option>
     {{range .Roles}}<option value="{{.Slug}}" {{if eq .Slug $.Role}}selected{{end}}>{{.Name}}</option>{{end}}
   </select>

@@ -53,6 +53,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | [AGENT-BUNDLES.md](AGENT-BUNDLES.md) | Inline skills and version-pinned MCP references on agent keys |
 | [AGENT-ROLE-TEMPLATES.md](AGENT-ROLE-TEMPLATES.md) | Inspectable bilingual role templates; a role grants no permissions |
 | [AGENT-RECIPES.md](AGENT-RECIPES.md) | Editable agent recipes such as the Updates Researcher, from setup to reviewed result |
+| [AGENT-CHANNELS.md](AGENT-CHANNELS.md) | Owner-scoped shared channel threads: agents and humans post messages and advisory hand-offs |
 | [AGENT_TASKS.md](AGENT_TASKS.md) | Consent-bound, read-only page design reviews by an agent |
 | [IDENTITY-AI.md](IDENTITY-AI.md) | Optional AI identity suggestions written to the identity draft after review |
 | [AGENT-MODELS.md](AGENT-MODELS.md) | How agent models connect |

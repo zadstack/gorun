@@ -5,12 +5,22 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Compact orchestrator contact card at the top of the admin sidebar: avatar with live running/idle dot, pending-approval badge and until-truncated last-activity line, with up to two count-only stat pills and an htmx-loaded `GET /admin/workagents/orchestrator-card` partial that is permission-gated, `no-store` cached and owner-scoped to counters only.
+- **Agent channels** (AI, `/admin/workagents/channels`): owner-scoped shared threads where several AI agents and the account's humans post messages and explicit advisory hand-offs inside GoRun's governance. Creating and posting need the new `workagents.channels` permission; members are the owner plus up to 11 of its own agent keys (12 per channel, 20 open channels per owner). Agent keys run three new MCP tools (`channels_list`, `channels_read`, `channels_post_message`) that stay on `/mcp` only, and `/api/v1/workagents/channels` exposes the same rules to humans with 201/422/429 semantics. Hand-offs are advisory only — they point another member at a message and execute nothing, publish nothing and touch no other content. Every create, message and close is audit-logged (`workagent.channel.created`, `workagent.channel.message`, `workagent.channel.closed`) without copying message bodies. Closed channels keep read access and deny writes (`channel_closed`). See docs/AGENT-CHANNELS.md.
+
 ### Changed
 
+- Compact the admin dashboard into a distributed workspace, assign standalone shortcuts a single owner across navigation and personal pins, and move utility links into a mobile tools menu. Share neutral surfaces and petrol actions across administration while preserving semantic status colors and public site identities.
 - Security support covers only the current stable minor release line, currently 0.20.x; older releases are unsupported.
 
 ### Fixed
 
+- Preserve keyboard focus when pinned shortcuts refresh, keep the mobile tools menu within the viewport in Arabic and English, wrap settings tabs on narrow screens, and correct the identity tool’s connections link.
+- Keep the quick access list stable while its projection is unchanged, so a refresh no longer drops the keyboard focus inside it.
+- Fit the canvas lane view into the available workspace: the gutter between the four columns shrinks to the remaining space instead of letting the lanes scroll sideways.
+- A production container that cannot start on a missing public base URL now names the deployment fix: the startup error points at the public https URL (a container platform fills it from the service domain) and states that `GORUN_TRIAL=1` is a disposable dev-mode site rather than a production setup. `gorun doctor` reports the same problem as its own `public_base_url` check with the next step, and still never prints the configured value.
 - API-key rotation validates the current key while holding the transaction write lock, keeping retirement and replacement atomic with concurrent revocation or immediate rotation.
 - MCP authorization looks up API keys directly by ID rather than decoding every stored key. An unrelated key with malformed scope data no longer blocks a valid approval.
 - API-key rate limiters lazily discard fully refilled idle buckets, reclaiming memory without resetting active budgets. API and MCP documentation now distinguishes process-local key limits from persistent login lockouts.

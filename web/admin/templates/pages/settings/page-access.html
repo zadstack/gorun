@@ -16,6 +16,6 @@
 <p class="text-muted text-sm">{{if .PasswordSet}}{{if .AR}}توجد كلمة مرور محفوظة. اترك الحقل فارغًا للاحتفاظ بها.{{else}}A password is saved. Leave the field blank to keep it.{{end}}{{else}}{{if .AR}}لم تُحفظ كلمة مرور بعد.{{else}}No password is saved.{{end}}{{end}} {{if .AR}}تغيير الإعدادات يلغي فتح الصفحة السابق.{{else}}Saving invalidates previous page unlocks.{{end}}</p>
 <label class="flex items-center gap-2 min-h-[44px] cursor-pointer"><input type="checkbox" name="clear_password" value="1" class="w-auto">{{if .AR}}مسح كلمة المرور المحفوظة{{else}}Clear the saved password{{end}}</label>
 </div><p class="text-muted text-sm">{{if .AR}}الحماية تخص محتوى الصفحة. روابط ملفات الوسائط العامة أو المشتركة تبقى عامة؛ لا تستخدمها لملفات سرية.{{else}}This protects the page content. Shared or public media URLs remain public; do not use them for confidential files.{{end}}</p>
-<button class="min-h-[44px] rounded-lg border border-green bg-green text-white px-4 py-2">{{if .AR}}حفظ الإعدادات{{else}}Save availability{{end}}</button>
+<button class="min-h-[44px] rounded-lg border border-blue bg-blue text-white px-4 py-2">{{if .AR}}حفظ الإعدادات{{else}}Save availability{{end}}</button>
 </form>{{end}}</section>
 {{end}}

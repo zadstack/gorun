@@ -1,11 +1,11 @@
 {{define "title"}}{{t "agentbundles.title"}}{{end}}
 {{define "content"}}
 <div class="max-w-5xl mx-auto space-y-4" data-agent-bundle>
-<header><a href="/admin/agents/keys" class="text-green underline">{{t "agentbundles.back"}}</a><h1 class="text-2xl font-bold mt-2">{{t "agentbundles.title"}} · {{.Name}}</h1><p class="text-muted mt-2">{{t "agentbundles.intro"}}</p></header>
+<header><a href="/admin/agents/keys" class="text-blue underline">{{t "agentbundles.back"}}</a><h1 class="text-2xl font-bold mt-2">{{t "agentbundles.title"}} · {{.Name}}</h1><p class="text-muted mt-2">{{t "agentbundles.intro"}}</p></header>
 {{if .RoleDraft}}<section role="status" class="border border-amber rounded p-4"><h2 class="font-bold">{{t "agentroles.draft"}} · {{.RoleDraft}}</h2><p>{{t "agentroles.replace"}}</p><a href="/admin/agents/keys?agent_model={{.ID}}" class="underline inline-flex min-h-11 items-center">{{t "agentroles.model"}}</a></section>{{end}}
 {{if .Error}}<p role="alert" class="border border-red rounded p-3 text-red">{{t .Error}}</p>{{end}}
 <form method="post" action="/admin/agents/keys/{{.ID}}/bundle" class="space-y-4">
-<a href="/admin/agents/keys/{{.ID}}/tools" class="inline-flex min-h-11 items-center text-green underline">{{t "managedtools.title"}}</a><p class="text-sm text-muted">{{t "managedtools.bundle_edit"}}</p>
+<a href="/admin/agents/keys/{{.ID}}/tools" class="inline-flex min-h-11 items-center text-blue underline">{{t "managedtools.title"}}</a><p class="text-sm text-muted">{{t "managedtools.bundle_edit"}}</p>
 <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="version" value="{{.Bundle.Version}}">
 <div class="grid gap-4 lg:grid-cols-2">
 <section class="rounded border border-line bg-panel p-4" aria-labelledby="bundle-skills"><h2 id="bundle-skills" class="font-bold text-lg">{{t "agentbundles.skills"}}</h2><p class="text-muted text-sm my-2">{{t "agentbundles.skill_help"}}</p>
@@ -18,8 +18,8 @@
 <section class="rounded border border-line bg-panel p-4" aria-labelledby="bundle-mcp"><h2 id="bundle-mcp" class="font-bold text-lg">{{t "agentbundles.mcp"}}</h2><p class="text-muted text-sm my-2">{{t "agentbundles.mcp_help"}}</p>
 {{if .Missing}}<p role="alert" class="text-amber-text my-3">{{t "agentbundles.missing"}}</p>{{end}}
 {{range .Connections}}<label class="block border border-line rounded p-3 mb-2"><span class="flex gap-2 items-center"><input type="checkbox" name="mcp" value="{{.ID}}" {{if .Selected}}checked{{end}}><strong>{{.Name}}</strong></span><span class="block text-xs text-muted break-all mt-2" dir="ltr">{{.Endpoint}}</span><span class="block text-sm mt-2">{{if eq .Status "pass"}}{{t "agentbundles.pass"}}{{else if eq .Status "fail"}}{{t "agentbundles.fail"}}{{else if eq .Status "changed"}}{{t "agentbundles.changed"}}{{else}}{{t "agentbundles.configured"}}{{end}}</span>{{if .TestedAt}}<time class="block text-xs text-muted" dir="ltr">{{.TestedAt}}</time>{{end}}<input type="hidden" name="version_{{.ID}}" value="{{.Version}}"></label>{{else}}<p class="text-muted my-3">{{t "agentbundles.no_mcp"}}</p>{{end}}
-<a href="/admin/settings/connections" class="inline-flex min-h-11 items-center text-green underline">{{t "agentbundles.connections"}}</a><p class="text-muted text-sm mt-3">{{t "agentbundles.external"}}</p>
+<a href="/admin/settings/connections" class="inline-flex min-h-11 items-center text-blue underline">{{t "agentbundles.connections"}}</a><p class="text-muted text-sm mt-3">{{t "agentbundles.external"}}</p>
 </section></div>
-<section class="border border-line rounded bg-panel p-4"><label class="flex items-start gap-2"><input type="checkbox" name="reviewed" value="1" required class="mt-1"><span>{{t "agentbundles.review"}}</span></label><div class="flex flex-wrap gap-3 items-center mt-3"><button class="rounded bg-green hover:bg-green-hover text-white px-4 min-h-11" type="submit">{{t "agentbundles.save"}}</button><a href="/admin/agents/keys/{{.ID}}/bundle/export" class="inline-flex min-h-11 items-center text-green underline">{{t "agentbundles.export"}}</a><a href="/admin/agents/keys/{{.ID}}/bundle" class="inline-flex min-h-11 items-center text-muted underline">{{t "agentbundles.reload"}}</a></div></section>
+<section class="border border-line rounded bg-panel p-4"><label class="flex items-start gap-2"><input type="checkbox" name="reviewed" value="1" required class="mt-1"><span>{{t "agentbundles.review"}}</span></label><div class="flex flex-wrap gap-3 items-center mt-3"><button class="rounded bg-blue hover:bg-blue-hover text-white px-4 min-h-11" type="submit">{{t "agentbundles.save"}}</button><a href="/admin/agents/keys/{{.ID}}/bundle/export" class="inline-flex min-h-11 items-center text-blue underline">{{t "agentbundles.export"}}</a><a href="/admin/agents/keys/{{.ID}}/bundle" class="inline-flex min-h-11 items-center text-muted underline">{{t "agentbundles.reload"}}</a></div></section>
 </form></div>
 {{end}}

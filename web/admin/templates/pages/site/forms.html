@@ -21,7 +21,7 @@
     <tbody>
       {{range .Rows}}
       <tr class="border-t border-line">
-        <td class="px-3 py-2"><a href="{{.Href}}" class="font-medium text-blue hover:text-blue-hover underline underline-offset-2 focus:outline-none focus:ring-[3px] focus:ring-green-soft"><bdi>{{.Title}}</bdi></a></td>
+        <td class="px-3 py-2"><a href="{{.Href}}" class="font-medium text-blue hover:text-blue-hover underline underline-offset-2 focus:outline-none focus:ring-[3px] focus:ring-blue-soft"><bdi>{{.Title}}</bdi></a></td>
         <td class="px-3 py-2 text-muted">{{t (printf "site.forms.source.%s" .Source)}}</td>
         <td class="px-3 py-2 font-mono" data-entries="{{.Entries}}">{{.Entries}}</td>
         <td class="px-3 py-2 font-mono {{if .New}}font-bold{{end}}" data-new="{{.New}}">{{.New}}</td>

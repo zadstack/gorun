@@ -13,10 +13,12 @@ import (
 
 const recentAuditCount = 10
 
-// dashboardPage is the data of pages/dashboard.html. It matches the auth
-// placeholder handler's data (Widgets only) so both routes can render the
-// template until the placeholder is removed.
-type dashboardPage struct{ Widgets []template.HTML }
+// dashboardPage supplies the widgets and whether their order is personalized.
+// The auth-only test placeholder renders the empty-widget branch.
+type dashboardPage struct {
+	Widgets        []template.HTML
+	PersonalLayout bool
+}
 
 func (h *handlers) dashboard(w http.ResponseWriter, r *http.Request) {
 	var page dashboardPage
@@ -25,6 +27,7 @@ func (h *handlers) dashboard(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
+	page.PersonalLayout = len(state.Order) > 0
 	widgets, err := h.dashboardRendered(r, false)
 	if err != nil {
 		h.serverError(w, r, err)

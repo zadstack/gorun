@@ -5,8 +5,8 @@
 <h1 class="text-[22px] font-bold mb-3">{{t "core.action.search"}}</h1>
 <form method="get" action="/admin/search" role="search" class="flex gap-2 mb-4 max-w-xl">
   <label class="sr-only" for="search-page-q">{{t "core.action.search"}}</label>
-  <input id="search-page-q" name="q" type="search" value="{{.Query}}" class="h-9 min-w-0 flex-1 rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
-  <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.search"}}</button>
+  <input id="search-page-q" name="q" type="search" value="{{.Query}}" class="h-9 min-w-0 flex-1 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
+  <button type="submit" class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.search"}}</button>
 </form>
 {{end}}
 <div id="search-results" class="{{if .Full}}rounded border border-line bg-panel max-w-xl{{end}}" data-search-results>

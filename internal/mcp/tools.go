@@ -6,6 +6,7 @@ import (
 	"github.com/zadstack/gorun/internal/media"
 	"github.com/zadstack/gorun/internal/taxonomy"
 	"github.com/zadstack/gorun/internal/theme"
+	"github.com/zadstack/gorun/internal/workagents"
 )
 
 // Scopes used by the core tools.
@@ -78,6 +79,9 @@ func registerCoreTools(d *kernel.Deps, s *server) {
 	}
 	if svc, ok := kernel.Get[theme.Service](d, kernel.ServiceTheme); ok {
 		tools = append(tools, templateTools(svc)...)
+	}
+	if ch, ok := kernel.Get[*workagents.Channels](d, "workagents.channels"); ok {
+		tools = append(tools, channelTools(ch)...)
 	}
 	tools = append(tools, logTools(d), settingsTool(d))
 	tools = append(tools, migrationTools(d, s)...)

@@ -46,12 +46,12 @@ jobs:
         run: python3 tools/readme-diagrams/generate.py --check
 
   race:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       # Every shard reports, so one failure does not hide another.
       fail-fast: false
       matrix:
-        shard: ['rest 1 3', 'rest 2 3', 'rest 3 3', 'admin 1 2', 'admin 2 2']
+        shard: ['rest 1 3', 'rest 2 3', 'rest 3 3', 'admin 1 2', 'admin 2 2', 'wpmigrate 1 2', 'wpmigrate 2 2']
     name: race (${{ matrix.shard }})
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -64,8 +64,9 @@ jobs:
         # Keep production Argon2 and every package; no coverage instrumentation
         # in the race run. CGO stays enabled for the race detector. The shards
         # together cover every package: three share the packages, slowest
-        # spread first, and two share the internal/admin tests, which alone
-        # take 15 minutes under race.
+        # spread first, two share the internal/admin tests, which alone take
+        # 15 minutes under race, and two share the internal/wpmigrate tests,
+        # which alone took 10 to 12 minutes and held up a whole shard.
         run: sh tools/race-shard.sh ${{ matrix.shard }}
 
   coverage:
@@ -115,7 +116,7 @@ jobs:
           done
 
   browser:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0

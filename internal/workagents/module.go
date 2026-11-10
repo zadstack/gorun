@@ -48,6 +48,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 	d.Perms.Declare("workagents.manage", map[string]string{"en": "Manage agent workflows", "ar": "إدارة الإيجنتس والفلوهات"})
 	d.Perms.Declare("workagents.read", map[string]string{"en": "Read owned agents", "ar": "قراءة الإيجنتس المملوكة"})
 	d.Perms.Declare("workagents.run", map[string]string{"en": "Run owned agents", "ar": "تشغيل الإيجنتس المملوكة"})
+	d.Perms.Declare("workagents.channels", map[string]string{"en": "Agent channels", "ar": "قنوات الوكلاء"})
 	d.Admin.AddNav(kernel.NavItem{ID: "workagents.workspace", LabelKey: "workagents.title", Icon: "bot", Href: "/admin/workagents", Permission: "workagents.manage", Group: "system", Position: 28})
 	d.Jobs.Register(jobKind, s.execute, 1)
 	d.Jobs.Cron("workagents.schedules", 30*time.Second, s.schedule)
@@ -55,6 +56,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 	d.Hooks.Filter("system.health.checks", 50, s.healthChecks)
 	adminTpl, _ := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates)
 	h := &handlers{s: s, tpl: tpl, adminTpl: adminTpl}
+	d.Services.Set("workagents.channels", &Channels{s: s})
 	d.Router.Admin.With(auth.RequirePerm("workagents.manage")).Get("/workagents", h.page)
 	d.Router.Public.Group(func(r chi.Router) {
 		r.Use(auth.CSRFMiddleware())
@@ -75,6 +77,8 @@ func (m *Module) Register(d *kernel.Deps) error {
 	})
 	h.api(d)
 	h.registerDesignReviews(d)
+	h.registerChannels(d)
+	d.Router.Admin.With(auth.RequirePerm("workagents.read")).Get("/workagents/orchestrator-card", h.orchestratorCard)
 	if err := seedExampleOrchestratorAgents(context.Background(), d, func() string { return db.FormatTime(time.Now()) }); err != nil {
 		return err
 	}
@@ -200,6 +204,24 @@ func (h *handlers) failure(w http.ResponseWriter, e error) {
 	code := 500
 	message := "agent operation failed"
 	switch {
+	case errors.Is(e, ErrChannelNotFound):
+		code = 404
+		message = e.Error()
+	case errors.Is(e, ErrChannelDenied):
+		httpx.Error(w, http.StatusForbidden, "forbidden", e.Error(), nil)
+		return
+	case errors.Is(e, ErrChannelInvalid):
+		code = 422
+		message = e.Error()
+	case errors.Is(e, ErrChannelBusy):
+		code = 429
+		message = e.Error()
+	case errors.Is(e, ErrChannelClosed):
+		code = 422
+		message = e.Error()
+	case errors.Is(e, ErrChannelMember):
+		code = 422
+		message = e.Error()
 	case errors.Is(e, errBusy):
 		code = 429
 		message = e.Error()

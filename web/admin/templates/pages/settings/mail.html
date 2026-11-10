@@ -34,17 +34,17 @@
   <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem_10rem]">
     <div>
       <label for="m-host" class="block font-medium mb-1">{{t "admin.mail.host"}}</label>
-      <input id="m-host" name="host" value="{{.Form.Host}}" dir="ltr" placeholder="smtp.example.com" class="h-11 w-full rounded border {{if index .Fields "host"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="m-host" name="host" value="{{.Form.Host}}" dir="ltr" placeholder="smtp.example.com" class="h-11 w-full rounded border {{if index .Fields "host"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       {{template "partials/field_errors" (index .Fields "host")}}
     </div>
     <div>
       <label for="m-port" class="block font-medium mb-1">{{t "admin.mail.port"}}</label>
-      <input id="m-port" name="port" value="{{.Form.Port}}" inputmode="numeric" dir="ltr" class="h-11 w-full rounded border {{if index .Fields "port"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="m-port" name="port" value="{{.Form.Port}}" inputmode="numeric" dir="ltr" class="h-11 w-full rounded border {{if index .Fields "port"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       {{template "partials/field_errors" (index .Fields "port")}}
     </div>
     <div>
       <label for="m-tls" class="block font-medium mb-1">{{t "admin.mail.tls"}}</label>
-      <select id="m-tls" name="tls" class="h-11 w-full rounded border {{if index .Fields "tls"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <select id="m-tls" name="tls" class="h-11 w-full rounded border {{if index .Fields "tls"}}border-red{{else}}border-line{{end}} bg-panel px-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
         {{range .TLSModes}}<option value="{{.}}" {{if eq . $.Form.TLS}}selected{{end}}>{{t (printf "admin.mail.tls_%s" .)}}</option>{{end}}
       </select>
       {{template "partials/field_errors" (index .Fields "tls")}}
@@ -53,11 +53,11 @@
   <div class="grid gap-4 sm:grid-cols-2">
     <div>
       <label for="m-username" class="block font-medium mb-1">{{t "admin.mail.username"}}</label>
-      <input id="m-username" name="username" value="{{.Form.Username}}" dir="ltr" autocomplete="off" class="h-11 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="m-username" name="username" value="{{.Form.Username}}" dir="ltr" autocomplete="off" class="h-11 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     </div>
     <div>
       <label for="m-password" class="block font-medium mb-1">{{t "admin.mail.password"}}</label>
-      <input id="m-password" name="password" type="password" autocomplete="new-password" aria-describedby="m-password-help" class="h-11 w-full rounded border {{if index .Fields "password"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="m-password" name="password" type="password" autocomplete="new-password" aria-describedby="m-password-help" class="h-11 w-full rounded border {{if index .Fields "password"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       <p id="m-password-help" class="mt-1 text-xs text-muted">{{if .PasswordSet}}{{t "admin.mail.password_set"}}{{else}}{{t "admin.mail.password_unset"}}{{end}}</p>
       {{if .PasswordSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_password" class="accent-[var(--green)]"> {{t "admin.mail.password_clear"}}</label>{{end}}
       {{template "partials/field_errors" (index .Fields "password")}}
@@ -68,28 +68,28 @@
   <div class="grid gap-4 sm:grid-cols-2">
     <div>
       <label for="m-from" class="block font-medium mb-1">{{t "admin.mail.from"}}</label>
-      <input id="m-from" name="from" type="email" value="{{.Form.From}}" dir="ltr" placeholder="noreply@example.com" class="h-11 w-full rounded border {{if index .Fields "from"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="m-from" name="from" type="email" value="{{.Form.From}}" dir="ltr" placeholder="noreply@example.com" class="h-11 w-full rounded border {{if index .Fields "from"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       {{template "partials/field_errors" (index .Fields "from")}}
     </div>
     <div>
       <label for="m-from-name" class="block font-medium mb-1">{{t "admin.mail.from_name"}}</label>
-      <input id="m-from-name" name="from_name" value="{{.Form.FromName}}" class="h-11 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="m-from-name" name="from_name" value="{{.Form.FromName}}" class="h-11 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     </div>
     <div>
       <label for="m-reply-to" class="block font-medium mb-1">{{t "admin.mail.reply_to"}}</label>
-      <input id="m-reply-to" name="reply_to" type="email" value="{{.Form.ReplyTo}}" dir="ltr" class="h-11 w-full rounded border {{if index .Fields "reply_to"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-green focus:ring-[3px] focus:ring-green-soft">
+      <input id="m-reply-to" name="reply_to" type="email" value="{{.Form.ReplyTo}}" dir="ltr" class="h-11 w-full rounded border {{if index .Fields "reply_to"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
       {{template "partials/field_errors" (index .Fields "reply_to")}}
       <p class="mt-1 text-xs text-muted">{{t "admin.mail.reply_to_help"}}</p>
     </div>
   </div>
-  <div><button type="submit" class="h-11 px-4 rounded bg-green text-white font-medium hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "core.action.save"}}</button></div>
+  <div><button type="submit" class="h-11 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.save"}}</button></div>
 </form>
 <section class="mt-4 rounded border border-line bg-panel p-4 max-w-3xl">
   <h2 class="text-base font-bold mb-1">{{t "admin.mail.test_title"}}</h2>
   <p class="text-xs text-muted mb-3">{{t "admin.mail.test_help"}}</p>
   <form method="post" action="/admin/settings/mail/test" hx-post="/admin/settings/mail/test" hx-target="#mail-test-result" hx-swap="innerHTML" class="flex flex-wrap items-center gap-3">
     <input type="hidden" name="_csrf" value="{{csrf}}">
-    <button type="submit" class="h-11 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "send"}}<span>{{t "admin.mail.test_send"}}</span></button>
+    <button type="submit" class="h-11 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "send"}}<span>{{t "admin.mail.test_send"}}</span></button>
     <div id="mail-test-result" aria-live="polite"></div>
   </form>
 </section>

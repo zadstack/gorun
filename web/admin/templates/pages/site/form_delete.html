@@ -12,7 +12,7 @@
   <form method="post" action="/admin/forms/{{.Form.Slug}}/delete" class="flex gap-2">
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <button type="submit" class="h-9 px-4 inline-flex items-center gap-1 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2" "w-4 h-4"}}{{t "site.forms.delete.confirm"}}</button>
-    <a href="/admin/forms/{{.Form.Slug}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "site.forms.delete.cancel"}}</a>
+    <a href="/admin/forms/{{.Form.Slug}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "site.forms.delete.cancel"}}</a>
   </form>
   {{end}}
 </div>

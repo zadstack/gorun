@@ -124,5 +124,8 @@
   "step.verify_running": "التحقق من هوية النسخة · جارٍ",
   "step.verify_done": "التحقق من هوية النسخة · مسجل",
   "step.complete": "اكتمل التحقق من الهوية",
-  "permissions": "صلاحيات Cloudflare المطلوبة"
+  "permissions": "صلاحيات Cloudflare المطلوبة",
+  "dashboard_title": "إعدادات الموقع",
+  "dashboard_hint": "إعدادات محفوظة؛ افتح صفحة الخدمة لاختبار الاتصال.",
+  "more_settings": "باقي الإعدادات"
 }

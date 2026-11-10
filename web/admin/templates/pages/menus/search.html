@@ -13,7 +13,7 @@
     <button type="button" data-kind="{{.Kind}}" data-ref="{{.RefID}}" data-label="{{.Label}}" data-hint="{{.Hint}}"
             @click="add({ kind: $el.dataset.kind, ref_id: $el.dataset.ref, label: '', hint: $el.dataset.label + ' · ' + $el.dataset.hint })"
             aria-label="{{t "menus.add.item" .Label}}"
-            class="shrink-0 h-8 w-8 inline-flex items-center justify-center rounded border border-line hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{icon "plus"}}</button>
+            class="shrink-0 h-8 w-8 inline-flex items-center justify-center rounded border border-line hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "plus"}}</button>
   </li>
   {{end}}
 </ul>
