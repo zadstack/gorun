@@ -44,7 +44,7 @@
       <dt class="text-muted">{{t "media.detail.type"}}</dt><dd class="font-mono"><bdi>{{$m.Mime}}</bdi></dd>
       <dt class="text-muted">{{t "media.detail.size"}}</dt><dd class="font-mono"><bdi>{{.Item.Size}}</bdi></dd>
       {{if .Item.Dims}}<dt class="text-muted">{{t "media.detail.dimensions"}}</dt><dd class="font-mono"><bdi>{{.Item.Dims}}</bdi></dd>{{end}}
-      <dt class="text-muted">{{t "media.detail.uploaded"}}</dt><dd class="font-mono"><bdi>{{date $m.CreatedAt}}</bdi></dd>
+      <dt class="text-muted">{{t "media.detail.uploaded"}}</dt><dd class="font-mono"><bdi>{{datetime $m.CreatedAt}}</bdi></dd>
       {{if $m.SourceURL}}<dt class="text-muted">{{t "media.detail.source"}}</dt><dd class="font-mono break-all" dir="ltr">{{$m.SourceURL}}</dd>{{end}}
       <dt class="text-muted">{{t "media.detail.url"}}</dt>
       <dd x-data="{ copied: false }" data-url="{{$m.URL}}">

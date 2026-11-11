@@ -21,5 +21,9 @@
   "error.description_long": "Keep the description under 500 characters",
   "error.image": "Use an image URL from the media library or a full https:// address",
   "error.robots_long": "robots.txt is too long (10 KB max)",
-  "error.key": "Unknown SEO setting"
+  "error.key": "Unknown SEO setting",
+  "sample.title": "Sample search preview",
+  "sample.help": "This previews the template; search engines may show different text.",
+  "robots.block_all_warning": "Custom rules include blocking every path. Review before launch.",
+  "robots.advanced": "Advanced: crawler rules"
 }

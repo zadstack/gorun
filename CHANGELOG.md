@@ -55,6 +55,12 @@ All notable changes to GoRun are recorded here. The format follows
 - Agent channel messages re-check the open status inside the insert transaction, so a channel closed while a post is in flight refuses it (`channel_closed`).
 - The hourly trash purge logs an item that fails to delete and continues with the rest, like scheduled publishing, instead of abandoning the whole tick.
 - Saving a hierarchical item re-checks its parent chain inside the write transaction, so two concurrent saves (A under B, B under A) can no longer both commit a cycle.
+- Sidebar, quick-access and dashboard pin icons no longer disappear after a pin change or a focus-triggered refresh: icons are rendered again after the fetched fragments are swapped in (also for the integrations page's live refresh).
+- The integrations page asks once, in the accessible confirmation dialog, before clearing the Cloudflare cache or probing storage; the extra native `confirm()` prompt is gone.
+- The confirmation dialog keeps Tab and Shift+Tab between its buttons and returns focus to the control that opened it when it closes.
+- The admin sidebar no longer announces itself as "Dashboard" to screen readers; the primary navigation is labelled "Main navigation" (`core.nav.main`).
+- Display strings that templates chose with `{{if eq locale "ar"}}` (media library filters and details dialog, readiness, SEO preview, template file filters, content review, comments help, taxonomy, Metricool, page builder) and the content studio script's built-in English/Arabic pairs now come from the module catalogs; studio result times use the shared `<time>` output instead of `toLocaleString()`.
+- Admin tables and detail pages that printed bare `{{date}}` text (content, commerce, users, extensions, webhooks, system health and updates, media, builder history) use `{{datetime}}`, so every timestamp carries the full UTC value in its tooltip.
 
 ## [0.21.0] - 2026-11-11
 

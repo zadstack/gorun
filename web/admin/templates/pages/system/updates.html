@@ -79,7 +79,7 @@
         <td class="px-2 py-1.5 font-mono text-xs" dir="ltr">{{.RequestedVersion}} <span class="text-muted">← {{.RunningVersion}}</span></td>
         <td class="px-2 py-1.5">{{template "updates_status_chip" .Status}}</td>
         <td class="px-2 py-1.5 font-mono text-xs" dir="ltr">{{if .AcceptedVersion}}{{.AcceptedVersion}}{{else}}—{{end}}</td>
-        <td class="px-2 py-1.5 text-xs text-muted">{{date .CreatedAt}}{{if .Error}} · <span class="text-red">{{.Error}}</span>{{end}}</td>
+        <td class="px-2 py-1.5 text-xs text-muted">{{datetime .CreatedAt}}{{if .Error}} · <span class="text-red">{{.Error}}</span>{{end}}</td>
       </tr>
       {{end}}
     </tbody>

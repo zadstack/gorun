@@ -133,7 +133,7 @@
         <tbody class="divide-y divide-line">
           {{range .Deliveries}}
           <tr data-delivery-status="{{.Status}}">
-            <td class="px-3 py-2 font-mono text-xs whitespace-nowrap" dir="ltr">{{date .CreatedAt}}</td>
+            <td class="px-3 py-2 font-mono text-xs whitespace-nowrap" dir="ltr">{{datetime .CreatedAt}}</td>
             <td class="px-3 py-2 text-xs"><span class="font-mono" dir="ltr">{{.Hook}}</span> <span class="text-muted">({{t (print "ext.kind." .Kind)}})</span></td>
             <td class="px-3 py-2">{{if eq .Status "ok"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "ext.log.ok"}}{{with .HTTPStatus}} · {{.}}{{end}}</span>{{else if eq .Status "timeout"}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-xs">{{t "ext.log.timeout"}}</span>{{else}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-xs">{{t "ext.log.failed"}}{{with .HTTPStatus}} · {{.}}{{end}}</span>{{end}}</td>
             <td class="px-3 py-2 text-end font-mono text-xs" dir="ltr">{{.DurationMS}} ms</td>
@@ -158,8 +158,8 @@
       <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-xs">
         {{with $x.Manifest.Author}}<dt class="text-muted">{{t "ext.about.author"}}</dt><dd>{{.}}</dd>{{end}}
         <dt class="text-muted">{{t "ext.about.endpoint"}}</dt><dd class="font-mono break-all" dir="ltr">{{with $x.EndpointURL}}{{.}}{{else}}—{{end}}</dd>
-        <dt class="text-muted">{{t "ext.about.installed"}}</dt><dd class="font-mono" dir="ltr">{{date $x.InstalledAt}}</dd>
-        {{with $x.ActivatedAt}}<dt class="text-muted">{{t "ext.about.activated"}}</dt><dd class="font-mono" dir="ltr">{{date .}}</dd>{{end}}
+        <dt class="text-muted">{{t "ext.about.installed"}}</dt><dd class="font-mono" dir="ltr">{{datetime $x.InstalledAt}}</dd>
+        {{with $x.ActivatedAt}}<dt class="text-muted">{{t "ext.about.activated"}}</dt><dd class="font-mono" dir="ltr">{{datetime .}}</dd>{{end}}
         <dt class="text-muted">{{t "ext.about.failures"}}</dt><dd class="font-mono" dir="ltr">{{$x.Failures}} / {{$x.TotalFailures}}</dd>
         <dt class="text-muted">{{t "ext.about.key"}}</dt><dd class="font-mono break-all" dir="ltr">{{with $x.APIKeyID}}{{.}}{{else}}—{{end}}</dd>
       </dl>

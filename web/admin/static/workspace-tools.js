@@ -28,6 +28,7 @@
       if (current && next) current.replaceChildren(...[...next.childNodes].map(node => document.importNode(node, true)));
     }
     placeTools();
+    window.lucide?.createIcons(); // the swapped regions carry {{icon}} placeholders
     if (restoreFocus) {
       let target;
       if (focusedPin) target = [...document.querySelectorAll('[data-nav-id]')].find(row => row.dataset.navId === focusedPin)?.querySelector('[data-sidebar-pin-add]');

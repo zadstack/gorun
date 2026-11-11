@@ -204,5 +204,6 @@
   "suggest_reason_faq": "Use a split question layout while keeping native expandable answers.",
   "suggest_reason_choice": "Present the existing destinations as task choices.",
   "suggest_reason_service": "Present the existing destinations as service rows with explanatory text.",
-  "suggest_ai_no_candidates": "AI can only choose a compatible alternative; none preserves all fields for this section."
+  "suggest_ai_no_candidates": "AI can only choose a compatible alternative; none preserves all fields for this section.",
+  "transfer.advanced": "Advanced: transfer layout"
 }
