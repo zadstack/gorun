@@ -1,0 +1,14 @@
+{{define "title"}}{{t "content.preview.created_title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "content-ux.css"}}">
+{{template "partials/page-header" (dict "Title" (t "content.preview.created_title") "Subtitle" .Item.Title "Back" .EditURL "BackLabel" (t "content.revisions.back_to_editor"))}}
+<section class="card preview-link-result" data-preview-result>
+  <div class="card-body field">
+    <label class="field-label" for="preview-link-url">{{t "content.preview.new_link"}}</label>
+    <input id="preview-link-url" type="text" readonly dir="ltr" value="{{.URL}}" data-preview-url>
+    <p class="field-help">{{t "content.preview.shown_once"}}</p>
+    <p class="meta-row"><span class="meta-item">{{t "content.preview.expires"}} {{datetime .ExpiresAt}}</span></p>
+  </div>
+  <div class="card-foot"><a class="btn btn-primary" href="{{.EditURL}}">{{t "content.revisions.back_to_editor"}}</a></div>
+</section>
+{{end}}

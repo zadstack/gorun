@@ -60,6 +60,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 	}
 	d.Services.Set(kernel.ServiceContent, Service(svc))
 	d.Services.Set(ServiceComments, CommentService(svc))
+	d.Services.Set(ServicePreview, PreviewResolver(svc))
 	for _, p := range permissions {
 		d.Perms.Declare(p.name, map[string]string{"en": p.en, "ar": p.ar})
 	}

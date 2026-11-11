@@ -116,6 +116,7 @@ finds no service degrades (see the *Absent* column). Hooks: `Hooks.Action`/`Filt
 |---|---|---|---|
 | `auth`, `auth.keys`, `auth.roles`, `admin.templates` | auth | every module with admin pages; commerce, wpmigrate, ext, mcp, workagents, launch | boot error in most consumers (auth is core, always present) |
 | `content`, `content.comments` | content | taxonomy, menus, seo, theme, site, api, admin, builder, membership, workagents, wpmigrate, mcp, ext | wpmigrate refuses to boot; ext falls back to no content types; others are core |
+| `content.preview` (`content.ServicePreview`, `content.PreviewResolver`) | content | site (`/preview/{token}`) | site answers 404 for every preview link |
 | `taxonomy`, `media`, `media.storage`, `menus`, `redirects`, `seo`, `theme`, `pattern` | the module of that name | core consumers plus commerce (media, redirects, theme), wpmigrate, mcp, builder | core, always present |
 | `webhooks` | webhooks | admin (canvas activity), `gorun webhook` | admin reads `any` and skips |
 | `mailer` (`mailer.ServiceName`) | admin | commerce (`service.go`), site forms | commerce logs and skips mail |

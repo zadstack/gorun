@@ -79,6 +79,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | Doc | Covers |
 | --- | --- |
 | [CONTENT_STUDIO.md](CONTENT_STUDIO.md) | Reviewable AI text/media candidates |
+| [EDITING_SAFETY.md](EDITING_SAFETY.md) | Editor autosave and restore, revision compare, shareable preview links |
 | [MIGRATION.md](MIGRATION.md) | WordPress REST / WXR import |
 | [STORAGE.md](STORAGE.md) | Data directory layout and media |
 | [FORMS.md](FORMS.md) | Site forms: builder and captured forms, entry tables, CSV, webhook |

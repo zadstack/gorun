@@ -450,7 +450,7 @@ Example section in a version-1 document:
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **212 operations** in 25 tags.
+Generated from the current locally booted OpenAPI document: **215 operations** in 25 tags.
 
 ### analytics
 
@@ -510,14 +510,17 @@ Generated from the current locally booted OpenAPI document: **212 operations** i
 
 | Method | Path | Summary | Scopes |
 |---|---|---|---|
+| DELETE | `/api/v1/content/{id}/preview-links/{link}` | Revoke a shareable preview link | `content.edit` |
 | DELETE | `/api/v1/content/{id}/translations` | Take the item out of its translations | `content.edit` |
 | DELETE | `/api/v1/content/{id}` | Trash content (hard=1 deletes) | `content.delete` |
+| GET | `/api/v1/content/{id}/preview-links` | List active shareable preview links (never their tokens) | `content.edit` |
 | GET | `/api/v1/content/{id}/revisions` | List revisions (newest first) | `content.view` |
 | GET | `/api/v1/content/{id}/translations` | List the item and its translations (by locale) | `content.view` |
 | GET | `/api/v1/content/{id}` | Get content | `content.view` |
 | GET | `/api/v1/content` | Query content | `content.view` |
 | PATCH | `/api/v1/content/{id}` | Update content (merge: omitted fields keep their value) | `content.edit` |
 | POST | `/api/v1/content/query` | Query content with the full query DSL | `content.view` |
+| POST | `/api/v1/content/{id}/preview-links` | Create a shareable preview link (the URL with its token is returned only here) | `content.edit` |
 | POST | `/api/v1/content/{id}/publish` | Publish content now | `content.publish` |
 | POST | `/api/v1/content/{id}/revisions/{revision}/restore` | Restore a revision | `content.edit` |
 | POST | `/api/v1/content/{id}/translations/link` | Link another item (and its translations) as translations | `content.edit` |

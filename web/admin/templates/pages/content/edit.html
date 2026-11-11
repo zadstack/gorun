@@ -1,6 +1,6 @@
 {{define "title"}}{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{.Item.Title}}{{end}}{{end}}
 {{define "content"}}
-<link rel="stylesheet" href="{{asset "content-ux.css"}}"><script defer src="{{asset "content-ux.js"}}"></script>
+<link rel="stylesheet" href="{{asset "content-ux.css"}}"><script defer src="{{asset "content-ux.js"}}"></script><script defer src="{{asset "content-autosave.js"}}"></script><script defer src="{{asset "content-preview-links.js"}}"></script>
 {{/* $ai: the AI writing helper is configured (a non-empty ai.provider is only saved with a model and a key)
      and the type has a body to work from. */}}
 {{$ai := and .Supports.body (setting "ai.provider")}}
@@ -20,10 +20,21 @@
 <p role="status" aria-live="polite" data-review-status></p><a href="/admin/workagents/design-reviews?page_id={{.Item.ID}}" target="_blank" rel="noopener" class="text-blue">{{t "workagents.review.history"}}</a><noscript><a href="/admin/workagents/design-reviews?page_id={{.Item.ID}}">{{t "workagents.review.preview"}}</a></noscript></aside></details>
 {{end}}
 {{with .FormError}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
-<form method="post" action="{{.Action}}" data-content-editor data-was-published="{{if eq .Item.Status "published"}}true{{else}}false{{end}}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate>
+<form method="post" action="{{.Action}}" data-content-editor data-was-published="{{if eq .Item.Status "published"}}true{{else}}false{{end}}"{{if .CanAutosave}} data-autosave-url="{{.Action}}/autosave"{{end}} class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   {{if not .IsNew}}<input type="hidden" name="edit_token" value="{{.EditToken}}"><input type="hidden" name="terms_token" value="{{.TermsToken}}">{{end}}
   <div class="space-y-4 min-w-0">
+    {{with .Autosave}}
+    <section class="autosave-banner" data-autosave-banner data-autosave-payload="{{.Payload}}" role="region" aria-labelledby="autosave-banner-title">
+      <p id="autosave-banner-title" class="autosave-banner-title">{{icon "history"}}<span>{{t "content.autosave.banner"}}</span> {{datetime .SavedAt}}</p>
+      {{if .Stale}}<p class="autosave-banner-note" data-autosave-stale>{{t "content.autosave.banner_stale"}}</p>{{else}}<p class="autosave-banner-note">{{t "content.autosave.banner_help"}}</p>{{end}}
+      <div class="autosave-banner-actions" data-autosave-actions>
+        <button type="button" class="btn btn-primary btn-sm" data-autosave-restore hidden>{{icon "rotate-ccw"}}<span>{{t "content.autosave.restore"}}</span></button>
+        <button type="submit" class="btn btn-secondary btn-sm" formaction="{{$.Action}}/autosave/discard" formnovalidate data-autosave-discard>{{icon "x"}}<span>{{t "content.autosave.discard"}}</span></button>
+      </div>
+      <p class="autosave-banner-note" data-autosave-restored hidden role="status">{{t "content.autosave.restored"}}</p>
+    </section>
+    {{end}}
     <section class="rounded border border-line bg-panel p-4 space-y-3">
       <div {{if $ai}}x-data="gpAIField" data-action="title" data-target="title" data-error="{{t "content.ai.error"}}" data-empty="{{t "content.ai.empty_body"}}"{{end}}>
         <div class="flex items-center justify-between gap-2 mb-1">
@@ -106,7 +117,9 @@
 
   <aside class="space-y-4">
     <section class="content-publish-panel rounded border border-line bg-panel p-4 space-y-3">
-      <h2 class="text-base font-bold mb-3">{{t "content.publish.title"}}</h2><p data-save-state role="status" data-clean="{{t "content.ux.saved_state"}}" data-dirty="{{t "content.ux.unsaved_state"}}">{{t "content.ux.saved_state"}}</p><p class="text-muted text-sm">{{if eq .Item.Status "published"}}{{t "content.ux.live_help"}}{{else}}{{t "content.ux.save_help"}}{{end}}</p>
+      <h2 class="text-base font-bold mb-3">{{t "content.publish.title"}}</h2><p data-save-state role="status" data-clean="{{t "content.ux.saved_state"}}" data-dirty="{{t "content.ux.unsaved_state"}}">{{t "content.ux.saved_state"}}</p>
+      <p class="autosave-status" data-autosave-status role="status" aria-live="polite" data-state="{{if .CanAutosave}}idle{{else}}off{{end}}" data-idle="{{t "content.autosave.idle"}}" data-pending="{{t "content.autosave.pending"}}" data-saving="{{t "content.autosave.saving"}}" data-saved="{{t "content.autosave.saved"}}" data-failed="{{t "content.autosave.failed"}}" data-retry="{{t "content.autosave.retry"}}" data-conflict="{{t "content.autosave.conflict"}}" data-forbidden="{{t "content.autosave.forbidden"}}">{{if .CanAutosave}}{{t "content.autosave.idle"}}{{else if .IsNew}}{{t "content.autosave.after_first_save"}}{{end}}</p>
+      <p class="text-muted text-sm">{{if eq .Item.Status "published"}}{{t "content.ux.live_help"}}{{else}}{{t "content.ux.save_help"}}{{end}}</p>
       {{if .IsNew}}
       <div>
         <label for="editor-locale" class="block font-medium mb-1">{{t "content.editor.locale"}}</label>
@@ -218,14 +231,44 @@
     </section>
     {{end}}
 
+    {{if .CanPreviewLinks}}
+    <section class="rounded border border-line bg-panel p-4 preview-links" data-preview-links aria-labelledby="preview-links-title">
+      <h2 id="preview-links-title" class="text-base font-bold mb-2">{{t "content.preview.title"}}</h2>
+      <p class="field-help mb-3">{{t "content.preview.help"}}</p>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label" for="preview-ttl">{{t "content.preview.expires_after"}}</label>
+          <select id="preview-ttl" name="preview_ttl">
+            <option value="1h">{{t "content.preview.ttl_1h"}}</option>
+            <option value="24h" selected>{{t "content.preview.ttl_24h"}}</option>
+            <option value="7d">{{t "content.preview.ttl_7d"}}</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary" formaction="{{.Action}}/preview-links" formnovalidate data-preview-create>{{icon "link"}}<span>{{t "content.preview.create"}}</span></button>
+      </div>
+      <div class="preview-link-created field" data-preview-created hidden>
+        <label class="field-label" for="preview-link-url">{{t "content.preview.new_link"}}</label>
+        <div class="preview-link-copy"><input id="preview-link-url" type="text" readonly dir="ltr" data-preview-url><button type="button" class="btn btn-secondary btn-sm" data-preview-copy data-copied="{{t "content.preview.copied"}}">{{icon "copy"}}<span>{{t "content.preview.copy"}}</span></button></div>
+        <p class="field-help">{{t "content.preview.shown_once"}}</p>
+      </div>
+      <p class="field-error" data-preview-error role="alert" hidden></p>
+      <h3 class="field-label mt-3">{{t "content.preview.active"}}</h3>
+      <ul class="preview-link-list" data-preview-list data-revoke-label="{{t "content.preview.revoke"}}" data-expires-label="{{t "content.preview.expires"}}" data-confirm="{{t "content.preview.revoke_confirm"}}">
+        {{range .PreviewLinks}}<li data-preview-link="{{.ID}}"><span>{{t "content.preview.expires"}} {{datetime .ExpiresAt}}</span><button type="submit" class="btn btn-ghost btn-sm" formaction="{{$.Action}}/preview-links/{{.ID}}/revoke" formnovalidate data-preview-revoke>{{t "content.preview.revoke"}}</button></li>{{end}}
+      </ul>
+      <p class="field-help" data-preview-empty {{if .PreviewLinks}}hidden{{end}}>{{t "content.preview.none"}}</p>
+    </section>
+    {{end}}
+
     {{if .Revisions}}
     <section class="rounded border border-line bg-panel p-4">
       <h2 class="text-base font-bold mb-3">{{t "content.revisions.title"}}</h2>
       <ul class="space-y-1.5 text-sm">
         {{range $i, $r := .Revisions}}
         <li class="flex items-center justify-between gap-2">
-          <span class="font-mono text-xs text-muted">{{date $r.CreatedAt}}</span>
-          {{if $i}}<button type="submit" formaction="{{$.Action}}/revisions/{{$r.ID}}/restore" formnovalidate class="text-blue hover:text-blue-hover text-xs">{{t "content.revisions.restore"}}</button>{{else}}<span class="text-xs text-muted">{{t "content.revisions.current"}}</span>{{end}}
+          <span class="font-mono text-xs text-muted">{{datetime $r.CreatedAt}}</span>
+          <span class="revision-actions"><a href="{{$.Action}}/revisions/{{$r.ID}}/compare" class="text-blue hover:text-blue-hover text-xs" data-revision-compare-link>{{t "content.revisions.compare"}}</a>
+          {{if $i}}<button type="submit" formaction="{{$.Action}}/revisions/{{$r.ID}}/restore" formnovalidate class="text-blue hover:text-blue-hover text-xs">{{t "content.revisions.restore"}}</button>{{else}}<span class="text-xs text-muted">{{t "content.revisions.current"}}</span>{{end}}</span>
         </li>
         {{end}}
       </ul>
