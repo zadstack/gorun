@@ -5,6 +5,8 @@
 <link rel="stylesheet" href="{{asset "workspace-tools.css"}}">
 <script defer src="{{asset "workspace-tools.js"}}"></script>
 <script defer src="{{asset "webmcp.js"}}"></script>
+<script defer src="{{asset "command-palette.js"}}"></script>
+<script defer src="{{asset "shortcuts.js"}}"></script>
 <title>{{block "title" .}}{{t "core.app.name"}}{{end}} · {{t "core.app.name"}}</title>
 </head>
 <body class="admin-workspace min-h-screen bg-bg text-ink text-sm font-sans antialiased" hx-headers='{"X-CSRF-Token": "{{csrf}}"}' x-data="gpShell" @keydown.window="sidebarKey($event)" @resize.window="if (innerWidth >= 768) sidebarOpen = false" :class="sidebarOpen && 'overflow-hidden md:overflow-auto'">
@@ -22,6 +24,8 @@
 </div>
 <div hidden data-webmcp data-csrf="{{csrf}}"></div>
 {{template "partials/confirm_modal" .}}
+{{template "partials/command_palette" .}}
+{{template "partials/shortcuts" .}}
 {{template "partials/workspace-tools-rail" .}}
 <div class="fixed bottom-4 end-4 z-50 space-y-2" aria-live="polite" x-data>
   <template x-for="t in $store.toasts.items" :key="t.id">

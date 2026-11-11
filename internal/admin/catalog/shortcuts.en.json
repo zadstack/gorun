@@ -1,0 +1,20 @@
+{
+  "title": "Keyboard shortcuts",
+  "intro": "Shortcuts work while you are not typing in a field. Ctrl/⌘ S and Esc also work inside fields.",
+  "keys": "Keys",
+  "action": "Action",
+  "then": "then",
+  "palette": "Open the command palette",
+  "search": "Focus the search box",
+  "help": "Show this list",
+  "go_h": "Go to home",
+  "go_c": "Go to content",
+  "go_m": "Go to media",
+  "go_s": "Go to settings",
+  "go_a": "Go to approvals",
+  "save": "Save (editor pages)",
+  "close": "Close a dialog",
+  "palette_keys": "Move in the command palette",
+  "canvas": "On a canvas, Ctrl/⌘ K opens canvas search; the Commands button opens the command palette.",
+  "close_button": "Close"
+}

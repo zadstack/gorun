@@ -80,6 +80,11 @@ func roleAllows(role, perm string) bool {
 	return p["*"] || p[perm]
 }
 
+// RoleAllows reports whether role grants perm, for decisions about another
+// user (such as who may be named an item's author). It does not look at the
+// user's status; Can is the check for the request's own principal.
+func RoleAllows(role, perm string) bool { return roleAllows(role, perm) }
+
 // scopeAllows reports whether API key scopes grant perm ("*" = all).
 func scopeAllows(scopes []string, perm string) bool {
 	return slices.Contains(scopes, "*") || slices.Contains(scopes, perm)

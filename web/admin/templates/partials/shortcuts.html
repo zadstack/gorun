@@ -1,0 +1,26 @@
+{{define "partials/shortcuts"}}
+{{/* Shortcut map ("?") and the "g <key>" destinations for web/admin/static/shortcuts.js. The links are the user's authorized navigation only. */}}
+<div hidden data-gp-shortcut-targets>{{range shortcutTargets}}<a data-gp-shortcut-go="{{.Key}}" href="{{.Href}}" tabindex="-1"></a>{{end}}</div>
+<dialog class="gp-shortcuts" id="gp-shortcuts" data-gp-shortcuts aria-modal="true" aria-labelledby="gp-shortcuts-title" aria-describedby="gp-shortcuts-intro">
+  <div class="gp-shortcuts-head">
+    <h2 id="gp-shortcuts-title" class="section-title">{{t "shortcuts.title"}}</h2>
+    <button type="button" class="btn btn-secondary btn-sm" data-gp-shortcuts-close>{{t "shortcuts.close_button"}}</button>
+  </div>
+  <p id="gp-shortcuts-intro" class="gp-shortcuts-intro">{{t "shortcuts.intro"}}</p>
+  <div class="data-table-wrap">
+    <table class="data-table gp-shortcuts-table">
+      <thead><tr><th scope="col">{{t "shortcuts.keys"}}</th><th scope="col">{{t "shortcuts.action"}}</th></tr></thead>
+      <tbody>
+        <tr><td><span class="gp-keys"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd></span></td><td>{{t "shortcuts.palette"}}</td></tr>
+        <tr><td><span class="gp-keys"><kbd>/</kbd></span></td><td>{{t "shortcuts.search"}}</td></tr>
+        <tr><td><span class="gp-keys"><kbd>?</kbd></span></td><td>{{t "shortcuts.help"}}</td></tr>
+        {{range shortcutTargets}}<tr data-gp-shortcut-row="{{.Key}}"><td><span class="gp-keys"><kbd>g</kbd> <bdi class="gp-then">{{t "shortcuts.then"}}</bdi> <kbd>{{.Key}}</kbd></span></td><td>{{t (printf "shortcuts.go_%s" .Key)}}</td></tr>{{end}}
+        <tr><td><span class="gp-keys"><kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>S</kbd></span></td><td>{{t "shortcuts.save"}}</td></tr>
+        <tr><td><span class="gp-keys"><kbd>Esc</kbd></span></td><td>{{t "shortcuts.close"}}</td></tr>
+        <tr><td><span class="gp-keys"><kbd>↑</kbd> <kbd>↓</kbd> <kbd>Home</kbd> <kbd>End</kbd> <kbd>Enter</kbd></span></td><td>{{t "shortcuts.palette_keys"}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="gp-shortcuts-note">{{t "shortcuts.canvas"}}</p>
+</dialog>
+{{end}}

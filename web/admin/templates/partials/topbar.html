@@ -2,11 +2,10 @@
 <header class="admin-topbar h-14 border-b border-line bg-panel flex items-center gap-3 px-4">
   <button data-sidebar-toggle aria-controls="admin-sidebar" type="button" class="md:hidden p-1.5 rounded border border-line hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft"
           @click="toggleSidebar()" :aria-expanded="sidebarOpen.toString()" aria-label="{{t "core.action.toggle_menu"}}">{{icon "menu"}}</button>
-  {{/* Live search: HTMX loads /admin/x/search into the dropdown; without JS the form submits to /admin/search. "/" focuses, Esc closes. */}}
+  {{/* Live search: HTMX loads /admin/x/search into the dropdown; without JS the form submits to /admin/search. "/" focuses (shortcuts.js), Esc closes. */}}
   <form role="search" class="admin-search-form relative flex-1 max-w-md" action="/admin/search" method="get"
         x-data="{ open: false }"
         @keydown.escape="open = false"
-        @keydown.slash.window="if (!['INPUT', 'TEXTAREA', 'SELECT'].includes($event.target.tagName) && !$event.target.isContentEditable) { $event.preventDefault(); $refs.search.focus() }"
         @htmx:after-swap="open = true">
     <label class="sr-only" for="gp-search">{{t "core.search"}}</label>
     <input id="gp-search" name="q" type="search" placeholder="{{t "core.search"}}" autocomplete="off"
@@ -17,6 +16,7 @@
          class="absolute inset-x-0 top-full mt-1 z-40 max-h-96 overflow-y-auto rounded border border-line bg-panel [&:not(:has(li)):not(:has(p))]:hidden [&[x-cloak]]:hidden"
          x-show="open" x-cloak @click.outside="if ($event.target !== $refs.search) open = false"></div>
   </form>
+  <button type="button" class="admin-palette-trigger" data-gp-palette-open aria-haspopup="dialog" aria-controls="gp-palette" aria-keyshortcuts="Control+K Meta+K" title="{{t "palette.open"}}" hidden>{{icon "command"}}<span class="admin-palette-trigger-label">{{t "palette.trigger"}}</span><kbd dir="ltr" data-gp-palette-key>Ctrl K</kbd></button>
   {{template "partials/workspace-top-tools" .}}
   <details class="workspace-mobile-tools" data-workspace-mobile-tools hidden><summary>{{icon "grid-2x2"}}<span>{{t "core.workspace.more_tools"}}</span></summary><div data-workspace-mobile-slot></div></details>
   <div class="admin-account-actions ms-auto flex items-center gap-2">

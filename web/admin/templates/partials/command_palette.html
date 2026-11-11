@@ -1,0 +1,25 @@
+{{define "partials/command_palette"}}
+{{/* Command palette (web/admin/static/command-palette.js): Ctrl/Cmd+K or the topbar Commands button. Without JavaScript it never opens and the topbar search form still works. */}}
+<dialog class="gp-palette" id="gp-palette" data-gp-palette aria-modal="true" aria-labelledby="gp-palette-title" aria-describedby="gp-palette-help">
+  <h2 id="gp-palette-title" class="sr-only">{{t "palette.title"}}</h2>
+  <div class="gp-palette-query">
+    {{icon "search" "gp-palette-icon"}}
+    <label class="sr-only" for="gp-palette-input">{{t "palette.query"}}</label>
+    <input id="gp-palette-input" data-gp-palette-input type="text" role="combobox" autocomplete="off" spellcheck="false" maxlength="200" dir="auto"
+           placeholder="{{t "palette.placeholder"}}" aria-autocomplete="list" aria-expanded="false" aria-controls="gp-palette-list" aria-describedby="gp-palette-status">
+    <button type="button" class="gp-palette-close" data-gp-palette-close aria-label="{{t "palette.close"}}"><kbd dir="ltr">Esc</kbd></button>
+  </div>
+  <p id="gp-palette-status" class="gp-palette-status" data-gp-palette-status role="status" aria-live="polite"></p>
+  <div id="gp-palette-list" class="gp-palette-list" data-gp-palette-list role="listbox" aria-label="{{t "palette.results"}}"></div>
+  <p id="gp-palette-help" class="gp-palette-help">{{t "palette.help"}}</p>
+  <div hidden>
+    <span data-gp-palette-label="group.recent">{{t "palette.group.recent"}}</span><span data-gp-palette-label="group.actions">{{t "palette.group.actions"}}</span>
+    <span data-gp-palette-label="group.pages">{{t "palette.group.pages"}}</span><span data-gp-palette-label="group.content">{{t "palette.group.content"}}</span>
+    <span data-gp-palette-label="group.users">{{t "palette.group.users"}}</span><span data-gp-palette-label="group.search">{{t "palette.group.search"}}</span>
+    <span data-gp-palette-label="search_all">{{t "palette.search_all"}}</span><span data-gp-palette-label="loading">{{t "palette.loading"}}</span>
+    <span data-gp-palette-label="searching">{{t "palette.searching"}}</span><span data-gp-palette-label="empty">{{t "palette.empty"}}</span>
+    <span data-gp-palette-label="count">{{t "palette.count"}}</span><span data-gp-palette-label="error">{{t "palette.error"}}</span>
+    <span data-gp-palette-label="load_error">{{t "palette.load_error"}}</span>
+  </div>
+</dialog>
+{{end}}
