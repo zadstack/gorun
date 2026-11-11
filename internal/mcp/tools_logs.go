@@ -16,7 +16,7 @@ type getLogsInput struct {
 }
 
 func logTools(d *kernel.Deps) kernel.MCPTool {
-	return kernel.MCPTool{Name: "get_logs", Scopes: []string{scopeAudit}, Input: getLogsInput{},
+	return kernel.MCPTool{Name: "get_logs", Title: "Get my audit log", ReadOnly: true, Scopes: []string{scopeAudit}, Input: getLogsInput{},
 		Description: "Recent audit log entries for this API key or signed-in user only. Site-wide job queues stay on system.health (admin / REST).",
 		Handler: bind(func(ctx context.Context, in getLogsInput) (any, error) {
 			limit := in.Limit

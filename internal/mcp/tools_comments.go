@@ -41,7 +41,7 @@ func toAgentComment(c content.Comment) agentComment {
 
 func commentTools(svc content.CommentService) []kernel.MCPTool {
 	return []kernel.MCPTool{
-		{Name: "list_comments", Scopes: []string{scopeComments}, Input: listCommentsInput{},
+		{Name: "list_comments", Title: "List comments", ReadOnly: true, Scopes: []string{scopeComments}, Input: listCommentsInput{},
 			Description: "List visitor comments, newest first (filter by status and content_id). Commenter emails are not included.",
 			Handler: bind(func(ctx context.Context, in listCommentsInput) (any, error) {
 				page, per := paging(in.Page, in.PerPage)
@@ -55,7 +55,7 @@ func commentTools(svc content.CommentService) []kernel.MCPTool {
 				}
 				return newPage(out, p.Total, p.Page, p.PerPage), nil
 			})},
-		{Name: "moderate_comment", Scopes: []string{scopeComments}, Input: moderateCommentInput{},
+		{Name: "moderate_comment", Title: "Moderate comment", Idempotent: true, Scopes: []string{scopeComments}, Input: moderateCommentInput{},
 			Description: "Set a comment's status. Approving publishes the visitor's text and needs human approval; spam, trash and pending do not.",
 			Handler: bind(func(ctx context.Context, in moderateCommentInput) (any, error) {
 				if err := svc.SetCommentStatus(ctx, in.ID, in.Status); err != nil {
@@ -67,7 +67,7 @@ func commentTools(svc content.CommentService) []kernel.MCPTool {
 				}
 				return toAgentComment(*c), nil
 			})},
-		{Name: "delete_comment", Scopes: []string{scopeComments}, Sensitive: true, Input: idInput{},
+		{Name: "delete_comment", Title: "Delete comment", Destructive: true, Idempotent: true, Scopes: []string{scopeComments}, Sensitive: true, Input: idInput{},
 			Description: "Delete a comment permanently.",
 			Handler: bind(func(ctx context.Context, in idInput) (any, error) {
 				if err := svc.DeleteComment(ctx, in.ID); err != nil {

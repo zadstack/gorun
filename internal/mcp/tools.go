@@ -92,7 +92,7 @@ func registerCoreTools(d *kernel.Deps, s *server) {
 }
 
 func (s *server) checkApprovalTool() kernel.MCPTool {
-	return kernel.MCPTool{Name: "check_approval", Input: checkApprovalInput{},
+	return kernel.MCPTool{Name: "check_approval", Title: "Check approval status", ReadOnly: true, Input: checkApprovalInput{},
 		Description: "Status of a sensitive call awaiting human approval: pending_approval, approved (with the stored result), denied or expired.",
 		Handler:     bind(s.checkApproval)}
 }

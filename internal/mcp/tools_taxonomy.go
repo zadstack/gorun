@@ -25,7 +25,7 @@ type createTermInput struct {
 
 func taxonomyTools(svc taxonomy.Service) []kernel.MCPTool {
 	return []kernel.MCPTool{
-		{Name: "list_taxonomies", Scopes: []string{scopeView},
+		{Name: "list_taxonomies", Title: "List taxonomies", ReadOnly: true, Scopes: []string{scopeView},
 			Description: "List taxonomies (category, tag and custom ones) with the content types they apply to.",
 			Handler: bind(func(ctx context.Context, _ struct{}) (any, error) {
 				list, err := svc.Taxonomies(ctx)
@@ -34,7 +34,7 @@ func taxonomyTools(svc taxonomy.Service) []kernel.MCPTool {
 				}
 				return map[string]any{"taxonomies": list}, err
 			})},
-		{Name: "list_terms", Scopes: []string{scopeView}, Input: listTermsInput{},
+		{Name: "list_terms", Title: "List terms", ReadOnly: true, Scopes: []string{scopeView}, Input: listTermsInput{},
 			Description: "List the terms of a taxonomy.",
 			Handler: bind(func(ctx context.Context, in listTermsInput) (any, error) {
 				page, per := paging(in.Page, in.PerPage)
@@ -47,7 +47,7 @@ func taxonomyTools(svc taxonomy.Service) []kernel.MCPTool {
 				}
 				return newPage(terms, total, page, per), nil
 			})},
-		{Name: "create_term", Scopes: []string{scopeTaxonomy}, Input: createTermInput{},
+		{Name: "create_term", Title: "Create term", Scopes: []string{scopeTaxonomy}, Input: createTermInput{},
 			Description: "Create a term in a taxonomy.",
 			Handler: bind(func(ctx context.Context, in createTermInput) (any, error) {
 				return svc.SaveTerm(ctx, taxonomy.Term{Taxonomy: in.Taxonomy, Name: in.Name, Slug: in.Slug,

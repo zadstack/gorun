@@ -103,7 +103,7 @@ func (s *server) newSDKServer(principal principalFunc, limit func() error) *sdk.
 			schema = emptyObject
 		}
 		tool := t
-		srv.AddTool(&sdk.Tool{Name: t.Name, Description: s.describe(t), InputSchema: schema},
+		srv.AddTool(&sdk.Tool{Name: t.Name, Title: t.Title, Description: s.describe(t), InputSchema: schema, Annotations: annotations(t)},
 			func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 				ctx, err := with(ctx)
 				if err != nil {
@@ -148,6 +148,18 @@ func (s *server) visible(ctx context.Context, list []*sdk.Tool) []*sdk.Tool {
 		}
 	}
 	return out
+}
+
+// annotations maps a tool's title and hints to MCP tool annotations. Read-only
+// tools are idempotent and omit destructiveHint (it only applies to writes);
+// openWorldHint is always explicit because the protocol default is true.
+func annotations(t kernel.MCPTool) *sdk.ToolAnnotations {
+	a := &sdk.ToolAnnotations{Title: t.Title, ReadOnlyHint: t.ReadOnly, IdempotentHint: t.Idempotent || t.ReadOnly,
+		OpenWorldHint: new(t.OpenWorld)}
+	if !t.ReadOnly {
+		a.DestructiveHint = new(t.Destructive)
+	}
+	return a
 }
 
 func (s *server) describe(t kernel.MCPTool) string {

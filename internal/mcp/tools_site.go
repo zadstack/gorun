@@ -12,7 +12,7 @@ import (
 )
 
 func (s *server) siteTool() kernel.MCPTool {
-	return kernel.MCPTool{Name: "get_site_structure", Scopes: []string{scopeView},
+	return kernel.MCPTool{Name: "get_site_structure", Title: "Get site structure", ReadOnly: true, Scopes: []string{scopeView},
 		Description: "Everything needed to understand the site: identity, content types with fields, taxonomies, menus, active theme and template names. Call this first.",
 		Handler:     bind(func(ctx context.Context, _ struct{}) (any, error) { return s.siteStructure(ctx) })}
 }

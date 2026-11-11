@@ -282,11 +282,23 @@ func (r *APIRegistry) Operations() []APIOperation {
 }
 
 // MCPTool is one MCP tool. Sensitive tools require human approval.
+//
+// Title and the hints are published as MCP tool annotations so clients can
+// label tools and decide how much confirmation a call needs: ReadOnly tools
+// never change state; Destructive tools may delete or overwrite existing
+// data (meaningful only when not ReadOnly); Idempotent tools have no further
+// effect when repeated with the same arguments; OpenWorld tools reach
+// systems outside GoRun (for example by downloading a URL).
 type MCPTool struct {
 	Name, Description string
+	Title             string
 	Input             any
 	Scopes            []string
 	Sensitive         bool
+	ReadOnly          bool
+	Destructive       bool
+	Idempotent        bool
+	OpenWorld         bool
 	Handler           func(ctx context.Context, args json.RawMessage) (any, error)
 }
 

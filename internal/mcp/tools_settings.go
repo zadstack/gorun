@@ -101,7 +101,7 @@ func validateSettings(in map[string]any) (map[string]string, map[string]string) 
 }
 
 func settingsTool(d *kernel.Deps) kernel.MCPTool {
-	return kernel.MCPTool{Name: "update_settings", Scopes: []string{scopeSettings}, Sensitive: true, Input: updateSettingsInput{},
+	return kernel.MCPTool{Name: "update_settings", Title: "Update site settings", Destructive: true, Idempotent: true, Scopes: []string{scopeSettings}, Sensitive: true, Input: updateSettingsInput{},
 		Description: "Change site identity and SEO settings (site.title, site.tagline, site.locale, site.timezone, site.logo, contact.email, site.posts_per_page, seo.*). " +
 			"Base URL, theme and front page stay admin-only. All values are validated; nothing is saved if one is invalid.",
 		Handler: bind(func(ctx context.Context, in updateSettingsInput) (any, error) {

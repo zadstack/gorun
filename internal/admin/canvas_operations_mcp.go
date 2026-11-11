@@ -28,15 +28,18 @@ type canvasMCPInput struct {
 const canvasMCPDescription = "Selected-board operations only. Named-agent tasks require explicit owner review. Results append notes and never publish content."
 
 func (h *handlers) canvasMCPTools() {
-	for _, spec := range []struct{ name, scope, description string }{
-		{"canvases.context", "canvas.read", canvasMCPDescription + " Context sources start with a \"## [ref:…]\" header; a shortened source ends with a \"[… N more characters. Full text: ref:…]\" marker."},
-		{"canvases.source", "canvas.read", canvasMCPDescription + " Returns the full current text of one ref (board_id, run_id, ref) listed in that run's context, at most 200,000 characters: characters is the returned length, total_characters the full length, truncated is true when cut."},
-		{"canvases.pending", "canvas.read", canvasMCPDescription},
-		{"canvases.request_run", "canvas.run", canvasMCPDescription},
-		{"canvases.append_result", "canvas.append", canvasMCPDescription},
+	for _, spec := range []struct {
+		name, scope, description, title string
+		readOnly                        bool
+	}{
+		{"canvases.context", "canvas.read", canvasMCPDescription + " Context sources start with a \"## [ref:…]\" header; a shortened source ends with a \"[… N more characters. Full text: ref:…]\" marker.", "Get canvas run context", true},
+		{"canvases.source", "canvas.read", canvasMCPDescription + " Returns the full current text of one ref (board_id, run_id, ref) listed in that run's context, at most 200,000 characters: characters is the returned length, total_characters the full length, truncated is true when cut.", "Get canvas run source", true},
+		{"canvases.pending", "canvas.read", canvasMCPDescription, "List pending canvas runs", true},
+		{"canvases.request_run", "canvas.run", canvasMCPDescription, "Request canvas run", false},
+		{"canvases.append_result", "canvas.append", canvasMCPDescription, "Append canvas result", false},
 	} {
 		name, scope := spec.name, spec.scope
-		h.d.MCP.AddTool(kernel.MCPTool{Name: name, Description: spec.description, Input: canvasMCPInput{}, Scopes: []string{scope, "content.view"}, Handler: func(ctx context.Context, raw json.RawMessage) (any, error) {
+		h.d.MCP.AddTool(kernel.MCPTool{Name: name, Title: spec.title, ReadOnly: spec.readOnly, Idempotent: !spec.readOnly, Description: spec.description, Input: canvasMCPInput{}, Scopes: []string{scope, "content.view"}, Handler: func(ctx context.Context, raw json.RawMessage) (any, error) {
 			var in canvasMCPInput
 			dec := json.NewDecoder(bytes.NewReader(raw))
 			dec.DisallowUnknownFields()

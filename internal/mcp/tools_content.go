@@ -90,7 +90,7 @@ type deleteContentInput struct {
 
 func contentTools(svc content.Service) []kernel.MCPTool {
 	return []kernel.MCPTool{
-		{Name: "list_content", Scopes: []string{scopeView}, Input: listContentInput{},
+		{Name: "list_content", Title: "List content", ReadOnly: true, Scopes: []string{scopeView}, Input: listContentInput{},
 			Description: "Query content with the GoRun query DSL (type, status, search, taxonomy, indexed field filters, order, paging).",
 			Handler: bind(func(ctx context.Context, in listContentInput) (any, error) {
 				page, per := paging(in.Page, in.PerPage)
@@ -101,7 +101,7 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return newPage(p.Items, p.Total, p.Page, p.PerPage), nil
 			})},
-		{Name: "get_content", Scopes: []string{scopeView}, Input: getContentInput{},
+		{Name: "get_content", Title: "Get content item", ReadOnly: true, Scopes: []string{scopeView}, Input: getContentInput{},
 			Description: "Get one content item by id, or by type + slug (+ locale).",
 			Handler: bind(func(ctx context.Context, in getContentInput) (any, error) {
 				switch {
@@ -112,7 +112,7 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return nil, invalid("give id, or type and slug", map[string]string{"id": "required"})
 			})},
-		{Name: "create_content", Scopes: []string{scopeCreate}, Input: createContentInput{},
+		{Name: "create_content", Title: "Create draft content", Scopes: []string{scopeCreate}, Input: createContentInput{},
 			Description: "Create a content item as a draft (or pending review). Field values are validated against the type's schema.",
 			Handler: bind(func(ctx context.Context, in createContentInput) (any, error) {
 				if !draftStatuses[content.Status(in.Status)] {
@@ -126,10 +126,10 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 					Fields: in.Fields, AuthorID: actingUserID(ctx), Status: status, ParentID: in.ParentID, MenuOrder: in.MenuOrder,
 					Template: in.Template, FeaturedMediaID: in.FeaturedMediaID, SEO: in.SEO, Locale: in.Locale, Terms: in.Terms})
 			})},
-		{Name: "update_content", Scopes: []string{scopeEdit}, Input: updateContentInput{},
+		{Name: "update_content", Title: "Update content", Destructive: true, Idempotent: true, Scopes: []string{scopeEdit}, Input: updateContentInput{},
 			Description: "Update a content item: only the keys you send change (fields are merged key by key). Editing a live (published, private or scheduled) item needs human approval.",
 			Handler:     func(ctx context.Context, args json.RawMessage) (any, error) { return updateContent(ctx, svc, args) }},
-		{Name: "publish_content", Scopes: []string{scopePublish}, Sensitive: true, Input: idInput{},
+		{Name: "publish_content", Title: "Publish content", Idempotent: true, Scopes: []string{scopePublish}, Sensitive: true, Input: idInput{},
 			Description: "Publish a content item (goes live).",
 			Handler: bind(func(ctx context.Context, in idInput) (any, error) {
 				if err := svc.Publish(ctx, in.ID); err != nil {
@@ -137,7 +137,7 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return svc.Get(ctx, in.ID)
 			})},
-		{Name: "unpublish_content", Scopes: []string{scopePublish}, Sensitive: true, Input: idInput{},
+		{Name: "unpublish_content", Title: "Unpublish content", Idempotent: true, Scopes: []string{scopePublish}, Sensitive: true, Input: idInput{},
 			Description: "Unpublish a content item (back to draft).",
 			Handler: bind(func(ctx context.Context, in idInput) (any, error) {
 				if err := svc.Unpublish(ctx, in.ID); err != nil {
@@ -145,15 +145,15 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return svc.Get(ctx, in.ID)
 			})},
-		{Name: "list_translations", Scopes: []string{scopeView}, Input: idInput{},
+		{Name: "list_translations", Title: "List translations", ReadOnly: true, Scopes: []string{scopeView}, Input: idInput{},
 			Description: "List a content item and its translations (the same content in other locales), by locale.",
 			Handler:     bind(func(ctx context.Context, in idInput) (any, error) { return svc.Translations(ctx, in.ID) })},
-		{Name: "create_translation", Scopes: []string{scopeCreate}, Input: translationInput{},
+		{Name: "create_translation", Title: "Create translation draft", Scopes: []string{scopeCreate}, Input: translationInput{},
 			Description: "Copy a content item into another locale as a draft linked to it as a translation; then translate its text with update_content.",
 			Handler: bind(func(ctx context.Context, in translationInput) (any, error) {
 				return svc.CreateTranslation(ctx, in.ID, in.Locale)
 			})},
-		{Name: "link_translation", Scopes: []string{scopeEdit}, Input: linkTranslationInput{},
+		{Name: "link_translation", Title: "Link translation", Idempotent: true, Scopes: []string{scopeEdit}, Input: linkTranslationInput{},
 			Description: "Link an existing item (and its translations) as translations of another item of the same type; each locale once.",
 			Handler: bind(func(ctx context.Context, in linkTranslationInput) (any, error) {
 				if err := svc.LinkTranslation(ctx, in.ID, in.TranslationID); err != nil {
@@ -161,7 +161,7 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return svc.Translations(ctx, in.ID)
 			})},
-		{Name: "unlink_translation", Scopes: []string{scopeEdit}, Input: idInput{},
+		{Name: "unlink_translation", Title: "Unlink translation", Idempotent: true, Scopes: []string{scopeEdit}, Input: idInput{},
 			Description: "Take a content item out of its translations (the item itself is kept).",
 			Handler: bind(func(ctx context.Context, in idInput) (any, error) {
 				if err := svc.UnlinkTranslation(ctx, in.ID); err != nil {
@@ -169,7 +169,7 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return svc.Get(ctx, in.ID)
 			})},
-		{Name: "delete_content", Scopes: []string{scopeDelete}, Sensitive: true, Input: deleteContentInput{},
+		{Name: "delete_content", Title: "Delete content", Destructive: true, Idempotent: true, Scopes: []string{scopeDelete}, Sensitive: true, Input: deleteContentInput{},
 			Description: "Move a content item to the trash (hard: delete permanently).",
 			Handler: bind(func(ctx context.Context, in deleteContentInput) (any, error) {
 				if err := svc.Delete(ctx, in.ID, in.Hard); err != nil {
