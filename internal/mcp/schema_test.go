@@ -1,9 +1,11 @@
 package mcp
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/zadstack/gorun/internal/builder"
@@ -97,5 +99,41 @@ func TestSchemaEnumsPatternsAndNestedRequired(t *testing.T) {
 	}
 	if purpose["description"] == nil {
 		t.Errorf("purpose doc tag missing: %v", purpose)
+	}
+}
+
+// Canvas operations publish one schema and description each instead of a
+// shared 7-field input with a generic description.
+func TestCanvasToolSchemasArePerTool(t *testing.T) {
+	res, err := newEnv(t, nil).agent("*").cs.ListTools(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string][]any{
+		"canvases.pending":       {"board_id"},
+		"canvases.context":       {"board_id", "run_id"},
+		"canvases.source":        {"board_id", "run_id", "ref"},
+		"canvases.request_run":   {"board_id", "node_id", "request_id"},
+		"canvases.append_result": {"board_id", "run_id", "context_token", "text"},
+	}
+	for _, tl := range res.Tools {
+		req, ok := want[tl.Name]
+		if !ok {
+			continue
+		}
+		delete(want, tl.Name)
+		var s map[string]any
+		b, _ := json.Marshal(tl.InputSchema)
+		_ = json.Unmarshal(b, &s)
+		props, _ := s["properties"].(map[string]any)
+		if got := list(s["required"]); !reflect.DeepEqual(got, req) || len(props) != len(req) {
+			t.Errorf("%s schema: required %v, %d properties; want %v", tl.Name, got, len(props), req)
+		}
+		if strings.HasPrefix(tl.Description, "Selected-board operations only.") {
+			t.Errorf("%s keeps the generic description: %s", tl.Name, tl.Description)
+		}
+	}
+	if len(want) != 0 {
+		t.Errorf("canvas tools not listed: %v", want)
 	}
 }

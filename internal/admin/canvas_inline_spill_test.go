@@ -262,7 +262,7 @@ func TestCanvasSourceTool(t *testing.T) {
 				if err == nil {
 					t.Fatalf("%s ref served: %v", which, out)
 				}
-				if err != errCanvasConsent {
+				if err != errCanvasMCPForbidden {
 					t.Fatal("refusal must use the generic error", err)
 				}
 				return
