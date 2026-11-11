@@ -5,6 +5,20 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Shared admin component foundation (docs/ADMIN_COMPONENTS.md): type, radius and spacing tokens plus `.btn`, `.field`, `.data-table`, `.badge`, `.empty-state`, `.kv`, `.card` and a `partials/page-header` template with title, subtitle, back link, muted ID disclosure and actions.
+- One date/time output: the `datetime` template function and the `gpDateTime` script helper render `<time dir="ltr">` with the short UTC value and the full value in the tooltip.
+
+### Changed
+
+- Agent channels use the components: members are picked from the owner's agent keys by name (no free-text member ID), raw IDs move into a small ID disclosure, and messages show author initials, time and a hand-off chip with a petrol send button.
+- API keys have one primary "New API key" action in the page header and compact Rotate/Revoke row actions.
+- Agent approvals show arguments as a key/value list with the raw JSON in a disclosure; key and requester names are isolated so Arabic layouts no longer scramble them.
+- Private reports show "Report · date" in the list and the report category on the detail page instead of IDs.
+- The forms inbox shows formatted times, status badges, an entry count and a compact filter bar; form submissions and form entry pages use the same date format.
+- Canvas recovery and the agents drawer show timestamps through the shared helper instead of `toLocaleString()`.
+
 ## [0.21.0] - 2026-11-11
 
 ### Added
