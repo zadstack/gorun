@@ -178,10 +178,25 @@ func (h *handlers) apiKeyRevoke(w http.ResponseWriter, r *http.Request) {
 	if h.apiDeny(w, r, PermAPIKeys) {
 		return
 	}
-	if h.keyWriteErr(w, r, h.keys.Revoke(r.Context(), urlID(r))) {
+	k, err := h.keys.Get(r.Context(), urlID(r))
+	if h.keyWriteErr(w, r, err) {
 		return
 	}
-	httpx.JSON(w, http.StatusOK, opResult{ID: urlID(r), Status: "revoked"}, nil)
+	if !canRevokeKey(auth.UserFromContext(r.Context()), k) {
+		httpx.Error(w, http.StatusForbidden, "not_key_owner", "only the key's owner or an administrator can revoke it", nil)
+		return
+	}
+	if h.keyWriteErr(w, r, h.keys.Revoke(r.Context(), k.ID)) {
+		return
+	}
+	httpx.JSON(w, http.StatusOK, opResult{ID: k.ID, Status: "revoked"}, nil)
+}
+
+// canRevokeKey reports whether u may revoke k: its owner, or an
+// administrator (the only role holding "*"). Holding the key-management
+// permission alone does not reach other users' keys.
+func canRevokeKey(u *auth.User, k *auth.APIKey) bool {
+	return u != nil && k != nil && (k.UserID == u.ID || u.Role == auth.RoleAdmin)
 }
 
 // keyWriteErr writes the API error for err and reports whether it did.

@@ -295,8 +295,16 @@ func (s *service) execute(ctx context.Context, payload json.RawMessage) error {
 	if a.ExecutionKind == "text" && s.complete == nil {
 		return s.fail(ctx, p.RunID, "ai_unconfigured")
 	}
-	if _, e = s.d.DB.ExecContext(ctx, `UPDATE workagents_runs SET status='running',started_at=? WHERE id=?`, db.FormatTime(s.now()), p.RunID); e != nil {
+	// Claim the run: only a queued run moves to running. A redelivered job
+	// (the queue requeues a job whose heartbeat went stale while its worker
+	// may still be executing) finds the run already running and must not
+	// call the provider a second time.
+	claim, e := s.d.DB.ExecContext(ctx, `UPDATE workagents_runs SET status='running',started_at=? WHERE id=? AND status='queued'`, db.FormatTime(s.now()), p.RunID)
+	if e != nil {
 		return e
+	}
+	if n, e := claim.RowsAffected(); e != nil || n == 0 {
+		return s.interrupted(ctx, p.RunID, e)
 	}
 	var result string
 	switch a.ExecutionKind {
@@ -312,6 +320,8 @@ func (s *service) execute(ctx context.Context, payload json.RawMessage) error {
 		e = errUnavailable
 	}
 	if ctx.Err() != nil {
+		// Shutdown: hand the run back so the requeued job claims it again.
+		_, _ = s.d.DB.ExecContext(context.WithoutCancel(ctx), `UPDATE workagents_runs SET status='queued',started_at='' WHERE id=? AND status='running'`, p.RunID)
 		return ctx.Err()
 	}
 	if e != nil {
@@ -340,6 +350,25 @@ func (s *service) execute(ctx context.Context, payload json.RawMessage) error {
 		s.d.Log.Info("workagent run finished", "run_id", p.RunID, "agent_id", a.ID)
 	}
 	return e
+}
+
+// interrupted handles a delivery that could not claim its run. A run that
+// is still "running" was claimed by an earlier delivery: either that worker
+// is still executing it, or it died without finishing. Neither may call the
+// provider again, so the run fails closed as worker_interrupted unless the
+// earlier delivery finishes it first.
+func (s *service) interrupted(ctx context.Context, id string, claimErr error) error {
+	if claimErr != nil {
+		return claimErr
+	}
+	res, e := s.d.DB.ExecContext(ctx, `UPDATE workagents_runs SET status='failed',error_code='worker_interrupted',finished_at=? WHERE id=? AND status='running'`, db.FormatTime(s.now()), id)
+	if e != nil {
+		return e
+	}
+	if n, _ := res.RowsAffected(); n > 0 {
+		s.d.Log.Warn("workagent run redelivered while running; not executed again", "run_id", id, "error_code", "worker_interrupted")
+	}
+	return nil
 }
 
 func (s *service) fail(ctx context.Context, id, code string) error {

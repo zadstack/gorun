@@ -16,5 +16,5 @@
  <div data-studio-items class="space-y-4"></div>
  <p class="text-xs text-muted">{{if eq (locale) "ar"}}حذف النتيجة هنا لا يحذف الوسائط من المكتبة. متابعة الفيديو تستخدم أداة الحالة المهيأة فقط.{{else}}Removing a result here keeps imported files in Media. Video status uses only the configured status tool.{{end}}</p>
  {{end}}
-</section><script defer src="{{asset "studio.js"}}"></script>
+</section>{{template "partials/studio-strings"}}<script defer src="{{asset "studio.js"}}"></script>
 {{end}}

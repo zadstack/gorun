@@ -35,7 +35,8 @@ jobs:
         # Pinned; checks and exclusions live in staticcheck.conf.
         run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
       - name: govulncheck
-        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+        # Pinned like staticcheck; bump deliberately.
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - name: check formatting
         run: test -z "$(gofmt -l cmd pkg internal examples tools web)"
       - name: default theme CSS is up to date
@@ -99,18 +100,19 @@ jobs:
   # cancelled dependency must not turn the aggregate into a successful check.
   test:
     if: ${{ always() }}
-    needs: [quality, race, coverage]
+    needs: [quality, race, coverage, browser]
     runs-on: ubuntu-latest
     steps:
-      - name: require all Go checks
+      - name: require all Go and browser checks
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
           RACE_RESULT: ${{ needs.race.result }}
           COVERAGE_RESULT: ${{ needs.coverage.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
         run: |
-          for result in "$QUALITY_RESULT" "$RACE_RESULT" "$COVERAGE_RESULT"; do
+          for result in "$QUALITY_RESULT" "$RACE_RESULT" "$COVERAGE_RESULT" "$BROWSER_RESULT"; do
             if [ "$result" != success ]; then
-              echo "A required Go check did not succeed: $result" >&2
+              echo "A required check did not succeed: $result" >&2
               exit 1
             fi
           done

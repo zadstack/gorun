@@ -1,13 +1,32 @@
 // GoRun admin helpers (Alpine stores/components, HTMX hooks, icons).
 document.addEventListener('alpine:init', () => {
   // Confirmation modal: gp.confirm(message, onYes) or data-confirm / hx-confirm.
+  // The dialog keeps Tab between its buttons and returns focus to the
+  // control that opened it on every close path (as agents-dock.js does).
   Alpine.store('confirm', {
     open: false,
     message: '',
     onYes: null,
-    ask(message, onYes) { this.message = message; this.onYes = onYes; this.open = true; },
+    returnFocus: null,
+    ask(message, onYes) {
+      this.returnFocus = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+      this.message = message; this.onYes = onYes; this.open = true;
+    },
     yes() { const fn = this.onYes; this.close(); if (fn) fn(); },
-    close() { this.open = false; this.onYes = null; },
+    close() {
+      if (!this.open) return;
+      this.open = false; this.onYes = null;
+      const target = this.returnFocus; this.returnFocus = null;
+      if (target?.isConnected) target.focus({ preventScroll: true });
+    },
+    trap(event, root) {
+      const buttons = [...root.querySelectorAll('button')].filter((b) => !b.disabled);
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (!first) return;
+      if (!root.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+      else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    },
   });
   // Toasts: gp.toast(message, kind) with kind success | error | info.
   Alpine.store('toasts', {

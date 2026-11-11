@@ -412,5 +412,6 @@
   "bulk.error.schedule_invalid": "Enter a date and time to schedule the items.",
   "bulk.error.schedule_past": "The schedule time must be in the future (UTC). Nothing was changed.",
   "bulk.error.author_invalid": "Choose an active team member who may write content. Nothing was changed.",
-  "bulk.error.term_invalid": "Choose an existing term of this content type. Nothing was changed."
+  "bulk.error.term_invalid": "Choose an existing term of this content type. Nothing was changed.",
+  "comments.empty_help": "Visitor comments on content with comments enabled appear here. Choose a status above to review pending or approved comments."
 }

@@ -211,7 +211,15 @@ func (h *handlers) keyCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) keyRevoke(w http.ResponseWriter, r *http.Request) {
-	err := h.keys.Revoke(r.Context(), urlID(r))
+	k, err := h.keys.Get(r.Context(), urlID(r))
+	if err == nil && !canRevokeKey(auth.UserFromContext(r.Context()), k) {
+		httpx.SetFlash(w, "error", "admin.keys.revoke_denied")
+		redirect(w, r, "/admin/agents/keys")
+		return
+	}
+	if err == nil {
+		err = h.keys.Revoke(r.Context(), k.ID)
+	}
 	switch {
 	case errors.Is(err, auth.ErrNotFound):
 		httpx.SetFlash(w, "error", "admin.keys.revoke_missing")

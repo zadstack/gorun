@@ -136,6 +136,9 @@ func TestStudioContentOwnershipAndUnconfiguredCapabilities(t *testing.T) {
 	if resp.StatusCode != 200 || !strings.Contains(body, "Tool contracts") {
 		t.Fatalf("settings %d", resp.StatusCode)
 	}
+	// studio.js reads its interface strings from the catalog, not from a
+	// built-in English/Arabic pair.
+	mustContain(t, body, `data-studio-strings`, `data-request-failed="Request failed."`, `data-tools-listed="Tools listed. No tool was executed."`)
 	s.login("author@example.com", "author", "en")
 	resp, _ = s.do("GET", "/admin/x/studio/"+it.ID, nil)
 	if resp.StatusCode != 403 {

@@ -113,7 +113,7 @@
             <td class="px-3 py-2"><a href="{{.EditURL}}" class="font-medium text-blue hover:text-blue-hover" dir="auto">{{if .Title}}{{.Title}}{{else}}{{t "content.list.untitled"}}{{end}}</a>
               <div class="font-mono text-xs text-muted" dir="auto">{{.Slug}}</div>{{if .ParentTitle}}<small class="text-muted">↳ {{.ParentTitle}}</small>{{end}}</td>
             <td class="px-3 py-2">{{template "content/status_chip" .Status}}<small class="block text-muted mt-1">{{.Locale}}{{if .AuthorName}} · {{.AuthorName}}{{end}}</small></td>
-            <td class="px-3 py-2 text-end font-mono text-xs text-muted">{{date .UpdatedAt}}</td>
+            <td class="px-3 py-2 text-end font-mono text-xs text-muted">{{datetime .UpdatedAt}}</td>
           </tr>
           {{else}}
           <tr><td colspan="4" class="px-3 py-8 text-center text-muted">{{t "content.list.empty"}}</td></tr>

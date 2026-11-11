@@ -101,7 +101,7 @@ infrastructure, not modules you list in `Modules()`.
 A module that implements `kernel.OptionalModule` (`Enabled(ctx, db) (bool, error)`) is evaluated
 before any catalog, migration, route, job or hook registration. Disabled, it registers nothing and
 its tables, settings and queued jobs are left untouched; enabled again, it reads them back.
-Built-in optional modules (commerce, saas, membership, launch, workagents, identityai, identitylogo, wpmigrate, mcp, ext) answer with `kernel.AddonEnabled`, which
+Built-in optional modules (analytics, commerce, saas, membership, launch, workagents, identityai, identitylogo, wpmigrate, mcp, ext) answer with `kernel.AddonEnabled`, which
 reads the site setting `addons.<name>.enabled` (a JSON boolean; missing means **enabled**, so
 existing installs change nothing). The operator config (`[addons]` in the site config or
 `GORUN_ADDONS='{"commerce":"disabled"}'`) can only restrict: mode `disabled` turns an optional

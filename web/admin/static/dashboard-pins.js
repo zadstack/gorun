@@ -99,6 +99,8 @@
       // Listeners replace the shortcut regions synchronously, so the pin buttons
       // painted next include rows they just rendered.
       document.dispatchEvent(new CustomEvent('gorun:dashboard-pins-changed',{detail:{ids:data.ids,navigationHTML:data.navigation_html||''}}));
+      // Fetched fragments carry {{icon}} placeholders that only lucide turns into SVGs.
+      window.lucide?.createIcons();
       updateButtons(data.ids);if(nav&&Number.isFinite(top))nav.scrollTop=top;window.scrollTo(left,pageTop);
       if(quickID){const row=[...document.querySelectorAll('[data-quick-id]')].find(row=>row.dataset.quickId===quickID);(row?.querySelector(quickRemove?'[data-quick-remove]':'a')||document.querySelector('[data-quick-access] h2'))?.focus({preventScroll:true});}
       else if(panelID&&panelControl){const panel=[...(grid?.querySelectorAll('[data-pin-id]')||[])].find(panel=>panel.dataset.pinId===panelID);(panel?.querySelector(panelControl)||document.querySelector('[data-quick-access] h2'))?.focus({preventScroll:true});}
