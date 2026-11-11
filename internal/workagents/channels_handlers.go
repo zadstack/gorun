@@ -183,11 +183,31 @@ type channelsPageData struct {
 }
 
 type channelThreadPageData struct {
-	Channel   Channel
-	Messages  []channelMessageView
-	AgentKeys []channelAgentKeyOption
-	CanClose  bool
-	CanPost   bool
+	Channel  Channel
+	Messages []channelMessageView
+	// AgentKeys are the owner's live agent keys; AvailableKeys are the ones
+	// not in the channel yet (the add-member choices).
+	AgentKeys     []channelAgentKeyOption
+	AvailableKeys []channelAgentKeyOption
+	CanClose      bool
+	CanPost       bool
+}
+
+// nonMemberKeys returns the agent keys that are not channel members yet.
+func nonMemberKeys(keys []channelAgentKeyOption, members []ChannelMember) []channelAgentKeyOption {
+	in := map[string]bool{}
+	for _, m := range members {
+		if m.Kind == "agent_key" {
+			in[m.MemberID] = true
+		}
+	}
+	var out []channelAgentKeyOption
+	for _, k := range keys {
+		if !in[k.ID] {
+			out = append(out, k)
+		}
+	}
+	return out
 }
 
 // channelsPage is the channel list with a create form (own agent keys are
@@ -215,7 +235,8 @@ func (h *handlers) channelThreadPage(w http.ResponseWriter, r *http.Request) {
 		h.failure(w, e)
 		return
 	}
-	data := channelThreadPageData{Channel: c, Messages: messageViews(c.Members, msgs), AgentKeys: h.s.ownerAgentKeys(r.Context())}
+	keys := h.s.ownerAgentKeys(r.Context())
+	data := channelThreadPageData{Channel: c, Messages: messageViews(c.Members, msgs), AgentKeys: keys, AvailableKeys: nonMemberKeys(keys, c.Members)}
 	author, ok := h.s.postAuthor(r.Context())
 	data.CanPost = ok && c.Status == "open" && h.s.isChannelMember(r.Context(), c.ID, author.Kind, author.ID)
 	data.CanClose = channelManageAllowed(r.Context()) && c.Status == "open"

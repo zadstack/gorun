@@ -20,7 +20,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -429,14 +428,18 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 			p := r.URL.Path
 			return navPathMatches(p, href)
 		},
-		"path":  func() string { return pathOf(r) },
-		"icon":  icon,
-		"json":  toJSON,
-		"date":  formatDate,
-		"age":   formatAge,
-		"deref": deref,
-		"pct":   func(f float64) float64 { return f * 100 },
-		"asset": func(name string) string { return assetURL(assets, name) },
+		"path":     func() string { return pathOf(r) },
+		"icon":     icon,
+		"json":     toJSON,
+		"date":     formatDate,
+		"datetime": formatDateTime,
+		"initials": initials,
+		"dict":     dict,
+		"dataAttr": dataAttr,
+		"age":      formatAge,
+		"deref":    deref,
+		"pct":      func(f float64) float64 { return f * 100 },
+		"asset":    func(name string) string { return assetURL(assets, name) },
 		"pagination": func(page, perPage, total int) Pagination {
 			return NewPagination(page, perPage, total)
 		},
@@ -535,17 +538,6 @@ func icon(name string, class ...string) template.HTML {
 func toJSON(v any) (template.JS, error) {
 	b, err := json.Marshal(v)
 	return template.JS(b), err
-}
-
-func formatDate(s string) string {
-	if s == "" {
-		return "—"
-	}
-	ts, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		return s
-	}
-	return ts.UTC().Format("2006-01-02 15:04")
 }
 
 func assetURL(assets map[string]string, name string) string {

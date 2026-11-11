@@ -65,5 +65,6 @@
   "workspace.direct_tools": "فتح مباشرة",
   "workspace.all_tools": "كل أدوات الإدارة",
   "workspace.tools_hint": "افتح الأداة مباشرة دون التنقل بين أقسام الإعدادات.",
-  "workspace.more_tools": "أدوات أخرى"
+  "workspace.more_tools": "أدوات أخرى",
+  "id": "المعرّف"
 }

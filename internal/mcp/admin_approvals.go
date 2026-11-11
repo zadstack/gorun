@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/go-chi/chi/v5"
 
@@ -29,8 +30,42 @@ const (
 // approvalView is an approval prepared for the admin page.
 type approvalView struct {
 	Approval
+	// ArgList is the top-level arguments as key/value rows (empty when the
+	// arguments are not a JSON object); ArgsPretty keeps the raw JSON.
+	ArgList      []approvalArg
 	ArgsPretty   string
 	ResultPretty string
+}
+
+// approvalArg is one argument row. Code marks values that are JSON
+// (numbers, booleans, objects, arrays) rather than plain text.
+type approvalArg struct {
+	Key, Value string
+	Code       bool
+}
+
+// argList flattens a JSON object's top-level fields into sorted rows.
+func argList(raw json.RawMessage) []approvalArg {
+	var fields map[string]json.RawMessage
+	if len(raw) == 0 || json.Unmarshal(raw, &fields) != nil {
+		return nil
+	}
+	out := make([]approvalArg, 0, len(fields))
+	for k, v := range fields {
+		var s string
+		if json.Unmarshal(v, &s) == nil {
+			out = append(out, approvalArg{Key: k, Value: s})
+			continue
+		}
+		var buf bytes.Buffer
+		if json.Compact(&buf, v) != nil {
+			buf.Reset()
+			buf.Write(v)
+		}
+		out = append(out, approvalArg{Key: k, Value: buf.String(), Code: true})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Key < out[j].Key })
+	return out
 }
 
 type approvalsData struct {
@@ -53,7 +88,7 @@ func pretty(raw json.RawMessage) string {
 func views(list []Approval) []approvalView {
 	out := make([]approvalView, len(list))
 	for i, a := range list {
-		out[i] = approvalView{Approval: a, ArgsPretty: pretty(a.Args), ResultPretty: pretty(a.Result)}
+		out[i] = approvalView{Approval: a, ArgList: argList(a.Args), ArgsPretty: pretty(a.Args), ResultPretty: pretty(a.Result)}
 	}
 	return out
 }

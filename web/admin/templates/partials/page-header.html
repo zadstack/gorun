@@ -1,0 +1,24 @@
+{{/* Shared page header (docs/ADMIN_COMPONENTS.md). Pass a dict:
+  Title (required), TitleDir ("auto" for user-entered titles), Subtitle,
+  Back + BackLabel (a back link above the title), ID (a raw identifier shown
+  only in a small muted disclosure), Class (extra classes on <header>),
+  Action + ActionLabel [+ ActionIcon, ActionHook] (the primary petrol action
+  link; ActionHook is (dataAttr "name"): a data-* hook for scripts and tests),
+  Secondary + SecondaryLabel [+ SecondaryIcon] (a secondary action link).
+  Example:
+  {{template "partials/page-header" (dict "Title" (t "admin.keys.title") "Action" "#key-create" "ActionLabel" (t "admin.keys.new") "ActionIcon" "plus")}}
+*/}}
+{{define "partials/page-header"}}
+<header class="page-header{{with .Class}} {{.}}{{end}}">
+  <div class="page-header-main">
+    {{with .Back}}<a class="page-header-back" href="{{.}}">{{icon "chevron-left" "w-3.5 h-3.5 rtl:rotate-180"}}<span>{{$.BackLabel}}</span></a>{{end}}
+    <h1 class="page-header-title"{{with .TitleDir}} dir="{{.}}"{{end}}>{{.Title}}</h1>
+    {{with .Subtitle}}<p class="page-header-subtitle">{{.}}</p>{{end}}
+    {{with .ID}}<details class="id-detail page-header-meta"><summary>{{t "core.id"}}</summary><code dir="ltr">{{.}}</code></details>{{end}}
+  </div>
+  {{if or .Action .Secondary}}<div class="page-header-actions">
+    {{with .Secondary}}<a class="btn btn-secondary" href="{{.}}">{{with $.SecondaryIcon}}{{icon .}}{{end}}<span>{{$.SecondaryLabel}}</span></a>{{end}}
+    {{with .Action}}<a class="btn btn-primary" href="{{.}}"{{with $.ActionHook}} {{.}}{{end}}>{{with $.ActionIcon}}{{icon .}}{{end}}<span>{{$.ActionLabel}}</span></a>{{end}}
+  </div>{{end}}
+</header>
+{{end}}

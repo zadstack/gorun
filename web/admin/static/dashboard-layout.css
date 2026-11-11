@@ -17,8 +17,7 @@ body:has([data-dashboard-customize]:not([open])) .dashboard-grid[data-dashboard-
   background: var(--bg);
 }
 .admin-workspace #main:has(> [data-dashboard-layout]) > * { max-width: 74rem; margin-inline: auto; }
-.dashboard-page-heading { padding-block: .25rem .75rem; padding-inline-end: 10rem; border-bottom: 1px solid var(--line); }
-.admin-workspace #main .dashboard-page-heading h1 { font-size: 1.375rem; line-height: 1.5; font-weight: 600; }
+.dashboard-page-heading { padding-block: .25rem .75rem; padding-inline-end: 10rem; }
 .dashboard-page-heading p { margin-top: .25rem; color: var(--muted); font-size: var(--dashboard-body); }
 .admin-workspace .audit-customize { margin-block: 0 .75rem; }
 .admin-workspace .audit-customize > summary { position: absolute; inset-block-start: 1.5rem; inset-inline-end: clamp(1rem, 2vw, 2rem); width: fit-content; min-height: 36px; gap: .5rem; color: var(--muted); font-size: var(--dashboard-label); }
