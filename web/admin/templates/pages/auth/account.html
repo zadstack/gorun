@@ -1,0 +1,141 @@
+{{/* Data: accountPage. The signed-in user's own profile, sign-in security and sessions. */}}
+{{define "title"}}{{t "account.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "account.css"}}">
+<div class="account-page">
+{{template "partials/page-header" (dict "Title" (t "account.title") "Subtitle" (t "account.subtitle"))}}
+
+<div class="account-grid">
+  <section class="card" aria-labelledby="account-profile">
+    <div class="card-head"><h2 id="account-profile" class="section-title">{{t "account.profile.title"}}</h2></div>
+    <form method="post" action="/admin/account/profile" class="card-body" novalidate>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="field{{if index .Fields "name"}} is-invalid{{end}}">
+        <label for="acc-name" class="field-label">{{t "auth.field.name"}}</label>
+        <input id="acc-name" name="name" value="{{.Name}}" dir="auto" autocomplete="name" maxlength="200">
+        {{template "partials/field_errors" (index .Fields "name")}}
+      </div>
+      <div class="field{{if index .Fields "locale"}} is-invalid{{end}}">
+        <label for="acc-locale" class="field-label">{{t "account.profile.locale"}}</label>
+        <select id="acc-locale" name="locale" aria-describedby="acc-locale-help">
+          {{range .Locales}}<option value="{{.}}" {{if eq . $.Locale}}selected{{end}}>{{t (printf "admin.locale.%s" .)}}</option>{{end}}
+        </select>
+        <p id="acc-locale-help" class="field-help">{{t "account.profile.locale_help"}}</p>
+        {{template "partials/field_errors" (index .Fields "locale")}}
+      </div>
+      <div><button type="submit" class="btn btn-primary">{{t "core.action.save"}}</button></div>
+    </form>
+  </section>
+
+  <section class="card" aria-labelledby="account-email">
+    <div class="card-head"><h2 id="account-email" class="section-title">{{t "account.email.title"}}</h2></div>
+    <form method="post" action="/admin/account/email" class="card-body" novalidate>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="field{{if index .Fields "email"}} is-invalid{{end}}">
+        <label for="acc-email" class="field-label">{{t "auth.field.email"}}</label>
+        <input id="acc-email" name="email" type="email" dir="ltr" value="{{.Email}}" autocomplete="email" required {{if index .Fields "email"}}aria-invalid="true"{{end}}>
+        {{template "partials/field_errors" (index .Fields "email")}}
+      </div>
+      {{if .HasPassword}}
+      <div class="field{{if index .Fields "email_password"}} is-invalid{{end}}">
+        <label for="acc-email-password" class="field-label">{{t "account.field.current_password"}}</label>
+        <input id="acc-email-password" name="current_password" type="password" autocomplete="current-password" aria-describedby="acc-email-help">
+        <p id="acc-email-help" class="field-help">{{t "account.email.help"}}</p>
+        {{template "partials/field_errors" (index .Fields "email_password")}}
+      </div>
+      {{else}}{{with index .Fields "email_password"}}<p class="field-error">{{t .}}</p>{{end}}{{end}}
+      <div><button type="submit" class="btn btn-secondary">{{t "account.email.submit"}}</button></div>
+    </form>
+  </section>
+
+  <section class="card" id="password" aria-labelledby="account-password">
+    <div class="card-head"><h2 id="account-password" class="section-title">{{t "account.password.title"}}</h2></div>
+    <form method="post" action="/admin/account/password" class="card-body" novalidate>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      {{if .HasPassword}}
+      <div class="field{{if index .Fields "current_password"}} is-invalid{{end}}">
+        <label for="acc-current" class="field-label">{{t "account.field.current_password"}}</label>
+        <input id="acc-current" name="current_password" type="password" autocomplete="current-password" required>
+        {{template "partials/field_errors" (index .Fields "current_password")}}
+      </div>
+      {{else}}
+      <p class="field-help">{{t "account.password.none"}}</p>
+      {{with index .Fields "current_password"}}<p class="field-error">{{t .}}</p>{{end}}
+      {{end}}
+      <div class="field{{if index .Fields "new_password"}} is-invalid{{end}}">
+        <label for="acc-new" class="field-label">{{t "account.password.new"}}</label>
+        <input id="acc-new" name="new_password" type="password" autocomplete="new-password" required aria-describedby="acc-new-help">
+        <p id="acc-new-help" class="field-help">{{t "auth.field.password_help"}}</p>
+        {{template "partials/field_errors" (index .Fields "new_password")}}
+      </div>
+      <div class="field{{if index .Fields "confirm_password"}} is-invalid{{end}}">
+        <label for="acc-confirm" class="field-label">{{t "account.password.confirm"}}</label>
+        <input id="acc-confirm" name="confirm_password" type="password" autocomplete="new-password" required>
+        {{template "partials/field_errors" (index .Fields "confirm_password")}}
+      </div>
+      <p class="field-help">{{t "account.password.sessions"}}</p>
+      <div><button type="submit" class="btn btn-secondary">{{t "account.password.submit"}}</button></div>
+    </form>
+  </section>
+
+  <section class="card" aria-labelledby="account-2fa" data-account-two-factor>
+    <div class="card-head">
+      <h2 id="account-2fa" class="section-title">{{t "twofactor.setup.title"}}</h2>
+      {{if .TwoFactor.Enabled}}<span class="badge badge-success">{{icon "shield-check"}}{{t "twofactor.status.on"}}</span>{{else}}<span class="badge{{if .TwoFactorRequired}} badge-warning{{end}}">{{t "twofactor.status.off"}}</span>{{end}}
+    </div>
+    <div class="card-body">
+      {{if .TwoFactor.Enabled}}
+      <dl class="kv">
+        <div><dt>{{t "twofactor.status.since"}}</dt><dd>{{datetime .TwoFactor.EnabledAt}}</dd></div>
+        <div><dt>{{t "twofactor.status.recovery_left"}}</dt><dd><span dir="ltr">{{.TwoFactor.RecoveryLeft}}</span> / 10</dd></div>
+      </dl>
+      {{else}}
+      <p>{{t "account.two_factor.off"}}</p>
+      {{if .TwoFactorRequired}}<p class="account-notice account-notice-warning">{{icon "shield-alert"}}<span>{{t "twofactor.setup.required"}}</span></p>{{end}}
+      {{end}}
+      <div class="account-section-actions">
+        <a class="btn {{if .TwoFactor.Enabled}}btn-secondary{{else}}btn-primary{{end}}" href="/admin/account/two-factor">{{if .TwoFactor.Enabled}}{{icon "settings-2"}}<span>{{t "account.two_factor.manage"}}</span>{{else}}{{icon "shield-plus"}}<span>{{t "twofactor.start.submit"}}</span>{{end}}</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="card account-sessions" id="sessions" aria-labelledby="account-sessions">
+  <div class="card-head">
+    <h2 id="account-sessions" class="section-title">{{t "account.sessions.title"}}</h2>
+    {{if .OtherSessions}}
+    <form method="post" action="/admin/account/sessions/revoke-others" class="ms-auto" data-confirm="{{t "account.sessions.revoke_others_confirm"}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="btn btn-danger btn-sm">{{icon "log-out"}}<span>{{t "account.sessions.revoke_others"}}</span></button>
+    </form>
+    {{end}}
+  </div>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead><tr><th scope="col">{{t "account.sessions.device"}}</th><th scope="col">{{t "account.sessions.ip"}}</th><th scope="col" class="col-created">{{t "account.sessions.created"}}</th><th scope="col">{{t "account.sessions.last_seen"}}</th><th scope="col" class="actions"><span class="sr-only">{{t "account.sessions.actions"}}</span></th></tr></thead>
+      <tbody>
+      {{range .Sessions}}
+      <tr data-session{{if .Current}} data-session-current{{end}}>
+        <td><span class="session-device" title="{{.UA}}">{{if .Device}}<bdi>{{.Device}}</bdi>{{else}}{{t "account.sessions.unknown_device"}}{{end}}</span>{{if .Current}}<span class="badge badge-info">{{t "account.sessions.current"}}</span>{{end}}</td>
+        <td><span dir="ltr">{{if .IP}}{{.IP}}{{else}}—{{end}}</span></td>
+        <td class="col-created">{{datetime .CreatedAt}}</td>
+        <td>{{datetime .LastSeenAt}}</td>
+        <td class="actions">{{if not .Current}}<form method="post" action="/admin/account/sessions/{{.ID}}/revoke"><input type="hidden" name="_csrf" value="{{csrf}}"><button type="submit" class="btn btn-ghost btn-sm" aria-label="{{t "account.sessions.revoke_label" .Device}}">{{t "account.sessions.revoke"}}</button></form>{{end}}</td>
+      </tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{{if .CanAPIKeys}}
+<section class="card" aria-labelledby="account-keys">
+  <div class="card-head"><h2 id="account-keys" class="section-title">{{t "account.keys.title"}}</h2></div>
+  <div class="card-body">
+    <p class="field-help">{{t "account.keys.lead"}}</p>
+    <div><a class="btn btn-secondary" href="/admin/agents/keys">{{icon "key-round"}}<span>{{t "account.keys.open"}}</span></a></div>
+  </div>
+</section>
+{{end}}
+</div>
+{{end}}

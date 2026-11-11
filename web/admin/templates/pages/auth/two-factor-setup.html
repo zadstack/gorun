@@ -3,7 +3,7 @@
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "account.css"}}">
 <div class="account-page" hx-history="false">
-{{template "partials/page-header" (dict "Title" (t "twofactor.setup.title") "Subtitle" (t "twofactor.setup.subtitle"))}}
+{{template "partials/page-header" (dict "Title" (t "twofactor.setup.title") "Subtitle" (t "twofactor.setup.subtitle") "Back" "/admin/account" "BackLabel" (t "account.title"))}}
 {{if and .Required (not .Status.Enabled)}}<p role="status" class="account-notice account-notice-warning" data-two-factor-required>{{icon "shield-alert"}}<span>{{t "twofactor.setup.required"}}</span></p>{{end}}
 {{with .Error}}<p role="alert" class="account-notice account-notice-error">{{icon "circle-alert"}}<span>{{t .}}</span></p>{{end}}
 
@@ -17,7 +17,7 @@
   </div>
   <div class="card-foot">
     <button type="button" class="btn btn-secondary" onclick="window.print()">{{icon "printer"}}<span>{{t "twofactor.codes.print"}}</span></button>
-    <a class="btn btn-primary" href="/admin/account/two-factor">{{t "twofactor.codes.done"}}</a>
+    <a class="btn btn-primary" href="/admin/account">{{t "twofactor.codes.done"}}</a>
   </div>
 </section>
 
@@ -59,7 +59,7 @@
     <p class="field-help">{{t "twofactor.disable.lead"}}</p>
     <div class="field-row">
       <div class="field">
-        <label for="disable-password" class="field-label">{{t "auth.field.password"}}</label>
+        <label for="disable-password" class="field-label">{{t "account.field.current_password"}}</label>
         <input id="disable-password" name="password" type="password" autocomplete="current-password" required>
       </div>
       <div class="field">

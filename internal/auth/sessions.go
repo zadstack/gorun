@@ -19,10 +19,12 @@ const (
 	sessionTTL    = 14 * 24 * time.Hour
 	// sessions are extended (sliding expiry) at most once per this interval.
 	sessionRefresh = 24 * time.Hour
+	// last_seen_at is written at most once per this interval.
+	sessionSeenEvery = 5 * time.Minute
 )
 
 type session struct {
-	ID, UserID, CSRF, ExpiresAt, ReauthAt string
+	ID, UserID, CSRF, ExpiresAt, ReauthAt, LastSeenAt string
 }
 
 type sessionStore struct {
@@ -55,8 +57,8 @@ func (s *sessionStore) create(ctx context.Context, userID, ip, ua string) (strin
 	if len(ua) > 512 {
 		ua = ua[:512]
 	}
-	_, err := s.db.ExecContext(ctx, `INSERT INTO sessions (id, user_id, csrf_token, ip, ua, expires_at, created_at, reauth_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, sess.ID, userID, sess.CSRF, ip, ua, sess.ExpiresAt, db.FormatTime(now), sess.ReauthAt)
+	_, err := s.db.ExecContext(ctx, `INSERT INTO sessions (id, user_id, csrf_token, ip, ua, expires_at, created_at, reauth_at, last_seen_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, sess.ID, userID, sess.CSRF, ip, ua, sess.ExpiresAt, db.FormatTime(now), sess.ReauthAt, sess.ReauthAt)
 	if err != nil {
 		return "", session{}, fmt.Errorf("auth: create session: %w", err)
 	}
@@ -70,11 +72,11 @@ func (s *sessionStore) load(ctx context.Context, token string) (*session, *User,
 		return nil, nil, false, ErrNotFound
 	}
 	var sess session
-	row := s.db.QueryRowContext(ctx, `SELECT s.id, s.user_id, s.csrf_token, s.expires_at, s.reauth_at, u.id, u.email, u.name, u.role, u.locale, u.status, u.last_login_at, u.created_at, u.updated_at, u.onboarding_required,
+	row := s.db.QueryRowContext(ctx, `SELECT s.id, s.user_id, s.csrf_token, s.expires_at, s.reauth_at, s.last_seen_at, u.id, u.email, u.name, u.role, u.locale, u.status, u.last_login_at, u.created_at, u.updated_at, u.onboarding_required,
 		EXISTS (SELECT 1 FROM user_totp t WHERE t.user_id = u.id AND t.enabled_at != '')
 		FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ?`, hashToken(token))
 	var u User
-	err := row.Scan(&sess.ID, &sess.UserID, &sess.CSRF, &sess.ExpiresAt, &sess.ReauthAt,
+	err := row.Scan(&sess.ID, &sess.UserID, &sess.CSRF, &sess.ExpiresAt, &sess.ReauthAt, &sess.LastSeenAt,
 		&u.ID, &u.Email, &u.Name, &u.Role, &u.Locale, &u.Status, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, &u.onboardingRequired, &u.twoFactor)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil, false, ErrNotFound
@@ -87,6 +89,12 @@ func (s *sessionStore) load(ctx context.Context, token string) (*session, *User,
 	if !now.Before(exp) || u.Status != StatusActive {
 		_, _ = s.db.ExecContext(ctx, `DELETE FROM sessions WHERE id = ?`, sess.ID)
 		return nil, nil, false, ErrNotFound
+	}
+	if seen, err := db.ParseTime(sess.LastSeenAt); err != nil || now.Sub(seen) >= sessionSeenEvery {
+		sess.LastSeenAt = db.FormatTime(now)
+		if _, err := s.db.ExecContext(ctx, `UPDATE sessions SET last_seen_at = ? WHERE id = ?`, sess.LastSeenAt, sess.ID); err != nil {
+			return nil, nil, false, fmt.Errorf("auth: touch session: %w", err)
+		}
 	}
 	refreshed := false
 	if exp.Sub(now) < sessionTTL-sessionRefresh {

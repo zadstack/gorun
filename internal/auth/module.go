@@ -77,6 +77,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Router.Webhooks.Use(h.securityMiddleware)
 	h.registerSecurity()
 	h.registerTwoFactor()
+	h.registerAccount()
 
 	d.Router.Admin.Get("/login", h.loginForm)
 	d.Router.Admin.Post("/login", h.loginSubmit)

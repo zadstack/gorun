@@ -12,6 +12,10 @@ The admin is bilingual (**Arabic** and **English**) with full RTL when Arabic is
 
 Switching the admin UI language does not change the public `site.locale` or rewrite published URLs by itself. It does change the default content language for new items until you pick otherwise in the editor.
 
+## My account
+
+Select your name in the top bar to open **My account** (`/admin/account`). It holds your name and dashboard language, your sign-in email (changing it needs your current password; addresses stay unique), your password (current password, at least 10 characters; changing it signs out your other devices and cancels unused sign-in links), [two-factor authentication](LOGIN-SECURITY.md#two-factor-authentication-totp) and the list of signed-in devices with browser, IP address, sign-in time and last activity (refreshed at most every five minutes). **Sign out** ends one other device; **Sign out other devices** ends all but this one. Users who may manage API keys get a link to them. Every change is recorded in the audit log.
+
 ## Dashboard
 
 The dashboard separates everyday work from diagnostics. It opens with a short guide, integration setup status and quick actions, followed by your pinned tools, recent content, audit activity, jobs, system information and your saved canvases. Additional module widgets continue to work.
@@ -55,6 +59,8 @@ Ordering and hiding never grant or revoke permissions. New permitted module link
 القائمة الرئيسية تجمع الصفحات في ستة أقسام كحد أقصى: الرئيسية، المحتوى، الموقع، الكانفس والوكلاء، الوارد والإعدادات. يظهر المتجر عند توفر أدوات تجارة مسموح بها. اختر القسم ثم التبويب المطلوب؛ الإعدادات تجمع العام والفريق والتكاملات والنظام. تختفي الأقسام الفارغة، وتبقى روابط الإضافات الجديدة متاحة داخل الإعدادات.
 
 من «تخصيص القائمة» يمكنك تحريك المجموعات والعناصر بأزرار لأعلى ولأسفل، وإظهارها أو إخفاؤها، ثم حفظ الترتيب لحسابك فقط. «استعادة الافتراضي» تعيد الترتيب والظهور الأصليين. الصلاحيات لا تتغير.
+
+اضغط اسمك في الشريط العلوي لفتح «حسابي»: الاسم ولغة لوحة التحكم، والبريد (يتطلب كلمة المرور الحالية)، وكلمة المرور (تغييرها يُخرج أجهزتك الأخرى)، والمصادقة الثنائية، والأجهزة المسجّل دخولها مع تسجيل خروج جهاز أو كل الأجهزة الأخرى.
 
 أول موقع عام: [SITE_BUILDER.md](SITE_BUILDER.md). تبديل القالب: **المظهر ← القوالب**، والتفاصيل في [THEMES.md](THEMES.md).
 
