@@ -27,5 +27,9 @@
   "health.pending": "%d pending",
   "health.stale": "%d pending, %d past expiry (expiry job not running?)",
   "approvals.status_failed": "Failed",
-  "approvals.already_decided": "Nothing changed: this call was already decided or has expired."
+  "approvals.already_decided": "Nothing changed: this call was already decided or has expired.",
+  "approvals.raw_json": "Raw JSON",
+  "approvals.no_args": "No arguments.",
+  "approvals.expires_label": "Expires",
+  "approvals.decided": "Decided"
 }

@@ -27,5 +27,9 @@
   "health.pending": "%d معلّقة",
   "health.stale": "%d معلّقة، منها %d تجاوزت مدة الصلاحية (هل مهمة الانتهاء متوقفة؟)",
   "approvals.status_failed": "فشل",
-  "approvals.already_decided": "لم يتغير شيء: سبق اتخاذ قرار بشأن هذا الاستدعاء أو انتهت صلاحيته."
+  "approvals.already_decided": "لم يتغير شيء: سبق اتخاذ قرار بشأن هذا الاستدعاء أو انتهت صلاحيته.",
+  "approvals.raw_json": "JSON الخام",
+  "approvals.no_args": "بدون معاملات.",
+  "approvals.expires_label": "تنتهي",
+  "approvals.decided": "وقت القرار"
 }

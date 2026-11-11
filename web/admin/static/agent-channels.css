@@ -1,0 +1,43 @@
+/* Agent channels: list + thread layout on the shared admin components. */
+.channels-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem); gap: var(--space-4); align-items: start; }
+.channels-main { display: grid; gap: var(--space-4); min-width: 0; }
+.channels-side { display: grid; gap: var(--space-3); min-width: 0; }
+.channels-boundary { margin-top: var(--space-1); }
+.channels-boundary p { margin-top: var(--space-2); max-width: 72ch; }
+.channels-close { justify-self: start; }
+
+/* Messages: author initials, name, kind and time, then the body. */
+.chat-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.chat-msg { display: flex; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--panel); }
+.chat-msg.has-handoff { border-inline-start: 3px solid var(--accent); }
+.chat-main { display: grid; gap: var(--space-1); min-width: 0; flex: 1; }
+.chat-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); font-size: var(--fs-sm); color: var(--muted); }
+.chat-meta strong { color: var(--ink); font-size: var(--fs-md); font-weight: 650; }
+.chat-meta time { margin-left: auto; font-variant-numeric: tabular-nums; }
+[dir="rtl"] .chat-meta time { margin-left: 0; margin-right: auto; }
+.chat-body { margin: 0; color: var(--ink); font-size: var(--fs-base); line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.handoff-chip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); justify-self: start; margin: 0; padding: .125rem .5rem; border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent-hover); font-size: var(--fs-sm); font-weight: 600; }
+.handoff-chip bdi { color: var(--ink); }
+
+/* Composer. */
+.chat-composer-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3); }
+.chat-composer-row > .field { flex: 1 1 14rem; }
+
+/* Members. */
+.member-list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.member-list li { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.member-name { display: grid; flex: 1; min-width: 0; font-size: var(--fs-md); font-weight: 600; line-height: 1.35; }
+.member-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-name .field-help { font-weight: 400; }
+.member-list .id-detail { flex-shrink: 0; }
+.member-list .id-detail[open] { flex-basis: 100%; order: 3; padding-inline-start: 2.5rem; }
+.member-add { display: grid; gap: var(--space-2); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--line); }
+
+@media (max-width: 1023px) {
+  .channels-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  .chat-msg { padding: var(--space-2); gap: var(--space-2); }
+  .chat-meta time, [dir="rtl"] .chat-meta time { margin: 0; flex-basis: 100%; }
+  [dir="rtl"] .chat-meta time { text-align: right; }
+}
