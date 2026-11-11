@@ -20,6 +20,7 @@ type securityBlock struct{ IP, ExpiresAt string }
 type securityPage struct {
 	Attempts []securityAttempt
 	Blocks   []securityBlock
+	Roles    []twoFactorRole
 	Error    string
 }
 
@@ -40,6 +41,7 @@ func (h *handlers) registerSecurity() {
 	r.Get("/security/login-attempts", h.securityShow)
 	r.Post("/security/ip-block", h.securityBlock)
 	r.Post("/security/ip-unblock", h.securityUnblock)
+	r.Post("/security/two-factor", h.securityTwoFactorSave)
 }
 func (h *handlers) securityShow(w http.ResponseWriter, r *http.Request) {
 	h.securityRender(w, r, 200, "")
@@ -96,6 +98,10 @@ func (h *handlers) securityRender(w http.ResponseWriter, r *http.Request, status
 	}
 	rows.Close()
 	if e != nil {
+		h.serverError(w, r, e)
+		return
+	}
+	if data.Roles, e = h.twoFactorRoles(r.Context()); e != nil {
 		h.serverError(w, r, e)
 		return
 	}

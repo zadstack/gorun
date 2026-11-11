@@ -1,0 +1,26 @@
+{{/* Data: secondFactorPage. The sign-in step after the password or magic link. */}}
+{{define "title"}}{{t "twofactor.login.title"}}{{end}}
+{{define "content"}}
+<div class="admin-auth-panel">
+  <p class="admin-auth-brand">{{t "core.app.name"}}</p>
+  <h1>{{t "twofactor.login.title"}}</h1>
+  {{if .Expired}}
+  <p role="alert" class="mt-4 mb-4 rounded border border-amber bg-amber-soft text-amber-text px-3 py-2">{{t "twofactor.login.expired"}}</p>
+  <a href="/admin/login" class="btn btn-primary w-full">{{t "twofactor.login.restart"}}</a>
+  {{else}}
+  <p class="text-muted mt-2 mb-4">{{t "twofactor.login.lead"}}</p>
+  {{with .Error}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
+  <form method="post" action="/admin/login/2fa" class="space-y-4" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <div class="field">
+      <label for="code" class="field-label">{{t "twofactor.login.code"}}</label>
+      <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" dir="ltr" required autofocus
+             maxlength="64" spellcheck="false" autocapitalize="off" aria-describedby="code-help">
+      <p id="code-help" class="field-help">{{t "twofactor.login.code_help"}}</p>
+    </div>
+    <button type="submit" class="btn btn-primary w-full">{{t "twofactor.login.submit"}}</button>
+  </form>
+  <p class="text-sm mt-4"><a href="/admin/login" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "twofactor.login.cancel"}}</a></p>
+  {{end}}
+</div>
+{{end}}

@@ -23,7 +23,7 @@ const localeCookie = "gp_locale"
 var AnonymousAPIPaths = []string{"/api/v1/openapi.json", "/api/docs", "/api/v1/site/info"}
 
 // adminPublicPaths are reachable under /admin without a login.
-var adminPublicPaths = []string{"/admin/login", "/admin/setup", "/admin/logout"}
+var adminPublicPaths = []string{"/admin/login", SecondFactorPath, "/admin/setup", "/admin/logout"}
 
 // secureCookies reports whether cookies set while handling r get the
 // Secure flag: the request is https (TLS or a trusted proxy's
@@ -99,6 +99,10 @@ func apiKeyMiddleware(deps *kernel.Deps, allowAgent bool) func(http.Handler) htt
 			case p != nil && p.user != nil:
 				if p.user.onboardingRequired {
 					httpx.Error(w, http.StatusForbidden, "onboarding_required", "complete first-login setup in the admin", nil)
+					return
+				}
+				if twoFactorEnrolmentDue(r.Context(), deps, p.user) {
+					httpx.Error(w, http.StatusForbidden, "two_factor_enrolment_required", "set up two-factor authentication in the admin", nil)
 					return
 				}
 				if !safeMethod(r.Method) && !validCSRF(w, r, p.csrf) {
@@ -203,6 +207,38 @@ func adminGate(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// twoFactorEnrolPath is the enrolment page users of a role that requires a
+// second factor are held on until they finish.
+const twoFactorEnrolPath = "/admin/account/two-factor"
+
+// twoFactorGate holds signed-in users whose role requires two-factor
+// authentication (TwoFactorRolesSetting) but who have not enrolled on the
+// enrolment page; sign-out, language switch and password confirmation stay
+// available. API keys and MCP are not affected.
+func twoFactorGate(d *kernel.Deps) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			p := r.URL.Path
+			if slices.Contains(adminPublicPaths, p) || p == reauthPath || p == "/admin/locale" ||
+				p == twoFactorEnrolPath || strings.HasPrefix(p, twoFactorEnrolPath+"/") ||
+				!twoFactorEnrolmentDue(r.Context(), d, UserFromContext(r.Context())) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			if r.Header.Get("HX-Request") == "true" {
+				// Background requests from the enrolment page itself (the
+				// notifications bell) must not reload it in a loop.
+				if cur, err := url.Parse(r.Header.Get("HX-Current-URL")); err != nil || cur.Path != twoFactorEnrolPath {
+					w.Header().Set("HX-Redirect", twoFactorEnrolPath)
+				}
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			http.Redirect(w, r, twoFactorEnrolPath, http.StatusSeeOther)
+		})
+	}
 }
 
 // safeNext returns next when it is a local admin path, else "/admin".

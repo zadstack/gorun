@@ -70,11 +70,12 @@ func (s *sessionStore) load(ctx context.Context, token string) (*session, *User,
 		return nil, nil, false, ErrNotFound
 	}
 	var sess session
-	row := s.db.QueryRowContext(ctx, `SELECT s.id, s.user_id, s.csrf_token, s.expires_at, s.reauth_at, u.id, u.email, u.name, u.role, u.locale, u.status, u.last_login_at, u.created_at, u.updated_at, u.onboarding_required
+	row := s.db.QueryRowContext(ctx, `SELECT s.id, s.user_id, s.csrf_token, s.expires_at, s.reauth_at, u.id, u.email, u.name, u.role, u.locale, u.status, u.last_login_at, u.created_at, u.updated_at, u.onboarding_required,
+		EXISTS (SELECT 1 FROM user_totp t WHERE t.user_id = u.id AND t.enabled_at != '')
 		FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.id = ?`, hashToken(token))
 	var u User
 	err := row.Scan(&sess.ID, &sess.UserID, &sess.CSRF, &sess.ExpiresAt, &sess.ReauthAt,
-		&u.ID, &u.Email, &u.Name, &u.Role, &u.Locale, &u.Status, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, &u.onboardingRequired)
+		&u.ID, &u.Email, &u.Name, &u.Role, &u.Locale, &u.Status, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, &u.onboardingRequired, &u.twoFactor)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil, false, ErrNotFound
 	}

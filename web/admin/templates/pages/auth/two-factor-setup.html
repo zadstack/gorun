@@ -1,0 +1,128 @@
+{{/* Data: twoFactorPage. Enrolment, recovery codes and removal of the TOTP second factor. */}}
+{{define "title"}}{{t "twofactor.setup.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "account.css"}}">
+<div class="account-page" hx-history="false">
+{{template "partials/page-header" (dict "Title" (t "twofactor.setup.title") "Subtitle" (t "twofactor.setup.subtitle"))}}
+{{if and .Required (not .Status.Enabled)}}<p role="status" class="account-notice account-notice-warning" data-two-factor-required>{{icon "shield-alert"}}<span>{{t "twofactor.setup.required"}}</span></p>{{end}}
+{{with .Error}}<p role="alert" class="account-notice account-notice-error">{{icon "circle-alert"}}<span>{{t .}}</span></p>{{end}}
+
+{{if .Codes}}
+<section class="card" aria-labelledby="recovery-title" data-recovery-codes>
+  <div class="card-head"><h2 id="recovery-title" class="section-title">{{t "twofactor.codes.title"}}</h2></div>
+  <div class="card-body">
+    <p>{{t "twofactor.codes.lead"}}</p>
+    <ol class="recovery-codes" dir="ltr">{{range .Codes}}<li><code>{{.}}</code></li>{{end}}</ol>
+    <p class="field-help">{{t "twofactor.codes.once"}}</p>
+  </div>
+  <div class="card-foot">
+    <button type="button" class="btn btn-secondary" onclick="window.print()">{{icon "printer"}}<span>{{t "twofactor.codes.print"}}</span></button>
+    <a class="btn btn-primary" href="/admin/account/two-factor">{{t "twofactor.codes.done"}}</a>
+  </div>
+</section>
+
+{{else if .Status.Enabled}}
+<section class="card" aria-labelledby="tf-status">
+  <div class="card-head">
+    <h2 id="tf-status" class="section-title">{{t "twofactor.status.title"}}</h2>
+    <span class="badge badge-success" data-two-factor-status="on">{{icon "shield-check"}}{{t "twofactor.status.on"}}</span>
+  </div>
+  <div class="card-body">
+    <dl class="kv">
+      <div><dt>{{t "twofactor.status.since"}}</dt><dd>{{datetime .Status.EnabledAt}}</dd></div>
+      <div><dt>{{t "twofactor.status.recovery_left"}}</dt><dd><span dir="ltr">{{.Status.RecoveryLeft}}</span> / 10</dd></div>
+    </dl>
+    {{if lt .Status.RecoveryLeft 3}}<p class="account-notice account-notice-warning">{{icon "triangle-alert"}}<span>{{t "twofactor.status.recovery_low"}}</span></p>{{end}}
+  </div>
+</section>
+
+<section class="card" aria-labelledby="tf-regen">
+  <div class="card-head"><h2 id="tf-regen" class="section-title">{{t "twofactor.regen.title"}}</h2></div>
+  <form method="post" action="/admin/account/two-factor/recovery-codes" class="card-body" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <p class="field-help">{{t "twofactor.regen.lead"}}</p>
+    <div class="field account-code-field">
+      <label for="regen-code" class="field-label">{{t "twofactor.field.code"}}</label>
+      <input id="regen-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" dir="ltr" required maxlength="64" spellcheck="false">
+    </div>
+    <div><button type="submit" class="btn btn-secondary">{{icon "refresh-cw"}}<span>{{t "twofactor.regen.submit"}}</span></button></div>
+  </form>
+</section>
+
+<section class="card account-danger" aria-labelledby="tf-disable">
+  <div class="card-head"><h2 id="tf-disable" class="section-title">{{t "twofactor.disable.title"}}</h2></div>
+  {{if .Required}}
+  <div class="card-body"><p class="field-help">{{t "twofactor.disable.required"}}</p></div>
+  {{else}}
+  <form method="post" action="/admin/account/two-factor/disable" class="card-body" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <p class="field-help">{{t "twofactor.disable.lead"}}</p>
+    <div class="field-row">
+      <div class="field">
+        <label for="disable-password" class="field-label">{{t "auth.field.password"}}</label>
+        <input id="disable-password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="field">
+        <label for="disable-code" class="field-label">{{t "twofactor.field.code"}}</label>
+        <input id="disable-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" dir="ltr" required maxlength="64" spellcheck="false">
+      </div>
+    </div>
+    <div><button type="submit" class="btn btn-danger">{{icon "shield-off"}}<span>{{t "twofactor.disable.submit"}}</span></button></div>
+  </form>
+  {{end}}
+</section>
+
+{{else if .Status.Pending}}
+<section class="card" aria-labelledby="tf-enrol">
+  <div class="card-head"><h2 id="tf-enrol" class="section-title">{{t "twofactor.enrol.title"}}</h2></div>
+  <div class="card-body">
+    <ol class="account-steps">
+      <li>
+        <p>{{t "twofactor.enrol.step_app"}}</p>
+        <p class="field-help">{{t "twofactor.enrol.no_qr"}}</p>
+        <div class="field">
+          <span class="field-label" id="tf-secret-label">{{t "twofactor.enrol.secret"}}</span>
+          <code class="totp-secret" dir="ltr" aria-labelledby="tf-secret-label" data-totp-secret>{{.Secret}}</code>
+        </div>
+        <p class="account-inline-actions">
+          <a class="btn btn-secondary btn-sm" href="{{.URI}}" data-totp-uri>{{icon "smartphone"}}<span>{{t "twofactor.enrol.open_app"}}</span></a>
+        </p>
+        <details class="raw-detail"><summary>{{t "twofactor.enrol.uri"}}</summary><pre dir="ltr">{{.URI}}</pre></details>
+        <p class="field-help">{{t "twofactor.enrol.settings"}}</p>
+      </li>
+      <li>
+        <form method="post" action="/admin/account/two-factor/confirm" class="grid gap-3" novalidate>
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <div class="field account-code-field">
+            <label for="confirm-code" class="field-label">{{t "twofactor.enrol.code"}}</label>
+            <input id="confirm-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" dir="ltr" required maxlength="16" spellcheck="false" autofocus>
+          </div>
+          <div><button type="submit" class="btn btn-primary">{{icon "shield-check"}}<span>{{t "twofactor.enrol.submit"}}</span></button></div>
+        </form>
+      </li>
+    </ol>
+  </div>
+</section>
+
+{{else}}
+<section class="card" aria-labelledby="tf-off">
+  <div class="card-head">
+    <h2 id="tf-off" class="section-title">{{t "twofactor.status.title"}}</h2>
+    <span class="badge" data-two-factor-status="off">{{t "twofactor.status.off"}}</span>
+  </div>
+  <div class="card-body">
+    <p>{{t "twofactor.start.lead"}}</p>
+    <p class="field-help">{{t "twofactor.start.scope"}}</p>
+    {{if .Recent}}
+    <form method="post" action="/admin/account/two-factor/start">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="btn btn-primary">{{icon "shield-plus"}}<span>{{t "twofactor.start.submit"}}</span></button>
+    </form>
+    {{else}}
+    <p><a class="btn btn-primary" href="/admin/reauth?next=%2Fadmin%2Faccount%2Ftwo-factor">{{icon "lock"}}<span>{{t "twofactor.start.confirm"}}</span></a></p>
+    {{end}}
+  </div>
+</section>
+{{end}}
+</div>
+{{end}}

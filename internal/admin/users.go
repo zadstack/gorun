@@ -78,6 +78,8 @@ type userEditPage struct {
 	// MagicLink is a freshly created sign-in link, shown once when mail
 	// is not configured (never stored in a flash cookie or the audit log).
 	MagicLink string
+	// TwoFactor reports a confirmed TOTP second factor (reset below).
+	TwoFactor bool
 }
 
 func (h *handlers) renderUserForm(w http.ResponseWriter, r *http.Request, status int, data userEditPage) {
@@ -88,6 +90,12 @@ func (h *handlers) renderUserForm(w http.ResponseWriter, r *http.Request, status
 	}
 	data.Roles, data.Locales, data.Statuses = rs, i18n.Supported, []string{auth.StatusActive, auth.StatusDisabled}
 	if data.User != nil {
+		enabled, err := auth.TwoFactorEnabled(r.Context(), h.d.DB, data.User.ID)
+		if err != nil {
+			h.serverError(w, r, err)
+			return
+		}
+		data.TwoFactor = enabled
 		if role, err := h.roles.Get(r.Context(), data.User.Role); err == nil {
 			data.RolePermissions = role.Permissions
 			data.RoleAll = slices.Contains(role.Permissions, "*")
@@ -187,6 +195,27 @@ func (h *handlers) userDelete(w http.ResponseWriter, r *http.Request) {
 		httpx.SetFlash(w, "success", "admin.users.deleted")
 	}
 	redirect(w, r, "/admin/users")
+}
+
+// userTwoFactorReset removes another user's second factor and recovery codes
+// (lost phone). It needs a recent password confirmation and is audited as
+// user.2fa_reset; the user keeps their password and sessions.
+func (h *handlers) userTwoFactorReset(w http.ResponseWriter, r *http.Request) {
+	u, ok := h.loadUser(w, r)
+	if !ok {
+		return
+	}
+	if me := auth.UserFromContext(r.Context()); me != nil && me.ID == u.ID {
+		// Your own factor is managed (with a current code) on My account.
+		redirect(w, r, "/admin/account/two-factor")
+		return
+	}
+	if err := auth.ResetTwoFactor(r.Context(), h.d, u.ID); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	httpx.SetFlash(w, "success", "admin.users.two_factor_reset_done")
+	redirect(w, r, "/admin/users/"+u.ID)
 }
 
 func (h *handlers) userMagicLink(w http.ResponseWriter, r *http.Request) {
