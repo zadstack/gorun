@@ -64,8 +64,12 @@ test('Ctrl+K opens the command palette, finds pages and content, and Enter navig
   await expect(page).toHaveURL(new RegExp('/admin/content/post/' + id + '$'));
 
   // Recent items are offered the next time, and the page search finds the media library.
-  await page.keyboard.press('Control+k');
-  await expect(palette.locator('#gp-palette-group-recent')).toBeVisible();
+  // The URL changes before the editor's deferred scripts run: open once they are ready.
+  await page.waitForLoadState('load');
+  await expect(async () => {
+    if (!(await palette.isVisible())) await page.keyboard.press('Control+k');
+    await expect(palette.locator('#gp-palette-group-recent')).toBeVisible({timeout: 1_000});
+  }).toPass({timeout: 15_000});
   await expect(palette.getByRole('option', {name: new RegExp(title)}).first()).toBeVisible();
   await input.fill('media');
   await expect(palette.getByRole('option', {name: /^Media/}).first()).toBeVisible();
