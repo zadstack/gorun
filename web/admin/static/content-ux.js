@@ -6,6 +6,11 @@
    const all=form.querySelector('[data-select-all]'),bar=form.querySelector('[data-selection-bar]'),count=form.querySelector('[data-selection-count]');
    const update=()=>{const boxes=[...form.querySelectorAll('input[name=ids]')],selected=boxes.filter(x=>x.checked).length;if(bar)bar.hidden=!selected;if(count)count.textContent=String(selected);if(all){all.checked=!!boxes.length&&selected===boxes.length;all.indeterminate=selected>0&&selected<boxes.length;}};
    all?.addEventListener('change',()=>{form.querySelectorAll('input[name=ids]').forEach(x=>x.checked=all.checked);update();});form.addEventListener('change',update);form.addEventListener('submit',e=>{if(!form.querySelector('input[name=ids]:checked'))e.preventDefault();});update();
+   // Bulk action inputs: show only the fields the chosen action needs, and ask
+   // (data-confirm, partials/confirm_modal) with the selected count where the option says so.
+   const action=form.querySelector('[data-bulk-action]'),number=new Intl.NumberFormat(document.documentElement.lang||undefined);
+   const syncBulk=()=>{if(!action)return;const opt=action.selectedOptions[0],needs=opt?opt.dataset.bulkNeeds||'':'';form.querySelectorAll('[data-bulk-field]').forEach(f=>{const on=f.dataset.bulkField===needs;f.hidden=!on;f.querySelectorAll('input,select').forEach(x=>{x.disabled=!on;if(x.type==='datetime-local')x.required=on;});});const n=form.querySelectorAll('input[name=ids]:checked').length;if(opt&&opt.dataset.confirm)form.dataset.confirm=opt.dataset.confirm.replace('{count}',number.format(n));else delete form.dataset.confirm;};
+   action?.addEventListener('change',syncBulk);form.addEventListener('change',syncBulk);syncBulk();
   });
  }
  init();document.addEventListener('htmx:afterSwap',()=>init());
