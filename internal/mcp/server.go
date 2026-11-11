@@ -27,8 +27,7 @@ const (
 	rpcForbidden    = -32003
 	serviceName     = "mcp"
 	maxRequestBytes = 16 << 20 // base64 uploads up to 10 MB plus JSON overhead
-	instructions    = "GoRun CMS. Start with get_site_structure. Sensitive tools (publish, unpublish, delete, settings) " +
-		"may return status pending_approval: poll check_approval with the approval_id until a human decides."
+	guideURI        = "gorun://guide"
 )
 
 // server holds the tool pipeline shared by the HTTP and stdio transports.
@@ -88,7 +87,7 @@ func (c valuesCtx) Value(k any) any {
 // limit, when set, is consulted before each tool call (stdio rate limit).
 func (s *server) newSDKServer(principal principalFunc, limit func() error) *sdk.Server {
 	srv := sdk.NewServer(&sdk.Implementation{Name: serverName, Title: "GoRun", Version: serverVersion},
-		&sdk.ServerOptions{Instructions: instructions, Capabilities: &sdk.ServerCapabilities{}})
+		&sdk.ServerOptions{Instructions: guide, Capabilities: &sdk.ServerCapabilities{}})
 	with := func(ctx context.Context) (context.Context, error) {
 		p, err := principal(ctx)
 		if err != nil {
@@ -188,8 +187,16 @@ func (s *server) toolResult(tool string, data any, err error) *sdk.CallToolResul
 		StructuredContent: json.RawMessage(b), IsError: !env.OK}
 }
 
-// addResources registers gorun://types, gorun://site, and grant-scoped canvases.
+// addResources registers gorun://guide, gorun://types, gorun://site, and grant-scoped canvases.
 func (s *server) addResources(srv *sdk.Server, with func(context.Context) (context.Context, error)) {
+	srv.AddResource(&sdk.Resource{URI: guideURI, Name: "guide", Title: "GoRun MCP routing guide",
+		Description: "How to use these tools: bootstrap, drafts, approvals, paging, error codes, toolsets", MIMEType: "text/markdown"},
+		func(ctx context.Context, req *sdk.ReadResourceRequest) (*sdk.ReadResourceResult, error) {
+			if _, err := with(ctx); err != nil {
+				return nil, &jsonrpc.Error{Code: rpcUnauthorized, Message: err.Error()}
+			}
+			return &sdk.ReadResourceResult{Contents: []*sdk.ResourceContents{{URI: guideURI, MIMEType: "text/markdown", Text: guide}}}, nil
+		})
 	add := func(uri, name, desc string, read func(context.Context) (any, error)) {
 		srv.AddResource(&sdk.Resource{URI: uri, Name: name, Description: desc, MIMEType: "application/json"},
 			func(ctx context.Context, req *sdk.ReadResourceRequest) (*sdk.ReadResourceResult, error) {
