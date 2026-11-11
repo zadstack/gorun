@@ -32,7 +32,7 @@
       <tbody class="divide-y divide-line">
       {{range .Deliveries}}
         <tr data-delivery="{{.ID}}" data-status="{{.Status}}">
-          <td class="px-3 py-2 align-top"><p class="font-mono text-xs" dir="ltr">{{.Event}}</p><p class="text-[11px] text-muted">{{date .CreatedAt}}</p></td>
+          <td class="px-3 py-2 align-top"><p class="font-mono text-xs" dir="ltr">{{.Event}}</p><p class="text-[11px] text-muted">{{datetime .CreatedAt}}</p></td>
           <td class="px-3 py-2 align-top text-sm">{{t (print "webhooks.status_" .Status)}}{{if .ResponseCode}} · <span class="font-mono" dir="ltr">{{.ResponseCode}}</span>{{end}} · {{t "webhooks.attempts" .Attempts}}
             {{if .Error}}<p class="font-mono text-[11px] text-red break-all" dir="ltr">{{.Error}}</p>{{end}}</td>
           <td class="px-3 py-2 align-top text-end">

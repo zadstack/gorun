@@ -53,5 +53,6 @@
   "validation.types": "نوع محتوى غير معروف",
   "validation.unknown": "تصنيف غير معروف",
   "validation.unknown_term": "عنصر غير معروف",
-  "validation.locale_route": "مسار التصنيف محجوز للغة محتوى. اختر اسمًا آخر للمسار."
+  "validation.locale_route": "مسار التصنيف محجوز للغة محتوى. اختر اسمًا آخر للمسار.",
+  "list.advanced": "متقدم"
 }

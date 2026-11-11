@@ -1,5 +1,6 @@
 {
   "app.name": "GoRun",
+  "nav.main": "التنقل الرئيسي",
   "nav.dashboard": "لوحة التحكم",
   "nav.settings": "الإعدادات",
   "action.save": "حفظ",

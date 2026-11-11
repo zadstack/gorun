@@ -6,6 +6,9 @@ test('manager aliases enter the shared shell and workflow views preserve deep li
   await page.goto('/agents#runs');
   await expect(page).toHaveURL(/\/admin\/workagents#runs$/);
   await expect(page.locator('#admin-sidebar')).toBeVisible();
+  // The primary navigation is the labelled landmark; the sidebar container is not called "Dashboard".
+  await expect(page.locator('#admin-sidebar')).not.toHaveAttribute('aria-label');
+  await expect(page.getByRole('navigation', { name: 'Main navigation', exact: true })).toBeVisible();
   await expect(page.locator('#runs')).toBeVisible();
   await expect(page.locator('#profiles')).toBeHidden();
   await page.locator('.module-views').getByRole('link', { name: 'Schedules', exact: true }).click();

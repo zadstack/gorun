@@ -5,7 +5,7 @@
   <h1 class="text-[22px] font-bold">{{t "builder.history_restore"}}</h1>
   <p class="text-muted">{{t "builder.history_restore_lead"}}</p>
   <dl class="border border-line bg-panel p-4 space-y-2 text-sm">
-    <div class="flex justify-between gap-3"><dt class="text-muted">{{t "builder.history_when"}}</dt><dd class="font-mono">{{date .Revision.CreatedAt}}</dd></div>
+    <div class="flex justify-between gap-3"><dt class="text-muted">{{t "builder.history_when"}}</dt><dd class="font-mono">{{datetime .Revision.CreatedAt}}</dd></div>
     <div class="flex justify-between gap-3"><dt class="text-muted">{{t "builder.history_kind"}}</dt><dd>{{t (printf "builder.history_kind_%s" .Revision.Kind)}}</dd></div>
     <div class="flex justify-between gap-3"><dt class="text-muted">{{t "builder.history_sections"}}</dt><dd>{{.Revision.SectionCount}}</dd></div>
     {{if .Summary}}<div class="flex justify-between gap-3"><dt class="text-muted">{{t "builder.title"}}</dt><dd>{{.Summary}}</dd></div>{{end}}

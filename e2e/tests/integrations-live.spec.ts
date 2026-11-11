@@ -97,3 +97,26 @@ test('removed inventory cannot leave obsolete actions and unavailable forms keep
  await expect(page.getByLabel('Mail host')).toHaveValue('keep-unsubmitted-value');
  await expect(page.getByLabel('Mail host')).toBeDisabled();
 });
+
+test('a data-confirm action asks once in the accessible modal, which traps Tab and returns focus',async({page})=>{
+ // The page only renders its confirm forms when Cloudflare or storage is configured, so the
+ // real page is served with one such form added before integrations.js binds.
+ await page.route('**/admin/settings/integrations',async route=>{
+  const response=await route.fetch();const html=(await response.text()).replace('<div class="integrations space-y-6" data-integrations-live>','<div class="integrations space-y-6" data-integrations-live><form method="post" action="/admin/settings/integrations/cloudflare/clear" data-confirm="Clear the cache?"><button type="submit" data-e2e-confirm-opener>Clear</button></form>');
+  await route.fulfill({response,body:html});
+ });
+ let nativeDialogs=0;page.on('dialog',dialog=>{nativeDialogs++;void dialog.dismiss();});
+ await page.goto('/admin/settings/integrations');
+ const opener=page.locator('[data-e2e-confirm-opener]'),modal=page.locator('[role="dialog"][aria-labelledby="gp-confirm-title"]');
+ await opener.focus();await page.keyboard.press('Enter');
+ await expect(modal).toBeVisible();await expect(modal).toContainText('Clear the cache?');
+ expect(nativeDialogs).toBe(0);
+ const confirm=modal.locator('button[\\@click="$store.confirm.yes()"]'),cancel=modal.locator('button[\\@click="$store.confirm.close()"]');
+ await expect(confirm).toBeFocused();
+ for(const [key,target] of [['Tab',cancel],['Tab',confirm],['Shift+Tab',cancel],['Shift+Tab',confirm]] as const){await page.keyboard.press(key);await expect(target).toBeFocused();}
+ await page.keyboard.press('Escape');
+ await expect(modal).toBeHidden();await expect(opener).toBeFocused();
+ await page.keyboard.press('Enter');await expect(modal).toBeVisible();await cancel.click();
+ await expect(modal).toBeHidden();await expect(opener).toBeFocused();
+ expect(nativeDialogs).toBe(0);
+});

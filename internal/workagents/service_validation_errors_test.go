@@ -262,7 +262,8 @@ func TestExecuteReportsProviderAndToolFailures(t *testing.T) {
 		}
 	}
 
-	// Cancellation during the provider call leaves the run for retry.
+	// Cancellation during the provider call hands the run back to the
+	// queue, so the requeued job can claim it again.
 	cancelCtx, cancel := context.WithCancel(ctx)
 	behaviour = func(context.Context) (string, error) { cancel(); return "late", nil }
 	id, err := s.run(ctx, text.ID, "cancelled", "")
@@ -272,7 +273,7 @@ func TestExecuteReportsProviderAndToolFailures(t *testing.T) {
 	if err = execRun(s, cancelCtx, id); !errors.Is(err, context.Canceled) {
 		t.Fatal("cancellation not surfaced", err)
 	}
-	if status, _ := runStatus(t, s, id); status != "running" {
+	if status, _ := runStatus(t, s, id); status != "queued" {
 		t.Fatal("cancelled run finalised", status)
 	}
 

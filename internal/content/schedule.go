@@ -76,9 +76,11 @@ func (s *service) purgeTrash(ctx context.Context, now time.Time) error {
 	if err := rows.Err(); err != nil {
 		return err
 	}
+	// Like publishDue: one item that fails to delete (a locked database, a
+	// hook error) must not keep every other expired item in the trash.
 	for _, id := range ids {
 		if err := s.Delete(ctx, id, true); err != nil {
-			return err
+			s.log.Error("content: purge trash failed", "id", id, "err", err)
 		}
 	}
 	return nil

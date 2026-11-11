@@ -7,14 +7,13 @@
 <script defer src="{{asset "sidebar-scroll.js"}}"></script>
 <div hidden data-dashboard-pin-config data-csrf="{{csrf}}" data-saving="{{t "dashboardpins.saving"}}" data-error="{{t "dashboardpins.error"}}" data-stale="{{t "dashboardpins.stale"}}" data-saved="{{t "dashboardpins.saved"}}" data-reload="{{t "dashboardpins.reload"}}" data-refreshed="{{t "quickaccess.refreshed"}}" data-add="{{t "dashboardpins.add"}}" data-remove="{{t "quickaccess.remove"}}"></div>
 <aside x-ref="sidebar" id="admin-sidebar" class="admin-sidebar w-60 shrink-0 border-e border-line bg-panel hidden md:flex md:flex-col"
-       :class="sidebarOpen && '!flex flex-col fixed inset-y-0 start-0 z-40'"
-       aria-label="{{t "core.nav.dashboard"}}">
+       :class="sidebarOpen && '!flex flex-col fixed inset-y-0 start-0 z-40'">
   <div class="admin-brand-header h-14 px-4 flex items-center justify-between border-b border-line">
     {{$brand := sidebarBrand}}<a href="/admin" class="admin-site-brand" data-sidebar-brand title="{{if $brand.Title}}{{$brand.Title}}{{else if $brand.LogoPath}}{{t "core.nav.dashboard"}}{{else}}{{t "core.app.name"}}{{end}}">{{if $brand.LogoPath}}<img src="{{$brand.LogoPath}}" alt="" width="32" height="32" x-init="if ($el.complete &amp;&amp; !$el.naturalWidth) $el.hidden = true" @error="$el.hidden = true">{{end}}<span>{{if $brand.Title}}{{$brand.Title}}{{else if $brand.LogoPath}}{{t "core.nav.dashboard"}}{{else}}{{t "core.app.name"}}{{end}}</span></a>
     <button type="button" class="md:hidden p-1 rounded border border-transparent hover:border-line" @click="toggleSidebar()" aria-label="{{t "core.action.close"}}">{{icon "x"}}</button>
   </div>
   <div data-orchestrator-card>{{if can "workagents.read"}}<div hx-get="/admin/workagents/orchestrator-card" hx-trigger="load" hx-swap="innerHTML"></div>{{end}}</div>
-  <nav data-admin-navigation class="flex-1 overflow-y-auto p-2">
+  <nav data-admin-navigation class="flex-1 overflow-y-auto p-2" aria-label="{{t "core.nav.main"}}">
     {{template "partials/navigation-section-list" .}}
     {{template "partials/workspace-sidebar-tools" .}}
     <div data-sidebar-quick-access>{{template "partials/quick-access" .}}</div>

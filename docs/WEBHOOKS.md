@@ -143,6 +143,8 @@ and approximate use count, filters for active and revoked/expired keys,
   one: revoked immediately, or kept working for a grace period (up to 7 days;
   the console offers 1 hour and 24 hours) so clients can switch without
   downtime. Only the key's owner can rotate it.
+- **Revoke** is limited to the key's owner or an administrator; holding
+  `api_keys.manage` alone does not reach other users' keys (`403 not_key_owner`).
 - **Use count** is approximate: uses are counted in memory and written with
   `last_used_at` at most once a minute per key.
 - **No escalation:** a key created or rotated in the admin or through the

@@ -55,7 +55,7 @@
       <dt class="text-muted">{{t "admin.health.goroutines"}}</dt><dd class="font-mono text-xs">{{.Goroutines}}</dd>
       <dt class="text-muted">{{t "admin.health.heap"}}</dt><dd class="font-mono text-xs">{{.HeapAlloc}}</dd>
       <dt class="text-muted">{{t "admin.health.uptime"}}</dt><dd class="font-mono text-xs">{{.Uptime}}</dd>
-      <dt class="text-muted">{{t "admin.health.started"}}</dt><dd class="font-mono text-xs">{{date .StartedAt}}</dd>
+      <dt class="text-muted">{{t "admin.health.started"}}</dt><dd class="font-mono text-xs">{{datetime .StartedAt}}</dd>
       <dt class="text-muted">{{t "admin.health.theme"}}</dt><dd class="font-mono text-xs">{{.Theme}}</dd>
     </dl>
   </section>

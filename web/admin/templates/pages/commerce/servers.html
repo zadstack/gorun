@@ -20,7 +20,7 @@
         <td class="px-3 py-2"><a href="/admin/commerce/servers/{{.ID}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a></td>
         <td class="px-3 py-2 font-mono text-xs break-all" dir="ltr">{{.BaseURL}}</td>
         <td class="px-3 py-2"><span class="inline-flex rounded-chip border px-1.5 py-0.5 text-xs {{if eq .Status "ok"}}border-green bg-green-soft text-green{{else if eq .Status "error"}}border-red bg-red-soft text-red{{else}}border-line bg-panel-2{{end}}">{{t (print "commerce.server.status." .Status)}}</span>{{with .LastError}}<div class="mt-1 text-xs text-red break-all">{{.}}</div>{{end}}</td>
-        <td class="px-3 py-2 font-mono text-xs">{{if .LastCheckAt}}{{date .LastCheckAt}}{{else}}—{{end}}</td>
+        <td class="px-3 py-2 font-mono text-xs">{{datetime .LastCheckAt}}</td>
       </tr>
       {{end}}
     </tbody>

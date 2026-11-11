@@ -14,7 +14,7 @@ are called:
 | Kind | What it is | Where it lives | Switch |
 |---|---|---|---|
 | **Core module** | A domain every install boots (settings, auth, content, taxonomy, media, menus, redirects, seo, theme, pattern, builder, site, api, admin, webhooks). | `internal/<name>`, `kernel.BootOrder` up to `webhooks` | always on |
-| **Built-in feature module** | A feature compiled into the binary that owns its routes, workers, admin pages, migrations and permissions (commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext, identityai, identitylogo). | `internal/<name>`, after `webhooks` | All ten implement `kernel.OptionalModule` using `kernel.AddonEnabled` |
+| **Built-in feature module** | A feature compiled into the binary that owns its routes, workers, admin pages, migrations and permissions (analytics, commerce, saas, membership, launch, workagents, wpmigrate, mcp, ext, identityai, identitylogo). | `internal/<name>`, after `webhooks` | All eleven implement `kernel.OptionalModule` using `kernel.AddonEnabled` |
 | **Core service** | A general service that is a feature of a core module and is configured by settings: forms (site), storage (media), backups (admin), mail (admin). | the owning module | never switched; configured |
 | **External extension** | A separate program described by `manifest.json`, receiving hooks over signed HTTP and calling the REST API with a scoped key ([EXTENSIONS.md](EXTENSIONS.md)). | `<data>/extensions/<slug>` | activate / deactivate / uninstall on its own page |
 

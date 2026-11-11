@@ -61,8 +61,8 @@
       <h2 class="text-base font-bold mb-2">{{t "admin.users.details"}}</h2>
       <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
         <dt class="text-muted">{{t "admin.common.id"}}</dt><dd class="font-mono break-all">{{.ID}}</dd>
-        <dt class="text-muted">{{t "admin.users.created"}}</dt><dd class="font-mono">{{date .CreatedAt}}</dd>
-        <dt class="text-muted">{{t "admin.users.last_login"}}</dt><dd class="font-mono">{{date .LastLoginAt}}</dd>
+        <dt class="text-muted">{{t "admin.users.created"}}</dt><dd class="font-mono">{{datetime .CreatedAt}}</dd>
+        <dt class="text-muted">{{t "admin.users.last_login"}}</dt><dd class="font-mono">{{datetime .LastLoginAt}}</dd>
       </dl>
     </section>
     <section class="rounded border border-line bg-panel p-4">

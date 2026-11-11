@@ -376,5 +376,6 @@
   "preview.trashed": "Items in the trash cannot be previewed.",
   "preview.ttl_invalid": "Choose 1 hour, 24 hours or 7 days.",
   "preview.too_many": "This item already has 20 active preview links. Revoke one first.",
-  "flash.preview_revoked": "Preview link revoked"
+  "flash.preview_revoked": "Preview link revoked",
+  "comments.empty_help": "Visitor comments on content with comments enabled appear here. Choose a status above to review pending or approved comments."
 }

@@ -41,8 +41,8 @@
       {{template "partials/field_errors" (index .Fields "default_og_image")}}
     </div>
   </section>
-<section class="rounded border border-line p-4"><h2 class="font-bold">{{if eq locale "ar"}}معاينة بحث تجريبية{{else}}Sample search preview{{end}}</h2><p class="text-sm text-muted">{{if eq locale "ar"}}هذه معاينة للقالب؛ قد تعرض محركات البحث نصًا مختلفًا.{{else}}This previews the template; search engines may show different text.{{end}}</p><p data-seo-sample-title class="text-blue text-lg mt-3"></p><p data-seo-sample-description class="text-muted"></p><p data-seo-block-warning hidden class="text-red mt-3" role="status">{{if eq locale "ar"}}القواعد المخصصة تتضمن منع جميع المسارات. راجعها قبل الإطلاق.{{else}}Custom rules include blocking every path. Review before launch.{{end}}</p></section>
-  <details class="rounded border border-line bg-panel p-4 space-y-3" {{if index .Fields "robots_txt"}}open{{end}}><summary class="font-bold cursor-pointer">{{if eq locale "ar"}}متقدم: قواعد محركات البحث{{else}}Advanced: crawler rules{{end}}</summary>
+<section class="rounded border border-line p-4"><h2 class="font-bold">{{t "seo.sample.title"}}</h2><p class="text-sm text-muted">{{t "seo.sample.help"}}</p><p data-seo-sample-title class="text-blue text-lg mt-3"></p><p data-seo-sample-description class="text-muted"></p><p data-seo-block-warning hidden class="text-red mt-3" role="status">{{t "seo.robots.block_all_warning"}}</p></section>
+  <details class="rounded border border-line bg-panel p-4 space-y-3" {{if index .Fields "robots_txt"}}open{{end}}><summary class="font-bold cursor-pointer">{{t "seo.robots.advanced"}}</summary>
     <div>
       <label for="robots_txt" class="block font-medium mb-1">{{t "seo.field.robots_txt"}}</label>
       <textarea id="robots_txt" name="robots_txt" rows="6" dir="ltr" spellcheck="false" aria-describedby="rb-help rb-error"

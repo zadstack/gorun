@@ -226,5 +226,10 @@
   "identity.kind_import": "مستوردة",
   "identity.needs_themes_manage": "تحتاج الألوان والخطوط والشكل وCSS المخصص إلى صلاحية إدارة القوالب (هي نفس إعدادات القالب). يمكن تغيير الشعارات والاسم والوصف ورابط الهيدر.",
   "settings.variant_unavailable": "غير متاح في هذا القالب: %s.",
-  "settings.variant_not_offered": "غير متاح في هذا القالب"
+  "settings.variant_not_offered": "غير متاح في هذا القالب",
+  "templates.search": "ابحث عن ملف",
+  "templates.group": "مجموعة الملفات",
+  "templates.group_all": "كل الملفات",
+  "templates.group_page": "الصفحات",
+  "templates.group_part": "الأجزاء والمكونات"
 }
