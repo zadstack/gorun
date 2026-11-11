@@ -63,7 +63,7 @@ func (b bearerRT) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 // A2: with the real commerce and wpmigrate services booted, mcp binds
-// list_products, run_migration_preview and get_migration_status.
+// list_products, preview_migration and get_migration_status.
 func TestFullModulesMCPCommerceTools(t *testing.T) {
 	app, srv := bootFull(t)
 	cs, ok := kernel.Get[commerce.Service](app.Deps, kernel.ServiceCommerce)
@@ -88,7 +88,7 @@ func TestFullModulesMCPCommerceTools(t *testing.T) {
 	for _, tl := range res.Tools {
 		names = append(names, tl.Name)
 	}
-	for _, want := range []string{"list_products", "run_migration_preview", "get_migration_status"} {
+	for _, want := range []string{"list_products", "preview_migration", "get_migration_status"} {
 		if !slices.Contains(names, want) {
 			t.Fatalf("%s not registered against the real services: %v", want, names)
 		}

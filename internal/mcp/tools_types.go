@@ -37,7 +37,7 @@ type updateFieldsInput struct {
 
 func typeTools(svc content.Service) []kernel.MCPTool {
 	return []kernel.MCPTool{
-		{Name: "list_content_types", Scopes: []string{scopeView},
+		{Name: "list_content_types", Title: "List content types", Toolset: kernel.MCPToolsetTypes, ReadOnly: true, Scopes: []string{scopeView},
 			Description: "List content types with their custom field schemas.",
 			Handler: bind(func(ctx context.Context, _ struct{}) (any, error) {
 				types, err := svc.Types(ctx)
@@ -46,12 +46,12 @@ func typeTools(svc content.Service) []kernel.MCPTool {
 				}
 				return map[string]any{"types": types}, err
 			})},
-		{Name: "get_content_type", Scopes: []string{scopeView}, Input: slugInput{},
+		{Name: "get_content_type", Title: "Get content type", Toolset: kernel.MCPToolsetTypes, ReadOnly: true, Scopes: []string{scopeView}, Input: slugInput{},
 			Description: "Get one content type with its field schema.",
 			Handler: bind(func(ctx context.Context, in slugInput) (any, error) {
 				return svc.GetType(ctx, in.Slug)
 			})},
-		{Name: "create_content_type", Scopes: []string{scopeTypes}, Input: createTypeInput{},
+		{Name: "create_content_type", Title: "Create content type", Toolset: kernel.MCPToolsetTypes, Scopes: []string{scopeTypes}, Input: createTypeInput{},
 			Description: "Create a content type with custom fields (field types: text, textarea, richtext, number, date, datetime, boolean, select, multiselect, repeater, relationship, image, file, json).",
 			Handler: bind(func(ctx context.Context, in createTypeInput) (any, error) {
 				slug := strings.TrimSpace(in.Slug)
@@ -75,7 +75,7 @@ func typeTools(svc content.Service) []kernel.MCPTool {
 				}
 				return svc.GetType(ctx, slug)
 			})},
-		{Name: "update_content_type_fields", Scopes: []string{scopeTypes}, Input: updateFieldsInput{},
+		{Name: "update_content_type_fields", Title: "Replace content type fields", Toolset: kernel.MCPToolsetTypes, Destructive: true, Idempotent: true, Scopes: []string{scopeTypes}, Input: updateFieldsInput{},
 			Description: "Replace the custom field list of a content type (send every field to keep).",
 			Handler: bind(func(ctx context.Context, in updateFieldsInput) (any, error) {
 				t, err := svc.GetType(ctx, in.Slug)

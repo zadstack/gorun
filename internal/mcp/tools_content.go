@@ -15,17 +15,29 @@ import (
 var draftStatuses = map[content.Status]bool{"": true, "draft": true, "pending": true}
 
 type listContentInput struct {
-	Type     string                    `json:"type,omitempty"`
-	Status   string                    `json:"status,omitempty" jsonschema:"draft, pending, scheduled, published or private"`
-	Search   string                    `json:"search,omitempty"`
-	AuthorID string                    `json:"author_id,omitempty"`
-	ParentID string                    `json:"parent_id,omitempty"`
-	Locale   string                    `json:"locale,omitempty"`
-	Taxonomy map[string][]string       `json:"taxonomy,omitempty" jsonschema:"taxonomy slug → term slugs, e.g. {\"category\":[\"news\"]}"`
-	Fields   map[string]content.Filter `json:"fields,omitempty" jsonschema:"indexed field key → {op: eq|ne|gt|lt|gte|lte|in|like, value}"`
-	Order    []content.Order           `json:"order,omitempty" jsonschema:"[{by, dir: asc|desc}]"`
-	Page     int                       `json:"page,omitempty"`
-	PerPage  int                       `json:"per_page,omitempty" jsonschema:"default 20, max 100"`
+	Type     string                 `json:"type,omitempty"`
+	Status   string                 `json:"status,omitempty" jsonschema:"one status or a comma-separated list" pattern:"^ *(draft|pending|scheduled|published|private|trash) *(, *(draft|pending|scheduled|published|private|trash) *)*$"`
+	Search   string                 `json:"search,omitempty"`
+	AuthorID string                 `json:"author_id,omitempty"`
+	ParentID string                 `json:"parent_id,omitempty"`
+	Locale   string                 `json:"locale,omitempty"`
+	Taxonomy map[string][]string    `json:"taxonomy,omitempty" jsonschema:"taxonomy slug → term slugs, e.g. {\"category\":[\"news\"]}"`
+	Fields   map[string]filterInput `json:"fields,omitempty" jsonschema:"indexed field key → {op, value}"`
+	Order    []orderInput           `json:"order,omitempty"`
+	Page     int                    `json:"page,omitempty"`
+	PerPage  int                    `json:"per_page,omitempty" jsonschema:"default 20, max 100"`
+}
+
+// filterInput is content.Filter with the operators as an enum.
+type filterInput struct {
+	Op    string `json:"op" enum:"eq,ne,gt,lt,gte,lte,in,like"`
+	Value any    `json:"value" jsonschema:"compared value; an array for in"`
+}
+
+// orderInput is content.Order with dir optional (default asc).
+type orderInput struct {
+	By  string `json:"by" jsonschema:"title, slug, created_at, updated_at, published_at, publish_at, menu_order, status or an indexed field key"`
+	Dir string `json:"dir,omitempty" enum:"asc,desc" jsonschema:"default asc"`
 }
 
 type getContentInput struct {
@@ -42,7 +54,7 @@ type createContentInput struct {
 	Excerpt         string              `json:"excerpt,omitempty"`
 	Body            string              `json:"body,omitempty" jsonschema:"HTML"`
 	Fields          map[string]any      `json:"fields,omitempty" jsonschema:"custom field values keyed by field key"`
-	Status          string              `json:"status,omitempty" jsonschema:"draft (default) or pending; publish with publish_content"`
+	Status          string              `json:"status,omitempty" enum:"draft,pending" jsonschema:"default draft; publish with publish_content"`
 	ParentID        string              `json:"parent_id,omitempty"`
 	MenuOrder       *int                `json:"menu_order,omitempty"`
 	Template        string              `json:"template,omitempty"`
@@ -59,7 +71,7 @@ type updateContentInput struct {
 	Excerpt         string              `json:"excerpt,omitempty"`
 	Body            string              `json:"body,omitempty"`
 	Fields          map[string]any      `json:"fields,omitempty" jsonschema:"merged into the existing values key by key"`
-	Status          string              `json:"status,omitempty" jsonschema:"draft or pending (only for items that are not live)"`
+	Status          string              `json:"status,omitempty" enum:"draft,pending" jsonschema:"only for items that are not live"`
 	ParentID        string              `json:"parent_id,omitempty"`
 	MenuOrder       *int                `json:"menu_order,omitempty"`
 	Template        string              `json:"template,omitempty"`
@@ -90,18 +102,19 @@ type deleteContentInput struct {
 
 func contentTools(svc content.Service) []kernel.MCPTool {
 	return []kernel.MCPTool{
-		{Name: "list_content", Scopes: []string{scopeView}, Input: listContentInput{},
+		{Name: "list_content", Title: "List content", Toolset: kernel.MCPToolsetContent, ReadOnly: true, Scopes: []string{scopeView}, Input: listContentInput{},
 			Description: "Query content with the GoRun query DSL (type, status, search, taxonomy, indexed field filters, order, paging).",
 			Handler: bind(func(ctx context.Context, in listContentInput) (any, error) {
 				page, per := paging(in.Page, in.PerPage)
 				p, err := svc.Query(ctx, content.Query{Type: in.Type, Status: in.Status, Search: in.Search, AuthorID: in.AuthorID,
-					ParentID: in.ParentID, Locale: in.Locale, Taxonomy: in.Taxonomy, Fields: in.Fields, Order: in.Order, Page: page, PerPage: per})
+					ParentID: in.ParentID, Locale: in.Locale, Taxonomy: in.Taxonomy, Fields: queryFilters(in.Fields), Order: queryOrder(in.Order),
+					Page: page, PerPage: per})
 				if err != nil {
 					return nil, err
 				}
 				return newPage(p.Items, p.Total, p.Page, p.PerPage), nil
 			})},
-		{Name: "get_content", Scopes: []string{scopeView}, Input: getContentInput{},
+		{Name: "get_content", Title: "Get content item", Toolset: kernel.MCPToolsetContent, ReadOnly: true, Scopes: []string{scopeView}, Input: getContentInput{},
 			Description: "Get one content item by id, or by type + slug (+ locale).",
 			Handler: bind(func(ctx context.Context, in getContentInput) (any, error) {
 				switch {
@@ -112,7 +125,7 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return nil, invalid("give id, or type and slug", map[string]string{"id": "required"})
 			})},
-		{Name: "create_content", Scopes: []string{scopeCreate}, Input: createContentInput{},
+		{Name: "create_content", Title: "Create draft content", Toolset: kernel.MCPToolsetContent, Scopes: []string{scopeCreate}, Input: createContentInput{},
 			Description: "Create a content item as a draft (or pending review). Field values are validated against the type's schema.",
 			Handler: bind(func(ctx context.Context, in createContentInput) (any, error) {
 				if !draftStatuses[content.Status(in.Status)] {
@@ -126,10 +139,10 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 					Fields: in.Fields, AuthorID: actingUserID(ctx), Status: status, ParentID: in.ParentID, MenuOrder: in.MenuOrder,
 					Template: in.Template, FeaturedMediaID: in.FeaturedMediaID, SEO: in.SEO, Locale: in.Locale, Terms: in.Terms})
 			})},
-		{Name: "update_content", Scopes: []string{scopeEdit}, Input: updateContentInput{},
+		{Name: "update_content", Title: "Update content", Toolset: kernel.MCPToolsetContent, Destructive: true, Idempotent: true, Scopes: []string{scopeEdit}, Input: updateContentInput{},
 			Description: "Update a content item: only the keys you send change (fields are merged key by key). Editing a live (published, private or scheduled) item needs human approval.",
 			Handler:     func(ctx context.Context, args json.RawMessage) (any, error) { return updateContent(ctx, svc, args) }},
-		{Name: "publish_content", Scopes: []string{scopePublish}, Sensitive: true, Input: idInput{},
+		{Name: "publish_content", Title: "Publish content", Toolset: kernel.MCPToolsetContent, Idempotent: true, Scopes: []string{scopePublish}, Sensitive: true, Input: idInput{},
 			Description: "Publish a content item (goes live).",
 			Handler: bind(func(ctx context.Context, in idInput) (any, error) {
 				if err := svc.Publish(ctx, in.ID); err != nil {
@@ -137,7 +150,7 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return svc.Get(ctx, in.ID)
 			})},
-		{Name: "unpublish_content", Scopes: []string{scopePublish}, Sensitive: true, Input: idInput{},
+		{Name: "unpublish_content", Title: "Unpublish content", Toolset: kernel.MCPToolsetContent, Idempotent: true, Scopes: []string{scopePublish}, Sensitive: true, Input: idInput{},
 			Description: "Unpublish a content item (back to draft).",
 			Handler: bind(func(ctx context.Context, in idInput) (any, error) {
 				if err := svc.Unpublish(ctx, in.ID); err != nil {
@@ -145,15 +158,15 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return svc.Get(ctx, in.ID)
 			})},
-		{Name: "list_translations", Scopes: []string{scopeView}, Input: idInput{},
+		{Name: "list_translations", Title: "List translations", Toolset: kernel.MCPToolsetTranslations, ReadOnly: true, Scopes: []string{scopeView}, Input: idInput{},
 			Description: "List a content item and its translations (the same content in other locales), by locale.",
 			Handler:     bind(func(ctx context.Context, in idInput) (any, error) { return svc.Translations(ctx, in.ID) })},
-		{Name: "create_translation", Scopes: []string{scopeCreate}, Input: translationInput{},
+		{Name: "create_translation", Title: "Create translation draft", Toolset: kernel.MCPToolsetTranslations, Scopes: []string{scopeCreate}, Input: translationInput{},
 			Description: "Copy a content item into another locale as a draft linked to it as a translation; then translate its text with update_content.",
 			Handler: bind(func(ctx context.Context, in translationInput) (any, error) {
 				return svc.CreateTranslation(ctx, in.ID, in.Locale)
 			})},
-		{Name: "link_translation", Scopes: []string{scopeEdit}, Input: linkTranslationInput{},
+		{Name: "link_translation", Title: "Link translation", Toolset: kernel.MCPToolsetTranslations, Idempotent: true, Scopes: []string{scopeEdit}, Input: linkTranslationInput{},
 			Description: "Link an existing item (and its translations) as translations of another item of the same type; each locale once.",
 			Handler: bind(func(ctx context.Context, in linkTranslationInput) (any, error) {
 				if err := svc.LinkTranslation(ctx, in.ID, in.TranslationID); err != nil {
@@ -161,7 +174,7 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return svc.Translations(ctx, in.ID)
 			})},
-		{Name: "unlink_translation", Scopes: []string{scopeEdit}, Input: idInput{},
+		{Name: "unlink_translation", Title: "Unlink translation", Toolset: kernel.MCPToolsetTranslations, Idempotent: true, Scopes: []string{scopeEdit}, Input: idInput{},
 			Description: "Take a content item out of its translations (the item itself is kept).",
 			Handler: bind(func(ctx context.Context, in idInput) (any, error) {
 				if err := svc.UnlinkTranslation(ctx, in.ID); err != nil {
@@ -169,7 +182,7 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				}
 				return svc.Get(ctx, in.ID)
 			})},
-		{Name: "delete_content", Scopes: []string{scopeDelete}, Sensitive: true, Input: deleteContentInput{},
+		{Name: "delete_content", Title: "Delete content", Toolset: kernel.MCPToolsetContent, Destructive: true, Idempotent: true, Scopes: []string{scopeDelete}, Sensitive: true, Input: deleteContentInput{},
 			Description: "Move a content item to the trash (hard: delete permanently).",
 			Handler: bind(func(ctx context.Context, in deleteContentInput) (any, error) {
 				if err := svc.Delete(ctx, in.ID, in.Hard); err != nil {
@@ -178,6 +191,28 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				return map[string]any{"id": in.ID, "deleted": true, "hard": in.Hard}, nil
 			})},
 	}
+}
+
+func queryFilters(in map[string]filterInput) map[string]content.Filter {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]content.Filter, len(in))
+	for k, f := range in {
+		out[k] = content.Filter{Op: f.Op, Value: f.Value}
+	}
+	return out
+}
+
+func queryOrder(in []orderInput) []content.Order {
+	if in == nil {
+		return nil
+	}
+	out := make([]content.Order, 0, len(in))
+	for _, o := range in {
+		out = append(out, content.Order{By: o.By, Dir: o.Dir})
+	}
+	return out
 }
 
 // liveStatuses are the states in which an item is (or will go) live.

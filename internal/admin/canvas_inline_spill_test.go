@@ -193,9 +193,9 @@ func canvasSourceCall(t *testing.T, h *handlers, keyID string, in map[string]any
 	}
 	raw, _ := json.Marshal(in)
 	for _, tool := range h.d.MCP.Tools() {
-		if tool.Name == "canvases.source" {
+		if tool.Name == "get_canvas_source" {
 			if len(tool.Scopes) == 0 || tool.Scopes[0] != "canvas.read" {
-				t.Fatal("canvases.source scope", tool.Scopes)
+				t.Fatal("get_canvas_source scope", tool.Scopes)
 			}
 			out, err := tool.Handler(ctx, raw)
 			if err != nil {
@@ -205,7 +205,7 @@ func canvasSourceCall(t *testing.T, h *handlers, keyID string, in map[string]any
 			return m, nil
 		}
 	}
-	t.Fatal("canvases.source not registered")
+	t.Fatal("get_canvas_source not registered")
 	return nil, nil
 }
 
@@ -262,7 +262,7 @@ func TestCanvasSourceTool(t *testing.T) {
 				if err == nil {
 					t.Fatalf("%s ref served: %v", which, out)
 				}
-				if err != errCanvasConsent {
+				if err != errCanvasMCPForbidden {
 					t.Fatal("refusal must use the generic error", err)
 				}
 				return

@@ -97,7 +97,7 @@ Reading the graph:
   in `adapter_commerce.go`, published as `wpmigrate.product_importer` only when commerce booted)
   and `mcp → workagents` (the exported agent-channels bridge and its sentinel errors in
   `channels.go`, published as `workagents.channels` only when workagents booted; the bridge is
-  the read/append agent surface for `channels_list`, `channels_read` and `channels_post_message`).
+  the read/append agent surface for `list_channels`, `read_channel_messages` and `post_channel_message`).
   Any new edge must be added to `featureEdges` with a reason, or go through a service.
 - `pkg/themekit`, `pkg/patternkit` and `pkg/edge` import nothing from `internal/`
   (`TestContractPackagesAndThemesStayStandalone`), so theme and pattern authors build against a
@@ -123,7 +123,7 @@ finds no service degrades (see the *Absent* column). Hooks: `Hooks.Action`/`Filt
 | `kernel.module_inventory`, `kernel.schema`, `diagnostics` | kernel | admin capability report, health, updates | kernel, always present |
 | `kernel.navigation_pins`, `admin.canvas_read` | admin | auth navigation, mcp | optional reads |
 | **`commerce`** (`kernel.ServiceCommerce`) | commerce | wpmigrate adapter (`kernel.Get[commerce.Service]`), mcp (`kernel.Get[any]` + reflection), commerce itself | wpmigrate publishes no product importer; mcp registers no `list_products`; themes get the nil fallbacks for `products`/`product` |
-| `wpmigrate`, `wpmigrate.product_importer` | wpmigrate | mcp (`get_migration_status`, `run_migration_preview` via `any`) | mcp registers no migration tools |
+| `wpmigrate`, `wpmigrate.product_importer` | wpmigrate | mcp (`get_migration_status`, `preview_migration` via `any`) | mcp registers no migration tools |
 | `saas`, `membership`, `builder`, `workagents`, `ext`, `mcp` (internal) | the module | nothing outside the module (string keys, not kernel constants) | — |
 
 ### Hooks
@@ -182,7 +182,7 @@ Public paths are mounted at `/`, admin paths under `/admin`, API operations unde
 | **membership** | `/membership`, `/membership/assets.css`, `/membership/submissions` | `/membership`, `/membership/grants` | 7 | — | `membership.manage`, `membership.read`, `membership.unlimited`, `membership.submit` |
 | launch | `/start`, `/start/login`, `/start/verify` | — | — | — | — |
 | workagents | `/agents`, `/agents/*`, `/static/workagents.css` | `/workagents`, `/workspace` | `/v1/workagents/*` | — | `workagents.manage`, `workagents.read`, `workagents.run` |
-| wpmigrate | — | `/migrations/*` | 1 | `get_migration_status`, `run_migration_preview` | `migrations.run` |
+| wpmigrate | — | `/migrations/*` | 1 | `get_migration_status`, `preview_migration` | `migrations.run` |
 | mcp | `/mcp` | `/agents/approvals/*` | 3 | content, media, taxonomy, templates, comments, settings, logs, site structure | `mcp.approve`, `mcp.approve_self` |
 | ext | — | `/extensions/*` | 4 | — | `extensions.manage` |
 

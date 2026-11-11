@@ -86,6 +86,6 @@ Three screens were added for 0.21, in the same fresh fixture with synthetic data
 - `agent-channels-en.png` and `agent-channels-ar.png`: a second agent key, "Research assistant" (scopes
   `content.view`, `workagents.read`, `workagents.channels`), is created through the keys page. One channel per
   language is created from the admin screen with both agent keys as members. The owner posts through the
-  thread form, and the research key posts its reply through the real `channels_post_message` MCP tool with an
+  thread form, and the research key posts its reply through the real `post_channel_message` MCP tool with an
   advisory hand-off to the campaign assistant. The capture checks that no canvas run is created. Member IDs are
   key IDs, not secrets; one-time key secrets stay out of the page as for every other capture.

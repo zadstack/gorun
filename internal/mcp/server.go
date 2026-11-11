@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -27,8 +28,7 @@ const (
 	rpcForbidden    = -32003
 	serviceName     = "mcp"
 	maxRequestBytes = 16 << 20 // base64 uploads up to 10 MB plus JSON overhead
-	instructions    = "GoRun CMS. Start with get_site_structure. Sensitive tools (publish, unpublish, delete, settings) " +
-		"may return status pending_approval: poll check_approval with the approval_id until a human decides."
+	guideURI        = "gorun://guide"
 )
 
 // server holds the tool pipeline shared by the HTTP and stdio transports.
@@ -60,7 +60,7 @@ func (s *server) tools() []kernel.MCPTool { return s.d.MCP.Tools() }
 
 func (s *server) tool(name string) (kernel.MCPTool, bool) {
 	for _, t := range s.tools() {
-		if t.Name == name {
+		if t.Name == name || slices.Contains(t.Aliases, name) {
 			return t, true
 		}
 	}
@@ -84,17 +84,19 @@ func (c valuesCtx) Value(k any) any {
 // newSDKServer builds an MCP server acting as the principal returned by
 // principal (an API key context). Every tool is registered; tools/list is
 // filtered to those the key's scopes allow and calls to the others answer
-// "forbidden". A principal error (stdio: key revoked) fails the request.
-// limit, when set, is consulted before each tool call (stdio rate limit).
-func (s *server) newSDKServer(principal principalFunc, limit func() error) *sdk.Server {
+// "forbidden". view narrows the list further (toolsets, read-only) and
+// hidden tools are refused the same way. A principal error (stdio: key
+// revoked) fails the request. limit, when set, is consulted before each
+// tool call (stdio rate limit).
+func (s *server) newSDKServer(principal principalFunc, limit func() error, view toolView) *sdk.Server {
 	srv := sdk.NewServer(&sdk.Implementation{Name: serverName, Title: "GoRun", Version: serverVersion},
-		&sdk.ServerOptions{Instructions: instructions, Capabilities: &sdk.ServerCapabilities{}})
+		&sdk.ServerOptions{Instructions: guide, Capabilities: &sdk.ServerCapabilities{}})
 	with := func(ctx context.Context) (context.Context, error) {
 		p, err := principal(ctx)
 		if err != nil {
 			return nil, err
 		}
-		return valuesCtx{Context: ctx, values: p}, nil
+		return withView(valuesCtx{Context: ctx, values: p}, view), nil
 	}
 	for _, t := range s.tools() {
 		schema, err := schemaFor(t.Input)
@@ -103,20 +105,26 @@ func (s *server) newSDKServer(principal principalFunc, limit func() error) *sdk.
 			schema = emptyObject
 		}
 		tool := t
-		srv.AddTool(&sdk.Tool{Name: t.Name, Description: s.describe(t), InputSchema: schema},
-			func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
-				ctx, err := with(ctx)
-				if err != nil {
+		handler := func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
+			ctx, err := with(ctx)
+			if err != nil {
+				return s.toolResult(tool.Name, nil, err), nil
+			}
+			if limit != nil {
+				if err := limit(); err != nil {
 					return s.toolResult(tool.Name, nil, err), nil
 				}
-				if limit != nil {
-					if err := limit(); err != nil {
-						return s.toolResult(tool.Name, nil, err), nil
-					}
-				}
-				data, err := s.call(ctx, tool, req.Params.Arguments)
-				return s.toolResult(tool.Name, data, err), nil
-			})
+			}
+			data, err := s.call(ctx, tool, req.Params.Arguments)
+			return s.toolResult(tool.Name, data, err), nil
+		}
+		srv.AddTool(&sdk.Tool{Name: t.Name, Title: t.Title, Description: s.describe(t), InputSchema: schema, Annotations: annotations(t)}, handler)
+		// Deprecated names stay callable (same handler, audited under the
+		// current name) but tools/list hides them (see visible).
+		for _, alias := range t.Aliases {
+			srv.AddTool(&sdk.Tool{Name: alias, Title: t.Title, Description: "Deprecated alias of " + t.Name + "; call " + t.Name + " instead.",
+				InputSchema: schema, Annotations: annotations(t)}, handler)
+		}
 	}
 	srv.AddReceivingMiddleware(func(next sdk.MethodHandler) sdk.MethodHandler {
 		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
@@ -135,7 +143,8 @@ func (s *server) newSDKServer(principal principalFunc, limit func() error) *sdk.
 	return srv
 }
 
-// visible filters list to the tools ctx may call.
+// visible filters list to the tools ctx may call and its view shows;
+// deprecated aliases are never listed.
 func (s *server) visible(ctx context.Context, list []*sdk.Tool) []*sdk.Tool {
 	byName := map[string]kernel.MCPTool{}
 	for _, t := range s.tools() {
@@ -143,11 +152,23 @@ func (s *server) visible(ctx context.Context, list []*sdk.Tool) []*sdk.Tool {
 	}
 	out := make([]*sdk.Tool, 0, len(list))
 	for _, tl := range list {
-		if t, ok := byName[tl.Name]; ok && allowed(ctx, t) {
+		if t, ok := byName[tl.Name]; ok && allowed(ctx, t) && !hiddenByView(ctx, t) {
 			out = append(out, tl)
 		}
 	}
 	return out
+}
+
+// annotations maps a tool's title and hints to MCP tool annotations. Read-only
+// tools are idempotent and omit destructiveHint (it only applies to writes);
+// openWorldHint is always explicit because the protocol default is true.
+func annotations(t kernel.MCPTool) *sdk.ToolAnnotations {
+	a := &sdk.ToolAnnotations{Title: t.Title, ReadOnlyHint: t.ReadOnly, IdempotentHint: t.Idempotent || t.ReadOnly,
+		OpenWorldHint: new(t.OpenWorld)}
+	if !t.ReadOnly {
+		a.DestructiveHint = new(t.Destructive)
+	}
+	return a
 }
 
 func (s *server) describe(t kernel.MCPTool) string {
@@ -176,8 +197,16 @@ func (s *server) toolResult(tool string, data any, err error) *sdk.CallToolResul
 		StructuredContent: json.RawMessage(b), IsError: !env.OK}
 }
 
-// addResources registers gorun://types, gorun://site, and grant-scoped canvases.
+// addResources registers gorun://guide, gorun://types, gorun://site, and grant-scoped canvases.
 func (s *server) addResources(srv *sdk.Server, with func(context.Context) (context.Context, error)) {
+	srv.AddResource(&sdk.Resource{URI: guideURI, Name: "guide", Title: "GoRun MCP routing guide",
+		Description: "How to use these tools: bootstrap, drafts, approvals, paging, error codes, toolsets", MIMEType: "text/markdown"},
+		func(ctx context.Context, req *sdk.ReadResourceRequest) (*sdk.ReadResourceResult, error) {
+			if _, err := with(ctx); err != nil {
+				return nil, &jsonrpc.Error{Code: rpcUnauthorized, Message: err.Error()}
+			}
+			return &sdk.ReadResourceResult{Contents: []*sdk.ResourceContents{{URI: guideURI, MIMEType: "text/markdown", Text: guide}}}, nil
+		})
 	add := func(uri, name, desc string, read func(context.Context) (any, error)) {
 		srv.AddResource(&sdk.Resource{URI: uri, Name: name, Description: desc, MIMEType: "application/json"},
 			func(ctx context.Context, req *sdk.ReadResourceRequest) (*sdk.ReadResourceResult, error) {
@@ -257,7 +286,8 @@ func (s *server) addResources(srv *sdk.Server, with func(context.Context) (conte
 func (s *server) httpHandler() http.Handler {
 	h := sdk.NewStreamableHTTPHandler(func(r *http.Request) *sdk.Server {
 		p := r.Context()
-		return s.newSDKServer(func(context.Context) (context.Context, error) { return p, nil }, nil)
+		view, _ := r.Context().Value(viewKey{}).(toolView)
+		return s.newSDKServer(func(context.Context) (context.Context, error) { return p, nil }, nil, view)
 	},
 		&sdk.StreamableHTTPOptions{Stateless: true, JSONResponse: true, MaxRequestBodyBytes: maxRequestBytes,
 			DisableLocalhostProtection: true})
@@ -273,13 +303,26 @@ func (s *server) httpHandler() http.Handler {
 			unauthorized(w, "Authorization: Bearer gp_… API key required")
 			return
 		}
-		keyed.ServeHTTP(w, r)
+		view, err := viewFromRequest(r)
+		if err != nil {
+			badRequest(w, err.Error())
+			return
+		}
+		keyed.ServeHTTP(w, r.WithContext(withView(r.Context(), view)))
 	})
 }
 
 func hasBearerKey(r *http.Request) bool {
 	scheme, token, ok := strings.Cut(strings.TrimSpace(r.Header.Get("Authorization")), " ")
 	return ok && strings.EqualFold(scheme, "Bearer") && strings.HasPrefix(strings.TrimSpace(token), "gp_")
+}
+
+// badRequest writes a JSON-RPC invalid-params error with HTTP 400.
+func badRequest(w http.ResponseWriter, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": nil,
+		"error": map[string]any{"code": jsonrpc.CodeInvalidParams, "message": msg}})
 }
 
 // unauthorized writes a JSON-RPC error response with HTTP 401.
@@ -296,28 +339,52 @@ func unauthorized(w http.ResponseWriter, msg string) {
 // variable). The key is validated like a bearer key (hash lookup,
 // revocation, expiry, active owner) at start and again before every call,
 // so revoking it or disabling its owner ends access mid-session. Calls are
-// rate limited per process at the key's rate_per_min.
-func RunStdio(ctx context.Context, app *kernel.App, apiKey string) error {
+// rate limited per process at the key's rate_per_min. opts may narrow the
+// tool list (toolsets, read-only), like ?toolsets= and ?readonly=1 on /mcp.
+func RunStdio(ctx context.Context, app *kernel.App, apiKey string, opts ...Options) error {
 	if strings.TrimSpace(apiKey) == "" {
 		apiKey = os.Getenv(envKey)
 	}
-	return run(ctx, app, apiKey, &sdk.StdioTransport{})
+	return run(ctx, app, apiKey, &sdk.StdioTransport{}, opts)
+}
+
+// Options narrow the tools of a stdio session.
+type Options struct {
+	// Toolsets lists the toolsets to expose (empty: all).
+	Toolsets []string
+	// ReadOnly exposes only read-only tools.
+	ReadOnly bool
+}
+
+// ValidateOptions reports an unknown toolset name.
+func ValidateOptions(o Options) error {
+	_, err := newView(o.Toolsets, o.ReadOnly)
+	return err
 }
 
 // RunIO is RunStdio over the given streams (newline-delimited JSON-RPC),
 // for embedding and tests; apiKey falls back to GORUN_MCP_KEY too.
-func RunIO(ctx context.Context, app *kernel.App, apiKey string, in io.ReadCloser, out io.WriteCloser) error {
+func RunIO(ctx context.Context, app *kernel.App, apiKey string, in io.ReadCloser, out io.WriteCloser, opts ...Options) error {
 	if strings.TrimSpace(apiKey) == "" {
 		apiKey = os.Getenv(envKey)
 	}
-	return run(ctx, app, apiKey, &sdk.IOTransport{Reader: in, Writer: out})
+	return run(ctx, app, apiKey, &sdk.IOTransport{Reader: in, Writer: out}, opts)
 }
 
 // run serves one MCP session on t as apiKey.
-func run(ctx context.Context, app *kernel.App, apiKey string, t sdk.Transport) error {
+func run(ctx context.Context, app *kernel.App, apiKey string, t sdk.Transport, opts []Options) error {
 	s, ok := kernel.Get[*server](app.Deps, serviceName)
 	if !ok {
 		return errors.New("mcp: module not booted")
+	}
+	var o Options
+	for _, x := range opts {
+		o.Toolsets = append(o.Toolsets, x.Toolsets...)
+		o.ReadOnly = o.ReadOnly || x.ReadOnly
+	}
+	view, err := newView(o.Toolsets, o.ReadOnly)
+	if err != nil {
+		return fmt.Errorf("mcp: %w", err)
 	}
 	principal, err := authenticate(app.Deps, apiKey)
 	if err != nil {
@@ -335,7 +402,7 @@ func run(ctx context.Context, app *kernel.App, apiKey string, t sdk.Transport) e
 		}
 		return p, nil
 	}
-	return s.newSDKServer(fresh, limiter.take).Run(ctx, t)
+	return s.newSDKServer(fresh, limiter.take, view).Run(ctx, t)
 }
 
 // authenticate validates a plaintext key (API or agent kind) through

@@ -293,7 +293,7 @@ func (st *approvalStore) expire(ctx context.Context) error {
 	if n, _ := res.RowsAffected(); n > 0 {
 		st.s.d.Audit.Record(ctx, "mcp.approval.expire", "mcp_approval", "", map[string]any{"count": n})
 	}
-	interrupted, _ := json.Marshal(newEnvelope(nil, &ToolError{Code: "interrupted",
+	interrupted, _ := json.Marshal(newEnvelope(nil, &ToolError{Code: codeInterrupted,
 		Message: "execution was interrupted before a result was stored; check whether it took effect"}))
 	if _, err := st.s.d.DB.ExecContext(ctx, `UPDATE mcp_approvals SET status = 'failed', result_json = ?, executed_at = ?
 		WHERE status = 'approved' AND result_json = '' AND decided_at <= ?`,

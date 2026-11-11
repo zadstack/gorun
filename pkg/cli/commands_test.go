@@ -173,6 +173,13 @@ func TestMCPCommandServesStdio(t *testing.T) {
 	if err := mcpStdio([]string{"--key", "gp_wrong", "--data", dir}, io.NopCloser(strings.NewReader("")), nopWriteCloser{io.Discard}); err == nil {
 		t.Fatal("an invalid key must fail")
 	}
+	// --toolsets and --readonly narrow the list; unknown toolsets fail at once.
+	if err := mcpStdio([]string{"--toolsets", "media,nope", "--data", dir}, io.NopCloser(strings.NewReader("")), nopWriteCloser{io.Discard}); err == nil || !strings.Contains(err.Error(), `unknown toolset "nope"`) {
+		t.Fatalf("unknown toolset: %v", err)
+	}
+	if err := mcpStdio([]string{"--toolsets", "media", "--readonly", "--data", dir}, io.NopCloser(strings.NewReader("")), nopWriteCloser{io.Discard}); err != nil {
+		t.Fatalf("--toolsets media --readonly: %v", err)
+	}
 }
 
 // syncBuffer is a goroutine-safe log sink.

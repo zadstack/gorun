@@ -220,7 +220,7 @@
       const content = el('div', undefined, 'canvas-review-content');
       content.append(heading, textField(t('destination'), [review.provider?.title,review.provider?.model,review.provider?.endpoint].filter(Boolean).join('\n')), textField(t('prompt'), review.prompt), textField(t('context'), review.context));
       const spill = review.spill || {};
-      // Shortened sources: external agents can fetch the rest with canvases.source; providers cannot. Latin digits in every locale.
+      // Shortened sources: external agents can fetch the rest with get_canvas_source; providers cannot. Latin digits in every locale.
       if (spill.sources > 0) { const key = (spill.on_request ? 'spill_on_request' : 'spill_only') + (spill.sources === 1 ? '_one' : ''), number = new Intl.NumberFormat('en-US'); const line = el('p', t(key).replace('{sources}', number.format(spill.sources)).replace('{chars}', number.format(spill.characters || 0)), 'canvas-review-spill'); line.dataset.reviewSpill = ''; content.append(line); }
       if (review.managed_tools?.length) content.append(textField(t('tools_allowlist'), review.managed_tools.join('\n')), el('p', t('tools_manual_warning')));
       if (schedule) { const node = api.document().cards.find(c => c.id === schedule); content.append(el('p', `${t('interval')}: ${t(node?.interval || '')}`)); }

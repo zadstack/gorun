@@ -38,7 +38,11 @@ func canvasTool(t *testing.T, s *site, secret, name string, in any) (map[string]
 		return nil, e
 	}
 	if result.IsError {
-		return nil, errors.New("MCP rejected request")
+		text := ""
+		if block, ok := result.Content[0].(*sdk.TextContent); ok {
+			text = block.Text
+		}
+		return nil, errors.New("MCP rejected request: " + text)
 	}
 	if len(result.Content) != 1 {
 		return nil, errors.New("unexpected MCP result")
@@ -104,8 +108,14 @@ func TestCanvasAgentGrantRunAppendAndRevocation(t *testing.T) {
 		t.Fatal(run)
 	}
 	input := map[string]any{"board_id": board, "run_id": run["id"]}
-	if _, e = canvasTool(t, s, otherSecret, "canvases.context", input); e == nil {
-		t.Fatal("other key inherited private board")
+	if _, e = canvasTool(t, s, otherSecret, "canvases.context", input); e == nil || !strings.Contains(e.Error(), `"code":"forbidden"`) {
+		t.Fatal("other key inherited private board, or the refusal is not forbidden:", e)
+	}
+	if _, e = canvasTool(t, s, secret, "canvases.context", map[string]any{"board_id": board, "run": run["id"]}); e == nil || !strings.Contains(e.Error(), `"code":"validation_failed"`) {
+		t.Fatal("unknown argument must be validation_failed:", e)
+	}
+	if _, e = canvasTool(t, s, secret, "canvases.request_run", map[string]any{"board_id": board, "node_id": promptID, "request_id": "44444444-4444-4444-8444-444444444444"}); e == nil || !strings.Contains(e.Error(), `"code":"validation_failed"`) {
+		t.Fatal("a run of a prompt card must be validation_failed:", e)
 	}
 	contextual, e := canvasTool(t, s, secret, "canvases.context", input)
 	if e != nil || contextual["prompt"] != "Prepare a draft" {

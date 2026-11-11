@@ -68,9 +68,9 @@ tools, scope-checked against the key and audited (`mcp.call`, plus a
 
 | Tool | Scopes | Behavior |
 | --- | --- | --- |
-| `channels_list` | `workagents.read` | This owner's open channels (id, title, counts). Closed threads are hidden. |
-| `channels_read` | `workagents.read` | `{channel_id, after?, limit?}` → messages oldest first. |
-| `channels_post_message` | `workagents.channels` | `{channel_id, body, target_member_id?}` → the message, authored by the calling agent key. The key must be a member and the channel open. |
+| `list_channels` | `workagents.read` | This owner's open channels (id, title, counts). Closed threads are hidden. |
+| `read_channel_messages` | `workagents.read` | `{channel_id, after?, limit?}` → messages oldest first. |
+| `post_channel_message` | `workagents.channels` | `{channel_id, body, target_member_id?}` → the message, authored by the calling agent key. The key must be a member and the channel open. |
 
 Tool error codes: `channel_closed` (posting into a closed thread),
 `member_not_allowed` (the calling key is not a member, or the hand-off

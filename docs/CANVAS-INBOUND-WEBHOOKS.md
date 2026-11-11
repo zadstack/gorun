@@ -4,7 +4,7 @@ Each owned agent/provider card can have one **disabled by default** inbound rule
 The rule maps one exact command to the card's existing connected saved prompt and
 current selected context. It cannot execute shell commands or publish content.
 Results use the normal private canvas notes/artifact flow. An external named agent
-still needs its own connected MCP client to poll `canvases.pending`, obtain context
+still needs its own connected MCP client to poll `list_canvas_pending_runs`, obtain context
 and append a result; accepting an event does not launch or verify that client.
 Managed agents/providers use the existing queue and approved configured runtime.
 

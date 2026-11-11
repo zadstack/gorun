@@ -49,10 +49,10 @@ type updateMediaInput struct {
 
 func mediaTools(svc media.Service, log *slog.Logger) []kernel.MCPTool {
 	return []kernel.MCPTool{
-		{Name: "get_media", Scopes: []string{scopeView}, Input: mediaIDInput{},
+		{Name: "get_media", Title: "Get media item", Toolset: kernel.MCPToolsetMedia, ReadOnly: true, Scopes: []string{scopeView}, Input: mediaIDInput{},
 			Description: "Read a media item, including dimensions and generated responsive image variants.",
 			Handler:     bind(func(ctx context.Context, in mediaIDInput) (any, error) { return svc.Get(ctx, in.ID) })},
-		{Name: "update_media", Sensitive: true, Scopes: []string{scopeUpload}, Input: updateMediaInput{},
+		{Name: "update_media", Title: "Update media metadata", Toolset: kernel.MCPToolsetMedia, Destructive: true, Idempotent: true, Sensitive: true, Scopes: []string{scopeUpload}, Input: updateMediaInput{},
 			Description: "Update alt text, caption, title or focal point (x, y from 0 to 1; clear_focal removes it). Omitted or null fields are preserved; an empty string clears a field. Requires approval because metadata may appear on public pages.",
 			Handler: bind(func(ctx context.Context, in updateMediaInput) (any, error) {
 				if in.Alt == nil && in.Caption == nil && in.Title == nil && in.Focal == nil && !in.ClearFocal {
@@ -63,10 +63,10 @@ func mediaTools(svc media.Service, log *slog.Logger) []kernel.MCPTool {
 				}
 				return svc.Update(ctx, in.ID, media.Patch{Alt: in.Alt, Caption: in.Caption, Title: in.Title, Focal: in.Focal, ClearFocal: in.ClearFocal})
 			})},
-		{Name: "upload_media", Scopes: []string{scopeUpload}, Input: uploadMediaInput{},
+		{Name: "upload_media", Title: "Upload media", Toolset: kernel.MCPToolsetMedia, OpenWorld: true, Scopes: []string{scopeUpload}, Input: uploadMediaInput{},
 			Description: "Upload a file from base64 data (≤ 10 MB) or download it from a public URL (private addresses are refused).",
 			Handler:     bind(func(ctx context.Context, in uploadMediaInput) (any, error) { return uploadMedia(ctx, svc, log, in) })},
-		{Name: "list_media", Scopes: []string{scopeView}, Input: listMediaInput{},
+		{Name: "list_media", Title: "List media", Toolset: kernel.MCPToolsetMedia, ReadOnly: true, Scopes: []string{scopeView}, Input: listMediaInput{},
 			Description: "List the media library (newest first).",
 			Handler: bind(func(ctx context.Context, in listMediaInput) (any, error) {
 				page, per := paging(in.Page, in.PerPage)
@@ -95,7 +95,7 @@ func uploadMedia(ctx context.Context, svc media.Service, log *slog.Logger, in up
 				return nil, err
 			}
 			log.Info("mcp: upload_media url fetch failed", "err", err)
-			return nil, &ToolError{Code: "fetch_failed",
+			return nil, &ToolError{Code: codeFetchFailed,
 				Message: "could not download the URL (unreachable, private address, refused redirect or non-200 response)"}
 		}
 		return m, nil
