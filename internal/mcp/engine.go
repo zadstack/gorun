@@ -196,6 +196,9 @@ func (s *server) dispatch(ctx context.Context, t kernel.MCPTool, args json.RawMe
 	if !allowed(ctx, t) {
 		return nil, errForbidden()
 	}
+	if hiddenByView(ctx, t) {
+		return nil, errHidden()
+	}
 	sensitive := s.sensitive(ctx, t, args)
 	dynamic := s.dynamic[t.Name] != nil
 	selfApproved := (sensitive || dynamic) && s.selfApproved(ctx)

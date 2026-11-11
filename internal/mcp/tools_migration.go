@@ -50,14 +50,14 @@ func migrationTools(d *kernel.Deps, s *server) []kernel.MCPTool {
 	}
 	var out []kernel.MCPTool
 	if preview, ok := bindMethod[string](svc, "Preview"); ok {
-		out = append(out, kernel.MCPTool{Name: "run_migration_preview", Title: "Preview WordPress migration", ReadOnly: true, OpenWorld: true, Scopes: []string{scopeMigrate}, Input: migrationIDInput{},
+		out = append(out, kernel.MCPTool{Name: "run_migration_preview", Title: "Preview WordPress migration", Toolset: kernel.MCPToolsetMigration, ReadOnly: true, OpenWorld: true, Scopes: []string{scopeMigrate}, Input: migrationIDInput{},
 			Description: "Run the dry-run preview of a WordPress migration (writes nothing) and return its report.",
 			Handler:     bind(func(ctx context.Context, in migrationIDInput) (any, error) { return preview(ctx, in.MigrationID) })})
 	} else {
 		s.log.Warn("mcp: wpmigrate service has no Preview(ctx, string) (T, error); run_migration_preview disabled")
 	}
 	if status, ok := bindMethod[string](svc, "Status"); ok {
-		out = append(out, kernel.MCPTool{Name: "get_migration_status", Title: "Get migration status", ReadOnly: true, Scopes: []string{scopeMigrate}, Input: migrationIDInput{},
+		out = append(out, kernel.MCPTool{Name: "get_migration_status", Title: "Get migration status", Toolset: kernel.MCPToolsetMigration, ReadOnly: true, Scopes: []string{scopeMigrate}, Input: migrationIDInput{},
 			Description: "Status and progress counters of a WordPress migration.",
 			Handler:     bind(func(ctx context.Context, in migrationIDInput) (any, error) { return status(ctx, in.MigrationID) })})
 	} else {

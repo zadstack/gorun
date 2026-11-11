@@ -289,9 +289,13 @@ func (r *APIRegistry) Operations() []APIOperation {
 // data (meaningful only when not ReadOnly); Idempotent tools have no further
 // effect when repeated with the same arguments; OpenWorld tools reach
 // systems outside GoRun (for example by downloading a URL).
+//
+// Toolset groups the tool for clients that narrow the list (one of
+// MCPToolsets; empty means MCPToolsetOther).
 type MCPTool struct {
 	Name, Description string
 	Title             string
+	Toolset           string
 	Input             any
 	Scopes            []string
 	Sensitive         bool
@@ -300,6 +304,40 @@ type MCPTool struct {
 	Idempotent        bool
 	OpenWorld         bool
 	Handler           func(ctx context.Context, args json.RawMessage) (any, error)
+}
+
+// MCP toolsets: the groups a client may select with ?toolsets= on /mcp.
+const (
+	MCPToolsetContent      = "content"
+	MCPToolsetTypes        = "types"
+	MCPToolsetTranslations = "translations"
+	MCPToolsetComments     = "comments"
+	MCPToolsetMedia        = "media"
+	MCPToolsetTaxonomy     = "taxonomy"
+	MCPToolsetTemplates    = "templates"
+	MCPToolsetSite         = "site"
+	MCPToolsetSettings     = "settings"
+	MCPToolsetMigration    = "migration"
+	MCPToolsetCommerce     = "commerce"
+	MCPToolsetCanvas       = "canvas"
+	MCPToolsetBuilder      = "builder"
+	MCPToolsetChannels     = "channels"
+	MCPToolsetApprovals    = "approvals"
+	// MCPToolsetOther holds tools registered without a Toolset (extensions).
+	MCPToolsetOther = "other"
+)
+
+// MCPToolsets lists every toolset name.
+var MCPToolsets = []string{MCPToolsetContent, MCPToolsetTypes, MCPToolsetTranslations, MCPToolsetComments,
+	MCPToolsetMedia, MCPToolsetTaxonomy, MCPToolsetTemplates, MCPToolsetSite, MCPToolsetSettings, MCPToolsetMigration,
+	MCPToolsetCommerce, MCPToolsetCanvas, MCPToolsetBuilder, MCPToolsetChannels, MCPToolsetApprovals, MCPToolsetOther}
+
+// ToolsetName returns t's toolset, MCPToolsetOther when unset.
+func (t MCPTool) ToolsetName() string {
+	if t.Toolset == "" {
+		return MCPToolsetOther
+	}
+	return t.Toolset
 }
 
 // MCPRegistry collects MCP tools.

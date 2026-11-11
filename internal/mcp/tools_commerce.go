@@ -22,7 +22,7 @@ func commerceTools(d *kernel.Deps, s *server) []kernel.MCPTool {
 		s.log.Warn("mcp: commerce service has no Products(ctx, bool) (T, error); list_products disabled")
 		return nil
 	}
-	return []kernel.MCPTool{{Name: "list_products", Title: "List store products", ReadOnly: true, Scopes: []string{scopeCommerce}, Input: listProductsInput{},
+	return []kernel.MCPTool{{Name: "list_products", Title: "List store products", Toolset: kernel.MCPToolsetCommerce, ReadOnly: true, Scopes: []string{scopeCommerce}, Input: listProductsInput{},
 		Description: "List store products (MCP server plans) with prices in minor units.",
 		Handler: bind(func(ctx context.Context, in listProductsInput) (any, error) {
 			list, err := products(ctx, in.ActiveOnly)

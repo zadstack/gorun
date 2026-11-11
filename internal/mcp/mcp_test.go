@@ -372,7 +372,7 @@ func TestStdioTransportHandshake(t *testing.T) {
 	cr, sw := io.Pipe()
 	sr, cw := io.Pipe()
 	done := make(chan error, 1)
-	go func() { done <- run(ctx, e.app, key.Token, &sdk.IOTransport{Reader: sr, Writer: sw}) }()
+	go func() { done <- run(ctx, e.app, key.Token, &sdk.IOTransport{Reader: sr, Writer: sw}, nil) }()
 	c := sdk.NewClient(&sdk.Implementation{Name: "stdio-test", Version: "v0"}, nil)
 	cs, err := c.Connect(ctx, &sdk.IOTransport{Reader: cr, Writer: cw}, nil)
 	if err != nil {
@@ -397,7 +397,7 @@ func TestStdioTransportHandshake(t *testing.T) {
 	if n := e.count(`SELECT count(*) FROM audit_log WHERE action = 'mcp.call' AND actor_kind = 'api_key' AND actor_id = ?`, key.Key.ID); n != 1 {
 		t.Fatalf("stdio audit rows: %d", n)
 	}
-	if err := run(context.Background(), e.app, "gp_notavalidkey", &sdk.IOTransport{Reader: io.NopCloser(strings.NewReader("")), Writer: nopWriteCloser{}}); err == nil {
+	if err := run(context.Background(), e.app, "gp_notavalidkey", &sdk.IOTransport{Reader: io.NopCloser(strings.NewReader("")), Writer: nopWriteCloser{}}, nil); err == nil {
 		t.Fatal("invalid key must be rejected")
 	}
 }

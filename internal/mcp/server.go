@@ -83,9 +83,11 @@ func (c valuesCtx) Value(k any) any {
 // newSDKServer builds an MCP server acting as the principal returned by
 // principal (an API key context). Every tool is registered; tools/list is
 // filtered to those the key's scopes allow and calls to the others answer
-// "forbidden". A principal error (stdio: key revoked) fails the request.
-// limit, when set, is consulted before each tool call (stdio rate limit).
-func (s *server) newSDKServer(principal principalFunc, limit func() error) *sdk.Server {
+// "forbidden". view narrows the list further (toolsets, read-only) and
+// hidden tools are refused the same way. A principal error (stdio: key
+// revoked) fails the request. limit, when set, is consulted before each
+// tool call (stdio rate limit).
+func (s *server) newSDKServer(principal principalFunc, limit func() error, view toolView) *sdk.Server {
 	srv := sdk.NewServer(&sdk.Implementation{Name: serverName, Title: "GoRun", Version: serverVersion},
 		&sdk.ServerOptions{Instructions: guide, Capabilities: &sdk.ServerCapabilities{}})
 	with := func(ctx context.Context) (context.Context, error) {
@@ -93,7 +95,7 @@ func (s *server) newSDKServer(principal principalFunc, limit func() error) *sdk.
 		if err != nil {
 			return nil, err
 		}
-		return valuesCtx{Context: ctx, values: p}, nil
+		return withView(valuesCtx{Context: ctx, values: p}, view), nil
 	}
 	for _, t := range s.tools() {
 		schema, err := schemaFor(t.Input)
@@ -134,7 +136,7 @@ func (s *server) newSDKServer(principal principalFunc, limit func() error) *sdk.
 	return srv
 }
 
-// visible filters list to the tools ctx may call.
+// visible filters list to the tools ctx may call and its view shows.
 func (s *server) visible(ctx context.Context, list []*sdk.Tool) []*sdk.Tool {
 	byName := map[string]kernel.MCPTool{}
 	for _, t := range s.tools() {
@@ -142,7 +144,7 @@ func (s *server) visible(ctx context.Context, list []*sdk.Tool) []*sdk.Tool {
 	}
 	out := make([]*sdk.Tool, 0, len(list))
 	for _, tl := range list {
-		if t, ok := byName[tl.Name]; ok && allowed(ctx, t) {
+		if t, ok := byName[tl.Name]; ok && allowed(ctx, t) && !hiddenByView(ctx, t) {
 			out = append(out, tl)
 		}
 	}
@@ -276,7 +278,8 @@ func (s *server) addResources(srv *sdk.Server, with func(context.Context) (conte
 func (s *server) httpHandler() http.Handler {
 	h := sdk.NewStreamableHTTPHandler(func(r *http.Request) *sdk.Server {
 		p := r.Context()
-		return s.newSDKServer(func(context.Context) (context.Context, error) { return p, nil }, nil)
+		view, _ := r.Context().Value(viewKey{}).(toolView)
+		return s.newSDKServer(func(context.Context) (context.Context, error) { return p, nil }, nil, view)
 	},
 		&sdk.StreamableHTTPOptions{Stateless: true, JSONResponse: true, MaxRequestBodyBytes: maxRequestBytes,
 			DisableLocalhostProtection: true})
@@ -292,13 +295,26 @@ func (s *server) httpHandler() http.Handler {
 			unauthorized(w, "Authorization: Bearer gp_… API key required")
 			return
 		}
-		keyed.ServeHTTP(w, r)
+		view, err := viewFromRequest(r)
+		if err != nil {
+			badRequest(w, err.Error())
+			return
+		}
+		keyed.ServeHTTP(w, r.WithContext(withView(r.Context(), view)))
 	})
 }
 
 func hasBearerKey(r *http.Request) bool {
 	scheme, token, ok := strings.Cut(strings.TrimSpace(r.Header.Get("Authorization")), " ")
 	return ok && strings.EqualFold(scheme, "Bearer") && strings.HasPrefix(strings.TrimSpace(token), "gp_")
+}
+
+// badRequest writes a JSON-RPC invalid-params error with HTTP 400.
+func badRequest(w http.ResponseWriter, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": nil,
+		"error": map[string]any{"code": jsonrpc.CodeInvalidParams, "message": msg}})
 }
 
 // unauthorized writes a JSON-RPC error response with HTTP 401.
@@ -315,28 +331,52 @@ func unauthorized(w http.ResponseWriter, msg string) {
 // variable). The key is validated like a bearer key (hash lookup,
 // revocation, expiry, active owner) at start and again before every call,
 // so revoking it or disabling its owner ends access mid-session. Calls are
-// rate limited per process at the key's rate_per_min.
-func RunStdio(ctx context.Context, app *kernel.App, apiKey string) error {
+// rate limited per process at the key's rate_per_min. opts may narrow the
+// tool list (toolsets, read-only), like ?toolsets= and ?readonly=1 on /mcp.
+func RunStdio(ctx context.Context, app *kernel.App, apiKey string, opts ...Options) error {
 	if strings.TrimSpace(apiKey) == "" {
 		apiKey = os.Getenv(envKey)
 	}
-	return run(ctx, app, apiKey, &sdk.StdioTransport{})
+	return run(ctx, app, apiKey, &sdk.StdioTransport{}, opts)
+}
+
+// Options narrow the tools of a stdio session.
+type Options struct {
+	// Toolsets lists the toolsets to expose (empty: all).
+	Toolsets []string
+	// ReadOnly exposes only read-only tools.
+	ReadOnly bool
+}
+
+// ValidateOptions reports an unknown toolset name.
+func ValidateOptions(o Options) error {
+	_, err := newView(o.Toolsets, o.ReadOnly)
+	return err
 }
 
 // RunIO is RunStdio over the given streams (newline-delimited JSON-RPC),
 // for embedding and tests; apiKey falls back to GORUN_MCP_KEY too.
-func RunIO(ctx context.Context, app *kernel.App, apiKey string, in io.ReadCloser, out io.WriteCloser) error {
+func RunIO(ctx context.Context, app *kernel.App, apiKey string, in io.ReadCloser, out io.WriteCloser, opts ...Options) error {
 	if strings.TrimSpace(apiKey) == "" {
 		apiKey = os.Getenv(envKey)
 	}
-	return run(ctx, app, apiKey, &sdk.IOTransport{Reader: in, Writer: out})
+	return run(ctx, app, apiKey, &sdk.IOTransport{Reader: in, Writer: out}, opts)
 }
 
 // run serves one MCP session on t as apiKey.
-func run(ctx context.Context, app *kernel.App, apiKey string, t sdk.Transport) error {
+func run(ctx context.Context, app *kernel.App, apiKey string, t sdk.Transport, opts []Options) error {
 	s, ok := kernel.Get[*server](app.Deps, serviceName)
 	if !ok {
 		return errors.New("mcp: module not booted")
+	}
+	var o Options
+	for _, x := range opts {
+		o.Toolsets = append(o.Toolsets, x.Toolsets...)
+		o.ReadOnly = o.ReadOnly || x.ReadOnly
+	}
+	view, err := newView(o.Toolsets, o.ReadOnly)
+	if err != nil {
+		return fmt.Errorf("mcp: %w", err)
 	}
 	principal, err := authenticate(app.Deps, apiKey)
 	if err != nil {
@@ -354,7 +394,7 @@ func run(ctx context.Context, app *kernel.App, apiKey string, t sdk.Transport) e
 		}
 		return p, nil
 	}
-	return s.newSDKServer(fresh, limiter.take).Run(ctx, t)
+	return s.newSDKServer(fresh, limiter.take, view).Run(ctx, t)
 }
 
 // authenticate validates a plaintext key (API or agent kind) through

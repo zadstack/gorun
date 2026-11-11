@@ -3,12 +3,14 @@ package cli
 import (
 	"context"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/zadstack/gorun/internal/auth"
+	"github.com/zadstack/gorun/internal/kernel"
 )
 
 // Every tool of a fully booted build carries a title and consistent hints,
@@ -23,6 +25,8 @@ func TestFullModulesMCPToolAnnotations(t *testing.T) {
 		switch {
 		case strings.TrimSpace(tool.Title) == "":
 			t.Errorf("%s: no Title", tool.Name)
+		case tool.Toolset == "" || !slices.Contains(kernel.MCPToolsets, tool.Toolset):
+			t.Errorf("%s: toolset %q is not one of %v", tool.Name, tool.Toolset, kernel.MCPToolsets)
 		case tool.ReadOnly && tool.Destructive:
 			t.Errorf("%s: both ReadOnly and Destructive", tool.Name)
 		case tool.ReadOnly && tool.Sensitive:

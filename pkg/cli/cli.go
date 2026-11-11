@@ -57,7 +57,8 @@ commands:
   secret-key    print this site's key, to move a GORUN_TRIAL site to production
   reindex       rebuild the content search index and relation rows ([--no-jobs])
   mcp           serve MCP over stdio as an API key (--key gp_… or GORUN_MCP_KEY); no job
-                workers unless --jobs (the running server executes the jobs)
+                workers unless --jobs (the running server executes the jobs);
+                --toolsets a,b and --readonly narrow the tool list
   backup-preview verify and open a disposable localhost-only read-only preview (--input <stamp>.manifest.json)
   backup-inspect inspect a local pair without writes (--input <timestamp>.manifest.json)
   backup-restore restore a local pair into a new directory path that must not exist (--input, --dest; never merges)

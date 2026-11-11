@@ -83,7 +83,7 @@ var canvasOps = []struct {
 func (h *handlers) canvasMCPTools() {
 	for _, spec := range canvasOps {
 		op, scope := spec.op, spec.scope
-		h.d.MCP.AddTool(kernel.MCPTool{Name: spec.name, Title: spec.title, ReadOnly: spec.readOnly, Idempotent: !spec.readOnly,
+		h.d.MCP.AddTool(kernel.MCPTool{Name: spec.name, Title: spec.title, Toolset: kernel.MCPToolsetCanvas, ReadOnly: spec.readOnly, Idempotent: !spec.readOnly,
 			Description: spec.description + " Selected-board operation: the key needs a board grant; named-agent tasks require owner review.",
 			Input:       spec.input, Scopes: []string{scope, "content.view"},
 			Handler: func(ctx context.Context, raw json.RawMessage) (any, error) {
