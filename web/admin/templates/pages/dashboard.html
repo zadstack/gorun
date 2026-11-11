@@ -3,10 +3,8 @@
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "dashboard-layout.css"}}">
 <script src="{{asset "dashboard-layout.js"}}" defer></script>
-<header class="dashboard-page-heading">
-<h1>{{t "core.dashboard.title"}}</h1>
-{{with user}}<p>{{t "core.dashboard.welcome" .Name}}</p>{{end}}
-</header>
+{{$welcome := ""}}{{with user}}{{$welcome = t "core.dashboard.welcome" .Name}}{{end}}
+{{template "partials/page-header" (dict "Title" (t "core.dashboard.title") "Subtitle" $welcome "Class" "dashboard-page-heading")}}
 {{if .Widgets}}
 <details class="audit-customize" data-dashboard-customize><summary>{{t "auditworkspace.customize"}}</summary>
 <div class="dashboard-layout-toolbar" data-layout-toolbar data-saving="{{t "dashboardlayout.saving"}}" data-saved="{{t "dashboardlayout.saved"}}" data-error="{{t "dashboardlayout.error"}}" data-conflict="{{t "dashboardlayout.conflict"}}">

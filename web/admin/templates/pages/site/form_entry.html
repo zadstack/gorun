@@ -20,7 +20,7 @@
   </div>
   {{end}}
   <dl class="px-4 pb-4 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_minmax(0,1fr)] border-t border-line pt-4">
-    <dt class="text-muted">{{t "site.submissions.received"}}</dt><dd class="font-mono">{{.CreatedAt}}</dd>
+    <dt class="text-muted">{{t "site.submissions.received"}}</dt><dd>{{datetime .CreatedAt}}</dd>
     <dt class="text-muted">{{t "site.forms.entry.page"}}</dt><dd><bdi class="font-mono">{{.Page}}</bdi></dd>
     <dt class="text-muted">{{t "site.forms.entry.ip"}}</dt><dd class="font-mono" dir="ltr">{{.IP}}</dd>
   </dl>

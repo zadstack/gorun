@@ -444,11 +444,11 @@ func TestChannelsAdminScreenArabicListAndThread(t *testing.T) {
 	}
 	// Timestamps stay left to right inside the Arabic layout, in the shared
 	// minute format rather than raw RFC 3339.
-	stamp := regexp.MustCompile(`<time class="text-muted" datetime="[^"]+" dir="ltr">\d{4}-\d{2}-\d{2} \d{2}:\d{2}</time>`)
+	stamp := regexp.MustCompile(`<time datetime="[^"]+" dir="ltr" title="[^"]+ UTC">\d{4}-\d{2}-\d{2} \d{2}:\d{2}</time>`)
 	if !stamp.MatchString(body) {
 		t.Fatal("thread timestamp is not a left-to-right formatted <time>")
 	}
-	if list := get("/admin/workagents/channels").Body.String(); !regexp.MustCompile(`<time datetime="[^"]+" dir="ltr">\d{4}-\d{2}-\d{2} \d{2}:\d{2}</time>`).MatchString(list) {
+	if list := get("/admin/workagents/channels").Body.String(); !stamp.MatchString(list) {
 		t.Fatal("list last activity is not a left-to-right formatted <time>")
 	}
 	// The human post box is offered for the owner user.
@@ -462,5 +462,41 @@ func TestChannelsAdminScreenArabicListAndThread(t *testing.T) {
 	rec = get("/admin/workagents/channels/" + c.ID)
 	if rec.Code != 200 || !strings.Contains(rec.Body.String(), "مغلقة") || strings.Contains(rec.Body.String(), "data-channel-post") {
 		t.Fatal("closed thread state", rec.Code)
+	}
+}
+
+// The thread page picks new members from the owner's agent keys by name and
+// keeps raw member IDs out of the visible text.
+func TestChannelThreadMemberPickerUsesKeyNames(t *testing.T) {
+	s, ctx, app := bootWorkspace(t)
+	keys := setupKeys(t, s)
+	u := auth.UserFromContext(ctx)
+	joined := newAgentKey(t, keys, ctx, u.ID, "Campaign assistant")
+	spare := newAgentKey(t, keys, ctx, u.ID, "Research assistant")
+	c, e := s.createChannel(ctx, "Spring launch", []ChannelMember{{Kind: "agent_key", MemberID: joined.ID}})
+	if e != nil {
+		t.Fatal(e)
+	}
+	rec := httptest.NewRecorder()
+	app.Handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin/workagents/channels/"+c.ID, nil).WithContext(ctx))
+	body := rec.Body.String()
+	if rec.Code != 200 {
+		t.Fatal("thread page", rec.Code)
+	}
+	picker := regexp.MustCompile(`<select name="member_id" required>(.*?)</select>`).FindStringSubmatch(body)
+	if picker == nil {
+		t.Fatal("member picker is not a select")
+	}
+	if !strings.Contains(picker[1], `<option value="`+spare.ID+`">Research assistant</option>`) || strings.Contains(picker[1], joined.ID) {
+		t.Fatalf("member picker must offer only non-member keys by name: %s", picker[1])
+	}
+	if !strings.Contains(body, `<input type="hidden" name="kind" value="agent_key">`) || strings.Contains(body, `<input name="member_id"`) {
+		t.Fatal("free-text member ID input is still rendered")
+	}
+	if !strings.Contains(body, "<bdi>Campaign assistant</bdi>") {
+		t.Fatal("member names are not isolated with <bdi>")
+	}
+	if !strings.Contains(body, `<code dir="ltr">`+joined.ID+`</code>`) || strings.Contains(body, "· "+joined.ID) {
+		t.Fatal("member ID must sit in the muted ID detail only")
 	}
 }

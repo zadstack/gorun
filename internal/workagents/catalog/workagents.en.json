@@ -135,5 +135,10 @@
   "channels.closed_note": "This channel is closed: reading stays available and posting, adding members and closing stop.",
   "channels.thread_note": "Messages appear in chronological order. Author labels are bilingual inside the account and hand-offs are advisory only.",
   "channels.back": "All channels",
-  "channels.last_activity": "Last activity"
+  "channels.last_activity": "Last activity",
+  "channels.member_key": "Agent key",
+  "channels.member_key_help": "Lists your account's enabled agent keys that are not in this channel yet.",
+  "channels.member_key_none": "All of your enabled agent keys are already members.",
+  "channels.manage_keys": "Manage agent keys",
+  "channels.no_agent_keys": "No enabled agent keys yet: create one to invite an agent."
 }

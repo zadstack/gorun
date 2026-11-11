@@ -25,7 +25,7 @@
         <td class="px-3 py-2 text-muted">{{t (printf "site.forms.source.%s" .Source)}}</td>
         <td class="px-3 py-2 font-mono" data-entries="{{.Entries}}">{{.Entries}}</td>
         <td class="px-3 py-2 font-mono {{if .New}}font-bold{{end}}" data-new="{{.New}}">{{.New}}</td>
-        <td class="px-3 py-2 font-mono whitespace-nowrap text-muted" data-last="{{.LastEntry}}">{{if .LastEntry}}<time datetime="{{.LastEntry}}">{{.LastEntry}}</time>{{else}}—{{end}}</td>
+        <td class="px-3 py-2 font-mono whitespace-nowrap text-muted" data-last="{{.LastEntry}}">{{datetime .LastEntry}}</td>
         <td class="px-3 py-2 text-muted">{{if .Open}}{{t "site.forms.state.open"}}{{else}}{{t "site.forms.state.closed"}}{{end}}</td>
       </tr>
       {{end}}

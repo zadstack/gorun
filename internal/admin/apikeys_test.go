@@ -38,6 +38,12 @@ func TestAPIKeyCreateShowsPlaintextOnce(t *testing.T) {
 	}
 	mustNotContain(t, page, plain, "data-key-created")
 	mustContain(t, page, "gp_"+plain[3:11]+"…", "agent")
+	// One primary action in the shared page header opens the create form.
+	mustContain(t, page, `<a class="btn btn-primary" href="#key-create" data-key-create-open>`, `<bdi class="font-semibold">agent</bdi>`)
+	mustNotContain(t, page, "audit-create-link")
+	if n := strings.Count(page, "data-key-create-open"); n != 1 {
+		t.Fatalf("key create actions = %d, want 1", n)
+	}
 	if s.auditCount("api_key.create") != 1 {
 		t.Fatal("key creation not audited")
 	}

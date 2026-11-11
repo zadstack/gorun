@@ -27,7 +27,7 @@
       const list=el('ul',undefined,'canvas-recovery-list');
       for(const entry of entries) {
         const item=el('li',undefined,'canvas-recovery-item'),name=el('strong',entry.document.title);name.dir='auto';item.append(name);
-        const time=el('time',new Date(entry.changedAt).toLocaleString(document.documentElement.lang||undefined));time.dateTime=new Date(entry.changedAt).toISOString();item.append(time);
+        item.append(window.gpDateTime.element(entry.changedAt));
         const conflict=entry.baseVersion!==api.base()?.version;
         item.append(el('p',t(!entry.durable?'recovery_storage':conflict?'recovery_conflict':'recovery_other_tab'),'canvas-recovery-help'));
         const actions=el('div',undefined,'canvas-recovery-actions');

@@ -132,8 +132,8 @@ jobs:
         working-directory: e2e
       - run: npx playwright install --with-deps chromium
         working-directory: e2e
-      - name: canvas graph, preset and layout checks
-        run: node --test web/admin/static/canvas_*_test.cjs
+      - name: admin script unit checks (canvas graph, presets, layout, date/time)
+        run: node --test web/admin/static/*_test.cjs
       - run: npm test -- --project=chromium --project=theme
         working-directory: e2e
         env:
