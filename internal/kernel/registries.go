@@ -282,12 +282,64 @@ func (r *APIRegistry) Operations() []APIOperation {
 }
 
 // MCPTool is one MCP tool. Sensitive tools require human approval.
+//
+// Title and the hints are published as MCP tool annotations so clients can
+// label tools and decide how much confirmation a call needs: ReadOnly tools
+// never change state; Destructive tools may delete or overwrite existing
+// data (meaningful only when not ReadOnly); Idempotent tools have no further
+// effect when repeated with the same arguments; OpenWorld tools reach
+// systems outside GoRun (for example by downloading a URL).
+//
+// Toolset groups the tool for clients that narrow the list (one of
+// MCPToolsets; empty means MCPToolsetOther).
 type MCPTool struct {
 	Name, Description string
+	Title             string
+	Toolset           string
 	Input             any
 	Scopes            []string
 	Sensitive         bool
-	Handler           func(ctx context.Context, args json.RawMessage) (any, error)
+	ReadOnly          bool
+	Destructive       bool
+	Idempotent        bool
+	OpenWorld         bool
+	// Aliases are deprecated earlier names: still callable, never listed.
+	Aliases []string
+	Handler func(ctx context.Context, args json.RawMessage) (any, error)
+}
+
+// MCP toolsets: the groups a client may select with ?toolsets= on /mcp.
+const (
+	MCPToolsetContent      = "content"
+	MCPToolsetTypes        = "types"
+	MCPToolsetTranslations = "translations"
+	MCPToolsetComments     = "comments"
+	MCPToolsetMedia        = "media"
+	MCPToolsetTaxonomy     = "taxonomy"
+	MCPToolsetTemplates    = "templates"
+	MCPToolsetSite         = "site"
+	MCPToolsetSettings     = "settings"
+	MCPToolsetMigration    = "migration"
+	MCPToolsetCommerce     = "commerce"
+	MCPToolsetCanvas       = "canvas"
+	MCPToolsetBuilder      = "builder"
+	MCPToolsetChannels     = "channels"
+	MCPToolsetApprovals    = "approvals"
+	// MCPToolsetOther holds tools registered without a Toolset (extensions).
+	MCPToolsetOther = "other"
+)
+
+// MCPToolsets lists every toolset name.
+var MCPToolsets = []string{MCPToolsetContent, MCPToolsetTypes, MCPToolsetTranslations, MCPToolsetComments,
+	MCPToolsetMedia, MCPToolsetTaxonomy, MCPToolsetTemplates, MCPToolsetSite, MCPToolsetSettings, MCPToolsetMigration,
+	MCPToolsetCommerce, MCPToolsetCanvas, MCPToolsetBuilder, MCPToolsetChannels, MCPToolsetApprovals, MCPToolsetOther}
+
+// ToolsetName returns t's toolset, MCPToolsetOther when unset.
+func (t MCPTool) ToolsetName() string {
+	if t.Toolset == "" {
+		return MCPToolsetOther
+	}
+	return t.Toolset
 }
 
 // MCPRegistry collects MCP tools.
@@ -303,8 +355,10 @@ func NewMCPRegistry() *MCPRegistry { return &MCPRegistry{} }
 func (r *MCPRegistry) AddTool(t MCPTool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if slices.ContainsFunc(r.tools, func(x MCPTool) bool { return x.Name == t.Name }) {
-		panic(fmt.Sprintf("kernel: duplicate MCP tool %q", t.Name))
+	for _, name := range append([]string{t.Name}, t.Aliases...) {
+		if slices.ContainsFunc(r.tools, func(x MCPTool) bool { return x.Name == name || slices.Contains(x.Aliases, name) }) {
+			panic(fmt.Sprintf("kernel: duplicate MCP tool %q", name))
+		}
 	}
 	r.tools = append(r.tools, t)
 }

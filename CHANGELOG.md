@@ -9,6 +9,17 @@ All notable changes to GoRun are recorded here. The format follows
 
 - Shared admin component foundation (docs/ADMIN_COMPONENTS.md): type, radius and spacing tokens plus `.btn`, `.field`, `.data-table`, `.badge`, `.empty-state`, `.kv`, `.card` and a `partials/page-header` template with title, subtitle, back link, muted ID disclosure and actions.
 - One date/time output: the `datetime` template function and the `gpDateTime` script helper render `<time dir="ltr">` with the short UTC value and the full value in the tooltip.
+- MCP tool annotations on every tool: `title`, `readOnlyHint`, `destructiveHint`, `idempotentHint` and
+  `openWorldHint`, so clients can label tools and ask for confirmation only where it matters
+  ([docs/MCP.md](docs/MCP.md#tool-annotations)).
+- MCP toolsets and read-only mode: narrow `tools/list` with `?toolsets=content,media` or
+  `X-MCP-Toolsets`, and hide every write with `?readonly=1` or `X-MCP-Readonly: 1`; `gorun mcp` takes
+  `--toolsets` and `--readonly`. Hidden tools are refused with `forbidden`. Without parameters the list is
+  unchanged ([docs/MCP.md](docs/MCP.md#toolsets-and-read-only-mode)).
+- `gorun://guide` MCP resource: the routing guide (bootstrap, drafts first, approvals, paging, error codes,
+  toolsets), also sent as the server instructions.
+- One documented MCP error-code list, including `fetch_failed`, `channel_closed`, `member_not_allowed` and
+  `interrupted` ([docs/MCP.md](docs/MCP.md#error-codes)).
 
 ### Changed
 
@@ -18,6 +29,19 @@ All notable changes to GoRun are recorded here. The format follows
 - Private reports show "Report · date" in the list and the report category on the detail page instead of IDs.
 - The forms inbox shows formatted times, status badges, an entry count and a compact filter bar; form submissions and form entry pages use the same date format.
 - Canvas recovery and the agents drawer show timestamps through the shared helper instead of `toLocaleString()`.
+- MCP tools use one `verb_noun` naming: `list_canvas_pending_runs`, `get_canvas_context`,
+  `get_canvas_source`, `request_canvas_run`, `append_canvas_result`, `list_channels`,
+  `read_channel_messages`, `post_channel_message` and `preview_migration`. The old names
+  (`canvases.*`, `channels_*`, `run_migration_preview`) still work as deprecated aliases but are no longer
+  listed ([mapping](docs/MCP.md#deprecated-tool-names)).
+- MCP input schemas keep nested `required` properties and publish real `enum`s (content and comment
+  statuses, filter operators, order direction, field types) and the page builder's `enum`/`doc` tags.
+  `list_content` `status` accepts a comma-separated list, described by a `pattern`.
+- Canvas MCP tools publish one input schema and description each, and their refusals now return
+  `forbidden` / `validation_failed` instead of `internal`. Existing arguments keep working.
+- MCP server instructions are a short routing guide instead of one sentence.
+- `preview_migration` describes what it does: it records its preview plan (no content changes) and reads
+  the WordPress source, so it is annotated as a non-read-only, open-world tool.
 
 ## [0.21.0] - 2026-11-11
 

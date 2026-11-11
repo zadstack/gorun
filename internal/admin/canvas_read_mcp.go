@@ -22,6 +22,9 @@ type getCanvasInput struct {
 func (h *handlers) canvasReadMCPTools() {
 	h.d.MCP.AddTool(kernel.MCPTool{
 		Name:        "list_canvases",
+		Title:       "List canvases",
+		ReadOnly:    true,
+		Toolset:     kernel.MCPToolsetCanvas,
 		Description: "List canvas boards the key may read: owner boards for REST/session keys, or boards with an explicit read grant for agent keys. Returns id, title, updated_at and version only.",
 		Scopes:      []string{"canvas.read", "content.view"},
 		Input:       listCanvasesInput{},
@@ -43,6 +46,9 @@ func (h *handlers) canvasReadMCPTools() {
 	})
 	h.d.MCP.AddTool(kernel.MCPTool{
 		Name:        "get_canvas",
+		Title:       "Get canvas",
+		ReadOnly:    true,
+		Toolset:     kernel.MCPToolsetCanvas,
 		Description: "Read one canvas board by id. Agent keys receive only grant-allowed cards and edges between them. Never returns inbound secrets or provider credentials.",
 		Scopes:      []string{"canvas.read", "content.view"},
 		Input:       getCanvasInput{},

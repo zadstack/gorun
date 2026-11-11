@@ -75,7 +75,7 @@ func TestOptionalFeaturesIndependentDisableKeepsRegistrationsAndData(t *testing.
 			assertFeatureRows(t, app)
 			if disabled == "wpmigrate" {
 				for _, tool := range app.Deps.MCP.Tools() {
-					if tool.Name == "get_migration_status" || tool.Name == "run_migration_preview" {
+					if tool.Name == "get_migration_status" || tool.Name == "preview_migration" {
 						t.Fatalf("MCP retained disabled migration tool %s", tool.Name)
 					}
 				}

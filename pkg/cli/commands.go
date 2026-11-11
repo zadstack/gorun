@@ -66,7 +66,7 @@ func stringFlag(args []string, name string) (string, []string, error) {
 	return val, rest, nil
 }
 
-// mcpStdio implements `gorun mcp [--key gp_…] [--jobs]`: boot every
+// mcpStdio implements `gorun mcp [--key gp_…] [--toolsets a,b] [--readonly] [--jobs]`: boot every
 // module (logs go to stderr; stdout carries the protocol) and serve MCP
 // over in/out as the API key (--key, else GORUN_MCP_KEY). No job workers
 // run unless --jobs: an MCP client usually starts this beside `gorun
@@ -78,6 +78,11 @@ func mcpStdio(args []string, in io.ReadCloser, out io.WriteCloser) error {
 	if err != nil {
 		return err
 	}
+	toolsets, args, err := stringFlag(args, "toolsets")
+	if err != nil {
+		return err
+	}
+	readOnly, args := boolFlag(args, "readonly")
 	startJobs, args := boolFlag(args, "jobs")
 	_, args = boolFlag(args, "no-jobs") // the default now; kept for old configs
 	if strings.TrimSpace(key) == "" {
@@ -85,6 +90,13 @@ func mcpStdio(args []string, in io.ReadCloser, out io.WriteCloser) error {
 	}
 	if strings.TrimSpace(key) == "" {
 		return errors.New("mcp: an API key is required (--key gp_… or GORUN_MCP_KEY)")
+	}
+	opts := mcp.Options{ReadOnly: readOnly}
+	if toolsets != "" {
+		opts.Toolsets = strings.Split(toolsets, ",")
+	}
+	if err := mcp.ValidateOptions(opts); err != nil {
+		return fmt.Errorf("mcp: %w", err)
 	}
 	cfg, err := config.Load(args)
 	if err != nil {
@@ -97,7 +109,7 @@ func mcpStdio(args []string, in io.ReadCloser, out io.WriteCloser) error {
 		return err
 	}
 	defer app.Close()
-	err = mcp.RunIO(ctx, app, key, in, out)
+	err = mcp.RunIO(ctx, app, key, in, out, opts)
 	if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
 		return nil // client closed the session or the process was stopped
 	}

@@ -37,9 +37,11 @@ permissions and validation as the admin and the REST API.
 
 - **Streamable HTTP:** `POST https://<your-site>/mcp` (stateless, JSON responses).
 - **stdio:** `gorun mcp --key gp_…`, or set `GORUN_MCP_KEY` (one session per process).
-- **Resources:** `gorun://types` (content types and field schemas), `gorun://site` (site structure),
-  `gorun://canvases/{id}` (grant-scoped canvas board; same payload as `get_canvas`).
-- **Prompts:** none in v1.
+- **Instructions:** a short routing guide sent at `initialize` (start with `get_site_structure`, drafts first,
+  approvals and `check_approval`, paging, error codes, toolsets). The same text is the `gorun://guide` resource.
+- **Resources:** `gorun://guide` (routing guide, any key), `gorun://types` (content types and field schemas),
+  `gorun://site` (site structure), `gorun://canvases/{id}` (grant-scoped canvas board; same payload as `get_canvas`).
+- **Prompts, completions, output schemas:** none yet.
 
 ## Authentication
 
@@ -92,23 +94,68 @@ public `Host` header.
 | `commerce.manage` | `list_products` (when commerce is installed) |
 | `mcp.approve_self` | Sensitive tools run immediately, with no human approval. It must be listed explicitly in the key's scopes: `*` does **not** imply it. |
 | `mcp.approve` | Decide approvals over REST. It must be listed explicitly in the key's scopes (`*` does not count). A key can never decide calls it requested itself, nor calls requested by another key of the same owner (see below). |
-| `canvas.read` | `list_canvases`, `get_canvas`, `gorun://canvases/{id}`, and selected-board ops (`canvases.pending`, `canvases.context`, `canvases.source`). Agent keys also need an explicit board grant. |
-| `canvas.append` | `canvases.append_result` (append a private result note; never publishes) |
-| `canvas.run` | `canvases.request_run` (creates a `requested` run for human review; does not execute) |
+| `canvas.read` | `list_canvases`, `get_canvas`, `gorun://canvases/{id}`, and selected-board ops (`list_canvas_pending_runs`, `get_canvas_context`, `get_canvas_source`). Agent keys also need an explicit board grant. |
+| `canvas.append` | `append_canvas_result` (append a private result note; never publishes) |
+| `canvas.run` | `request_canvas_run` (creates a `requested` run for human review; does not execute) |
+| `workagents.read` / `workagents.channels` | `list_channels`, `read_channel_messages` / `post_channel_message` ([AGENT-CHANNELS.md](AGENT-CHANNELS.md)) |
 
 **Create MCP keys with only the scopes the agent needs, and never `*`.**
 
 `tools/list` returns only the tools your key may call. Calling any other tool returns the error code
 `forbidden`.
 
+## Toolsets and read-only mode
+
+Every tool belongs to one toolset. A client can ask for fewer tools (smaller `tools/list`, fewer wrong
+picks) without a new key:
+
+| Narrowing | HTTP (`/mcp`) | stdio (`gorun mcp`) |
+|---|---|---|
+| Only some toolsets | `?toolsets=content,media` or header `X-MCP-Toolsets: content,media` | `--toolsets content,media` |
+| Only read-only tools | `?readonly=1` or header `X-MCP-Readonly: 1` | `--readonly` |
+
+Without these parameters the list is exactly the scope-filtered list. The query parameter wins over the
+header. `check_approval` and `get_site_structure` are always listed (if the key's scopes allow them).
+Scopes still apply inside a view. A tool hidden by the view is refused on call with `forbidden`, like a
+tool outside the key's scopes. An unknown toolset name or `readonly` value answers HTTP 400 (stdio: the
+command exits with an error). Example: `claude mcp add --transport http gorun "https://your-site.example/mcp?toolsets=content,media&readonly=1" --header "Authorization: Bearer gp_…"`.
+
+| Toolset | Tools |
+|---|---|
+| `content` | `list_content`, `get_content`, `create_content`, `update_content`, `publish_content`, `unpublish_content`, `delete_content` |
+| `types` | `list_content_types`, `get_content_type`, `create_content_type`, `update_content_type_fields` |
+| `translations` | `list_translations`, `create_translation`, `link_translation`, `unlink_translation` |
+| `comments` | `list_comments`, `moderate_comment`, `delete_comment` |
+| `media` | `get_media`, `list_media`, `upload_media`, `update_media` |
+| `taxonomy` | `list_taxonomies`, `list_terms`, `create_term` |
+| `templates` | `list_templates`, `get_template`, `create_template_draft` |
+| `site` | `get_site_structure`, `get_logs` |
+| `settings` | `update_settings` |
+| `migration` | `preview_migration`, `get_migration_status` (WordPress migrator installed) |
+| `commerce` | `list_products` (commerce installed) |
+| `canvas` | `list_canvases`, `get_canvas`, `list_canvas_pending_runs`, `get_canvas_context`, `get_canvas_source`, `request_canvas_run`, `append_canvas_result` |
+| `builder` | `create_purpose_page`, `get_page_layout`, `save_page_layout`, `publish_page_layout`, `list_page_layout_revisions`, `get_page_layout_revision`, `restore_page_layout_revision` |
+| `channels` | `list_channels`, `read_channel_messages`, `post_channel_message` (agent channels installed) |
+| `approvals` | `check_approval` |
+| `other` | tools that modules or extensions register without a toolset |
+
+## Tool annotations
+
+Every tool carries MCP annotations so clients can label it and decide how much confirmation a call needs:
+`title`, `readOnlyHint` (never changes anything), `destructiveHint` (may delete or overwrite existing data;
+only on write tools), `idempotentHint` (repeating the same call changes nothing more) and `openWorldHint`
+(reaches outside GoRun: `upload_media` downloading a URL, `preview_migration` reading the WordPress site).
+The lists after the tool table name the read-only and destructive tools. Annotations are hints for the
+client; the server-side gates (scopes, approvals, grants) are what enforce access.
+
 ## Tools
 
 Every tool returns the REST envelope as JSON text and as structured content:
 `{"ok":true,"data":…}` on success, or `{"ok":false,"error":{"code","message","fields"}}` with
-`isError: true` on failure. Error codes are `forbidden`, `unauthorized`, `not_found`, `validation_failed`,
-`conflict`, `rate_limited`, `fetch_failed` (upload from a URL) and `internal`. `internal` errors carry a
-generic message, and the details go to the server log. Input schemas (JSON Schema 2020-12) come from the tool's Go
-input struct and use snake_case property names.
+`isError: true` on failure (codes: [Error codes](#error-codes)). Input schemas (JSON Schema 2020-12) come from
+the tool's Go input struct and use snake_case property names. At every level, properties without `omitempty`
+are `required` (the same rule as the REST OpenAPI document), and fixed value sets are real `enum`s (content
+and comment statuses, filter operators, order direction, field types, builder purposes and section options).
 
 | Tool | Scope | Sensitive | What it does |
 |---|---|---|---|
@@ -143,17 +190,73 @@ input struct and use snake_case property names.
 | `create_template_draft` | themes.manage | **yes** | Approval saves an override **as a draft only**. A human previews and publishes it in Appearance → Templates. Use the authenticated admin preview to render Go template instructions before publication. |
 | `get_logs` | audit.read | | Own audit tail only (`limit` ≤ 200, optional `action`; IPs stripped). Site-wide failed/dead jobs stay on `system.health` (admin / `GET /api/v1/jobs`). |
 | `update_settings` | settings.manage | **yes** | `{"settings":{"site.title":"…"}}`. Allowed keys: `site.title`, `site.tagline`, `site.locale`, `site.timezone`, `site.logo` (an existing media id), `contact.email`, `site.posts_per_page` (1–100; a number or numeric string, stored as a number), `seo.title_template`, `seo.default_description`, `seo.default_og_image`, `seo.robots_txt`. String values, validated with the same rules as the admin pages. All keys are saved in one transaction, or none are. `site.content_locales`, `site.base_url`, `site.theme` and `site.front_page` stay admin-only. A `site.locale` update must select an already configured public content language and is checked inside the write transaction. |
-| `run_migration_preview` | migrations.run | | Dry-run report of a WordPress migration (only if wpmigrate is installed) |
+| `preview_migration` | migrations.run | | Dry-run report of a WordPress migration (only if wpmigrate is installed) |
 | `get_migration_status` | migrations.run | | Migration progress (only if wpmigrate is installed) |
 | `list_products` | commerce.manage | | Store products (only if commerce is installed) |
 | `list_canvases` | canvas.read, content.view | | Boards the key may read: owner boards for REST keys, or grant-listed boards for agent keys. Returns `{id,title,updated_at,version}` only (`page` / `per_page` ≤ 100) |
 | `get_canvas` | canvas.read, content.view | | Board by `id`: `{id,title,version,updated_at,cards[],edges[]}`. Agent keys receive only grant-allowed cards and edges between them. No inbound secrets or provider credentials |
-| `canvases.pending` | canvas.read, content.view | | Waiting runs for this agent key on a granted board (`board_id`) |
-| `canvases.context` | canvas.read, content.view | | Bounded prompt/context for one delegated run (`board_id`, `run_id`). Each source starts with `## [ref:content/<id>] <title>` or `## [ref:note/<card id>] <title>`; a shortened source ends with `[… N more characters. Full text: ref:…]`. Also returns `refs` and `spilled` |
-| `canvases.source` | canvas.read, content.view | | Full current text of one ref from that run's context (`board_id`, `run_id`, `ref`), at most 200,000 characters (`characters` returned, `total_characters` full length, `truncated` when cut). Other refs are refused |
-| `canvases.append_result` | canvas.append, content.view | | Append a private result note for a waiting run (idempotent; never publishes) |
-| `canvases.request_run` | canvas.run, content.view | | Request a run (`requested`) for human review (`board_id`, `node_id`, `request_id`) |
+| `list_canvas_pending_runs` | canvas.read, content.view | | Waiting runs for this agent key on a granted board (`board_id`) |
+| `get_canvas_context` | canvas.read, content.view | | Bounded prompt/context for one delegated run (`board_id`, `run_id`). Each source starts with `## [ref:content/<id>] <title>` or `## [ref:note/<card id>] <title>`; a shortened source ends with `[… N more characters. Full text: ref:…]`. Also returns `refs` and `spilled` |
+| `get_canvas_source` | canvas.read, content.view | | Full current text of one ref from that run's context (`board_id`, `run_id`, `ref`), at most 200,000 characters (`characters` returned, `total_characters` full length, `truncated` when cut). Other refs are refused |
+| `append_canvas_result` | canvas.append, content.view | | Append a private result note for a waiting run (idempotent; never publishes) |
+| `request_canvas_run` | canvas.run, content.view | | Request a run (`requested`) for human review (`board_id`, `node_id`, `request_id`) |
+| `list_channels` | workagents.read | | This owner's open agent channels |
+| `read_channel_messages` | workagents.read | | `{channel_id, after?, limit?}`: messages oldest first |
+| `post_channel_message` | workagents.channels | | Post as the calling agent key (`{channel_id, body, target_member_id?}`) |
 | `check_approval` | any key | | Status of a sensitive call (see below) |
+
+Canvas operation errors: a missing, changed or revoked grant, consent, run, review or `context_token` returns
+`forbidden` (one generic message, so other owners' boards and runs stay invisible); unknown arguments, a
+non-agent card for `request_canvas_run` or a malformed request return `validation_failed`.
+
+Read-only tools: every `list_*` and `get_*` tool, `read_channel_messages` and `check_approval`
+(`preview_migration` is a dry run for content but records its preview plan, so it is not read-only).
+Destructive tools: `delete_content`, `delete_comment`,
+`update_content`, `update_content_type_fields`, `update_settings`, `update_media`, `create_template_draft`,
+`save_page_layout`, `publish_page_layout` and `restore_page_layout_revision`. Everything else only adds or
+changes state reversibly.
+
+## Deprecated tool names
+
+These names were renamed to one `verb_noun` style. The old names are still accepted on `tools/call` (same
+scopes, approvals, toolset filters; audited under the new name) but are no longer listed by `tools/list`.
+Switch to the new names.
+
+| Old name (deprecated) | New name |
+|---|---|
+| `canvases.pending` | `list_canvas_pending_runs` |
+| `canvases.context` | `get_canvas_context` |
+| `canvases.source` | `get_canvas_source` |
+| `canvases.request_run` | `request_canvas_run` |
+| `canvases.append_result` | `append_canvas_result` |
+| `channels_list` | `list_channels` |
+| `channels_read` | `read_channel_messages` |
+| `channels_post_message` | `post_channel_message` |
+| `run_migration_preview` | `preview_migration` |
+
+## Error codes
+
+Tool errors use these codes. They are stable: new codes may be added, existing ones are not renamed.
+
+| Code | Meaning | What the agent should do |
+|---|---|---|
+| `validation_failed` | Arguments are invalid; `fields` names the problems | Fix the named fields and call again |
+| `not_found` | The id, slug, approval or tool does not exist (or is not visible to this key) | Re-read with a list tool |
+| `forbidden` | The key's scopes, a board grant, or the session's toolsets/readonly filter do not allow the call | Do not retry; ask the operator for access |
+| `unauthorized` | The API key is no longer valid (stdio: revoked, expired, owner disabled) | Stop; a new key is needed |
+| `conflict` | The item changed meanwhile (live edit raced an approval, stale `updated_at`, existing type slug) | Reload, review, then retry |
+| `rate_limited` | Too many calls (stdio token bucket; agent channel posting limit) | Wait, then retry. Over HTTP the limit is HTTP 429 with `Retry-After` |
+| `fetch_failed` | `upload_media` could not download the URL (unreachable, private address, refused redirect, non-200) | Check the URL, or upload `data_base64` |
+| `channel_closed` | The agent channel is closed | Ask the owner for a new channel |
+| `member_not_allowed` | The key, or the hand-off target, is not a member of the channel | Use a member id from the channel |
+| `interrupted` | Stored in an approval result when an approved call stopped before saving its result | Check whether it took effect before repeating |
+| `internal` | Unexpected server error; the message is generic and the details go to the server log | Report it; retry later |
+
+`pending_approval` is **not** an error: a sensitive call returns `ok: true` with
+`data.status: "pending_approval"` and an `approval_id`. Poll `check_approval`; the stored result appears once a
+human approves (`approved`, or `failed` with the error), or the status becomes `denied` or `expired`.
+Transport-level failures use JSON-RPC errors instead: HTTP 401 without a valid bearer key, HTTP 429 when the key's
+HTTP rate limit is exceeded, HTTP 400 for an unknown toolset.
 
 Canvas boards are **not** public site pages. There is no anonymous HTML route for board bodies.
 Simple CMS workspace mode may hide the canvases admin nav; these tools stay available when scopes and
@@ -239,6 +342,7 @@ Add to `claude_desktop_config.json`:
 ```sh
 gorun mcp --key gp_…
 GORUN_MCP_KEY=gp_… gorun mcp   # keeps the key out of the process list
+gorun mcp --toolsets content,media --readonly   # narrow the tool list (see Toolsets)
 ```
 
 This boots GoRun against the configured data directory (same database as `gorun serve`), validates

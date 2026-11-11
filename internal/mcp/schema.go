@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -19,32 +21,42 @@ var emptyObject = json.RawMessage(`{"type":"object"}`)
 type fieldShape struct {
 	Key        string            `json:"key"`
 	Label      map[string]string `json:"label,omitempty"`
-	Type       string            `json:"type" jsonschema:"text, textarea, richtext, number, date, datetime, boolean, select, multiselect, repeater, relationship, image, file or json"`
+	Type       string            `json:"type" enum:"text,textarea,richtext,number,date,datetime,boolean,select,multiselect,repeater,relationship,image,file,json"`
 	Required   bool              `json:"required,omitempty"`
 	Indexed    bool              `json:"indexed,omitempty"`
 	Multiple   bool              `json:"multiple,omitempty"`
 	Default    any               `json:"default,omitempty"`
 	Help       map[string]string `json:"help,omitempty"`
-	Options    []content.Option  `json:"options,omitempty"`
+	Options    []optionShape     `json:"options,omitempty" jsonschema:"choices of select and multiselect fields"`
 	Min        *float64          `json:"min,omitempty"`
 	Max        *float64          `json:"max,omitempty"`
 	Step       *float64          `json:"step,omitempty"`
 	SubFields  []map[string]any  `json:"sub_fields,omitempty" jsonschema:"repeater sub-fields (same shape as a field)"`
-	TargetType string            `json:"target_type,omitempty"`
+	TargetType string            `json:"target_type,omitempty" jsonschema:"relationship fields: the content type slug they point to"`
 	Mime       []string          `json:"mime,omitempty"`
+}
+
+// optionShape is content.Option with the label optional (as the service accepts it).
+type optionShape struct {
+	Value string            `json:"value"`
+	Label map[string]string `json:"label,omitempty"`
 }
 
 var (
 	schemaMu    sync.Mutex
 	schemaCache = map[reflect.Type]json.RawMessage{}
 	typeSchemas map[reflect.Type]*jsonschema.Schema
+	fieldType   = reflect.TypeFor[content.Field]()
+	shapeType   = reflect.TypeFor[fieldShape]()
 )
 
 // schemaFor returns the JSON Schema (2020-12) of a tool's Input value: the
-// properties are its json (snake_case) names; only fields without
-// omitempty at the top level are required. Nested objects never declare
-// required properties (service validation reports them instead). Results
-// are cached per type.
+// properties are its json (snake_case) names, and at every level the fields
+// without omitempty/omitzero are required (the same rule as the REST
+// OpenAPI document). Besides `jsonschema:"description"`, the REST tags
+// `doc:"…"`, `enum:"a,b"` (comma separated; a leading comma allows ""),
+// `pattern:"…"`, `minimum:"n"` and `maximum:"n"` are honoured. Results are
+// cached per type.
 func schemaFor(input any) (json.RawMessage, error) {
 	if input == nil {
 		return emptyObject, nil
@@ -66,15 +78,14 @@ func schemaFor(input any) (json.RawMessage, error) {
 		if err != nil {
 			return nil, fmt.Errorf("mcp: field schema: %w", err)
 		}
-		typeSchemas = map[reflect.Type]*jsonschema.Schema{reflect.TypeFor[content.Field](): fs}
+		applyTags(shapeType, fs, 0)
+		typeSchemas = map[reflect.Type]*jsonschema.Schema{fieldType: fs}
 	}
 	s, err := jsonschema.ForType(t, &jsonschema.ForOptions{IgnoreInvalidTypes: true, TypeSchemas: typeSchemas})
 	if err != nil {
 		return nil, fmt.Errorf("mcp: schema for %s: %w", t, err)
 	}
-	for _, p := range s.Properties {
-		dropRequired(p)
-	}
+	applyTags(t, s, 0)
 	b, err := json.Marshal(s)
 	if err != nil {
 		return nil, fmt.Errorf("mcp: marshal schema for %s: %w", t, err)
@@ -83,21 +94,85 @@ func schemaFor(input any) (json.RawMessage, error) {
 	return b, nil
 }
 
-// dropRequired clears Required on s and every schema nested in it.
-func dropRequired(s *jsonschema.Schema) {
-	if s == nil {
+// maxTagDepth bounds the walk over nested (possibly recursive) types.
+const maxTagDepth = 16
+
+// applyTags copies the REST schema tags of t's fields onto s, recursively.
+func applyTags(t reflect.Type, s *jsonschema.Schema, depth int) {
+	if s == nil || depth > maxTagDepth {
 		return
 	}
-	s.Required = nil
-	for _, p := range s.Properties {
-		dropRequired(p)
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
 	}
-	dropRequired(s.Items)
-	dropRequired(s.AdditionalProperties)
-	for _, x := range s.AnyOf {
-		dropRequired(x)
+	switch t.Kind() {
+	case reflect.Slice, reflect.Array:
+		if t.Elem().Kind() != reflect.Uint8 {
+			applyTags(t.Elem(), s.Items, depth+1)
+		}
+		return
+	case reflect.Map:
+		applyTags(t.Elem(), s.AdditionalProperties, depth+1)
+		return
+	case reflect.Struct:
+	default:
+		return
 	}
-	for _, x := range s.OneOf {
-		dropRequired(x)
+	if t == fieldType {
+		return // its shared schema is fieldShape's, tagged once when built
+	}
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		name, _, _ := strings.Cut(f.Tag.Get("json"), ",")
+		if name == "-" {
+			continue
+		}
+		if f.Anonymous && name == "" {
+			applyTags(f.Type, s, depth+1) // embedded fields are flattened into s
+			continue
+		}
+		if !f.IsExported() {
+			continue
+		}
+		if name == "" {
+			name = f.Name
+		}
+		ps := s.Properties[name]
+		if ps == nil {
+			continue
+		}
+		tagField(f, ps)
+		applyTags(f.Type, ps, depth+1)
+	}
+}
+
+// tagField applies one field's doc/enum/pattern/minimum/maximum tags; on a
+// slice field the value constraints go to its items.
+func tagField(f reflect.StructField, ps *jsonschema.Schema) {
+	if doc := f.Tag.Get("doc"); doc != "" && ps.Description == "" {
+		ps.Description = doc
+	}
+	target := ps
+	ft := f.Type
+	for ft.Kind() == reflect.Pointer {
+		ft = ft.Elem()
+	}
+	if ft.Kind() == reflect.Slice && ps.Items != nil {
+		target = ps.Items
+	}
+	if e := f.Tag.Get("enum"); e != "" {
+		target.Enum = nil
+		for _, v := range strings.Split(e, ",") {
+			target.Enum = append(target.Enum, v)
+		}
+	}
+	if p := f.Tag.Get("pattern"); p != "" {
+		target.Pattern = p
+	}
+	if v, err := strconv.ParseFloat(f.Tag.Get("minimum"), 64); err == nil {
+		target.Minimum = &v
+	}
+	if v, err := strconv.ParseFloat(f.Tag.Get("maximum"), 64); err == nil {
+		target.Maximum = &v
 	}
 }

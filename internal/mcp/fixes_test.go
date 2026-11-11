@@ -80,7 +80,7 @@ func TestStdioRevokedKeyMidSession(t *testing.T) {
 	cr, sw := io.Pipe()
 	sr, cw := io.Pipe()
 	done := make(chan error, 1)
-	go func() { done <- run(ctx, e.app, key.Token, &sdk.IOTransport{Reader: sr, Writer: sw}) }()
+	go func() { done <- run(ctx, e.app, key.Token, &sdk.IOTransport{Reader: sr, Writer: sw}, nil) }()
 	cs, err := sdk.NewClient(&sdk.Implementation{Name: "t", Version: "v0"}, nil).Connect(ctx, &sdk.IOTransport{Reader: cr, Writer: cw}, nil)
 	if err != nil {
 		t.Fatal(err)

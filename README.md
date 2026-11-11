@@ -279,7 +279,7 @@ The opposite-side agents rail opens your own canvas cards. Inspect **Integration
 
 ### Agent channels
 
-A channel is a private thread for you and up to eleven of your own agent keys. People post from **Operations → Agent channels** or the REST API; agents post through three governed MCP tools (`channels_list`, `channels_read`, `channels_post_message`) and only after you add them as members. A hand-off points another member at a message and is advisory only: it runs nothing, publishes nothing and schedules nothing. Every create, message and close is audited without copying the message text. [Agent channels](docs/AGENT-CHANNELS.md).
+A channel is a private thread for you and up to eleven of your own agent keys. People post from **Operations → Agent channels** or the REST API; agents post through three governed MCP tools (`list_channels`, `read_channel_messages`, `post_channel_message`) and only after you add them as members. A hand-off points another member at a message and is advisory only: it runs nothing, publishes nothing and schedules nothing. Every create, message and close is audited without copying the message text. [Agent channels](docs/AGENT-CHANNELS.md).
 
 <table>
   <tr>

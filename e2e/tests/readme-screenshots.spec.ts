@@ -145,11 +145,11 @@ test('capture current README product screens with synthetic campaign data', asyn
   const preview=await boardPost('/operations/preview',{version:beforeReview.version,node_id:actorID});
   const queued=await boardPost('/operations/runs',{request_id:randomUUID(),review_token:preview.review_token});
   const input:any={board_id:boardPath.split('/').pop(),run_id:queued.run.id};
-  const contextResult=await mcp(request,agent,'tools/call',{name:'canvases.context',arguments:input});
+  const contextResult=await mcp(request,agent,'tools/call',{name:'get_canvas_context',arguments:input});
   const context=toolPayload(contextResult.body.result).data;
   input.context_token=context.context_token;
   input.text='EN · Your next idea deserves room to grow. Meet Atlas Studio: a shared workspace for planning, content and considered launches. Explore the product story.\n\nAR · فكرتك القادمة تستحق مساحة للنمو. تعرف على أطلس ستوديو: مساحة مشتركة للتخطيط والمحتوى وإطلاق المشاريع بعناية.\n\nDemo draft — human review required.';
-  const appended=await mcp(request,agent,'tools/call',{name:'canvases.append_result',arguments:input});
+  const appended=await mcp(request,agent,'tools/call',{name:'append_canvas_result',arguments:input});
   expect(appended.body.result?.isError).not.toBe(true);
   const document=await (await request.get(boardPath+'/document')).json();
   const result=document.cards.find((c:any)=>!cards.some(x=>x.id===c.id));
@@ -418,7 +418,7 @@ test('capture current README product screens with synthetic campaign data', asyn
     await expect(page.locator('[data-channel-messages]')).toContainText(body.slice(0,40));
   }
   await say('Please collect the three customer quotes for the spring launch brief. Keep sources with each quote.',researchID);
-  const posted=await mcp(request,research,'tools/call',{name:'channels_post_message',arguments:{channel_id:channelID,body:'Three quotes collected from the approved interview notes, each with its source. Handing the outline to the campaign assistant for the draft.',target_member_id:campaignID}});
+  const posted=await mcp(request,research,'tools/call',{name:'post_channel_message',arguments:{channel_id:channelID,body:'Three quotes collected from the approved interview notes, each with its source. Handing the outline to the campaign assistant for the draft.',target_member_id:campaignID}});
   expect(JSON.stringify(posted.body)).not.toContain('"isError":true');
   await say('Thanks. The draft still goes through approval before anything is published.');
   await page.reload();
@@ -434,7 +434,7 @@ test('capture current README product screens with synthetic campaign data', asyn
   await expect(page.locator('[data-channel-thread]')).toBeVisible();
   const arabicChannelID=page.url().split('/').pop()!;
   await say('اجمع ثلاثة اقتباسات من العملاء لملخص حملة الربيع، واحتفظ بمصدر كل اقتباس.',researchID);
-  const arabicPost=await mcp(request,research,'tools/call',{name:'channels_post_message',arguments:{channel_id:arabicChannelID,body:'جمعت ثلاثة اقتباسات من ملاحظات المقابلات المعتمدة مع مصادرها. أحوّل المخطط إلى مساعد الحملة لكتابة المسودة.',target_member_id:campaignID}});
+  const arabicPost=await mcp(request,research,'tools/call',{name:'post_channel_message',arguments:{channel_id:arabicChannelID,body:'جمعت ثلاثة اقتباسات من ملاحظات المقابلات المعتمدة مع مصادرها. أحوّل المخطط إلى مساعد الحملة لكتابة المسودة.',target_member_id:campaignID}});
   expect(JSON.stringify(arabicPost.body)).not.toContain('"isError":true');
   await say('شكرًا. المسودة تمر بالموافقة قبل نشر أي شيء.');
   await page.reload();
