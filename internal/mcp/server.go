@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -59,7 +60,7 @@ func (s *server) tools() []kernel.MCPTool { return s.d.MCP.Tools() }
 
 func (s *server) tool(name string) (kernel.MCPTool, bool) {
 	for _, t := range s.tools() {
-		if t.Name == name {
+		if t.Name == name || slices.Contains(t.Aliases, name) {
 			return t, true
 		}
 	}
@@ -104,20 +105,26 @@ func (s *server) newSDKServer(principal principalFunc, limit func() error, view 
 			schema = emptyObject
 		}
 		tool := t
-		srv.AddTool(&sdk.Tool{Name: t.Name, Title: t.Title, Description: s.describe(t), InputSchema: schema, Annotations: annotations(t)},
-			func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
-				ctx, err := with(ctx)
-				if err != nil {
+		handler := func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
+			ctx, err := with(ctx)
+			if err != nil {
+				return s.toolResult(tool.Name, nil, err), nil
+			}
+			if limit != nil {
+				if err := limit(); err != nil {
 					return s.toolResult(tool.Name, nil, err), nil
 				}
-				if limit != nil {
-					if err := limit(); err != nil {
-						return s.toolResult(tool.Name, nil, err), nil
-					}
-				}
-				data, err := s.call(ctx, tool, req.Params.Arguments)
-				return s.toolResult(tool.Name, data, err), nil
-			})
+			}
+			data, err := s.call(ctx, tool, req.Params.Arguments)
+			return s.toolResult(tool.Name, data, err), nil
+		}
+		srv.AddTool(&sdk.Tool{Name: t.Name, Title: t.Title, Description: s.describe(t), InputSchema: schema, Annotations: annotations(t)}, handler)
+		// Deprecated names stay callable (same handler, audited under the
+		// current name) but tools/list hides them (see visible).
+		for _, alias := range t.Aliases {
+			srv.AddTool(&sdk.Tool{Name: alias, Title: t.Title, Description: "Deprecated alias of " + t.Name + "; call " + t.Name + " instead.",
+				InputSchema: schema, Annotations: annotations(t)}, handler)
+		}
 	}
 	srv.AddReceivingMiddleware(func(next sdk.MethodHandler) sdk.MethodHandler {
 		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
@@ -136,7 +143,8 @@ func (s *server) newSDKServer(principal principalFunc, limit func() error, view 
 	return srv
 }
 
-// visible filters list to the tools ctx may call and its view shows.
+// visible filters list to the tools ctx may call and its view shows;
+// deprecated aliases are never listed.
 func (s *server) visible(ctx context.Context, list []*sdk.Tool) []*sdk.Tool {
 	byName := map[string]kernel.MCPTool{}
 	for _, t := range s.tools() {

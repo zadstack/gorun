@@ -4,7 +4,7 @@ import { csrf, db, setLocale, submitAndLand } from '../lib/helpers.ts';
 
 // A long content source is shortened to fit the run context, never failed or
 // silently cut: the review dialog says how much was left out and that an
-// external agent can fetch the rest (canvases.source). Seeded straight into
+// external agent can fetch the rest (get_canvas_source). Seeded straight into
 // the fixture database; nothing runs.
 
 const id = () => randomUUID().replaceAll('-', '').slice(0, 26).toUpperCase();

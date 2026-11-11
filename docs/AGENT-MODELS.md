@@ -7,7 +7,7 @@ Select a named AI connection and click **Load available models**. Discovery uses
 ## Execution modes
 
 - **Run inside GoRun (text)**: a reviewed canvas run uses the selected connection and model. Results become new private notes. This does not activate the site's global writing provider or publish content.
-- **External agent (MCP)**: GoRun hands the request to the named external agent. A selected model is a preference returned by `canvases.context`; the external client's configuration determines the actual model. Without a preference, existing external-agent behavior is preserved.
+- **External agent (MCP)**: GoRun hands the request to the named external agent. A selected model is a preference returned by `get_canvas_context`; the external client's configuration determines the actual model. Without a preference, existing external-agent behavior is preserved.
 
 Managed execution currently generates text. Images and video use Studio/MCP provider nodes rather than a managed text agent.
 

@@ -30,7 +30,7 @@ func TestToolsListMatchesScopes(t *testing.T) {
 	}
 	for _, hidden := range []string{"create_content_type", "create_content", "update_content", "publish_content", "delete_content",
 		"upload_media", "create_term", "list_templates", "create_template_draft", "get_logs", "update_settings",
-		"run_migration_preview", "list_products"} {
+		"preview_migration", "list_products"} {
 		if contains(names, hidden) {
 			t.Errorf("content.view key must not see %s", hidden)
 		}
@@ -41,7 +41,7 @@ func TestToolsListMatchesScopes(t *testing.T) {
 
 	full := e.agent("*").toolNames()
 	for _, want := range []string{"create_content_type", "update_content_type_fields", "publish_content", "unpublish_content",
-		"upload_media", "create_template_draft", "get_logs", "update_settings", "run_migration_preview", "get_migration_status", "list_products"} {
+		"upload_media", "create_template_draft", "get_logs", "update_settings", "preview_migration", "get_migration_status", "list_products"} {
 		if !contains(full, want) {
 			t.Errorf("* key must see %s", want)
 		}
@@ -64,7 +64,7 @@ func TestToolsListMatchesScopes(t *testing.T) {
 
 	// Optional-service tools are absent when the services are not booted.
 	bare := newEnv(t, nil).agent("*").toolNames()
-	if contains(bare, "list_products") || contains(bare, "run_migration_preview") {
+	if contains(bare, "list_products") || contains(bare, "preview_migration") {
 		t.Fatalf("optional tools registered without services: %v", bare)
 	}
 	if got := e.agent("commerce.manage").ok("list_products", map[string]any{}); got == nil {

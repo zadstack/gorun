@@ -28,7 +28,7 @@ type canvasSourceItem struct {
 }
 
 // canvasSpill records a source that was shortened: Kept of its Total characters
-// are inline, the rest is available through canvases.source.
+// are inline, the rest is available through get_canvas_source.
 type canvasSpill struct {
 	Ref   string `json:"ref"`
 	Kept  int    `json:"kept"`
@@ -162,7 +162,7 @@ func canvasCut(s string, limit int) string {
 // canvasSpillSummary is the review dialog's shortening line: how many sources
 // were shortened, how many characters were left out, and whether the
 // destination can fetch them (only an external MCP agent can call
-// canvases.source; providers and managed agents receive the shortened text).
+// get_canvas_source; providers and managed agents receive the shortened text).
 func canvasSpillSummary(p canvasPrepared) map[string]any {
 	chars := 0
 	for _, s := range p.Spilled {

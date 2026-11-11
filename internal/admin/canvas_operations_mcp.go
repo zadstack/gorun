@@ -57,25 +57,25 @@ type canvasAppendInput struct {
 }
 
 // canvasOps are the selected-board agent operations. op is the internal
-// operation key (the original tool name).
+// operation key and the original tool name, kept as a deprecated alias.
 var canvasOps = []struct {
 	op, name, scope, title, description string
 	input                               any
 	readOnly                            bool
 }{
-	{"canvases.pending", "canvases.pending", "canvas.read", "List pending canvas runs",
+	{"canvases.pending", "list_canvas_pending_runs", "canvas.read", "List pending canvas runs",
 		"List up to 20 runs on one granted board that wait for this agent key (status waiting_agent), oldest first: {runs:[{id,node_id,created_at}]}. Next: get_canvas_context with a run id.",
 		canvasBoardInput{}, true},
-	{"canvases.context", "canvases.context", "canvas.read", "Get canvas run context",
+	{"canvases.context", "get_canvas_context", "canvas.read", "Get canvas run context",
 		"Read the bounded prompt and context of one waiting run, plus the context_token needed to append its result. Context sources start with a \"## [ref:…]\" header; a shortened source ends with a \"[… N more characters. Full text: ref:…]\" marker (fetch it with get_canvas_source). Reading changes nothing.",
 		canvasRunInput{}, true},
-	{"canvases.source", "canvases.source", "canvas.read", "Get canvas run source",
+	{"canvases.source", "get_canvas_source", "canvas.read", "Get canvas run source",
 		"Return the full current text of one ref listed in that run's context, at most 200,000 characters: characters is the returned length, total_characters the full length, truncated is true when cut. Other refs are refused.",
 		canvasSourceInput{}, true},
-	{"canvases.request_run", "canvases.request_run", "canvas.run", "Request canvas run",
+	{"canvases.request_run", "request_canvas_run", "canvas.run", "Request canvas run",
 		"Ask for a run of a provider or agent card. It only creates a requested run for the board owner to review; nothing executes until a human starts it. Idempotent per request_id.",
 		canvasRequestInput{}, false},
-	{"canvases.append_result", "canvases.append_result", "canvas.append", "Append canvas result",
+	{"canvases.append_result", "append_canvas_result", "canvas.append", "Append canvas result",
 		"Append the result of a waiting run as a new private note card (with the run's context_token). Never edits or deletes cards and never publishes content. Repeating the same text after success is a no-op.",
 		canvasAppendInput{}, false},
 }
@@ -83,7 +83,7 @@ var canvasOps = []struct {
 func (h *handlers) canvasMCPTools() {
 	for _, spec := range canvasOps {
 		op, scope := spec.op, spec.scope
-		h.d.MCP.AddTool(kernel.MCPTool{Name: spec.name, Title: spec.title, Toolset: kernel.MCPToolsetCanvas, ReadOnly: spec.readOnly, Idempotent: !spec.readOnly,
+		h.d.MCP.AddTool(kernel.MCPTool{Name: spec.name, Title: spec.title, Toolset: kernel.MCPToolsetCanvas, Aliases: []string{spec.op}, ReadOnly: spec.readOnly, Idempotent: !spec.readOnly,
 			Description: spec.description + " Selected-board operation: the key needs a board grant; named-agent tasks require owner review.",
 			Input:       spec.input, Scopes: []string{scope, "content.view"},
 			Handler: func(ctx context.Context, raw json.RawMessage) (any, error) {

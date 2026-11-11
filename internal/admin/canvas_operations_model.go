@@ -70,11 +70,11 @@ type canvasPrepared struct {
 	ReviewHash         string            `json:"review_hash"`
 	Provider           map[string]string `json:"provider"`
 	Nodes              []string          `json:"nodes"`
-	// Refs lists every source reference in Context; canvases.source serves only these.
+	// Refs lists every source reference in Context; get_canvas_source serves only these.
 	Refs []string `json:"refs,omitempty"`
 	// Spilled lists the sources Context shortened, in context order.
 	Spilled []canvasSpill `json:"spilled,omitempty"`
-	// full holds each ref's whole text for canvases.source; it is never stored.
+	// full holds each ref's whole text for get_canvas_source; it is never stored.
 	full map[string]string
 }
 

@@ -303,7 +303,9 @@ type MCPTool struct {
 	Destructive       bool
 	Idempotent        bool
 	OpenWorld         bool
-	Handler           func(ctx context.Context, args json.RawMessage) (any, error)
+	// Aliases are deprecated earlier names: still callable, never listed.
+	Aliases []string
+	Handler func(ctx context.Context, args json.RawMessage) (any, error)
 }
 
 // MCP toolsets: the groups a client may select with ?toolsets= on /mcp.
@@ -353,8 +355,10 @@ func NewMCPRegistry() *MCPRegistry { return &MCPRegistry{} }
 func (r *MCPRegistry) AddTool(t MCPTool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if slices.ContainsFunc(r.tools, func(x MCPTool) bool { return x.Name == t.Name }) {
-		panic(fmt.Sprintf("kernel: duplicate MCP tool %q", t.Name))
+	for _, name := range append([]string{t.Name}, t.Aliases...) {
+		if slices.ContainsFunc(r.tools, func(x MCPTool) bool { return x.Name == name || slices.Contains(x.Aliases, name) }) {
+			panic(fmt.Sprintf("kernel: duplicate MCP tool %q", name))
+		}
 	}
 	r.tools = append(r.tools, t)
 }

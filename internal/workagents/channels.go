@@ -616,7 +616,7 @@ func (s *service) closeChannel(ctx context.Context, id string) (Channel, error) 
 type Channels struct{ s *service }
 
 // OpenChannels wires the bridge action name; List returns this owner's at
-// most 100 open channels (ids and titles only — messages need channels_read).
+// most 100 open channels (ids and titles only — messages need read_channel_messages).
 func (c *Channels) List(ctx context.Context) ([]ChannelSummary, error) {
 	if !channelReadAllowed(ctx) {
 		return nil, ErrChannelDenied

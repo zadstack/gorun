@@ -110,11 +110,11 @@ func TestCanvasToolSchemasArePerTool(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := map[string][]any{
-		"canvases.pending":       {"board_id"},
-		"canvases.context":       {"board_id", "run_id"},
-		"canvases.source":        {"board_id", "run_id", "ref"},
-		"canvases.request_run":   {"board_id", "node_id", "request_id"},
-		"canvases.append_result": {"board_id", "run_id", "context_token", "text"},
+		"list_canvas_pending_runs": {"board_id"},
+		"get_canvas_context":       {"board_id", "run_id"},
+		"get_canvas_source":        {"board_id", "run_id", "ref"},
+		"request_canvas_run":       {"board_id", "node_id", "request_id"},
+		"append_canvas_result":     {"board_id", "run_id", "context_token", "text"},
 	}
 	for _, tl := range res.Tools {
 		req, ok := want[tl.Name]
