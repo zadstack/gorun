@@ -15,6 +15,7 @@ func (h *handlers) routes() {
 	h.canvasRoutes()
 	h.dashboardPinRoutes()
 	h.dashboardLayoutRoutes()
+	h.webmcpRoutes()
 	r := h.d.Router.Admin
 	r.Get("/", h.dashboard)
 	r.Get("/x/canvas-activity", h.canvasActivityFragment)

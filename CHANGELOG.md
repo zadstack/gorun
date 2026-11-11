@@ -7,6 +7,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- WebMCP in the admin: on browsers that provide `document.modelContext`, admin pages register `search_admin`, `list_admin_pages`, `get_current_page`, `open_admin_page` and `create_content_draft` for an in-browser agent. Tools run as the signed-in user with the screens' permission checks and CSRF protection; the only write is a draft ([docs/WEBMCP.md](docs/WEBMCP.md)).
 - MCP tool annotations on every tool: `title`, `readOnlyHint`, `destructiveHint`, `idempotentHint` and
   `openWorldHint`, so clients can label tools and ask for confirmation only where it matters
   ([docs/MCP.md](docs/MCP.md#tool-annotations)).

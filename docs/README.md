@@ -48,6 +48,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | Doc | Covers |
 | --- | --- |
 | [MCP.md](MCP.md) | MCP overview for operators and agents: keys, scopes, approvals, HTTP vs stdio |
+| [WEBMCP.md](WEBMCP.md) | In-browser agent tools for the admin (WebMCP): search, read the page, open pages, create drafts |
 | [MANAGED-MCP-TOOLS.md](MANAGED-MCP-TOOLS.md) | Managed text agents calling explicitly selected MCP tools, with owner review of every call |
 | [mcp-optional-connections.md](mcp-optional-connections.md) | Opt-in remote MCP connection records for Studio; nothing runs until configured and approved |
 | [AGENT-BUNDLES.md](AGENT-BUNDLES.md) | Inline skills and version-pinned MCP references on agent keys |
