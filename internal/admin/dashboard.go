@@ -62,16 +62,23 @@ func (h *handlers) registerWidgets() {
 	h.d.Admin.AddWidget("canvas_gallery", h.widgetCanvasGallery)
 }
 
-type quickAction struct{ LabelKey, Label, Href, Icon string }
+// quickAction is a "new …" shortcut. Names holds a content type's singular
+// name per locale (Label is the request locale's); the palette matches on
+// every locale.
+type quickAction struct {
+	LabelKey, Label, Href, Icon string
+	Names                       map[string]string
+}
 
-// widgetQuickActions links to "new" screens the user may use: one per
-// content type (when the content module is present), new user, new key.
-func (h *handlers) widgetQuickActions(ctx context.Context, r *http.Request) (template.HTML, error) {
+// quickActions lists the "new" screens the user may use: one per content
+// type (when the content module is present), new user, new key. The
+// dashboard widget and the command palette share it.
+func (h *handlers) quickActions(ctx context.Context, r *http.Request) ([]quickAction, error) {
 	var actions []quickAction
 	if cs, ok := h.contentService(); ok && can(r, "content.create") {
 		types, err := cs.Types(ctx)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		locale := i18n.Locale(ctx)
 		for _, t := range types {
@@ -87,7 +94,7 @@ func (h *handlers) widgetQuickActions(ctx context.Context, r *http.Request) (tem
 				icon = "file-plus"
 			}
 			// Assumes the content admin's "new item" URL.
-			actions = append(actions, quickAction{Label: name, Href: "/admin/content/" + t.Slug + "/new", Icon: icon})
+			actions = append(actions, quickAction{Label: name, Href: "/admin/content/" + t.Slug + "/new", Icon: icon, Names: t.Singular})
 		}
 	}
 	if can(r, PermUsers) {
@@ -96,8 +103,14 @@ func (h *handlers) widgetQuickActions(ctx context.Context, r *http.Request) (tem
 	if can(r, PermAPIKeys) && WorkspaceShowsAdvanced(ctx, h.d.Settings) {
 		actions = append(actions, quickAction{LabelKey: "admin.dashboard.new_key", Href: "/admin/agents/keys", Icon: "key-round"})
 	}
-	if len(actions) == 0 {
-		return "", nil
+	return actions, nil
+}
+
+// widgetQuickActions renders quickActions on the dashboard.
+func (h *handlers) widgetQuickActions(ctx context.Context, r *http.Request) (template.HTML, error) {
+	actions, err := h.quickActions(ctx, r)
+	if err != nil || len(actions) == 0 {
+		return "", err
 	}
 	return h.fragment(r, "pages/system/widgets/quick_actions.html", actions)
 }

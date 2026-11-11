@@ -420,7 +420,8 @@ func (t *Templates) funcMap(r *http.Request, st *reqState, assets map[string]str
 		"navigationLabel": func(key string) string {
 			return groupLabel(func(k string) string { return translate(k) }, key)
 		},
-		"allNav": nav.AllGroups,
+		"allNav":          nav.AllGroups,
+		"shortcutTargets": nav.Shortcuts,
 		"active": func(href string) bool {
 			if r == nil {
 				return false
