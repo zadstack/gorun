@@ -162,6 +162,7 @@ func (h *handlers) registerChannels(d *kernel.Deps) {
 	d.Router.Admin.With(auth.RequirePerm("workagents.manage")).Post("/workagents/channels/{id}/members", h.channelMemberForm)
 	d.Router.Admin.With(auth.RequirePerm("workagents.manage")).Post("/workagents/channels/{id}/close", h.channelCloseForm)
 	h.channelsAPI(d)
+	registerNotifications(d)
 }
 
 // ---- Admin screen ---------------------------------------------------------

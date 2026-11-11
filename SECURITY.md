@@ -35,6 +35,10 @@ you. Please give us a reasonable time to ship the fix before publishing details.
 
 - Passwords are hashed with Argon2id. Login attempts are rate-limited (more than 5 per 15 minutes per IP + email are refused, counted in
   the database so lockouts survive restarts). A separate limit allows 30 attempts per IP per 15 minutes, including successful logins; at most four Argon2 login checks run concurrently across the process.
+- Optional TOTP two-factor authentication (RFC 6238) for the admin sign-in, enforceable per role. The shared secret is
+  stored encrypted with `GORUN_SECRET_KEY`; recovery codes are stored hashed and work once; the second step is a
+  five-minute single-use pending sign-in with its own rate limit and replay protection. API keys and MCP are not
+  affected. See [docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md#two-factor-authentication-totp).
 - Sessions use a random token in the `gp_session` cookie (`HttpOnly`, `SameSite=Lax`, `Secure` when the request
   is https, i.e. TLS or `X-Forwarded-Proto: https` from a peer listed in `GORUN_TRUSTED_PROXIES`, else when `GORUN_BASE_URL` is
   https; never from the `site.base_url` setting, so a wrong value cannot lock admins out); only its SHA-256 is stored. Sessions slide over 14 days.
@@ -106,7 +110,7 @@ you. Please give us a reasonable time to ship the fix before publishing details.
 
 - `GORUN_SECRET_KEY` (32 bytes, required when `GORUN_ENV=prod`; generated into `<data>/secret.key` with mode
   0600 in dev) signs sessions and encrypts stored secrets with AES-256-GCM: WordPress application passwords,
-  billing-server secrets, extension HMAC secrets, Stripe keys saved in the admin and the SMTP password. Changing
+  billing-server secrets, extension HMAC secrets, Stripe keys saved in the admin, the SMTP password and users' TOTP secrets. Changing
   the key makes those values unreadable, so do not rotate it casually.
 - Webhooks are verified before any processing (`Stripe-Signature`; deliveries are refused with 503 when no
   webhook secret is set). Extension deliveries are signed with HMAC-SHA256.

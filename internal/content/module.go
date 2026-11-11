@@ -70,5 +70,6 @@ func (m *Module) Register(d *kernel.Deps) error {
 		return err
 	}
 	registerAPI(d, svc)
+	registerNotifications(d)
 	return nil
 }

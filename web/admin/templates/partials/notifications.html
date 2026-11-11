@@ -1,0 +1,65 @@
+{{/* Notifications centre (internal/admin/notifications.go).
+  partials/notifications-bell: the topbar bell. Without JavaScript it is a link
+  to /admin/notifications; with Alpine and HTMX it opens a panel. The count
+  polls every 90 s, when the tab becomes visible and after a mark-read.
+  partials/notifications-panel and partials/notifications-count are the
+  fragments; data: notifyData. */}}
+{{define "partials/notifications-bell"}}
+<div class="notify" x-data="{ open: false }" @keydown.escape.window="if (open) { open = false; $refs.bell.focus() }" @click.outside="open = false" data-notifications>
+  <a href="/admin/notifications" x-ref="bell" class="notify-bell" role="button" aria-haspopup="true" aria-controls="notify-panel" :aria-expanded="open.toString()"
+     title="{{t "notifications.title"}}"
+     @click.prevent="open = !open; if (open) $nextTick(() => htmx.trigger($refs.panel, 'notify-open'))">
+    {{icon "bell"}}<span class="sr-only">{{t "notifications.title"}}</span>
+    <span id="notify-count" hx-get="/admin/x/notifications/count" hx-swap="innerHTML"
+          hx-trigger="load delay:500ms, every 90s, visibilitychange[document.visibilityState==='visible'] from:document, notify-refresh from:body"></span>
+  </a>
+  <div id="notify-panel" x-ref="panel" class="notify-panel" x-show="open" x-cloak role="region" aria-label="{{t "notifications.title"}}"
+       hx-get="/admin/x/notifications/panel" hx-trigger="notify-open" hx-swap="innerHTML">
+    <p class="notify-empty">{{t "notifications.loading"}}</p>
+  </div>
+</div>
+{{end}}
+
+{{define "partials/notifications-count"}}{{if .Unread}}<span class="notify-count" aria-hidden="true" data-notify-unread="{{.Unread}}">{{if gt .Unread 99}}99+{{else}}{{.Unread}}{{end}}</span><span class="sr-only">{{t "notifications.unread_count" .Unread}}</span>{{end}}{{end}}
+
+{{define "partials/notifications-list"}}
+{{if .Items}}
+<ul class="notify-list" data-notify-list>
+  {{range .Items}}
+  <li class="notify-item{{if .Unread}} is-unread{{end}}" data-notify-item="{{.Key}}">
+    <span class="notify-item-icon{{with .Tone}} is-{{.}}{{end}}" aria-hidden="true">{{icon .Icon}}</span>
+    <div class="notify-item-body">
+      <a class="notify-item-title" href="/admin/notifications/go?key={{.Key}}">{{if .Count}}{{t .TitleKey .Count}}{{else}}{{t .TitleKey}}{{end}}{{if .Unread}}<span class="sr-only"> · {{t "notifications.unread"}}</span>{{end}}</a>
+      {{with .Detail}}<span class="notify-item-detail"><bdi>{{.}}</bdi></span>{{end}}
+      <span class="notify-item-meta">{{datetime .At}}</span>
+    </div>
+    {{if .Unread}}
+    <form method="post" action="/admin/notifications/read" hx-post="/admin/notifications/read" hx-target="closest [data-notify-target]" hx-swap="outerHTML">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="key" value="{{.Key}}">
+      <button type="submit" class="btn btn-ghost btn-sm" title="{{t "notifications.mark_read"}}" aria-label="{{t "notifications.mark_read"}}">{{icon "check"}}</button>
+    </form>
+    {{end}}
+  </li>
+  {{end}}
+</ul>
+{{else}}
+<p class="notify-empty" data-notify-empty>{{t "notifications.empty"}}</p>
+{{end}}
+{{end}}
+
+{{define "partials/notifications-panel"}}
+<div data-notify-target>
+  <div class="notify-panel-head">
+    <h2 class="notify-panel-title">{{t "notifications.title"}}</h2>
+    {{if .Unread}}
+    <form method="post" action="/admin/notifications/read-all" hx-post="/admin/notifications/read-all" hx-target="closest [data-notify-target]" hx-swap="outerHTML">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="btn btn-ghost btn-sm">{{t "notifications.mark_all_read"}}</button>
+    </form>
+    {{end}}
+  </div>
+  {{template "partials/notifications-list" .}}
+  <div class="notify-panel-foot"><a class="btn btn-ghost btn-sm" href="/admin/notifications">{{t "notifications.view_all"}}</a></div>
+</div>
+{{end}}

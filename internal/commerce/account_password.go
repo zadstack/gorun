@@ -1,6 +1,7 @@
 package commerce
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 
@@ -33,6 +34,10 @@ func (h *publicHandlers) accountPasswordLogin(w http.ResponseWriter, r *http.Req
 		return
 	}
 	if err = auth.StartUserSession(h.svc.d, w, r, u); err != nil {
+		if errors.Is(err, auth.ErrSecondFactorRequired) {
+			http.Redirect(w, r, auth.SecondFactorPath, http.StatusSeeOther)
+			return
+		}
 		http.Error(w, "account unavailable", http.StatusServiceUnavailable)
 		return
 	}

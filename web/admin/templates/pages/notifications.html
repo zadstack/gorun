@@ -1,0 +1,21 @@
+{{/* Data: notifyData (internal/admin/notifications.go). */}}
+{{define "title"}}{{t "notifications.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "account.css"}}">
+<div class="account-page notify-page" hx-disable>
+{{template "partials/page-header" (dict "Title" (t "notifications.title") "Subtitle" (t "notifications.subtitle"))}}
+<div class="section-head">
+  <p class="meta-row"><span class="meta-item">{{t "notifications.unread"}} <strong dir="ltr" data-notify-unread-total>{{.Unread}}</strong></span><span class="meta-item">{{t "notifications.total"}} <strong dir="ltr">{{len .Items}}</strong></span></p>
+  {{if .Unread}}
+  <form method="post" action="/admin/notifications/read-all">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" class="btn btn-secondary btn-sm">{{icon "check-check"}}<span>{{t "notifications.mark_all_read"}}</span></button>
+  </form>
+  {{end}}
+</div>
+{{if .Items}}{{template "partials/notifications-list" .}}{{else}}
+<div class="empty-state"><p class="empty-state-title">{{t "notifications.empty"}}</p><p>{{t "notifications.empty_help"}}</p></div>
+{{end}}
+<p class="field-help">{{t "notifications.scope"}}</p>
+</div>
+{{end}}

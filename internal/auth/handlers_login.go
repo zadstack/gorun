@@ -20,6 +20,7 @@ type handlers struct {
 	svc          *service
 	sessions     *sessionStore
 	tpl          *httpx.Templates
+	twoFactor    *twoFactorStore
 }
 
 // secure is the Secure flag for cookies set while handling r.
@@ -93,15 +94,12 @@ func (h *handlers) loginSubmit(w http.ResponseWriter, r *http.Request) {
 		h.tpl.RenderWith(w, r, http.StatusForbidden, "auth", "pages/auth/login.html", page)
 		return
 	}
-	if err := h.startSession(w, r, u, "user.login"); err != nil {
+	dest, err := h.completeLogin(w, r, u, "user.login", safeNext(f.Next))
+	if err != nil {
 		h.serverError(w, r, err)
 		return
 	}
-	if u.onboardingRequired {
-		http.Redirect(w, r, onboardingPath, http.StatusSeeOther)
-		return
-	}
-	http.Redirect(w, r, safeNext(f.Next), http.StatusSeeOther)
+	http.Redirect(w, r, dest, http.StatusSeeOther)
 }
 
 func (h *handlers) logout(w http.ResponseWriter, r *http.Request) {
@@ -136,15 +134,12 @@ func (h *handlers) magicSubmit(w http.ResponseWriter, r *http.Request) {
 		h.tpl.RenderWith(w, r, http.StatusBadRequest, "auth", "pages/auth/magic.html", authPage{Error: "auth.magic.invalid"})
 		return
 	}
-	if err := h.startSession(w, r, u, "user.magic_login"); err != nil {
+	dest, err := h.completeLogin(w, r, u, "user.magic_login", "/account")
+	if err != nil {
 		h.serverError(w, r, err)
 		return
 	}
-	if u.onboardingRequired {
-		http.Redirect(w, r, onboardingPath, http.StatusSeeOther)
-		return
-	}
-	http.Redirect(w, r, "/account", http.StatusSeeOther)
+	http.Redirect(w, r, dest, http.StatusSeeOther)
 }
 
 type localeForm struct {

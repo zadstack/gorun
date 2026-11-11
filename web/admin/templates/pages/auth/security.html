@@ -4,6 +4,18 @@
 <header class="admin-page-heading"><h1>{{t "auth.security.title"}}</h1><p class="text-muted">{{t "auth.security.description"}}</p></header>
 {{if .Error}}<p role="alert" class="security-notice">{{t .Error}}</p>{{end}}
 <section class="border border-line bg-panel p-3 mb-4"><h2 class="font-bold">{{t "operator.security_counts"}}</h2><p>{{t "auth.security.blocks"}}: <strong>{{len .Blocks}}</strong> · {{t "auth.security.attempts"}}: <strong>{{len .Attempts}}</strong></p><p class="text-xs text-muted mt-2">{{t "operator.security_limits"}}</p></section>
+<section id="two-factor" aria-labelledby="security-two-factor" class="border border-line bg-panel p-3 mb-4" data-two-factor-roles>
+<h2 id="security-two-factor" class="font-bold">{{t "twofactor.enforce.title"}}</h2>
+<p class="text-muted mt-1">{{t "twofactor.enforce.lead"}}</p>
+<form method="post" action="/admin/security/two-factor" class="mt-3 grid gap-3">
+<input type="hidden" name="_csrf" value="{{csrf}}">
+<fieldset class="flex flex-wrap gap-x-5 gap-y-2"><legend class="sr-only">{{t "twofactor.enforce.roles"}}</legend>
+{{range .Roles}}<label class="inline-flex items-center gap-2"><input type="checkbox" name="roles" value="{{.Slug}}" {{if .Required}}checked{{end}}><bdi>{{.Name}}</bdi> <span class="text-muted text-xs" dir="ltr">({{.Users}})</span></label>{{end}}
+</fieldset>
+<p class="text-xs text-muted">{{t "twofactor.enforce.scope"}}</p>
+<div><button class="admin-secondary-button">{{t "twofactor.enforce.save"}}</button></div>
+</form>
+</section>
 <section aria-labelledby="security-blocks"><h2 id="security-blocks">{{t "auth.security.blocks"}}</h2>
 {{range .Blocks}}<div class="security-row"><div><strong dir="ltr">{{.IP}}</strong><p class="text-muted">{{t "auth.security.until"}} <time dir="ltr">{{.ExpiresAt}}</time></p></div><form method="post" action="/admin/security/ip-unblock"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="ip" value="{{.IP}}"><input type="hidden" name="expires_at" value="{{.ExpiresAt}}"><button class="admin-secondary-button">{{t "auth.security.unblock"}}</button></form></div>{{else}}<p class="text-muted">{{t "auth.security.no_blocks"}}</p>{{end}}</section>
 <section aria-labelledby="security-attempts"><h2 id="security-attempts">{{t "auth.security.attempts"}}</h2>

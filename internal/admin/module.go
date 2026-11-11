@@ -126,6 +126,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.errorInventoryNav()
 	h.registerWidgets()
 	h.routes()
+	h.notificationRoutes()
 	h.studioRoutes()
 	h.canvasMCPTools()
 	h.canvasReadMCPTools()

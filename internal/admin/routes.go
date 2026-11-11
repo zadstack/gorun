@@ -37,6 +37,7 @@ func (h *handlers) routes() {
 	users.Post("/users/{id}", h.userUpdate)
 	users.Post("/users/{id}/delete", h.userDelete)
 	users.Post("/users/{id}/magic-link", h.userMagicLink)
+	users.With(auth.RequireRecentAuth).Post("/users/{id}/two-factor/reset", h.userTwoFactorReset)
 
 	roles := r.With(auth.RequirePerm(PermUsers))
 	roles.Get("/roles", h.rolesList)

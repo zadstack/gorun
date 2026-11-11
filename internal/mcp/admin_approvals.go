@@ -100,6 +100,7 @@ func (s *server) registerAdmin(tpl *httpx.Templates) {
 	r.Get("/agents/approvals", func(w http.ResponseWriter, r *http.Request) { s.renderApprovals(w, r, tpl, "") })
 	r.Post("/agents/approvals/{id}/approve", s.adminDecide(tpl, s.approvals.Approve, "mcp.approvals.approved"))
 	r.Post("/agents/approvals/{id}/deny", s.adminDecide(tpl, s.approvals.Deny, "mcp.approvals.denied"))
+	s.registerNotifications()
 }
 
 func (s *server) renderApprovals(w http.ResponseWriter, r *http.Request, tpl *httpx.Templates, notice string) {

@@ -363,11 +363,12 @@ attempts, then marked dead (retry from **System → Jobs** or `POST /api/v1/jobs
 |---|---|---|
 | `content.publish_due` | 30 s | publish scheduled items |
 | `content.purge_trash` | 1 h | hard-delete items trashed more than `content.trash_days` (default 30) days ago |
-| `auth.cleanup` | 1 h | remove expired sessions, stale login attempts and used or expired magic links |
+| `auth.cleanup` | 1 h | remove expired sessions, stale login attempts, used or expired magic links and expired two-factor sign-in steps |
 | `mcp.approvals.expire` | 1 h | mark undecided MCP approvals expired |
 | `wpmigrate.watchdog` | 5 min | fail items of a running migration that sit pending with no job, so the run advances |
 | `commerce.expire` | 24 h | expire entitlements past `ends_at` and enqueue suspensions |
 | `jobs.prune` | 1 h | delete finished jobs: `done` after `jobs.retain_done_days` (7), `dead` after `jobs.retain_dead_days` (30), jobs with an idempotency key after `jobs.retain_keyed_days` (90); System Health shows the job table row count |
+| `notifications.prune` | 24 h | delete notification read marks older than 60 days |
 | `backup.schedule` | 1 h | when `backup.schedule_hours` ≥ 1, create a local backup pair (secrets excluded) if due; then prune to `backup.retain` newest complete pairs when retain ≥ 1; no remote upload |
 
 ## Permissions and roles
@@ -418,7 +419,7 @@ After grant mutations, `auth.ReloadRoles` refreshes the in-memory map used by `C
 3. **Publish a contract.** Put the public interface in `contract.go`, add a service name in
    `internal/kernel/services.go` (or a `ServiceName` constant in your package) and `d.Services.Set` it in
    `Register`. Consume earlier modules with `kernel.Get[T](d, name)`, never by importing a later module.
-4. **Register everything in `Register`:** permissions (`d.Perms.Declare`), admin nav and widgets (`d.Admin`; `AddNavProvider` for entries that change at runtime, evaluated per request),
+4. **Register everything in `Register`:** permissions (`d.Perms.Declare`), admin nav and widgets (`d.Admin`; `AddNavProvider` for entries that change at runtime, evaluated per request; `AddNotificationSource` for items of the notifications centre, derived per request behind a permission),
    routes (`d.Router.Admin/Public/Webhooks` with `auth.RequirePerm`), API operations (`d.API.Add(api.Op(…))`),
    MCP tools (`d.MCP.AddTool`), theme funcs and kinds (`d.Theme`), jobs and crons (`d.Jobs.Register/Cron`),
    hooks (`d.Hooks.Action/Filter`), health checks (filter `system.health.checks`). Nothing registers after

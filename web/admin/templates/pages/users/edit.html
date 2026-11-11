@@ -80,6 +80,19 @@
         <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "mail"}}<span>{{t "admin.users.magic_send"}}</span></button>
       </form>
     </section>
+    <section class="rounded border border-line bg-panel p-4" data-user-two-factor>
+      <h2 class="text-base font-bold mb-2">{{t "admin.users.two_factor"}}</h2>
+      <p class="mb-3">{{if $.TwoFactor}}<span class="badge badge-success">{{icon "shield-check"}}{{t "admin.users.two_factor_on"}}</span>{{else}}<span class="badge">{{t "admin.users.two_factor_off"}}</span>{{end}}</p>
+      {{if and $.TwoFactor (not $.IsSelf)}}
+      <p class="text-xs text-muted mb-3">{{t "admin.users.two_factor_reset_help"}}</p>
+      <form method="post" action="/admin/users/{{.ID}}/two-factor/reset" data-confirm="{{t "admin.users.two_factor_reset_confirm" .Email}}">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button type="submit" class="btn btn-danger btn-sm">{{icon "shield-off"}}<span>{{t "admin.users.two_factor_reset"}}</span></button>
+      </form>
+      {{else if $.IsSelf}}
+      <a class="text-blue hover:text-blue-hover underline underline-offset-2 text-xs" href="/admin/account/two-factor">{{t "admin.users.two_factor_self"}}</a>
+      {{end}}
+    </section>
     {{if not $.IsSelf}}
     <section class="rounded border border-line bg-panel p-4">
       <h2 class="text-base font-bold mb-2">{{t "admin.users.danger"}}</h2>

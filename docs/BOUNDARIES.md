@@ -153,7 +153,7 @@ can be parked (`internal/jobs/park.go`). Crons run only when their module regist
 | auth | — | `auth.cleanup` 1h |
 | content | — | `content.publish_due` 30s, `content.purge_trash` 1h |
 | media | `media.fetch_url` | — |
-| admin | `canvas.generate`, `canvas.tools`, `studio.generate`, `backup.scheduled`, `update.run`, `observe.*` | `canvas.schedule` 1m, `studio.recover` 1m, `jobs.prune` 1h, `observe.tick` 1m, `update.reconcile` 1m, `backup.schedule` 1h |
+| admin | `canvas.generate`, `canvas.tools`, `studio.generate`, `backup.scheduled`, `update.run`, `observe.*` | `canvas.schedule` 1m, `studio.recover` 1m, `jobs.prune` 1h, `observe.tick` 1m, `update.reconcile` 1m, `backup.schedule` 1h, `notifications.prune` 24h |
 | webhooks | `webhooks.deliver` | `webhooks.prune` 24h |
 | **analytics** | — (writes go through an in-process buffer, flushed every 2s and on close) | `analytics.rollup` 1h |
 | **commerce** | `commerce.provision`, `commerce.suspend`, `commerce.resume`, `commerce.magic_mail`, `commerce.billing_mail` | `commerce.expire` 24h, `commerce.billing_grace` 1h, `commerce.request_receipts` 10s |

@@ -12,6 +12,24 @@ The admin is bilingual (**Arabic** and **English**) with full RTL when Arabic is
 
 Switching the admin UI language does not change the public `site.locale` or rewrite published URLs by itself. It does change the default content language for new items until you pick otherwise in the editor.
 
+## My account
+
+Select your name in the top bar to open **My account** (`/admin/account`). It holds your name and dashboard language, your sign-in email (changing it needs your current password; addresses stay unique), your password (current password, at least 10 characters; changing it signs out your other devices and cancels unused sign-in links), [two-factor authentication](LOGIN-SECURITY.md#two-factor-authentication-totp) and the list of signed-in devices with browser, IP address, sign-in time and last activity (refreshed at most every five minutes). **Sign out** ends one other device; **Sign out other devices** ends all but this one. Users who may manage API keys get a link to them. Every change is recorded in the audit log.
+
+## Notifications
+
+The bell in the top bar shows how many items wait for you and opens a short list; **View all notifications** opens `/admin/notifications`. Items are worked out from current data each time and follow your permissions:
+
+| Item | Shown to |
+|---|---|
+| Agent actions waiting for approval | `mcp.approve` |
+| Content submitted for review (status *pending*) by someone else | `content.publish`, except authors and contributors |
+| Comments awaiting moderation (one item with the count) | `comments.moderate` |
+| Agent channel hand-offs addressed to you | `workagents.manage` |
+| Failed background jobs, backups and updates (last 7 days) | `system.health`, `system.backup`, `system.update` |
+
+Opening an item marks it read and goes to the page where you act; **Mark as read** and **Mark all as read** do the same without leaving. Only the read marks are stored (`notifications_read`, removed after 60 days). The count refreshes every 90 seconds and when the tab becomes visible; there is no websocket. Without JavaScript the bell is a link to the full page. Modules add items with `d.Admin.AddNotificationSource`.
+
 ## Dashboard
 
 The dashboard separates everyday work from diagnostics. It opens with a short guide, integration setup status and quick actions, followed by your pinned tools, recent content, audit activity, jobs, system information and your saved canvases. Additional module widgets continue to work.
@@ -85,6 +103,8 @@ The `g` destinations are rendered from your authorized navigation: a key whose p
 لوحة الأوامر: اضغط Ctrl K (أو ⌘ K على ماك) أو زر «الأوامر» بجانب البحث. تعرض الصفحات والإجراءات المسموح لك بها ونتائج المحتوى والمستخدمين، والبحث يتجاهل التشكيل والهمزات والفرق بين ى/ي وة/ه، ويقبل الاسم العربي أو الإنجليزي للصفحة. في صفحات الكانفس يبقى Ctrl K لبحث الكانفس. اضغط ? لعرض الاختصارات: / للبحث، g ثم h/c/m/s/a للرئيسية والمحتوى والوسائط والإعدادات والموافقات (حسب صلاحياتك)، وCtrl S للحفظ في محرر المحتوى. لا تعمل الاختصارات أثناء الكتابة في حقل.
 
 من «تخصيص القائمة» يمكنك تحريك المجموعات والعناصر بأزرار لأعلى ولأسفل، وإظهارها أو إخفاؤها، ثم حفظ الترتيب لحسابك فقط. «استعادة الافتراضي» تعيد الترتيب والظهور الأصليين. الصلاحيات لا تتغير.
+
+اضغط اسمك في الشريط العلوي لفتح «حسابي»: الاسم ولغة لوحة التحكم، والبريد (يتطلب كلمة المرور الحالية)، وكلمة المرور (تغييرها يُخرج أجهزتك الأخرى)، والمصادقة الثنائية، والأجهزة المسجّل دخولها مع تسجيل خروج جهاز أو كل الأجهزة الأخرى. الجرس في الشريط العلوي يعرض ما ينتظرك حسب صلاحياتك: موافقات الوكلاء، والمحتوى المرسل للمراجعة، والتعليقات بانتظار الإشراف، وإسناد مهام في قنوات الوكلاء، والمهام والنسخ الاحتياطية والتحديثات الفاشلة. فتح العنصر يحدده كمقروء وينقلك إلى صفحة التنفيذ.
 
 أول موقع عام: [SITE_BUILDER.md](SITE_BUILDER.md). تبديل القالب: **المظهر ← القوالب**، والتفاصيل في [THEMES.md](THEMES.md).
 

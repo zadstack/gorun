@@ -180,6 +180,10 @@ func (h *handlers) loginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := auth.StartUserSession(h.d, w, r, u); err != nil {
+		if errors.Is(err, auth.ErrSecondFactorRequired) {
+			http.Redirect(w, r, auth.SecondFactorPath, http.StatusSeeOther)
+			return
+		}
 		h.d.Log.Error("launch: session", "err", err)
 		http.Error(w, "unavailable", http.StatusInternalServerError)
 		return
