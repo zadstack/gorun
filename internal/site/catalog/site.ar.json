@@ -209,5 +209,6 @@
   "intake.received_at": "تاريخ الاستلام",
   "forms.entries_total": "الرسائل",
   "forms.slug": "مفتاح النموذج",
-  "forms.danger_zone": "حذف هذا النموذج ورسائله."
+  "forms.danger_zone": "حذف هذا النموذج ورسائله.",
+  "preview.ribbon": "معاينة — غير منشورة. تظهر هذه الصفحة عبر رابط معاينة خاص."
 }

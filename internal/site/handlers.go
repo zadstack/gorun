@@ -30,11 +30,13 @@ type handlers struct {
 	limiter  *limiter
 	comments *limiter // POST /forms/comment, apart from the contact form
 	reports  *limiter
+	previews *limiter // GET /preview/{token}
 }
 
 func newHandlers(d *kernel.Deps) *handlers {
 	return &handlers{d: d, links: theme.NewLinker(d), limiter: newLimiter(contactRate, contactWindow),
-		comments: newLimiter(contactRate, contactWindow), reports: newLimiter(contactRate, contactWindow)}
+		comments: newLimiter(contactRate, contactWindow), reports: newLimiter(contactRate, contactWindow),
+		previews: newLimiter(previewRate, previewWindow)}
 }
 
 func (h *handlers) theme() (theme.Service, bool) {

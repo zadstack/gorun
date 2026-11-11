@@ -83,6 +83,12 @@ func registerAPI(d *kernel.Deps, svc *service) {
 			Scopes: []string{"content.edit"}, Params: []kernel.APIParam{id}, Request: linkInput{}, Response: []Item{}, Handler: a.linkTranslation},
 		{Method: "DELETE", Path: "/v1/content/{id}/translations", Summary: "Take the item out of its translations", Tags: []string{"content"},
 			Scopes: []string{"content.edit"}, Params: []kernel.APIParam{id}, Response: []Item{}, Handler: a.unlinkTranslation},
+		{Method: "GET", Path: "/v1/content/{id}/preview-links", Summary: "List active shareable preview links (never their tokens)", Tags: []string{"content"},
+			Scopes: []string{"content.edit"}, Params: []kernel.APIParam{id}, Response: []PreviewLink{}, Handler: a.listPreviewLinks},
+		{Method: "POST", Path: "/v1/content/{id}/preview-links", Summary: "Create a shareable preview link (the URL with its token is returned only here)", Tags: []string{"content"},
+			Scopes: []string{"content.edit"}, Params: []kernel.APIParam{id}, Request: PreviewLinkInput{}, Response: PreviewLinkCreated{}, Handler: a.createPreviewLink},
+		{Method: "DELETE", Path: "/v1/content/{id}/preview-links/{link}", Summary: "Revoke a shareable preview link", Tags: []string{"content"},
+			Scopes: []string{"content.edit"}, Params: []kernel.APIParam{id, {Name: "link", In: "path", Type: "string", Required: true, Description: "preview link id"}}, Handler: a.revokePreviewLink},
 	}
 	for _, op := range ops {
 		if op.Method == "POST" || op.Method == "PATCH" {
@@ -91,7 +97,7 @@ func registerAPI(d *kernel.Deps, svc *service) {
 				op.Contract.MaxBodyBytes = maxAPIBody
 			}
 		}
-		if op.Method == "POST" && (op.Path == "/v1/content" || op.Path == "/v1/types" || op.Path == "/v1/content/{id}/translations") {
+		if op.Method == "POST" && (op.Path == "/v1/content" || op.Path == "/v1/types" || op.Path == "/v1/content/{id}/translations" || op.Path == "/v1/content/{id}/preview-links") {
 			op.Contract.SuccessStatuses = []int{http.StatusCreated}
 		}
 		if op.Path == "/v1/types/{slug}" && op.Method == "DELETE" {

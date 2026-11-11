@@ -113,3 +113,57 @@ test('revision compare shows field and body changes with text labels', async ({ 
     removeItem(id);
   }
 });
+
+test('a preview link shows a draft to a visitor without an account until it is revoked', async ({ page, browser }, testInfo) => {
+  await page.goto('/admin');
+  await setLocale(page, 'en');
+  const title = 'Preview ' + randomUUID();
+  const id = await createPost(page, title, 'Embargoed paragraph');
+  try {
+    const panel = page.locator('[data-preview-links]');
+    await expect(panel.locator('[data-preview-empty]')).toBeVisible();
+    await expect(panel.locator('[name=preview_ttl]')).toHaveValue('24h');
+    await panel.locator('[name=preview_ttl]').selectOption('1h');
+    // Choosing a link lifetime is not an edit of the item.
+    await expect(page.locator('[data-save-state]')).toHaveText('Changes save only when you choose a save or publish action.');
+    await panel.locator('[data-preview-create]').click();
+    const urlField = panel.locator('[data-preview-url]');
+    await expect(urlField).toHaveValue(/\/preview\/[A-Za-z0-9_-]{43}$/);
+    await expect(panel.locator('[data-preview-list] li')).toHaveCount(1);
+    await expect(panel.locator('[data-preview-list] li time')).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('preview-links-editor.png'), animations: 'disabled', fullPage: true });
+    const link = new URL(await urlField.inputValue());
+
+    // A fresh context: no session cookie, like someone the link was sent to.
+    const visitor = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      const guest = await visitor.newPage();
+      const resp = await guest.goto(link.pathname);
+      expect(resp!.status()).toBe(200);
+      expect(resp!.headers()['x-robots-tag']).toBe('noindex, nofollow');
+      expect(resp!.headers()['cache-control']).toBe('private, no-store');
+      expect(resp!.headers()['referrer-policy']).toBe('no-referrer');
+      await expect(guest.locator('[data-gorun-preview]')).toBeVisible();
+      await expect(guest.getByText('Embargoed paragraph')).toBeVisible();
+      await guest.setViewportSize({ width: 390, height: 844 });
+      expect(await guest.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+      await guest.screenshot({ path: testInfo.outputPath('preview-visitor-390.png'), animations: 'disabled' });
+
+      // Revoke from the editor: the same URL is now a plain 404.
+      await panel.locator('[data-preview-revoke]').click();
+      const modal = page.locator('[role="dialog"][aria-labelledby="gp-confirm-title"]');
+      await expect(modal).toBeVisible();
+      await modal.locator('button[\\@click="$store.confirm.yes()"]').click();
+      await expect(panel.locator('[data-preview-list] li')).toHaveCount(0);
+      const gone = await guest.goto(link.pathname);
+      expect(gone!.status()).toBe(404);
+      await expect(guest.getByText('Embargoed paragraph')).toHaveCount(0);
+      const unknown = await guest.goto('/preview/' + 'A'.repeat(43));
+      expect(unknown!.status()).toBe(404);
+    } finally {
+      await visitor.close();
+    }
+  } finally {
+    removeItem(id);
+  }
+});

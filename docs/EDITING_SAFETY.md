@@ -93,3 +93,50 @@ with a screen-reader label (*Removed:* / *Added:*); every changed line has a vis
 (*Added*, *Removed*, *Changed*), so color is never the only signal. Text is rendered escaped,
 with `dir="auto"` and `unicode-bidi: plaintext` per line so Arabic and English lines each keep
 their direction.
+
+## Shareable preview links
+
+A preview link lets someone without an admin account see a draft, pending, scheduled or
+private item through the public theme. In the editor's **Preview links** panel, choose how
+long it lives (**1 hour**, **24 hours** — the default — or **7 days**) and press **Create preview
+link**. The URL is shown once, with a **Copy** button; active links are listed with their expiry
+and a **Revoke** button (with confirmation). Without JavaScript, create shows the link on its
+own page and revoke returns to the editor.
+
+- **Who.** Creating, listing and revoking need `content.edit` on the item (authors and
+  contributors only for their own items). Trashed items get no links and are never shown.
+  At most 20 active links per item.
+- **Token.** 32 random bytes from `crypto/rand`, base64url (43 characters), in
+  `/preview/{token}`. Only its SHA-256 is stored in `content_preview_links`
+  (`id`, `content_id`, `token_hash`, `created_by`, `created_at`, `expires_at`, `revoked_at`);
+  the lookup goes by hash and is confirmed with a constant-time comparison. The token never
+  appears in the database, the audit log or the list.
+- **What the visitor sees.** The saved version (not unsaved editor text, not autosaves)
+  rendered by the active theme as if it were published, in the item's language, with a small
+  *Preview — not published* ribbon at the top. Page access rules (password or blocked pages)
+  do not apply: the link itself is the permission.
+- **Headers.** `X-Robots-Tag: noindex, nofollow`, `Cache-Control: private, no-store` and
+  `Referrer-Policy: no-referrer` on every answer, including the 404.
+- **No oracle.** Unknown, malformed, expired and revoked tokens, links to trashed items and
+  items of non-public types all get the same theme 404 page. Paths under `/preview/` that are
+  not 43-character tokens fall through to normal page routing.
+- **Rate limit.** 60 requests per minute per client IP on `/preview/…` (then `429` with
+  `Retry-After`).
+- **Audit.** `content.preview_link_create` (link id, expiry, lifetime) and
+  `content.preview_link_revoke` (link id), targeting the item.
+
+Admin routes: `POST /admin/content/{type}/{id}/preview-links` (`preview_ttl` = `1h`/`24h`/`7d`;
+JSON `201` with `Accept: application/json`, else the result page) and
+`POST /admin/content/{type}/{id}/preview-links/{link}/revoke`.
+
+REST ([API.md](API.md#content)): `GET /api/v1/content/{id}/preview-links` lists active links
+(never tokens), `POST /api/v1/content/{id}/preview-links` with `{"ttl":"24h"}` returns `201`
+with the link and its `url` (the only time the token is returned), and
+`DELETE /api/v1/content/{id}/preview-links/{link}` revokes. All need `content.edit`.
+
+```sh
+curl -X POST -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
+  -d '{"ttl":"7d"}' https://example.org/api/v1/content/01J…/preview-links
+# {"ok":true,"data":{"id":"01J…","content_id":"01J…","created_by":"…","created_at":"…",
+#  "expires_at":"…","url":"https://example.org/preview/…"}}
+```

@@ -1,6 +1,6 @@
 {{define "title"}}{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{.Item.Title}}{{end}}{{end}}
 {{define "content"}}
-<link rel="stylesheet" href="{{asset "content-ux.css"}}"><script defer src="{{asset "content-ux.js"}}"></script><script defer src="{{asset "content-autosave.js"}}"></script>
+<link rel="stylesheet" href="{{asset "content-ux.css"}}"><script defer src="{{asset "content-ux.js"}}"></script><script defer src="{{asset "content-autosave.js"}}"></script><script defer src="{{asset "content-preview-links.js"}}"></script>
 {{/* $ai: the AI writing helper is configured (a non-empty ai.provider is only saved with a model and a key)
      and the type has a body to work from. */}}
 {{$ai := and .Supports.body (setting "ai.provider")}}
@@ -228,6 +228,35 @@
         {{end}}
       </ul>
       {{if .CanUnlink}}<button type="submit" formaction="{{.Action}}/translations/unlink" formnovalidate class="mt-3 text-xs text-blue hover:text-blue-hover">{{t "content.translations.unlink"}}</button>{{end}}
+    </section>
+    {{end}}
+
+    {{if .CanPreviewLinks}}
+    <section class="rounded border border-line bg-panel p-4 preview-links" data-preview-links aria-labelledby="preview-links-title">
+      <h2 id="preview-links-title" class="text-base font-bold mb-2">{{t "content.preview.title"}}</h2>
+      <p class="field-help mb-3">{{t "content.preview.help"}}</p>
+      <div class="field-row">
+        <div class="field">
+          <label class="field-label" for="preview-ttl">{{t "content.preview.expires_after"}}</label>
+          <select id="preview-ttl" name="preview_ttl">
+            <option value="1h">{{t "content.preview.ttl_1h"}}</option>
+            <option value="24h" selected>{{t "content.preview.ttl_24h"}}</option>
+            <option value="7d">{{t "content.preview.ttl_7d"}}</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-secondary" formaction="{{.Action}}/preview-links" formnovalidate data-preview-create>{{icon "link"}}<span>{{t "content.preview.create"}}</span></button>
+      </div>
+      <div class="preview-link-created field" data-preview-created hidden>
+        <label class="field-label" for="preview-link-url">{{t "content.preview.new_link"}}</label>
+        <div class="preview-link-copy"><input id="preview-link-url" type="text" readonly dir="ltr" data-preview-url><button type="button" class="btn btn-secondary btn-sm" data-preview-copy data-copied="{{t "content.preview.copied"}}">{{icon "copy"}}<span>{{t "content.preview.copy"}}</span></button></div>
+        <p class="field-help">{{t "content.preview.shown_once"}}</p>
+      </div>
+      <p class="field-error" data-preview-error role="alert" hidden></p>
+      <h3 class="field-label mt-3">{{t "content.preview.active"}}</h3>
+      <ul class="preview-link-list" data-preview-list data-revoke-label="{{t "content.preview.revoke"}}" data-expires-label="{{t "content.preview.expires"}}" data-confirm="{{t "content.preview.revoke_confirm"}}">
+        {{range .PreviewLinks}}<li data-preview-link="{{.ID}}"><span>{{t "content.preview.expires"}} {{datetime .ExpiresAt}}</span><button type="submit" class="btn btn-ghost btn-sm" formaction="{{$.Action}}/preview-links/{{.ID}}/revoke" formnovalidate data-preview-revoke>{{t "content.preview.revoke"}}</button></li>{{end}}
+      </ul>
+      <p class="field-help" data-preview-empty {{if .PreviewLinks}}hidden{{end}}>{{t "content.preview.none"}}</p>
     </section>
     {{end}}
 

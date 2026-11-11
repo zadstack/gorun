@@ -209,5 +209,6 @@
   "intake.received_at": "Received",
   "forms.entries_total": "Entries",
   "forms.slug": "Form key",
-  "forms.danger_zone": "Remove this form and its entries."
+  "forms.danger_zone": "Remove this form and its entries.",
+  "preview.ribbon": "Preview — not published. This page is shown through a private preview link."
 }

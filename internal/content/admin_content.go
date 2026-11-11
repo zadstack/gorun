@@ -253,6 +253,8 @@ type editorView struct {
 	BodyDir, Placeholder  string
 	Autosave              *autosaveView // the user's earlier autosave, offered for restore
 	CanAutosave           bool
+	CanPreviewLinks       bool
+	PreviewLinks          []PreviewLink // active shareable preview links
 }
 
 func (h *adminHandlers) newItem(w http.ResponseWriter, r *http.Request) {
@@ -368,7 +370,8 @@ func (h *adminHandlers) renderEditor(w http.ResponseWriter, r *http.Request, sta
 		v.Translations, v.CanUnlink = h.translationViews(ctx, base, it)
 	}
 	if !isNew && it.Status != "trash" && auth.Can(ctx, "content.edit") {
-		v.CanAutosave = true
+		v.CanAutosave, v.CanPreviewLinks = true, true
+		v.PreviewLinks, _ = h.svc.PreviewLinks(ctx, it.ID)
 		if status < 400 {
 			v.Autosave = h.autosaveBanner(ctx, it)
 		}
