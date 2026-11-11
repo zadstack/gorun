@@ -5,6 +5,15 @@
   <h1 class="text-[22px] font-bold">{{.PluralName}}</h1>
   {{if .CanCreate}}<a href="{{.BaseURL}}/new" class="h-9 px-3 rounded bg-blue text-white font-medium inline-flex items-center gap-1.5 hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "plus"}}<span>{{t "content.list.new" .TypeName}}</span></a>{{end}}
 </div>
+{{with .Bulk}}
+<section class="bulk-result mb-4" role="status" aria-labelledby="bulk-result-title" data-bulk-result data-state="{{if .Ok}}ok{{else}}partial{{end}}" data-bulk-action-done="{{.Action}}">
+  <h2 id="bulk-result-title" class="sr-only">{{t "content.bulk.result_title"}}</h2>
+  <p class="bulk-result-head">{{if .Ok}}{{icon "circle-check"}}{{else}}{{icon "triangle-alert"}}{{end}}<strong data-bulk-done>{{.Done}}</strong>{{if .Skipped}}<span class="bulk-result-sep" aria-hidden="true">·</span><strong data-bulk-skipped>{{.Skipped}}</strong>{{end}}</p>
+  {{if .Groups}}<ul class="bulk-result-list">
+    {{range .Groups}}<li><span class="bulk-result-reason">{{.Reason}} ({{.Count}})</span>{{if .Titles}}: {{range $i, $title := .Titles}}{{if $i}}{{if eq locale "ar"}}، {{else}}, {{end}}{{end}}<bdi>{{$title}}</bdi>{{end}}{{end}}</li>{{end}}
+  </ul>{{end}}
+</section>
+{{end}}
 {{if and .CanCreate (eq .Type.Slug "page")}}
 <details class="mb-4 rounded border border-line bg-panel p-4" data-purpose-page>
   <summary class="font-medium cursor-pointer">{{t "builder.preset_new"}}</summary>
@@ -50,24 +59,47 @@
 
   <form method="post" action="{{.BaseURL}}/bulk" data-content-selection x-data data-confirm="{{t "content.list.bulk_confirm"}}">
     <input type="hidden" name="_csrf" value="{{csrf}}">
-    {{if and .CanDelete .Rows}}
-    <div data-selection-bar class="content-selection-bar flex flex-wrap items-center gap-2 mb-2"><output data-selection-count aria-live="polite"></output>
-      <label class="sr-only" for="bulk-action">{{t "content.list.bulk"}}</label>
-      <select id="bulk-action" name="action" class="h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-        <option value="trash">{{t "content.list.bulk_trash"}}</option>
-        {{if eq .Status "trash"}}<option value="delete">{{t "content.list.bulk_delete"}}</option>{{end}}
-      </select>
-      <button type="submit" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "content.list.apply"}}</button>
+    <input type="hidden" name="return" value="{{.Return}}">
+    {{if and .CanBulk .Rows}}
+    <div data-selection-bar class="content-selection-bar bulk-bar">
+      <p class="bulk-bar-count"><output data-selection-count aria-live="polite"></output> <span>{{t "content.list.bulk_selected"}}</span></p>
+      <div class="field bulk-bar-field">
+        <label class="field-label" for="bulk-action">{{t "content.list.bulk"}}</label>
+        <select id="bulk-action" name="action" class="field-control" data-bulk-action>
+          {{if .CanPublish}}<option value="publish" data-confirm="{{t "content.list.bulk_publish_confirm"}}">{{t "content.list.bulk_publish"}}</option>
+          <option value="unpublish" data-confirm="{{t "content.list.bulk_unpublish_confirm"}}">{{t "content.list.bulk_unpublish"}}</option>
+          {{if .CanEdit}}<option value="schedule" data-bulk-needs="schedule">{{t "content.list.bulk_schedule"}}</option>{{end}}{{end}}
+          {{if and .CanAssign .BulkAuthors}}<option value="author" data-bulk-needs="author">{{t "content.list.bulk_author"}}</option>{{end}}
+          {{if .BulkTerms}}<option value="term_add" data-bulk-needs="term">{{t "content.list.bulk_term_add"}}</option>
+          <option value="term_remove" data-bulk-needs="term">{{t "content.list.bulk_term_remove"}}</option>{{end}}
+          {{if .CanDelete}}<option value="trash" data-confirm="{{t "content.list.bulk_confirm"}}"{{if not .CanPublish}} selected{{end}}>{{t "content.list.bulk_trash"}}</option>
+          {{if eq .Status "trash"}}<option value="delete" data-confirm="{{t "content.list.bulk_confirm"}}">{{t "content.list.bulk_delete"}}</option>{{end}}{{end}}
+        </select>
+      </div>
+      {{if and .CanPublish .CanEdit}}<div class="field bulk-bar-field" data-bulk-field="schedule">
+        <label class="field-label" for="bulk-publish-at">{{t "content.list.bulk_publish_at"}}</label>
+        <input id="bulk-publish-at" name="publish_at" type="datetime-local" class="field-control" dir="ltr">
+      </div>{{end}}
+      {{if and .CanAssign .BulkAuthors}}<div class="field bulk-bar-field" data-bulk-field="author">
+        <label class="field-label" for="bulk-author">{{t "content.list.bulk_new_author"}}</label>
+        <select id="bulk-author" name="author_id" class="field-control">{{range .BulkAuthors}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select>
+      </div>{{end}}
+      {{if .BulkTerms}}<div class="field bulk-bar-field" data-bulk-field="term">
+        <label class="field-label" for="bulk-term">{{t "content.list.bulk_term"}}</label>
+        <select id="bulk-term" name="term" class="field-control">{{range .BulkTerms}}<optgroup label="{{.Label}}">{{range .Options}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</optgroup>{{end}}</select>
+      </div>{{end}}
+      <button type="submit" class="btn btn-primary bulk-bar-apply">{{t "content.list.apply"}}</button>
+      <p class="field-help bulk-bar-scope" data-bulk-scope>{{t "content.list.bulk_scope"}}</p>
     </div>
     {{end}}
     {{if .Tree}}{{if .TreeTruncated}}<p class="border border-amber rounded p-3 mb-3" role="status">{{t "content.ux.tree_limit"}} <a class="underline" href="{{.TableURL}}">{{t "content.ux.table"}}</a></p>{{end}}
-    {{if .CanDelete}}<label class="flex items-center gap-2 min-h-11"><input type="checkbox" data-select-all>{{t "content.list.select_all"}}</label>{{end}}
+    {{if .CanBulk}}<label class="flex items-center gap-2 min-h-11"><input type="checkbox" data-select-all>{{t "content.list.select_all"}}</label>{{end}}
     <ul class="content-tree border border-line rounded bg-panel p-3">{{range .TreeRoots}}{{template "content/tree_node" .}}{{else}}<li>{{t "content.list.empty"}}</li>{{end}}</ul>
     {{else}}<div class="rounded border border-line bg-panel overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-panel-2">
           <tr class="text-start">
-            {{if .CanDelete}}<th scope="col" class="w-10 px-3 py-2"><input type="checkbox" aria-label="{{t "content.list.select_all"}}" class="h-4 w-4 accent-[var(--green)]"
+            {{if .CanBulk}}<th scope="col" class="w-10 px-3 py-2"><input type="checkbox" aria-label="{{t "content.list.select_all"}}" class="h-4 w-4 accent-[var(--green)]"
                 data-select-all></th>{{end}}
             <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.list.title"}}</th>
             <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.list.status"}}</th>
@@ -77,11 +109,11 @@
         <tbody>
           {{range .Rows}}
           <tr class="border-t border-line hover:bg-bg">
-            {{if $.CanDelete}}<td class="px-3 py-2"><input type="checkbox" name="ids" value="{{.ID}}" aria-label="{{t "content.list.select"}} {{.Title}}" class="h-4 w-4 accent-[var(--green)]"></td>{{end}}
+            {{if $.CanBulk}}<td class="px-3 py-2"><input type="checkbox" name="ids" value="{{.ID}}" aria-label="{{t "content.list.select"}} {{.Title}}" class="h-4 w-4 accent-[var(--green)]"></td>{{end}}
             <td class="px-3 py-2"><a href="{{.EditURL}}" class="font-medium text-blue hover:text-blue-hover" dir="auto">{{if .Title}}{{.Title}}{{else}}{{t "content.list.untitled"}}{{end}}</a>
               <div class="font-mono text-xs text-muted" dir="auto">{{.Slug}}</div>{{if .ParentTitle}}<small class="text-muted">↳ {{.ParentTitle}}</small>{{end}}</td>
             <td class="px-3 py-2">{{template "content/status_chip" .Status}}<small class="block text-muted mt-1">{{.Locale}}{{if .AuthorName}} · {{.AuthorName}}{{end}}</small></td>
-            <td class="px-3 py-2 text-end font-mono text-xs text-muted">{{date .UpdatedAt}}</td>
+            <td class="px-3 py-2 text-end font-mono text-xs text-muted">{{datetime .UpdatedAt}}</td>
           </tr>
           {{else}}
           <tr><td colspan="4" class="px-3 py-8 text-center text-muted">{{t "content.list.empty"}}</td></tr>

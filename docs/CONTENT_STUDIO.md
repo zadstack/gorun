@@ -35,3 +35,27 @@ Each content/editor pair retains at most 40 active candidates. All routes requir
 ## Validation
 
 Local fake-provider tests cover unsaved source, draft preservation, same-request idempotency, text edits, owner isolation, CSRF, disabled capabilities, destination pinning, actual generated image import and retention, MCP discovery versus exact tool calls/status, sanitized errors and private-network rejection. Real provider generation remains unverified until an operator supplies a supported provider connection and explicitly invokes it.
+
+## Bulk actions
+
+Tick items on a content list (or **Select all**) and choose a bulk action. **Select all only selects the items shown on the current page, with the current filters**; other pages are never included. The list offers only the actions your role allows:
+
+| Action | Needs | What happens per item |
+|---|---|---|
+| Publish now | `content.publish` | `Publish` (as the editor's Publish button). Already published items are skipped. |
+| Move back to draft | `content.publish` | `Unpublish`. Items that are not published, scheduled or private are skipped. |
+| Schedule… | `content.publish` and `content.edit` | Saved with status *scheduled* and the chosen time. The time (UTC, `datetime-local`) must be in the future, otherwise nothing changes. |
+| Change author… | `content.edit`, not author/contributor | Saved with the new author. Only active team members whose role may create content are offered and accepted. |
+| Add a term… / Remove a term… | `content.edit` | Saved with the term added to or removed from the item's terms. Only existing terms of the type's taxonomies are offered (up to 500). |
+| Move to trash / Delete permanently | `content.delete` | Unchanged from before; the whole request needs `content.delete`. |
+
+Each item goes through the same service method as the single-item path (`Publish`, `Unpublish`, `Update`), so ownership (authors and contributors only change their own items), publish permission, the save hooks of that path (`content.before_save`, `content.authorize_save` for saves), validation, revisions and audit entries apply item by item. One refused item never stops the others. Publish and move back to draft ask for confirmation with the number of selected items first.
+
+After the request the list (with the same filters) shows a summary, for example **2 published · 1 skipped**, with the skipped items grouped by reason: no permission, not yours, changed meanwhile or held for approval, does not pass validation, in the trash, already in that state, not found. Titles are shown only for items you may open. The summary lives in a two-minute cookie for that list and is shown once. A request handles at most 200 ids.
+
+Endpoint (admin session, CSRF field `_csrf`): `POST /admin/content/{type}/bulk` with `action` (`publish`, `unpublish`, `schedule`, `author`, `term_add`, `term_remove`, `trash`, `delete`), `ids`, and `publish_at`, `author_id` or `term` (`taxonomy/slug`) as the action needs; `return` is the list query to go back to.
+
+Not included:
+
+- **Change language** in bulk: an item's language ties it to a translation group (one item per language) and to its slug, so moving many items at once can collide with existing translations. Use **Translations** in the editor.
+- **REST API**: `/api/v1` has no bulk operation pattern yet; scripts call the per-item endpoints (`POST /api/v1/content/{id}/publish` and the update endpoint) in a loop.

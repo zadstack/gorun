@@ -153,7 +153,7 @@ func TestSetupCreatesFirstAdminAndLogsIn(t *testing.T) {
 	}
 	// topbar live search with the full-page form fallback
 	for _, want := range []string{`action="/admin/search"`, `hx-get="/admin/x/search"`, `hx-target="#admin-search-results"`,
-		`hx-trigger="input changed delay:300ms, focus"`, `id="admin-search-results"`, `@click.outside=`, `@keydown.slash.window=`, `@keydown.escape=`} {
+		`hx-trigger="input changed delay:300ms, focus"`, `id="admin-search-results"`, `@click.outside=`, `aria-keyshortcuts="/"`, `shortcuts.js`, `data-gp-palette`, `@keydown.escape=`} {
 		if !strings.Contains(page, want) {
 			t.Errorf("topbar lacks %s", want)
 		}

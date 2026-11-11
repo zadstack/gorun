@@ -1,6 +1,6 @@
 {{define "partials/confirm_modal"}}
 <div x-data x-show="$store.confirm.open" x-cloak class="[&[x-cloak]]:hidden fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,24,22,0.3)] p-4"
-     @keydown.escape.window="$store.confirm.close()" role="dialog" aria-modal="true" aria-labelledby="gp-confirm-title">
+     @keydown.escape.window="$store.confirm.close()" @keydown.tab="$store.confirm.trap($event, $el)" role="dialog" aria-modal="true" aria-labelledby="gp-confirm-title">
   <div class="w-full max-w-sm rounded border border-line bg-panel p-5" @click.outside="$store.confirm.close()">
     <h2 id="gp-confirm-title" class="text-base font-bold mb-2">{{t "core.confirm.title"}}</h2>
     <p class="text-muted mb-4" x-text="$store.confirm.message"></p>

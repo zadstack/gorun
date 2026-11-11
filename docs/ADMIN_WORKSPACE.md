@@ -62,6 +62,34 @@ Open **Customize sidebar**, which remains available even when every other link i
 
 Ordering and hiding never grant or revoke permissions. New permitted module links remain available, and removed links do not break the saved order. Other team members keep their own preferences.
 
+## Command palette and keyboard shortcuts
+
+Press **Ctrl K** (**⌘ K** on a Mac) on any admin page, or use the **Commands** button beside the topbar search, to open the command palette. Type to filter; **↑ ↓**, **Home** and **End** move, **Enter** opens, **Esc** closes and returns focus. With an empty query it shows your recent choices, the quick actions and the admin pages.
+
+- **Pages** come from your permission-filtered navigation (the same items as the sidebar and the global search), so the palette never lists a page you cannot open. Items hidden from your sidebar still appear.
+- **Actions** are the dashboard's quick actions (new item of each content type you may create, new user, new API key) plus **Upload media** and **Open settings** when your navigation holds the Media library or Settings. Nothing is added that the navigation or the quick actions would not offer.
+- **Content** and **Users** are live results of the global search (`/admin/x/webmcp/search`, the same permission rules: authors and contributors see their own items, users need `users.manage`), requested 200 ms after you stop typing; a newer query cancels the older request.
+- The last entry, **Search everything**, opens the full search page.
+- Matching works on labels in both admin languages: an Arabic admin can type `settings`, an English admin `الإعدادات`. Case, Latin accents and Arabic marks are ignored, and alef forms (أ إ آ ٱ), ya/alef maqsura, ta marbuta/ha and tatweel are folded, so `اعدادات` finds «الإعدادات». Exact and prefix matches rank first, then word starts, substrings and letters in order.
+- Your last five choices are remembered in this browser only (`localStorage`, key `gorun.palette.recent`); private windows simply start empty.
+
+The palette loads its list from `GET /admin/x/palette` (admin session, JSON `{pages, actions}`, each `{label, alt, href, icon, section}` where `alt` holds the labels in the other admin language) the first time it opens on a page. Without JavaScript nothing changes: the topbar search form still submits to `/admin/search`.
+
+**On canvas pages** Ctrl/⌘ K keeps opening canvas search (cards and boards); the global palette defers to it there and opens with the **Commands** button.
+
+Press **?** to see every shortcut:
+
+| Keys | Action |
+|---|---|
+| Ctrl/⌘ K | Open the command palette |
+| `/` | Focus the topbar search |
+| `?` | Show the shortcut map |
+| `g` then `h` / `c` / `m` / `s` / `a` | Go to home, content (posts, or the first content type you may open), media, settings, approvals |
+| Ctrl/⌘ S | Save in the content editor (presses its **Save** button; autosave keeps running) |
+| Esc | Close a dialog |
+
+The `g` destinations are rendered from your authorized navigation: a key whose page you may not open is not bound and not listed (for example `g a` needs agent approvals, `g s` needs `settings.manage`). Plain-key shortcuts never fire while focus is in a text field, select, textarea or editable area, during IME composition, or while a dialog is open; Ctrl/⌘ S works inside fields and only where the page marks a save button (`data-shortcut-save`), otherwise the browser keeps its own shortcut. Letters follow the physical key, so the shortcuts also work with an Arabic keyboard layout. The scripts are `web/admin/static/command-palette.js` and `web/admin/static/shortcuts.js`.
+
 ## العربية
 
 لوحة الإدارة ثنائية اللغة (عربية وإنجليزية) مع RTL كامل عند اختيار العربية. بدّل لغة الواجهة من زر اللغة في الشريط العلوي. لغة الحساب الافتراضية من **المستخدمون ← تعديل ← اللغة**. لغة الموقع العامة من **الإعدادات ← عام** ولا تتغير تلقائيًا عند تبديل لغة الواجهة.
@@ -71,6 +99,8 @@ Ordering and hiding never grant or revoke permissions. New permitted module link
 استخدم زر «إضافة إلى الوصول السريع» بجانب تبويب الصفحة داخل قسمها؛ يظهر الاختصار في القائمة الرئيسية واللوحة الشخصية فورًا، ويختفي تبويب الصفحة عند الانتقال التالي أو إعادة التحميل. لإلغاء التثبيت استخدم «إزالة من الوصول السريع» بجانب اختصار القائمة، أو «إرجاع إلى التنقل» في لوحته داخل الرئيسية. تتحدث القائمة واللوحة الموجودة في الصفحة فورًا، ويعود تبويب الصفحة عند الانتقال التالي أو إعادة التحميل. التثبيت لا يغيّر الصلاحيات ولا ينشر أي محتوى.
 
 القائمة الرئيسية تجمع الصفحات في ستة أقسام كحد أقصى: الرئيسية، المحتوى، الموقع، الكانفس والوكلاء، الوارد والإعدادات. يظهر المتجر عند توفر أدوات تجارة مسموح بها. اختر القسم ثم التبويب المطلوب؛ الإعدادات تجمع العام والفريق والتكاملات والنظام. تختفي الأقسام الفارغة، وتبقى روابط الإضافات الجديدة متاحة داخل الإعدادات.
+
+لوحة الأوامر: اضغط Ctrl K (أو ⌘ K على ماك) أو زر «الأوامر» بجانب البحث. تعرض الصفحات والإجراءات المسموح لك بها ونتائج المحتوى والمستخدمين، والبحث يتجاهل التشكيل والهمزات والفرق بين ى/ي وة/ه، ويقبل الاسم العربي أو الإنجليزي للصفحة. في صفحات الكانفس يبقى Ctrl K لبحث الكانفس. اضغط ? لعرض الاختصارات: / للبحث، g ثم h/c/m/s/a للرئيسية والمحتوى والوسائط والإعدادات والموافقات (حسب صلاحياتك)، وCtrl S للحفظ في محرر المحتوى. لا تعمل الاختصارات أثناء الكتابة في حقل.
 
 من «تخصيص القائمة» يمكنك تحريك المجموعات والعناصر بأزرار لأعلى ولأسفل، وإظهارها أو إخفاؤها، ثم حفظ الترتيب لحسابك فقط. «استعادة الافتراضي» تعيد الترتيب والظهور الأصليين. الصلاحيات لا تتغير.
 

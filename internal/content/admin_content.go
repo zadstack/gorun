@@ -43,6 +43,14 @@ type listView struct {
 	Tree, TreeTruncated  bool
 	TreeURL, TableURL    string
 	TreeRoots            []*contentTreeNode
+	// Bulk actions: which ones the user may start, their inputs, the
+	// list query to return to, and the outcome of the last bulk request.
+	CanBulk, CanPublish bool
+	CanEdit, CanAssign  bool
+	BulkAuthors         []choice
+	BulkTerms           []bulkTermGroup
+	Return              string
+	Bulk                *bulkSummary
 }
 
 func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
@@ -159,49 +167,21 @@ func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
 		v.Rows = append(v.Rows, listRow{ParentID: it.ParentID, Locale: it.Locale, AuthorName: authorName, ParentTitle: parentTitle, ID: it.ID, Title: it.Title, Slug: it.Slug, Status: string(it.Status), UpdatedAt: it.UpdatedAt,
 			EditURL: base + "/" + it.ID})
 	}
+	v.CanPublish, v.CanEdit = canPublish(ctx), auth.Can(ctx, "content.edit")
+	v.CanAssign = v.CanEdit && !ownOnly(u)
+	if v.CanAssign {
+		v.BulkAuthors = h.bulkAuthors(ctx)
+	}
+	if v.CanEdit {
+		v.BulkTerms = h.bulkTerms(ctx, t)
+	}
+	v.CanBulk = v.CanDelete || v.CanPublish || len(v.BulkAuthors) > 0 || len(v.BulkTerms) > 0
+	v.Return = r.URL.RawQuery
+	v.Bulk = h.takeBulkSummary(w, r, t)
 	if tree {
-		v.TreeRoots = contentTree(v.Rows, v.CanDelete)
+		v.TreeRoots = contentTree(v.Rows, v.CanBulk)
 	}
 	h.tpl.Render(w, r, "pages/content/list.html", v)
-}
-
-func (h *adminHandlers) bulk(w http.ResponseWriter, r *http.Request) {
-	t, ok := h.typeFromURL(w, r)
-	if !ok {
-		return
-	}
-	if err := r.ParseForm(); err != nil {
-		h.tpl.RenderError(w, r, http.StatusBadRequest)
-		return
-	}
-	hard := r.PostForm.Get("action") == "delete"
-	trashed, deleted := 0, 0
-	for _, id := range r.PostForm["ids"] {
-		it, err := h.svc.Get(r.Context(), id)
-		if err != nil || it.Type != t.Slug {
-			continue
-		}
-		purge := hard && it.Status == "trash"
-		if err := h.svc.Delete(r.Context(), id, purge); err != nil {
-			continue
-		}
-		if purge {
-			deleted++
-		} else {
-			trashed++
-		}
-	}
-	switch {
-	case deleted > 0 && trashed == 0:
-		httpx.SetFlash(w, "success", "content.flash.bulk_deleted")
-	case trashed > 0 && deleted == 0:
-		httpx.SetFlash(w, "success", "content.flash.bulk_trashed")
-	case trashed > 0:
-		httpx.SetFlash(w, "success", "content.flash.bulk_mixed")
-	default:
-		httpx.SetFlash(w, "info", "content.flash.bulk_none")
-	}
-	http.Redirect(w, r, "/admin/content/"+t.Slug, http.StatusSeeOther)
 }
 
 // --- editor ---

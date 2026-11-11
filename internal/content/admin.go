@@ -53,7 +53,7 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	r.With(view).Get("/content/{type}", h.list)
 	r.With(create).Get("/content/{type}/new", h.newItem)
 	r.With(create).Post("/content/{type}", h.createItem)
-	r.With(del).Post("/content/{type}/bulk", h.bulk)
+	r.With(view).Post("/content/{type}/bulk", h.bulk) // per action and per item permissions inside (admin_bulk.go)
 	r.With(view).Get("/content/{type}/{id}", h.editItem)
 	r.With(edit).Post("/content/{type}/{id}", h.updateItem)
 	r.With(del).Post("/content/{type}/{id}/trash", h.trashItem)

@@ -206,8 +206,9 @@ test('refresh keeps focus on the waiting action', async ({page})=>{
  const act=agent.locator('.canvas-node-state button');await expect(act).toHaveCount(1);
  await act.focus();
  await page.evaluate(()=>{(document.activeElement as any).__mark=1;});
+ const refreshed=runsResponse(page);
  await page.locator('[data-canvas-operations] details').nth(1).evaluate(d=>{(d as HTMLDetailsElement).open=true;(d.querySelector('button') as HTMLButtonElement).click();}); // click() keeps focus where it is
- await page.waitForTimeout(500);
+ await settled(page,refreshed);
  expect(await page.evaluate(()=>{const a=document.activeElement as any;return a&&a.__mark===1&&!!a.closest('.canvas-node-state');})).toBe(true);
 });
 
@@ -248,6 +249,8 @@ test('every edge has an arrowhead', async ({page})=>{
 });
 
 const runsResponse=(page:Page)=>page.waitForResponse(r=>/\/operations\/runs(\?|$)/.test(r.url())&&r.request().method()==='GET',{timeout:10000});
+// settled waits for a runs response to be fully read, then gives the page one task to apply it.
+const settled=async(page:Page,response:ReturnType<typeof runsResponse>)=>{await (await response).finished();await page.evaluate(()=>new Promise(resolve=>setTimeout(resolve,0)));};
 
 test('state updates without reload', async ({page})=>{
  const id='77777777-7777-4777-8777-000000000007';
@@ -264,19 +267,29 @@ test('card element survives polling', async ({page})=>{
  const handle=agent.locator('.canvas-handle').first();
  await handle.focus();
  await page.evaluate(()=>{(document.activeElement as any).__mark=1;});
- await runsResponse(page);await page.waitForTimeout(300);
+ await settled(page,runsResponse(page));
  expect(await agent.evaluate(e=>(e as any).__probe)).toBe(1);
  expect(await page.evaluate(()=>(document.activeElement as any)?.__mark)).toBe(1);
 });
 
 test('polling stops when idle', async ({page})=>{
+ await page.clock.install(); // time flows normally; the idle window below is skipped instead of slept
  const id='77777777-7777-4777-8777-000000000009';
  await runningAgentBoard(page,id);
  const agent=page.locator('.canvas-card[data-kind=agent]');
  const d=db();d.prepare("UPDATE admin_canvas_runs SET status='failed',finished_at=? WHERE id=?").run(new Date().toISOString(),id);d.close();
  await expect(agent).toHaveAttribute('data-state','failed',{timeout:10000});
- let n=0;page.on('request',r=>{if(/\/operations\/runs(\?|$)/.test(r.url()))n++;});
- await page.waitForTimeout(9000);
+ const runs=(r:{url:()=>string})=>/\/operations\/runs(\?|$)/.test(r.url());
+ let n=0,inflight=0;const settle=(r:{url:()=>string})=>{if(runs(r))inflight--;};
+ page.on('request',r=>{if(runs(r)){n++;inflight++;}});page.on('requestfinished',settle);page.on('requestfailed',settle);
+ // Skip three 4 s poll intervals on the virtual clock. A poll sets its next timer only after its
+ // response is applied, so each step lets any poll it fired finish before skipping the next one.
+ for(let step=0;step<3;step++){
+  await page.clock.runFor(4100);
+  await page.evaluate(()=>fetch('/healthz').then(r=>r.status)); // request events of a poll fired above arrive first
+  await expect.poll(()=>inflight).toBe(0);
+  await page.evaluate(()=>new Promise(resolve=>{const c=new MessageChannel();c.port1.onmessage=()=>resolve(null);c.port2.postMessage(0);}));
+ }
  expect(n).toBeLessThanOrEqual(1);
 });
 
@@ -308,12 +321,12 @@ test('polling keeps focus on Cancel run in the run history', async ({page})=>{
  await cancel.focus();
  await page.evaluate(()=>{(document.activeElement as any).__mark=1;});
  // An unchanged poll leaves the control in place.
- await runsResponse(page);await page.waitForTimeout(300);
+ await settled(page,runsResponse(page));
  expect(await page.evaluate(()=>(document.activeElement as any)?.__mark)).toBe(1);
  await expect(cancel).toBeFocused();
  // A poll that changes the list rebuilds it and puts focus back on the same run's control.
  await insertRun(board,'',  '77777777-7777-4777-8777-000000000012','failed',new Date(Date.now()-60_000).toISOString());
- await runsResponse(page);await page.waitForTimeout(300);
+ await runsResponse(page);
  await expect(history.locator('li')).toHaveCount(2);
  await expect(page.locator(`[data-run-id="${id}"][data-action=cancel]`)).toBeFocused();
 });

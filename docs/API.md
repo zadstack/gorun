@@ -34,7 +34,7 @@ modules register, and served at `GET /api/v1/openapi.json`. The interactive refe
 - **Key console.** Keys can also be managed over the API (`/v1/keys`: list, create, rotate with a grace period,
   revoke) and with `gorun key`. Creating a key over the API needs a signed-in session (an API key caller gets
   `403 session_required`); a key created or rotated through the API never carries scopes beyond the caller's,
-  and only a key's owner can rotate it. Rotation validates the original key and issues its
+  only a key's owner can rotate it, and only its owner or an administrator can revoke it. Rotation validates the original key and issues its
   replacement in one write transaction; with zero grace, concurrent rotations can issue
   only one replacement. See [WEBHOOKS.md](WEBHOOKS.md#key-console).
 - **Webhooks.** Signed outgoing notifications of site events (`/v1/webhooks`, `gorun webhook`); payload,
@@ -91,7 +91,7 @@ Module operations add their own codes (found by grepping `api.WriteError` / `htt
 | 502 | `billing_server_error` | commerce: the billing server answered with an error |
 | 403 | `session_required` | keys: creating a key with an API key instead of a signed-in session |
 | 403 | `scope_exceeds_caller` | keys: creating a key with scopes the caller does not hold |
-| 403 | `not_key_owner` | keys: rotating a key owned by someone else, or beyond the caller's scopes |
+| 403 | `not_key_owner` | keys: rotating a key owned by someone else or beyond the caller's scopes; revoking another user's key without the administrator role |
 | 409 | `key_inactive` | keys: rotating a revoked or expired key |
 | 409 | `webhook_disabled` | webhooks: testing or redelivering to a disabled webhook |
 | 500 | `internal` | some module handlers use this code instead of `internal_error` (same meaning) |
@@ -247,9 +247,11 @@ Example connection evidence fragment:
 
 Module activation reuses `kernel.OptionalModule`, before catalogs, migrations, routes and job handlers
 are registered. Disabled modules retain their tables/settings and re-enable through their existing
-activation configuration and a restart. The built-in optional modules are commerce, saas and
-membership (enabled by default; `addons.<name>.enabled` setting or `GORUN_ADDONS` mode `disabled`,
-see [ARCHITECTURE.md](ARCHITECTURE.md#optional-modules)). Core modules that do not implement that
+activation configuration and a restart. The built-in optional modules are analytics, commerce, saas,
+membership, launch, workagents, identityai, identitylogo, wpmigrate, mcp and ext: each implements
+the gate with `kernel.AddonEnabled` and is enabled by default (`addons.<name>.enabled` setting or
+`GORUN_ADDONS` mode `disabled`; see [MODULES.md](MODULES.md) and
+[ARCHITECTURE.md](ARCHITECTURE.md#optional-modules)). Core modules that do not implement that
 gate stay enabled; `GORUN_ADDONS` alone is not a universal switch for arbitrary modules. The report
 captures boot state, so editing desired configuration does not pretend that the running process has
 restarted.

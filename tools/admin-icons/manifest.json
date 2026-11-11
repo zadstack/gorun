@@ -1,7 +1,7 @@
 {
   "source": "vendor/lucide-1.55.0.js",
   "sourceIntegrity": "sha384-SZUFq9Dx112fyzY/iIBEjyd2gu3jY4XVhp+LUNXSpEMB2IEm/TOoMTNH4BHtQ6Hz",
-  "coreIntegrity": "sha384-LLJziAvYOGFhSnGQz5LOMFB6q5IFEeNp/QNh7kR6moM21/es2A9KLTZesKnJ2lE9",
+  "coreIntegrity": "sha384-W0T2Jor5VPae+eIsAR3oQTjvyJHcaCBZ9HZRx4ih06lhZV+AYtAIawKaBXx9lEb2",
   "icons": [
     "Activity",
     "Ad",
@@ -132,6 +132,7 @@
     "Play",
     "Plug",
     "Plus",
+    "Presentation",
     "Printer",
     "Puzzle",
     "Quote",
@@ -171,6 +172,7 @@
     "Sidebar",
     "SidebarOpen",
     "Signature",
+    "Slash",
     "SlidersHorizontal",
     "Smartphone",
     "Sparkles",

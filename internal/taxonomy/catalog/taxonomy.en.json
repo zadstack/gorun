@@ -53,5 +53,6 @@
   "validation.types": "Unknown content type",
   "validation.unknown": "Unknown taxonomy",
   "validation.unknown_term": "Unknown term",
-  "validation.locale_route": "This taxonomy route is reserved for a content language. Choose another slug."
+  "validation.locale_route": "This taxonomy route is reserved for a content language. Choose another slug.",
+  "list.advanced": "Advanced"
 }

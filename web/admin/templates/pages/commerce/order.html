@@ -8,12 +8,12 @@
   <dt class="text-muted">{{t "commerce.col.email"}}</dt><dd dir="ltr" class="text-start">{{.Email}}</dd>
   <dt class="text-muted">{{t "commerce.col.product"}}</dt><dd>{{.ProductName}}</dd>
   <dt class="text-muted">{{t "commerce.col.total"}}</dt><dd class="font-mono text-start" dir="ltr">{{.Total}}</dd>
-  <dt class="text-muted">{{t "commerce.col.created"}}</dt><dd class="font-mono text-xs">{{date .CreatedAt}}</dd>
-  <dt class="text-muted">{{t "commerce.orders.paid_at"}}</dt><dd class="font-mono text-xs">{{if .PaidAt}}{{date .PaidAt}}{{else}}—{{end}}</dd>
+  <dt class="text-muted">{{t "commerce.col.created"}}</dt><dd class="font-mono text-xs">{{datetime .CreatedAt}}</dd>
+  <dt class="text-muted">{{t "commerce.orders.paid_at"}}</dt><dd class="font-mono text-xs">{{datetime .PaidAt}}</dd>
   <dt class="text-muted">{{t "commerce.col.mode"}}</dt><dd>{{template "partials/commerce_order_mode" .StripeMode}}</dd>
   <dt class="text-muted">Stripe</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.StripeSessionID}} {{.StripePaymentIntent}}</dd>
 {{if .ReceiptStatus}}
-  <dt class="text-muted">{{t "commerce.receipt.label"}}</dt><dd>{{t (print "commerce.receipt." .ReceiptStatus)}}{{if .ReceiptSentAt}} · {{date .ReceiptSentAt}}{{end}}{{if .ReceiptError}}<p class="text-sm text-muted">{{t "commerce.receipt.check_provider"}}</p>{{end}}</dd>
+  <dt class="text-muted">{{t "commerce.receipt.label"}}</dt><dd>{{t (print "commerce.receipt." .ReceiptStatus)}}{{if .ReceiptSentAt}} · {{datetime .ReceiptSentAt}}{{end}}{{if .ReceiptError}}<p class="text-sm text-muted">{{t "commerce.receipt.check_provider"}}</p>{{end}}</dd>
   {{end}}
 </dl>
 {{end}}
@@ -44,7 +44,7 @@
 {{end}}
 <h2 class="text-base font-bold mt-6 mb-2">{{t "commerce.entitlements.title"}}</h2>
 <div class="rounded border border-line bg-panel overflow-x-auto max-w-3xl">
-  {{if .Entitlements}}<ul>{{range .Entitlements}}<li class="px-4 py-3 border-t border-line first:border-t-0 flex flex-wrap gap-3 items-center"><span class="inline-flex rounded-chip border px-1.5 py-0.5 text-xs {{if or (eq .Status "active") (eq .Status "paid")}}border-green bg-green-soft text-green{{else if or (eq .Status "failed") (eq .Status "refunded")}}border-red bg-red-soft text-red{{else if or (eq .Status "suspended") (eq .Status "expired")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}}">{{t (print "commerce.entitlement.status." .Status)}}</span><span class="font-mono text-xs" dir="ltr">{{.PlanCode}}</span><span>{{.ServerName}}</span><span class="font-mono text-xs text-muted">{{if .EndsAt}}{{t "commerce.account.ends"}} {{date .EndsAt}}{{end}}</span></li>{{end}}</ul>
+  {{if .Entitlements}}<ul>{{range .Entitlements}}<li class="px-4 py-3 border-t border-line first:border-t-0 flex flex-wrap gap-3 items-center"><span class="inline-flex rounded-chip border px-1.5 py-0.5 text-xs {{if or (eq .Status "active") (eq .Status "paid")}}border-green bg-green-soft text-green{{else if or (eq .Status "failed") (eq .Status "refunded")}}border-red bg-red-soft text-red{{else if or (eq .Status "suspended") (eq .Status "expired")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}}">{{t (print "commerce.entitlement.status." .Status)}}</span><span class="font-mono text-xs" dir="ltr">{{.PlanCode}}</span><span>{{.ServerName}}</span><span class="font-mono text-xs text-muted">{{if .EndsAt}}{{t "commerce.account.ends"}} {{datetime .EndsAt}}{{end}}</span></li>{{end}}</ul>
   {{else}}<p class="p-4 text-muted">{{t "commerce.entitlements.none_yet"}}</p>{{end}}
 </div>
 <h2 class="text-base font-bold mt-6 mb-2">{{t "commerce.ops.title"}}</h2>

@@ -59,5 +59,8 @@ These are admin-session endpoints for the script, not part of `/api/v1`:
 | GET | `/admin/x/webmcp/search?q=` | `{query, too_short, content:[…], users:[…], pages:[…]}`, each hit `{title, detail, href}` |
 | POST | `/admin/x/webmcp/drafts` | JSON `{type, title, body}` with `X-CSRF-Token` → `201 {ok, id, status:"draft", href}`; `422 {code:"validation_failed"}`; `403 {code:"forbidden"}` |
 
+The admin's command palette ([ADMIN_WORKSPACE.md](ADMIN_WORKSPACE.md#command-palette-and-keyboard-shortcuts))
+reads the same search endpoint for its live content and user results.
+
 Integrations and remote agents should keep using the [REST API](API.md) and
 the [MCP server](MCP.md).

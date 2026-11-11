@@ -493,25 +493,37 @@ func (s *service) postChannelMessage(ctx context.Context, channelID, body, targe
 		handoff = true
 	}
 	m := ChannelMessage{ID: db.NewID(), ChannelID: channelID, AuthorKind: author.Kind, AuthorID: author.ID, AuthorName: author.Name, Body: body, Meta: meta, CreatedAt: db.FormatTime(s.now())}
-	e = db.InTx(ctx, s.d.DB, func(tx *sql.Tx) error {
-		if _, e := tx.ExecContext(ctx, `INSERT INTO workagents_channel_messages(id,channel_id,author_kind,author_id,author_name,body,meta_json,created_at)VALUES(?,?,?,?,?,?,?,?)`,
-			m.ID, channelID, m.AuthorKind, m.AuthorID, m.AuthorName, m.Body, string(meta), m.CreatedAt); e != nil {
+	if e := s.insertChannelMessage(ctx, m, handoff); e != nil {
+		return ChannelMessage{}, e
+	}
+	return m, nil
+}
+
+// insertChannelMessage stores m in one write transaction. The open status is
+// re-checked under the write lock (the thread bump only matches an open
+// channel), so a close that commits after the caller's read still wins.
+func (s *service) insertChannelMessage(ctx context.Context, m ChannelMessage, handoff bool) error {
+	return db.InTx(ctx, s.d.DB, func(tx *sql.Tx) error {
+		res, e := tx.ExecContext(ctx, `UPDATE workagents_channels SET updated_at=? WHERE id=? AND status='open'`, m.CreatedAt, m.ChannelID)
+		if e != nil {
 			return e
 		}
-		if _, e := tx.ExecContext(ctx, `UPDATE workagents_channels SET updated_at=? WHERE id=?`, m.CreatedAt, channelID); e != nil {
+		if n, e := res.RowsAffected(); e != nil {
+			return e
+		} else if n == 0 {
+			return ErrChannelClosed
+		}
+		if _, e := tx.ExecContext(ctx, `INSERT INTO workagents_channel_messages(id,channel_id,author_kind,author_id,author_name,body,meta_json,created_at)VALUES(?,?,?,?,?,?,?,?)`,
+			m.ID, m.ChannelID, m.AuthorKind, m.AuthorID, m.AuthorName, m.Body, string(m.Meta), m.CreatedAt); e != nil {
 			return e
 		}
 		// The body is never copied into audit metadata.
 		if s.d.Audit != nil {
-			s.d.Audit.RecordTx(ctx, tx, "workagent.channel.message", "channel", channelID,
+			s.d.Audit.RecordTx(ctx, tx, "workagent.channel.message", "channel", m.ChannelID,
 				map[string]any{"message_id": m.ID, "author_kind": m.AuthorKind, "handoff": handoff})
 		}
 		return nil
 	})
-	if e != nil {
-		return ChannelMessage{}, e
-	}
-	return m, nil
 }
 
 // isChannelMember reports whether member (kind,id) is on the channel.

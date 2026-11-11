@@ -67,12 +67,6 @@
     });
   }
 
-  document.querySelectorAll('form[data-confirm]').forEach(function (form) {
-    form.addEventListener('submit', function (e) {
-      if (!window.confirm(form.getAttribute('data-confirm'))) e.preventDefault();
-    });
-  });
-
   var hub = document.querySelector('[data-integrations-live]');
   if (!hub || !window.fetch || !window.AbortController) return;
   var message = hub.querySelector('[data-live-message]');
@@ -135,6 +129,7 @@
       // Skip byte-identical results to avoid unnecessary layout and focus work.
       if (sameRevision && current.innerHTML === fresh.innerHTML && current.dataset.refreshPending === fresh.dataset.refreshPending) return;
       current.replaceWith(fresh);
+      if (window.lucide) window.lucide.createIcons();
       if (activeKey) newControls.forEach(function (control) { if (controlKey(control) === activeKey) control.focus({ preventScroll: true }); });
     });
     initTables();
