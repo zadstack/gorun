@@ -95,7 +95,7 @@ func uploadMedia(ctx context.Context, svc media.Service, log *slog.Logger, in up
 				return nil, err
 			}
 			log.Info("mcp: upload_media url fetch failed", "err", err)
-			return nil, &ToolError{Code: "fetch_failed",
+			return nil, &ToolError{Code: codeFetchFailed,
 				Message: "could not download the URL (unreachable, private address, refused redirect or non-200 response)"}
 		}
 		return m, nil

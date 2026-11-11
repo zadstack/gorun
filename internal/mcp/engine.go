@@ -23,17 +23,26 @@ import (
 	"github.com/zadstack/gorun/internal/theme"
 )
 
-// Error codes returned in the tool error envelope.
+// Error codes returned in the tool error envelope. They are a stable
+// contract: every code is listed in errorCodes and documented in
+// docs/MCP.md ("Error codes"); add new ones there, never rename one.
 const (
-	codeForbidden    = "forbidden"
-	codeNotFound     = "not_found"
-	codeValidation   = "validation_failed"
-	codeConflict     = "conflict"
-	codeRateLimit    = "rate_limited"
-	codeUnauthorized = "unauthorized"
-	codeError        = "error"
-	codeInternal     = "internal"
+	codeForbidden        = "forbidden"
+	codeNotFound         = "not_found"
+	codeValidation       = "validation_failed"
+	codeConflict         = "conflict"
+	codeRateLimit        = "rate_limited"
+	codeUnauthorized     = "unauthorized"
+	codeFetchFailed      = "fetch_failed"
+	codeChannelClosed    = "channel_closed"
+	codeMemberNotAllowed = "member_not_allowed"
+	codeInterrupted      = "interrupted"
+	codeInternal         = "internal"
 )
+
+// errorCodes lists every code a tool error may carry.
+var errorCodes = []string{codeValidation, codeNotFound, codeForbidden, codeUnauthorized, codeConflict, codeRateLimit,
+	codeFetchFailed, codeChannelClosed, codeMemberNotAllowed, codeInterrupted, codeInternal}
 
 // ToolError is an error a tool returns to the agent as-is (code, message,
 // optional per-field messages).

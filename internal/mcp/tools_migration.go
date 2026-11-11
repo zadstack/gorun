@@ -50,8 +50,8 @@ func migrationTools(d *kernel.Deps, s *server) []kernel.MCPTool {
 	}
 	var out []kernel.MCPTool
 	if preview, ok := bindMethod[string](svc, "Preview"); ok {
-		out = append(out, kernel.MCPTool{Name: "preview_migration", Aliases: []string{"run_migration_preview"}, Title: "Preview WordPress migration", Toolset: kernel.MCPToolsetMigration, ReadOnly: true, OpenWorld: true, Scopes: []string{scopeMigrate}, Input: migrationIDInput{},
-			Description: "Run the dry-run preview of a WordPress migration (writes nothing) and return its report.",
+		out = append(out, kernel.MCPTool{Name: "preview_migration", Aliases: []string{"run_migration_preview"}, Title: "Preview WordPress migration", Toolset: kernel.MCPToolsetMigration, Idempotent: true, OpenWorld: true, Scopes: []string{scopeMigrate}, Input: migrationIDInput{},
+			Description: "Run the dry-run preview of a WordPress migration and return its report. It reads the WordPress source and records the preview plan; no content is created or changed.",
 			Handler:     bind(func(ctx context.Context, in migrationIDInput) (any, error) { return preview(ctx, in.MigrationID) })})
 	} else {
 		s.log.Warn("mcp: wpmigrate service has no Preview(ctx, string) (T, error); preview_migration disabled")

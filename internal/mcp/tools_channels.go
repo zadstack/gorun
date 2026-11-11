@@ -55,13 +55,13 @@ func channelToolError(err error) error {
 	case errors.Is(err, workagents.ErrChannelNotFound):
 		return notFound("channel")
 	case errors.Is(err, workagents.ErrChannelClosed):
-		return &ToolError{Code: "channel_closed", Message: "this channel is closed; ask its owner to open a new channel for follow-up messages"}
+		return &ToolError{Code: codeChannelClosed, Message: "this channel is closed; ask its owner to open a new channel for follow-up messages"}
 	case errors.Is(err, workagents.ErrChannelMember):
-		return &ToolError{Code: "member_not_allowed", Message: "the calling key is not a channel member, or the hand-off target is not a channel member"}
+		return &ToolError{Code: codeMemberNotAllowed, Message: "the calling key is not a channel member, or the hand-off target is not a channel member"}
 	case errors.Is(err, workagents.ErrChannelDenied):
 		return errForbidden()
 	case errors.Is(err, workagents.ErrChannelBusy):
-		return &ToolError{Code: "rate_limited", Message: err.Error()}
+		return &ToolError{Code: codeRateLimit, Message: err.Error()}
 	case errors.Is(err, workagents.ErrChannelInvalid):
 		return invalid(err.Error(), nil)
 	}
