@@ -11,7 +11,7 @@ import (
 const scopeComments = content.PermModerateComments
 
 type listCommentsInput struct {
-	Status    string `json:"status,omitempty" jsonschema:"pending, approved, spam or trash"`
+	Status    string `json:"status,omitempty" enum:"pending,approved,spam,trash"`
 	ContentID string `json:"content_id,omitempty"`
 	Page      int    `json:"page,omitempty"`
 	PerPage   int    `json:"per_page,omitempty" jsonschema:"default 20, max 100"`
@@ -19,7 +19,7 @@ type listCommentsInput struct {
 
 type moderateCommentInput struct {
 	ID     string `json:"id"`
-	Status string `json:"status" jsonschema:"pending, approved, spam or trash"`
+	Status string `json:"status" enum:"pending,approved,spam,trash" jsonschema:"approved publishes the comment and needs human approval"`
 }
 
 // agentComment is a comment as agents see it: never the commenter's email.

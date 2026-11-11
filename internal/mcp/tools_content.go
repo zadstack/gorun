@@ -15,17 +15,29 @@ import (
 var draftStatuses = map[content.Status]bool{"": true, "draft": true, "pending": true}
 
 type listContentInput struct {
-	Type     string                    `json:"type,omitempty"`
-	Status   string                    `json:"status,omitempty" jsonschema:"draft, pending, scheduled, published or private"`
-	Search   string                    `json:"search,omitempty"`
-	AuthorID string                    `json:"author_id,omitempty"`
-	ParentID string                    `json:"parent_id,omitempty"`
-	Locale   string                    `json:"locale,omitempty"`
-	Taxonomy map[string][]string       `json:"taxonomy,omitempty" jsonschema:"taxonomy slug → term slugs, e.g. {\"category\":[\"news\"]}"`
-	Fields   map[string]content.Filter `json:"fields,omitempty" jsonschema:"indexed field key → {op: eq|ne|gt|lt|gte|lte|in|like, value}"`
-	Order    []content.Order           `json:"order,omitempty" jsonschema:"[{by, dir: asc|desc}]"`
-	Page     int                       `json:"page,omitempty"`
-	PerPage  int                       `json:"per_page,omitempty" jsonschema:"default 20, max 100"`
+	Type     string                 `json:"type,omitempty"`
+	Status   string                 `json:"status,omitempty" jsonschema:"one status or a comma-separated list" pattern:"^ *(draft|pending|scheduled|published|private|trash) *(, *(draft|pending|scheduled|published|private|trash) *)*$"`
+	Search   string                 `json:"search,omitempty"`
+	AuthorID string                 `json:"author_id,omitempty"`
+	ParentID string                 `json:"parent_id,omitempty"`
+	Locale   string                 `json:"locale,omitempty"`
+	Taxonomy map[string][]string    `json:"taxonomy,omitempty" jsonschema:"taxonomy slug → term slugs, e.g. {\"category\":[\"news\"]}"`
+	Fields   map[string]filterInput `json:"fields,omitempty" jsonschema:"indexed field key → {op, value}"`
+	Order    []orderInput           `json:"order,omitempty"`
+	Page     int                    `json:"page,omitempty"`
+	PerPage  int                    `json:"per_page,omitempty" jsonschema:"default 20, max 100"`
+}
+
+// filterInput is content.Filter with the operators as an enum.
+type filterInput struct {
+	Op    string `json:"op" enum:"eq,ne,gt,lt,gte,lte,in,like"`
+	Value any    `json:"value" jsonschema:"compared value; an array for in"`
+}
+
+// orderInput is content.Order with dir optional (default asc).
+type orderInput struct {
+	By  string `json:"by" jsonschema:"title, slug, created_at, updated_at, published_at, publish_at, menu_order, status or an indexed field key"`
+	Dir string `json:"dir,omitempty" enum:"asc,desc" jsonschema:"default asc"`
 }
 
 type getContentInput struct {
@@ -42,7 +54,7 @@ type createContentInput struct {
 	Excerpt         string              `json:"excerpt,omitempty"`
 	Body            string              `json:"body,omitempty" jsonschema:"HTML"`
 	Fields          map[string]any      `json:"fields,omitempty" jsonschema:"custom field values keyed by field key"`
-	Status          string              `json:"status,omitempty" jsonschema:"draft (default) or pending; publish with publish_content"`
+	Status          string              `json:"status,omitempty" enum:"draft,pending" jsonschema:"default draft; publish with publish_content"`
 	ParentID        string              `json:"parent_id,omitempty"`
 	MenuOrder       *int                `json:"menu_order,omitempty"`
 	Template        string              `json:"template,omitempty"`
@@ -59,7 +71,7 @@ type updateContentInput struct {
 	Excerpt         string              `json:"excerpt,omitempty"`
 	Body            string              `json:"body,omitempty"`
 	Fields          map[string]any      `json:"fields,omitempty" jsonschema:"merged into the existing values key by key"`
-	Status          string              `json:"status,omitempty" jsonschema:"draft or pending (only for items that are not live)"`
+	Status          string              `json:"status,omitempty" enum:"draft,pending" jsonschema:"only for items that are not live"`
 	ParentID        string              `json:"parent_id,omitempty"`
 	MenuOrder       *int                `json:"menu_order,omitempty"`
 	Template        string              `json:"template,omitempty"`
@@ -95,7 +107,8 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 			Handler: bind(func(ctx context.Context, in listContentInput) (any, error) {
 				page, per := paging(in.Page, in.PerPage)
 				p, err := svc.Query(ctx, content.Query{Type: in.Type, Status: in.Status, Search: in.Search, AuthorID: in.AuthorID,
-					ParentID: in.ParentID, Locale: in.Locale, Taxonomy: in.Taxonomy, Fields: in.Fields, Order: in.Order, Page: page, PerPage: per})
+					ParentID: in.ParentID, Locale: in.Locale, Taxonomy: in.Taxonomy, Fields: queryFilters(in.Fields), Order: queryOrder(in.Order),
+					Page: page, PerPage: per})
 				if err != nil {
 					return nil, err
 				}
@@ -178,6 +191,28 @@ func contentTools(svc content.Service) []kernel.MCPTool {
 				return map[string]any{"id": in.ID, "deleted": true, "hard": in.Hard}, nil
 			})},
 	}
+}
+
+func queryFilters(in map[string]filterInput) map[string]content.Filter {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]content.Filter, len(in))
+	for k, f := range in {
+		out[k] = content.Filter{Op: f.Op, Value: f.Value}
+	}
+	return out
+}
+
+func queryOrder(in []orderInput) []content.Order {
+	if in == nil {
+		return nil
+	}
+	out := make([]content.Order, 0, len(in))
+	for _, o := range in {
+		out = append(out, content.Order{By: o.By, Dir: o.Dir})
+	}
+	return out
 }
 
 // liveStatuses are the states in which an item is (or will go) live.
