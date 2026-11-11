@@ -46,7 +46,7 @@ gated by the `tools` permissions policy, with `readOnlyHint` and
 | 4 | Shell clean-up | One tab bar (categories fold into the sidebar), pin control on hover/focus only, the rail holds agents only, each destination in one place, row actions in a menu, danger zones in settings. | M | part 1 done (#229) |
 | 5 | Editing safety | Content autosave with conflict handling, revision diff, signed expiring preview links ([EDITING_SAFETY.md](EDITING_SAFETY.md)). | M | in review |
 | 6 | Speed for power users | Global command palette (Cmd/Ctrl+K) over admin search and actions, shortcut map (`?`, `/`, `g c`, Cmd+S), bulk publish/unpublish/schedule/author/terms. | M | planned |
-| 7 | Accounts and awareness | TOTP 2FA with recovery codes and per-role enforcement, "My account" page, notifications centre (approvals, review requests, comments, failed jobs/backups). | L | planned |
+| 7 | Accounts and awareness | TOTP 2FA with recovery codes and per-role enforcement, "My account" page, notifications centre (approvals, review requests, comments, failed jobs/backups). | L | in review |
 | 8 | Data freedom | Content export (JSON/CSV), term translations. | M | planned |
 
 Order: 1 and 2 touch separate code and run in parallel; 3 builds on 2's

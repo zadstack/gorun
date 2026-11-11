@@ -1,0 +1,23 @@
+{
+  "title": "Notifications",
+  "subtitle": "Things waiting for you: approvals you can decide, content to review, comments to moderate and failed operations.",
+  "loading": "Loading…",
+  "empty": "Nothing needs your attention.",
+  "empty_help": "New approvals, review requests, comments and failures appear here and on the bell in the top bar.",
+  "scope": "Items come from the last 7 days and follow your permissions. Each item opens the page where you can act.",
+  "unread": "Unread",
+  "unread_count": "%d unread notifications",
+  "total": "Shown",
+  "mark_read": "Mark as read",
+  "mark_all_read": "Mark all as read",
+  "view_all": "View all notifications",
+  "gone": "That item no longer needs attention.",
+  "approval": "Agent action waiting for your approval",
+  "content_review": "Content submitted for review",
+  "comments_pending": "%d comments awaiting moderation",
+  "handoff": "An agent handed a task to you",
+  "job_failed": "Background job failed",
+  "backup_failed": "Backup failed",
+  "backup_retention_failed": "Old backups could not be removed",
+  "update_failed": "Update failed"
+}

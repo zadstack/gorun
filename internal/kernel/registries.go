@@ -36,6 +36,7 @@ type AdminRegistry struct {
 	providers []func(ctx context.Context) []NavItem
 	widgets   []Widget
 	canvas    []CanvasWidget
+	notify    []NotificationSource
 	can       func(ctx context.Context, perm string) bool
 	navFilter func(ctx context.Context, items []NavItem) []NavItem
 }

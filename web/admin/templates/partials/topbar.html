@@ -26,6 +26,7 @@
       <button type="submit" class="h-9 px-3 rounded border border-line hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.locale.switch"}}</button>
     </form>
     {{with user}}
+    {{template "partials/notifications-bell" $}}
     <a href="/admin/account" class="admin-account-link" title="{{t "account.link"}}" aria-label="{{t "account.link"}}: {{or .Name .Email}}" data-account-link><span class="avatar avatar-user" aria-hidden="true">{{initials (or .Name .Email)}}</span><span class="admin-account-name text-muted">{{.Name}}</span></a>
     <form method="post" action="/admin/logout">
       <input type="hidden" name="_csrf" value="{{csrf}}">

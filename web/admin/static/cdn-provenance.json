@@ -106,8 +106,8 @@
     {
       "package": "lucide-core",
       "version": "1.55.0",
-      "integrity": "sha384-bK9Knju/RHE6FGv/VC05FVEhRx8UZqXWAMxjuzLfya0bgVbDYk6/QkjxLPiFkEu0",
-      "bytes": 33605,
+      "integrity": "sha384-LLJziAvYOGFhSnGQz5LOMFB6q5IFEeNp/QNh7kR6moM21/es2A9KLTZesKnJ2lE9",
+      "bytes": 44392,
       "license": "ISC",
       "license_source": "https://cdn.jsdelivr.net/npm/lucide@1.55.0/LICENSE",
       "integrity_enforced": true,
