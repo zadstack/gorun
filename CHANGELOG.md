@@ -24,6 +24,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- Admin page tabs are a flat underlined bar instead of a row of bordered boxes. The pin-to-Quick-access button appears on hover or keyboard focus on desktop and stays visible on touch and narrow screens; on phones the tabs scroll sideways instead of stacking.
 - Agent channels use the components: members are picked from the owner's agent keys by name (no free-text member ID), raw IDs move into a small ID disclosure, and messages show author initials, time and a hand-off chip with a petrol send button.
 - API keys have one primary "New API key" action in the page header and compact Rotate/Revoke row actions.
 - Agent approvals show arguments as a key/value list with the raw JSON in a disclosure; key and requester names are isolated so Arabic layouts no longer scramble them.
