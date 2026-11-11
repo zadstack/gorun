@@ -251,6 +251,8 @@ type editorView struct {
 	Featured              mediaView
 	FormError             string
 	BodyDir, Placeholder  string
+	Autosave              *autosaveView // the user's earlier autosave, offered for restore
+	CanAutosave           bool
 }
 
 func (h *adminHandlers) newItem(w http.ResponseWriter, r *http.Request) {
@@ -365,6 +367,12 @@ func (h *adminHandlers) renderEditor(w http.ResponseWriter, r *http.Request, sta
 	if !isNew && it.Status != "trash" {
 		v.Translations, v.CanUnlink = h.translationViews(ctx, base, it)
 	}
+	if !isNew && it.Status != "trash" && auth.Can(ctx, "content.edit") {
+		v.CanAutosave = true
+		if status < 400 {
+			v.Autosave = h.autosaveBanner(ctx, it)
+		}
+	}
 	h.tpl.RenderWith(w, r, status, "admin", "pages/content/edit.html", v)
 }
 
@@ -443,6 +451,12 @@ func (h *adminHandlers) afterSave(w http.ResponseWriter, r *http.Request, t *Typ
 	var ve *ValidationError
 	switch {
 	case err == nil:
+		if cur != nil {
+			// The item now holds what the editor had; an older autosave would only confuse.
+			if derr := h.svc.DiscardAutosave(r.Context(), it.ID); derr != nil {
+				h.d.Log.Warn("content: discard autosave after save", "id", it.ID, "err", derr)
+			}
+		}
 		httpx.SetFlash(w, "success", "content.flash.saved")
 		http.Redirect(w, r, "/admin/content/"+t.Slug+"/"+it.ID, http.StatusSeeOther)
 	case errors.Is(err, ErrConflict):

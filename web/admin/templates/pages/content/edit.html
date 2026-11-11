@@ -1,6 +1,6 @@
 {{define "title"}}{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{.Item.Title}}{{end}}{{end}}
 {{define "content"}}
-<link rel="stylesheet" href="{{asset "content-ux.css"}}"><script defer src="{{asset "content-ux.js"}}"></script>
+<link rel="stylesheet" href="{{asset "content-ux.css"}}"><script defer src="{{asset "content-ux.js"}}"></script><script defer src="{{asset "content-autosave.js"}}"></script>
 {{/* $ai: the AI writing helper is configured (a non-empty ai.provider is only saved with a model and a key)
      and the type has a body to work from. */}}
 {{$ai := and .Supports.body (setting "ai.provider")}}
@@ -20,10 +20,21 @@
 <p role="status" aria-live="polite" data-review-status></p><a href="/admin/workagents/design-reviews?page_id={{.Item.ID}}" target="_blank" rel="noopener" class="text-blue">{{t "workagents.review.history"}}</a><noscript><a href="/admin/workagents/design-reviews?page_id={{.Item.ID}}">{{t "workagents.review.preview"}}</a></noscript></aside></details>
 {{end}}
 {{with .FormError}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
-<form method="post" action="{{.Action}}" data-content-editor data-was-published="{{if eq .Item.Status "published"}}true{{else}}false{{end}}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate>
+<form method="post" action="{{.Action}}" data-content-editor data-was-published="{{if eq .Item.Status "published"}}true{{else}}false{{end}}"{{if .CanAutosave}} data-autosave-url="{{.Action}}/autosave"{{end}} class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   {{if not .IsNew}}<input type="hidden" name="edit_token" value="{{.EditToken}}"><input type="hidden" name="terms_token" value="{{.TermsToken}}">{{end}}
   <div class="space-y-4 min-w-0">
+    {{with .Autosave}}
+    <section class="autosave-banner" data-autosave-banner data-autosave-payload="{{.Payload}}" role="region" aria-labelledby="autosave-banner-title">
+      <p id="autosave-banner-title" class="autosave-banner-title">{{icon "history"}}<span>{{t "content.autosave.banner"}}</span> {{datetime .SavedAt}}</p>
+      {{if .Stale}}<p class="autosave-banner-note" data-autosave-stale>{{t "content.autosave.banner_stale"}}</p>{{else}}<p class="autosave-banner-note">{{t "content.autosave.banner_help"}}</p>{{end}}
+      <div class="autosave-banner-actions" data-autosave-actions>
+        <button type="button" class="btn btn-primary btn-sm" data-autosave-restore hidden>{{icon "rotate-ccw"}}<span>{{t "content.autosave.restore"}}</span></button>
+        <button type="submit" class="btn btn-secondary btn-sm" formaction="{{$.Action}}/autosave/discard" formnovalidate data-autosave-discard>{{icon "x"}}<span>{{t "content.autosave.discard"}}</span></button>
+      </div>
+      <p class="autosave-banner-note" data-autosave-restored hidden role="status">{{t "content.autosave.restored"}}</p>
+    </section>
+    {{end}}
     <section class="rounded border border-line bg-panel p-4 space-y-3">
       <div {{if $ai}}x-data="gpAIField" data-action="title" data-target="title" data-error="{{t "content.ai.error"}}" data-empty="{{t "content.ai.empty_body"}}"{{end}}>
         <div class="flex items-center justify-between gap-2 mb-1">
@@ -106,7 +117,9 @@
 
   <aside class="space-y-4">
     <section class="content-publish-panel rounded border border-line bg-panel p-4 space-y-3">
-      <h2 class="text-base font-bold mb-3">{{t "content.publish.title"}}</h2><p data-save-state role="status" data-clean="{{t "content.ux.saved_state"}}" data-dirty="{{t "content.ux.unsaved_state"}}">{{t "content.ux.saved_state"}}</p><p class="text-muted text-sm">{{if eq .Item.Status "published"}}{{t "content.ux.live_help"}}{{else}}{{t "content.ux.save_help"}}{{end}}</p>
+      <h2 class="text-base font-bold mb-3">{{t "content.publish.title"}}</h2><p data-save-state role="status" data-clean="{{t "content.ux.saved_state"}}" data-dirty="{{t "content.ux.unsaved_state"}}">{{t "content.ux.saved_state"}}</p>
+      <p class="autosave-status" data-autosave-status role="status" aria-live="polite" data-state="{{if .CanAutosave}}idle{{else}}off{{end}}" data-idle="{{t "content.autosave.idle"}}" data-pending="{{t "content.autosave.pending"}}" data-saving="{{t "content.autosave.saving"}}" data-saved="{{t "content.autosave.saved"}}" data-failed="{{t "content.autosave.failed"}}" data-retry="{{t "content.autosave.retry"}}" data-conflict="{{t "content.autosave.conflict"}}" data-forbidden="{{t "content.autosave.forbidden"}}">{{if .CanAutosave}}{{t "content.autosave.idle"}}{{else if .IsNew}}{{t "content.autosave.after_first_save"}}{{end}}</p>
+      <p class="text-muted text-sm">{{if eq .Item.Status "published"}}{{t "content.ux.live_help"}}{{else}}{{t "content.ux.save_help"}}{{end}}</p>
       {{if .IsNew}}
       <div>
         <label for="editor-locale" class="block font-medium mb-1">{{t "content.editor.locale"}}</label>

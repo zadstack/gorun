@@ -7,6 +7,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- Content editor autosave: text, SEO and custom fields are saved in the background (3 s after typing stops, at most every 30 s, on leaving a field) into a per-user `content_autosaves` record, never into the item, so live content and revision history stay untouched. Autosave checks the editor's edit token and answers 409 without storing when someone saved a newer version. A restore banner offers earlier autosaved changes, the status line shows *Saving… / Autosaved 12:04 / Not saved — Retry*, and the browser warns before leaving unsaved changes ([docs/EDITING_SAFETY.md](docs/EDITING_SAFETY.md#autosave)).
 - WebMCP in the admin: on browsers that provide `document.modelContext`, admin pages register `search_admin`, `list_admin_pages`, `get_current_page`, `open_admin_page` and `create_content_draft` for an in-browser agent. Tools run as the signed-in user with the screens' permission checks and CSRF protection; the only write is a draft ([docs/WEBMCP.md](docs/WEBMCP.md)).
 - Shared admin component foundation (docs/ADMIN_COMPONENTS.md): type, radius and spacing tokens plus `.btn`, `.field`, `.data-table`, `.badge`, `.empty-state`, `.kv`, `.card` and a `partials/page-header` template with title, subtitle, back link, muted ID disclosure and actions.
 - One date/time output: the `datetime` template function and the `gpDateTime` script helper render `<time dir="ltr">` with the short UTC value and the full value in the tooltip.

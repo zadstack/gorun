@@ -313,5 +313,21 @@
   "editor.tool_right": "Align right",
   "editor.tool_clean": "Remove formatting",
   "editor.tool_body": "Writing area",
-  "types.error_locale_route": "This public route is reserved for a content language. Choose another type or archive slug."
+  "types.error_locale_route": "This public route is reserved for a content language. Choose another type or archive slug.",
+  "autosave.banner": "You have autosaved changes from",
+  "autosave.banner_help": "They were kept for you only and are not saved to this item. Restore them into the editor, review, then save.",
+  "autosave.banner_stale": "This item was saved again after these changes were autosaved. Restoring puts the older text back into the editor over the newer version; compare carefully before you save.",
+  "autosave.restore": "Restore autosaved changes",
+  "autosave.discard": "Discard",
+  "autosave.restored": "Autosaved changes restored. They are not saved yet: review them, then save.",
+  "autosave.idle": "Autosave is on (only you see autosaved changes)",
+  "autosave.pending": "Changes not autosaved yet",
+  "autosave.saving": "Saving…",
+  "autosave.saved": "Autosaved",
+  "autosave.failed": "Not saved",
+  "autosave.retry": "Retry",
+  "autosave.conflict": "Not autosaved: someone saved a newer version of this item. Your text is still in the editor; copy what you need, then reload to see their changes.",
+  "autosave.forbidden": "Not autosaved: you can no longer edit this item. Your text is still in the editor.",
+  "autosave.after_first_save": "Autosave starts after the first save.",
+  "flash.autosave_discarded": "Autosaved changes discarded"
 }
