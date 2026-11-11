@@ -662,6 +662,7 @@
   "keys.grace_none": "إلغاء القديم الآن",
   "keys.grace_hour": "القديم يعمل ساعة",
   "keys.grace_day": "القديم يعمل 24 ساعة",
+  "keys.revoke_denied": "لا يلغي المفتاح إلا مالكه أو مدير الموقع.",
   "keys.rotate_denied": "لا يدوّر المفتاح النشط إلا مالكه، وفي حدود صلاحياته.",
   "updates.title": "تحديثات النظام",
   "updates.current": "النسخة الحالية",

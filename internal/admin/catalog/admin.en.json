@@ -662,6 +662,7 @@
   "keys.grace_none": "Revoke old now",
   "keys.grace_hour": "Old works 1 hour",
   "keys.grace_day": "Old works 24 hours",
+  "keys.revoke_denied": "Only the key's owner or an administrator can revoke it.",
   "keys.rotate_denied": "Only the key's owner can rotate an active key, within their own permissions.",
   "updates.title": "System updates",
   "updates.current": "Running version",

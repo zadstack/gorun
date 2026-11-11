@@ -48,6 +48,11 @@ All notable changes to GoRun are recorded here. The format follows
 - `preview_migration` describes what it does: it records its preview plan (no content changes) and reads
   the WordPress source, so it is annotated as a non-read-only, open-world tool.
 
+### Fixed
+
+- API key revoke checks ownership like rotate: `DELETE /api/v1/keys/{id}` and the console's Revoke button accept only the key's owner or an administrator; another user holding `api_keys.manage` gets `403 not_key_owner` (console: an error notice) and the key stays active.
+<!-- fixed-end -->
+
 ## [0.21.0] - 2026-11-11
 
 ### Added
