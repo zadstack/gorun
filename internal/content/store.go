@@ -296,6 +296,15 @@ func (s *service) save(ctx context.Context, existing *Item, in Input, opts saveO
 		if err := checkTranslationTx(ctx, tx, existing, it, opts.translationOf); err != nil {
 			return err
 		}
+		if it.ParentID != "" {
+			ok, err := parentChainValid(ctx, tx, it.Type, it)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return invalid(FieldErrors{"parent_id": "content.validation.parent"})
+			}
+		}
 		if s.hooks != nil {
 			if _, err := s.hooks.Apply(ctx, "content.authorize_save", &SaveAuthorization{Tx: tx, Item: it}); err != nil {
 				return err
@@ -513,20 +522,37 @@ func (s *service) checkParent(ctx context.Context, typ *Type, it *Item, errs Fie
 		errs["parent_id"] = "content.validation.parent"
 		return nil
 	}
-	// Walk up from the parent: it must exist, share the type, and never
-	// reach this item (no cycles).
+	ok, err := parentChainValid(ctx, s.db, typ.Slug, it)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		errs["parent_id"] = "content.validation.parent"
+	}
+	return nil
+}
+
+// rowQuerier is satisfied by *sql.DB and *sql.Tx.
+type rowQuerier interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+// parentChainValid walks up from it's parent: it must exist, share the
+// type, and never reach it (no cycles). The save re-runs it inside the write
+// transaction, so two concurrent saves (A under B, B under A) cannot both
+// pass against each other's pre-commit state.
+func parentChainValid(ctx context.Context, q rowQuerier, typSlug string, it *Item) (bool, error) {
 	cur := it.ParentID
 	for depth := 0; cur != "" && depth < 100; depth++ {
-		var typSlug, next string
-		err := s.db.QueryRowContext(ctx, `SELECT type, COALESCE(parent_id, '') FROM content WHERE id = ?`, cur).Scan(&typSlug, &next)
-		if errors.Is(err, sql.ErrNoRows) || (err == nil && (typSlug != typ.Slug || next == it.ID)) {
-			errs["parent_id"] = "content.validation.parent"
-			return nil
+		var curType, next string
+		err := q.QueryRowContext(ctx, `SELECT type, COALESCE(parent_id, '') FROM content WHERE id = ?`, cur).Scan(&curType, &next)
+		if errors.Is(err, sql.ErrNoRows) || (err == nil && (curType != typSlug || next == it.ID)) {
+			return false, nil
 		}
 		if err != nil {
-			return fmt.Errorf("content: check parent: %w", err)
+			return false, fmt.Errorf("content: check parent: %w", err)
 		}
 		cur = next
 	}
-	return nil
+	return true, nil
 }

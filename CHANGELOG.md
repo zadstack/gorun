@@ -51,7 +51,10 @@ All notable changes to GoRun are recorded here. The format follows
 ### Fixed
 
 - API key revoke checks ownership like rotate: `DELETE /api/v1/keys/{id}` and the console's Revoke button accept only the key's owner or an administrator; another user holding `api_keys.manage` gets `403 not_key_owner` (console: an error notice) and the key stays active.
-<!-- fixed-end -->
+- Work-agent runs execute once per run: the transition to `running` only claims a `queued` run, so a job the queue redelivers after a stale heartbeat no longer calls the AI provider or GitHub a second time. A run found already running fails closed as `worker_interrupted`; a shutdown during the provider call hands the run back to `queued` for the requeued job.
+- Agent channel messages re-check the open status inside the insert transaction, so a channel closed while a post is in flight refuses it (`channel_closed`).
+- The hourly trash purge logs an item that fails to delete and continues with the rest, like scheduled publishing, instead of abandoning the whole tick.
+- Saving a hierarchical item re-checks its parent chain inside the write transaction, so two concurrent saves (A under B, B under A) can no longer both commit a cycle.
 
 ## [0.21.0] - 2026-11-11
 
