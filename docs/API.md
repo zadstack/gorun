@@ -247,9 +247,11 @@ Example connection evidence fragment:
 
 Module activation reuses `kernel.OptionalModule`, before catalogs, migrations, routes and job handlers
 are registered. Disabled modules retain their tables/settings and re-enable through their existing
-activation configuration and a restart. The built-in optional modules are commerce, saas and
-membership (enabled by default; `addons.<name>.enabled` setting or `GORUN_ADDONS` mode `disabled`,
-see [ARCHITECTURE.md](ARCHITECTURE.md#optional-modules)). Core modules that do not implement that
+activation configuration and a restart. The built-in optional modules are analytics, commerce, saas,
+membership, launch, workagents, identityai, identitylogo, wpmigrate, mcp and ext: each implements
+the gate with `kernel.AddonEnabled` and is enabled by default (`addons.<name>.enabled` setting or
+`GORUN_ADDONS` mode `disabled`; see [MODULES.md](MODULES.md) and
+[ARCHITECTURE.md](ARCHITECTURE.md#optional-modules)). Core modules that do not implement that
 gate stay enabled; `GORUN_ADDONS` alone is not a universal switch for arbitrary modules. The report
 captures boot state, so editing desired configuration does not pretend that the running process has
 restarted.

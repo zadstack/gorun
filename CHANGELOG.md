@@ -61,6 +61,9 @@ All notable changes to GoRun are recorded here. The format follows
 - The admin sidebar no longer announces itself as "Dashboard" to screen readers; the primary navigation is labelled "Main navigation" (`core.nav.main`).
 - Display strings that templates chose with `{{if eq locale "ar"}}` (media library filters and details dialog, readiness, SEO preview, template file filters, content review, comments help, taxonomy, Metricool, page builder) and the content studio script's built-in English/Arabic pairs now come from the module catalogs; studio result times use the shared `<time>` output instead of `toLocaleString()`.
 - Admin tables and detail pages that printed bare `{{date}}` text (content, commerce, users, extensions, webhooks, system health and updates, media, builder history) use `{{datetime}}`, so every timestamp carries the full UTC value in its tooltip.
+- Docs: API.md, MODULES.md and ARCHITECTURE.md list all eleven optional modules that switch through `kernel.AddonEnabled` (analytics, commerce, saas, membership, launch, workagents, identityai, identitylogo, wpmigrate, mcp, ext); MCP.md lists `site.logo_dark`, `site.logo_light` and `site.icon` among the `update_settings` keys and adds `comments.moderate` to the scope table.
+- CI: `govulncheck` is pinned (v1.9.0) like staticcheck, and the required `test` check now also fails when the browser suite fails.
+- Browser tests: the analytics and canvas polling specs wait on observable state (beacon order, network idle, a virtual clock with a request barrier) instead of fixed sleeps of up to 9 s.
 
 ## [0.21.0] - 2026-11-11
 

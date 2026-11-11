@@ -38,13 +38,20 @@ async function visitor(browser: Browser, init?: string): Promise<{ context: Brow
   return { context, page: await context.newPage() };
 }
 
-// beacons records every request to /_a/e a page makes.
-function trackBeacons(page: Page): { count: () => number } {
-  let n = 0;
+// beacons records the path of every request to /_a/e a page makes, in order.
+function trackBeacons(page: Page): { count: () => number; paths: () => string[] } {
+  const paths: string[] = [];
   page.on("request", (r) => {
-    if (new URL(r.url()).pathname === "/_a/e") n++;
+    if (new URL(r.url()).pathname !== "/_a/e") return;
+    let path = "";
+    try {
+      path = JSON.parse(r.postData() ?? "{}").p ?? "";
+    } catch {
+      // keep the beacon counted even when its body is not readable
+    }
+    paths.push(path);
   });
-  return { count: () => n };
+  return { count: () => paths.length, paths: () => [...paths] };
 }
 
 const card = (page: Page, name: string) => page.locator(`[data-card="${name}"] [data-value]`);
@@ -99,7 +106,8 @@ test.describe.serial("site analytics", () => {
     await page.goto(pagePath);
     await expect(page.locator(`form[action="/forms/${formSlug}"]`)).toBeVisible();
     expect(await page.locator('script[src="/_a/s.js"]').count()).toBe(0);
-    await page.waitForTimeout(4_000);
+    // No script on staff pages: once the network is idle, no beacon can still be on its way.
+    await page.waitForLoadState("networkidle");
     expect(staffBeacons.count()).toBe(0);
     expect(views()).toBe(base);
 
@@ -122,22 +130,25 @@ test.describe.serial("site analytics", () => {
     await visit.evaluate(() => {
       location.hash = "#y";
     });
-    await visit.waitForTimeout(1_000);
-    expect(beacons.count()).toBe(4);
+    // A real client-side navigation is the barrier: its beacon follows any the hash changes sent,
+    // so the exact ordered list proves they sent none.
+    await visit.evaluate(() => history.pushState(null, "", "/"));
+    await expect.poll(() => beacons.paths()).toEqual(["/?utm_source=nl", pagePath, "/", pagePath, "/"]);
     await context.close();
 
-    await expect.poll(() => views(), { timeout: 20_000 }).toBe(base + 4);
+    await expect.poll(() => views(), { timeout: 20_000 }).toBe(base + 5);
 
     // Do Not Track: the script sends nothing.
     const dnt = await visitor(browser, "Object.defineProperty(navigator, 'doNotTrack', { get: () => '1' });");
     const dntBeacons = trackBeacons(dnt.page);
     await dnt.page.goto("/");
     await expect(dnt.page.locator('script[src="/_a/s.js"]')).toHaveCount(1);
-    await dnt.page.waitForTimeout(2_500);
+    // The script returns before sending when DNT is set; once the network is idle nothing is in flight.
+    await dnt.page.waitForLoadState("networkidle");
     expect(dntBeacons.count()).toBe(0);
     await dnt.context.close();
-    await new Promise((ok) => setTimeout(ok, 3_000));
-    expect(views()).toBe(base + 4);
+    // No beacon left the page, so nothing can reach the write buffer.
+    expect(views()).toBe(base + 5);
   });
 
   test("dashboard shows visitors, views, pages, campaign and source; filters live in the URL", async ({ page }) => {
