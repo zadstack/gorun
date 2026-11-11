@@ -237,8 +237,9 @@
       <ul class="space-y-1.5 text-sm">
         {{range $i, $r := .Revisions}}
         <li class="flex items-center justify-between gap-2">
-          <span class="font-mono text-xs text-muted">{{date $r.CreatedAt}}</span>
-          {{if $i}}<button type="submit" formaction="{{$.Action}}/revisions/{{$r.ID}}/restore" formnovalidate class="text-blue hover:text-blue-hover text-xs">{{t "content.revisions.restore"}}</button>{{else}}<span class="text-xs text-muted">{{t "content.revisions.current"}}</span>{{end}}
+          <span class="font-mono text-xs text-muted">{{datetime $r.CreatedAt}}</span>
+          <span class="revision-actions"><a href="{{$.Action}}/revisions/{{$r.ID}}/compare" class="text-blue hover:text-blue-hover text-xs" data-revision-compare-link>{{t "content.revisions.compare"}}</a>
+          {{if $i}}<button type="submit" formaction="{{$.Action}}/revisions/{{$r.ID}}/restore" formnovalidate class="text-blue hover:text-blue-hover text-xs">{{t "content.revisions.restore"}}</button>{{else}}<span class="text-xs text-muted">{{t "content.revisions.current"}}</span>{{end}}</span>
         </li>
         {{end}}
       </ul>

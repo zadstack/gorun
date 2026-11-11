@@ -1,0 +1,47 @@
+{{define "title"}}{{t "content.revisions.compare_title"}} · {{.Item.Title}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "content-ux.css"}}">
+{{template "partials/page-header" (dict "Title" (t "content.revisions.compare_title") "Subtitle" .Item.Title "Back" .EditURL "BackLabel" (t "content.revisions.back_to_editor") "ID" .Revision.ID)}}
+<div class="revision-compare" data-revision-compare data-against="{{.Against}}">
+  <nav class="revision-compare-switch" aria-label="{{t "content.revisions.compare_with"}}">
+    <a class="btn btn-sm {{if eq .Against "current"}}btn-primary{{else}}btn-secondary{{end}}" href="{{.CurrentURL}}"{{if eq .Against "current"}} aria-current="page"{{end}} data-compare-current>{{t "content.revisions.against_current"}}</a>
+    {{if .HasPrevious}}<a class="btn btn-sm {{if eq .Against "previous"}}btn-primary{{else}}btn-secondary{{end}}" href="{{.PrevURL}}"{{if eq .Against "previous"}} aria-current="page"{{end}} data-compare-previous>{{t "content.revisions.against_previous"}}</a>{{end}}
+  </nav>
+  <div class="meta-row revision-compare-sides">
+    <span class="meta-item"><span class="badge badge-danger">{{t "content.revisions.old_side"}}</span> {{t .OldLabel}} {{datetime .OldAt}}</span>
+    <span class="meta-item"><span class="badge badge-success">{{t "content.revisions.new_side"}}</span> {{t .NewLabel}} {{datetime .NewAt}}</span>
+  </div>
+  <p class="diff-legend">{{t "content.revisions.legend"}} <del>{{t "content.revisions.removed"}}</del> <ins>{{t "content.revisions.added"}}</ins></p>
+
+  <section class="card" aria-labelledby="diff-fields-title">
+    <div class="card-head"><h2 id="diff-fields-title" class="section-title">{{t "content.revisions.fields_title"}}</h2></div>
+    {{if .Fields}}
+    <div class="data-table-wrap"><table class="data-table diff-fields" data-diff-fields>
+      <thead><tr><th scope="col">{{t "content.revisions.field"}}</th><th scope="col">{{t "content.revisions.change"}}</th></tr></thead>
+      <tbody>{{range .Fields}}<tr data-diff-field="{{.Key}}"><th scope="row"><bdi>{{.Label}}</bdi></th><td dir="auto" class="diff-text">{{template "content/diff-spans" .Spans}}</td></tr>{{end}}</tbody>
+    </table></div>
+    {{else}}<p class="empty-state">{{t "content.revisions.no_field_changes"}}</p>{{end}}
+  </section>
+
+  <section class="card" aria-labelledby="diff-body-title">
+    <div class="card-head"><h2 id="diff-body-title" class="section-title">{{t "content.revisions.body_title"}}</h2>
+      {{if .BodyChanged}}<p class="field-help" data-diff-counts>{{t "content.revisions.counts" .Added .Removed}}</p>{{end}}</div>
+    {{if .BodyChanged}}
+    <ol class="diff-body" data-diff-body>
+      {{range .Body}}<li class="diff-line diff-{{.Op}}" data-op="{{.Op}}">{{if eq .Op "insert"}}<span class="diff-mark">{{t "content.revisions.line_added"}}</span>{{else if eq .Op "delete"}}<span class="diff-mark">{{t "content.revisions.line_removed"}}</span>{{else if eq .Op "change"}}<span class="diff-mark">{{t "content.revisions.line_changed"}}</span>{{else}}<span class="diff-mark" aria-hidden="true"></span>{{end}}<span class="diff-text" dir="auto">{{template "content/diff-spans" .Spans}}</span></li>{{end}}
+    </ol>
+    {{else}}<p class="empty-state">{{t "content.revisions.no_body_changes"}}</p>{{end}}
+  </section>
+
+  {{if .CanRestore}}
+  <form method="post" action="{{.RestoreAction}}" class="revision-compare-actions">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="submit" class="btn btn-primary">{{icon "rotate-ccw"}}<span>{{t "content.revisions.restore_this"}}</span></button>
+    <p class="field-help">{{t "content.revisions.restore_help"}}</p>
+  </form>
+  {{end}}
+</div>
+{{end}}
+
+{{/* Word-level spans: deletions in <del>, insertions in <ins>, each with a screen-reader label; strike-through and underline, not color only. */}}
+{{define "content/diff-spans"}}{{range .}}{{if eq .Op "delete"}}<del><span class="sr-only">{{t "content.revisions.removed"}}: </span>{{.Text}}</del>{{else if eq .Op "insert"}}<ins><span class="sr-only">{{t "content.revisions.added"}}: </span>{{.Text}}</ins>{{else}}{{.Text}}{{end}}{{end}}{{end}}

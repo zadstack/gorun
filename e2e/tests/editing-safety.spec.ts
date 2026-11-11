@@ -79,3 +79,37 @@ test('autosave keeps the item, restores on reopen and stops on a conflict', asyn
     removeItem(id);
   }
 });
+
+test('revision compare shows field and body changes with text labels', async ({ page }, testInfo) => {
+  await page.goto('/admin');
+  await setLocale(page, 'en');
+  const title = 'Compare ' + randomUUID();
+  const id = await createPost(page, title, 'First paragraph text');
+  try {
+    await page.fill('#title', title + ' v2');
+    await page.locator('[data-field-type=richtext] .ql-editor').click();
+    await page.keyboard.press('End');
+    await page.keyboard.type(' changed');
+    await page.locator('button[name=intent][value=save]').click();
+    await expect(page.locator('#title')).toHaveValue(title + ' v2');
+    // The compare link sits before the restore button of each revision.
+    const oldest = page.locator('[data-revision-compare-link]').last();
+    await expect(oldest.locator('xpath=following-sibling::button')).toHaveCount(1);
+    await oldest.click();
+    await expect(page).toHaveURL(/\/revisions\/[^/]+\/compare$/);
+    const titleRow = page.locator('[data-diff-field=title]');
+    await expect(titleRow.locator('ins')).toContainText('v2');
+    await expect(titleRow.locator('ins .sr-only')).toHaveText('Added:');
+    await expect(page.locator('[data-diff-body] [data-op=change] ins')).toContainText('changed');
+    await page.screenshot({ path: testInfo.outputPath('revision-compare-en.png'), animations: 'disabled', fullPage: true });
+    await setLocale(page, 'ar');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator('[data-diff-body]')).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+    await page.screenshot({ path: testInfo.outputPath('revision-compare-ar-390.png'), animations: 'disabled', fullPage: true });
+    await setLocale(page, 'en');
+    await page.setViewportSize({ width: 1280, height: 900 });
+  } finally {
+    removeItem(id);
+  }
+});

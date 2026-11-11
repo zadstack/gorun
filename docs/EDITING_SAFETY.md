@@ -65,3 +65,31 @@ saved nor autosaved (including status, terms and other fields autosave does not 
 | POST | `/admin/content/{type}/{id}/autosave/discard` | `content.edit` | JSON with `Accept: application/json`, else `303` back to the editor |
 
 The form posts `edit_token` (from the editor) and the autosaved fields as the editor names them.
+
+## Revision compare
+
+Each entry in the editor's **Revisions** panel has a **Compare** link before its **Restore**
+button. It opens `/admin/content/{type}/{id}/revisions/{rev}/compare`
+(permission `content.view`; authors and contributors only for their own items):
+
+- **This revision → current version** (default) compares the revision with the saved item;
+- **Previous revision → this revision** (`?against=previous`) shows what that save changed.
+  The oldest revision has no previous one (404).
+
+The page lists the changed fields (title, slug, status, excerpt, template, parent, order,
+featured image, every SEO key, every custom field and every taxonomy) and a body diff, then a
+**Restore this revision** button (`content.edit`) for any revision but the newest.
+
+The body diff runs on text extracted from the stored, already sanitized HTML: one line per
+block element (paragraphs, headings, list items, quotes, table rows…), `<br>` breaks a line,
+images appear as `[image: alt]`, scripts and styles are dropped and whitespace is collapsed
+except in `<pre>`. Lines are compared with a longest-common-subsequence diff
+(`internal/content/diff.go`, no dependency); a removed line followed by an added one becomes a
+*Changed* line with a word-level diff. Very large bodies (over about a million line pairs
+after trimming the common start and end) fall back to "all removed, all added".
+
+Removed text is in `<del>` (struck through), added text in `<ins>` (underlined), each starting
+with a screen-reader label (*Removed:* / *Added:*); every changed line has a visible text label
+(*Added*, *Removed*, *Changed*), so color is never the only signal. Text is rendered escaped,
+with `dir="auto"` and `unicode-bidi: plaintext` per line so Arabic and English lines each keep
+their direction.

@@ -59,6 +59,7 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	r.With(del).Post("/content/{type}/{id}/trash", h.trashItem)
 	r.With(del).Post("/content/{type}/{id}/delete", h.deleteItem)
 	r.With(edit).Post("/content/{type}/{id}/revisions/{rev}/restore", h.restoreItem)
+	r.With(view).Get("/content/{type}/{id}/revisions/{rev}/compare", h.compareRevision)
 	r.With(edit).Post("/content/{type}/{id}/autosave", h.autosave)
 	r.With(edit).Post("/content/{type}/{id}/autosave/discard", h.discardAutosave)
 	r.With(create).Post("/content/{type}/{id}/translations", h.translateItem)
