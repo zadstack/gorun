@@ -1,0 +1,62 @@
+{{/* Data: notifySettingsData (internal/admin/notify_pages.go). Site-level
+  notification delivery: mail status and the Telegram bot. The bot token is
+  never rendered; only whether one is stored. */}}
+{{define "title"}}{{t "notifydelivery.settings.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "account.css"}}">
+<link rel="stylesheet" href="{{asset "notify-delivery.css"}}">
+<div class="account-page" data-notify-settings>
+{{template "partials/page-header" (dict "Title" (t "notifydelivery.settings.title") "Subtitle" (t "notifydelivery.settings.subtitle") "Secondary" "/admin/account/notifications" "SecondaryLabel" (t "notifydelivery.settings.my_prefs") "SecondaryIcon" "bell")}}
+
+<dl class="kv">
+  <div><dt>{{t "notifydelivery.settings.mail"}}</dt><dd>{{if .MailConfigured}}<span class="badge badge-success">{{t "notifydelivery.settings.configured"}}</span>{{else}}<span class="badge badge-warning">{{t "notifydelivery.settings.not_configured"}}</span> <a href="/admin/settings/mail">{{t "notifydelivery.email.configure"}}</a>{{end}}</dd></div>
+  <div><dt>{{t "notifydelivery.settings.email_users"}}</dt><dd dir="ltr">{{.EmailUsers}}</dd></div>
+  <div><dt>{{t "notifydelivery.settings.telegram_users"}}</dt><dd dir="ltr">{{.TelegramUsers}}</dd></div>
+</dl>
+
+<section class="card" aria-labelledby="tg-bot-title">
+  <div class="card-head"><h2 id="tg-bot-title" class="section-title">{{icon "send"}} {{t "notifydelivery.settings.bot"}}</h2></div>
+  <form method="post" action="/admin/settings/notifications" class="card-body" novalidate>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <p class="notify-status">{{if .TokenSet}}<span class="badge badge-success" data-bot-token-set>{{t "notifydelivery.settings.token_set"}}</span>{{else}}<span class="badge" data-bot-token-unset>{{t "notifydelivery.settings.token_unset"}}</span>{{end}}
+      {{if .WebhookReady}}<span class="badge badge-success" data-webhook-ready>{{t "notifydelivery.settings.webhook_ready"}}</span> <span class="field-help">{{datetime .WebhookAt}}</span>{{else if .TokenSet}}<span class="badge badge-warning">{{t "notifydelivery.settings.webhook_missing"}}</span>{{end}}</p>
+    <p class="field-help">{{t "notifydelivery.settings.bot_help"}}</p>
+    <div class="field{{if index .Fields "bot_token"}} is-invalid{{end}}">
+      <label for="tg-token" class="field-label">{{t "notifydelivery.settings.token"}}</label>
+      <input id="tg-token" name="bot_token" type="password" dir="ltr" autocomplete="new-password" maxlength="200" aria-describedby="tg-token-help" value="">
+      <p id="tg-token-help" class="field-help">{{if .TokenSet}}{{t "notifydelivery.settings.token_keep"}}{{else}}{{t "notifydelivery.settings.token_where"}}{{end}}</p>
+      {{with index .Fields "bot_token"}}<p class="field-error">{{t .}}</p>{{end}}
+    </div>
+    <div class="field{{if index .Fields "bot_username"}} is-invalid{{end}}">
+      <label for="tg-user" class="field-label">{{t "notifydelivery.settings.username"}}</label>
+      <input id="tg-user" name="bot_username" dir="ltr" value="{{.Username}}" maxlength="40" placeholder="example_bot" autocomplete="off" required>
+      {{with index .Fields "bot_username"}}<p class="field-error">{{t .}}</p>{{end}}
+    </div>
+    <div><button type="submit" class="btn btn-primary">{{t "core.action.save"}}</button></div>
+  </form>
+  {{if .TokenSet}}
+  <div class="card-foot">
+    <form method="post" action="/admin/settings/notifications/webhook">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="btn btn-secondary btn-sm" {{if not .WebhookAvailable}}disabled{{end}}>{{icon "webhook"}}<span>{{t "notifydelivery.settings.register_webhook"}}</span></button>
+    </form>
+    {{if not .BaseURLIsHTTPS}}<p class="field-help">{{t "notifydelivery.settings.webhook_https"}}</p>{{end}}
+  </div>
+  {{end}}
+</section>
+
+{{if .TokenSet}}
+<section class="danger-zone" aria-labelledby="tg-danger-title">
+  <h2 id="tg-danger-title" class="danger-zone-title">{{t "core.danger.title"}}</h2>
+  <div class="danger-zone-item">
+    <div class="danger-zone-text"><p class="danger-zone-label">{{t "notifydelivery.settings.remove"}}</p>
+      <p class="danger-zone-help">{{t "notifydelivery.settings.remove_help"}}</p></div>
+    <form method="post" action="/admin/settings/notifications/remove" data-confirm="{{t "notifydelivery.settings.remove_confirm"}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="btn btn-danger btn-sm">{{icon "trash-2"}}<span>{{t "notifydelivery.settings.remove"}}</span></button>
+    </form>
+  </div>
+</section>
+{{end}}
+</div>
+{{end}}

@@ -68,7 +68,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/builder` | core | `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `mailer` `media` `menus` `settings` `theme` |
 | `internal/site` | core | `audit` `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `mailer` `redirects` `seo` `settings` `taxonomy` `theme` |
 | `internal/api` | core | `auth` `config` `content` `db` `httpx` `i18n` `jobs` `kernel` `media` `menus` `settings` `taxonomy` `theme` |
-| `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `observe` `redirects` `seo` `settings` `theme` `update` |
+| `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `metrics` `observe` `redirects` `seo` `settings` `theme` `update` |
 | `internal/webhooks` | core | `audit` `auth` `db` `httpx` `i18n` `jobs` `kernel` |
 | `internal/analytics` | feature | `audit` `auth` `db` `httpx` `i18n` `kernel` `settings` |
 | `internal/commerce` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `redirects` `seo` `settings` `theme` |
@@ -153,7 +153,7 @@ can be parked (`internal/jobs/park.go`). Crons run only when their module regist
 | auth | — | `auth.cleanup` 1h |
 | content | — | `content.publish_due` 30s, `content.purge_trash` 1h, `content.cleanup` 24h |
 | media | `media.fetch_url` | — |
-| admin | `canvas.generate`, `canvas.tools`, `studio.generate`, `backup.scheduled`, `update.run`, `observe.*` | `canvas.schedule` 1m, `studio.recover` 1m, `jobs.prune` 1h, `observe.tick` 1m, `update.reconcile` 1m, `backup.schedule` 1h, `notifications.prune` 24h |
+| admin | `canvas.generate`, `canvas.tools`, `studio.generate`, `backup.scheduled`, `update.run`, `observe.*`, `notifications.deliver` | `canvas.schedule` 1m, `studio.recover` 1m, `jobs.prune` 1h, `observe.tick` 1m, `update.reconcile` 1m, `backup.schedule` 1h, `notifications.prune` 24h, `notifications.deliver` 5m |
 | webhooks | `webhooks.deliver` | `webhooks.prune` 24h |
 | **analytics** | — (writes go through an in-process buffer, flushed every 2s and on close) | `analytics.rollup` 1h |
 | **commerce** | `commerce.provision`, `commerce.suspend`, `commerce.resume`, `commerce.magic_mail`, `commerce.billing_mail` | `commerce.expire` 24h, `commerce.billing_grace` 1h, `commerce.request_receipts` 10s |

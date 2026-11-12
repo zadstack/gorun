@@ -1,0 +1,21 @@
+{{/* Data: unsubscribeData (internal/admin/notify_pages.go). Public page behind
+  the signed link in notification emails; GET only asks, POST turns email off. */}}
+{{define "title"}}{{t "notifydelivery.unsubscribe.title"}}{{end}}
+{{define "content"}}
+<div class="admin-auth-panel" data-unsubscribe>
+  <p class="admin-auth-brand">{{t "core.app.name"}}</p>
+  <h1>{{t "notifydelivery.unsubscribe.title"}}</h1>
+  {{if .Invalid}}
+  <p role="alert" class="mt-4 mb-4 rounded border border-red bg-red-soft text-red px-3 py-2" data-unsubscribe-invalid>{{t "notifydelivery.unsubscribe.invalid"}}</p>
+  {{else if .Done}}
+  <p role="status" class="mt-4 mb-4 rounded border border-green bg-green-soft text-green px-3 py-2" data-unsubscribe-done>{{t "notifydelivery.unsubscribe.done"}} <bdi dir="ltr">{{.Email}}</bdi></p>
+  <a href="{{.PreferencesURL}}" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "notifydelivery.unsubscribe.manage"}}</a>
+  {{else}}
+  <p class="text-muted mt-2 mb-4">{{t "notifydelivery.unsubscribe.intro"}} <bdi dir="ltr">{{.Email}}</bdi></p>
+  <form method="post" action="/notifications/unsubscribe">
+    <input type="hidden" name="token" value="{{.Token}}">
+    <button type="submit" class="w-full h-9 bg-blue text-white hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "notifydelivery.unsubscribe.submit"}}</button>
+  </form>
+  {{end}}
+</div>
+{{end}}

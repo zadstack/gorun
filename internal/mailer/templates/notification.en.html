@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<body style="margin:0;padding:24px;background:#f3f5f2;color:#141816;font-family:system-ui,-apple-system,Segoe UI,sans-serif;font-size:14px;">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #cbd3ce;border-radius:6px;padding:24px;">
+    <p style="margin:0 0 4px;color:#5b655f;font-size:12px;"><bdi>{{.Site}}</bdi></p>
+    <h1 style="margin:0 0 16px;font-size:18px;">{{.Heading}}</h1>
+    <ul style="margin:0 0 16px;padding:0;list-style:none;">
+      {{range .Items}}<li style="padding:10px 0;border-top:1px solid #e3e8e4;">
+        <a href="{{.URL}}" style="color:#0f5e63;font-weight:600;text-decoration:underline;">{{.Title}}</a>
+        {{if .Detail}}<div style="color:#5b655f;font-size:13px;margin-top:2px;"><bdi>{{.Detail}}</bdi></div>{{end}}
+      </li>{{end}}
+    </ul>
+    <p style="margin:0 0 12px;color:#5b655f;font-size:12px;">Only titles are included; open each link to see the details in the admin.</p>
+    <p style="margin:0;font-size:12px;"><a href="{{.PrefsURL}}" style="color:#0f5e63;">Notification settings</a> · <a href="{{.UnsubscribeURL}}" style="color:#0f5e63;">Stop these emails</a></p>
+  </div>
+</body>
+</html>

@@ -175,6 +175,8 @@ func render(ctx context.Context, httpm *HTTP, q *jobs.Queue, st *settings.Store,
 		fmt.Fprintf(&b, "gorun_jobs{status=%q} %d\n", row.status, row.n)
 	}
 
+	writeNotificationCounters(&b)
+
 	ts := backupLastSuccessUnix(ctx, st, dataDir)
 	writeHelpType(&b, "gorun_backup_last_success_timestamp_seconds", "gauge",
 		"Unix time of the newest successful local backup (schedule last or complete on-disk pair); 0 if none.")
