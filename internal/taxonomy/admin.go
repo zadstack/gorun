@@ -42,6 +42,9 @@ func registerAdmin(d *kernel.Deps, svc *service) {
 	r.With(manage).Post("/taxonomies/{tax}/delete", h.deleteTaxonomy)
 	r.With(manage).Post("/taxonomies/{tax}/terms", h.saveTerm)
 	r.With(manage).Post("/taxonomies/{tax}/terms/{id}/delete", h.deleteTerm)
+	r.With(manage).Post("/taxonomies/{tax}/terms/{id}/translations", h.translateTerm)
+	r.With(manage).Post("/taxonomies/{tax}/terms/{id}/translations/link", h.linkTerm)
+	r.With(manage).Post("/taxonomies/{tax}/terms/{id}/translations/unlink", h.unlinkTerm)
 	r.With(view).Get("/x/taxonomy/{tax}/terms", h.suggest)
 	r.With(view).Get("/x/taxonomy/{tax}/picker", h.picker)
 }
@@ -219,6 +222,12 @@ type termsView struct {
 	Settings     taxForm
 	Search       string
 	TermsBaseURL string
+	// Locales are the site's content languages; the language select, the language column
+	// and the translations panel show only when there are several (Multilingual).
+	Locales      []string
+	Multilingual bool
+	Translations []termTranslationView
+	LinkChoices  []choice
 }
 
 var indentClass = []string{"", "ps-4", "ps-8", "ps-12"}
@@ -307,6 +316,14 @@ func (h *adminHandlers) renderTerms(w http.ResponseWriter, r *http.Request, stat
 		}
 	}
 	v.Settings = taxForm{Taxonomy: *tax, Types: h.contentTypes(ctx, tax.Types), Errors: map[string]string{}}
+	v.Locales = i18n.ContentLocales(ctx, h.d.Settings)
+	v.Multilingual = len(v.Locales) > 1
+	if v.Edit.Locale == "" {
+		v.Edit.Locale = h.svc.defaultLocale(ctx)
+	}
+	if v.Multilingual && edit.ID != "" {
+		v.Translations, v.LinkChoices = h.translationPanel(ctx, tax, edit, v.Locales)
+	}
 	h.tpl.RenderWith(w, r, status, "admin", "pages/taxonomy/terms.html", v)
 }
 
@@ -322,7 +339,7 @@ func (h *adminHandlers) saveTerm(w http.ResponseWriter, r *http.Request) {
 	}
 	f := r.PostForm
 	t := Term{ID: strings.TrimSpace(f.Get("id")), Taxonomy: tax.Slug, Name: f.Get("name"), Slug: f.Get("slug"),
-		Description: strings.TrimSpace(f.Get("description")), ParentID: f.Get("parent_id")}
+		Description: strings.TrimSpace(f.Get("description")), ParentID: f.Get("parent_id"), Locale: strings.TrimSpace(f.Get("locale"))}
 	if t.ID != "" {
 		cur, err := h.svc.GetTerm(r.Context(), t.ID)
 		if err != nil || cur.Taxonomy != tax.Slug {

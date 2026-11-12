@@ -19,6 +19,7 @@
           <tr>
             <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.terms.name"}}</th>
             <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.field.slug"}}</th>
+            {{if .Multilingual}}<th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.terms.language"}}</th>{{end}}
             <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted">{{t "taxonomy.terms.count"}}</th>
             <th scope="col" class="px-3 py-2"><span class="sr-only">{{t "taxonomy.terms.actions"}}</span></th>
           </tr>
@@ -28,6 +29,7 @@
           <tr class="border-t border-line hover:bg-bg">
             <td class="px-3 py-2"><span class="{{.Indent}} inline-block" dir="auto">{{if .Depth}}<span class="text-muted" aria-hidden="true">└ </span>{{end}}<a href="{{.EditURL}}" class="text-blue hover:text-blue-hover font-medium">{{.Name}}</a></span></td>
             <td class="px-3 py-2 font-mono text-xs" dir="auto">{{.Slug}}</td>
+            {{if $.Multilingual}}<td class="px-3 py-2 text-xs" data-term-locale="{{.Locale}}"><span class="badge">{{localeName .Locale}}</span>{{if .TranslationGroup}} <span class="text-muted" title="{{t "taxonomy.translations.title"}}" aria-label="{{t "taxonomy.translations.title"}}">{{icon "languages" "w-3.5 h-3.5 inline"}}</span>{{end}}</td>{{end}}
             <td class="px-3 py-2 text-end font-mono">{{.Count}}</td>
             <td class="px-3 py-2 text-end">
               <form method="post" action="{{$.TermsBaseURL}}/terms/{{.ID}}/delete" data-confirm="{{t "taxonomy.terms.delete_confirm"}}">
@@ -37,7 +39,7 @@
             </td>
           </tr>
           {{else}}
-          <tr><td colspan="4" class="px-3 py-8 text-center text-muted">{{t "taxonomy.terms.empty"}}</td></tr>
+          <tr><td colspan="{{if .Multilingual}}5{{else}}4{{end}}" class="px-3 py-8 text-center text-muted">{{t "taxonomy.terms.empty"}}</td></tr>
           {{end}}
         </tbody>
       </table>
@@ -59,6 +61,15 @@
           <input id="term-slug" name="slug" type="text" value="{{.Edit.Slug}}" dir="auto" aria-describedby="term-slug-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
           <p id="term-slug-help" class="mt-1 text-xs text-muted">{{t "taxonomy.terms.slug_help"}}</p>
         </div>
+        {{if .Multilingual}}
+        <div class="field">
+          <label for="term-locale" class="field-label">{{t "taxonomy.terms.language"}}</label>
+          <select id="term-locale" name="locale" class="field-control">
+            {{range .Locales}}<option value="{{.}}" {{if eq . $.Edit.Locale}}selected{{end}}>{{localeName .}}</option>{{end}}
+          </select>
+          {{template "partials/field_errors" (index .Errors "locale")}}
+        </div>
+        {{else}}<input type="hidden" name="locale" value="{{.Edit.Locale}}">{{end}}
         {{if .Taxonomy.Hierarchical}}
         <div>
           <label for="term-parent" class="block font-medium mb-1">{{t "taxonomy.terms.parent"}}</label>
@@ -79,6 +90,63 @@
         </div>
       </form>
     </section>
+    {{if .Translations}}
+    <section class="rounded border border-line bg-panel p-4 space-y-3" data-term-translations aria-labelledby="term-translations-title">
+      <div>
+        <h2 id="term-translations-title" class="section-title">{{t "taxonomy.translations.title"}}</h2>
+        <p class="field-help">{{t "taxonomy.translations.help"}}</p>
+      </div>
+      <ul class="space-y-2 text-sm">
+        {{range .Translations}}
+        <li class="space-y-1.5" data-term-translation="{{.Locale}}">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-medium">{{localeName .Locale}}</span>
+            {{if .Current}}<span class="badge badge-info">{{t "taxonomy.translations.current"}}</span>
+            {{else if .EditURL}}<a href="{{.EditURL}}" class="text-blue hover:text-blue-hover text-xs truncate max-w-[12rem]"><bdi>{{.Name}}</bdi></a>
+            {{else}}<span class="text-xs text-muted">{{t "taxonomy.translations.none"}}</span>{{end}}
+          </div>
+          {{if and (not .Current) (not .EditURL)}}
+          <details class="rounded border border-line px-3 py-2">
+            <summary class="cursor-pointer text-xs text-blue">{{t "taxonomy.translations.add"}}</summary>
+            <form method="post" action="{{$.TermsBaseURL}}/terms/{{$.Edit.ID}}/translations" class="mt-2 space-y-2" novalidate>
+              <input type="hidden" name="_csrf" value="{{csrf}}">
+              <input type="hidden" name="locale" value="{{.Locale}}">
+              <div class="field">
+                <label class="field-label" for="tr-name-{{.Locale}}">{{t "taxonomy.translations.name" (localeName .Locale)}}</label>
+                <input id="tr-name-{{.Locale}}" name="name" type="text" required lang="{{.Locale}}" dir="auto" class="field-control">
+              </div>
+              <div class="field">
+                <label class="field-label" for="tr-slug-{{.Locale}}">{{t "taxonomy.translations.slug"}}</label>
+                <input id="tr-slug-{{.Locale}}" name="slug" type="text" dir="auto" class="field-control font-mono">
+              </div>
+              <button type="submit" class="btn btn-secondary btn-sm">{{icon "languages"}}<span>{{t "taxonomy.translations.add"}}</span></button>
+            </form>
+          </details>
+          {{end}}
+        </li>
+        {{end}}
+      </ul>
+      {{if .LinkChoices}}
+      <form method="post" action="{{.TermsBaseURL}}/terms/{{.Edit.ID}}/translations/link" class="field-row items-end pt-3 border-t border-line">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <div class="field grow">
+          <label class="field-label" for="term-link">{{t "taxonomy.translations.link"}}</label>
+          <select id="term-link" name="term_id" class="field-control" aria-describedby="term-link-help">
+            {{range .LinkChoices}}<option value="{{.Value}}">{{.Label}}</option>{{end}}
+          </select>
+          <span id="term-link-help" class="sr-only">{{t "taxonomy.translations.link_pick"}}</span>
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">{{t "taxonomy.translations.link_submit"}}</button>
+      </form>
+      {{end}}
+      {{if .Edit.TranslationGroup}}
+      <form method="post" action="{{.TermsBaseURL}}/terms/{{.Edit.ID}}/translations/unlink" data-confirm="{{t "taxonomy.translations.unlink_confirm"}}">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button type="submit" class="btn btn-ghost btn-sm">{{t "taxonomy.translations.unlink"}}</button>
+      </form>
+      {{end}}
+    </section>
+    {{end}}
     <details class="rounded border border-line bg-panel p-4">
       <summary class="cursor-pointer font-bold">{{t "taxonomy.settings.title"}}</summary>
       <div class="mt-3">{{template "taxonomy/settings_form" .Settings}}</div>
