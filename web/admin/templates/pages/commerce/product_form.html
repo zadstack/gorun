@@ -198,10 +198,16 @@
   </form>
 </section>
 {{if .ID}}
-<form method="post" action="/admin/commerce/products/{{.ID}}/delete" class="mt-6" data-confirm="{{t "commerce.confirm.delete_product"}}">
-  <input type="hidden" name="_csrf" value="{{csrf}}">
-  <button type="submit" class="h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{t "core.action.delete"}}</button>
-</form>
+<section class="danger-zone" aria-labelledby="product-danger-title">
+  <h2 id="product-danger-title" class="danger-zone-title">{{t "core.danger.title"}}</h2>
+  <div class="danger-zone-item">
+    <div class="danger-zone-text"><p class="danger-zone-label">{{t "commerce.danger.product"}}</p><p class="danger-zone-help">{{t "commerce.danger.product_help"}}</p></div>
+    <form method="post" action="/admin/commerce/products/{{.ID}}/delete" data-confirm="{{t "commerce.confirm.delete_product"}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="btn btn-danger btn-sm">{{icon "trash-2"}}<span>{{t "core.action.delete"}}</span></button>
+    </form>
+  </div>
+</section>
 {{end}}
 {{template "partials/media_picker.html" .}}
 {{end}}

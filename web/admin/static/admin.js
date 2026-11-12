@@ -197,9 +197,11 @@ document.addEventListener('submit', (e) => {
   const form = e.target;
   if (!form.dataset || !form.dataset.confirm || form.dataset.confirmed) return;
   e.preventDefault();
+  // Keep the clicked button so its name/value (e.g. a row menu's choice) is sent.
+  const submitter = e.submitter && e.submitter.form === form ? e.submitter : null;
   gp.confirm(form.dataset.confirm, () => {
     form.dataset.confirmed = '1';
-    form.requestSubmit();
+    form.requestSubmit(submitter);
     delete form.dataset.confirmed; // the next submit asks again
   });
 }, true);

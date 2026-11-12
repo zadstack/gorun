@@ -6,6 +6,8 @@
   "action.save": "Save",
   "action.cancel": "Cancel",
   "action.delete": "Delete",
+  "action.row_actions": "Actions for %s",
+  "danger.title": "Danger zone",
   "action.edit": "Edit",
   "status.draft": "Draft",
   "status.published": "Published",
@@ -63,9 +65,7 @@
   "nav.group.site": "Site",
   "workspace.site_tools": "Site tools",
   "workspace.view_site": "View site",
-  "workspace.direct_tools": "Open directly",
   "workspace.all_tools": "Administration tools",
   "workspace.tools_hint": "Open a tool directly, without navigating through settings sections.",
-  "workspace.more_tools": "More tools",
   "id": "ID"
 }

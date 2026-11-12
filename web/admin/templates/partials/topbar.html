@@ -18,7 +18,6 @@
   </form>
   <button type="button" class="admin-palette-trigger" data-gp-palette-open aria-haspopup="dialog" aria-controls="gp-palette" aria-keyshortcuts="Control+K Meta+K" title="{{t "palette.open"}}" hidden>{{icon "command"}}<span class="admin-palette-trigger-label">{{t "palette.trigger"}}</span><kbd dir="ltr" data-gp-palette-key>Ctrl K</kbd></button>
   {{template "partials/workspace-top-tools" .}}
-  <details class="workspace-mobile-tools" data-workspace-mobile-tools hidden><summary>{{icon "grid-2x2"}}<span>{{t "core.workspace.more_tools"}}</span></summary><div data-workspace-mobile-slot></div></details>
   <div class="admin-account-actions ms-auto flex items-center gap-2">
     <form method="post" action="/admin/locale">
       <input type="hidden" name="_csrf" value="{{csrf}}">

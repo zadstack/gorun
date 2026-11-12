@@ -1,41 +1,22 @@
 {{/* Every tool comes from nav: module availability, permissions and personal visibility are already applied. */}}
 {{define "partials/workspace-tool-link"}}<a class="workspace-tool-link" data-workspace-tool="{{.ID}}" href="{{.Href}}" {{if active .Href}}aria-current="page"{{end}}>{{icon .Icon}}<span>{{t .LabelKey}}</span></a>{{end}}
 
+{{/* The public site is not an admin destination, so it is the only topbar link. */}}
 {{define "partials/workspace-top-tools"}}
 <nav class="workspace-top-tools" aria-label="{{t "core.workspace.site_tools"}}">
  <a class="workspace-tool-link" href="/" target="_blank" rel="noopener">{{icon "external-link"}}<span>{{t "core.workspace.view_site"}}</span></a>
- {{range workspaceTools.Top}}{{template "partials/workspace-tool-link" .}}{{end}}
 </nav>
 {{end}}
 
-{{define "partials/workspace-sidebar-tools"}}
-<section class="workspace-sidebar-tools" aria-labelledby="workspace-sidebar-tools-title">
- <h2 id="workspace-sidebar-tools-title">{{t "core.workspace.direct_tools"}}</h2>
- <div>{{range workspaceTools.Sidebar}}{{template "partials/workspace-tool-link" .}}{{end}}</div>
-</section>
-{{end}}
-
+{{/* The rail holds agents only: the agents launcher and agent shortcuts (the
+     dock's own aside is the landmark). Every page destination is owned by its
+     section tabs or a personal pin. */}}
 {{define "partials/workspace-tools-rail"}}
-<aside class="workspace-tools-rail" aria-label="{{t "core.workspace.direct_tools"}}">
- {{template "partials/agents-dock" .}}
- {{template "partials/workspace-rail-tools" .}}
-</aside>
-{{end}}
-
-{{define "partials/workspace-rail-tools"}}
-<nav class="workspace-rail-tools" aria-label="{{t "core.workspace.site_tools"}}">
- {{range workspaceTools.Rail}}{{template "partials/workspace-tool-link" .}}{{end}}
-</nav>
-<nav class="workspace-rail-footer" aria-label="{{t "core.nav.section.settings"}}">
- {{range workspaceTools.Footer}}{{template "partials/workspace-tool-link" .}}{{end}}
-</nav>
+<div class="workspace-tools-rail">{{template "partials/agents-dock" .}}</div>
 {{end}}
 
 {{/* Every region the shortcut projection owns, refreshed after a pin change. */}}
 {{define "partials/workspace-navigation"}}
-{{template "partials/workspace-top-tools" .}}
-{{template "partials/workspace-sidebar-tools" .}}
-{{template "partials/workspace-rail-tools" .}}
 {{template "partials/workspace-tool-directory" .}}
 {{template "partials/navigation-section-list" .}}
 <div data-workspace-context-navigation>{{template "partials/navigation-tabs" .}}</div>

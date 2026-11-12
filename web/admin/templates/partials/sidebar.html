@@ -15,7 +15,6 @@
   <div data-orchestrator-card>{{if can "workagents.read"}}<div hx-get="/admin/workagents/orchestrator-card" hx-trigger="load" hx-swap="innerHTML"></div>{{end}}</div>
   <nav data-admin-navigation class="flex-1 overflow-y-auto p-2" aria-label="{{t "core.nav.main"}}">
     {{template "partials/navigation-section-list" .}}
-    {{template "partials/workspace-sidebar-tools" .}}
     <div data-sidebar-quick-access>{{template "partials/quick-access" .}}</div>
   </nav>
   <div class="admin-sidebar-footer"><a href="/admin/navigation" class="admin-nav-link {{if active "/admin/navigation"}}is-active{{end}}" {{if active "/admin/navigation"}}aria-current="page"{{end}}>{{icon "sliders-horizontal"}}<span>{{t "auth.navigation.title"}}</span></a></div>

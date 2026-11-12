@@ -93,16 +93,19 @@
       <a class="text-blue hover:text-blue-hover underline underline-offset-2 text-xs" href="/admin/account/two-factor">{{t "admin.users.two_factor_self"}}</a>
       {{end}}
     </section>
-    {{if not $.IsSelf}}
-    <section class="rounded border border-line bg-panel p-4">
-      <h2 class="text-base font-bold mb-2">{{t "admin.users.danger"}}</h2>
-      <form method="post" action="/admin/users/{{.ID}}/delete" data-confirm="{{t "admin.users.delete_confirm" .Email}}">
-        <input type="hidden" name="_csrf" value="{{csrf}}">
-        <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-red text-red bg-red-soft hover:border-red focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2"}}<span>{{t "core.action.delete"}}</span></button>
-      </form>
-    </section>
-    {{end}}
   </aside>
   {{end}}
 </div>
+{{with .User}}{{if not $.IsSelf}}
+<section class="danger-zone" aria-labelledby="user-danger-title">
+  <h2 id="user-danger-title" class="danger-zone-title">{{t "core.danger.title"}}</h2>
+  <div class="danger-zone-item">
+    <div class="danger-zone-text"><p class="danger-zone-label">{{t "admin.users.danger"}}</p><p class="danger-zone-help">{{t "admin.users.delete_help"}}</p></div>
+    <form method="post" action="/admin/users/{{.ID}}/delete" data-confirm="{{t "admin.users.delete_confirm" .Email}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="btn btn-danger btn-sm">{{icon "trash-2"}}<span>{{t "core.action.delete"}}</span></button>
+    </form>
+  </div>
+</section>
+{{end}}{{end}}
 {{end}}

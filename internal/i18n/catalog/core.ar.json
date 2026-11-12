@@ -6,6 +6,8 @@
   "action.save": "حفظ",
   "action.cancel": "إلغاء",
   "action.delete": "حذف",
+  "action.row_actions": "إجراءات %s",
+  "danger.title": "منطقة الخطر",
   "action.edit": "تعديل",
   "status.draft": "مسودة",
   "status.published": "منشور",
@@ -63,9 +65,7 @@
   "nav.group.site": "الموقع",
   "workspace.site_tools": "أدوات الموقع",
   "workspace.view_site": "عرض الموقع",
-  "workspace.direct_tools": "فتح مباشرة",
   "workspace.all_tools": "كل أدوات الإدارة",
   "workspace.tools_hint": "افتح الأداة مباشرة دون التنقل بين أقسام الإعدادات.",
-  "workspace.more_tools": "أدوات أخرى",
   "id": "المعرّف"
 }

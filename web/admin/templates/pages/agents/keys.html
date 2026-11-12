@@ -56,26 +56,27 @@
           <td><ul class="key-scopes">{{range .Scopes}}<li class="badge font-mono" dir="ltr">{{.}}</li>{{end}}</ul></td>
           <td class="hidden md:table-cell">{{datetime .LastUsedAt}}<span class="cell-sub" data-key-uses>{{t "admin.keys.uses" .UseCount}}</span>{{if .RotatedFrom}}<span class="cell-sub">{{t "admin.keys.rotated"}}</span>{{end}}</td>
           <td class="actions">
-            <div class="row-actions">
-            {{if .CanRotate}}
-            <form method="post" action="/admin/agents/keys/{{.ID}}/rotate" data-confirm="{{t "admin.keys.rotate_confirm" .Name}}">
-              <input type="hidden" name="_csrf" value="{{csrf}}">
-              <label class="sr-only" for="grace-{{.ID}}">{{t "admin.keys.grace"}}</label>
-              <select id="grace-{{.ID}}" name="grace">
-                <option value="0">{{t "admin.keys.grace_none"}}</option>
-                <option value="3600">{{t "admin.keys.grace_hour"}}</option>
-                <option value="86400">{{t "admin.keys.grace_day"}}</option>
-              </select>
-              <button type="submit" class="btn btn-secondary btn-sm">{{t "admin.keys.rotate"}}</button>
-            </form>
-            {{end}}
-            {{if .Active}}
-            <form method="post" action="/admin/agents/keys/{{.ID}}/revoke" data-confirm="{{t "admin.keys.revoke_confirm" .Name}}">
-              <input type="hidden" name="_csrf" value="{{csrf}}">
-              <button type="submit" class="btn btn-danger btn-sm">{{t "admin.keys.revoke"}}</button>
-            </form>
-            {{end}}
+            {{if or .CanRotate .Active}}
+            <div class="row-menu" data-row-menu>
+              <button type="button" id="key-actions-{{.ID}}" class="btn btn-secondary btn-sm row-menu-button" data-row-menu-button aria-haspopup="menu" aria-controls="key-menu-{{.ID}}" hidden>{{icon "ellipsis"}}<span class="sr-only">{{t "core.action.row_actions" .Name}}</span></button>
+              <div class="row-menu-list" id="key-menu-{{.ID}}" data-row-menu-list>
+              {{if .CanRotate}}
+              <form method="post" action="/admin/agents/keys/{{.ID}}/rotate" data-confirm="{{t "admin.keys.rotate_confirm" .Name}}">
+                <input type="hidden" name="_csrf" value="{{csrf}}">
+                <button type="submit" name="grace" value="0" class="row-menu-item" data-row-menu-item>{{icon "refresh-cw"}}<span>{{t "admin.keys.rotate_now"}}</span></button>
+                <button type="submit" name="grace" value="3600" class="row-menu-item" data-row-menu-item>{{icon "refresh-cw"}}<span>{{t "admin.keys.rotate_hour"}}</span></button>
+                <button type="submit" name="grace" value="86400" class="row-menu-item" data-row-menu-item>{{icon "refresh-cw"}}<span>{{t "admin.keys.rotate_day"}}</span></button>
+              </form>
+              {{end}}
+              {{if .Active}}
+              <form method="post" action="/admin/agents/keys/{{.ID}}/revoke" data-confirm="{{t "admin.keys.revoke_confirm" .Name}}">
+                <input type="hidden" name="_csrf" value="{{csrf}}">
+                <button type="submit" class="row-menu-item row-menu-item-danger" data-row-menu-item>{{icon "ban"}}<span>{{t "admin.keys.revoke"}}</span></button>
+              </form>
+              {{end}}
+              </div>
             </div>
+            {{end}}
           </td>
         </tr>
         {{end}}
