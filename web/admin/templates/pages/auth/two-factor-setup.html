@@ -79,7 +79,7 @@
     <ol class="account-steps">
       <li>
         <p>{{t "twofactor.enrol.step_app"}}</p>
-        <p class="field-help">{{t "twofactor.enrol.no_qr"}}</p>
+        {{with .QR}}<figure class="totp-qr-frame">{{.}}<figcaption class="field-help">{{t "twofactor.enrol.qr_help"}}</figcaption></figure>{{end}}
         <div class="field">
           <span class="field-label" id="tf-secret-label">{{t "twofactor.enrol.secret"}}</span>
           <code class="totp-secret" dir="ltr" aria-labelledby="tf-secret-label" data-totp-secret>{{.Secret}}</code>

@@ -19,6 +19,20 @@
 .totp-secret { display: block; width: fit-content; max-width: 100%; padding: var(--space-2) var(--space-3); border: 1px dashed var(--line-strong); border-radius: var(--radius-md); background: var(--bg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--fs-lg); letter-spacing: .06em; overflow-wrap: anywhere; user-select: all; }
 #main .recovery-codes { list-style: decimal; display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: var(--space-2) var(--space-4); margin: 0; padding-inline-start: 1.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--fs-base); }
 .recovery-codes code { user-select: all; }
+/* TOTP enrolment QR: fixed black on white in both themes (scanners need the
+   contrast), quiet zone drawn inside the SVG. */
+#main .totp-qr-frame { display: grid; justify-items: start; gap: var(--space-2); margin: 0; }
+.totp-qr { display: block; width: min(13rem, 100%); height: auto; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; }
+/* Passkeys list on the two-factor page. */
+.passkey-list { display: grid; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: var(--radius-md); }
+.passkey-item { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); }
+.passkey-item:last-child { border-bottom: 0; }
+.passkey-item > :is(svg,i) { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--muted); }
+.passkey-item-body { flex: 1; min-width: 12rem; display: grid; gap: .125rem; }
+.passkey-item-name { font-weight: 600; overflow-wrap: anywhere; }
+.passkey-item-meta { color: var(--muted); font-size: var(--fs-sm); }
+.passkey-add { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-2); }
+.passkey-add .field { flex: 1; min-width: 12rem; max-width: 22rem; margin: 0; }
 .account-section-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 .account-sessions .data-table-wrap { border: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); }
 .account-sessions .badge { margin-inline-start: var(--space-1); }

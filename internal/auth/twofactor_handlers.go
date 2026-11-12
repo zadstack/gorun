@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/i18n"
 )
 
 // twoFactorPage is the data for pages/auth/two-factor-setup.html.
@@ -17,6 +18,9 @@ type twoFactorPage struct {
 	// html/template allows in href by default).
 	Secret string
 	URI    template.URL
+	// QR is the URI drawn as an inline SVG QR code (empty if it could not be
+	// encoded; the key and link still work).
+	QR template.HTML
 	// Codes are fresh recovery codes, shown once after enabling or
 	// regenerating.
 	Codes    []string
@@ -59,7 +63,13 @@ func (h *handlers) twoFactorRender(w http.ResponseWriter, r *http.Request, statu
 			return
 		}
 		page.Secret = formatTOTPSecret(secret)
-		page.URI = template.URL(totpURI(secret, h.deps.Settings.GetString(r.Context(), "site.title", ""), u.Email)) //nolint:gosec // our own otpauth URI with escaped components
+		uri := totpURI(secret, h.deps.Settings.GetString(r.Context(), "site.title", ""), u.Email)
+		page.URI = template.URL(uri) //nolint:gosec // our own otpauth URI with escaped components
+		if qr, err := qrSVG(uri, h.deps.I18n.T(i18n.Locale(r.Context()), "twofactor.enrol.qr_label")); err == nil {
+			page.QR = qr
+		} else {
+			h.deps.Log.Warn("auth: two-factor QR code", "err", err)
+		}
 	}
 	// Secrets and recovery codes must not be cached or kept in HTMX history.
 	w.Header().Set("Cache-Control", "no-store")
