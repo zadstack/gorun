@@ -5,15 +5,28 @@ import { db, setContentLocale, setLocale } from "../lib/helpers.ts";
 // filled in by a logged-out visitor in each locale) and capture (a plain POST
 // to /forms/{slug} with a real CSRF token, which creates the form on first use).
 //
-// POST /forms/* shares one per-IP limiter (5 a minute), so every visitor POST
-// goes through post(), which waits out a 429 instead of failing.
+// POST /forms/* shares one per-IP limiter (5 a minute). The e2e server trusts
+// loopback as a reverse proxy (GORUN_TRUSTED_PROXIES in global-setup.ts), so
+// every visitor context sends its own X-Forwarded-For client IP and never
+// shares a window with another context; the last test fills one IP's window
+// to prove the 429 still fires, then shows a fresh IP is not blocked.
 
 const stamp = Date.now().toString(36);
 const saved = /حُفظت|Draft saved/;
 
-async function visitor(browser: Browser, locale: "ar" | "en"): Promise<{ context: BrowserContext; page: Page }> {
-  const context = await browser.newContext({ storageState: { cookies: [], origins: [] }, locale });
-  return { context, page: await context.newPage() };
+// Each visitor gets a client IP from the 198.18.0.0/15 benchmarking range,
+// starting at a random offset so a rerun within the same minute (same server)
+// does not land in an earlier run's window.
+let visitorSeq = Math.floor(Math.random() * 0x10000);
+function visitorIP(): string {
+  const n = visitorSeq++ & 0x1ffff;
+  return `198.${18 + (n >> 16)}.${(n >> 8) & 0xff}.${n & 0xff}`;
+}
+
+async function visitor(browser: Browser, locale: "ar" | "en"): Promise<{ context: BrowserContext; page: Page; ip: string }> {
+  const ip = visitorIP();
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] }, locale, extraHTTPHeaders: { "X-Forwarded-For": ip } });
+  return { context, page: await context.newPage(), ip };
 }
 
 // buildFormPage creates a published builder page holding one Form section.
@@ -58,40 +71,27 @@ async function buildFormPage(page: Page, opts: { pageSlug: string; formSlug: str
   await expect(page.locator("#builder-status")).toContainText(/Page published|نُشرت/);
 }
 
-// post clicks a submit control (or runs a request) and retries after the
-// shared rate-limit window when the server answers 429.
-// prepare opens the page and fills the form; it runs again after a 429 so no field depends on history restore.
-async function submitUI(page: Page, formSlug: string, prepare: () => Promise<void>, click: () => Promise<void>) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) await prepare();
-    const posted = page.waitForResponse((r) => r.request().method() === "POST" && new URL(r.url()).pathname === `/forms/${formSlug}`);
-    await click();
-    const response = await posted;
-    if (response.status() !== 429) return response;
-    await page.waitForTimeout(61_000);
-  }
-  throw new Error("rate limited three times");
+// submitUI clicks a submit control and returns the POST /forms/{slug} response.
+async function submitUI(page: Page, formSlug: string, click: () => Promise<void>) {
+  const posted = page.waitForResponse((r) => r.request().method() === "POST" && new URL(r.url()).pathname === `/forms/${formSlug}`);
+  await click();
+  return posted;
 }
 
 async function capturePost(page: Page, slug: string, fields: Record<string, string>): Promise<{ status: number; body: string }> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const result = await page.evaluate(
-      async ({ slug, fields }) => {
-        const token = document.querySelector<HTMLInputElement>('input[name="_csrf"]')?.value ?? "";
-        const response = await fetch(`/forms/${slug}`, {
-          method: "POST",
-          credentials: "same-origin",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ _csrf: token, ...fields }),
-        });
-        return { status: response.status, body: await response.text() };
-      },
-      { slug, fields },
-    );
-    if (result.status !== 429) return result;
-    await page.waitForTimeout(61_000);
-  }
-  throw new Error("rate limited three times");
+  return page.evaluate(
+    async ({ slug, fields }) => {
+      const token = document.querySelector<HTMLInputElement>('input[name="_csrf"]')?.value ?? "";
+      const response = await fetch(`/forms/${slug}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ _csrf: token, ...fields }),
+      });
+      return { status: response.status, body: await response.text() };
+    },
+    { slug, fields },
+  );
 }
 
 // entries are the rows of the entries table (rows with a date link; the field-settings table also has rows).
@@ -149,7 +149,7 @@ test.describe.serial("site forms", () => {
         await form.locator(`#sf-${formSlugAr}-notes`).fill("ملاحظة, بفاصلة");
       };
       await fillAr();
-      const response = await submitUI(visit, formSlugAr, async () => { await visit.goto(`/${pageAr}`); await fillAr(); }, () => form.locator('button[type="submit"]').click());
+      const response = await submitUI(visit, formSlugAr, () => form.locator('button[type="submit"]').click());
       expect([200, 303]).toContain(response.status());
       await visit.waitForLoadState("load");
       await expect(visit.locator("body")).toContainText("وصلنا طلبك");
@@ -170,7 +170,7 @@ test.describe.serial("site forms", () => {
         await form.locator(`#sf-${formSlugEn}-plan`).selectOption("basic");
       };
       await fillEn();
-      const response = await submitUI(visit, formSlugEn, async () => { await visit.goto(`/en/${pageEn}`); await fillEn(); }, () => form.locator('button[type="submit"]').click());
+      const response = await submitUI(visit, formSlugEn, () => form.locator('button[type="submit"]').click());
       expect([200, 303]).toContain(response.status());
       await visit.waitForLoadState("load");
       await expect(visit.locator("body")).toContainText("We got your request");
@@ -288,5 +288,23 @@ test.describe.serial("site forms", () => {
     // A future date range excludes today's entries.
     await page.goto(`/admin/forms/${formSlugAr}?from=2999-01-01`);
     await expect(entries(page)).toHaveCount(0);
+  });
+
+  test("rate limit: the sixth POST from one client IP in a minute is refused; another IP is not", async ({ browser }) => {
+    // The limiter runs before CSRF, so tokenless POSTs (403) count toward the window.
+    // Nothing is stored: a refused POST never creates the form.
+    const limited = `e2e-limit-${stamp}`;
+    const { context, ip } = await visitor(browser, "en");
+    for (let i = 0; i < 5; i++) expect((await context.request.post(`/forms/${limited}`, { form: { name: "A" } })).status()).toBe(403);
+    const refused = await context.request.post(`/forms/${limited}`, { form: { name: "A" } });
+    expect(refused.status()).toBe(429);
+    await context.close();
+
+    // A different client IP has its own window: no waiting for the minute to pass.
+    const { context: other, ip: otherIP } = await visitor(browser, "en");
+    expect(otherIP).not.toBe(ip);
+    expect((await other.request.post(`/forms/${limited}`, { form: { name: "A" } })).status()).toBe(403);
+    await other.close();
+    expect(db().prepare("SELECT count(*) AS n FROM forms WHERE slug = ?").get(limited)).toMatchObject({ n: 0 });
   });
 });
