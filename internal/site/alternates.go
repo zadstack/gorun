@@ -37,6 +37,26 @@ func (h *handlers) alternates(r *http.Request, tc *theme.Context) []theme.Altern
 				add(m.Locale, links.Item(ctx, m))
 			}
 		}
+	} else if t := tc.Term; t != nil && t.TranslationGroup != "" {
+		// A translated term: each locale points at its own translation, the others at this term.
+		byLocale := map[string]string{}
+		if svc, ok := h.taxonomy(); ok {
+			members, err := svc.TermTranslations(ctx, t.ID)
+			if err != nil {
+				h.d.Log.Error("site: term translations", "id", t.ID, "err", err)
+			}
+			for i := range members {
+				byLocale[members[i].Locale] = h.links.Term(&members[i])
+			}
+		}
+		locales := i18n.ContentLocales(ctx, h.d.Settings)
+		for _, loc := range locales {
+			path, ok := byLocale[loc]
+			if !ok {
+				path = h.links.Term(t)
+			}
+			add(loc, i18n.LocalizePath(loc, site, path, locales))
+		}
 	} else {
 		path := r.URL.Path
 		if q := r.URL.Query().Get("q"); q != "" {

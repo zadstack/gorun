@@ -292,9 +292,9 @@ func (f *funcs) url(v any) string {
 	case content.Item:
 		return base + f.itemPath(&x)
 	case *taxonomy.Term:
-		return base + f.localizedTerm(f.s.links.Term(x))
+		return base + f.localizedTerm(f.s.links.Term(f.termInPage(x)))
 	case taxonomy.Term:
-		return base + f.localizedTerm(f.s.links.Term(&x))
+		return base + f.localizedTerm(f.s.links.Term(f.termInPage(&x)))
 	case *menus.Item:
 		return x.URL
 	case menus.Item:
@@ -476,10 +476,34 @@ func (f *funcs) terms(v any, tax string) []taxonomy.Term {
 	var out []taxonomy.Term
 	for _, slug := range it.Terms[tax] {
 		if t, err := svc.GetTermBySlug(f.st.ctx, tax, slug); err == nil && t != nil {
-			out = append(out, *t)
+			t = f.termInPage(t)
+			if !slices.ContainsFunc(out, func(o taxonomy.Term) bool { return o.ID == t.ID }) {
+				out = append(out, *t)
+			}
 		}
 	}
 	return out
+}
+
+// termInPage is t's translation in the page's locale when it has one, else t itself.
+func (f *funcs) termInPage(t *taxonomy.Term) *taxonomy.Term {
+	if t == nil || t.TranslationGroup == "" || t.Locale == f.pageLocale() {
+		return t
+	}
+	svc, ok := kernel.Get[taxonomy.Service](f.s.d, kernel.ServiceTaxonomy)
+	if !ok {
+		return t
+	}
+	members, err := svc.TermTranslations(f.st.ctx, t.ID)
+	if err != nil {
+		return t
+	}
+	for i := range members {
+		if members[i].Locale == f.pageLocale() {
+			return &members[i]
+		}
+	}
+	return t
 }
 
 // media returns the media item for v (an id, *media.Media or Media), or nil.

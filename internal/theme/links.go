@@ -195,7 +195,8 @@ func (l *Linker) sitemapEntry(ctx context.Context, v any) (any, error) {
 	case e.Item != nil:
 		e.Loc = l.Item(ctx, e.Item)
 	case e.Term != nil:
-		e.Loc = l.Term(e.Term)
+		// A term lives under its own locale (an untranslated term of the site locale stays unprefixed).
+		e.Loc = i18n.LocalizePath(e.Term.Locale, l.SiteLocale(ctx), l.Term(e.Term), l.ContentLocales(ctx))
 	case e.Type != nil:
 		e.Loc = archivePath(e.Type)
 	}
