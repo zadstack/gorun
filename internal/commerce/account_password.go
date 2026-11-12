@@ -33,7 +33,9 @@ func (h *publicHandlers) accountPasswordLogin(w http.ResponseWriter, r *http.Req
 		http.Redirect(w, r, target, http.StatusSeeOther)
 		return
 	}
-	if err = auth.StartUserSession(h.svc.d, w, r, u); err != nil {
+	next := accountNext(r.PostForm.Get("next"))
+	// With two-factor the admin's second step returns here afterwards.
+	if err = auth.StartUserSessionNext(h.svc.d, w, r, u, next); err != nil {
 		if errors.Is(err, auth.ErrSecondFactorRequired) {
 			http.Redirect(w, r, auth.SecondFactorPath, http.StatusSeeOther)
 			return
@@ -41,7 +43,7 @@ func (h *publicHandlers) accountPasswordLogin(w http.ResponseWriter, r *http.Req
 		http.Error(w, "account unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	http.Redirect(w, r, accountNext(r.PostForm.Get("next")), http.StatusSeeOther)
+	http.Redirect(w, r, next, http.StatusSeeOther)
 }
 
 // Account return paths are deliberately a small native allowlist. Neither

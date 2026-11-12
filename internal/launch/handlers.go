@@ -179,7 +179,7 @@ func (h *handlers) loginPost(w http.ResponseWriter, r *http.Request) {
 		h.render(w, r, "login.html", http.StatusForbidden, data)
 		return
 	}
-	if err := auth.StartUserSession(h.d, w, r, u); err != nil {
+	if err := auth.StartUserSessionNext(h.d, w, r, u, "/account"); err != nil {
 		if errors.Is(err, auth.ErrSecondFactorRequired) {
 			http.Redirect(w, r, auth.SecondFactorPath, http.StatusSeeOther)
 			return

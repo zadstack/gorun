@@ -91,3 +91,30 @@ func TestPasswordLoginNativeReturnPath(t *testing.T) {
 		}
 	}
 }
+
+// Staff with two-factor who sign in on the shop account form go through the
+// admin second step and then back to the form's (allowlisted) destination.
+func TestPasswordLoginSecondFactorKeepsReturnPath(t *testing.T) {
+	e := boot(t)
+	u, err := auth.NewService(e.svc.db, nil).Create(context.Background(), "staff-2fa@example.test", "Staff", "secure-staff-password", "editor")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.svc.db.Exec(`INSERT INTO user_totp (user_id, secret_enc, enabled_at, created_at, updated_at) VALUES (?, 'sealed', '2026-11-12T00:00:00Z', '2026-11-12T00:00:00Z', '2026-11-12T00:00:00Z')`, u.ID); err != nil {
+		t.Fatal(err)
+	}
+	for next, want := range map[string]string{"/agents": "/agents", "//evil.example": "/account", "https://evil.example": "/account"} {
+		csrf := e.csrfFrom("/account")
+		resp, _ := e.do("POST", "/account/password-login", url.Values{"_csrf": {csrf}, "email": {u.Email}, "password": {"secure-staff-password"}, "next": {next}})
+		if resp.StatusCode != 303 || resp.Header.Get("Location") != auth.SecondFactorPath {
+			t.Fatalf("next %q: %d %s, want the second step", next, resp.StatusCode, resp.Header.Get("Location"))
+		}
+		var stored string
+		if err := e.svc.db.QueryRow(`SELECT next FROM login_challenges WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1`, u.ID).Scan(&stored); err != nil {
+			t.Fatal(err)
+		}
+		if stored != want {
+			t.Fatalf("next %q: second step returns to %q, want %q", next, stored, want)
+		}
+	}
+}
