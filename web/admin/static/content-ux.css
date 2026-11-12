@@ -65,8 +65,10 @@
 .bulk-result-reason{font-weight:600}
 @media(max-width:639px){.bulk-bar-field{flex:1 1 100%}.bulk-bar-apply{flex:1 1 100%}}
 
-/* Content export (docs/CONTENT_STUDIO.md#export): a disclosure menu next to the primary action. */
-.content-export{position:relative}
+/* Content export (docs/CONTENT_STUDIO.md#export): a disclosure menu next to the primary action, anchored
+   to the actions group (not the button) so it stays on screen in both directions at 390 px. */
+.content-list-actions{position:relative}
+.content-export{position:static}
 .content-export>summary{list-style:none;cursor:pointer}
 .content-export>summary::-webkit-details-marker{display:none}
 .content-export-menu{position:absolute;inset-inline-end:0;top:calc(100% + var(--space-1));z-index:20;display:grid;gap:var(--space-1);width:min(18rem,calc(100vw - 2rem));padding:var(--space-2);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel);box-shadow:0 6px 18px rgb(0 0 0/.08)}
