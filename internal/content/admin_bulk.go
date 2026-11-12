@@ -2,7 +2,6 @@ package content
 
 import (
 	"context"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -30,7 +29,6 @@ const (
 	bulkMaxItems   = 200 // ids accepted per request
 	bulkMaxSkipped = 40  // skipped ids reported by id (the rest are counted)
 	bulkCookie     = "gorun_content_bulk"
-	bulkTermsMax   = 500 // terms offered in the bulk term select
 )
 
 // bulkActions are the actions that report a per-item outcome.
@@ -98,6 +96,16 @@ func (h *adminHandlers) bulk(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		h.bulkDelete(w, r, t, action == "delete", back)
+		return
+	}
+	if kind, ok := bulkNeedsChoice(ctx, action, r.PostForm); ok {
+		ids := bulkIDs(r.PostForm["ids"])
+		if len(ids) == 0 {
+			httpx.SetFlash(w, "info", "content.flash.bulk_none")
+			http.Redirect(w, r, back, http.StatusSeeOther)
+			return
+		}
+		h.bulkChoose(w, r, t, kind, ids)
 		return
 	}
 	req, errKey := h.parseBulk(ctx, t, action, r.PostForm)
@@ -421,96 +429,6 @@ func (h *adminHandlers) takeBulkSummary(w http.ResponseWriter, r *http.Request, 
 	}
 	if res.More > 0 {
 		out.Groups = append(out.Groups, bulkSkipGroup{Reason: tr("content.bulk.reason.more"), Count: res.More})
-	}
-	return out
-}
-
-// --- list page controls ---
-
-type bulkTermGroup struct {
-	Label   string
-	Options []choice
-}
-
-// bulkAuthors lists the users the author action may assign.
-func (h *adminHandlers) bulkAuthors(ctx context.Context) []choice {
-	us, ok := kernel.Get[auth.Service](h.d, kernel.ServiceAuth)
-	if !ok {
-		return nil
-	}
-	users, _, err := us.List(ctx, auth.ListQuery{PerPage: 200, Sort: "name", Order: "asc"})
-	if err != nil {
-		return nil
-	}
-	var out []choice
-	for i := range users {
-		u := &users[i]
-		if !permittedAuthor(u) {
-			continue
-		}
-		label := u.Name
-		if label == "" {
-			label = u.Email
-		}
-		out = append(out, choice{Value: u.ID, Label: label})
-	}
-	return out
-}
-
-// bulkTerms lists the terms of the type's taxonomies, grouped by taxonomy,
-// as "taxonomy/slug" values. Without the taxonomy module it is empty.
-func (h *adminHandlers) bulkTerms(ctx context.Context, t *Type) []bulkTermGroup {
-	if len(t.Taxonomies) == 0 {
-		return nil
-	}
-	locale := i18n.Locale(ctx)
-	marks := strings.TrimSuffix(strings.Repeat("?,", len(t.Taxonomies)), ",")
-	args := make([]any, len(t.Taxonomies))
-	for i, tax := range t.Taxonomies {
-		args[i] = tax
-	}
-	names := map[string]string{}
-	if rows, err := h.d.DB.QueryContext(ctx, `SELECT slug, name_json FROM taxonomies WHERE slug IN (`+marks+`)`, args...); err == nil {
-		for rows.Next() {
-			var slug, raw string
-			var m map[string]string
-			if rows.Scan(&slug, &raw) == nil && json.Unmarshal([]byte(raw), &m) == nil {
-				names[slug] = localized(m, locale, slug)
-			}
-		}
-		rows.Close()
-	}
-	rows, err := h.d.DB.QueryContext(ctx, `SELECT taxonomy, slug, name FROM terms WHERE taxonomy IN (`+marks+`) ORDER BY taxonomy, name LIMIT ?`, append(args, bulkTermsMax)...)
-	if err != nil {
-		return nil
-	}
-	defer rows.Close()
-	groups := map[string]*bulkTermGroup{}
-	for rows.Next() {
-		var tax, slug string
-		var name sql.NullString
-		if rows.Scan(&tax, &slug, &name) != nil {
-			continue
-		}
-		g := groups[tax]
-		if g == nil {
-			g = &bulkTermGroup{Label: names[tax]}
-			if g.Label == "" {
-				g.Label = tax
-			}
-			groups[tax] = g
-		}
-		label := name.String
-		if label == "" {
-			label = slug
-		}
-		g.Options = append(g.Options, choice{Value: tax + "/" + slug, Label: label})
-	}
-	var out []bulkTermGroup
-	for _, tax := range t.Taxonomies {
-		if g := groups[tax]; g != nil {
-			out = append(out, *g)
-		}
 	}
 	return out
 }

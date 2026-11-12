@@ -47,8 +47,7 @@ type listView struct {
 	// list query to return to, and the outcome of the last bulk request.
 	CanBulk, CanPublish bool
 	CanEdit, CanAssign  bool
-	BulkAuthors         []choice
-	BulkTerms           []bulkTermGroup
+	CanTerms            bool
 	Return              string
 	Bulk                *bulkSummary
 	// ExportURLs are the json and csv downloads of the list's current filters.
@@ -176,14 +175,11 @@ func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
 			EditURL: base + "/" + it.ID})
 	}
 	v.CanPublish, v.CanEdit = canPublish(ctx), auth.Can(ctx, "content.edit")
-	v.CanAssign = v.CanEdit && !ownOnly(u)
-	if v.CanAssign {
-		v.BulkAuthors = h.bulkAuthors(ctx)
-	}
-	if v.CanEdit {
-		v.BulkTerms = h.bulkTerms(ctx, t)
-	}
-	v.CanBulk = v.CanDelete || v.CanPublish || len(v.BulkAuthors) > 0 || len(v.BulkTerms) > 0
+	// Author and term options are not loaded here: the bulk bar fetches them
+	// when that action is chosen (admin_choices.go).
+	v.CanAssign = canAssign(ctx)
+	v.CanTerms = v.CanEdit && h.hasTerms(ctx, t)
+	v.CanBulk = v.CanDelete || v.CanPublish || v.CanAssign || v.CanTerms
 	v.Return = r.URL.RawQuery
 	v.Bulk = h.takeBulkSummary(w, r, t)
 	if tree {
@@ -228,6 +224,8 @@ type editorView struct {
 	Parent                *pickView
 	Templates             []choice
 	Authors               []choice
+	AuthorsMore           bool   // more authors than listed: the select can search
+	AuthorsURL            string // the author choices endpoint the search uses
 	Pickers               []pickerView
 	Revisions             []Revision
 	SEO                   seoView
@@ -345,7 +343,8 @@ func (h *adminHandlers) renderEditor(w http.ResponseWriter, r *http.Request, sta
 		v.Parent = newPickView("parent_id", "parent_id", t.Slug, it.ID, false, h.svc.pickedChoices(ctx, sel))
 	}
 	if u := auth.UserFromContext(ctx); u != nil && !ownOnly(u) {
-		v.Authors = h.authorChoices(ctx, it.AuthorID)
+		v.Authors, v.AuthorsMore = h.authorChoices(ctx, "", it.AuthorID)
+		v.AuthorsURL = "/admin/x/content/" + t.Slug + "/choices?" + url.Values{"kind": {"author"}, "blank": {"1"}, "selected": {it.AuthorID}}.Encode()
 	}
 	for _, tax := range t.Taxonomies {
 		q := url.Values{"selected": {strings.Join(it.Terms[tax], ",")}}
@@ -365,29 +364,6 @@ func (h *adminHandlers) renderEditor(w http.ResponseWriter, r *http.Request, sta
 		}
 	}
 	h.tpl.RenderWith(w, r, status, "admin", "pages/content/edit.html", v)
-}
-
-func (h *adminHandlers) authorChoices(ctx context.Context, current string) []choice {
-	us, ok := kernel.Get[auth.Service](h.d, kernel.ServiceAuth)
-	if !ok {
-		return nil
-	}
-	users, _, err := us.List(ctx, auth.ListQuery{PerPage: 200, Sort: "name", Order: "asc"})
-	if err != nil {
-		return nil
-	}
-	out := []choice{}
-	for _, u := range users {
-		if u.Role == "customer" {
-			continue
-		}
-		label := u.Name
-		if label == "" {
-			label = u.Email
-		}
-		out = append(out, choice{Value: u.ID, Label: label, Selected: u.ID == current})
-	}
-	return out
 }
 
 func (h *adminHandlers) createItem(w http.ResponseWriter, r *http.Request) {

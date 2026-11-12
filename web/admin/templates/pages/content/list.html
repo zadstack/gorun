@@ -79,8 +79,8 @@
           {{if .CanPublish}}<option value="publish" data-confirm="{{t "content.list.bulk_publish_confirm"}}">{{t "content.list.bulk_publish"}}</option>
           <option value="unpublish" data-confirm="{{t "content.list.bulk_unpublish_confirm"}}">{{t "content.list.bulk_unpublish"}}</option>
           {{if .CanEdit}}<option value="schedule" data-bulk-needs="schedule">{{t "content.list.bulk_schedule"}}</option>{{end}}{{end}}
-          {{if and .CanAssign .BulkAuthors}}<option value="author" data-bulk-needs="author">{{t "content.list.bulk_author"}}</option>{{end}}
-          {{if .BulkTerms}}<option value="term_add" data-bulk-needs="term">{{t "content.list.bulk_term_add"}}</option>
+          {{if .CanAssign}}<option value="author" data-bulk-needs="author">{{t "content.list.bulk_author"}}</option>{{end}}
+          {{if .CanTerms}}<option value="term_add" data-bulk-needs="term">{{t "content.list.bulk_term_add"}}</option>
           <option value="term_remove" data-bulk-needs="term">{{t "content.list.bulk_term_remove"}}</option>{{end}}
           {{if .CanDelete}}<option value="trash" data-confirm="{{t "content.list.bulk_confirm"}}"{{if not .CanPublish}} selected{{end}}>{{t "content.list.bulk_trash"}}</option>
           {{if eq .Status "trash"}}<option value="delete" data-confirm="{{t "content.list.bulk_confirm"}}">{{t "content.list.bulk_delete"}}</option>{{end}}{{end}}
@@ -90,13 +90,16 @@
         <label class="field-label" for="bulk-publish-at">{{t "content.list.bulk_publish_at"}}</label>
         <input id="bulk-publish-at" name="publish_at" type="datetime-local" class="field-control" dir="ltr">
       </div>{{end}}
-      {{if and .CanAssign .BulkAuthors}}<div class="field bulk-bar-field" data-bulk-field="author">
+      {{/* Options load when the action is chosen (content-ux.js); without JavaScript, Apply opens a step that asks. */}}
+      {{if .CanAssign}}<div class="field bulk-bar-field" data-bulk-field="author">
         <label class="field-label" for="bulk-author">{{t "content.list.bulk_new_author"}}</label>
-        <select id="bulk-author" name="author_id" class="field-control">{{range .BulkAuthors}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</select>
+        <input type="search" class="field-control" data-choices-search="bulk-author" placeholder="{{t "content.choices.search"}}" aria-label="{{t "content.choices.search_authors"}}" dir="auto" hidden>
+        <select id="bulk-author" name="author_id" class="field-control" data-choices-src="/admin/x/content/{{.Type.Slug}}/choices?kind=author"><option value="">{{t "content.choices.after_apply"}}</option></select>
       </div>{{end}}
-      {{if .BulkTerms}}<div class="field bulk-bar-field" data-bulk-field="term">
+      {{if .CanTerms}}<div class="field bulk-bar-field" data-bulk-field="term">
         <label class="field-label" for="bulk-term">{{t "content.list.bulk_term"}}</label>
-        <select id="bulk-term" name="term" class="field-control">{{range .BulkTerms}}<optgroup label="{{.Label}}">{{range .Options}}<option value="{{.Value}}">{{.Label}}</option>{{end}}</optgroup>{{end}}</select>
+        <input type="search" class="field-control" data-choices-search="bulk-term" placeholder="{{t "content.choices.search"}}" aria-label="{{t "content.choices.search_terms"}}" dir="auto" hidden>
+        <select id="bulk-term" name="term" class="field-control" data-choices-src="/admin/x/content/{{.Type.Slug}}/choices?kind=term"><option value="">{{t "content.choices.after_apply"}}</option></select>
       </div>{{end}}
       <button type="submit" class="btn btn-primary bulk-bar-apply">{{t "content.list.apply"}}</button>
       <p class="field-help bulk-bar-scope" data-bulk-scope>{{t "content.list.bulk_scope"}}</p>

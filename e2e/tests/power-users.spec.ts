@@ -172,6 +172,66 @@ test('bulk publish asks first and reports each item, in English and Arabic', asy
   await page.screenshot({path: testInfo.outputPath('bulk-bar-ar-390.png'), animations: 'disabled', fullPage: true});
 });
 
+test('bulk author choices load only when chosen, search, and ask in a step without JavaScript', async ({page, browser}, testInfo) => {
+  await page.goto('/admin');
+  await setLocale(page, 'en');
+  const prefix = 'Choices ' + randomUUID().slice(0, 8);
+  const a = await draft(page, prefix + ' one');
+  const database = db();
+  const admin = database.prepare("SELECT id FROM users WHERE role='admin' ORDER BY created_at LIMIT 1").get() as any;
+  database.close();
+  const fetched: string[] = [];
+  page.on('request', r => { if (r.url().includes('/choices?')) fetched.push(r.url()); });
+
+  await page.goto('/admin/content/post?search=' + encodeURIComponent(prefix));
+  const form = page.locator('[data-content-selection]');
+  const author = form.locator('#bulk-author');
+  await expect(author.locator('option')).toHaveCount(1); // the "choose after Apply" placeholder only
+  expect(fetched).toHaveLength(0);
+  await form.locator(`input[name=ids][value="${a}"]`).check();
+  await form.locator('#bulk-action').selectOption('author');
+  await expect(author.locator(`option[value="${admin.id}"]`)).toHaveCount(1);
+  expect(fetched.filter(u => u.includes('kind=author'))).toHaveLength(1);
+  const search = form.locator('[data-choices-search="bulk-author"]');
+  await expect(search).toBeVisible();
+  await search.fill('zz-nobody-' + randomUUID().slice(0, 4));
+  await expect(author.locator(`option[value="${admin.id}"]`)).toHaveCount(0);
+  await search.fill('');
+  await expect(author.locator(`option[value="${admin.id}"]`)).toHaveCount(1);
+  expect(await noHorizontalScroll(page)).toBe(true);
+  await page.screenshot({path: testInfo.outputPath('bulk-author-en.png'), animations: 'disabled'});
+
+  // Without JavaScript the select stays empty; Apply opens the step that asks.
+  // (Keyboard: without JavaScript the admin sidebar drawer overlaps the list.)
+  const state = await page.context().storageState();
+  const noJS = await browser.newContext({baseURL: new URL(page.url()).origin, javaScriptEnabled: false, storageState: state});
+  const plain = await noJS.newPage();
+  await plain.goto('/admin/content/post?search=' + encodeURIComponent(prefix));
+  await plain.locator(`input[name=ids][value="${a}"]`).press('Space');
+  await expect(plain.locator(`input[name=ids][value="${a}"]`)).toBeChecked();
+  await plain.locator('#bulk-action').selectOption('author', {force: true});
+  await plain.locator('button[type=submit].bulk-bar-apply').press('Enter');
+  await expect(plain.getByRole('heading', {name: 'Choose the new author'})).toBeVisible();
+  await expect(plain.locator(`#bulk-choose-value option[value="${admin.id}"]`)).toHaveCount(1);
+  await plain.locator('#bulk-choose-value').selectOption(admin.id, {force: true});
+  await plain.locator('[data-bulk-choose] .btn-primary').press('Enter');
+  await expect(plain).toHaveURL(/\/admin\/content\/post\?search=/);
+  await expect(plain.locator('[data-bulk-result]')).toBeVisible();
+  await noJS.close();
+
+  // With JavaScript but a failed fetch, Apply falls back to the same step.
+  await page.route('**/choices?**', route => route.abort());
+  await page.goto('/admin/content/post?search=' + encodeURIComponent(prefix));
+  await form.locator(`input[name=ids][value="${a}"]`).check();
+  await form.locator('#bulk-action').selectOption('author');
+  await form.locator('button[type=submit].bulk-bar-apply').click();
+  await expect(page.getByRole('heading', {name: 'Choose the new author'})).toBeVisible();
+  await expect(page.locator(`#bulk-choose-value option[value="${admin.id}"]`)).toHaveCount(1);
+  expect(await noHorizontalScroll(page)).toBe(true);
+  await page.screenshot({path: testInfo.outputPath('bulk-author-step.png'), animations: 'disabled'});
+  await page.unroute('**/choices?**');
+});
+
 test('the palette works in Arabic and at 390 px', async ({page}, testInfo) => {
   await page.goto('/admin');
   await setLocale(page, 'ar');

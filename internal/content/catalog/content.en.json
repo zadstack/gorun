@@ -422,5 +422,16 @@
   "export.action": "Export",
   "export.json": "JSON — complete, for re-import",
   "export.csv": "CSV — spreadsheet",
-  "export.help": "Exports what matches the current filters and you are allowed to open, up to 10,000 items."
+  "export.help": "Exports what matches the current filters and you are allowed to open, up to 10,000 items.",
+  "choices.search": "Search…",
+  "choices.search_authors": "Search authors",
+  "choices.search_terms": "Search terms",
+  "choices.search_button": "Search",
+  "choices.more": "More results: search to narrow the list",
+  "choices.none": "No matches",
+  "choices.after_apply": "Choose after Apply",
+  "bulk.choose_author": "Choose the new author",
+  "bulk.choose_term": "Choose the term",
+  "bulk.choose_count": "Selected items: %d. Nothing changes until you apply.",
+  "bulk.choose_back": "Back to the list"
 }
