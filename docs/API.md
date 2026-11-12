@@ -65,6 +65,7 @@ default.
 | 401 | `unauthorized` | No or invalid API key / session |
 | 403 | `forbidden` | Missing scope or permission |
 | 403 | `onboarding_required` | The auto-generated administrator must complete first-login setup at the local `/admin/onboarding` page before authenticated API access |
+| 403 | `two_factor_enrolment_required` | Session request from a user whose role must use two-factor authentication (Login security) and who has not enrolled yet; set it up at `/admin/account/two-factor`. API keys are not affected ([LOGIN-SECURITY.md](LOGIN-SECURITY.md#two-factor-authentication-totp)) |
 | 403 | `csrf_invalid` | Session request without a valid `X-CSRF-Token` |
 | 403 | `agent_key_not_allowed` | An agent-kind key was used on `/api` (agent keys work only on `/mcp`) |
 | 404 | `not_found` | Unknown path or resource |
