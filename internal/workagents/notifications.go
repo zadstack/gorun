@@ -15,7 +15,7 @@ const handoffWindow = 7 * 24 * time.Hour
 // signed-in user (in their own open channels) to the admin notifications
 // centre. A hand-off executes nothing; the item only links to the thread.
 func registerNotifications(d *kernel.Deps) {
-	d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "workagents.handoffs", Permission: "workagents.manage",
+	d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "workagents.handoffs", Permission: "workagents.manage", Category: kernel.NotifyHandoffs,
 		Load: func(ctx context.Context, limit int) ([]kernel.Notification, error) {
 			o := owner(ctx)
 			if o == "" {

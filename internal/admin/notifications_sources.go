@@ -13,9 +13,9 @@ import (
 // owns: failed background jobs, failed backups and failed updates, each from
 // the last notifyWindow and behind the permission of its screen.
 func (h *handlers) registerNotificationSources() {
-	h.d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "admin.jobs", Permission: PermHealth, Load: h.notifyDeadJobs})
-	h.d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "admin.backups", Permission: PermBackup, Load: h.notifyFailedBackups})
-	h.d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "admin.updates", Permission: PermUpdate, Load: h.notifyFailedUpdates})
+	h.d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "admin.jobs", Permission: PermHealth, Category: kernel.NotifyFailures, Load: h.notifyDeadJobs})
+	h.d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "admin.backups", Permission: PermBackup, Category: kernel.NotifyFailures, Load: h.notifyFailedBackups})
+	h.d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "admin.updates", Permission: PermUpdate, Category: kernel.NotifyFailures, Load: h.notifyFailedUpdates})
 }
 
 func notifySince() string { return db.FormatTime(time.Now().Add(-notifyWindow)) }

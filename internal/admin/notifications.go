@@ -47,24 +47,8 @@ func (h *handlers) notifications(ctx context.Context) (notifyData, error) {
 		return out, nil
 	}
 	var all []kernel.Notification
-	for _, src := range h.d.Admin.NotificationSources() {
-		if !auth.Can(ctx, src.Permission) {
-			continue
-		}
-		items, err := src.Load(ctx, notifyPerSource)
-		if err != nil {
-			// One failing module must not hide the others.
-			h.d.Log.Error("admin: notification source", "source", src.ID, "err", err)
-			continue
-		}
-		if len(items) > notifyPerSource {
-			items = items[:notifyPerSource]
-		}
-		all = append(all, items...)
-	}
-	sort.SliceStable(all, func(i, j int) bool { return all[i].At > all[j].At })
-	if len(all) > notifyMax {
-		all = all[:notifyMax]
+	for _, n := range gatherNotifications(ctx, h.d) {
+		all = append(all, n.Notification)
 	}
 	if len(all) == 0 {
 		return out, nil
@@ -99,6 +83,43 @@ func (h *handlers) notifications(ctx context.Context) (notifyData, error) {
 		out.Items = append(out.Items, item)
 	}
 	return out, nil
+}
+
+// categorized is a notification with its source's category.
+type categorized struct {
+	kernel.Notification
+	Category string
+}
+
+// gatherNotifications computes the items of the user in ctx: each source
+// whose permission the user holds loads at most notifyPerSource rows; the
+// merged list is newest first and capped at notifyMax. The bell and the
+// delivery run (acting as the recipient) share it, so both apply the same
+// permission rules at the moment they run.
+func gatherNotifications(ctx context.Context, d *kernel.Deps) []categorized {
+	var all []categorized
+	for _, src := range d.Admin.NotificationSources() {
+		if !auth.Can(ctx, src.Permission) {
+			continue
+		}
+		items, err := src.Load(ctx, notifyPerSource)
+		if err != nil {
+			// One failing module must not hide the others.
+			d.Log.Error("admin: notification source", "source", src.ID, "err", err)
+			continue
+		}
+		if len(items) > notifyPerSource {
+			items = items[:notifyPerSource]
+		}
+		for _, n := range items {
+			all = append(all, categorized{Notification: n, Category: src.Category})
+		}
+	}
+	sort.SliceStable(all, func(i, j int) bool { return all[i].At > all[j].At })
+	if len(all) > notifyMax {
+		all = all[:notifyMax]
+	}
+	return all
 }
 
 func (h *handlers) notificationRoutes() {
