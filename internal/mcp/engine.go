@@ -115,6 +115,13 @@ func toToolError(err error) (te *ToolError, known bool) {
 	return &ToolError{Code: codeInternal, Message: "internal error"}, false
 }
 
+// errorCode is the code of err for an audit row. It does not log: the same
+// error is classified again (and logged) when its result envelope is built.
+func errorCode(err error) string {
+	te, _ := toToolError(err)
+	return te.Code
+}
+
 // classify is toToolError that logs unclassified errors (never sent).
 func (s *server) classify(tool string, err error) *ToolError {
 	te, known := toToolError(err)
@@ -195,7 +202,7 @@ func (s *server) call(ctx context.Context, t kernel.MCPTool, args json.RawMessag
 	meta["ok"] = err == nil
 	meta["duration_ms"] = time.Since(start).Milliseconds()
 	if err != nil {
-		meta["error_code"] = s.classify(t.Name, err).Code
+		meta["error_code"] = errorCode(err)
 	}
 	s.d.Audit.Record(ctx, "mcp.call", "tool", t.Name, meta)
 	return data, err

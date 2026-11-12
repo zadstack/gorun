@@ -331,7 +331,7 @@ func (s *server) runApproved(ctx context.Context, a *Approval) (any, error) {
 	meta := map[string]any{"args_hash": argsHash(a.Args), "ok": err == nil, "duration_ms": time.Since(start).Milliseconds(),
 		"approval_id": a.ID, "api_key_id": a.APIKeyID, "approved_by": deciderID(ctx), "executed": true}
 	if err != nil {
-		meta["error_code"] = s.classify(t.Name, err).Code
+		meta["error_code"] = errorCode(err)
 	}
 	s.d.Audit.Record(actx, "mcp.call", "tool", t.Name, meta)
 	return data, err
