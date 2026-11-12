@@ -145,7 +145,10 @@ func (s *service) CreateTermTranslation(ctx context.Context, id string, t Term) 
 		return nil, err
 	}
 	locale, err := i18n.CanonicalLocale(t.Locale)
-	if err != nil || locale == src.Locale {
+	switch {
+	case err != nil:
+		return nil, validationError(map[string]string{"locale": msgTermLocale})
+	case locale == src.Locale:
 		return nil, validationError(map[string]string{"locale": msgTermTranslated})
 	}
 	t.ID, t.Taxonomy, t.Locale, t.TranslationGroup = "", src.Taxonomy, locale, ""
