@@ -8,7 +8,7 @@ languages independent of admin catalogs, dynamic routes and transactional guards
 Merged PR #215 adds bounded, cancellable retries only for busy `InTx` lock
 acquisition, process counters exposed through metrics, and moves content slug
 normalization outside the write transaction. Callback and commit replay are
-excluded. Term translation relationships (step 3) are in review as roadmap phase 8
+excluded. Term translation relationships (step 3) shipped in 0.22.0 (#236, roadmap phase 8)
 ([docs/specs/data-freedom.md](docs/specs/data-freedom.md)). Full transaction-duration
 instrumentation, wider transaction audits, independent importer distribution,
 multilingual source adapters and reconciliation remain subsequent changes. The WordPress

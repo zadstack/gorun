@@ -229,6 +229,16 @@ test('bulk author choices load only when chosen, search, and ask in a step witho
   await expect(page.locator(`#bulk-choose-value option[value="${admin.id}"]`)).toHaveCount(1);
   expect(await noHorizontalScroll(page)).toBe(true);
   await page.screenshot({path: testInfo.outputPath('bulk-author-step.png'), animations: 'disabled'});
+  // The same step in Arabic, right to left, at phone width.
+  await setLocale(page, 'ar');
+  await page.setViewportSize({width: 390, height: 844});
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect(page.locator('#bulk-choose-value')).toBeVisible();
+  expect(await noHorizontalScroll(page)).toBe(true);
+  await page.screenshot({path: testInfo.outputPath('bulk-author-step-ar.png'), animations: 'disabled', fullPage: true});
+  await setLocale(page, 'en');
+  await page.setViewportSize({width: 1280, height: 800});
   await page.unroute('**/choices?**');
 });
 

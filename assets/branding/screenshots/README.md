@@ -1,6 +1,6 @@
 # GoRun product screenshots
 
-The canonical PNGs were last refreshed for 0.21 (from main after #216) from the actual GoRun
+The canonical PNGs were last refreshed for 0.22 (from main after #237) from the actual GoRun
 application, using fictional Atlas Studio content and the sample
 editor Amira Hassan. One fresh local fixture supplies the editor, content list,
 site design, role catalog, canvas story, navigation, agent drawer, approvals,
