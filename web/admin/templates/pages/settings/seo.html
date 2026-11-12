@@ -3,7 +3,7 @@
 <h1 class="text-[22px] font-bold">{{t "seo.title"}}</h1>
 <p class="text-muted mb-4">{{t "seo.intro"}}</p>
 <a href="/admin/settings/seo/audit" class="inline-flex mb-4 min-h-11 items-center px-3 rounded border border-line bg-panel">{{t "seoaudit.title"}}</a>
-<script defer src="{{asset "seo-preview.js"}}"></script><form data-seo-preview-form data-site-title="{{setting "site.title"}}" method="post" action="/admin/settings/seo" class="max-w-3xl space-y-4" novalidate>
+<script defer src="{{asset "seo-preview.js"}}"></script><form data-seo-preview-form data-site-title="{{setting "site.title"}}" data-sample-page-title="{{t "seo.sample.page_title"}}" method="post" action="/admin/settings/seo" class="max-w-3xl space-y-4" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <section class="rounded border border-line bg-panel p-4 space-y-4">
     <div>

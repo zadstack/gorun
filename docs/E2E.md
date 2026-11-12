@@ -36,7 +36,10 @@ E2E_KEEP_DATA=1 npx playwright test     # keep the temp data dir (path printed a
 1. builds the binary: `CGO_ENABLED=0 go build -o e2e/.bin/gorun ../cmd/gorun`;
 2. starts two in-process fixture servers on 127.0.0.1 (see below);
 3. spawns `gorun serve` on a free port with a temp `GORUN_DATA`, `GORUN_THEMES=../themes`,
-   `GORUN_ENV=dev`, `GORUN_BASE_URL=http://127.0.0.1:<port>`, `GORUN_ALLOW_PRIVATE_NET=1` and a
+   `GORUN_ENV=dev`, `GORUN_BASE_URL=http://127.0.0.1:<port>`, `GORUN_ALLOW_PRIVATE_NET=1`,
+   `GORUN_TRUSTED_PROXIES=127.0.0.1/32` (a spec may give a browser context its own client IP through
+   `X-Forwarded-For`, as `site-forms.spec.ts` does to keep each visitor in its own per-IP rate-limit
+   window instead of sleeping it out; requests without the header still come from 127.0.0.1) and a
    webhook secret, logs to `<data>/server.log`, and waits for `/healthz`. The server env is built
    explicitly: every `GORUN_*` and `STRIPE_*` variable of your shell is dropped, and `STRIPE_SECRET_KEY`
    is passed only when it starts with `sk_test_`;

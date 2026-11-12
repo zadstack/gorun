@@ -433,5 +433,6 @@
   "bulk.choose_author": "اختر الكاتب الجديد",
   "bulk.choose_term": "اختر المصطلح",
   "bulk.choose_count": "العناصر المحددة: %d. لن يتغير شيء قبل التطبيق.",
-  "bulk.choose_back": "العودة إلى القائمة"
+  "bulk.choose_back": "العودة إلى القائمة",
+  "list.title_separator": "، "
 }

@@ -231,5 +231,8 @@
   "templates.group": "مجموعة الملفات",
   "templates.group_all": "كل الملفات",
   "templates.group_page": "الصفحات",
-  "templates.group_part": "الأجزاء والمكونات"
+  "templates.group_part": "الأجزاء والمكونات",
+  "themes.details": "تفاصيل القالب",
+  "editor.fallback": "المحرر النصي متاح؛ تعذّر تحميل محرر الكود.",
+  "editor.keyboard_help": "Ctrl/Cmd+F للبحث داخل الكود. Tab للتنقل بين الأدوات. Escape للخروج من المحرر."
 }

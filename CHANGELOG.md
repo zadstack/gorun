@@ -15,6 +15,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 - Notification delivery by email and Telegram ([docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md)): My account → **Email and Telegram delivery** (`/admin/account/notifications`, also in the bell panel) turns on email right away or as a daily digest at a chosen UTC hour, links Telegram through a one-time code and `t.me` deep link (15 minutes, single use, stored hashed), mutes categories (approvals, review queue, comments, failures, hand-offs) and sends rate-limited test messages. A 5-minute job recomputes each opted-in user's items as that user, so permissions are checked again at send time, and records delivered keys per channel so restarts and parallel instances do not send twice. Messages carry titles, counts and admin links only, in the user's admin language. Emails have a signed one-click unsubscribe link (GET confirms, POST turns email off). Administrators store the bot token encrypted (never rendered) and register the webhook (`/webhooks/telegram/<secret path>` plus Telegram's secret header, compared in constant time); Telegram sends go only to `api.telegram.org` through the SSRF-safe client, retry 429/5xx with backoff, and stop for a user after three 403s. `/metrics` gains `gorun_notification_deliveries_total{channel,outcome}`; linking, unlinking, bot changes and unsubscribes are audited. `kernel.NotificationSource` gains an optional `Category`.
 
+### Fixed
+
+- The content studio panel, studio settings, starter wizard, theme and pattern lists, template editor, AI settings link and content list no longer choose their wording inline by interface language: 99 strings (60 in templates, 39 in the studio settings, connection setup, starter and SEO preview scripts) moved to the module catalogs in English and Arabic, with unchanged wording. A test (`web/i18n_guard_test.go`) now fails on new `eq locale "ar"` text pickers in admin and module templates or `lang === 'ar'` pickers in admin scripts.
+- The site-forms browser spec no longer sleeps 61 seconds when the forms rate limit answers 429: the e2e server trusts loopback as a proxy (`GORUN_TRUSTED_PROXIES`) and each visitor context sends its own `X-Forwarded-For` client IP. A new test still asserts the 429 on the sixth POST from one IP. The spec dropped from 72 s to 11 s.
+
 ## [0.22.0] - 2026-11-12
 
 ### Upgrade notes

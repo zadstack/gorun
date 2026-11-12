@@ -17,5 +17,6 @@
   "slug": "Slug",
   "version": "Version",
   "screenshot_alt": "Screenshot of %s pattern",
-  "note": "Patterns do not change theme colors or fonts. Adjust identity under Themes / Theme settings."
+  "note": "Patterns do not change theme colors or fonts. Adjust identity under Themes / Theme settings.",
+  "source": "Source"
 }

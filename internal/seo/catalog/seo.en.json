@@ -25,5 +25,6 @@
   "sample.title": "Sample search preview",
   "sample.help": "This previews the template; search engines may show different text.",
   "robots.block_all_warning": "Custom rules include blocking every path. Review before launch.",
-  "robots.advanced": "Advanced: crawler rules"
+  "robots.advanced": "Advanced: crawler rules",
+  "sample.page_title": "Sample page title"
 }
