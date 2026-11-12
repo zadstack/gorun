@@ -80,6 +80,12 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     GORUN_BASE_URL: base,
     // fixture WordPress + fake billing server live on 127.0.0.1 over http
     GORUN_ALLOW_PRIVATE_NET: '1',
+    // The runner reaches the server over loopback; trusting it as a reverse
+    // proxy (the operator setting used behind Caddy or Traefik) lets a spec
+    // give each visitor context its own X-Forwarded-For client IP, so per-IP
+    // limits are exercised without sleeping out their windows. A request
+    // without the header still resolves to 127.0.0.1, as before.
+    GORUN_TRUSTED_PROXIES: '127.0.0.1/32',
     STRIPE_WEBHOOK_SECRET: webhookSecret,
   };
   // Optional cold-start fixture: membership is off in persisted settings,

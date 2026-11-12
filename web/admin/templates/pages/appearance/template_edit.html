@@ -20,7 +20,7 @@
   <label for="template-body" class="sr-only">{{t "theme.editor.body"}}</label>
   <div data-code-editor class="flex rounded border border-line bg-panel focus-within:border-green focus-within:ring-[3px] focus-within:ring-green-soft overflow-hidden" dir="ltr">
     <pre data-code-gutter aria-hidden="true" x-ref="gutter" class="select-none border-e border-line bg-panel-2 px-2 py-2 text-end font-mono text-[12px] leading-5 text-muted overflow-hidden" x-text="Array.from({length: lines}, (_, i) => i + 1).join('\n')">1</pre>
-    <textarea data-code-source data-language="html" data-label="{{t "theme.editor.body"}}" data-fallback="{{if eq (locale) "ar"}}المحرر النصي متاح؛ تعذّر تحميل محرر الكود.{{else}}Code editor unavailable; plain text editing is ready.{{end}}" id="template-body" name="body" x-ref="src" rows="28" spellcheck="false" wrap="off"
+    <textarea data-code-source data-language="html" data-label="{{t "theme.editor.body"}}" data-fallback="{{t "theme.editor.fallback"}}" id="template-body" name="body" x-ref="src" rows="28" spellcheck="false" wrap="off"
               @input="lines = Math.max(1, $event.target.value.split('\n').length)" @scroll="$refs.gutter.scrollTop = $event.target.scrollTop"
               class="flex-1 min-h-[480px] resize-y bg-panel px-3 py-2 font-mono text-[12px] leading-5 focus:outline-none">{{.Body}}</textarea>
   </div>
@@ -33,7 +33,7 @@
     {{end}}
   </div>
   <p class="mt-2 text-[12px] text-muted">{{t "theme.editor.help"}}</p>
-  <p id="code-editor-help" class="mt-2 text-[12px] text-muted">{{if eq (locale) "ar"}}Ctrl/Cmd+F للبحث داخل الكود. Tab للتنقل بين الأدوات. Escape للخروج من المحرر.{{else}}Ctrl/Cmd+F to search code. Tab moves between controls. Escape leaves the editor.{{end}}</p>
+  <p id="code-editor-help" class="mt-2 text-[12px] text-muted">{{t "theme.editor.keyboard_help"}}</p>
   <p data-code-status role="status" class="text-[12px] text-muted"></p>
 </form>
 {{end}}

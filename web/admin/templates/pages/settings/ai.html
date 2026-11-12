@@ -2,7 +2,7 @@
 {{define "title"}}{{t "admin.settings.tab_ai"}}{{end}}
 {{define "content"}}
 <h1 class="text-[22px] font-bold mb-3">{{t "admin.settings.title"}}</h1>
-<p class="mb-3"><a href="/admin/settings/studio" class="text-blue">{{if eq (locale) "ar"}}استوديو المحتوى: مزوّدو MCP والمهارات{{else}}Content studio: MCP providers & skills{{end}}</a></p>
+<p class="mb-3"><a href="/admin/settings/studio" class="text-blue">{{t "admin.settings.studio_link"}}</a></p>
 {{template "partials/settings_tabs" "ai"}}
 {{if not .Configured}}<div role="status" class="mb-4 max-w-3xl rounded border border-line bg-panel-2 text-muted px-3 py-2">{{t "admin.ai.not_configured"}}</div>{{end}}
 <form method="post" action="/admin/settings/ai" class="rounded border border-line bg-panel p-4 space-y-4 max-w-3xl" novalidate x-data="{ provider: $el.dataset.provider }" data-provider="{{.Form.Provider}}">

@@ -15,5 +15,8 @@
   "kind_fixed": "Create a new connection to use a different type.",
   "ai_conflict": "AI settings changed elsewhere. Your proposal is retained; reload and review before saving.",
   "reload": "Reload saved settings",
-  "storage_conflict": "Storage changed elsewhere. No destination was disabled. Reload Storage and review the active destination."
+  "storage_conflict": "Storage changed elsewhere. No destination was disabled. Reload Storage and review the active destination.",
+  "purpose_mcp": "Tool connection: save the MCP server endpoint, then test discovery without executing tools.",
+  "purpose_ai": "Writing model: choose its protocol and model, then save before testing.",
+  "purpose_s3": "File storage: use the S3 endpoint and bucket name. Saving does not move files or activate storage."
 }
