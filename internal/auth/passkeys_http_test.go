@@ -76,8 +76,12 @@ func cborBytes(b []byte) []byte { return append(cborHead(2, uint64(len(b))), b..
 func cborText(s string) []byte  { return append(cborHead(3, uint64(len(s))), s...) }
 
 func (a *softAuthenticator) coseKey() []byte {
-	x := a.key.PublicKey.X.FillBytes(make([]byte, 32))
-	y := a.key.PublicKey.Y.FillBytes(make([]byte, 32))
+	// Uncompressed SEC 1 point: 0x04 || X (32 bytes) || Y (32 bytes).
+	point, err := a.key.PublicKey.Bytes()
+	if err != nil || len(point) != 65 {
+		panic("softAuthenticator: P-256 public key encoding")
+	}
+	x, y := point[1:33], point[33:]
 	out := cborHead(5, 5)
 	out = append(out, cborInt(1)...)
 	out = append(out, cborInt(2)...) // kty: EC2
