@@ -5,6 +5,11 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- The content studio panel, studio settings, starter wizard, theme and pattern lists, template editor, AI settings link and content list no longer choose their wording inline by interface language: 99 strings (60 in templates, 39 in the studio settings, connection setup, starter and SEO preview scripts) moved to the module catalogs in English and Arabic, with unchanged wording. A test (`web/i18n_guard_test.go`) now fails on new `eq locale "ar"` text pickers in admin and module templates or `lang === 'ar'` pickers in admin scripts.
+- The site-forms browser spec no longer sleeps 61 seconds when the forms rate limit answers 429: the e2e server trusts loopback as a proxy (`GORUN_TRUSTED_PROXIES`) and each visitor context sends its own `X-Forwarded-For` client IP. A new test still asserts the 429 on the sixth POST from one IP. The spec dropped from 72 s to 11 s.
+
 ## [0.22.0] - 2026-11-12
 
 ### Upgrade notes

@@ -1,7 +1,7 @@
 (() => {
  'use strict';
  const root=document.querySelector('[data-studio-structured]'),raw=document.querySelector('[data-studio-config]');if(!root||!raw)return;
- const L=document.querySelector('[data-studio-config-strings]')?.dataset||{},t=key=>L[key]||'';
+ const L=document.querySelector('[data-studio-config-strings]')?.dataset||{},t=key=>L[key]??key;
  const node=(tag,text)=>{const el=document.createElement(tag);if(text!==undefined)el.textContent=text;return el;};
  const status=document.querySelector('[data-studio-config-status]'),advanced=document.querySelector('[data-studio-advanced]');let config,rawEdited=false,readers=[];
  const mode=node('p');mode.dataset.studioEditorMode='';mode.setAttribute('role','status');mode.setAttribute('aria-live','polite');mode.hidden=true;root.before(mode);
