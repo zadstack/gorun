@@ -1,6 +1,6 @@
 # Professional-grade roadmap
 
-Status: active. Audit of 2026-11-11 against v0.21.0: admin design, the MCP
+Status: complete in 0.22.0 (2026-11-12). Audit of 2026-11-11 against v0.21.0: admin design, the MCP
 surface and professional-CMS capabilities, plus WebMCP for the admin. Each
 phase ships as its own pull request with tests and refreshed screenshots, and
 is merged only with green CI. Update the status column as phases land.
@@ -43,11 +43,11 @@ gated by the `tools` permissions policy, with `readOnlyHint` and
 | 1 | Admin component foundation | Tokens for type, radius and spacing; `.btn-*`, `.field`, `.page-header`, `.data-table`, `.badge-*`, `.empty-state` in `admin.css`; `partials/page-header`; one date/time output (template `date`/`datetime` + JS helper, full value in `title`); `<bdi>` for mixed-direction values. Migrate the most visible pages: dashboard, content list, API keys, approvals, agent channels, forms inbox, private reports. | L | done (#227) |
 | 2 | MCP organization | Tool annotations (`title`, `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) on all tools; real enums and nested `required`; split canvas inputs and map their errors; routing-guide server instructions + `gorun://guide`; toolsets and read-only mode (`?toolsets=`/`X-MCP-Toolsets`, default all); one `verb_noun` naming with old names kept as hidden aliases; documented error list. | L | done (#226) |
 | 3 | WebMCP in the admin | Feature-detected `document.modelContext` registration on admin pages: read-only tools (search, open a page, read the current item, list pins) and draft-only writes. Consequential actions call existing endpoints and still need the human confirmation and approvals already enforced server-side. Relies on the `tools` permissions-policy default (`'self'`) and the admin never being framed. Tools follow the current user's permissions and unregister on navigation. | M | done (#228) |
-| 4 | Shell clean-up | One tab bar (categories fold into the sidebar), pin control on hover/focus only, the rail holds agents only, each destination in one place, row actions in a menu, danger zones in settings. | M | in review (part 1 #229) |
+| 4 | Shell clean-up | One tab bar (categories fold into the sidebar), pin control on hover/focus only, the rail holds agents only, each destination in one place, row actions in a menu, danger zones in settings. | M | done (#229, #234) |
 | 5 | Editing safety | Content autosave with conflict handling, revision diff, signed expiring preview links ([EDITING_SAFETY.md](EDITING_SAFETY.md)). | M | done (#230) |
 | 6 | Speed for power users | Global command palette (Cmd/Ctrl+K) over admin search and actions, shortcut map (`?`, `/`, `g c`, Cmd+S), bulk publish/unpublish/schedule/author/terms. | M | done (#231) |
-| 7 | Accounts and awareness | TOTP 2FA with recovery codes and per-role enforcement, "My account" page, notifications centre (approvals, review requests, comments, failed jobs/backups). | L | in review (#233) |
-| 8 | Data freedom | Content export (JSON/CSV), term translations ([spec](specs/data-freedom.md)). | M | in review |
+| 7 | Accounts and awareness | TOTP 2FA with recovery codes and per-role enforcement, "My account" page, notifications centre (approvals, review requests, comments, failed jobs/backups). | L | done (#233) |
+| 8 | Data freedom | Content export (JSON/CSV), term translations ([spec](specs/data-freedom.md)). | M | done (#236) |
 
 Order: 1 and 2 touch separate code and run in parallel; 3 builds on 2's
 annotations; 4 builds on 1's components. Later phases follow in order.

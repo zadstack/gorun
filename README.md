@@ -159,6 +159,8 @@ The screenshots use an isolated demo site with fictional content. The layout mir
 
 The dashboard keeps recent work, quick actions and the site setup checklist on one screen. Each standalone shortcut has a single place: primary navigation, the page tabs, your pins or the tools rail. Pinning a tool updates the sidebar and shortcuts in place, without reloading the page. The orchestrator card at the top of the sidebar shows whether a run is live and how many approvals wait for you. [Dashboard](assets/branding/screenshots/dashboard-en.png).
 
+Press **Ctrl/⌘ K** for the command palette (pages, permitted actions and content, Arabic-aware) and **?** for keyboard shortcuts. The bell lists approvals, items waiting for review, comments and failed jobs you can act on. **My account** holds your profile, password, signed-in devices and two-factor sign-in (authenticator app with recovery codes; administrators can require it per role).
+
 ## Measured, with context
 
 In a controlled minimal article test at **50 requests/s**, median run p95 latency was **2.66 ms for GoRun**, **16.85 ms for WordPress + MariaDB**, and **0.66 ms for Astro static + Nginx**. Sampled peak working set was **114.54 MiB**, **203.78 MiB**, and **4.09 MiB**, respectively.
@@ -175,6 +177,8 @@ Manage posts, pages, custom content types, fields, media and navigation in one p
     <td width="50%" valign="top"><a href="assets/branding/screenshots/editor-en.png"><img src="assets/branding/screenshots/editor-en.png" alt="Post editor with body, excerpt, featured image and publishing panel" /></a><br /><sub>Editor with scheduling and revisions</sub></td>
   </tr>
 </table>
+
+The editor autosaves to a private copy and never overwrites a newer save. Compare any revision with the current version before restoring it, and share an expiring, revocable preview link with reviewers who have no account. Select items in the content list to publish, schedule, reassign or tag them together; each item keeps its own permission checks. Export content as JSON or CSV from the list, the REST API or `gorun content export`, and translate categories and tags like content. [Editing safety](docs/EDITING_SAFETY.md) · [Content export](docs/API.md#content-export)
 
 [Editorial workflow](docs/README.md) · [WordPress migration](docs/MIGRATION.md)
 
@@ -220,7 +224,7 @@ Activating a theme does not create starter pages; use the site builder for that.
 
 ## Work with agents, keep the decisions
 
-Connect an MCP client with an **AI agent** key. Its scopes are bounded by its owner's permissions; publishing, deleting and changing sensitive settings require human approval by default. REST integration keys are separate from agent keys.
+Connect an MCP client with an **AI agent** key. Its scopes are bounded by its owner's permissions; publishing, deleting and changing sensitive settings require human approval by default. REST integration keys are separate from agent keys. Every MCP tool carries annotations (read-only, destructive, idempotent); clients can narrow the list with `?toolsets=content,media` or hide writes with `?readonly=1`, and `gorun://guide` explains the workflow. In supporting browsers the admin also registers [WebMCP](docs/WEBMCP.md) tools, so an in-browser agent can search, read the open page and prepare drafts as you, without an API key.
 
 ### How an agent action gets approved
 
