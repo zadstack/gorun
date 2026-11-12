@@ -389,6 +389,57 @@ the type's schema remain preserved. SEO key null is a stored null, not a deletio
 Content listing uses `order=price:desc,title`, `taxonomy.{tax}` and `fields.{key}.{op}` filters; it does not
 use the generic helper's `sort` syntax. Its page/per_page defaults remain 1/20, capped at 100.
 
+## Content export
+
+`GET /api/v1/content/export` (scope `content.view`) is a download, not an envelope: the success body
+is a JSON document or a CSV file sent as `Content-Disposition: attachment` with
+`Cache-Control: private, no-store`. Errors before streaming use the normal error envelope (401, 403,
+422 `validation_failed` for an unknown `format`, `type`, `status`, `date_field`, date, `columns` or
+`limit`). It returns what `GET /api/v1/content` would let the caller read: author and contributor
+keys get their own items plus other people's published items of public types.
+
+```sh
+curl -H "Authorization: Bearer gp_…" -o posts.json \
+  "https://example.com/api/v1/content/export?format=json&type=post&status=published&from=2025-01-01"
+curl -H "Authorization: Bearer gp_…" -o posts.csv \
+  "https://example.com/api/v1/content/export?format=csv&type=post&columns=id,title,status,fields.price,terms"
+```
+
+```json
+{"format":"gorun.content-export","version":1,"exported_at":"2026-11-12T08:00:00Z",
+ "filters":{"format":"json","type":"post","status":"published","from":"2025-01-01","limit":10000},
+ "items":[{"id":"01K…","type":"post","slug":"hello","title":"Hello","body":"<p>…</p>","status":"published",
+   "locale":"en","translation_group":"01K…","terms":{"category":["news"]},
+   "author":{"id":"01K…","name":"Sara"},"featured_media_id":"01K…",
+   "media":[{"id":"01K…","url":"https://example.com/uploads/2026/11/a.jpg"}],
+   "created_at":"2026-11-01T09:00:00Z","updated_at":"…","published_at":"…","publish_at":"", "…":"…"}],
+ "count":1,"next_after":""}
+```
+
+At most 10 000 items per request (`limit`, default 10 000); when more match, `next_after` names the
+last id and `after=<next_after>` continues. Formats, columns, the author-email rule and auditing are
+described in [CONTENT_STUDIO.md](CONTENT_STUDIO.md#export).
+
+## Term translations
+
+Terms carry `locale` (a configured content language; default the site language) and the read-only
+`translation_group` ("" when untranslated). Create a term as the translation of another one with
+`translation_of`, or use the translations sub-resource:
+
+```sh
+curl -X POST -H "Authorization: Bearer gp_…" -H "Content-Type: application/json" \
+  -d '{"name":"أخبار","slug":"akhbar","locale":"ar","translation_of":"01KNEWS…"}' \
+  https://example.com/api/v1/taxonomies/category/terms
+# → 201 {"ok":true,"data":{"id":"01K…","slug":"akhbar","locale":"ar","translation_group":"01KNEWS…",…}}
+curl -H "Authorization: Bearer gp_…" "https://example.com/api/v1/taxonomies/category/terms?translation_group=01KNEWS…"
+```
+
+`POST …/terms/{id}/translations` takes a `Term` body (`locale`, `name`, optional `slug`, `description`);
+`POST …/terms/{id}/translations/link` takes `{"term_id":"…"}`; `DELETE …/terms/{id}/translations`
+unlinks. A second term in a language already in the group, a language outside the site's content
+languages or a term of another taxonomy answers 422. See
+[CONTENT_STUDIO.md](CONTENT_STUDIO.md#term-translations) for routing and theme behaviour.
+
 ## Canvas editor search
 
 The canvas editor also uses the session-only admin endpoint

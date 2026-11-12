@@ -542,3 +542,6 @@ explicit language list is saved. On configured sites, implicit content languages
 follow the public default. Existing Arabic/English admin catalogs, user language
 validation and type-label translation fields remain separate. This change does
 not add translated taxonomy-term relationships or translate starter/theme copy.
+Term translations came later (taxonomy migration 0003: `terms.locale` and
+`terms.translation_group`, the site language backfilled at boot); see
+[CONTENT_STUDIO.md](CONTENT_STUDIO.md#term-translations).

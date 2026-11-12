@@ -7,6 +7,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/menus"
 	"github.com/zadstack/gorun/internal/taxonomy"
 )
 
@@ -22,7 +23,7 @@ func TestTermArchivesPerLocale(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = ts.CreateTermTranslation(ctx, akhbar.ID, taxonomy.Term{Locale: "en", Name: "News", Slug: "news"})
+	news, err := ts.CreateTermTranslation(ctx, akhbar.ID, taxonomy.Term{Locale: "en", Name: "News", Slug: "news"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,6 +59,15 @@ func TestTermArchivesPerLocale(t *testing.T) {
 	_, body = e.get("/en/post/khabar")
 	mustContain(t, body, "/en/category/news")
 	mustNotContain(t, body, "/en/category/akhbar")
+
+	// A menu item naming the English term links to it under /en/.
+	ms, _ := kernel.Get[menus.Service](e.app.Deps, kernel.ServiceMenus)
+	if _, err := ms.Save(ctx, menus.Menu{Slug: "main-en", Name: "Main EN", Location: "primary", Locale: "en",
+		Items: []menus.Item{{Kind: menus.KindTerm, Label: "NEWS-LINK", RefID: news.ID}}}); err != nil {
+		t.Fatal(err)
+	}
+	_, body = e.get("/en/")
+	mustContain(t, body, `href="http://example.test/en/category/news">NEWS-LINK`)
 
 	// The sitemap lists each term under its own locale.
 	_, xml := e.get("/sitemap.xml")

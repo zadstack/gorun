@@ -59,3 +59,35 @@ Not included:
 
 - **Change language** in bulk: an item's language ties it to a translation group (one item per language) and to its slug, so moving many items at once can collide with existing translations. Use **Translations** in the editor.
 - **REST API**: `/api/v1` has no bulk operation pattern yet; scripts call the per-item endpoints (`POST /api/v1/content/{id}/publish` and the update endpoint) in a loop.
+
+## Export
+
+Take content out of GoRun as JSON (complete, for re-import elsewhere) or CSV (one row per item, for spreadsheets). Specification: [specs/data-freedom.md](specs/data-freedom.md).
+
+- **Admin:** the content list's **Export** menu downloads JSON or CSV with the list's current filters (search, status, language, author, view). `GET /admin/content/{type}/export?format=json|csv` needs `content.view`.
+- **REST:** `GET /api/v1/content/export` (scope `content.view`) answers with an attachment (`Content-Disposition: attachment`, `Cache-Control: private, no-store`). Parameters: `format` (`json` default, `csv`), `type`, `status` (comma list; default all but trash), `locale`, `author_id`, `search`, `date_field` (`created_at` default, `updated_at`, `published_at`) with `from`/`to` (inclusive; `2025-01-31` or RFC 3339), `columns` (CSV), `limit` (1–10 000, default 10 000) and `after`. Invalid values answer 422 before anything is sent.
+- **CLI:** `gorun content export --format json|csv [--type T] [--status S] [--locale L] [--author ID] [--search Q] [--date-field F] [--from D] [--to D] [--columns c1,c2] [--out file]` writes everything that matches (no limit) to stdout or to a private (0600) file that appears only once complete.
+
+**JSON** is one document: `{"format":"gorun.content-export","version":1,"exported_at","filters","items":[…],"count","next_after"}`. Each item has `id`, `type`, `slug`, `title`, `excerpt`, `body`, `body_format`, `status`, `locale`, `translation_group`, `parent_id`, `menu_order`, `template`, `fields`, `seo`, `terms` (taxonomy → term slugs), `author` (`id`, `name`, `email`), `featured_media_id`, `media` (every media id the featured image and image/file fields reference, with its absolute URL), `created_at`, `updated_at`, `published_at` and `publish_at`. Media files themselves are not included; backups carry them.
+
+**CSV** starts with a UTF-8 BOM so spreadsheet apps read Arabic. Default columns: `id,type,slug,title,status,locale,author_name,created_at,updated_at,published_at,terms`. `columns` picks from `id`, `type`, `slug`, `title`, `excerpt`, `body`, `status`, `locale`, `translation_group`, `parent_id`, `author_id`, `author_name`, `author_email`, `created_at`, `updated_at`, `published_at`, `publish_at`, `featured_media_id`, `featured_media_url`, `seo_title`, `seo_description`, `terms` and `fields.<key>` (lists and objects as JSON). `terms` reads `category:news|world; tag:go`. Every cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading `'`, so a spreadsheet never runs it as a formula.
+
+**Who sees what.** An export holds exactly what the content list shows the caller: authors and contributors get their own items plus other people's published items of public types (never someone else's draft, pending or private item); the admin list's export of an author is limited to their own items, as the list is. Author emails appear only on the caller's own items, for callers with `users.manage`, and in the CLI. The CLI runs as the server operator and sees everything.
+
+**Large exports** stream: items are read in pages of 100 in id order and written as they are read, so memory does not grow with the site. An HTTP export stops after `limit` items; the JSON document then ends with `next_after`, and the same request with `after=<next_after>` continues (for CSV, pass the last row's `id`).
+
+**Audit.** Admin and REST exports record `content.export` with the actor, `via` (`admin` or `api`), format, filters, `count` and `next_after` — never item contents.
+
+Not included: importing a JSON export (use the REST create operations or the WordPress importer), comments, revisions, users, settings and media binaries.
+
+## Term translations
+
+On a site with several content languages, categories, tags and custom taxonomy terms are translated like content: each term has a `locale` (one of the content languages; existing terms got the site's default language when the feature arrived) and terms that are the same category in different languages share a `translation_group`.
+
+- **Admin:** open a term in **Taxonomies → (taxonomy)**. The form has a **Language** select, and the **Translations** panel lists every content language: add a translation inline (name, optional slug), link an existing term of another language, or remove the term from its translations. The term table shows each term's language. All of this needs `taxonomy.manage`.
+- **Slugs** stay unique per taxonomy across languages, so `news` and `akhbar` (or `أخبار`) are separate slugs; the same text in two languages becomes `news` and `news-2`. Every slug reference (content `terms`, `taxonomy.{tax}` filters, menus, theme functions) keeps naming exactly one term.
+- **A translation** copies the description and meta and takes the parent's translation in its language as parent (top level when the parent is not translated). A group holds one term per language; a group left with one term is dissolved.
+- **Public site:** `/{taxonomy}/{slug}` under a language prefix redirects (301, query kept) to the term's translation in that language when there is one, so `/en/category/akhbar` goes to `/en/category/news`. A term archive lists the page language's items tagged with any term of its group (a translated post that kept the source's category still appears). Term pages list each translation as an `hreflang` alternate, the theme functions `url`, `terms` and `termsOf` use the page language's translation, the sitemap and menu items link each term under its own language prefix. Untranslated terms work in every language as before.
+- **REST:** terms carry `locale` and `translation_group`; `GET /api/v1/taxonomies/{tax}/terms` filters by `locale` and `translation_group`; `POST …/terms` accepts `locale` and `translation_of` (a term id of the same taxonomy); `GET`/`POST`/`DELETE …/terms/{id}/translations` and `POST …/terms/{id}/translations/link` (`{"term_id": "…"}`) list, create, unlink and link. `translation_group` is read-only on create and update.
+- **MCP:** `list_terms` takes optional `locale` and `translation_group`; `create_term` takes optional `locale` and `translation_of` ([MCP.md](MCP.md)).
+- A content language used by a term cannot be removed from the site's languages.

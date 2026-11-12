@@ -182,8 +182,8 @@ and comment statuses, filter operators, order direction, field types, builder pu
 | `upload_media` | media.upload | | `data_base64` + `filename` (≤ 10 MB) or a public `url` (SSRF-safe: private addresses refused) |
 | `list_media` | content.view | | Media library |
 | `list_taxonomies` | content.view | | Taxonomies |
-| `list_terms` | content.view | | Terms of a taxonomy |
-| `create_term` | taxonomy.manage | | New term |
+| `list_terms` | content.view | | Terms of a taxonomy; optional `locale` (one content language) and `translation_group` (a term and its translations). Each term returns `locale` and `translation_group` |
+| `create_term` | taxonomy.manage | | New term; optional `locale` (default the site language) and `translation_of` (id of a term of the same taxonomy in another language: the new term becomes its translation, the parent maps to the parent's translation). See [term translations](CONTENT_STUDIO.md#term-translations) |
 | `get_media` | content.view | | One media item by `id`, including dimensions and responsive image `variants` |
 | `update_media` | media.upload | **yes** | Patch `alt`, `caption`, `title` by `id`, or set `focal` (`{x, y}`, each 0–1) or `clear_focal`. Missing/null fields stay unchanged; `""` clears. At least one change is required. |
 | `list_templates` | themes.manage | | Theme templates and saved overrides |

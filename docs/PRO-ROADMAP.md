@@ -47,7 +47,7 @@ gated by the `tools` permissions policy, with `readOnlyHint` and
 | 5 | Editing safety | Content autosave with conflict handling, revision diff, signed expiring preview links ([EDITING_SAFETY.md](EDITING_SAFETY.md)). | M | done (#230) |
 | 6 | Speed for power users | Global command palette (Cmd/Ctrl+K) over admin search and actions, shortcut map (`?`, `/`, `g c`, Cmd+S), bulk publish/unpublish/schedule/author/terms. | M | done (#231) |
 | 7 | Accounts and awareness | TOTP 2FA with recovery codes and per-role enforcement, "My account" page, notifications centre (approvals, review requests, comments, failed jobs/backups). | L | in review (#233) |
-| 8 | Data freedom | Content export (JSON/CSV), term translations. | M | planned |
+| 8 | Data freedom | Content export (JSON/CSV), term translations ([spec](specs/data-freedom.md)). | M | in review |
 
 Order: 1 and 2 touch separate code and run in parallel; 3 builds on 2's
 annotations; 4 builds on 1's components. Later phases follow in order.

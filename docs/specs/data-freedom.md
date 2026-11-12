@@ -49,7 +49,7 @@ then `content-export`. Either can ship alone.
     published_at,publish_at,featured_media_id,featured_media_url,seo_title,seo_description,
     terms`) and custom fields (`fields.<key>`; non-scalar values as JSON). Every cell starting
     with `=` `+` `-` `@`, tab or CR is prefixed with `'`.
-- Filters: `type`, `status` (comma list, default all but trash), `locale`, `author`,
+- Filters: `type`, `status` (comma list, default all but trash), `locale`, `author_id` (`author` in the admin list),
   `from`/`to` (date or RFC 3339, inclusive) on `date_field` = `created_at` (default),
   `updated_at` or `published_at`; `search` as in the list.
 - Streaming: keyset pages of 100 ordered by id, written and flushed as they are read; memory
@@ -116,8 +116,8 @@ then `content-export`. Either can ship alone.
 gofmt -l . && go vet ./... && go test ./...
 python3 tools/docs-check.py
 node tools/admin-icons/update.mjs --check
-go run ./cmd/gorun api-docs docs/API.md   # regenerate the operations table
-(cd e2e && npx playwright test data-freedom)
+GORUN_THEMES=./themes go run ./cmd/gorun api-docs --update docs/API.md   # operations table
+(cd e2e && npx playwright test tests/data-freedom.spec.ts)
 ```
 
 ## Testing strategy
