@@ -35,6 +35,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Changed
 
+- A content language used by a taxonomy term can no longer be removed from `site.content_locales` (as for content and menus). A menu item that names a term links it under the term's own language prefix. Form-submission and analytics CSV exports share the formula-escaping helper `httpx.CSVCell` (same rule). OpenAPI marks download operations through `APIContract.ResponseContentTypes`.
 - `POST /admin/content/{type}/bulk` now needs `content.view` at the route; trash and delete still require `content.delete` for the whole request and every other action checks permissions per item. An unknown `action` is refused with an error message instead of being treated as trash. The bulk form may send `return` (the list query) to come back to the same filters.
 - Admin page tabs are a flat underlined bar instead of a row of bordered boxes. The pin-to-Quick-access button appears on hover or keyboard focus on desktop and stays visible on touch and narrow screens; on phones the tabs scroll sideways instead of stacking.
 - Agent channels use the components: members are picked from the owner's agent keys by name (no free-text member ID), raw IDs move into a small ID disclosure, and messages show author initials, time and a hand-off chip with a petrol send button.
