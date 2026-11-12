@@ -16,11 +16,11 @@ const maxPendingCommentsCounted = 99
 // centre: content submitted for review (status pending) that the user may
 // publish, and comments awaiting moderation.
 func registerNotifications(d *kernel.Deps) {
-	d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "content.review", Permission: "content.publish",
+	d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "content.review", Permission: "content.publish", Category: kernel.NotifyReview,
 		Load: func(ctx context.Context, limit int) ([]kernel.Notification, error) {
 			return reviewNotifications(ctx, d, limit)
 		}})
-	d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "content.comments", Permission: PermModerateComments,
+	d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "content.comments", Permission: PermModerateComments, Category: kernel.NotifyComments,
 		Load: func(ctx context.Context, limit int) ([]kernel.Notification, error) {
 			return commentNotifications(ctx, d)
 		}})

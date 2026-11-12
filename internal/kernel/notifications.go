@@ -26,10 +26,28 @@ type Notification struct {
 // NotificationSource derives notifications for the user in ctx. The admin
 // checks Permission (required) before Load; Load filters further (own items,
 // items the user may decide) and returns at most limit items, newest first.
+//
+// Category groups sources for delivery preferences (a user may mute a
+// category for email and Telegram; the in-app centre always shows it). Known
+// categories: NotifyApprovals, NotifyReview, NotifyComments, NotifyFailures,
+// NotifyHandoffs. Empty means NotifyOther, which cannot be muted.
 type NotificationSource struct {
-	ID, Permission string
-	Load           func(ctx context.Context, limit int) ([]Notification, error)
+	ID, Permission, Category string
+	Load                     func(ctx context.Context, limit int) ([]Notification, error)
 }
+
+// Notification categories (NotificationSource.Category).
+const (
+	NotifyApprovals = "approvals"
+	NotifyReview    = "review"
+	NotifyComments  = "comments"
+	NotifyFailures  = "failures"
+	NotifyHandoffs  = "handoffs"
+	NotifyOther     = "other"
+)
+
+// NotifyCategories lists the categories a user may mute, in display order.
+var NotifyCategories = []string{NotifyApprovals, NotifyReview, NotifyComments, NotifyFailures, NotifyHandoffs}
 
 // AddNotificationSource registers a source; IDs must be unique.
 func (a *AdminRegistry) AddNotificationSource(src NotificationSource) {
@@ -37,6 +55,9 @@ func (a *AdminRegistry) AddNotificationSource(src NotificationSource) {
 	defer a.mu.Unlock()
 	if src.ID == "" || src.Permission == "" || src.Load == nil {
 		panic("kernel: incomplete notification source")
+	}
+	if src.Category == "" {
+		src.Category = NotifyOther
 	}
 	if slices.ContainsFunc(a.notify, func(s NotificationSource) bool { return s.ID == src.ID }) {
 		panic(fmt.Sprintf("kernel: duplicate notification source %q", src.ID))

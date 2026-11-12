@@ -30,6 +30,7 @@ cannot claim `/metrics`.
 | `gorun_db_begin_retries_total` | counter | Additional `db.InTx` lock acquisition attempts after backoff |
 | `gorun_db_begin_exhausted_total` | counter | `db.InTx` acquisitions that fail after all three attempts; cancellation is excluded |
 | `gorun_jobs{status}` | gauge | `queued`, `running`, `failed` (queued awaiting retry), `dead`, `done` |
+| `gorun_notification_deliveries_total{channel,outcome}` | counter | notification messages per `channel` (`email`, `telegram`) and `outcome` (`sent`, `failed`) since process start, test sends included ([NOTIFICATIONS.md](NOTIFICATIONS.md)) |
 | `gorun_backup_last_success_timestamp_seconds` | gauge | Unix time of newest successful **local** backup (max of `backup.schedule.last` and newest complete on-disk pair); `0` if none |
 
 No per-path labels. No OpenTelemetry SDK.

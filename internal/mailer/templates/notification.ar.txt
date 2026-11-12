@@ -1,0 +1,10 @@
+{{define "subject"}}{{.Site}}: {{.Heading}}{{end}}{{.Heading}}
+{{range .Items}}
+- {{.Title}}{{if .Detail}}
+  {{.Detail}}{{end}}
+  {{.URL}}
+{{end}}
+تتضمن الرسالة العناوين فقط؛ افتح كل رابط لترى التفاصيل في لوحة الإدارة.
+
+إعدادات الإشعارات: {{.PrefsURL}}
+إيقاف هذه الرسائل: {{.UnsubscribeURL}}

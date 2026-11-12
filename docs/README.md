@@ -42,6 +42,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | [THEME-CONTRACT.md](THEME-CONTRACT.md) | Catalog theme contract checked by `pkg/themekit` and `gorun theme doctor` |
 | [ADMIN_WORKSPACE.md](ADMIN_WORKSPACE.md) | Bilingual admin (AR/EN, RTL), dashboard pins, sidebar |
 | [ADMIN_COMPONENTS.md](ADMIN_COMPONENTS.md) | Admin design tokens, shared components, page header, date/time output |
+| [NOTIFICATIONS.md](NOTIFICATIONS.md) | Notification delivery by email (immediate or daily digest) and Telegram: preferences, bot setup, webhook, security, metrics |
 | [SIDEBAR-QUICK-ACCESS.md](SIDEBAR-QUICK-ACCESS.md) | Personal quick-access shortcuts in the main sidebar |
 
 ## Agents and integrations / الوكلاء والتكاملات

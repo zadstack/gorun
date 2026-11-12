@@ -28,7 +28,9 @@ The bell in the top bar shows how many items wait for you and opens a short list
 | Agent channel hand-offs addressed to you | `workagents.manage` |
 | Failed background jobs, backups and updates (last 7 days) | `system.health`, `system.backup`, `system.update` |
 
-Opening an item marks it read and goes to the page where you act; **Mark as read** and **Mark all as read** do the same without leaving. Only the read marks are stored (`notifications_read`, removed after 60 days). The count refreshes every 90 seconds and when the tab becomes visible; there is no websocket. Without JavaScript the bell is a link to the full page. Modules add items with `d.Admin.AddNotificationSource`.
+Opening an item marks it read and goes to the page where you act; **Mark as read** and **Mark all as read** do the same without leaving. Only the read marks are stored (`notifications_read`, removed after 60 days). The count refreshes every 90 seconds and when the tab becomes visible; there is no websocket. Without JavaScript the bell is a link to the full page. Modules add items with `d.Admin.AddNotificationSource` (with a `Category` so users can mute it for delivery).
+
+**Email and Telegram.** My account → **Email and Telegram delivery** (`/admin/account/notifications`, also linked from the bell panel) sends the same items outside the app: email right away or as a daily digest at a chosen UTC hour, and Telegram after linking your account to the site's bot. You can mute categories and send yourself a test. Administrators set up the bot under **Integrations → Notification delivery** (`/admin/settings/notifications`). Messages carry titles, counts and admin links only, and each run checks your permissions again. Details: [NOTIFICATIONS.md](NOTIFICATIONS.md).
 
 ## Dashboard
 

@@ -11,7 +11,7 @@ import (
 // notifications centre for users who may decide them (mcp.approve; a
 // session user may decide any pending call, see checkDecider).
 func (s *server) registerNotifications() {
-	s.d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "mcp.approvals", Permission: PermApprove,
+	s.d.Admin.AddNotificationSource(kernel.NotificationSource{ID: "mcp.approvals", Permission: PermApprove, Category: kernel.NotifyApprovals,
 		Load: func(ctx context.Context, limit int) ([]kernel.Notification, error) {
 			rows, err := s.d.DB.QueryContext(ctx, `SELECT id, tool, key_name, requested_at FROM mcp_approvals
 				WHERE status = 'pending' AND expires_at > ? ORDER BY requested_at DESC LIMIT ?`, db.Now(), limit)

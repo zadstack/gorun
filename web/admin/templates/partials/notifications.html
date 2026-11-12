@@ -60,6 +60,6 @@
     {{end}}
   </div>
   {{template "partials/notifications-list" .}}
-  <div class="notify-panel-foot"><a class="btn btn-ghost btn-sm" href="/admin/notifications">{{t "notifications.view_all"}}</a></div>
+  <div class="notify-panel-foot"><a class="btn btn-ghost btn-sm" href="/admin/notifications">{{t "notifications.view_all"}}</a><a class="btn btn-ghost btn-sm" href="/admin/account/notifications" data-notify-delivery-link>{{icon "settings-2"}}<span>{{t "notifydelivery.link"}}</span></a></div>
 </div>
 {{end}}

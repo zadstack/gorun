@@ -1,0 +1,118 @@
+{{/* Data: notifyPrefsData (internal/admin/notify_pages.go). Per-user delivery of
+  the notifications centre by email and Telegram (docs/NOTIFICATIONS.md). */}}
+{{define "title"}}{{t "notifydelivery.title"}}{{end}}
+{{define "content"}}
+<link rel="stylesheet" href="{{asset "account.css"}}">
+<link rel="stylesheet" href="{{asset "notify-delivery.css"}}">
+<div class="account-page" data-notify-prefs>
+{{template "partials/page-header" (dict "Title" (t "notifydelivery.title") "Subtitle" (t "notifydelivery.subtitle") "Back" "/admin/account" "BackLabel" (t "account.title"))}}
+
+{{if .LinkCode}}
+<section class="card" aria-labelledby="notify-link-title" data-telegram-link>
+  <div class="card-head"><h2 id="notify-link-title" class="section-title">{{t "notifydelivery.telegram.link_title"}}</h2></div>
+  <div class="card-body">
+    <ol class="account-steps">
+      <li><p>{{t "notifydelivery.telegram.link_step_open"}}</p>
+        <p><a class="btn btn-primary" href="{{.DeepLink}}" target="_blank" rel="noopener noreferrer" data-telegram-deeplink>{{icon "send"}}<span>{{t "notifydelivery.telegram.open_bot" .BotUsername}}</span></a></p></li>
+      <li><p>{{t "notifydelivery.telegram.link_step_code"}}</p>
+        <code class="notify-link-code" dir="ltr" data-telegram-code>/start {{.LinkCode}}</code></li>
+    </ol>
+    <p class="field-help">{{t "notifydelivery.telegram.link_expiry"}} {{datetime .LinkExpires}}</p>
+  </div>
+</section>
+{{end}}
+
+<form id="notify-prefs" method="post" action="/admin/account/notifications" novalidate></form>
+<div class="account-grid">
+  <section class="card" aria-labelledby="notify-email-title" data-notify-email>
+    <div class="card-head"><h2 id="notify-email-title" class="section-title">{{icon "mail"}} {{t "notifydelivery.email.title"}}</h2></div>
+    <div class="card-body">
+      {{if not .MailConfigured}}
+      <p class="account-notice account-notice-warning" role="status" data-mail-not-configured>{{icon "triangle-alert"}}<span>{{t "notifydelivery.email.not_configured"}}{{if .CanSettings}} <a href="/admin/settings/mail">{{t "notifydelivery.email.configure"}}</a>{{else}} {{t "notifydelivery.email.ask_admin"}}{{end}}</span></p>
+      <input type="hidden" name="email_mode" value="{{.Prefs.EmailMode}}" form="notify-prefs">
+      <input type="hidden" name="digest_hour" value="{{.Prefs.DigestHour}}" form="notify-prefs">
+      {{end}}
+      <fieldset class="notify-choices{{if index .Fields "email_mode"}} is-invalid{{end}}" {{if not .MailConfigured}}disabled{{end}}>
+        <legend>{{t "notifydelivery.email.mode"}}</legend>
+        {{range $m := $.EmailModes}}
+        <label class="notify-choice"><input type="radio" name="email_mode" value="{{$m}}" form="notify-prefs" {{if eq $m $.Prefs.EmailMode}}checked{{end}}>
+          <span>{{t (printf "notifydelivery.email.mode_%s" $m)}}<small>{{t (printf "notifydelivery.email.mode_%s_help" $m)}}</small></span></label>
+        {{end}}
+        {{with index .Fields "email_mode"}}<p class="field-error">{{t .}}</p>{{end}}
+      </fieldset>
+      <div class="field notify-hour{{if index .Fields "digest_hour"}} is-invalid{{end}}">
+        <label for="notify-hour" class="field-label">{{t "notifydelivery.email.digest_hour"}}</label>
+        <select id="notify-hour" name="digest_hour" form="notify-prefs" dir="ltr" aria-describedby="notify-hour-help" {{if not .MailConfigured}}disabled{{end}}>
+          {{range .Hours}}<option value="{{.}}" {{if eq . $.Prefs.DigestHour}}selected{{end}}>{{printf "%02d:00 UTC" .}}</option>{{end}}
+        </select>
+        <p id="notify-hour-help" class="field-help">{{t "notifydelivery.email.digest_hour_help"}}</p>
+        {{with index .Fields "digest_hour"}}<p class="field-error">{{t .}}</p>{{end}}
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="notify-tg-title" data-notify-telegram>
+    <div class="card-head"><h2 id="notify-tg-title" class="section-title">{{icon "send"}} {{t "notifydelivery.telegram.title"}}</h2></div>
+    <div class="card-body">
+      {{if not .BotConfigured}}
+      <p class="account-notice account-notice-warning" role="status" data-telegram-not-configured>{{icon "triangle-alert"}}<span>{{t "notifydelivery.telegram.not_configured"}}{{if .CanSettings}} <a href="/admin/settings/notifications">{{t "notifydelivery.telegram.configure"}}</a>{{end}}</span></p>
+      {{else if .Prefs.Linked}}
+      <p class="notify-status"><span class="badge badge-success" data-telegram-linked>{{t "notifydelivery.telegram.linked"}}</span><span class="field-help">{{t "notifydelivery.telegram.linked_at"}} {{datetime .Prefs.LinkedAt}}</span></p>
+      {{if eq .Prefs.TelegramDisabled "blocked"}}<p class="account-notice account-notice-error" role="status" data-telegram-blocked>{{icon "circle-alert"}}<span>{{t "notifydelivery.telegram.blocked"}}</span></p>{{end}}
+      <label class="notify-choice"><input type="checkbox" name="telegram_enabled" form="notify-prefs" {{if .Prefs.TelegramEnabled}}checked{{end}}><span>{{t "notifydelivery.telegram.enabled"}}<small>{{t "notifydelivery.telegram.enabled_help"}}</small></span></label>
+      <div class="notify-actions">
+        <form method="post" action="/admin/account/notifications/telegram/unlink" data-confirm="{{t "notifydelivery.telegram.unlink_confirm"}}">
+          <input type="hidden" name="_csrf" value="{{csrf}}">
+          <button type="submit" class="btn btn-secondary btn-sm">{{icon "unlink"}}<span>{{t "notifydelivery.telegram.unlink"}}</span></button>
+        </form>
+      </div>
+      {{else}}
+      <p class="field-help">{{t "notifydelivery.telegram.not_linked"}}</p>
+      <form method="post" action="/admin/account/notifications/telegram/link">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button type="submit" class="btn btn-secondary" data-telegram-link-start>{{icon "link"}}<span>{{t "notifydelivery.telegram.link"}}</span></button>
+      </form>
+      {{end}}
+    </div>
+  </section>
+
+  {{if .Categories}}
+  <section class="card" aria-labelledby="notify-cat-title" data-notify-categories>
+    <div class="card-head"><h2 id="notify-cat-title" class="section-title">{{icon "list-filter"}} {{t "notifydelivery.categories.title"}}</h2></div>
+    <div class="card-body">
+      <fieldset class="notify-choices">
+        <legend class="sr-only">{{t "notifydelivery.categories.title"}}</legend>
+        {{range .Categories}}
+        <label class="notify-choice"><input type="checkbox" name="deliver_{{.}}" form="notify-prefs" {{if not ($.Prefs.IsMuted .)}}checked{{end}}><span>{{t (printf "notifydelivery.categories.%s" .)}}</span></label>
+        {{end}}
+      </fieldset>
+      <p class="field-help">{{t "notifydelivery.categories.help"}}</p>
+    </div>
+  </section>
+  {{end}}
+</div>
+
+<div class="notify-actions">
+  <input type="hidden" name="_csrf" value="{{csrf}}" form="notify-prefs">
+  <button type="submit" class="btn btn-primary" form="notify-prefs" data-notify-save>{{t "core.action.save"}}</button>
+</div>
+
+<section class="card" aria-labelledby="notify-test-title" data-notify-test>
+  <div class="card-head"><h2 id="notify-test-title" class="section-title">{{t "notifydelivery.test.title"}}</h2></div>
+  <div class="card-body">
+    <p class="field-help">{{t "notifydelivery.test.help"}}</p>
+    <div class="notify-actions">
+      <form method="post" action="/admin/account/notifications/test/email">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button type="submit" class="btn btn-secondary btn-sm" {{if not .MailConfigured}}disabled{{end}} data-notify-test-email>{{icon "mail"}}<span>{{t "notifydelivery.test.email"}}</span></button>
+      </form>
+      <form method="post" action="/admin/account/notifications/test/telegram">
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <button type="submit" class="btn btn-secondary btn-sm" {{if not (and .BotConfigured .Prefs.Linked)}}disabled{{end}} data-notify-test-telegram>{{icon "send"}}<span>{{t "notifydelivery.test.telegram"}}</span></button>
+      </form>
+    </div>
+  </div>
+</section>
+<p class="field-help">{{t "notifydelivery.privacy"}}</p>
+</div>
+{{end}}

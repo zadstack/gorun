@@ -357,6 +357,7 @@ attempts, then marked dead (retry from **System → Jobs** or `POST /api/v1/jobs
 | `commerce.suspend` | commerce | 8 | suspend a billing account (refund, expiry) |
 | `commerce.magic_mail` | commerce | 3 | look up a customer and send the account magic link |
 | `ext.deliver` | ext | 5 | deliver an action/event to an extension endpoint |
+| `notifications.deliver` | admin | 1 | one notification delivery run (email and Telegram outbox) |
 | `migration.step`, `migration.item`, `migration.advance` | wpmigrate | 3 | the import pipeline |
 
 | Cron | Every | Purpose |
@@ -370,6 +371,7 @@ attempts, then marked dead (retry from **System → Jobs** or `POST /api/v1/jobs
 | `commerce.expire` | 24 h | expire entitlements past `ends_at` and enqueue suspensions |
 | `jobs.prune` | 1 h | delete finished jobs: `done` after `jobs.retain_done_days` (7), `dead` after `jobs.retain_dead_days` (30), jobs with an idempotency key after `jobs.retain_keyed_days` (90); System Health shows the job table row count |
 | `notifications.prune` | 24 h | delete notification read marks older than 60 days |
+| `notifications.deliver` | 5 min | enqueue the `notifications.deliver` job once per 5-minute bucket (idempotency key), which emails and Telegrams new notification items to opted-in users ([NOTIFICATIONS.md](NOTIFICATIONS.md)) |
 | `backup.schedule` | 1 h | when `backup.schedule_hours` ≥ 1, create a local backup pair (secrets excluded) if due; then prune to `backup.retain` newest complete pairs when retain ≥ 1; no remote upload |
 
 ## Permissions and roles
