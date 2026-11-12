@@ -47,6 +47,10 @@ func registerAPI(d *kernel.Deps, svc *service) {
 			Params: []kernel.APIParam{slug}, Handler: a.deleteType},
 		{Method: "GET", Path: "/v1/content", Summary: "Query content", Tags: []string{"content"}, Scopes: []string{"content.view"},
 			Params: listParams(), Response: []Item{}, Handler: a.listContent},
+		{Method: "GET", Path: "/v1/content/export", Summary: "Export content as a JSON or CSV attachment (streamed)", Tags: []string{"content"},
+			Scopes: []string{"content.view"}, Params: exportParams(), Handler: a.exportContent,
+			Contract: &kernel.APIContract{ResponseContentTypes: []string{"application/json", "text/csv"},
+				Limits: map[string]any{"max_items_per_request": MaxExportLimit}}},
 		{Method: "POST", Path: "/v1/content/query", Summary: "Query content with the full query DSL", Tags: []string{"content"},
 			Scopes: []string{"content.view"}, Request: Query{}, Response: []Item{}, Handler: a.queryContent},
 		{Method: "POST", Path: "/v1/content", Summary: "Create content", Tags: []string{"content"}, Scopes: []string{"content.create"},
@@ -120,6 +124,21 @@ func listParams() []kernel.APIParam {
 		q("locale", "string", ""), q("page", "integer", ""), q("per_page", "integer", "max 100"),
 		q("order", "string", "comma-separated by[:asc|desc], e.g. price:desc,title"),
 		q("taxonomy.{tax}", "string", "comma-separated term slugs"), q("fields.{key}.{op}", "string", "indexed field filter; op eq ne gt lt gte lte in like"),
+	}
+}
+
+func exportParams() []kernel.APIParam {
+	q := func(name, typ, desc string) kernel.APIParam {
+		return kernel.APIParam{Name: name, In: "query", Type: typ, Description: desc}
+	}
+	return []kernel.APIParam{
+		q("format", "string", "json (default, one complete document) or csv (one row per item)"),
+		q("type", "string", "content type slug"), q("status", "string", "status or comma-separated statuses; default all but trash"),
+		q("locale", "string", "content language"), q("author_id", "string", ""), q("search", "string", "search title, excerpt and body"),
+		q("date_field", "string", "created_at (default), updated_at or published_at"),
+		q("from", "string", "inclusive lower bound: 2025-01-31 or RFC 3339"), q("to", "string", "inclusive upper bound: 2025-01-31 or RFC 3339"),
+		q("after", "string", "continue after this item id (the JSON next_after)"), q("limit", "integer", "max items, 1 to 10000 (default 10000)"),
+		q("columns", "string", "CSV columns, comma-separated: core columns or fields.<key>"),
 	}
 }
 

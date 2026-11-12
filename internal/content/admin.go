@@ -51,6 +51,7 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	r := d.Router.Admin
 	view, create, edit, del := auth.RequirePerm("content.view"), auth.RequirePerm("content.create"), auth.RequirePerm("content.edit"), auth.RequirePerm("content.delete")
 	r.With(view).Get("/content/{type}", h.list)
+	r.With(view).Get("/content/{type}/export", h.exportList)
 	r.With(create).Get("/content/{type}/new", h.newItem)
 	r.With(create).Post("/content/{type}", h.createItem)
 	r.With(view).Post("/content/{type}/bulk", h.bulk) // per action and per item permissions inside (admin_bulk.go)

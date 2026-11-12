@@ -1,6 +1,7 @@
 package content
 
 import (
+	"cmp"
 	"context"
 	"encoding/csv"
 	"encoding/json"
@@ -125,11 +126,11 @@ var (
 )
 
 // ParseExportOptions reads export options from query parameters (format, type, status, locale,
-// author, search, date_field, from, to, after, limit, columns), validating every value. The
+// author_id (or author), search, date_field, from, to, after, limit, columns), validating every value. The
 // limit defaults to and may not exceed MaxExportLimit.
 func ParseExportOptions(q url.Values) (ExportOptions, error) {
 	o := ExportOptions{Format: strings.ToLower(strings.TrimSpace(q.Get("format"))), Type: strings.TrimSpace(q.Get("type")),
-		Status: strings.TrimSpace(q.Get("status")), AuthorID: strings.TrimSpace(q.Get("author")), Search: strings.TrimSpace(q.Get("search")),
+		Status: strings.TrimSpace(q.Get("status")), AuthorID: strings.TrimSpace(cmp.Or(q.Get("author_id"), q.Get("author"))), Search: strings.TrimSpace(q.Get("search")),
 		DateField: strings.TrimSpace(q.Get("date_field")), From: strings.TrimSpace(q.Get("from")), To: strings.TrimSpace(q.Get("to")),
 		After: strings.TrimSpace(q.Get("after")), Limit: MaxExportLimit}
 	errs := FieldErrors{}

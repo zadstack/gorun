@@ -452,7 +452,7 @@ Example section in a version-1 document:
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **215 operations** in 25 tags.
+Generated from the current locally booted OpenAPI document: **220 operations** in 25 tags.
 
 ### analytics
 
@@ -515,6 +515,7 @@ Generated from the current locally booted OpenAPI document: **215 operations** i
 | DELETE | `/api/v1/content/{id}/preview-links/{link}` | Revoke a shareable preview link | `content.edit` |
 | DELETE | `/api/v1/content/{id}/translations` | Take the item out of its translations | `content.edit` |
 | DELETE | `/api/v1/content/{id}` | Trash content (hard=1 deletes) | `content.delete` |
+| GET | `/api/v1/content/export` | Export content as a JSON or CSV attachment (streamed) | `content.view` |
 | GET | `/api/v1/content/{id}/preview-links` | List active shareable preview links (never their tokens) | `content.edit` |
 | GET | `/api/v1/content/{id}/revisions` | List revisions (newest first) | `content.view` |
 | GET | `/api/v1/content/{id}/translations` | List the item and its translations (by locale) | `content.view` |
@@ -707,15 +708,19 @@ Generated from the current locally booted OpenAPI document: **215 operations** i
 
 | Method | Path | Summary | Scopes |
 |---|---|---|---|
+| DELETE | `/api/v1/taxonomies/{tax}/terms/{id}/translations` | Take the term out of its translations | `taxonomy.manage` |
 | DELETE | `/api/v1/taxonomies/{tax}/terms/{id}` | Delete a term (children move up) | `taxonomy.manage` |
 | DELETE | `/api/v1/taxonomies/{tax}` | Delete a taxonomy and its terms | `taxonomy.manage` |
+| GET | `/api/v1/taxonomies/{tax}/terms/{id}/translations` | List the term and its translations (by locale) | `content.view` |
 | GET | `/api/v1/taxonomies/{tax}/terms/{id}` | Get a term | `content.view` |
 | GET | `/api/v1/taxonomies/{tax}/terms` | List terms | `content.view` |
 | GET | `/api/v1/taxonomies/{tax}` | Get a taxonomy | `content.view` |
 | GET | `/api/v1/taxonomies` | List taxonomies | `content.view` |
 | PATCH | `/api/v1/taxonomies/{tax}/terms/{id}` | Update a term | `taxonomy.manage` |
 | PATCH | `/api/v1/taxonomies/{tax}` | Update a taxonomy | `taxonomy.manage` |
-| POST | `/api/v1/taxonomies/{tax}/terms` | Create a term | `taxonomy.manage` |
+| POST | `/api/v1/taxonomies/{tax}/terms/{id}/translations/link` | Link another term (and its translations) as translations | `taxonomy.manage` |
+| POST | `/api/v1/taxonomies/{tax}/terms/{id}/translations` | Create a translation of the term in another locale | `taxonomy.manage` |
+| POST | `/api/v1/taxonomies/{tax}/terms` | Create a term (translation_of links it as a translation) | `taxonomy.manage` |
 | POST | `/api/v1/taxonomies` | Create or replace a taxonomy | `taxonomy.manage` |
 
 ### themes

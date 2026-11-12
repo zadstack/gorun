@@ -245,9 +245,12 @@ type APIOperation struct {
 type APIContract struct {
 	SuccessStatuses    []int
 	RequestContentType string
-	MaxBodyBytes       int64
-	Limits             map[string]any
-	Errors             []APIErrorResponse
+	// ResponseContentTypes marks a download: the success response is a raw body (an attachment)
+	// in one of these media types instead of the JSON envelope.
+	ResponseContentTypes []string
+	MaxBodyBytes         int64
+	Limits               map[string]any
+	Errors               []APIErrorResponse
 }
 
 type APIErrorResponse struct {
