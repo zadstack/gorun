@@ -137,6 +137,41 @@ func (s *Taxonomy) DeleteTerm(_ context.Context, id string) error {
 	return nil
 }
 
+// TermTranslations returns the term and the terms sharing its TranslationGroup.
+func (s *Taxonomy) TermTranslations(ctx context.Context, id string) ([]taxonomy.Term, error) {
+	t, err := s.GetTerm(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if t.TranslationGroup == "" {
+		return []taxonomy.Term{*t}, nil
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var out []taxonomy.Term
+	for _, m := range s.terms {
+		if m.TranslationGroup == t.TranslationGroup {
+			out = append(out, m)
+		}
+	}
+	return out, nil
+}
+
+// CreateTermTranslation stores t in the group of the term id.
+func (s *Taxonomy) CreateTermTranslation(ctx context.Context, id string, t taxonomy.Term) (*taxonomy.Term, error) {
+	src, err := s.GetTerm(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	t.Taxonomy, t.TranslationGroup = src.Taxonomy, src.TranslationGroup
+	out := s.AddTerm(t)
+	return &out, nil
+}
+
+func (s *Taxonomy) LinkTermTranslation(context.Context, string, string) error { return nil }
+
+func (s *Taxonomy) UnlinkTermTranslation(context.Context, string) error { return nil }
+
 func (s *Taxonomy) SetContentTerms(context.Context, string, map[string][]string) error { return nil }
 
 func (s *Taxonomy) ContentTerms(context.Context, string) (map[string][]string, error) {

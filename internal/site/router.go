@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/zadstack/gorun/internal/content"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/taxonomy"
 	"github.com/zadstack/gorun/internal/theme"
@@ -149,12 +150,35 @@ func (h *handlers) archive(w http.ResponseWriter, r *http.Request, tc *theme.Con
 
 func (h *handlers) term(w http.ResponseWriter, r *http.Request, tc *theme.Context, tax *taxonomy.Taxonomy, slug string) {
 	svc, _ := h.taxonomy()
-	t, err := svc.GetTermBySlug(r.Context(), tax.Slug, slug)
+	ctx := r.Context()
+	t, err := svc.GetTermBySlug(ctx, tax.Slug, slug)
 	if err != nil || t == nil {
 		h.notFound(w, r)
 		return
 	}
-	if err := h.termItems(r, tc, tax, t.Slug); err != nil {
+	slugs := []string{t.Slug}
+	if t.TranslationGroup != "" {
+		members, err := svc.TermTranslations(ctx, t.ID)
+		if err != nil {
+			h.serverError(w, r, tc, err)
+			return
+		}
+		loc := i18n.Locale(ctx)
+		slugs = slugs[:0]
+		for _, m := range members {
+			if m.Locale == loc && m.ID != t.ID {
+				// The term has a translation in this locale: its archive lives there.
+				target := i18n.LocalizePath(loc, h.siteLocaleOf(ctx), h.links.Term(&m), i18n.ContentLocales(ctx, h.d.Settings))
+				if r.URL.RawQuery != "" {
+					target += "?" + r.URL.RawQuery
+				}
+				http.Redirect(w, r, target, http.StatusMovedPermanently)
+				return
+			}
+			slugs = append(slugs, m.Slug)
+		}
+	}
+	if err := h.termItems(r, tc, tax, slugs); err != nil {
 		h.serverError(w, r, tc, err)
 		return
 	}
@@ -164,12 +188,13 @@ func (h *handlers) term(w http.ResponseWriter, r *http.Request, tc *theme.Contex
 	h.render(w, r, kernel.KindRequest{Kind: theme.KindTaxonomy, Taxonomy: tax.Slug, Term: t.Slug}, tc)
 }
 
-// termItems lists the term's items, restricted to the public content types
+// termItems lists the items of the term (slugs: the term and its translations, so an item
+// tagged with any of them appears in its own locale's archive), restricted to the public content types
 // attached to the taxonomy. With exactly one such type the query is narrowed
 // to it (totals stay exact); with several, non-public items are dropped
 // after the query (content.Query has a single Type); with none, the archive
 // is empty.
-func (h *handlers) termItems(r *http.Request, tc *theme.Context, tax *taxonomy.Taxonomy, term string) error {
+func (h *handlers) termItems(r *http.Request, tc *theme.Context, tax *taxonomy.Taxonomy, slugs []string) error {
 	ctx := r.Context()
 	public := h.publicTypes(ctx)
 	var types []string
@@ -183,7 +208,7 @@ func (h *handlers) termItems(r *http.Request, tc *theme.Context, tax *taxonomy.T
 			types = append(types, slug)
 		}
 	}
-	q := content.Query{Taxonomy: map[string][]string{tax.Slug: {term}}}
+	q := content.Query{Taxonomy: map[string][]string{tax.Slug: slugs}}
 	switch len(types) {
 	case 0:
 		tc.Pagination = theme.NewPagination(1, h.perPage(ctx), 0)
@@ -194,7 +219,7 @@ func (h *handlers) termItems(r *http.Request, tc *theme.Context, tax *taxonomy.T
 		if t, ok := public[types[0]]; ok {
 			spec := theme.LibrarySpecFor(t)
 			spec.Taxonomies = slices.DeleteFunc(spec.Taxonomies, func(s string) bool { return s == tax.Slug })
-			spec.Fixed = map[string][]string{tax.Slug: {term}}
+			spec.Fixed = map[string][]string{tax.Slug: slugs}
 			lib := theme.ParseLibrary(spec, r.URL)
 			lib.Apply(&q)
 			tc.Extra["library"] = lib

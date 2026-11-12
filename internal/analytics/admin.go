@@ -544,13 +544,8 @@ func isTopDim(dim string) bool {
 	return false
 }
 
-// csvSafe neutralises spreadsheet formulas (same rule as site's export).
-func csvSafe(v string) string {
-	if v != "" && (v[0] == '=' || v[0] == '+' || v[0] == '-' || v[0] == '@' || v[0] == '\t' || v[0] == '\r') {
-		return "'" + v
-	}
-	return v
-}
+// csvSafe neutralises spreadsheet formulas (httpx.CSVCell, the rule every export shares).
+func csvSafe(v string) string { return httpx.CSVCell(v) }
 
 // ---- widget ---------------------------------------------------------------
 

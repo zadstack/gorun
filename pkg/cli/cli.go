@@ -84,6 +84,8 @@ commands:
   webhook       webhook list | events | create --name N --url URL --events a,b|* | update <id> [...] |
                 delete <id> | test <id> | secret <id> | deliveries <id> [--limit N] | redeliver <delivery-id>
   content       content list [--type T] [--limit N]: items (no trash) as JSON with their public links
+                content export [--format json|csv] [--type T] [--status S] [--locale L] [--from D] [--to D]
+                [--columns c1,c2] [--out file]: every matching item, streamed (docs/CONTENT_STUDIO.md#export)
   starter       import the starter content (sample posts and pages) into a site with no content
   info          the site's facts as JSON: title, theme, users (no secrets), content counts, sizes
   ai            ai set --provider openai|anthropic --model M [--base-url URL] [--api-key-stdin] | ai off:

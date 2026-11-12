@@ -124,6 +124,15 @@ func (l *Linker) Term(t *taxonomy.Term) string {
 	return "/" + t.Taxonomy + "/" + t.Slug
 }
 
+// TermIn returns the public path of t under its own locale's prefix: the site locale's terms
+// stay unprefixed, a term in another language lives under /<locale>/ (sitemap and menu links).
+func (l *Linker) TermIn(ctx context.Context, t *taxonomy.Term) string {
+	if t == nil {
+		return "/"
+	}
+	return i18n.LocalizePath(t.Locale, l.SiteLocale(ctx), l.Term(t), l.ContentLocales(ctx))
+}
+
 // Archive returns the archive path of content type typ.
 func (l *Linker) Archive(ctx context.Context, typ string) string {
 	if svc, ok := l.content(); ok {
@@ -159,7 +168,7 @@ func (l *Linker) MenuItem(ctx context.Context, it *menus.Item) {
 		case menus.KindTerm:
 			if svc, ok := kernel.Get[taxonomy.Service](l.d, kernel.ServiceTaxonomy); ok {
 				if t, err := svc.GetTerm(ctx, it.RefID); err == nil {
-					it.URL = l.Term(t)
+					it.URL = l.TermIn(ctx, t)
 				}
 			}
 		case menus.KindArchive:
@@ -195,7 +204,7 @@ func (l *Linker) sitemapEntry(ctx context.Context, v any) (any, error) {
 	case e.Item != nil:
 		e.Loc = l.Item(ctx, e.Item)
 	case e.Term != nil:
-		e.Loc = l.Term(e.Term)
+		e.Loc = l.TermIn(ctx, e.Term)
 	case e.Type != nil:
 		e.Loc = archivePath(e.Type)
 	}

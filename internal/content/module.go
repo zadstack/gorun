@@ -54,6 +54,11 @@ func (m *Module) Register(d *kernel.Deps) error {
 		tb, _ := kernel.Get[TermBackend](d, kernel.ServiceTaxonomy)
 		return tb
 	}
+	// media also registers later; exports resolve its URLs per call.
+	svc.mediaFn = func() MediaURLResolver {
+		mr, _ := kernel.Get[MediaURLResolver](d, kernel.ServiceMedia)
+		return mr
+	}
 	m.svc = svc
 	if err := svc.ensureSearch(context.Background()); err != nil {
 		return err

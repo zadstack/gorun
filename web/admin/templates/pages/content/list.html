@@ -3,7 +3,17 @@
 <link rel="stylesheet" href="{{asset "content-ux.css"}}"><script defer src="{{asset "content-ux.js"}}"></script>
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <h1 class="text-[22px] font-bold">{{.PluralName}}</h1>
+  <div class="content-list-actions flex flex-wrap items-center gap-2">
+  <details class="content-export" data-content-export>
+    <summary class="btn btn-secondary" aria-describedby="content-export-help">{{icon "download"}}<span>{{t "content.export.action"}}</span></summary>
+    <div class="content-export-menu" role="group" aria-label="{{t "content.export.action"}}">
+      <a href="{{index .ExportURLs "json"}}" download data-export-format="json">{{icon "file-json"}}<span>{{t "content.export.json"}}</span></a>
+      <a href="{{index .ExportURLs "csv"}}" download data-export-format="csv">{{icon "sheet"}}<span>{{t "content.export.csv"}}</span></a>
+      <p id="content-export-help" class="field-help">{{t "content.export.help"}}</p>
+    </div>
+  </details>
   {{if .CanCreate}}<a href="{{.BaseURL}}/new" class="h-9 px-3 rounded bg-blue text-white font-medium inline-flex items-center gap-1.5 hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "plus"}}<span>{{t "content.list.new" .TypeName}}</span></a>{{end}}
+  </div>
 </div>
 {{with .Bulk}}
 <section class="bulk-result mb-4" role="status" aria-labelledby="bulk-result-title" data-bulk-result data-state="{{if .Ok}}ok{{else}}partial{{end}}" data-bulk-action-done="{{.Action}}">

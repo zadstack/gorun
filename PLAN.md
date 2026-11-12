@@ -8,9 +8,10 @@ languages independent of admin catalogs, dynamic routes and transactional guards
 Merged PR #215 adds bounded, cancellable retries only for busy `InTx` lock
 acquisition, process counters exposed through metrics, and moves content slug
 normalization outside the write transaction. Callback and commit replay are
-excluded. Full transaction-duration instrumentation, wider transaction audits,
-term translation relationships, independent importer distribution, multilingual
-source adapters and reconciliation remain subsequent changes. The WordPress
+excluded. Term translation relationships (step 3) are in review as roadmap phase 8
+([docs/specs/data-freedom.md](docs/specs/data-freedom.md)). Full transaction-duration
+instrumentation, wider transaction audits, independent importer distribution,
+multilingual source adapters and reconciliation remain subsequent changes. The WordPress
 importer is still bundled and optional.
 
 ## Goal
@@ -37,8 +38,8 @@ of which importer, API client or editor creates the data.
   extensions using manifests, scoped REST keys and an HTTP hook bridge. They do
   not provide native dynamically loaded Go plugins.
 - `internal/content/translations.go` already implements content translation
-  relationships. `internal/taxonomy/contract.go` has no corresponding term locale
-  or term translation-group fields.
+  relationships. `internal/taxonomy/translations.go` now gives terms the same
+  model (`Locale`, `TranslationGroup`, create/link/unlink) for step 3.
 
 ## Scope
 
@@ -125,7 +126,10 @@ worker and revoking access need explicit lifecycle handling.
 3. **Public locale model (L).** Separate public language configuration from admin
    catalogs. Preserve full language tags, routing, slug reservations and locale
    defaults. Keep existing Arabic/English sites compatible. Add term translation
-   relationships and define translated parent/menu behavior.
+   relationships and define translated parent/menu behavior. Status: term
+   translations in review (roadmap phase 8): a translation's parent is the
+   parent's translation in that locale; a menu item links the term it names,
+   under that term's own locale prefix.
 4. **Source-neutral import operations (L).** Fill the public API gaps identified
    in step 1. Define source-scoped external identities and conflict policies.
    Move WooCommerce transformation out of commerce; provide generic operations

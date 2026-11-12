@@ -268,7 +268,9 @@ func (f *funcs) adjacent(v any) Adjacent {
 
 // termsOf returns the terms of taxonomy tax that have published public items
 // of content type typ in the page's locale, with that count, in the
-// taxonomy's own order. At most termsOfMax terms are considered.
+// taxonomy's own order. A translated term counts the items of its whole
+// translation group and appears once, in the page's locale when it has a
+// translation there. At most termsOfMax terms are considered.
 func (f *funcs) termsOf(tax, typ string) []TermCount {
 	svc, ok := kernel.Get[taxonomy.Service](f.s.d, kernel.ServiceTaxonomy)
 	csvc, ok2 := f.contentService()
@@ -280,9 +282,24 @@ func (f *funcs) termsOf(tax, typ string) []TermCount {
 		return nil
 	}
 	var out []TermCount
+	loc := f.pageLocale()
 	for _, t := range terms {
-		page, err := csvc.Query(f.st.ctx, content.Query{Type: typ, Status: "published", PublicOnly: true, PublicLocale: f.pageLocale(),
-			Taxonomy: map[string][]string{tax: {t.Slug}}, PerPage: 1})
+		slugs := []string{t.Slug}
+		if t.TranslationGroup != "" {
+			members, err := svc.TermTranslations(f.st.ctx, t.ID)
+			if err != nil {
+				continue
+			}
+			if t.Locale != loc && slices.ContainsFunc(members, func(m taxonomy.Term) bool { return m.Locale == loc }) {
+				continue // the page-locale translation stands for the group
+			}
+			slugs = slugs[:0]
+			for _, m := range members {
+				slugs = append(slugs, m.Slug)
+			}
+		}
+		page, err := csvc.Query(f.st.ctx, content.Query{Type: typ, Status: "published", PublicOnly: true, PublicLocale: loc,
+			Taxonomy: map[string][]string{tax: slugs}, PerPage: 1})
 		if err == nil && page.Total > 0 {
 			out = append(out, TermCount{Term: t, Count: page.Total})
 		}

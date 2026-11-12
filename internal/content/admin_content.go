@@ -51,6 +51,8 @@ type listView struct {
 	BulkTerms           []bulkTermGroup
 	Return              string
 	Bulk                *bulkSummary
+	// ExportURLs are the json and csv downloads of the list's current filters.
+	ExportURLs map[string]string
 }
 
 func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
@@ -141,6 +143,12 @@ func (h *adminHandlers) list(w http.ResponseWriter, r *http.Request) {
 	}
 	if q.Status != "" {
 		filters.Set("status", q.Status)
+	}
+	v.ExportURLs = map[string]string{}
+	for _, format := range []string{"json", "csv"} {
+		exp := maps.Clone(filters)
+		exp.Set("format", format)
+		v.ExportURLs[format] = base + "/export?" + exp.Encode()
 	}
 	v.TableURL = base + "?" + filters.Encode()
 	filters.Set("layout", "tree")

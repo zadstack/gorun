@@ -1,7 +1,7 @@
 {
   "source": "vendor/lucide-1.55.0.js",
   "sourceIntegrity": "sha384-SZUFq9Dx112fyzY/iIBEjyd2gu3jY4XVhp+LUNXSpEMB2IEm/TOoMTNH4BHtQ6Hz",
-  "coreIntegrity": "sha384-LMgvWOYTwczcJ8dOTVpgxCjwgKvRIIlVEkKQ3zTSdeNVDQzcz3e2yXXr+tFgn4AR",
+  "coreIntegrity": "sha384-yvtKJ37wjpLWVhJQraJngd4BJK6m1rWRyvUSR7WpElqHgySlg7jkm+gutliucXS9",
   "icons": [
     "Activity",
     "Ad",
@@ -63,6 +63,7 @@
     "FileArchive",
     "FileCheck",
     "FileCode",
+    "FileJson",
     "FilePlus",
     "FileText",
     "FileUp",
@@ -162,6 +163,7 @@
     "Settings2",
     "Shapes",
     "Share2",
+    "Sheet",
     "Shell",
     "Shield",
     "ShieldAlert",

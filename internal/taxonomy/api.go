@@ -43,17 +43,29 @@ func registerAPI(d *kernel.Deps, svc *service) {
 		{Method: "DELETE", Path: "/v1/taxonomies/{tax}", Summary: "Delete a taxonomy and its terms", Tags: []string{"taxonomies"},
 			Scopes: []string{"taxonomy.manage"}, Params: []kernel.APIParam{tax}, Handler: a.delete},
 		{Method: "GET", Path: "/v1/taxonomies/{tax}/terms", Summary: "List terms", Tags: []string{"taxonomies"}, Scopes: []string{"content.view"},
-			Params: []kernel.APIParam{tax, q("search", "string", ""), q("parent_id", "string", "0 for top level"), q("page", "integer", ""),
-				q("per_page", "integer", "max 500")}, Response: []Term{}, Handler: a.listTerms},
-		{Method: "POST", Path: "/v1/taxonomies/{tax}/terms", Summary: "Create a term", Tags: []string{"taxonomies"},
-			Scopes: []string{"taxonomy.manage"}, Params: []kernel.APIParam{tax}, Request: Term{}, Response: Term{}, Handler: a.createTerm},
+			Params: []kernel.APIParam{tax, q("search", "string", ""), q("parent_id", "string", "0 for top level"),
+				q("locale", "string", "content language, e.g. ar"), q("translation_group", "string", "members of one translation group"),
+				q("page", "integer", ""), q("per_page", "integer", "max 500")}, Response: []Term{}, Handler: a.listTerms},
+		{Method: "POST", Path: "/v1/taxonomies/{tax}/terms", Summary: "Create a term (translation_of links it as a translation)", Tags: []string{"taxonomies"},
+			Scopes: []string{"taxonomy.manage"}, Params: []kernel.APIParam{tax}, Request: TermInput{}, Response: Term{}, Handler: a.createTerm},
 		{Method: "GET", Path: "/v1/taxonomies/{tax}/terms/{id}", Summary: "Get a term", Tags: []string{"taxonomies"},
 			Scopes: []string{"content.view"}, Params: []kernel.APIParam{tax, id}, Response: Term{}, Handler: a.getTerm},
 		{Method: "PATCH", Path: "/v1/taxonomies/{tax}/terms/{id}", Summary: "Update a term", Tags: []string{"taxonomies"},
 			Scopes: []string{"taxonomy.manage"}, Params: []kernel.APIParam{tax, id}, Request: Term{}, Response: Term{}, Handler: a.patchTerm},
 		{Method: "DELETE", Path: "/v1/taxonomies/{tax}/terms/{id}", Summary: "Delete a term (children move up)", Tags: []string{"taxonomies"},
 			Scopes: []string{"taxonomy.manage"}, Params: []kernel.APIParam{tax, id}, Handler: a.deleteTerm},
+		{Method: "GET", Path: "/v1/taxonomies/{tax}/terms/{id}/translations", Summary: "List the term and its translations (by locale)", Tags: []string{"taxonomies"},
+			Scopes: []string{"content.view"}, Params: []kernel.APIParam{tax, id}, Response: []Term{}, Handler: a.listTranslations},
+		{Method: "POST", Path: "/v1/taxonomies/{tax}/terms/{id}/translations", Summary: "Create a translation of the term in another locale", Tags: []string{"taxonomies"},
+			Scopes: []string{"taxonomy.manage"}, Params: []kernel.APIParam{tax, id}, Request: Term{}, Response: Term{}, Handler: a.createTranslation},
+		{Method: "POST", Path: "/v1/taxonomies/{tax}/terms/{id}/translations/link", Summary: "Link another term (and its translations) as translations", Tags: []string{"taxonomies"},
+			Scopes: []string{"taxonomy.manage"}, Params: []kernel.APIParam{tax, id}, Request: termLinkInput{}, Response: []Term{}, Handler: a.linkTranslation},
+		{Method: "DELETE", Path: "/v1/taxonomies/{tax}/terms/{id}/translations", Summary: "Take the term out of its translations", Tags: []string{"taxonomies"},
+			Scopes: []string{"taxonomy.manage"}, Params: []kernel.APIParam{tax, id}, Response: []Term{}, Handler: a.unlinkTranslation},
 	} {
+		if op.Method == "POST" && op.Path == "/v1/taxonomies/{tax}/terms/{id}/translations" {
+			op.Contract = &kernel.APIContract{SuccessStatuses: []int{http.StatusCreated}, MaxBodyBytes: maxAPIBody}
+		}
 		d.API.Add(op)
 	}
 }
@@ -200,7 +212,7 @@ func (a *api) listTerms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	qs := r.URL.Query()
-	q := TermQuery{Search: qs.Get("search"), ParentID: qs.Get("parent_id")}
+	q := TermQuery{Search: qs.Get("search"), ParentID: qs.Get("parent_id"), Locale: qs.Get("locale"), TranslationGroup: qs.Get("translation_group")}
 	q.Page, _ = strconv.Atoi(qs.Get("page"))
 	q.PerPage, _ = strconv.Atoi(qs.Get("per_page"))
 	terms, total, err := a.svc.Terms(r.Context(), chi.URLParam(r, "tax"), q)
@@ -241,12 +253,19 @@ func (a *api) createTerm(w http.ResponseWriter, r *http.Request) {
 	if !a.allow(w, r, "taxonomy.manage") {
 		return
 	}
-	var t Term
-	if !a.decode(w, r, &t) {
+	var in TermInput
+	if !a.decode(w, r, &in) {
 		return
 	}
+	t := in.Term
 	t.ID, t.Taxonomy = "", chi.URLParam(r, "tax")
-	saved, err := a.svc.SaveTerm(r.Context(), t)
+	var saved *Term
+	var err error
+	if in.TranslationOf != "" {
+		saved, err = a.svc.createTranslationIn(r.Context(), t.Taxonomy, in.TranslationOf, t)
+	} else {
+		saved, err = a.svc.SaveTerm(r.Context(), t)
+	}
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -290,4 +309,90 @@ func (a *api) deleteTerm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusOK, map[string]bool{"deleted": true}, nil)
+}
+
+// TermInput is the body of a term create: the term, optionally as a translation of another
+// term of the same taxonomy (translation_of, a term id). translation_group is read-only.
+type TermInput struct {
+	Term
+	TranslationOf string `json:"translation_of,omitempty"`
+}
+
+// termLinkInput names the term to link as a translation.
+type termLinkInput struct {
+	TermID string `json:"term_id"`
+}
+
+func (a *api) listTranslations(w http.ResponseWriter, r *http.Request) {
+	if !a.allow(w, r, "content.view") {
+		return
+	}
+	t, ok := a.termIn(w, r)
+	if !ok {
+		return
+	}
+	a.translations(w, r, t.ID)
+}
+
+func (a *api) translations(w http.ResponseWriter, r *http.Request, id string) {
+	members, err := a.svc.TermTranslations(r.Context(), id)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	httpx.JSON(w, http.StatusOK, members, nil)
+}
+
+func (a *api) createTranslation(w http.ResponseWriter, r *http.Request) {
+	if !a.allow(w, r, "taxonomy.manage") {
+		return
+	}
+	src, ok := a.termIn(w, r)
+	if !ok {
+		return
+	}
+	var in Term
+	if !a.decode(w, r, &in) {
+		return
+	}
+	saved, err := a.svc.CreateTermTranslation(r.Context(), src.ID, in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	httpx.JSON(w, http.StatusCreated, saved, nil)
+}
+
+func (a *api) linkTranslation(w http.ResponseWriter, r *http.Request) {
+	if !a.allow(w, r, "taxonomy.manage") {
+		return
+	}
+	t, ok := a.termIn(w, r)
+	if !ok {
+		return
+	}
+	var in termLinkInput
+	if !a.decode(w, r, &in) {
+		return
+	}
+	if err := a.svc.LinkTermTranslation(r.Context(), t.ID, in.TermID); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.translations(w, r, t.ID)
+}
+
+func (a *api) unlinkTranslation(w http.ResponseWriter, r *http.Request) {
+	if !a.allow(w, r, "taxonomy.manage") {
+		return
+	}
+	t, ok := a.termIn(w, r)
+	if !ok {
+		return
+	}
+	if err := a.svc.UnlinkTermTranslation(r.Context(), t.ID); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	a.translations(w, r, t.ID)
 }

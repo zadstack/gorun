@@ -390,6 +390,57 @@ the type's schema remain preserved. SEO key null is a stored null, not a deletio
 Content listing uses `order=price:desc,title`, `taxonomy.{tax}` and `fields.{key}.{op}` filters; it does not
 use the generic helper's `sort` syntax. Its page/per_page defaults remain 1/20, capped at 100.
 
+## Content export
+
+`GET /api/v1/content/export` (scope `content.view`) is a download, not an envelope: the success body
+is a JSON document or a CSV file sent as `Content-Disposition: attachment` with
+`Cache-Control: private, no-store`. Errors before streaming use the normal error envelope (401, 403,
+422 `validation_failed` for an unknown `format`, `type`, `status`, `date_field`, date, `columns` or
+`limit`). It returns what `GET /api/v1/content` would let the caller read: author and contributor
+keys get their own items plus other people's published items of public types.
+
+```sh
+curl -H "Authorization: Bearer gp_…" -o posts.json \
+  "https://example.com/api/v1/content/export?format=json&type=post&status=published&from=2025-01-01"
+curl -H "Authorization: Bearer gp_…" -o posts.csv \
+  "https://example.com/api/v1/content/export?format=csv&type=post&columns=id,title,status,fields.price,terms"
+```
+
+```json
+{"format":"gorun.content-export","version":1,"exported_at":"2026-11-12T08:00:00Z",
+ "filters":{"format":"json","type":"post","status":"published","from":"2025-01-01","limit":10000},
+ "items":[{"id":"01K…","type":"post","slug":"hello","title":"Hello","body":"<p>…</p>","status":"published",
+   "locale":"en","translation_group":"01K…","terms":{"category":["news"]},
+   "author":{"id":"01K…","name":"Sara"},"featured_media_id":"01K…",
+   "media":[{"id":"01K…","url":"https://example.com/uploads/2026/11/a.jpg"}],
+   "created_at":"2026-11-01T09:00:00Z","updated_at":"…","published_at":"…","publish_at":"", "…":"…"}],
+ "count":1,"next_after":""}
+```
+
+At most 10 000 items per request (`limit`, default 10 000); when more match, `next_after` names the
+last id and `after=<next_after>` continues. Formats, columns, the author-email rule and auditing are
+described in [CONTENT_STUDIO.md](CONTENT_STUDIO.md#export).
+
+## Term translations
+
+Terms carry `locale` (a configured content language; default the site language) and the read-only
+`translation_group` ("" when untranslated). Create a term as the translation of another one with
+`translation_of`, or use the translations sub-resource:
+
+```sh
+curl -X POST -H "Authorization: Bearer gp_…" -H "Content-Type: application/json" \
+  -d '{"name":"أخبار","slug":"akhbar","locale":"ar","translation_of":"01KNEWS…"}' \
+  https://example.com/api/v1/taxonomies/category/terms
+# → 201 {"ok":true,"data":{"id":"01K…","slug":"akhbar","locale":"ar","translation_group":"01KNEWS…",…}}
+curl -H "Authorization: Bearer gp_…" "https://example.com/api/v1/taxonomies/category/terms?translation_group=01KNEWS…"
+```
+
+`POST …/terms/{id}/translations` takes a `Term` body (`locale`, `name`, optional `slug`, `description`);
+`POST …/terms/{id}/translations/link` takes `{"term_id":"…"}`; `DELETE …/terms/{id}/translations`
+unlinks. A second term in a language already in the group, a language outside the site's content
+languages or a term of another taxonomy answers 422. See
+[CONTENT_STUDIO.md](CONTENT_STUDIO.md#term-translations) for routing and theme behaviour.
+
 ## Canvas editor search
 
 The canvas editor also uses the session-only admin endpoint
@@ -453,7 +504,7 @@ Example section in a version-1 document:
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **215 operations** in 25 tags.
+Generated from the current locally booted OpenAPI document: **220 operations** in 25 tags.
 
 ### analytics
 
@@ -516,6 +567,7 @@ Generated from the current locally booted OpenAPI document: **215 operations** i
 | DELETE | `/api/v1/content/{id}/preview-links/{link}` | Revoke a shareable preview link | `content.edit` |
 | DELETE | `/api/v1/content/{id}/translations` | Take the item out of its translations | `content.edit` |
 | DELETE | `/api/v1/content/{id}` | Trash content (hard=1 deletes) | `content.delete` |
+| GET | `/api/v1/content/export` | Export content as a JSON or CSV attachment (streamed) | `content.view` |
 | GET | `/api/v1/content/{id}/preview-links` | List active shareable preview links (never their tokens) | `content.edit` |
 | GET | `/api/v1/content/{id}/revisions` | List revisions (newest first) | `content.view` |
 | GET | `/api/v1/content/{id}/translations` | List the item and its translations (by locale) | `content.view` |
@@ -708,15 +760,19 @@ Generated from the current locally booted OpenAPI document: **215 operations** i
 
 | Method | Path | Summary | Scopes |
 |---|---|---|---|
+| DELETE | `/api/v1/taxonomies/{tax}/terms/{id}/translations` | Take the term out of its translations | `taxonomy.manage` |
 | DELETE | `/api/v1/taxonomies/{tax}/terms/{id}` | Delete a term (children move up) | `taxonomy.manage` |
 | DELETE | `/api/v1/taxonomies/{tax}` | Delete a taxonomy and its terms | `taxonomy.manage` |
+| GET | `/api/v1/taxonomies/{tax}/terms/{id}/translations` | List the term and its translations (by locale) | `content.view` |
 | GET | `/api/v1/taxonomies/{tax}/terms/{id}` | Get a term | `content.view` |
 | GET | `/api/v1/taxonomies/{tax}/terms` | List terms | `content.view` |
 | GET | `/api/v1/taxonomies/{tax}` | Get a taxonomy | `content.view` |
 | GET | `/api/v1/taxonomies` | List taxonomies | `content.view` |
 | PATCH | `/api/v1/taxonomies/{tax}/terms/{id}` | Update a term | `taxonomy.manage` |
 | PATCH | `/api/v1/taxonomies/{tax}` | Update a taxonomy | `taxonomy.manage` |
-| POST | `/api/v1/taxonomies/{tax}/terms` | Create a term | `taxonomy.manage` |
+| POST | `/api/v1/taxonomies/{tax}/terms/{id}/translations/link` | Link another term (and its translations) as translations | `taxonomy.manage` |
+| POST | `/api/v1/taxonomies/{tax}/terms/{id}/translations` | Create a translation of the term in another locale | `taxonomy.manage` |
+| POST | `/api/v1/taxonomies/{tax}/terms` | Create a term (translation_of links it as a translation) | `taxonomy.manage` |
 | POST | `/api/v1/taxonomies` | Create or replace a taxonomy | `taxonomy.manage` |
 
 ### themes

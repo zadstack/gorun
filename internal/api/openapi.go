@@ -290,6 +290,18 @@ func responsesFor(g *schemaGen, op kernel.APIOperation, method string) map[strin
 		}
 	}
 	if op.Contract != nil {
+		if types := op.Contract.ResponseContentTypes; len(types) > 0 {
+			content := map[string]any{}
+			for _, ct := range types {
+				content[ct] = map[string]any{"schema": map[string]any{"type": "string"}}
+			}
+			out["200"] = map[string]any{
+				"description": "Success: a file download (Content-Disposition: attachment), not the JSON envelope.",
+				"headers": map[string]any{"Content-Disposition": map[string]any{
+					"description": "attachment; filename=…", "schema": map[string]any{"type": "string"}}},
+				"content": content,
+			}
+		}
 		if len(op.Contract.SuccessStatuses) > 0 {
 			success := out["200"]
 			delete(out, "200")

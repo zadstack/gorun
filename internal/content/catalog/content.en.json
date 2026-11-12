@@ -413,5 +413,14 @@
   "bulk.error.schedule_past": "The schedule time must be in the future (UTC). Nothing was changed.",
   "bulk.error.author_invalid": "Choose an active team member who may write content. Nothing was changed.",
   "bulk.error.term_invalid": "Choose an existing term of this content type. Nothing was changed.",
-  "comments.empty_help": "Visitor comments on content with comments enabled appear here. Choose a status above to review pending or approved comments."
+  "comments.empty_help": "Visitor comments on content with comments enabled appear here. Choose a status above to review pending or approved comments.",
+  "export.invalid_format": "Choose json or csv",
+  "export.invalid_limit": "Use a limit from 1 to 10000",
+  "export.invalid_date": "Use a date (2025-01-31) or a date and time (2025-01-31T10:00:00Z)",
+  "export.invalid_date_field": "Choose created_at, updated_at or published_at",
+  "export.invalid_column": "Unknown column; use core columns or fields.<key>",
+  "export.action": "Export",
+  "export.json": "JSON — complete, for re-import",
+  "export.csv": "CSV — spreadsheet",
+  "export.help": "Exports what matches the current filters and you are allowed to open, up to 10,000 items."
 }

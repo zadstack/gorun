@@ -111,7 +111,7 @@ func validateLocaleRemoval(ctx context.Context, tx *sql.Tx, previous, locales []
 		if slices.Contains(locales, removed) {
 			continue
 		}
-		for _, table := range []string{"content", "menus"} {
+		for _, table := range []string{"content", "menus", "terms"} {
 			used, err := localeInUse(ctx, tx, table, removed)
 			if err != nil {
 				return err

@@ -11,6 +11,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/i18n"
 )
 
 // --- terms ---
@@ -20,12 +21,13 @@ import (
 const countExpr = `(SELECT COUNT(*) FROM content_terms ct JOIN content c ON c.id = ct.content_id
 	WHERE ct.term_id = t.id AND c.status = 'published')`
 
-const termColumns = `t.id, t.taxonomy, t.slug, t.name, t.description, COALESCE(t.parent_id, ''), t.meta_json, ` + countExpr
+const termColumns = `t.id, t.taxonomy, t.slug, t.name, t.description, COALESCE(t.parent_id, ''), t.meta_json, ` + countExpr +
+	`, t.locale, t.translation_group`
 
 func scanTerm(sc interface{ Scan(...any) error }) (*Term, error) {
 	var t Term
 	var meta string
-	if err := sc.Scan(&t.ID, &t.Taxonomy, &t.Slug, &t.Name, &t.Description, &t.ParentID, &meta, &t.Count); err != nil {
+	if err := sc.Scan(&t.ID, &t.Taxonomy, &t.Slug, &t.Name, &t.Description, &t.ParentID, &meta, &t.Count, &t.Locale, &t.TranslationGroup); err != nil {
 		return nil, err
 	}
 	if err := json.Unmarshal([]byte(meta), &t.Meta); err != nil || t.Meta == nil {
@@ -57,6 +59,14 @@ func (s *service) Terms(ctx context.Context, taxonomy string, q TermQuery) ([]Te
 	default:
 		where = append(where, "t.parent_id = ?")
 		args = append(args, q.ParentID)
+	}
+	if q.Locale != "" {
+		where = append(where, "t.locale = ?")
+		args = append(args, canonicalOr(q.Locale))
+	}
+	if q.TranslationGroup != "" {
+		where = append(where, "t.translation_group = ?")
+		args = append(args, q.TranslationGroup)
 	}
 	cond := " WHERE " + strings.Join(where, " AND ")
 	var total int
@@ -136,8 +146,23 @@ func uniqueTermSlug(ctx context.Context, q execQuerier, taxonomy, base, excludeI
 // SaveTerm creates (ID empty) or updates a term. The slug comes from Slug
 // or Name (Arabic kept), made unique per taxonomy; ParentID is allowed only
 // in hierarchical taxonomies, must be in the same taxonomy and must not
-// create a cycle. Fires taxonomy.term_saved (sync, *Term).
+// create a cycle. Locale defaults to the term's current locale, then to the
+// site language, and must be a content language not already taken in the
+// term's translation group; TranslationGroup is never changed here. Fires
+// taxonomy.term_saved (sync, *Term).
 func (s *service) SaveTerm(ctx context.Context, t Term) (*Term, error) {
+	return s.saveTermWith(ctx, t, termSaveOpts{action: "taxonomy.term_save"})
+}
+
+// termSaveOpts: a new term joins group (as a translation of source, whose group is created in
+// the same transaction when it has none yet).
+type termSaveOpts struct {
+	group, action string
+	source        *Term
+}
+
+func (s *service) saveTermWith(ctx context.Context, t Term, opts termSaveOpts) (*Term, error) {
+	group, action := opts.group, opts.action
 	tax, err := s.Get(ctx, t.Taxonomy)
 	if errors.Is(err, ErrNotFound) {
 		return nil, validationError(map[string]string{"taxonomy": "taxonomy.validation.unknown"})
@@ -158,11 +183,24 @@ func (s *service) SaveTerm(ctx context.Context, t Term) (*Term, error) {
 		if existing.Taxonomy != t.Taxonomy {
 			errs["taxonomy"] = "taxonomy.validation.immutable"
 		}
+		group = existing.TranslationGroup
 	}
 	if t.ParentID != "" {
 		if err := s.checkTermParent(ctx, tax, t); err != nil {
 			errs["parent_id"] = err.Error()
 		}
+	}
+	switch {
+	case strings.TrimSpace(t.Locale) != "":
+		canonical, err := i18n.CanonicalLocale(t.Locale)
+		if err != nil {
+			errs["locale"] = msgTermLocale
+		}
+		t.Locale = canonical
+	case existing != nil && existing.Locale != "":
+		t.Locale = existing.Locale
+	default:
+		t.Locale = s.defaultLocale(ctx)
 	}
 	if err := validationError(errs); err != nil {
 		return nil, err
@@ -182,22 +220,35 @@ func (s *service) SaveTerm(ctx context.Context, t Term) (*Term, error) {
 		base = strings.ToLower(t.ID)
 	}
 	err = db.InTx(ctx, s.db, func(tx *sql.Tx) error {
+		if src := opts.source; src != nil && src.TranslationGroup == "" {
+			if _, err := tx.ExecContext(ctx, `UPDATE terms SET translation_group = ? WHERE id = ?`, group, src.ID); err != nil {
+				return fmt.Errorf("taxonomy: start translation group: %w", err)
+			}
+		}
+		if err := checkTermLocaleTx(ctx, tx, t.Locale, group, t.ID); err != nil {
+			return err
+		}
 		slug, err := uniqueTermSlug(ctx, tx, t.Taxonomy, base, t.ID)
 		if err != nil {
 			return err
 		}
 		t.Slug = slug
 		if existing == nil {
-			_, err = tx.ExecContext(ctx, `INSERT INTO terms (id, taxonomy, slug, name, description, parent_id, meta_json) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-				t.ID, t.Taxonomy, t.Slug, t.Name, t.Description, nullable(t.ParentID), string(meta))
+			_, err = tx.ExecContext(ctx, `INSERT INTO terms (id, taxonomy, slug, name, description, parent_id, meta_json, locale, translation_group)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				t.ID, t.Taxonomy, t.Slug, t.Name, t.Description, nullable(t.ParentID), string(meta), t.Locale, group)
 		} else {
-			_, err = tx.ExecContext(ctx, `UPDATE terms SET slug = ?, name = ?, description = ?, parent_id = ?, meta_json = ? WHERE id = ?`,
-				t.Slug, t.Name, t.Description, nullable(t.ParentID), string(meta), t.ID)
+			_, err = tx.ExecContext(ctx, `UPDATE terms SET slug = ?, name = ?, description = ?, parent_id = ?, meta_json = ?, locale = ? WHERE id = ?`,
+				t.Slug, t.Name, t.Description, nullable(t.ParentID), string(meta), t.Locale, t.ID)
 		}
 		if err != nil {
 			return fmt.Errorf("taxonomy: save term: %w", err)
 		}
-		s.audit.RecordTx(ctx, tx, "taxonomy.term_save", "term", t.ID, map[string]any{"taxonomy": t.Taxonomy, "name": t.Name})
+		details := map[string]any{"taxonomy": t.Taxonomy, "name": t.Name, "locale": t.Locale}
+		if group != "" {
+			details["group"] = group
+		}
+		s.audit.RecordTx(ctx, tx, action, "term", t.ID, details)
 		return nil
 	})
 	if err != nil {
@@ -253,6 +304,9 @@ func (s *service) DeleteTerm(ctx context.Context, id string) error {
 		if _, err := tx.ExecContext(ctx, `DELETE FROM terms WHERE id = ?`, id); err != nil {
 			return fmt.Errorf("taxonomy: delete term: %w", err)
 		}
+		if err := pruneTermGroupTx(ctx, tx, t.TranslationGroup); err != nil {
+			return err
+		}
 		s.audit.RecordTx(ctx, tx, "taxonomy.term_delete", "term", id, map[string]any{"taxonomy": t.Taxonomy, "name": t.Name})
 		return nil
 	})
@@ -292,7 +346,7 @@ func (s *service) SetContentTermsTx(ctx context.Context, tx *sql.Tx, contentID s
 			if value == "" {
 				continue
 			}
-			id, err := s.resolveTerm(ctx, tx, taxSlug, value, !hierarchical)
+			id, err := s.resolveTerm(ctx, tx, contentID, taxSlug, value, !hierarchical)
 			if err != nil {
 				return err
 			}
@@ -305,8 +359,8 @@ func (s *service) SetContentTermsTx(ctx context.Context, tx *sql.Tx, contentID s
 }
 
 // resolveTerm finds a term by slug (as given, then slugified), creating it
-// when create is set.
-func (s *service) resolveTerm(ctx context.Context, tx *sql.Tx, taxSlug, value string, create bool) (string, error) {
+// when create is set, in the locale of the content item.
+func (s *service) resolveTerm(ctx context.Context, tx *sql.Tx, contentID, taxSlug, value string, create bool) (string, error) {
 	slug := content.Slugify(value, false)
 	for _, cand := range []string{value, slug} {
 		var id string
@@ -321,11 +375,18 @@ func (s *service) resolveTerm(ctx context.Context, tx *sql.Tx, taxSlug, value st
 	if !create || slug == "" {
 		return "", validationError(map[string]string{"terms." + taxSlug: "taxonomy.validation.unknown_term"})
 	}
+	var locale string
+	if err := tx.QueryRowContext(ctx, `SELECT locale FROM content WHERE id = ?`, contentID).Scan(&locale); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return "", fmt.Errorf("taxonomy: item locale: %w", err)
+	}
+	if locale == "" {
+		locale = s.defaultLocale(ctx)
+	}
 	id := db.NewID()
-	if _, err := tx.ExecContext(ctx, `INSERT INTO terms (id, taxonomy, slug, name) VALUES (?, ?, ?, ?)`, id, taxSlug, slug, value); err != nil {
+	if _, err := tx.ExecContext(ctx, `INSERT INTO terms (id, taxonomy, slug, name, locale) VALUES (?, ?, ?, ?, ?)`, id, taxSlug, slug, value, locale); err != nil {
 		return "", fmt.Errorf("taxonomy: create term: %w", err)
 	}
-	s.audit.RecordTx(ctx, tx, "taxonomy.term_save", "term", id, map[string]any{"taxonomy": taxSlug, "name": value, "auto": true})
+	s.audit.RecordTx(ctx, tx, "taxonomy.term_save", "term", id, map[string]any{"taxonomy": taxSlug, "name": value, "locale": locale, "auto": true})
 	return id, nil
 }
 
