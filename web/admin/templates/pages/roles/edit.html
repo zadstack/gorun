@@ -69,17 +69,19 @@
         <dt class="text-muted">{{t "admin.roles.users"}}</dt><dd class="font-mono">{{.UserCount}}</dd>
       </dl>
     </section>
-    {{if not .System}}
-    <section class="rounded border border-line bg-panel p-4">
-      <h2 class="text-base font-bold mb-2">{{t "admin.roles.danger"}}</h2>
-      <p class="text-xs text-muted mb-3">{{t "admin.roles.delete_help"}}</p>
-      <form method="post" action="/admin/roles/{{.Slug}}/delete" data-confirm="{{t "admin.roles.delete_confirm" .Slug}}">
-        <input type="hidden" name="_csrf" value="{{csrf}}">
-        <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-red text-red bg-red-soft hover:border-red focus:outline-none focus:ring-[3px] focus:ring-red-soft" {{if gt .UserCount 0}}disabled{{end}}>{{icon "trash-2"}}<span>{{t "admin.roles.delete"}}</span></button>
-      </form>
-    </section>
-    {{end}}
   </aside>
   {{end}}
 </div>
+{{with .Record}}{{if not .System}}
+<section class="danger-zone" aria-labelledby="role-danger-title">
+  <h2 id="role-danger-title" class="danger-zone-title">{{t "core.danger.title"}}</h2>
+  <div class="danger-zone-item">
+    <div class="danger-zone-text"><p class="danger-zone-label">{{t "admin.roles.danger"}}</p><p class="danger-zone-help">{{t "admin.roles.delete_help"}}</p></div>
+    <form method="post" action="/admin/roles/{{.Slug}}/delete" data-confirm="{{t "admin.roles.delete_confirm" .Slug}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="btn btn-danger btn-sm" {{if gt .UserCount 0}}disabled{{end}}>{{icon "trash-2"}}<span>{{t "admin.roles.delete"}}</span></button>
+    </form>
+  </div>
+</section>
+{{end}}{{end}}
 {{end}}

@@ -37,6 +37,8 @@ Defined on `:root` in `admin.css`. Older rules keep working through aliases
 | `.raw-detail` | A `<details>` for raw JSON or other secondary payloads. |
 | `.id-detail` | A raw identifier (ULID) that stays out of the visible text. |
 | `.avatar` (`.avatar-user`) | Initials from the `initials` template function. |
+| `.row-menu` (`row-menu.js`) | One actions button per table row for secondary and destructive actions. See [Row actions](#row-actions). |
+| `.danger-zone` | The last section of a settings or detail page, holding its destructive actions. See [Danger zone](#danger-zone). |
 
 ## Page header partial
 
@@ -51,6 +53,63 @@ Keys: `Title` (required), `TitleDir` (`auto` for user-entered titles), `Subtitle
 `Back` + `BackLabel`, `ID`, `Class`, `Action` + `ActionLabel` (+ `ActionIcon`,
 `ActionHook`), `Secondary` + `SecondaryLabel` (+ `SecondaryIcon`). `dict`
 builds the argument map; `dataAttr` adds one `data-*` hook for scripts and tests.
+
+## Row actions
+
+Keep at most one obvious action visible in a row (often the row link itself)
+and put the rest behind one menu button. `row-menu.js` (loaded on every admin
+page) enhances the markup; without JavaScript the button stays hidden and the
+items render inline as small buttons, so every action still works.
+
+```gotemplate
+<div class="row-menu" data-row-menu>
+  <button type="button" id="key-actions-{{.ID}}" class="btn btn-secondary btn-sm row-menu-button"
+          data-row-menu-button aria-haspopup="menu" aria-controls="key-menu-{{.ID}}" hidden>
+    {{icon "ellipsis"}}<span class="sr-only">{{t "core.action.row_actions" .Name}}</span></button>
+  <div class="row-menu-list" id="key-menu-{{.ID}}" data-row-menu-list>
+    <form method="post" action="…/rotate" data-confirm="…">…
+      <button type="submit" name="grace" value="3600" class="row-menu-item" data-row-menu-item>…</button></form>
+    <form method="post" action="…/revoke" data-confirm="…">…
+      <button type="submit" class="row-menu-item row-menu-item-danger" data-row-menu-item>…</button></form>
+  </div>
+</div>
+```
+
+- Items are the forms' own submit buttons (or links), so routes and posted
+  fields do not change; a choice that used to be a `<select>` becomes one item
+  per value with the same `name`/`value`. `data-confirm` still asks first and
+  submits the chosen button's value.
+- Keyboard: Enter, Space or ↓ opens on the first item, ↑ on the last;
+  ↑ ↓ Home End move; Esc closes and returns focus to the button; Tab closes.
+  A click outside, scrolling or resizing closes it.
+- The list is fixed-positioned below the button (above it near the bottom of
+  the screen), aligned to the button's inline end and kept inside the
+  viewport, so a scrolling table never clips it.
+- `.row-menu-item-danger` goes last and is separated by a rule.
+
+Used by API keys and saved connections.
+
+## Danger zone
+
+Destructive actions on a settings or detail page (delete, uninstall) go in one
+section at the very bottom of the page, after the form and its side panels:
+
+```gotemplate
+<section class="danger-zone" aria-labelledby="user-danger-title">
+  <h2 id="user-danger-title" class="danger-zone-title">{{t "core.danger.title"}}</h2>
+  <div class="danger-zone-item">
+    <div class="danger-zone-text"><p class="danger-zone-label">{{t "admin.users.danger"}}</p>
+      <p class="danger-zone-help">{{t "admin.users.delete_help"}}</p></div>
+    <form method="post" action="/admin/users/{{.ID}}/delete" data-confirm="…">…
+      <button type="submit" class="btn btn-danger btn-sm">{{icon "trash-2"}}<span>…</span></button></form>
+  </div>
+</section>
+```
+
+Each item says what it removes and has one `.btn-danger`; keep the existing
+`data-confirm`. Several items stack with a divider. On phones the button spans
+the width. Used by users, roles, forms, extensions, products and billing
+servers.
 
 ## Dates and times
 

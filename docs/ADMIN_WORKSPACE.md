@@ -54,7 +54,23 @@ The canvas gallery shows only your own saved canvases, with a few safe content p
 
 The primary sidebar has up to six entries: **Home**, **Content**, **Website**, **Canvas & agents**, **Inbox** and **Settings**. **Store** appears only when a permitted commerce entry is available. Empty sections are omitted. Content includes content types and taxonomies; Website combines appearance, menus, SEO and redirects. Settings contains general settings, team/roles, integrations and system tools. Unknown extension groups remain accessible under Settings.
 
-Select a section to see its page tabs above the current screen. Larger sections have a category row (for example **Settings → Team & roles → Users**). These are ordinary links and work without JavaScript. Nested editors keep their parent section selected. Existing URLs and route permissions are unchanged.
+Select a section to see its page tabs above the current screen. Larger sections have a compact category switch above the tabs (for example **Settings → Team & roles → Users**). These are ordinary links and work without JavaScript. Nested editors keep their parent section selected. Existing URLs and route permissions are unchanged.
+
+### One place for each destination
+
+Every page has one visible owner in the shell, so a link never appears twice:
+
+| Destination | Where it lives |
+|---|---|
+| Posts, pages, media, comments, taxonomies | **Content** tabs |
+| Site design, themes, template overrides, menus, SEO, redirects, analytics | **Website** tabs |
+| Canvases, approvals, API keys, agents and workflows | **Canvas & agents** tabs |
+| General settings, users and roles, connections and integrations, backups, health, jobs, updates | **Settings** tabs |
+| Anything you pinned | **Quick access** in the sidebar and a dashboard panel (its tab hides) |
+
+The topbar holds search, **Commands** (Ctrl/⌘ K) and **View site**. The right rail (left in Arabic) holds agents only: the agents launcher and your agent shortcuts. On phones the agents launcher floats at the bottom and the sections open from the menu button. The dashboard ends with an administration directory listing the structure, settings, integrations and operations pages not already shown on it. The command palette reaches every page you may open.
+
+Rows with several actions (API keys, saved connections) show one actions button (⋯): open it with a click, **Enter** or **↓**, move with the arrow keys, **Home** and **End**, and close with **Esc**, which returns focus to the button. Without JavaScript the actions show inline. Destructive actions on detail pages (deleting a user, role, form, product or billing server, uninstalling an extension) sit in a **Danger zone** at the bottom of the page and still ask for confirmation.
 
 ## Arrange the sidebar
 
@@ -98,7 +114,7 @@ The `g` destinations are rendered from your authorized navigation: a key whose p
 
 استخدم زر «إضافة إلى الوصول السريع» بجانب تبويب الصفحة داخل قسمها؛ يظهر الاختصار في القائمة الرئيسية واللوحة الشخصية فورًا، ويختفي تبويب الصفحة عند الانتقال التالي أو إعادة التحميل. لإلغاء التثبيت استخدم «إزالة من الوصول السريع» بجانب اختصار القائمة، أو «إرجاع إلى التنقل» في لوحته داخل الرئيسية. تتحدث القائمة واللوحة الموجودة في الصفحة فورًا، ويعود تبويب الصفحة عند الانتقال التالي أو إعادة التحميل. التثبيت لا يغيّر الصلاحيات ولا ينشر أي محتوى.
 
-القائمة الرئيسية تجمع الصفحات في ستة أقسام كحد أقصى: الرئيسية، المحتوى، الموقع، الكانفس والوكلاء، الوارد والإعدادات. يظهر المتجر عند توفر أدوات تجارة مسموح بها. اختر القسم ثم التبويب المطلوب؛ الإعدادات تجمع العام والفريق والتكاملات والنظام. تختفي الأقسام الفارغة، وتبقى روابط الإضافات الجديدة متاحة داخل الإعدادات.
+القائمة الرئيسية تجمع الصفحات في ستة أقسام كحد أقصى: الرئيسية، المحتوى، الموقع، الكانفس والوكلاء، الوارد والإعدادات. يظهر المتجر عند توفر أدوات تجارة مسموح بها. اختر القسم ثم التبويب المطلوب؛ الإعدادات تجمع العام والفريق والتكاملات والنظام. تختفي الأقسام الفارغة، وتبقى روابط الإضافات الجديدة متاحة داخل الإعدادات. لكل صفحة مكان واحد ظاهر: تبويبات قسمها أو الوصول السريع إن ثبّتّها. الشريط العلوي فيه البحث والأوامر وعرض الموقع فقط، والشريط الجانبي المقابل للوكلاء فقط (زر الوكلاء واختصاراتهم). المظهر والقوالب والنسخ الاحتياطية وصحة النظام داخل تبويبات الموقع والإعدادات، ولوحة الأوامر (Ctrl K) تصل لأي صفحة. الإجراءات الإضافية في صفوف مفاتيح API والاتصالات داخل زر إجراءات (⋯) يعمل بالأسهم وEsc، والإجراءات الخطرة كالحذف في قسم «منطقة الخطر» أسفل الصفحة.
 
 لوحة الأوامر: اضغط Ctrl K (أو ⌘ K على ماك) أو زر «الأوامر» بجانب البحث. تعرض الصفحات والإجراءات المسموح لك بها ونتائج المحتوى والمستخدمين، والبحث يتجاهل التشكيل والهمزات والفرق بين ى/ي وة/ه، ويقبل الاسم العربي أو الإنجليزي للصفحة. في صفحات الكانفس يبقى Ctrl K لبحث الكانفس. اضغط ? لعرض الاختصارات: / للبحث، g ثم h/c/m/s/a للرئيسية والمحتوى والوسائط والإعدادات والموافقات (حسب صلاحياتك)، وCtrl S للحفظ في محرر المحتوى. لا تعمل الاختصارات أثناء الكتابة في حقل.
 

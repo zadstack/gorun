@@ -60,16 +60,18 @@ func TestNavigationCacheSharesProjectionPerRequestAndPath(t *testing.T) {
 }
 
 func TestWorkspaceToolsNavigationURLsCoverShortcutSlots(t *testing.T) {
-	groups := []NavGroup{{Items: []NavItem{{ID: "site.analytics", Href: "/admin/analytics"}, {ID: "b", Href: "/admin/b"}}}}
+	groups := []NavGroup{{Items: []NavItem{{ID: "site.analytics", Href: "/admin/analytics"}, {ID: "b", Href: "/admin/b"}}}, {Key: "system", Items: []NavItem{{ID: "system.jobs", Href: "/admin/system/jobs"}}}}
 	tools := workspaceTools(groups, nil, []QuickAccessItem{{NavItem: NavItem{Href: "/admin/pinned"}}})
-	// A widget link is hidden when any visible owner, pins or the always-visible
-	// shortcut slots, already links to it, so each destination has one owner.
-	for _, href := range []string{"/admin/pinned", "/admin/analytics"} {
+	// A widget link is hidden when any visible owner, pins or the dashboard
+	// directory, already links to it, so each destination has one owner.
+	for _, href := range []string{"/admin/pinned", "/admin/system/jobs"} {
 		if !tools.NavigationURLs[href] {
 			t.Errorf("%s has a visible owner but is missing from navigation URLs", href)
 		}
 	}
-	if tools.NavigationURLs["/admin/b"] {
-		t.Error("ungrouped destination without an owner counted as navigation")
+	for _, href := range []string{"/admin/b", "/admin/analytics"} {
+		if tools.NavigationURLs[href] {
+			t.Errorf("%s has no visible owner on this page but counted as navigation", href)
+		}
 	}
 }

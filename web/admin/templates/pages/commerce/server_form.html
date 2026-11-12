@@ -41,9 +41,15 @@
   </form>
   <div id="server-test-result" class="mt-3" aria-live="polite"></div>
 </section>
-<form method="post" action="/admin/commerce/servers/{{.ID}}/delete" class="mt-6" data-confirm="{{t "commerce.confirm.delete_server"}}">
-  <input type="hidden" name="_csrf" value="{{csrf}}">
-  <button type="submit" class="h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{t "core.action.delete"}}</button>
-</form>
+<section class="danger-zone" aria-labelledby="server-danger-title">
+  <h2 id="server-danger-title" class="danger-zone-title">{{t "core.danger.title"}}</h2>
+  <div class="danger-zone-item">
+    <div class="danger-zone-text"><p class="danger-zone-label">{{t "commerce.danger.server"}}</p><p class="danger-zone-help">{{t "commerce.danger.server_help"}}</p></div>
+    <form method="post" action="/admin/commerce/servers/{{.ID}}/delete" data-confirm="{{t "commerce.confirm.delete_server"}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <button type="submit" class="btn btn-danger btn-sm">{{icon "trash-2"}}<span>{{t "core.action.delete"}}</span></button>
+    </form>
+  </div>
+</section>
 {{end}}
 {{end}}

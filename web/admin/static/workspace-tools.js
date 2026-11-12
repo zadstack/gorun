@@ -1,22 +1,10 @@
 (() => {
   'use strict';
-  const menu = document.querySelector('[data-workspace-mobile-tools]');
-  if (!menu) return;
-  const slot = menu.querySelector('[data-workspace-mobile-slot]');
-  const parts = [...document.querySelectorAll('.workspace-rail-tools,.workspace-rail-footer')];
-  const homes = new Map(parts.map(part => [part, part.parentElement]));
-  const mobile = matchMedia('(max-width:767px)');
-  function placeTools() {
-    for (const part of parts) (mobile.matches ? slot : homes.get(part)).append(part);
-    menu.hidden = !mobile.matches || !parts.some(part => part.querySelector('a'));
-    if (menu.hidden) menu.open = false;
-  }
-  mobile.addEventListener('change', placeTools);
-  document.addEventListener('click', event => { if (!menu.contains(event.target)) menu.open = false; });
-  menu.addEventListener('keydown', event => { if (event.key === 'Escape') { menu.open = false; menu.querySelector('summary').focus(); } });
   let controller;
-  const selectors = ['.workspace-top-tools','.workspace-sidebar-tools','.workspace-rail-tools','.workspace-rail-footer','.workspace-tool-groups','[data-navigation-sections]','[data-workspace-context-navigation]'];
-  // Swap every shortcut region from a rendered projection, keeping focus on the
+  // The regions the navigation projection owns (partials/workspace-navigation):
+  // the dashboard directory, the sidebar sections and the contextual tabs.
+  const selectors = ['.workspace-tool-groups','[data-navigation-sections]','[data-workspace-context-navigation]'];
+  // Swap every navigation region from a rendered projection, keeping focus on the
   // same destination when the focused control was inside a replaced region.
   function applyProjection(doc) {
     const focused = document.activeElement;
@@ -27,7 +15,6 @@
       const current = document.querySelector(selector), next = doc.querySelector(selector);
       if (current && next) current.replaceChildren(...[...next.childNodes].map(node => document.importNode(node, true)));
     }
-    placeTools();
     window.lucide?.createIcons(); // the swapped regions carry {{icon}} placeholders
     if (restoreFocus) {
       let target;
@@ -64,5 +51,4 @@
   }
   document.addEventListener('gorun:dashboard-pins-changed', refreshTools);
   window.addEventListener('pagehide', () => controller?.abort());
-  placeTools();
 })();

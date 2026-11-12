@@ -182,15 +182,17 @@
       <ul class="grid gap-1">{{range $x.Manifest.AdminNav}}<li><a href="{{.URL}}" rel="noopener noreferrer" target="_blank" class="inline-flex items-center gap-1 text-blue hover:text-blue-hover underline-offset-2 hover:underline">{{with index .Label locale}}{{.}}{{else}}{{index .Label "en"}}{{end}}{{icon "external-link"}}</a></li>{{end}}</ul>
     </section>
     {{end}}
-    <section class="rounded border border-red bg-panel p-4" aria-labelledby="ext-danger">
-      <h2 id="ext-danger" class="text-base font-bold text-red mb-2">{{t "ext.uninstall.title"}}</h2>
-      <p class="text-xs text-muted mb-3">{{t "ext.uninstall.help"}}</p>
-      <form method="post" action="/admin/extensions/{{$x.Slug}}/uninstall" data-confirm="{{t "ext.uninstall.confirm" $x.Slug}}" class="grid gap-3">
-        <input type="hidden" name="_csrf" value="{{csrf}}">
-        <label class="inline-flex items-start gap-2 text-xs"><input type="checkbox" name="purge" value="1" class="mt-0.5 h-4 w-4 accent-[var(--red)]"> <span>{{t "ext.uninstall.purge"}}</span></label>
-        <div><button type="submit" class="h-9 px-3 rounded border border-red text-red bg-panel hover:bg-red-soft inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2"}}{{t "ext.uninstall.submit"}}</button></div>
-      </form>
-    </section>
   </aside>
 </div>
+<section class="danger-zone" aria-labelledby="ext-danger">
+  <h2 id="ext-danger" class="danger-zone-title">{{t "core.danger.title"}}</h2>
+  <div class="danger-zone-item">
+    <div class="danger-zone-text"><p class="danger-zone-label">{{t "ext.uninstall.title"}}</p><p class="danger-zone-help">{{t "ext.uninstall.help"}}</p></div>
+    <form method="post" action="/admin/extensions/{{$x.Slug}}/uninstall" data-confirm="{{t "ext.uninstall.confirm" $x.Slug}}">
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <label class="inline-flex items-start gap-2 text-xs"><input type="checkbox" name="purge" value="1" class="mt-0.5 h-4 w-4 accent-[var(--red)]"> <span>{{t "ext.uninstall.purge"}}</span></label>
+      <button type="submit" class="btn btn-danger btn-sm">{{icon "trash-2"}}<span>{{t "ext.uninstall.submit"}}</span></button>
+    </form>
+  </div>
+</section>
 {{end}}
