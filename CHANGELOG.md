@@ -9,7 +9,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 Details and commands: [docs/UPGRADE.md](docs/UPGRADE.md#022-upgrade-notes).
 
-- Five forward-only, additive migrations run on first start: `admin/0012_notifications_read`, `auth/0012_two_factor`, `auth/0013_session_last_seen`, `content/0010_autosaves` and `content/0011_preview_links`. No new environment variables and no new Go dependencies.
+- Six forward-only migrations run on first start: `admin/0012_notifications_read`, `auth/0012_two_factor`, `auth/0013_session_last_seen`, `content/0010_autosaves` and `content/0011_preview_links` add tables and a column; `content/0012_autosaves_user_fk` rebuilds `content_autosaves` (same name, columns and index, one transaction) so `user_id` references `users` with `ON DELETE CASCADE`, dropping autosaves of users deleted earlier. No new environment variables and no new Go dependencies.
 - Rolling back to 0.21.x on the current data is possible: 0.21 warns about the unknown migrations and ignores the new tables. **While 0.21 runs, two-factor sign-in is not enforced** (password only). After rolling forward again, sign out all sessions created in that window.
 - The in-app updater cannot roll back automatically once these migrations ran: a failed health check ends `rollback_failed` and keeps the current data ([Rollback semantics](docs/UPGRADE.md#rollback-semantics)).
 - Renamed MCP tools keep their old names as hidden aliases; clients that adopt the new names break if you roll back to 0.21.x. `preview_migration` is no longer annotated read-only.
@@ -74,9 +74,13 @@ Details and commands: [docs/UPGRADE.md](docs/UPGRADE.md#022-upgrade-notes).
 - MCP server instructions are a short routing guide instead of one sentence.
 - `preview_migration` describes what it does: it records its preview plan (no content changes) and reads
   the WordPress source, so it is annotated as a non-read-only, open-world tool.
+- The content list no longer loads the people and terms for **Change author…** and the term actions with every page view: the bulk bar fetches them when the action is chosen (`GET /admin/x/content/{type}/choices`, searchable), and without JavaScript **Apply** opens a short step that asks for the author or term. Measured locally on a list with 150 team members and 600 terms: HTML 85 KB → 56 KB, about 25% more requests per second, p95 17 → 14 ms ([docs/CONTENT_STUDIO.md](docs/CONTENT_STUDIO.md#bulk-actions)).
+- New daily cron `content.cleanup`: deletes preview links that expired or were revoked more than 30 days ago, autosaves untouched for 30 days and autosaves older than 7 days whose item was saved since, and logs the counts.
 
 ### Fixed
 
+- **Change author…** on the content list and the editor's author select offered at most the first 100 accounts by name and removed customers afterwards, so on a shop with many customers team members were missing or the action did not appear at all. Eligible authors (active, not customers, role may create content) are now filtered in the database (`auth.ListQuery.Permission`), and the editor keeps the item's current author.
+- Deleting a user now also deletes their unsaved editor autosaves; `content_autosaves.user_id` had no foreign key, so a deleted user's draft text stayed in the database.
 - Two-factor sign-in after a `GORUN_SECRET_KEY` change: a stored secret that no longer decrypts made the code step answer 500. App codes are now refused like a wrong code, the operator gets one log line per user naming the likely cause (no secret material), and recovery codes keep working.
 - Staff with two-factor who sign in on the shop account form or the launch login return to that form's destination after the code instead of the admin dashboard. The return path is kept with the pending sign-in and must be a same-site relative path, so it cannot become an open redirect.
 - MCP `preview_migration` and `get_migration_status` with an unknown migration ID answer `not_found` instead of `internal`, and an unclassified tool error is logged once instead of twice.
