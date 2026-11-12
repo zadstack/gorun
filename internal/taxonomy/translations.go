@@ -166,6 +166,22 @@ func (s *service) CreateTermTranslation(ctx context.Context, id string, t Term) 
 	return s.saveTermWith(ctx, t, termSaveOpts{group: termGroupID(src), source: src, action: "taxonomy.term_translate"})
 }
 
+// createTranslationIn is CreateTermTranslation for a source that must be in taxonomy (the REST
+// and MCP create calls name the taxonomy and the source separately).
+func (s *service) createTranslationIn(ctx context.Context, taxonomy, sourceID string, t Term) (*Term, error) {
+	src, err := s.GetTerm(ctx, sourceID)
+	if errors.Is(err, ErrNotFound) {
+		return nil, validationError(map[string]string{"translation_of": "taxonomy.validation.unknown_term"})
+	}
+	if err != nil {
+		return nil, err
+	}
+	if src.Taxonomy != taxonomy {
+		return nil, validationError(map[string]string{"translation_of": msgTermTranslationTax})
+	}
+	return s.CreateTermTranslation(ctx, src.ID, t)
+}
+
 // LinkTermTranslation puts other (with its own translations) into the group of id. Both must be
 // in the same taxonomy, and the merged group may hold each locale once.
 func (s *service) LinkTermTranslation(ctx context.Context, id, other string) error {
