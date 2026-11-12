@@ -5,7 +5,21 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Upgrade notes
+
+Details and commands: [docs/UPGRADE.md](docs/UPGRADE.md#022-upgrade-notes).
+
+- Five forward-only, additive migrations run on first start: `admin/0012_notifications_read`, `auth/0012_two_factor`, `auth/0013_session_last_seen`, `content/0010_autosaves` and `content/0011_preview_links`. No new environment variables and no new Go dependencies.
+- Rolling back to 0.21.x on the current data is possible: 0.21 warns about the unknown migrations and ignores the new tables. **While 0.21 runs, two-factor sign-in is not enforced** (password only). After rolling forward again, sign out all sessions created in that window.
+- The in-app updater cannot roll back automatically once these migrations ran: a failed health check ends `rollback_failed` and keeps the current data ([Rollback semantics](docs/UPGRADE.md#rollback-semantics)).
+- Renamed MCP tools keep their old names as hidden aliases; clients that adopt the new names break if you roll back to 0.21.x. `preview_migration` is no longer annotated read-only.
+- `DELETE /api/v1/keys/{id}` now answers `403 not_key_owner` to a caller who is neither the key's owner nor an administrator.
+- Content bulk requests with an unknown `action` are refused; previously the selection was trashed.
+- Two-factor enforcement is off by default; API keys and MCP are never asked for a code. Recovery when nobody can sign in: `gorun user two-factor-reset` ([docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md#lockout-recovery)).
+
 ### Added
+
+- `gorun user two-factor-reset --email <email>` removes a user's second factor, recovery codes and pending sign-ins from the server's shell, also for the only administrator, prints what it did and records `user.2fa_reset` with `{"via":"cli"}` ([docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md#lockout-recovery)).
 
 - Two-factor authentication (TOTP, RFC 6238) for the admin sign-in: enrolment from My account with a setup key and `otpauth://` link, ten single-use recovery codes (stored hashed), a five-minute single-use second sign-in step after the password or magic link with rate limiting and replay protection, disabling with password and code, administrator reset (audited) and per-role enforcement on Login security. Secrets are encrypted with `GORUN_SECRET_KEY`. API keys and MCP are not affected ([docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md#two-factor-authentication-totp)).
 - My account (`/admin/account`, from the name in the top bar): name, dashboard language, email change with the current password, password change that signs out other devices, two-factor status, signed-in devices with last activity and per-device or all-other sign-out, and a link to API keys ([docs/ADMIN_WORKSPACE.md](docs/ADMIN_WORKSPACE.md#my-account)).
@@ -61,6 +75,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Fixed
 
+- Two-factor sign-in after a `GORUN_SECRET_KEY` change: a stored secret that no longer decrypts made the code step answer 500. App codes are now refused like a wrong code, the operator gets one log line per user naming the likely cause (no secret material), and recovery codes keep working.
+- Staff with two-factor who sign in on the shop account form or the launch login return to that form's destination after the code instead of the admin dashboard. The return path is kept with the pending sign-in and must be a same-site relative path, so it cannot become an open redirect.
+- MCP `preview_migration` and `get_migration_status` with an unknown migration ID answer `not_found` instead of `internal`, and an unclassified tool error is logged once instead of twice.
+- Docs: API.md lists `403 two_factor_enrolment_required`.
 - API key revoke checks ownership like rotate: `DELETE /api/v1/keys/{id}` and the console's Revoke button accept only the key's owner or an administrator; another user holding `api_keys.manage` gets `403 not_key_owner` (console: an error notice) and the key stays active.
 - Work-agent runs execute once per run: the transition to `running` only claims a `queued` run, so a job the queue redelivers after a stale heartbeat no longer calls the AI provider or GitHub a second time. A run found already running fails closed as `worker_interrupted`; a shutdown during the provider call hands the run back to `queued` for the requeued job.
 - Agent channel messages re-check the open status inside the insert transaction, so a channel closed while a post is in flight refuses it (`channel_closed`).

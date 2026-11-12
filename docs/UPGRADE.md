@@ -395,6 +395,56 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ---
 
+## 0.22 upgrade notes
+
+From 0.21.x. No new environment variables and no new Go dependencies.
+
+**Migrations.** Five forward-only, additive migrations run on the first start:
+
+| Migration | Adds |
+| --- | --- |
+| `admin/0012_notifications_read` | table `notifications_read` (per-user read marks of notifications) |
+| `auth/0012_two_factor` | tables `user_totp`, `user_recovery_codes`, `login_challenges` |
+| `auth/0013_session_last_seen` | column `sessions.last_seen_at` (default `''`) |
+| `content/0010_autosaves` | table `content_autosaves` |
+| `content/0011_preview_links` | table `content_preview_links` |
+
+**Rolling back to 0.21.x** on the current data works ([§6 A](#a-runtime-rollback--preserve-current-data)):
+0.21 logs `database has migrations unknown to this binary`, shows the schema as ahead and ignores the new
+tables and column. While 0.21 runs:
+
+- **Two-factor sign-in is not enforced**: enrolled users sign in with the password only, and role enforcement
+  is off. Treat sessions created during that window as single-factor. After rolling forward to 0.22 again,
+  sign them out: each affected user uses **My account → Sign out other devices** (or
+  `gorun user password --email …`, which ends all of that user's sessions); to end every session at once,
+  stop the server and delete the rows of the `sessions` table in `<data>/gorun.db`, then start it again.
+- Autosaves, preview links and notification read marks are kept but unused; `/preview/{token}` links answer
+  404 until 0.22 runs again.
+
+**In-app updater.** Because migrations run on activation, a failed 0.22 health check cannot be rolled back
+automatically: the operation ends `rollback_failed` and keeps the current data. Repair forward or roll back by
+hand as above ([Rollback semantics](#rollback-semantics)).
+
+**MCP clients.** Renamed tools (`list_canvas_pending_runs`, `get_canvas_context`, `get_canvas_source`,
+`request_canvas_run`, `append_canvas_result`, `list_channels`, `read_channel_messages`,
+`post_channel_message`, `preview_migration`) keep their old names (`canvases.*`, `channels_*`,
+`run_migration_preview`) as hidden aliases, so existing clients keep working. A client that switches to the
+new names breaks if you roll back to 0.21.x, which knows only the old ones; keep the old names until 0.22 is
+settled. `preview_migration` is no longer annotated read-only (it records its preview plan), so clients that
+auto-approve read-only tools may now ask for confirmation.
+
+**Behaviour changes to check in integrations.**
+
+- `DELETE /api/v1/keys/{id}` answers `403 not_key_owner` when the caller is neither the key's owner nor an
+  administrator (previously any holder of `api_keys.manage` could revoke).
+- `POST /admin/content/{type}/bulk` refuses an unknown `action` with an error instead of trashing the selection.
+- Two-factor enforcement is off by default (no role selected on **Login security**). API keys and MCP agent
+  keys never ask for a code. When a role requires it, its members' session API calls answer
+  `403 two_factor_enrolment_required` until they enrol. Recovery when nobody can sign in:
+  [LOGIN-SECURITY.md → Lockout recovery](LOGIN-SECURITY.md#lockout-recovery).
+
+---
+
 ## العربية — ملخص سريع
 
 يفحص GoRun الإصدارات الرسمية في الخلفية افتراضيًا، ولا ينشرها تلقائيًا. طلب

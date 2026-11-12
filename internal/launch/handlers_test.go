@@ -140,6 +140,44 @@ func TestStartLoginCustomerSession(t *testing.T) {
 	}
 }
 
+// A customer with two-factor goes through the second step and is sent back to
+// the customer account, not the admin dashboard.
+func TestStartLoginSecondFactorReturnsToAccount(t *testing.T) {
+	app, srv, c := bootLaunch(t)
+	svc, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)
+	if _, err := svc.Create(context.Background(), "ops@example.test", "Ops", "correct horse battery", auth.RoleAdmin); err != nil {
+		t.Fatal(err)
+	}
+	u, err := svc.Create(context.Background(), "cust2fa@example.test", "Cust", "correct horse battery", auth.RoleCustomer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const enabled = `INSERT INTO user_totp (user_id, secret_enc, enabled_at, created_at, updated_at)
+		VALUES (?, 'sealed', '2026-11-12T00:00:00Z', '2026-11-12T00:00:00Z', '2026-11-12T00:00:00Z')`
+	if _, err := app.Deps.DB.Exec(enabled, u.ID); err != nil {
+		t.Fatal(err)
+	}
+	resp, err := c.Get(srv.URL + "/start/login?hl=en")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	form := url.Values{"_csrf": {csrfFrom(t, string(body))}, "email": {"cust2fa@example.test"}, "password": {"correct horse battery"}}
+	resp, err = c.PostForm(srv.URL+"/start/login", form)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != auth.SecondFactorPath {
+		t.Fatalf("login redirect: %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	var next string
+	if err := app.Deps.DB.QueryRow(`SELECT next FROM login_challenges WHERE user_id = ?`, u.ID).Scan(&next); err != nil || next != "/account" {
+		t.Fatalf("second step returns to %q (%v), want /account", next, err)
+	}
+}
+
 func TestLaunchPagesShareSafePublishedIdentity(t *testing.T) {
 	app, srv, c := bootLaunch(t)
 	svc, _ := kernel.Get[auth.Service](app.Deps, kernel.ServiceAuth)

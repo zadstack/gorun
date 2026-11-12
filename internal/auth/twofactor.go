@@ -9,8 +9,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/zadstack/gorun/internal/audit"
@@ -49,11 +51,27 @@ type twoFactorStore struct {
 	db    *sql.DB
 	key   []byte
 	audit *audit.Writer
+	log   *slog.Logger
 	now   func() time.Time
+	// unreadable remembers users whose secret failed to decrypt, so the
+	// operator error is logged once per user and process, not per attempt.
+	unreadable sync.Map
 }
 
 func newTwoFactorStore(d *kernel.Deps) *twoFactorStore {
-	return &twoFactorStore{db: d.DB, key: d.Config.SecretKey, audit: d.Audit, now: time.Now}
+	return &twoFactorStore{db: d.DB, key: d.Config.SecretKey, audit: d.Audit, log: d.Log, now: time.Now}
+}
+
+// secretUnreadable reports a stored secret that does not decrypt, almost
+// always because GORUN_SECRET_KEY changed after enrolment. Only the user id
+// is logged, never the ciphertext or the error detail.
+func (s *twoFactorStore) secretUnreadable(userID string) {
+	if _, seen := s.unreadable.LoadOrStore(userID, struct{}{}); seen || s.log == nil {
+		return
+	}
+	s.log.Error("auth: two-factor secret cannot be decrypted; was GORUN_SECRET_KEY changed? "+
+		"The user can still sign in with a recovery code; reset their two-factor (admin Users page or "+
+		"`gorun user two-factor-reset --email …`) so they can enrol again", "user_id", userID)
 }
 
 func (s *twoFactorStore) record(ctx context.Context, action, userID string, meta any) {
@@ -178,7 +196,10 @@ func (s *twoFactorStore) verify(ctx context.Context, userID, code string) (strin
 	if norm := normalizeOTP(code); len(norm) == totpDigits {
 		secret, err := s.open(userID, enc)
 		if err != nil {
-			return "", fmt.Errorf("auth: open two-factor secret: %w", err)
+			// No app code can match a secret we cannot read: answer like a
+			// wrong code so the user can fall back to a recovery code.
+			s.secretUnreadable(userID)
+			return "", errTwoFactorCode
 		}
 		step, ok := matchTOTP(secret, norm, s.now(), last)
 		if !ok {
@@ -347,15 +368,28 @@ func TwoFactorEnabled(ctx context.Context, d *sql.DB, userID string) (bool, erro
 // sessions stay signed in; the next sign-in asks only for the password, or
 // for enrolment when the user's role requires it.
 func ResetTwoFactor(ctx context.Context, d *kernel.Deps, userID string) error {
+	_, err := resetTwoFactor(ctx, d, userID, nil)
+	return err
+}
+
+// ResetTwoFactorFromCLI is ResetTwoFactor for the server's shell
+// (`gorun user two-factor-reset`), the lockout recovery when no administrator
+// can sign in. It needs no acting user: the audit entry has the system actor
+// and {"via":"cli"}. It reports whether a factor was removed.
+func ResetTwoFactorFromCLI(ctx context.Context, d *kernel.Deps, userID string) (bool, error) {
+	return resetTwoFactor(ctx, d, userID, map[string]string{"via": "cli"})
+}
+
+func resetTwoFactor(ctx context.Context, d *kernel.Deps, userID string, meta any) (bool, error) {
 	s := newTwoFactorStore(d)
 	removed, err := s.remove(ctx, userID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if removed {
-		s.record(ctx, "user.2fa_reset", userID, nil)
+		s.record(ctx, "user.2fa_reset", userID, meta)
 	}
-	return nil
+	return removed, nil
 }
 
 // TwoFactorRequiredRoles returns the roles that must use a second factor.
