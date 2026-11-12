@@ -363,6 +363,7 @@ attempts, then marked dead (retry from **System → Jobs** or `POST /api/v1/jobs
 |---|---|---|
 | `content.publish_due` | 30 s | publish scheduled items |
 | `content.purge_trash` | 1 h | hard-delete items trashed more than `content.trash_days` (default 30) days ago |
+| `content.cleanup` | 24 h | delete preview links that expired or were revoked more than 30 days ago, autosaves untouched for 30 days and autosaves older than 7 days whose item was saved since; logs the counts |
 | `auth.cleanup` | 1 h | remove expired sessions, stale login attempts, used or expired magic links and expired two-factor sign-in steps |
 | `mcp.approvals.expire` | 1 h | mark undecided MCP approvals expired |
 | `wpmigrate.watchdog` | 5 min | fail items of a running migration that sit pending with no job, so the run advances |

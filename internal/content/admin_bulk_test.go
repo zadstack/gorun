@@ -202,16 +202,27 @@ func TestAdminBulkAuthorAndTerms(t *testing.T) {
 	}
 
 	_, page := s.do("GET", "/admin/content/post", nil, nil)
-	for _, want := range []string{`value="author"`, `value="term_add"`, `value="category/news"`, `>News<`, editor.ID} {
+	for _, want := range []string{`value="author"`, `value="term_add"`} {
 		if !strings.Contains(page, want) {
 			t.Errorf("bulk controls lack %q", want)
 		}
 	}
-	if strings.Contains(page, customer.ID) {
+	_, authors := s.do("GET", "/admin/x/content/post/choices?kind=author", nil, nil)
+	_, terms := s.do("GET", "/admin/x/content/post/choices?kind=term", nil, nil)
+	for _, want := range []string{`value="category/news"`, `>News<`} {
+		if !strings.Contains(terms, want) {
+			t.Errorf("term choices lack %q", want)
+		}
+	}
+	if !strings.Contains(authors, editor.ID) {
+		t.Error("author choices lack the editor")
+	}
+	if strings.Contains(authors, customer.ID) {
 		t.Error("a customer is offered as author")
 	}
 
-	for _, id := range []string{customer.ID, "missing", ""} {
+	// An empty author_id opens the choose step (TestAdminBulkChooseStepWithoutJS).
+	for _, id := range []string{customer.ID, "missing"} {
 		if resp := bulkPost(t, s, "post", url.Values{"action": {"author"}, "author_id": {id}, "ids": {a.ID}}); !flashed(resp, "content.bulk.error.author_invalid") {
 			t.Errorf("author %q accepted", id)
 		}
@@ -227,7 +238,7 @@ func TestAdminBulkAuthorAndTerms(t *testing.T) {
 		t.Error("author summary missing")
 	}
 
-	for _, term := range []string{"category/nope", "nope/news", "news", ""} {
+	for _, term := range []string{"category/nope", "nope/news", "news"} {
 		if resp := bulkPost(t, s, "post", url.Values{"action": {"term_add"}, "term": {term}, "ids": {a.ID}}); !flashed(resp, "content.bulk.error.term_invalid") {
 			t.Errorf("term %q accepted", term)
 		}

@@ -167,7 +167,8 @@
       {{if .Authors}}
       <div>
         <label for="author_id" class="block font-medium mb-1">{{t "content.editor.author"}}</label>
-        <select id="author_id" name="author_id" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
+        {{if .AuthorsMore}}<input type="search" class="w-full h-9 rounded border border-line bg-panel px-3 mb-2" data-choices-search="author_id" placeholder="{{t "content.choices.search"}}" aria-label="{{t "content.choices.search_authors"}}" dir="auto" hidden>{{end}}
+        <select id="author_id" name="author_id"{{if .AuthorsMore}} data-choices-src="{{.AuthorsURL}}" data-choices-loaded{{end}} class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           <option value="">{{t "content.editor.choose"}}</option>
           {{range .Authors}}<option value="{{.Value}}" {{if .Selected}}selected{{end}}>{{.Label}}</option>{{end}}
         </select>

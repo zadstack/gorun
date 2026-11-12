@@ -422,5 +422,16 @@
   "export.action": "تصدير",
   "export.json": "JSON — كامل، لإعادة الاستيراد",
   "export.csv": "CSV — جدول بيانات",
-  "export.help": "يصدّر ما يطابق عوامل التصفية الحالية مما يحق لك فتحه، حتى 10,000 عنصر."
+  "export.help": "يصدّر ما يطابق عوامل التصفية الحالية مما يحق لك فتحه، حتى 10,000 عنصر.",
+  "choices.search": "ابحث…",
+  "choices.search_authors": "ابحث في الكتّاب",
+  "choices.search_terms": "ابحث في المصطلحات",
+  "choices.search_button": "بحث",
+  "choices.more": "توجد نتائج أخرى: ابحث لتضييق القائمة",
+  "choices.none": "لا نتائج مطابقة",
+  "choices.after_apply": "اختر بعد الضغط على تطبيق",
+  "bulk.choose_author": "اختر الكاتب الجديد",
+  "bulk.choose_term": "اختر المصطلح",
+  "bulk.choose_count": "العناصر المحددة: %d. لن يتغير شيء قبل التطبيق.",
+  "bulk.choose_back": "العودة إلى القائمة"
 }

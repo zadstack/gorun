@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/zadstack/gorun/internal/audit"
+	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/hooks"
 	"github.com/zadstack/gorun/internal/jobs"
@@ -32,6 +33,11 @@ func newTestDB(t *testing.T) *sql.DB {
 		t.Fatal(err)
 	}
 	if err := db.Migrate(ctx, d, "settings", settings.Migrations()); err != nil {
+		t.Fatal(err)
+	}
+	// auth boots before content (kernel.BootOrder): content_autosaves.user_id
+	// references users.
+	if err := db.Migrate(ctx, d, "auth", auth.New().Migrations()); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Migrate(ctx, d, "content", migrations); err != nil {

@@ -69,6 +69,7 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	r.With(edit).Post("/content/{type}/{id}/translations/unlink", h.unlinkItem)
 	r.With(edit).Get("/x/content/{type}/row", h.repeaterRow)
 	r.With(view).Get("/x/content/pick", h.pick)
+	r.With(view).Get("/x/content/{type}/choices", h.choices) // author/term options; per-kind permission inside (admin_choices.go)
 	moderate := auth.RequirePerm(PermModerateComments)
 	r.With(moderate).Get("/comments", h.commentsList)
 	r.With(moderate).Post("/comments/{id}/status", h.commentStatus)

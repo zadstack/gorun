@@ -151,7 +151,7 @@ can be parked (`internal/jobs/park.go`). Crons run only when their module regist
 |---|---|---|
 | kernel/hooks | `hooks.event` | — |
 | auth | — | `auth.cleanup` 1h |
-| content | — | `content.publish_due` 30s, `content.purge_trash` 1h |
+| content | — | `content.publish_due` 30s, `content.purge_trash` 1h, `content.cleanup` 24h |
 | media | `media.fetch_url` | — |
 | admin | `canvas.generate`, `canvas.tools`, `studio.generate`, `backup.scheduled`, `update.run`, `observe.*` | `canvas.schedule` 1m, `studio.recover` 1m, `jobs.prune` 1h, `observe.tick` 1m, `update.reconcile` 1m, `backup.schedule` 1h, `notifications.prune` 24h |
 | webhooks | `webhooks.deliver` | `webhooks.prune` 24h |

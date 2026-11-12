@@ -7,3 +7,4 @@
 
 internal/workagents/migrations/0004_github_starred.sql # already applied fleet-wide; widens a CHECK by rename+add+copy+drop and keeps the column name execution_kind, so older readers still work
 internal/commerce/migrations/0008_provisioning_op_running.sql # widens status CHECK (adds running) by rename+add+copy+drop and keeps the column name status, so older readers still work
+internal/content/migrations/0012_autosaves_user_fk.sql # adds the missing users FK to content_autosaves (new in 0.22, 0010) by create+copy+drop+rename; same table name, columns and index, so 0.22 readers work and 0.21 never used the table; drops only autosaves of already-deleted users

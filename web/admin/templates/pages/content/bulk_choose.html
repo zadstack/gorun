@@ -1,0 +1,30 @@
+{{define "title"}}{{if eq .Kind "author"}}{{t "content.bulk.choose_author"}}{{else}}{{t "content.bulk.choose_term"}}{{end}}{{end}}
+{{define "content"}}
+<div class="mb-4">
+  <a href="{{.BackURL}}" class="text-sm text-blue hover:text-blue-hover">{{.TypeName}} · {{t "content.bulk.choose_back"}}</a>
+  <h1 class="text-[22px] font-bold mt-1">{{if eq .Kind "author"}}{{t "content.bulk.choose_author"}}{{else}}{{t "content.bulk.choose_term"}}{{end}}</h1>
+  <p class="text-muted">{{t "content.bulk.choose_count" (len .IDs)}}</p>
+</div>
+<form method="post" action="{{.BaseURL}}/bulk" class="rounded border border-line bg-panel p-4 space-y-3 max-w-xl" data-bulk-choose>
+  <input type="hidden" name="_csrf" value="{{csrf}}">
+  <input type="hidden" name="action" value="{{.Action}}">
+  <input type="hidden" name="return" value="{{.Return}}">
+  {{range .IDs}}<input type="hidden" name="ids" value="{{.}}">{{end}}
+  <div class="field">
+    <label class="field-label" for="bulk-choose-q">{{if eq .Kind "author"}}{{t "content.choices.search_authors"}}{{else}}{{t "content.choices.search_terms"}}{{end}}</label>
+    <div class="flex flex-wrap gap-2">
+      <input id="bulk-choose-q" type="search" name="q" value="{{.Query}}" class="field-control flex-1 min-w-0" dir="auto">
+      <button type="submit" name="step" value="search" class="btn btn-secondary">{{t "content.choices.search_button"}}</button>
+    </div>
+  </div>
+  {{if or .Choices.Authors .Choices.Terms}}
+  <div class="field">
+    <label class="field-label" for="bulk-choose-value">{{if eq .Kind "author"}}{{t "content.list.bulk_new_author"}}{{else}}{{t "content.list.bulk_term"}}{{end}}</label>
+    <select id="bulk-choose-value" name="{{if eq .Kind "author"}}author_id{{else}}term{{end}}" class="field-control" required>{{template "content/choice_options" .Choices}}</select>
+  </div>
+  <button type="submit" class="btn btn-primary">{{t "content.list.apply"}}</button>
+  {{else}}
+  <p class="field-help" role="status">{{t "content.choices.none"}}</p>
+  {{end}}
+</form>
+{{end}}

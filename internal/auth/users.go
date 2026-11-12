@@ -52,8 +52,12 @@ type User struct {
 
 // ListQuery filters Service.List. Sort: email, name, role, created_at,
 // last_login_at (default created_at); Order: asc or desc (default desc).
+// Permission, when set, keeps only active staff (not customers) whose role
+// grants it, the same rule as RoleAllows, applied in SQL so paging counts
+// only matching users.
 type ListQuery struct {
 	Search        string
+	Permission    string
 	Page, PerPage int
 	Sort, Order   string
 }
@@ -229,11 +233,20 @@ func (s *service) GetByEmail(ctx context.Context, email string) (*User, error) {
 var sortColumns = map[string]string{"email": "email", "name": "name", "role": "role", "created_at": "created_at", "last_login_at": "last_login_at"}
 
 func (s *service) List(ctx context.Context, q ListQuery) ([]User, int, error) {
-	where, args := "", []any{}
+	var conds []string
+	var args []any
 	if q.Search != "" {
 		like := "%" + strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(q.Search) + "%"
-		where = ` WHERE (email LIKE ? ESCAPE '\' OR name LIKE ? ESCAPE '\')`
+		conds = append(conds, `(email LIKE ? ESCAPE '\' OR name LIKE ? ESCAPE '\')`)
 		args = append(args, like, like)
+	}
+	if q.Permission != "" {
+		conds = append(conds, `status = ? AND role <> ? AND role IN (SELECT role FROM role_permissions WHERE permission IN (?, '*'))`)
+		args = append(args, StatusActive, RoleCustomer, q.Permission)
+	}
+	where := ""
+	if len(conds) > 0 {
+		where = " WHERE " + strings.Join(conds, " AND ")
 	}
 	var total int
 	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM users`+where, args...).Scan(&total); err != nil {

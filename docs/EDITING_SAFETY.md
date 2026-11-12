@@ -27,7 +27,11 @@ never into the item, whatever its status:
   for a background save.
 
 Only you see your autosaves. A normal **Save** removes your row; **Discard** in the restore
-banner removes it too. Deleting the item removes all of its autosaves.
+banner removes it too. Deleting the item removes all of its autosaves, and deleting a user
+removes theirs (`user_id` references `users` with `ON DELETE CASCADE`). The daily
+`content.cleanup` job deletes autosaves not touched for 30 days, and autosaves older than
+7 days whose item was saved since (the restore banner offers those as older than the item
+until then).
 
 **Conflicts.** The editor is opened on a version identified by its edit token (the same
 optimistic-concurrency token the normal save checks, `content.EditToken`). An autosave is only
@@ -109,6 +113,7 @@ own page and revoke returns to the editor.
 - **Token.** 32 random bytes from `crypto/rand`, base64url (43 characters), in
   `/preview/{token}`. Only its SHA-256 is stored in `content_preview_links`
   (`id`, `content_id`, `token_hash`, `created_by`, `created_at`, `expires_at`, `revoked_at`);
+  the daily `content.cleanup` job deletes rows that expired or were revoked more than 30 days ago;
   the lookup goes by hash and is confirmed with a constant-time comparison. The token never
   appears in the database, the audit log or the list.
 - **What the visitor sees.** The saved version (not unsaved editor text, not autosaves)

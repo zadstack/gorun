@@ -46,14 +46,16 @@ Tick items on a content list (or **Select all**) and choose a bulk action. **Sel
 | Move back to draft | `content.publish` | `Unpublish`. Items that are not published, scheduled or private are skipped. |
 | Schedule… | `content.publish` and `content.edit` | Saved with status *scheduled* and the chosen time. The time (UTC, `datetime-local`) must be in the future, otherwise nothing changes. |
 | Change author… | `content.edit`, not author/contributor | Saved with the new author. Only active team members whose role may create content are offered and accepted. |
-| Add a term… / Remove a term… | `content.edit` | Saved with the term added to or removed from the item's terms. Only existing terms of the type's taxonomies are offered (up to 500). |
+| Add a term… / Remove a term… | `content.edit` | Saved with the term added to or removed from the item's terms. Only existing terms of the type's taxonomies are offered. |
 | Move to trash / Delete permanently | `content.delete` | Unchanged from before; the whole request needs `content.delete`. |
 
 Each item goes through the same service method as the single-item path (`Publish`, `Unpublish`, `Update`), so ownership (authors and contributors only change their own items), publish permission, the save hooks of that path (`content.before_save`, `content.authorize_save` for saves), validation, revisions and audit entries apply item by item. One refused item never stops the others. Publish and move back to draft ask for confirmation with the number of selected items first.
 
 After the request the list (with the same filters) shows a summary, for example **2 published · 1 skipped**, with the skipped items grouped by reason: no permission, not yours, changed meanwhile or held for approval, does not pass validation, in the trash, already in that state, not found. Titles are shown only for items you may open. The summary lives in a two-minute cookie for that list and is shown once. A request handles at most 200 ids.
 
-Endpoint (admin session, CSRF field `_csrf`): `POST /admin/content/{type}/bulk` with `action` (`publish`, `unpublish`, `schedule`, `author`, `term_add`, `term_remove`, `trash`, `delete`), `ids`, and `publish_at`, `author_id` or `term` (`taxonomy/slug`) as the action needs; `return` is the list query to go back to.
+The list page does not load the people or terms to choose from. Choosing **Change author…** or a term action fetches them from `GET /admin/x/content/{type}/choices?kind=author|term` (options for the select, at most 100 authors or 200 terms; type in the search box above the select to narrow them, `q=`). Author choices need `content.edit` and not author/contributor, and are filtered in the database to active team members whose role may create content, so a shop's customers never push team members out of the list. Without JavaScript, **Apply** on these actions opens a short step that asks for the author or term (with a search) and keeps the selection; nothing changes until you apply there. The editor's author select uses the same list and keeps the item's current author even if that person may no longer write.
+
+Endpoint (admin session, CSRF field `_csrf`): `POST /admin/content/{type}/bulk` with `action` (`publish`, `unpublish`, `schedule`, `author`, `term_add`, `term_remove`, `trash`, `delete`), `ids`, and `publish_at`, `author_id` or `term` (`taxonomy/slug`) as the action needs; `return` is the list query to go back to. An `author`, `term_add` or `term_remove` request without its value (or with `step=search` and `q`) answers the choose step instead of changing anything.
 
 Not included:
 

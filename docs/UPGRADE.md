@@ -399,7 +399,7 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 From 0.21.x. No new environment variables and no new Go dependencies.
 
-**Migrations.** Five forward-only, additive migrations run on the first start:
+**Migrations.** Six forward-only migrations run on the first start (five additive, one table rebuild):
 
 | Migration | Adds |
 | --- | --- |
@@ -408,6 +408,7 @@ From 0.21.x. No new environment variables and no new Go dependencies.
 | `auth/0013_session_last_seen` | column `sessions.last_seen_at` (default `''`) |
 | `content/0010_autosaves` | table `content_autosaves` |
 | `content/0011_preview_links` | table `content_preview_links` |
+| `content/0012_autosaves_user_fk` | rebuilds `content_autosaves` with `user_id REFERENCES users (id) ON DELETE CASCADE` (same name, columns and index; one transaction). Autosaves of users deleted earlier are dropped. Allowlisted in `internal/db/migration_allowlist.txt` |
 
 **Rolling back to 0.21.x** on the current data works ([§6 A](#a-runtime-rollback--preserve-current-data)):
 0.21 logs `database has migrations unknown to this binary`, shows the schema as ahead and ignores the new
