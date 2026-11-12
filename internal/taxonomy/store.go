@@ -14,6 +14,7 @@ import (
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/hooks"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/settings"
 )
 
@@ -37,6 +38,7 @@ type service struct {
 	hooks     *hooks.Registry
 	audit     *audit.Writer
 	contentFn func() content.Service // nil-safe; content types are the source of truth for Types
+	settings  i18n.LocaleSettings    // nil-safe; the site's content languages
 }
 
 var (

@@ -1,6 +1,7 @@
 package taxonomy
 
 import (
+	"context"
 	"embed"
 	"io/fs"
 
@@ -37,6 +38,12 @@ func (*Module) Register(d *kernel.Deps) error {
 		cs, _ := kernel.Get[content.Service](d, kernel.ServiceContent)
 		return cs
 	})
+	if d.Settings != nil {
+		svc.settings = d.Settings
+	}
+	if err := svc.backfillLocales(context.Background()); err != nil {
+		return err
+	}
 	d.Services.Set(kernel.ServiceTaxonomy, Service(svc))
 	d.Perms.Declare("taxonomy.manage", map[string]string{"en": "Manage taxonomies", "ar": "إدارة التصنيفات"})
 	registerAdmin(d, svc)
