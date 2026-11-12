@@ -56,16 +56,24 @@ type Service interface {
 	Log(ctx context.Context, migrationID string, limit int) ([]LogEntry, error)
 }
 
+// notFoundError carries the shared "not_found" error code, so consumers that
+// reach this module only through kernel services (the MCP tools) classify it
+// without importing the package.
+type notFoundError struct{}
+
+func (notFoundError) Error() string     { return "wpmigrate: not found" }
+func (notFoundError) ErrorCode() string { return "not_found" }
+
 // Errors.
 var (
-	ErrNotFound        = errors.New("wpmigrate: not found")
-	ErrAuthFailed      = errors.New("wpmigrate: auth_failed")
-	ErrAuthUnavailable = errors.New("wpmigrate: authenticated profile unavailable")
-	ErrUnavailable     = errors.New("wpmigrate: unavailable from this source")
-	ErrBadState        = errors.New("wpmigrate: invalid state for this action")
-	ErrUnreachable     = errors.New("wpmigrate: site_unreachable")
-	ErrNotWordPress    = errors.New("wpmigrate: not_wordpress")
-	ErrInvalidSource   = errors.New("wpmigrate: invalid source")
+	ErrNotFound        error = notFoundError{}
+	ErrAuthFailed            = errors.New("wpmigrate: auth_failed")
+	ErrAuthUnavailable       = errors.New("wpmigrate: authenticated profile unavailable")
+	ErrUnavailable           = errors.New("wpmigrate: unavailable from this source")
+	ErrBadState              = errors.New("wpmigrate: invalid state for this action")
+	ErrUnreachable           = errors.New("wpmigrate: site_unreachable")
+	ErrNotWordPress          = errors.New("wpmigrate: not_wordpress")
+	ErrInvalidSource         = errors.New("wpmigrate: invalid source")
 )
 
 // Migration statuses.

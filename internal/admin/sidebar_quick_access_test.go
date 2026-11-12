@@ -145,6 +145,6 @@ func TestSidebarQuickAccessReturnsNavigationRegionsOnlyOnRequest(t *testing.T) {
 		t.Fatal("navigation rendered without being requested", html)
 	}
 	html := quickPayload(t, s, "/admin/dashboard/pins?page=/admin/users&navigation=1")["navigation_html"].(string)
-	mustContain(t, html, `data-navigation-sections`, `class="workspace-rail-tools"`, `data-workspace-context-navigation`, `aria-current="true"`)
-	mustNotContain(t, html, `<html`, `data-sidebar-quick-access`)
+	mustContain(t, html, `data-navigation-sections`, `class="workspace-tool-directory"`, `data-workspace-context-navigation`, `aria-current="true"`)
+	mustNotContain(t, html, `<html`, `data-sidebar-quick-access`, `workspace-rail-tools`, `workspace-sidebar-tools`)
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"image"
 	"image/color"
 	"image/png"
@@ -31,6 +32,7 @@ import (
 	"github.com/zadstack/gorun/internal/menus"
 	"github.com/zadstack/gorun/internal/taxonomy"
 	"github.com/zadstack/gorun/internal/theme"
+	"github.com/zadstack/gorun/internal/wpmigrate"
 )
 
 func TestMain(m *testing.M) {
@@ -90,13 +92,31 @@ type fakeReport struct {
 }
 
 // fakeMigrator mirrors the wpmigrate.Service method shape the tools use.
+// The IDs "missing" and "broken" return the service's not-found error and an
+// unclassified error.
 type fakeMigrator struct{}
 
+func fakeMigrationErr(id string) error {
+	switch id {
+	case "missing":
+		return wpmigrate.ErrNotFound
+	case "broken":
+		return errors.New("disk on fire")
+	}
+	return nil
+}
+
 func (*fakeMigrator) Preview(ctx context.Context, id string) (*fakeReport, error) {
+	if err := fakeMigrationErr(id); err != nil {
+		return nil, err
+	}
 	return &fakeReport{MigrationID: id, Status: "previewed"}, nil
 }
 
 func (*fakeMigrator) Status(ctx context.Context, id string) (*fakeReport, error) {
+	if err := fakeMigrationErr(id); err != nil {
+		return nil, err
+	}
 	return &fakeReport{MigrationID: id, Status: "running"}, nil
 }
 

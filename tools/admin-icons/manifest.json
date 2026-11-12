@@ -1,7 +1,7 @@
 {
   "source": "vendor/lucide-1.55.0.js",
   "sourceIntegrity": "sha384-SZUFq9Dx112fyzY/iIBEjyd2gu3jY4XVhp+LUNXSpEMB2IEm/TOoMTNH4BHtQ6Hz",
-  "coreIntegrity": "sha384-EPGa3xlgaZGld0PwuBfToB9ReaBRoM0vtBiPS1+MI0F1P5uIJQnxdZUlOVq2fBaj",
+  "coreIntegrity": "sha384-yvtKJ37wjpLWVhJQraJngd4BJK6m1rWRyvUSR7WpElqHgySlg7jkm+gutliucXS9",
   "icons": [
     "Activity",
     "Ad",
@@ -14,6 +14,7 @@
     "ArrowUpRight",
     "Badge",
     "BadgeCheck",
+    "Ban",
     "Baseline",
     "Bell",
     "Binary",
@@ -54,6 +55,7 @@
     "Download",
     "Edit",
     "Ellipse",
+    "Ellipsis",
     "Equal",
     "Expand",
     "ExternalLink",
@@ -77,7 +79,6 @@
     "Gauge",
     "Globe",
     "Grid",
-    "Grid2x2",
     "GripVertical",
     "Group",
     "HardDrive",

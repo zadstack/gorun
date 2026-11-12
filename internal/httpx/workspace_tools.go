@@ -1,17 +1,25 @@
 package httpx
 
-// WorkspaceTools assigns each standalone shortcut one visible owner. Primary
-// navigation, contextual tabs and personal pins take precedence over shortcuts.
+// WorkspaceTools gives each destination one visible owner. Primary sections
+// and their contextual tabs own every destination they hold; personal pins own
+// theirs. The shell repeats none of them as topbar, sidebar or rail shortcuts
+// (the rail holds agents only), and the command palette covers jumping to any
+// page. What remains of the administration groups forms the dashboard
+// directory, listed once.
 type WorkspaceTools struct {
-	NavigationURLs             map[string]bool
-	Top, Sidebar, Rail, Footer []NavItem
-	Groups                     []NavGroup
+	// NavigationURLs are the destinations with a visible owner on this page;
+	// widgets omit their own link to them.
+	NavigationURLs map[string]bool
+	// Groups is the dashboard directory of administration tools.
+	Groups []NavGroup
 }
 
+// directoryGroups are the administration groups the dashboard directory lists.
+var directoryGroups = map[string]bool{"structure": true, "settings": true, "integrations": true, "system": true}
+
 func workspaceTools(groups []NavGroup, sections []NavigationSection, pins []QuickAccessItem) WorkspaceTools {
-	var tools WorkspaceTools
 	used := map[string]bool{}
-	tools.NavigationURLs = used
+	tools := WorkspaceTools{NavigationURLs: used}
 	for _, section := range sections {
 		used[section.Href] = true
 		if !section.Active || section.Key == "home" {
@@ -28,32 +36,8 @@ func workspaceTools(groups []NavGroup, sections []NavigationSection, pins []Quic
 	for _, pin := range pins {
 		used[pin.Href] = true
 	}
-	index := map[string]NavItem{}
 	for _, group := range groups {
-		for _, item := range group.Items {
-			index[item.ID] = item
-		}
-	}
-	take := func(ids ...string) []NavItem {
-		var out []NavItem
-		for _, id := range ids {
-			item, ok := index[id]
-			if !ok || item.Href == "" || used[item.Href] {
-				continue
-			}
-			used[item.Href] = true
-			out = append(out, item)
-		}
-		return out
-	}
-	tools.Top = take("media", "site.analytics")
-	tools.Sidebar = take("content.type.post", "content.type.page", "site-builder", "menus", "users", "settings.connections")
-	tools.Rail = take("appearance.themes", "appearance.templates", "system.backups", "system.health")
-	tools.Footer = take("settings")
-	for _, group := range groups {
-		switch group.Key {
-		case "structure", "settings", "integrations", "system":
-		default:
+		if !directoryGroups[group.Key] {
 			continue
 		}
 		next := group
