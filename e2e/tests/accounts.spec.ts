@@ -92,6 +92,8 @@ test.describe.serial('accounts: two-factor, My account, notifications', () => {
     key = (await secret.textContent())!.trim();
     expect(key.replace(/\s/g, '')).toMatch(/^[A-Z2-7]{32}$/);
     await expect(page.locator('[data-totp-uri]')).toHaveAttribute('href', /^otpauth:\/\/totp\//);
+    // The same URI drawn as an inline SVG QR code (passkeys.spec decodes it).
+    await expect(page.locator('svg[data-totp-qr]')).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/accounts-enrol-en.png`, fullPage: true });
     await page.fill('#confirm-code', totp(key));
     await page.locator('form[action="/admin/account/two-factor/confirm"] button').click();

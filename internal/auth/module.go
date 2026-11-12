@@ -68,7 +68,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	errorPage.Store(&renderErr)
 	d.Admin.AddNav(kernel.NavItem{ID: "dashboard", LabelKey: "core.nav.dashboard", Icon: "layout-dashboard", Href: "/admin", Position: 0})
 
-	h := &handlers{deps: d, svc: svc, sessions: newSessionStore(d.DB), tpl: tpl, twoFactor: newTwoFactorStore(d)}
+	h := &handlers{deps: d, svc: svc, sessions: newSessionStore(d.DB), tpl: tpl, twoFactor: newTwoFactorStore(d), passkeys: newPasskeyStore(d.DB)}
 	// adminGate before CSRF: an expired-session HTMX POST gets HX-Redirect,
 	// not a CSRF 403.
 	d.Router.Admin.Use(h.securityMiddleware, SessionMiddleware(d), localeMiddleware, adminGate, twoFactorGate(d), CSRFMiddleware(), httpx.NavigationCache)
@@ -77,6 +77,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	d.Router.Webhooks.Use(h.securityMiddleware)
 	h.registerSecurity()
 	h.registerTwoFactor()
+	h.registerPasskeys()
 	h.registerAccount()
 
 	d.Router.Admin.Get("/login", h.loginForm)
@@ -207,6 +208,7 @@ func cleanup(ctx context.Context, d *kernel.Deps) error {
 		{`DELETE FROM login_attempts WHERE window_start <= ?`, []any{stale}},
 		{`DELETE FROM magic_links WHERE expires_at <= ? OR used_at != ''`, []any{stale}},
 		{cleanupChallengesSQL, []any{now}},
+		{cleanupCeremoniesSQL, []any{now}},
 	} {
 		if _, err := d.DB.ExecContext(ctx, q.sql, q.args...); err != nil {
 			return fmt.Errorf("auth: cleanup: %w", err)

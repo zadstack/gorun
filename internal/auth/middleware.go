@@ -23,7 +23,7 @@ const localeCookie = "gp_locale"
 var AnonymousAPIPaths = []string{"/api/v1/openapi.json", "/api/docs", "/api/v1/site/info"}
 
 // adminPublicPaths are reachable under /admin without a login.
-var adminPublicPaths = []string{"/admin/login", SecondFactorPath, "/admin/setup", "/admin/logout"}
+var adminPublicPaths = []string{"/admin/login", SecondFactorPath, passkeyLoginBeginPath, passkeyLoginPath, "/admin/setup", "/admin/logout"}
 
 // secureCookies reports whether cookies set while handling r get the
 // Secure flag: the request is https (TLS or a trusted proxy's

@@ -8,17 +8,28 @@
   <p role="alert" class="mt-4 mb-4 rounded border border-amber bg-amber-soft text-amber-text px-3 py-2">{{t "twofactor.login.expired"}}</p>
   <a href="/admin/login" class="btn btn-primary w-full">{{t "twofactor.login.restart"}}</a>
   {{else}}
-  <p class="text-muted mt-2 mb-4">{{t "twofactor.login.lead"}}</p>
+  <p class="text-muted mt-2 mb-4">{{if .TOTP}}{{t "twofactor.login.lead"}}{{else}}{{t "passkeys.login.lead"}}{{end}}</p>
   {{with .Error}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
+  {{if .Passkey}}
+  <div class="space-y-2 mb-4" data-passkey-login data-begin="/admin/login/2fa/passkey/begin" data-finish="/admin/login/2fa/passkey/finish"
+       data-working="{{t "passkeys.working"}}" data-cancelled="{{t "passkeys.cancelled"}}" data-failed="{{t "passkeys.error.invalid"}}" data-unsupported="{{t "passkeys.unsupported"}}">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <button type="button" class="btn btn-primary w-full" data-passkey-login-button>{{t "passkeys.login.submit"}}</button>
+    <p role="alert" class="rounded border border-red bg-red-soft text-red px-3 py-2" data-passkey-error hidden></p>
+    <p class="text-muted text-sm" role="status" aria-live="polite" data-passkey-status hidden></p>
+  </div>
+  <p class="text-muted text-sm mb-3">{{if .TOTP}}{{t "passkeys.login.or_code"}}{{else}}{{t "passkeys.login.or_recovery"}}{{end}}</p>
+  <script defer src="{{asset "passkeys.js"}}"></script>
+  {{end}}
   <form method="post" action="/admin/login/2fa" class="space-y-4" novalidate>
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <div class="field">
-      <label for="code" class="field-label">{{t "twofactor.login.code"}}</label>
-      <input id="code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" dir="ltr" required autofocus
+      <label for="code" class="field-label">{{if .TOTP}}{{t "twofactor.login.code"}}{{else}}{{t "passkeys.login.recovery"}}{{end}}</label>
+      <input id="code" name="code" type="text" {{if .TOTP}}inputmode="numeric" autocomplete="one-time-code"{{else}}autocomplete="off"{{end}} dir="ltr" required {{if not .Passkey}}autofocus{{end}}
              maxlength="64" spellcheck="false" autocapitalize="off" aria-describedby="code-help">
-      <p id="code-help" class="field-help">{{t "twofactor.login.code_help"}}</p>
+      <p id="code-help" class="field-help">{{if .TOTP}}{{t "twofactor.login.code_help"}}{{else}}{{t "passkeys.login.recovery_help"}}{{end}}</p>
     </div>
-    <button type="submit" class="btn btn-primary w-full">{{t "twofactor.login.submit"}}</button>
+    <button type="submit" class="btn {{if .Passkey}}btn-secondary{{else}}btn-primary{{end}} w-full">{{t "twofactor.login.submit"}}</button>
   </form>
   <p class="text-sm mt-4"><a href="/admin/login" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "twofactor.login.cancel"}}</a></p>
   {{end}}

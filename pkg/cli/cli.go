@@ -53,7 +53,7 @@ commands:
   user login-link  print a single-use sign-in link (--email [--ttl 2m], at most 15m)
   user status   turn a user off or on (--email --status active|disabled; not the last active admin)
   user password set a user's password and end their sessions (--email, --password or --password-stdin)
-  user two-factor-reset  remove a user's two-factor and recovery codes, also the only admin's (--email; audited)
+  user two-factor-reset  remove a user's two-factor (app, passkeys, recovery codes), also the only admin's (--email; audited)
   healthcheck   GET /healthz on the local server (for container healthchecks)
   secret-key    print this site's key, to move a GORUN_TRIAL site to production
   reindex       rebuild the content search index and relation rows ([--no-jobs])

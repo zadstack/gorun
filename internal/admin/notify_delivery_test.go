@@ -349,7 +349,13 @@ func TestTelegramWebhookAuthAndLinkCodes(t *testing.T) {
 	if resp, _ := s.webhook(path, "", "/start "+code); resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("missing header: %d", resp.StatusCode)
 	}
-	if resp, _ := s.webhook(path, header[:len(header)-1]+"0", "/start "+code); resp.StatusCode != http.StatusUnauthorized {
+	// Change the last character to a different one: the header is random, so a
+	// fixed replacement would equal the real value one time in sixteen.
+	last := "0"
+	if strings.HasSuffix(header, "0") {
+		last = "1"
+	}
+	if resp, _ := s.webhook(path, header[:len(header)-1]+last, "/start "+code); resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("wrong header: %d", resp.StatusCode)
 	}
 	var stored int

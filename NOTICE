@@ -19,5 +19,7 @@ Third-party components bundled with GoRun keep their own licenses:
 - docs/licenses/minio-sio.txt (github.com/minio/sio, Apache License 2.0)
 - docs/licenses/maxminddb-golang.txt (github.com/oschwald/maxminddb-golang/v2,
   ISC License)
+- docs/licenses/go-tpm.txt (github.com/google/go-tpm, Apache License 2.0;
+  used by github.com/go-webauthn/webauthn for TPM attestation)
 
 Contact: info@gocloud.run

@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/i18n"
 )
 
 // twoFactorPage is the data for pages/auth/two-factor-setup.html.
@@ -17,17 +18,31 @@ type twoFactorPage struct {
 	// html/template allows in href by default).
 	Secret string
 	URI    template.URL
+	// QR is the URI drawn as an inline SVG QR code (empty if it could not be
+	// encoded; the key and link still work).
+	QR template.HTML
 	// Codes are fresh recovery codes, shown once after enabling or
 	// regenerating.
 	Codes    []string
 	Error    string
 	Required bool // the user's role requires a second factor
 	Recent   bool // signed in or confirmed the password within ReauthWindow
+	// Passkeys lists the user's passkeys; PasskeysAvailable is false when
+	// GORUN_BASE_URL cannot host WebAuthn (plain http on a real host, IP).
+	Passkeys          []passkey
+	PasskeysAvailable bool
+	// CanDisable: the app factor may be turned off (not required, or a
+	// usable passkey remains).
+	CanDisable bool
+	// HasPassword is false for accounts that sign in by link only; removing
+	// a passkey then relies on a recent sign-in.
+	HasPassword bool
 }
 
 func (h *handlers) registerTwoFactor() {
 	r := h.deps.Router.Admin
 	r.Get("/account/two-factor", h.twoFactorShow)
+	r.Get("/account/two-factor/passkeys", h.twoFactorShow)
 	r.With(RequireRecentAuth).Post("/account/two-factor/start", h.twoFactorStart)
 	r.Post("/account/two-factor/confirm", h.twoFactorConfirm)
 	r.Post("/account/two-factor/recovery-codes", h.twoFactorRegenerate)
@@ -52,6 +67,24 @@ func (h *handlers) twoFactorRender(w http.ResponseWriter, r *http.Request, statu
 	page.Status = st
 	page.Required = slices.Contains(TwoFactorRequiredRoles(r.Context(), h.deps), u.Role)
 	page.Recent = RecentlyAuthenticated(r.Context(), ReauthWindow)
+	rpID := ""
+	if rp := h.passkeyRP(r.Context()); rp != nil {
+		page.PasskeysAvailable, rpID = true, rp.rpID
+	}
+	if page.Passkeys, err = h.passkeys.list(r.Context(), u.ID, rpID); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	var hash string
+	if err := h.deps.DB.QueryRowContext(r.Context(), `SELECT password_hash FROM users WHERE id = ?`, u.ID).Scan(&hash); err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	page.HasPassword = hash != ""
+	page.CanDisable = !page.Required
+	for _, p := range page.Passkeys {
+		page.CanDisable = page.CanDisable || p.Usable
+	}
 	if st.Pending && page.Codes == nil {
 		secret, err := h.twoFactor.pendingSecret(r.Context(), u.ID)
 		if err != nil {
@@ -59,7 +92,13 @@ func (h *handlers) twoFactorRender(w http.ResponseWriter, r *http.Request, statu
 			return
 		}
 		page.Secret = formatTOTPSecret(secret)
-		page.URI = template.URL(totpURI(secret, h.deps.Settings.GetString(r.Context(), "site.title", ""), u.Email)) //nolint:gosec // our own otpauth URI with escaped components
+		uri := totpURI(secret, h.deps.Settings.GetString(r.Context(), "site.title", ""), u.Email)
+		page.URI = template.URL(uri) //nolint:gosec // our own otpauth URI with escaped components
+		if qr, err := qrSVG(uri, h.deps.I18n.T(i18n.Locale(r.Context()), "twofactor.enrol.qr_label")); err == nil {
+			page.QR = qr
+		} else {
+			h.deps.Log.Warn("auth: two-factor QR code", "err", err)
+		}
 	}
 	// Secrets and recovery codes must not be cached or kept in HTMX history.
 	w.Header().Set("Cache-Control", "no-store")
@@ -135,16 +174,26 @@ func (h *handlers) twoFactorRegenerate(w http.ResponseWriter, r *http.Request) {
 	h.twoFactorRender(w, r, http.StatusOK, u, twoFactorPage{Codes: codes})
 }
 
-// twoFactorDisable removes the factor after the password and a current code.
-// Members of a role that requires two-factor authentication cannot.
+// twoFactorDisable removes the app factor after the password and a current
+// code. Members of a role that requires two-factor authentication cannot,
+// unless a passkey usable on this site remains.
 func (h *handlers) twoFactorDisable(w http.ResponseWriter, r *http.Request) {
 	u := sessionUser(r)
 	if u == nil {
 		deny(w, r, http.StatusForbidden, "forbidden", "a signed-in session is required")
 		return
 	}
-	if slices.Contains(TwoFactorRequiredRoles(r.Context(), h.deps), u.Role) {
+	required := slices.Contains(TwoFactorRequiredRoles(r.Context(), h.deps), u.Role)
+	if required && !h.hasUsablePasskey(r, u) {
 		h.twoFactorRender(w, r, http.StatusForbidden, u, twoFactorPage{Error: "twofactor.disable.required"})
+		return
+	}
+	if enabled, err := h.twoFactor.status(r.Context(), u.ID); err != nil {
+		h.serverError(w, r, err)
+		return
+	} else if !enabled.Enabled {
+		// No app factor to turn off: do not spend a code.
+		http.Redirect(w, r, twoFactorEnrolPath, http.StatusSeeOther)
 		return
 	}
 	pw, err := h.svc.CheckPassword(r.Context(), u.Email, r.PostFormValue("password"))
@@ -162,13 +211,34 @@ func (h *handlers) twoFactorDisable(w http.ResponseWriter, r *http.Request) {
 	if !h.checkSecondFactor(w, r, u) {
 		return
 	}
-	if _, err := h.twoFactor.remove(r.Context(), u.ID); err != nil {
+	rpID := ""
+	if rp := h.passkeyRP(r.Context()); rp != nil {
+		rpID = rp.rpID
+	}
+	removed, err := h.twoFactor.remove(r.Context(), u.ID, rpID, required)
+	if errors.Is(err, errLastRequiredFactor) {
+		h.twoFactorRender(w, r, http.StatusForbidden, u, twoFactorPage{Error: "twofactor.disable.required"})
+		return
+	}
+	if err != nil {
 		h.serverError(w, r, err)
 		return
 	}
-	h.deps.Audit.Record(r.Context(), "user.2fa_disabled", "user", u.ID, nil)
-	httpx.SetFlash(w, "success", "twofactor.disable.done")
+	if removed {
+		h.deps.Audit.Record(r.Context(), "user.2fa_disabled", "user", u.ID, nil)
+		httpx.SetFlash(w, "success", "twofactor.disable.done")
+	}
 	http.Redirect(w, r, twoFactorEnrolPath, http.StatusSeeOther)
+}
+
+// hasUsablePasskey reports a passkey of u created for this site's RP ID.
+func (h *handlers) hasUsablePasskey(r *http.Request, u *User) bool {
+	rp := h.passkeyRP(r.Context())
+	if rp == nil {
+		return false
+	}
+	n, err := h.passkeys.usableCount(r.Context(), u.ID, rp.rpID)
+	return err == nil && n > 0
 }
 
 // checkSecondFactor verifies the form's code (TOTP or recovery) under the

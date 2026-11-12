@@ -81,12 +81,13 @@
   <section class="card" aria-labelledby="account-2fa" data-account-two-factor>
     <div class="card-head">
       <h2 id="account-2fa" class="section-title">{{t "twofactor.setup.title"}}</h2>
-      {{if .TwoFactor.Enabled}}<span class="badge badge-success">{{icon "shield-check"}}{{t "twofactor.status.on"}}</span>{{else}}<span class="badge{{if .TwoFactorRequired}} badge-warning{{end}}">{{t "twofactor.status.off"}}</span>{{end}}
+      {{if .TwoFactor.Active}}<span class="badge badge-success">{{icon "shield-check"}}{{t "twofactor.status.on"}}</span>{{else}}<span class="badge{{if .TwoFactorRequired}} badge-warning{{end}}">{{t "twofactor.status.off"}}</span>{{end}}
     </div>
     <div class="card-body">
-      {{if .TwoFactor.Enabled}}
+      {{if .TwoFactor.Active}}
       <dl class="kv">
-        <div><dt>{{t "twofactor.status.since"}}</dt><dd>{{datetime .TwoFactor.EnabledAt}}</dd></div>
+        {{if .TwoFactor.Enabled}}<div><dt>{{t "twofactor.status.since"}}</dt><dd>{{datetime .TwoFactor.EnabledAt}}</dd></div>{{end}}
+        <div data-account-passkeys><dt>{{t "passkeys.title"}}</dt><dd><span dir="ltr">{{.TwoFactor.Passkeys}}</span></dd></div>
         <div><dt>{{t "twofactor.status.recovery_left"}}</dt><dd><span dir="ltr">{{.TwoFactor.RecoveryLeft}}</span> / 10</dd></div>
       </dl>
       {{else}}
@@ -94,7 +95,8 @@
       {{if .TwoFactorRequired}}<p class="account-notice account-notice-warning">{{icon "shield-alert"}}<span>{{t "twofactor.setup.required"}}</span></p>{{end}}
       {{end}}
       <div class="account-section-actions">
-        <a class="btn {{if .TwoFactor.Enabled}}btn-secondary{{else}}btn-primary{{end}}" href="/admin/account/two-factor">{{if .TwoFactor.Enabled}}{{icon "settings-2"}}<span>{{t "account.two_factor.manage"}}</span>{{else}}{{icon "shield-plus"}}<span>{{t "twofactor.start.submit"}}</span>{{end}}</a>
+        <a class="btn {{if .TwoFactor.Active}}btn-secondary{{else}}btn-primary{{end}}" href="/admin/account/two-factor">{{if .TwoFactor.Active}}{{icon "settings-2"}}<span>{{t "account.two_factor.manage"}}</span>{{else}}{{icon "shield-plus"}}<span>{{t "twofactor.start.submit"}}</span>{{end}}</a>
+        {{if not .TwoFactor.Passkeys}}<a class="btn btn-secondary" href="/admin/account/two-factor/passkeys#passkeys" data-account-add-passkey>{{icon "fingerprint"}}<span>{{t "passkeys.add"}}</span></a>{{end}}
       </div>
     </div>
   </section>

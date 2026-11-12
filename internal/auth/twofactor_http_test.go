@@ -57,7 +57,7 @@ func (s *site) enrol() (string, []string) {
 	}
 	resp, page = s.do("GET", "/admin/account/two-factor", nil)
 	m := secretRe.FindStringSubmatch(page)
-	if resp.StatusCode != 200 || m == nil || resp.Header.Get("Cache-Control") != "no-store" || !strings.Contains(page, "otpauth://totp/") {
+	if resp.StatusCode != 200 || m == nil || resp.Header.Get("Cache-Control") != "no-store" || !strings.Contains(page, "otpauth://totp/") || !strings.Contains(page, "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=") || !strings.Contains(page, "data-totp-qr") {
 		s.t.Fatalf("enrolment page: %d %q\n%s", resp.StatusCode, resp.Header.Get("Cache-Control"), page)
 	}
 	key := m[1]

@@ -117,22 +117,46 @@ func (h *handlers) completeLogin(w http.ResponseWriter, r *http.Request, u *User
 type secondFactorPage struct {
 	Error   string
 	Expired bool
+	// TOTP is false for users whose only factor is a passkey (the code field
+	// then takes recovery codes only); Passkey offers the passkey button.
+	TOTP, Passkey bool
+}
+
+// methods fills in which second factors the pending sign-in's user can use.
+func (h *handlers) methods(ctx context.Context, userID string, page *secondFactorPage) {
+	page.TOTP = true
+	var n int
+	if err := h.deps.DB.QueryRowContext(ctx, `SELECT count(*) FROM user_totp WHERE user_id = ? AND enabled_at != ''`, userID).Scan(&n); err == nil {
+		page.TOTP = n == 1
+	}
+	if rp := h.passkeyRP(ctx); rp != nil {
+		if creds, err := h.passkeys.credentials(ctx, userID, rp.rpID); err == nil {
+			page.Passkey = len(creds) > 0
+		}
+	}
 }
 
 func (h *handlers) secondFactorForm(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	if _, err := h.loadChallenge(r); err != nil {
+	ch, err := h.loadChallenge(r)
+	if err != nil {
 		h.tpl.RenderWith(w, r, http.StatusOK, "auth", "pages/auth/two-factor.html", secondFactorPage{Expired: true})
 		return
 	}
-	h.tpl.RenderWith(w, r, http.StatusOK, "auth", "pages/auth/two-factor.html", secondFactorPage{})
+	var page secondFactorPage
+	h.methods(r.Context(), ch.userID, &page)
+	h.tpl.RenderWith(w, r, http.StatusOK, "auth", "pages/auth/two-factor.html", page)
 }
 
 // secondFactorSubmit checks the code under the login rate limits (per user
 // and per IP), then turns the pending sign-in into a session.
 func (h *handlers) secondFactorSubmit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
+	var ch *challenge
 	render := func(status int, page secondFactorPage) {
+		if ch != nil && !page.Expired {
+			h.methods(r.Context(), ch.userID, &page)
+		}
 		h.tpl.RenderWith(w, r, status, "auth", "pages/auth/two-factor.html", page)
 	}
 	ch, err := h.loadChallenge(r)
