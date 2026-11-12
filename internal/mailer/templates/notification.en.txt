@@ -1,0 +1,10 @@
+{{define "subject"}}{{.Site}}: {{.Heading}}{{end}}{{.Heading}}
+{{range .Items}}
+- {{.Title}}{{if .Detail}}
+  {{.Detail}}{{end}}
+  {{.URL}}
+{{end}}
+Only titles are included; open each link to see the details in the admin.
+
+Notification settings: {{.PrefsURL}}
+Stop these emails: {{.UnsubscribeURL}}

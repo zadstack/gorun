@@ -1,7 +1,7 @@
 {
   "source": "vendor/lucide-1.55.0.js",
   "sourceIntegrity": "sha384-SZUFq9Dx112fyzY/iIBEjyd2gu3jY4XVhp+LUNXSpEMB2IEm/TOoMTNH4BHtQ6Hz",
-  "coreIntegrity": "sha384-yvtKJ37wjpLWVhJQraJngd4BJK6m1rWRyvUSR7WpElqHgySlg7jkm+gutliucXS9",
+  "coreIntegrity": "sha384-HwPOvYn9pZp74BLsYgrLcyxPJlZeJU0mVw3XqTksoq8wGlhdJeD0dfMqneIT7oV6",
   "icons": [
     "Activity",
     "Ad",
@@ -17,6 +17,7 @@
     "Ban",
     "Baseline",
     "Bell",
+    "BellRing",
     "Binary",
     "Blocks",
     "Bold",
@@ -108,6 +109,7 @@
     "Link",
     "List",
     "ListChecks",
+    "ListFilter",
     "ListTree",
     "ListX",
     "Lock",
@@ -198,6 +200,7 @@
     "Type",
     "Underline",
     "Undo",
+    "Unlink",
     "Upload",
     "User",
     "UserPlus",

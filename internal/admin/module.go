@@ -64,6 +64,7 @@ type handlers struct {
 	started time.Time
 	observe *observe.Service // durable background observations
 	update  *update.Service  // staged update lifecycle
+	notify  *notifyDelivery  // email and Telegram delivery of notifications
 	// userMu serialises user guard checks with the mutation they protect
 	// (last-admin / self rules); GoRun is a single process.
 	userMu            sync.Mutex
@@ -127,6 +128,9 @@ func (*Module) Register(d *kernel.Deps) error {
 	h.registerWidgets()
 	h.routes()
 	h.notificationRoutes()
+	h.notify = newNotifyDelivery(d, users, m, tpl)
+	h.notify.register()
+	h.notifyDeliveryRoutes()
 	h.studioRoutes()
 	h.canvasMCPTools()
 	h.canvasReadMCPTools()
@@ -179,6 +183,7 @@ func addNav(d *kernel.Deps) {
 		{ID: "canvases", LabelKey: "admin.canvas.title", Icon: "layout-dashboard", Href: "/admin/canvases", Position: 15},
 		{ID: "agents.keys", LabelKey: "admin.nav.keys", Icon: "key-round", Href: "/admin/agents/keys", Permission: PermAPIKeys, Group: "agents", Position: 20},
 		{ID: "agents.audit", LabelKey: "admin.nav.audit", Icon: "scroll-text", Href: "/admin/agents/audit", Permission: PermHealth, Group: "system", Position: 930},
+		{ID: "settings.notifications", LabelKey: "notifydelivery.nav", Icon: "bell-ring", Href: "/admin/settings/notifications", Permission: PermSettings, Group: "integrations", Position: 815},
 		{ID: "storage", LabelKey: "admin.storage.title", Icon: "hard-drive", Href: "/admin/settings/storage", Permission: PermSettings, Group: "integrations", Position: 820},
 		{ID: "users", LabelKey: "admin.nav.users", Icon: "users", Href: "/admin/users", Permission: PermUsers, Group: "settings", Position: 720},
 		{ID: "roles", LabelKey: "admin.nav.roles", Icon: "shield", Href: "/admin/roles", Permission: PermUsers, Group: "settings", Position: 725},
