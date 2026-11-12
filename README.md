@@ -159,7 +159,7 @@ The screenshots use an isolated demo site with fictional content. The layout mir
 
 The dashboard keeps recent work, quick actions and the site setup checklist on one screen. Each standalone shortcut has a single place: primary navigation, the page tabs, your pins or the tools rail. Pinning a tool updates the sidebar and shortcuts in place, without reloading the page. The orchestrator card at the top of the sidebar shows whether a run is live and how many approvals wait for you. [Dashboard](assets/branding/screenshots/dashboard-en.png).
 
-Press **Ctrl/⌘ K** for the command palette (pages, permitted actions and content, Arabic-aware) and **?** for keyboard shortcuts. The bell lists approvals, items waiting for review, comments and failed jobs you can act on. **My account** holds your profile, password, signed-in devices and two-factor sign-in (authenticator app with recovery codes; administrators can require it per role).
+Press **Ctrl/⌘ K** for the command palette (pages, permitted actions and content, Arabic-aware) and **?** for keyboard shortcuts. The bell lists approvals, items waiting for review, comments and failed jobs you can act on. **My account** holds your profile, password, signed-in devices and two-factor sign-in: an authenticator app (scan the QR code) or a passkey, with recovery codes; administrators can require it per role. Notifications can also reach you by email (immediately or as a daily digest) or Telegram, per category. [Sign-in security](docs/LOGIN-SECURITY.md) · [Notifications](docs/NOTIFICATIONS.md)
 
 ## Measured, with context
 

@@ -5,6 +5,8 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-12
+
 ### Upgrade notes
 
 - Two forward-only migrations run on first start. `admin/0013_notification_delivery` adds the tables `notification_prefs`, `notification_deliveries` and `notification_telegram_codes`. Nothing is sent until a user turns a channel on. No new environment variables.
@@ -1418,7 +1420,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/zadstack/gorun/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/zadstack/gorun/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/zadstack/gorun/compare/v0.20.0...v0.21.0
 [0.20.0]: https://github.com/zadstack/gorun/compare/v0.19.0...v0.20.0

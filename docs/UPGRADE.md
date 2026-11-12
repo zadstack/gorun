@@ -395,6 +395,23 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ---
 
+## 0.23 upgrade notes
+
+From 0.22.x. No new environment variables.
+
+**Migrations.** Two forward-only, additive migrations run on the first start:
+
+| Migration | Adds |
+| --- | --- |
+| `admin/0013_notification_delivery` | tables `notification_prefs`, `notification_deliveries`, `notification_telegram_codes` |
+| `auth/0014_passkeys` | tables `webauthn_users`, `user_passkeys`, `webauthn_challenges` |
+
+**New Go dependencies** (pinned in `go.mod`, `govulncheck` clean): `github.com/go-webauthn/webauthn` and its modules, and `rsc.io/qr`. `github.com/google/go-tpm` is Apache-2.0 and listed in `NOTICE`.
+
+**Configuration.** Passkeys and Telegram delivery need `GORUN_BASE_URL` on `https://` (passkeys also accept `http://localhost`). Passkeys are bound to that host: changing the domain later makes existing passkeys unusable (they stay listed and are marked as made for another address). Telegram also needs its webhook registered once from **Integrations → Notifications**. Email delivery needs mail configured. Nothing is sent until a user turns a channel on.
+
+**Rollback to 0.22.x** is possible on the same data (it ignores the new tables). While 0.22 runs, email and Telegram delivery stop and **users whose only second factor is a passkey sign in with the password alone**; after rolling forward again, sign out the sessions created in that window. As in 0.22, the in-app updater cannot roll back automatically once migrations have run (see [Rollback semantics](#rollback-semantics)).
+
 ## 0.22 upgrade notes
 
 From 0.21.x. No new environment variables and no new Go dependencies.
