@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -258,9 +257,4 @@ func (a *submissionAdmin) export(w http.ResponseWriter, r *http.Request) {
 	a.h.d.Audit.Record(r.Context(), "site.form.export", "form_submission", view, map[string]any{"rows": n})
 }
 
-func csvSafe(v string) string {
-	if v != "" && strings.ContainsRune("=+-@\t\r", rune(v[0])) {
-		return "'" + v
-	}
-	return v
-}
+func csvSafe(v string) string { return httpx.CSVCell(v) }

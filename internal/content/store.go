@@ -48,6 +48,7 @@ type service struct {
 	settings *settings.Store
 	log      *slog.Logger
 	termsFn  func() TermBackend
+	mediaFn  func() MediaURLResolver // nil-safe; media URLs for exports
 	now      func() time.Time
 }
 
