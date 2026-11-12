@@ -85,3 +85,42 @@ func (s *service) purgeTrash(ctx context.Context, now time.Time) error {
 	}
 	return nil
 }
+
+const (
+	// previewLinkRetention keeps expired and revoked preview links (and
+	// their audit trail by id) for this long before they are deleted.
+	previewLinkRetention = 30 * 24 * time.Hour
+	// autosaveRetention bounds how long an untouched autosave is kept.
+	autosaveRetention = 30 * 24 * time.Hour
+	// staleAutosaveRetention bounds an autosave whose item was saved since
+	// its base version. The editor still offers it for a while (the restore
+	// banner marks it as older than the item), so it is not deleted at once.
+	staleAutosaveRetention = 7 * 24 * time.Hour
+)
+
+// cleanupStale deletes rows nothing needs any more (cron "content.cleanup",
+// daily): preview links that expired or were revoked more than 30 days ago,
+// autosaves not touched for 30 days, and autosaves older than 7 days whose
+// item was saved since their base version. It logs what it removed.
+func (s *service) cleanupStale(ctx context.Context, now time.Time) error {
+	linkCutoff := db.FormatTime(now.Add(-previewLinkRetention))
+	res, err := s.db.ExecContext(ctx, `DELETE FROM content_preview_links
+		WHERE expires_at <= ? OR (revoked_at IS NOT NULL AND revoked_at <= ?)`, linkCutoff, linkCutoff)
+	if err != nil {
+		return fmt.Errorf("content: clean preview links: %w", err)
+	}
+	links, _ := res.RowsAffected()
+	res, err = s.db.ExecContext(ctx, `DELETE FROM content_autosaves
+		WHERE saved_at <= ?
+		   OR (saved_at <= ? AND EXISTS (SELECT 1 FROM content c
+		       WHERE c.id = content_autosaves.content_id AND c.updated_at <> content_autosaves.base_updated_at))`,
+		db.FormatTime(now.Add(-autosaveRetention)), db.FormatTime(now.Add(-staleAutosaveRetention)))
+	if err != nil {
+		return fmt.Errorf("content: clean autosaves: %w", err)
+	}
+	autosaves, _ := res.RowsAffected()
+	if links > 0 || autosaves > 0 {
+		s.log.Info("content: cleanup", "preview_links", links, "autosaves", autosaves)
+	}
+	return nil
+}

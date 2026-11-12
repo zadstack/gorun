@@ -71,6 +71,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 	}
 	d.Jobs.Cron("content.publish_due", 30*time.Second, func(ctx context.Context) error { return svc.publishDue(ctx, time.Now()) })
 	d.Jobs.Cron("content.purge_trash", time.Hour, func(ctx context.Context) error { return svc.purgeTrash(ctx, time.Now()) })
+	d.Jobs.Cron("content.cleanup", 24*time.Hour, func(ctx context.Context) error { return svc.cleanupStale(ctx, time.Now()) })
 	if err := registerAdmin(d, svc); err != nil {
 		return err
 	}
