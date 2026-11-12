@@ -21,6 +21,7 @@ type handlers struct {
 	sessions     *sessionStore
 	tpl          *httpx.Templates
 	twoFactor    *twoFactorStore
+	passkeys     *passkeyStore
 }
 
 // secure is the Secure flag for cookies set while handling r.

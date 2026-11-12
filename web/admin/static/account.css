@@ -33,6 +33,15 @@
 .passkey-item-meta { color: var(--muted); font-size: var(--fs-sm); }
 .passkey-add { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-2); }
 .passkey-add .field { flex: 1; min-width: 12rem; max-width: 22rem; margin: 0; }
+.passkey-add .passkey-add-help { flex-basis: 100%; margin: 0; }
+.passkey-remove { flex-shrink: 0; }
+.passkey-remove > summary { list-style: none; cursor: pointer; }
+.passkey-remove > summary::-webkit-details-marker { display: none; }
+.passkey-remove[open] { flex-basis: 100%; }
+.passkey-remove-form { display: grid; gap: var(--space-2); margin-top: var(--space-2); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--red) 35%, var(--line)); border-radius: var(--radius-md); }
+.passkey-remove-form .field { max-width: 22rem; margin: 0; }
+/* Components set display (flex/grid); script-toggled parts must still hide. */
+.account-page [hidden] { display: none !important; }
 .account-section-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 .account-sessions .data-table-wrap { border: 0; border-radius: 0 0 var(--radius-md) var(--radius-md); }
 .account-sessions .badge { margin-inline-start: var(--space-1); }

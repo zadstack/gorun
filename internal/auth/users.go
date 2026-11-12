@@ -45,7 +45,7 @@ func (e *ValidationError) Error() string { return fmt.Sprintf("auth: invalid inp
 // User is an account. Customers have role "customer".
 type User struct {
 	onboardingRequired                    bool // internal: never part of API or exported user JSON
-	twoFactor                             bool // internal: confirmed TOTP factor (loaded with the session only)
+	twoFactor                             bool // internal: confirmed TOTP factor or a passkey (loaded with the session only)
 	ID, Email, Name, Role, Locale, Status string
 	LastLoginAt, CreatedAt, UpdatedAt     string
 }

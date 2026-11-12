@@ -38,13 +38,18 @@ var (
 	errNoPendingEnrolment  = errors.New("auth: no pending two-factor enrolment")
 )
 
-// twoFactorStatus is what the account page shows.
+// twoFactorStatus is what the account page shows. Enabled and Pending are
+// about the authenticator app (TOTP); Passkeys counts registered passkeys.
 type twoFactorStatus struct {
 	Enabled      bool
 	EnabledAt    string
 	Pending      bool
 	RecoveryLeft int
+	Passkeys     int
 }
+
+// Active reports any confirmed second factor (app or passkey).
+func (s twoFactorStatus) Active() bool { return s.Enabled || s.Passkeys > 0 }
 
 // twoFactorStore keeps TOTP secrets (encrypted) and recovery codes (hashed).
 type twoFactorStore struct {
@@ -95,18 +100,21 @@ func (s *twoFactorStore) open(userID, enc string) ([]byte, error) {
 // status reports enrolment state and unused recovery codes.
 func (s *twoFactorStore) status(ctx context.Context, userID string) (twoFactorStatus, error) {
 	var st twoFactorStatus
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM user_passkeys WHERE user_id = ?`, userID).Scan(&st.Passkeys); err != nil {
+		return st, fmt.Errorf("auth: count passkeys: %w", err)
+	}
 	var enabledAt sql.NullString
 	err := s.db.QueryRowContext(ctx, `SELECT enabled_at FROM user_totp WHERE user_id = ?`, userID).Scan(&enabledAt)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		return st, nil
 	case err != nil:
 		return st, fmt.Errorf("auth: two-factor status: %w", err)
+	default:
+		st.EnabledAt = enabledAt.String
+		st.Enabled = st.EnabledAt != ""
+		st.Pending = !st.Enabled
 	}
-	st.EnabledAt = enabledAt.String
-	st.Enabled = st.EnabledAt != ""
-	st.Pending = !st.Enabled
-	if st.Enabled {
+	if st.Active() {
 		if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM user_recovery_codes WHERE user_id = ? AND used_at = ''`, userID).Scan(&st.RecoveryLeft); err != nil {
 			return st, fmt.Errorf("auth: count recovery codes: %w", err)
 		}
@@ -170,6 +178,10 @@ func (s *twoFactorStore) confirm(ctx context.Context, userID, code string) ([]st
 		if n, _ := res.RowsAffected(); n != 1 {
 			return errNoPendingEnrolment
 		}
+		// A passkey may have issued codes earlier: one set at a time.
+		if _, err := tx.ExecContext(ctx, `DELETE FROM user_recovery_codes WHERE user_id = ?`, userID); err != nil {
+			return err
+		}
 		return storeRecoveryCodes(ctx, tx, userID, codes, now)
 	})
 	if err != nil {
@@ -180,20 +192,30 @@ func (s *twoFactorStore) confirm(ctx context.Context, userID, code string) ([]st
 }
 
 // verify checks a login or confirmation code: a TOTP code for a step after
-// the last accepted one, or else an unused recovery code. It returns
-// "totp" or "recovery". Both paths consume the code atomically, so two
-// concurrent requests cannot use one code twice.
+// the last accepted one, or else an unused recovery code (also for users
+// whose only factor is a passkey). It returns "totp" or "recovery". Both
+// paths consume the code atomically, so two concurrent requests cannot use
+// one code twice.
 func (s *twoFactorStore) verify(ctx context.Context, userID, code string) (string, error) {
 	var enc string
 	var last int64
 	err := s.db.QueryRowContext(ctx, `SELECT secret_enc, last_step FROM user_totp WHERE user_id = ? AND enabled_at != ''`, userID).Scan(&enc, &last)
+	hasTOTP := err == nil
 	if errors.Is(err, sql.ErrNoRows) {
-		return "", errTwoFactorNotEnabled
-	}
-	if err != nil {
+		enabled, err := TwoFactorEnabled(ctx, s.db, userID)
+		if err != nil {
+			return "", err
+		}
+		if !enabled {
+			return "", errTwoFactorNotEnabled
+		}
+	} else if err != nil {
 		return "", fmt.Errorf("auth: load two-factor: %w", err)
 	}
 	if norm := normalizeOTP(code); len(norm) == totpDigits {
+		if !hasTOTP {
+			return "", errTwoFactorCode
+		}
 		secret, err := s.open(userID, enc)
 		if err != nil {
 			// No app code can match a secret we cannot read: answer like a
@@ -269,7 +291,7 @@ func (s *twoFactorStore) regenerate(ctx context.Context, userID string) ([]strin
 	codes := newRecoveryCodes()
 	err := db.InTx(ctx, s.db, func(tx *sql.Tx) error {
 		var n int
-		if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM user_totp WHERE user_id = ? AND enabled_at != ''`, userID).Scan(&n); err != nil {
+		if err := tx.QueryRowContext(ctx, twoFactorEnabledSQL, userID, userID).Scan(&n); err != nil {
 			return err
 		}
 		if n != 1 {
@@ -287,17 +309,71 @@ func (s *twoFactorStore) regenerate(ctx context.Context, userID string) ([]strin
 	return codes, nil
 }
 
-// remove deletes the factor, its recovery codes and pending sign-ins.
-func (s *twoFactorStore) remove(ctx context.Context, userID string) (bool, error) {
+// remove deletes the app factor (TOTP) and pending sign-ins. Recovery codes
+// go too unless passkeys remain, which still need them. With required set,
+// the app is only removed while a passkey created for rpID exists; the
+// check is part of the DELETE, so a parallel passkey removal cannot leave
+// the user without any factor (errLastRequiredFactor).
+func (s *twoFactorStore) remove(ctx context.Context, userID, rpID string, required bool) (bool, error) {
 	removed := false
+	err := db.InTx(ctx, s.db, func(tx *sql.Tx) error {
+		q := `DELETE FROM user_totp WHERE user_id = ?`
+		args := []any{userID}
+		if required {
+			q += ` AND EXISTS (SELECT 1 FROM user_passkeys WHERE user_id = ? AND rp_id = ? AND ? != '')`
+			args = append(args, userID, rpID, rpID)
+		}
+		res, err := tx.ExecContext(ctx, q, args...)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 && required {
+			var exists int
+			if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM user_totp WHERE user_id = ?`, userID).Scan(&exists); err != nil {
+				return err
+			}
+			if exists > 0 {
+				return errLastRequiredFactor
+			}
+		}
+		n, _ := res.RowsAffected()
+		removed = n > 0
+		for _, q := range []string{
+			`DELETE FROM user_recovery_codes WHERE user_id = ? AND NOT EXISTS (SELECT 1 FROM user_passkeys WHERE user_id = user_recovery_codes.user_id)`,
+			`DELETE FROM login_challenges WHERE user_id = ?`,
+		} {
+			if _, err := tx.ExecContext(ctx, q, userID); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if errors.Is(err, errLastRequiredFactor) {
+		return false, err
+	}
+	if err != nil {
+		return false, fmt.Errorf("auth: remove two-factor: %w", err)
+	}
+	return removed, nil
+}
+
+// removeAll deletes every second factor of the user (app, recovery codes,
+// passkeys) with pending sign-ins and open passkey ceremonies. It reports
+// whether a factor existed and how many passkeys were removed.
+func (s *twoFactorStore) removeAll(ctx context.Context, userID string) (bool, int64, error) {
+	var totp, passkeys int64
 	err := db.InTx(ctx, s.db, func(tx *sql.Tx) error {
 		res, err := tx.ExecContext(ctx, `DELETE FROM user_totp WHERE user_id = ?`, userID)
 		if err != nil {
 			return err
 		}
-		n, _ := res.RowsAffected()
-		removed = n > 0
-		for _, q := range []string{`DELETE FROM user_recovery_codes WHERE user_id = ?`, `DELETE FROM login_challenges WHERE user_id = ?`} {
+		totp, _ = res.RowsAffected()
+		if res, err = tx.ExecContext(ctx, `DELETE FROM user_passkeys WHERE user_id = ?`, userID); err != nil {
+			return err
+		}
+		passkeys, _ = res.RowsAffected()
+		for _, q := range []string{`DELETE FROM user_recovery_codes WHERE user_id = ?`, `DELETE FROM login_challenges WHERE user_id = ?`,
+			`DELETE FROM webauthn_challenges WHERE user_id = ?`} {
 			if _, err := tx.ExecContext(ctx, q, userID); err != nil {
 				return err
 			}
@@ -305,9 +381,38 @@ func (s *twoFactorStore) remove(ctx context.Context, userID string) (bool, error
 		return nil
 	})
 	if err != nil {
-		return false, fmt.Errorf("auth: remove two-factor: %w", err)
+		return false, 0, fmt.Errorf("auth: reset two-factor: %w", err)
 	}
-	return removed, nil
+	return totp > 0 || passkeys > 0, passkeys, nil
+}
+
+// issueFirstRecoveryCodes gives a user whose first factor is a new passkey
+// ten recovery codes, unless they already hold some (then it returns nil):
+// a parallel registration never silently replaces a set already shown.
+func (s *twoFactorStore) issueFirstRecoveryCodes(ctx context.Context, userID string) ([]string, error) {
+	codes := newRecoveryCodes()
+	issued := false
+	err := db.InTx(ctx, s.db, func(tx *sql.Tx) error {
+		// Insert-select takes the write lock before reading, so the check
+		// and the insert see the same state.
+		for _, c := range codes {
+			res, err := tx.ExecContext(ctx, `INSERT INTO user_recovery_codes (id, user_id, code_hash, created_at)
+				SELECT ?, ?, ?, ? WHERE ? OR NOT EXISTS (SELECT 1 FROM user_recovery_codes WHERE user_id = ? AND used_at = '')`,
+				db.NewID(), userID, recoveryCodeHash(userID, normalizeRecoveryCode(c)), db.FormatTime(s.now()), issued, userID)
+			if err != nil {
+				return err
+			}
+			if n, _ := res.RowsAffected(); n == 0 {
+				return nil
+			}
+			issued = true
+		}
+		return nil
+	})
+	if err != nil || !issued {
+		return nil, err
+	}
+	return codes, nil
 }
 
 func storeRecoveryCodes(ctx context.Context, tx *sql.Tx, userID string, codes []string, now string) error {
@@ -356,40 +461,61 @@ func recoveryCodeHash(userID, normalized string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// TwoFactorEnabled reports whether userID has a confirmed second factor.
+// twoFactorEnabledSQL is 1 when the user (both arguments) has a confirmed
+// app factor or at least one passkey, else 0.
+const twoFactorEnabledSQL = `SELECT EXISTS (SELECT 1 FROM user_totp WHERE user_id = ? AND enabled_at != '')
+	OR EXISTS (SELECT 1 FROM user_passkeys WHERE user_id = ?)`
+
+// TwoFactorEnabled reports whether userID has a confirmed second factor: an
+// authenticator app or at least one passkey. Passkeys count whatever RP ID
+// they were created for, so changing GORUN_BASE_URL never silently drops
+// the second step (recovery codes or a reset get the user in).
 func TwoFactorEnabled(ctx context.Context, d *sql.DB, userID string) (bool, error) {
 	var n int
-	err := d.QueryRowContext(ctx, `SELECT count(*) FROM user_totp WHERE user_id = ? AND enabled_at != ''`, userID).Scan(&n)
+	err := d.QueryRowContext(ctx, twoFactorEnabledSQL, userID, userID).Scan(&n)
 	return n == 1, err
 }
 
-// ResetTwoFactor removes another user's second factor and recovery codes
-// (an administrator's recovery path) and records user.2fa_reset. Existing
+// ResetTwoFactor removes another user's second factors (authenticator app,
+// passkeys) and recovery codes (an administrator's recovery path) and
+// records user.2fa_reset. Existing
 // sessions stay signed in; the next sign-in asks only for the password, or
 // for enrolment when the user's role requires it.
 func ResetTwoFactor(ctx context.Context, d *kernel.Deps, userID string) error {
-	_, err := resetTwoFactor(ctx, d, userID, nil)
+	_, _, err := resetTwoFactor(ctx, d, userID, "")
 	return err
 }
 
 // ResetTwoFactorFromCLI is ResetTwoFactor for the server's shell
 // (`gorun user two-factor-reset`), the lockout recovery when no administrator
 // can sign in. It needs no acting user: the audit entry has the system actor
-// and {"via":"cli"}. It reports whether a factor was removed.
-func ResetTwoFactorFromCLI(ctx context.Context, d *kernel.Deps, userID string) (bool, error) {
-	return resetTwoFactor(ctx, d, userID, map[string]string{"via": "cli"})
+// and {"via":"cli"}. It reports whether a factor was removed and how many
+// passkeys went with it.
+func ResetTwoFactorFromCLI(ctx context.Context, d *kernel.Deps, userID string) (bool, int64, error) {
+	return resetTwoFactor(ctx, d, userID, "cli")
 }
 
-func resetTwoFactor(ctx context.Context, d *kernel.Deps, userID string, meta any) (bool, error) {
+func resetTwoFactor(ctx context.Context, d *kernel.Deps, userID, via string) (bool, int64, error) {
 	s := newTwoFactorStore(d)
-	removed, err := s.remove(ctx, userID)
+	removed, passkeys, err := s.removeAll(ctx, userID)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	if removed {
-		s.record(ctx, "user.2fa_reset", userID, meta)
+		meta := map[string]any{}
+		if via != "" {
+			meta["via"] = via
+		}
+		if passkeys > 0 {
+			meta["passkeys"] = passkeys
+		}
+		if len(meta) == 0 {
+			s.record(ctx, "user.2fa_reset", userID, nil)
+		} else {
+			s.record(ctx, "user.2fa_reset", userID, meta)
+		}
 	}
-	return removed, nil
+	return removed, passkeys, nil
 }
 
 // TwoFactorRequiredRoles returns the roles that must use a second factor.

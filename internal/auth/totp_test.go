@@ -210,7 +210,7 @@ func TestRecoveryCodesSingleUseAndRegenerate(t *testing.T) {
 			t.Errorf("audit lacks %s: %v", want, actions)
 		}
 	}
-	if _, err := s.remove(ctx, u.ID); err != nil {
+	if _, err := s.remove(ctx, u.ID, "", false); err != nil {
 		t.Fatal(err)
 	}
 	if on, _ := TwoFactorEnabled(ctx, s.db, u.ID); on {

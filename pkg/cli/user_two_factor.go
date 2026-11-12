@@ -15,7 +15,8 @@ import (
 )
 
 // userTwoFactorReset implements `gorun user two-factor-reset --email E`:
-// removes a user's second factor, recovery codes and pending sign-ins when
+// removes a user's second factors (authenticator app and passkeys), recovery
+// codes and pending sign-ins when
 // nobody who could reset it in the admin can sign in (the only administrator
 // lost their phone, or GORUN_SECRET_KEY changed). It works for any user,
 // including the last administrator, and is audited as user.2fa_reset with
@@ -45,7 +46,7 @@ func userTwoFactorReset(args []string, out io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("user %s: %w", *email, err)
 	}
-	removed, err := auth.ResetTwoFactorFromCLI(ctx, &kernel.Deps{DB: d, Audit: auditor}, u.ID)
+	removed, passkeys, err := auth.ResetTwoFactorFromCLI(ctx, &kernel.Deps{DB: d, Audit: auditor}, u.ID)
 	if err != nil {
 		return err
 	}
@@ -53,7 +54,7 @@ func userTwoFactorReset(args []string, out io.Writer) error {
 		fmt.Fprintf(out, "%s had no two-factor authentication; nothing changed\n", u.Email)
 		return nil
 	}
-	fmt.Fprintf(out, "two-factor authentication removed for %s (%s): recovery codes and pending sign-ins deleted, "+
-		"password and sessions were kept; audited as user.2fa_reset\n", u.Email, u.ID)
+	fmt.Fprintf(out, "two-factor authentication removed for %s (%s): authenticator app, %d passkeys, recovery codes and pending sign-ins deleted, "+
+		"password and sessions were kept; audited as user.2fa_reset\n", u.Email, u.ID, passkeys)
 	return nil
 }

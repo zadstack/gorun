@@ -1,10 +1,10 @@
-{{/* Data: twoFactorPage. Enrolment, recovery codes and removal of the TOTP second factor. */}}
+{{/* Data: twoFactorPage. Enrolment, recovery codes and removal of the TOTP second factor; passkeys. */}}
 {{define "title"}}{{t "twofactor.setup.title"}}{{end}}
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "account.css"}}">
 <div class="account-page" hx-history="false">
 {{template "partials/page-header" (dict "Title" (t "twofactor.setup.title") "Subtitle" (t "twofactor.setup.subtitle") "Back" "/admin/account" "BackLabel" (t "account.title"))}}
-{{if and .Required (not .Status.Enabled)}}<p role="status" class="account-notice account-notice-warning" data-two-factor-required>{{icon "shield-alert"}}<span>{{t "twofactor.setup.required"}}</span></p>{{end}}
+{{if and .Required (not .Status.Active)}}<p role="status" class="account-notice account-notice-warning" data-two-factor-required>{{icon "shield-alert"}}<span>{{t "twofactor.setup.required"}}</span></p>{{end}}
 {{with .Error}}<p role="alert" class="account-notice account-notice-error">{{icon "circle-alert"}}<span>{{t .}}</span></p>{{end}}
 
 {{if .Codes}}
@@ -51,7 +51,7 @@
 
 <section class="card account-danger" aria-labelledby="tf-disable">
   <div class="card-head"><h2 id="tf-disable" class="section-title">{{t "twofactor.disable.title"}}</h2></div>
-  {{if .Required}}
+  {{if not .CanDisable}}
   <div class="card-body"><p class="field-help">{{t "twofactor.disable.required"}}</p></div>
   {{else}}
   <form method="post" action="/admin/account/two-factor/disable" class="card-body" novalidate>
@@ -123,6 +123,101 @@
     {{end}}
   </div>
 </section>
+{{end}}
+
+{{if not .Codes}}
+<section class="card" id="passkeys" aria-labelledby="pk-title" data-passkeys>
+  <div class="card-head">
+    <h2 id="pk-title" class="section-title">{{t "passkeys.title"}}</h2>
+    {{if .Passkeys}}<span class="badge badge-success" data-passkey-count>{{icon "key-round"}}<span dir="ltr">{{len .Passkeys}}</span></span>{{end}}
+  </div>
+  <div class="card-body">
+    <p class="field-help">{{t "passkeys.lead"}}</p>
+    {{if .Passkeys}}
+    <ul class="passkey-list" aria-label="{{t "passkeys.list"}}">
+      {{range .Passkeys}}
+      <li class="passkey-item" data-passkey>
+        {{icon "key-round"}}
+        <div class="passkey-item-body">
+          <span class="passkey-item-name"><bdi>{{.Name}}</bdi></span>
+          <span class="passkey-item-meta">{{t "passkeys.added"}} {{datetime .CreatedAt}} · {{if .LastUsedAt}}{{t "passkeys.last_used"}} {{datetime .LastUsedAt}}{{else}}{{t "passkeys.never_used"}}{{end}}{{if .Synced}} · {{t "passkeys.synced"}}{{end}}{{if not .Usable}} · <span data-passkey-other-site>{{t "passkeys.other_site"}}</span>{{end}}</span>
+        </div>
+        <details class="passkey-remove">
+          <summary class="btn btn-ghost btn-sm" aria-label="{{t "passkeys.remove.label" .Name}}">{{icon "trash-2"}}<span>{{t "passkeys.remove.submit"}}</span></summary>
+          <form method="post" action="/admin/account/two-factor/passkeys/{{.ID}}/remove" class="passkey-remove-form" novalidate>
+            <input type="hidden" name="_csrf" value="{{csrf}}">
+            <p class="field-help">{{t "passkeys.remove.lead"}}</p>
+            {{if $.HasPassword}}
+            <div class="field">
+              <label for="pk-remove-{{.ID}}" class="field-label">{{t "account.field.current_password"}}</label>
+              <input id="pk-remove-{{.ID}}" name="password" type="password" autocomplete="current-password" required>
+            </div>
+            {{end}}
+            <div><button type="submit" class="btn btn-danger btn-sm">{{icon "trash-2"}}<span>{{t "passkeys.remove.confirm_submit"}}</span></button></div>
+          </form>
+        </details>
+      </li>
+      {{end}}
+    </ul>
+    {{if not .Status.Enabled}}
+    <p class="field-help" data-passkey-recovery-left>{{t "twofactor.status.recovery_left"}}: <span dir="ltr">{{.Status.RecoveryLeft}}</span> / 10</p>
+    {{if lt .Status.RecoveryLeft 3}}<p class="account-notice account-notice-warning">{{icon "triangle-alert"}}<span>{{t "twofactor.status.recovery_low"}}</span></p>{{end}}
+    {{if .Status.RecoveryLeft}}
+    <details class="raw-detail">
+      <summary>{{t "twofactor.regen.title"}}</summary>
+      <form method="post" action="/admin/account/two-factor/recovery-codes" class="grid gap-2" novalidate>
+        <input type="hidden" name="_csrf" value="{{csrf}}">
+        <p class="field-help">{{t "passkeys.regen.lead"}}</p>
+        <div class="field account-code-field">
+          <label for="pk-regen-code" class="field-label">{{t "passkeys.login.recovery"}}</label>
+          <input id="pk-regen-code" name="code" type="text" autocomplete="off" dir="ltr" required maxlength="64" spellcheck="false">
+        </div>
+        <div><button type="submit" class="btn btn-secondary">{{icon "refresh-cw"}}<span>{{t "twofactor.regen.submit"}}</span></button></div>
+      </form>
+    </details>
+    {{end}}
+    {{end}}
+    {{else}}
+    <p data-passkeys-empty>{{t "passkeys.empty"}}</p>
+    {{end}}
+    {{if not .PasskeysAvailable}}
+    <p class="account-notice account-notice-warning" data-passkeys-unavailable>{{icon "triangle-alert"}}<span>{{t "passkeys.unavailable"}}</span></p>
+    {{else if .Recent}}
+    <form class="passkey-add" data-passkey-register data-begin="/admin/account/two-factor/passkeys/register/begin" data-finish="/admin/account/two-factor/passkeys/register/finish" novalidate>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <div class="field">
+        <label for="passkey-name" class="field-label">{{t "passkeys.name"}}</label>
+        <input id="passkey-name" name="name" maxlength="64" dir="auto" autocomplete="off" placeholder="{{t "passkeys.name_placeholder"}}" aria-describedby="passkey-name-help">
+      </div>
+      <div><button type="submit" class="btn btn-primary">{{icon "fingerprint"}}<span>{{t "passkeys.add"}}</span></button></div>
+      <p id="passkey-name-help" class="field-help passkey-add-help">{{t "passkeys.name_help"}}</p>
+    </form>
+    <p class="account-notice account-notice-warning" data-passkey-unsupported hidden>{{icon "triangle-alert"}}<span>{{t "passkeys.unsupported"}}</span></p>
+    <p class="account-notice" role="status" aria-live="polite" data-passkey-status hidden></p>
+    {{else}}
+    <p><a class="btn btn-secondary" href="/admin/reauth?next=%2Fadmin%2Faccount%2Ftwo-factor%2Fpasskeys" data-passkey-reauth>{{icon "lock"}}<span>{{t "passkeys.confirm"}}</span></a></p>
+    {{end}}
+  </div>
+</section>
+
+<section class="card" aria-labelledby="pk-codes-title" data-passkey-codes hidden>
+  <div class="card-head"><h2 id="pk-codes-title" class="section-title" tabindex="-1">{{t "twofactor.codes.title"}}</h2></div>
+  <div class="card-body">
+    <p>{{t "passkeys.codes.lead"}}</p>
+    <ol class="recovery-codes" dir="ltr" data-passkey-code-list></ol>
+    <p class="field-help">{{t "twofactor.codes.once"}}</p>
+  </div>
+  <div class="card-foot">
+    <a class="btn btn-primary" href="/admin/account/two-factor/passkeys">{{t "twofactor.codes.done"}}</a>
+  </div>
+</section>
+<template data-passkey-messages
+  data-unsupported="{{t "passkeys.unsupported"}}"
+  data-working="{{t "passkeys.working"}}"
+  data-cancelled="{{t "passkeys.cancelled"}}"
+  data-failed="{{t "passkeys.error.invalid"}}"
+  data-added="{{t "passkeys.added_done"}}"></template>
+<script defer src="{{asset "passkeys.js"}}"></script>
 {{end}}
 </div>
 {{end}}
