@@ -433,5 +433,6 @@
   "bulk.choose_author": "Choose the new author",
   "bulk.choose_term": "Choose the term",
   "bulk.choose_count": "Selected items: %d. Nothing changes until you apply.",
-  "bulk.choose_back": "Back to the list"
+  "bulk.choose_back": "Back to the list",
+  "list.title_separator": ", "
 }

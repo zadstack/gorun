@@ -20,7 +20,7 @@
   <h2 id="bulk-result-title" class="sr-only">{{t "content.bulk.result_title"}}</h2>
   <p class="bulk-result-head">{{if .Ok}}{{icon "circle-check"}}{{else}}{{icon "triangle-alert"}}{{end}}<strong data-bulk-done>{{.Done}}</strong>{{if .Skipped}}<span class="bulk-result-sep" aria-hidden="true">·</span><strong data-bulk-skipped>{{.Skipped}}</strong>{{end}}</p>
   {{if .Groups}}<ul class="bulk-result-list">
-    {{range .Groups}}<li><span class="bulk-result-reason">{{.Reason}} ({{.Count}})</span>{{if .Titles}}: {{range $i, $title := .Titles}}{{if $i}}{{if eq locale "ar"}}، {{else}}, {{end}}{{end}}<bdi>{{$title}}</bdi>{{end}}{{end}}</li>{{end}}
+    {{range .Groups}}<li><span class="bulk-result-reason">{{.Reason}} ({{.Count}})</span>{{if .Titles}}: {{range $i, $title := .Titles}}{{if $i}}{{t "content.list.title_separator"}}{{end}}<bdi>{{$title}}</bdi>{{end}}{{end}}</li>{{end}}
   </ul>{{end}}
 </section>
 {{end}}
