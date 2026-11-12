@@ -53,6 +53,7 @@ commands:
   user login-link  print a single-use sign-in link (--email [--ttl 2m], at most 15m)
   user status   turn a user off or on (--email --status active|disabled; not the last active admin)
   user password set a user's password and end their sessions (--email, --password or --password-stdin)
+  user two-factor-reset  remove a user's two-factor and recovery codes, also the only admin's (--email; audited)
   healthcheck   GET /healthz on the local server (for container healthchecks)
   secret-key    print this site's key, to move a GORUN_TRIAL site to production
   reindex       rebuild the content search index and relation rows ([--no-jobs])
@@ -169,7 +170,10 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		if len(args) >= 2 && args[1] == "login-link" {
 			return userLoginLink(args[2:], out)
 		}
-		return errors.New("usage: gorun user create --email --password [--name] [--admin] | user password --email (--password | --password-stdin)")
+		if len(args) >= 2 && args[1] == "two-factor-reset" {
+			return userTwoFactorReset(args[2:], out)
+		}
+		return errors.New("usage: gorun user create --email --password [--name] [--admin] | user password --email (--password | --password-stdin) | user two-factor-reset --email")
 	case "healthcheck":
 		return healthcheck(args[1:])
 	case "secret-key":

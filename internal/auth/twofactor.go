@@ -368,15 +368,28 @@ func TwoFactorEnabled(ctx context.Context, d *sql.DB, userID string) (bool, erro
 // sessions stay signed in; the next sign-in asks only for the password, or
 // for enrolment when the user's role requires it.
 func ResetTwoFactor(ctx context.Context, d *kernel.Deps, userID string) error {
+	_, err := resetTwoFactor(ctx, d, userID, nil)
+	return err
+}
+
+// ResetTwoFactorFromCLI is ResetTwoFactor for the server's shell
+// (`gorun user two-factor-reset`), the lockout recovery when no administrator
+// can sign in. It needs no acting user: the audit entry has the system actor
+// and {"via":"cli"}. It reports whether a factor was removed.
+func ResetTwoFactorFromCLI(ctx context.Context, d *kernel.Deps, userID string) (bool, error) {
+	return resetTwoFactor(ctx, d, userID, map[string]string{"via": "cli"})
+}
+
+func resetTwoFactor(ctx context.Context, d *kernel.Deps, userID string, meta any) (bool, error) {
 	s := newTwoFactorStore(d)
 	removed, err := s.remove(ctx, userID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if removed {
-		s.record(ctx, "user.2fa_reset", userID, nil)
+		s.record(ctx, "user.2fa_reset", userID, meta)
 	}
-	return nil
+	return removed, nil
 }
 
 // TwoFactorRequiredRoles returns the roles that must use a second factor.
