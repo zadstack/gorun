@@ -5,6 +5,17 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- One forward-only migration runs on first start: `auth/0014_passkeys` adds the tables `webauthn_users`, `user_passkeys` and `webauthn_challenges`; existing users and sessions are unchanged. Rolling back to 0.22.x is possible (it ignores the tables), but **while it runs, users whose only second factor is a passkey sign in with the password alone**; after rolling forward again, sign out the sessions created in that window.
+- New Go dependencies (pinned in `go.mod`, `govulncheck` clean): `github.com/go-webauthn/webauthn` v0.18.2 (BSD-3-Clause) with `github.com/go-webauthn/x` v0.3.1, `github.com/fxamacker/cbor/v2` v2.9.4, `github.com/x448/float16` v0.8.4, `github.com/golang-jwt/jwt/v5` v5.3.1, `github.com/google/go-tpm` v0.9.8 (Apache-2.0, see `NOTICE`), `github.com/go-viper/mapstructure/v2` v2.5.0, `github.com/tinylib/msgp` v1.6.4 and `github.com/philhofer/fwd` v1.2.0; and `rsc.io/qr` v0.2.0 (BSD-3-Clause, no dependencies) for the QR code.
+- Passkeys need `GORUN_BASE_URL` on https (or `http://localhost`); an IP address or plain http on a real host shows passkeys as unavailable. Changing the domain later makes existing passkeys unusable ([docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md#passkeys)). No new environment variables.
+
+### Added
+
+- Passkeys (WebAuthn) as the second sign-in factor: register, name, list (added, last used, synced) and remove passkeys under My account → Two-factor authentication, then use one instead of the code on the second step after the password, magic link or shop form. A passkey satisfies per-role two-factor enforcement; adding one without unused recovery codes left (normally the first) shows ten new codes. The RP ID and origin derive only from `GORUN_BASE_URL` and every request must match it; challenges are random, stored only hashed, bound to the session or pending sign-in, single use and valid for five minutes; a signature counter that does not grow refuses the sign-in; attempts share the code rate limit; adding needs a recent password confirmation and removing asks for the password. Administrator **Reset two-factor** and `gorun user two-factor-reset` remove passkeys too. Audited as `user.passkey_added`, `user.passkey_removed`, `user.passkey_used` and `user.passkey_failed`. Passwordless sign-in is not part of this release ([docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md#passkeys), [docs/specs/passkeys.md](docs/specs/passkeys.md)).
+- The two-factor enrolment page shows a QR code of the `otpauth://` setup link, drawn on the server as inline SVG (no script, image request or `data:` URI), next to the setup key and link ([docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md#two-factor-authentication-totp)).
+
 ## [0.22.0] - 2026-11-12
 
 ### Upgrade notes

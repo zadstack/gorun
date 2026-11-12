@@ -56,7 +56,8 @@ Capability map (two independently testable modules; build order `totp-qr` → `p
 
 - RP ID = host of `GORUN_BASE_URL` (lower-case, no port). Refused (passkeys unavailable) when the host is an IP
   address or empty: an RP ID must be a valid domain ([WebAuthn L3 §5.1.3 step 7][s-create]).
-- Origin = `scheme://host[:port]` of the base URL. Allowed only for `https`, or `http` when the host is
+- Origin = `scheme://host[:port]` of the base URL (default ports dropped, internationalized hosts in punycode, as
+  browsers serialize origins). Allowed only for `https`, or `http` when the host is
   `localhost` or ends in `.localhost` (WebAuthn is exposed only in secure contexts, and `http://localhost` is the
   one plain-http origin a client accepts: [L3 §4 "Relying Party Identifier"][s-rpid], [§5][s-api]).
 - Every WebAuthn endpoint first checks the request's `Origin` header equals that origin (403 otherwise, audited
@@ -119,11 +120,17 @@ server-side:
 - `POST …/register/finish` body `{"name": "...", "credential": {…}}` (64 KiB cap). Name: trimmed, 1–64 runes,
   no control characters; empty → "Passkey". Verifies with `CreateCredential`, refuses a known credential id,
   stores the row, audits `user.passkey_added` (`{"passkey_id","name"}`).
-- When this is the user's first factor (no TOTP, no earlier passkey) and the user has no unused recovery codes,
+- When the user holds no unused recovery codes after the passkey is stored (normally: their first second factor),
   the response carries ten fresh recovery codes, shown once by the page (same codes, hashing and rules as TOTP).
-- `POST …/{id}/remove` needs a recent password confirmation (`RequireRecentAuth`). Only the owner's rows.
-  Refused when the user's role requires two-factor and this is the last factor. Removing the last factor also
-  deletes the recovery codes. Audit `user.passkey_removed`.
+- `POST …/{id}/remove` asks for the current password in the form (`confirmPassword`, rate-limited like sign-in;
+  password-less accounts need a recent sign-in). Changed after the adversarial review: `RequireRecentAuth` alone
+  passes for any session younger than 10 minutes, and removing a factor weakens the sign-in, so it gets the same
+  bar as turning off the app (which asks for the password and a code). Only the owner's rows. Refused when the
+  user's role requires two-factor and no other usable factor (app, or a passkey of the current RP ID) remains;
+  check and delete are one statement in one transaction. Removing the last factor also deletes the recovery codes.
+  Audit `user.passkey_removed` (`two_factor_off` when nothing is left).
+- Users whose only factor is a passkey renew recovery codes with one of their recovery codes. A required role may
+  turn off the app while a usable passkey remains.
 - Users held by role enforcement can reach these routes (they live under the enrolment path).
 
 **Second-factor sign-in** (`/admin/login/2fa/passkey/begin|finish`, public admin paths, double-submit CSRF):
@@ -258,6 +265,30 @@ register a passkey from My account, sign out, sign in with password + passkey; Q
 5. `go vet`, `go test ./...`, govulncheck, docs check, icon check and the affected Playwright specs pass.
 6. Docs: LOGIN-SECURITY (passkeys, QR, recovery), SECURITY summary, CHANGELOG (Added + Upgrade notes listing the
    migration and dependencies).
+
+## Review log
+
+Doubt-driven review (fresh-context adversarial reviewer, single model; cross-model skipped: non-interactive run)
+found 12 issues. Fixed: removal now asks for the password (was: recent session only); last-factor check made
+atomic and limited to usable passkeys; default port and IDN origins; recovery-code renewal for passkey-only users;
+required roles may switch from the app to a passkey; `user.2fa_disabled` only when something was removed;
+first-passkey recovery codes never replace an existing set; duplicate credential checked before insert; bidi
+control characters refused in names; expired pending sign-in in the browser returns to its explanation page.
+Accepted as trade-offs: adding a passkey needs only a recent sign-in (same bar as starting TOTP enrolment);
+passkeys of an old RP ID still count as "has two-factor" for the sign-in step, so a domain change never silently
+drops the second step (they do not count for the last-factor check).
+
+Second cycle (9 findings). Fixed: turning off the app for a required role is now guarded inside the DELETE (a
+parallel passkey removal could have left no factor); recovery codes are issued whenever the user holds none after
+adding a passkey (closes a register/remove race and gives passkey-only users without codes a way to get new
+ones); with passkeys unavailable no passkey counts for the last-factor check; removing the last passkey also drops
+pending sign-ins and open ceremonies; the app cannot be "disabled" (spending a code) when it is not enrolled; names
+refuse all format characters (Cf: zero-width, bidi, BOM, tags) and noncharacters; ASCII hosts skip IDNA; ports are
+serialized canonically; an Origin mismatch on the sign-in step is audited but no longer uses up the pending
+sign-in's attempts. Accepted: renewing recovery codes with a passkey assertion (instead of a recovery code) is
+deferred; a settings read error makes role enforcement fail open, as everywhere else `auth.two_factor_roles` is
+read; enabling the app replaces a passkey-issued code set (the new set is shown at once, as before).
+Stop condition: two cycles, remaining findings trivial or accepted.
 
 ## Open questions
 

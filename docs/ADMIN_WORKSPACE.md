@@ -14,7 +14,7 @@ Switching the admin UI language does not change the public `site.locale` or rewr
 
 ## My account
 
-Select your name in the top bar to open **My account** (`/admin/account`). It holds your name and dashboard language, your sign-in email (changing it needs your current password; addresses stay unique), your password (current password, at least 10 characters; changing it signs out your other devices and cancels unused sign-in links), [two-factor authentication](LOGIN-SECURITY.md#two-factor-authentication-totp) and the list of signed-in devices with browser, IP address, sign-in time and last activity (refreshed at most every five minutes). **Sign out** ends one other device; **Sign out other devices** ends all but this one. Users who may manage API keys get a link to them. Every change is recorded in the audit log.
+Select your name in the top bar to open **My account** (`/admin/account`). It holds your name and dashboard language, your sign-in email (changing it needs your current password; addresses stay unique), your password (current password, at least 10 characters; changing it signs out your other devices and cancels unused sign-in links), [two-factor authentication](LOGIN-SECURITY.md#two-factor-authentication-totp) (authenticator app with a QR code, and [passkeys](LOGIN-SECURITY.md#passkeys)) and the list of signed-in devices with browser, IP address, sign-in time and last activity (refreshed at most every five minutes). **Sign out** ends one other device; **Sign out other devices** ends all but this one. Users who may manage API keys get a link to them. Every change is recorded in the audit log.
 
 ## Notifications
 

@@ -39,6 +39,11 @@ you. Please give us a reasonable time to ship the fix before publishing details.
   stored encrypted with `GORUN_SECRET_KEY`; recovery codes are stored hashed and work once; the second step is a
   five-minute single-use pending sign-in with its own rate limit and replay protection. API keys and MCP are not
   affected. See [docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md#two-factor-authentication-totp).
+- Passkeys (WebAuthn) as the second factor, as an alternative to the code. The RP ID and origin come only from
+  `GORUN_BASE_URL` (https, or http://localhost; never an IP address) and every passkey request must carry that
+  `Origin`. Challenges are random, stored only as SHA-256, bound to the session or pending sign-in, single use and
+  valid for five minutes; a signature counter that does not grow refuses the sign-in. Attempts share the code rate
+  limit. See [docs/LOGIN-SECURITY.md](docs/LOGIN-SECURITY.md#passkeys).
 - Sessions use a random token in the `gp_session` cookie (`HttpOnly`, `SameSite=Lax`, `Secure` when the request
   is https, i.e. TLS or `X-Forwarded-Proto: https` from a peer listed in `GORUN_TRUSTED_PROXIES`, else when `GORUN_BASE_URL` is
   https; never from the `site.base_url` setting, so a wrong value cannot lock admins out); only its SHA-256 is stored. Sessions slide over 14 days.
