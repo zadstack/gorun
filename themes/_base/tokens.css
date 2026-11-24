@@ -79,6 +79,38 @@
   --ed-line: var(--line);
   --ed-muted: var(--muted);
   --ed-ink: var(--ink);
+
+  /* shadcn role names (the admin's vocabulary, Basecoat's and the site
+     builder's) as aliases of the tokens above. They resolve on <html>, so a
+     theme or the site identity that overrides --bg, --ink, --accent, --line
+     or --panel under html[data-theme] (or :root) drives them without naming
+     them. Themes keep their own meaning for two names shadcn also uses:
+     --accent is the identity's main colour (shadcn: a soft hover surface) and
+     --muted is the secondary text colour (shadcn: a soft surface); a shared
+     stylesheet that compiles shadcn components remaps those two under its own
+     scope, never here. */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel);
+  --popover-foreground: var(--ink);
+  --primary: var(--accent);
+  --primary-hover: var(--accent-hover);
+  --primary-foreground: var(--on-accent);
+  --secondary: var(--panel-2);
+  --secondary-foreground: var(--ink);
+  --muted-foreground: var(--muted);
+  --destructive: var(--red);
+  --destructive-foreground: var(--on-accent);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-card);
+  --radius-xl: calc(var(--radius-card) + 4px);
+  --font-sans: var(--font);
 }
 
 /* Dates: never force LTR (reverses Arabic month names). Isolate for mixed runs. */

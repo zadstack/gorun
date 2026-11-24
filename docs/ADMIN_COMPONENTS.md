@@ -64,7 +64,7 @@ Defined on `:root` in `admin.css`. Older rules keep working through aliases
 | Radius | `--radius` 10px (Basecoat base) → `--radius-sm` 6px (badges, chips), `--radius-md` 8px (controls), `--radius-lg` 10px (cards, panels), `--radius-xl` 14px |
 | Spacing | `--space-1` … `--space-6` (0.25rem steps to 1.5rem) |
 | Controls | `--control-h` 36px · `--control-h-sm` 32px · `--control-h-touch` 44px (every `.btn` on phones) |
-| Colour | shadcn tokens `--background`, `--foreground`, `--card`, `--primary` (+ `--primary-hover`), `--secondary`, `--muted`, `--muted-foreground`, `--accent`, `--destructive`, `--border`, `--input`, `--ring`; GoRun aliases `--ink`, `--line`, `--panel`, `--bg`, `--blue*`; semantic `--green*`, `--amber*`, `--red*` |
+| Colour | shadcn tokens `--background`, `--foreground`, `--card`, `--primary` (+ `--primary-hover`), `--secondary`, `--muted`, `--muted-foreground`, `--accent`, `--destructive`, `--border`, `--input`, `--ring`; GoRun aliases `--ink`, `--line`, `--panel`, `--bg`, `--blue*`; semantic `--green*`, `--amber*`, `--red*`. Public themes declare the same role names as aliases of their identity tokens ([role names](THEME-CONTRACT.md#role-tokens)), so a component written against them renders in the admin and on the site; the admin palette itself stays its own |
 
 ## Components
 
