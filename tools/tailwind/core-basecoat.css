@@ -1,0 +1,82 @@
+/* Basecoat components for the shared functional pages, the second part of
+   web/site/core.css (tools/tailwind/build.sh appends this build to the
+   Tailwind v3 build of core.css). Built with the pinned Tailwind v4 CLI.
+
+   build.sh writes core-basecoat.gen.css (generated, not committed): the
+   vendored component sources of tools/tailwind/vendor/basecoat-1.3.0 for the
+   components listed in CORE_BASECOAT_COMPONENTS, their @layer wrappers
+   removed, nested under `.gp-core { }`. Nesting scopes every rule under the
+   wrapper of the shared templates (`.gp-core .btn`), so a Basecoat class name
+   can never restyle a theme's own markup; dropping the layer gives the rules
+   ordinary specificity, two classes, so they beat the element defaults of
+   core.css (one class) and a theme still overrides a component with its own
+   scope (html[data-theme="x"] .btn).
+
+   No preflight and no source scanning: only the theme variables below and
+   the utilities the components @apply. */
+@import "tailwindcss/theme.css" layer(theme) source(none);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@custom-variant dark (&:is(html.dark *));
+
+/* The components read shadcn's names through Tailwind's colour, radius and
+   font variables. Inline: a utility writes var(--primary) itself, nothing is
+   declared on :root, and the role names resolve to the theme's identity
+   tokens through themes/_base/tokens.css. Two of shadcn's names mean
+   something else in the themes, so they map to the surfaces shadcn intends:
+   `muted` (a soft surface; --muted is the themes' secondary text) and
+   `accent` (a hover surface; --accent is the identity's main colour). */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--panel-2);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent-soft);
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-card);
+  --radius-xl: var(--radius-card);
+  --radius-4xl: 999px;
+  --font-sans: var(--font);
+}
+
+@import "./core-basecoat.gen.css";
+
+/* GoRun additions, scoped the same way. */
+.gp-core {
+  /* Success and plain notices beside Basecoat's destructive alert, on the
+     themes' message tokens (THEMES.md, rules that keep the layers readable). */
+  .alert[data-variant='success'] {
+    background: var(--success-bg, var(--accent-soft));
+    border-color: color-mix(in srgb, var(--success-text, var(--primary)) 35%, var(--border));
+    color: var(--success-text, var(--foreground));
+  }
+  .alert[data-variant='success'] > section {
+    color: inherit;
+  }
+  /* The element defaults of core.css give labels a block margin and fields a
+     min-height; inside a Basecoat field the component owns both. */
+  .field > label, .field > section > label {
+    margin: 0;
+  }
+  .input, .textarea, select.select, .field > :is(input, select, textarea) {
+    min-height: 0;
+  }
+  /* shadcn's empty state draws its dashed border only in a variant; the
+     shop's and account's empty states show it. */
+  .empty {
+    border: 1px dashed var(--border);
+  }
+}

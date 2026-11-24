@@ -27,6 +27,6 @@ Selected homepage heroes may use a self-hosted Three.js enhancement, with three 
 
 ## Shared customer surfaces
 
-Shared customer surfaces default to a light neutral background, dark slate text and a restrained blue action color. Explicit saved site identities continue to take precedence.
+Shared customer surfaces default to a light neutral background, dark slate text and a restrained blue action color. Explicit saved site identities continue to take precedence. The shared store, cart, checkout, account and form-result pages build on the same Basecoat components as the admin (`.btn`, `.field`, `.card`, `.alert`, `.badge`, `.table`), compiled into the core site stylesheet under `.gp-core` and coloured by each theme's identity tokens through the role names, so a theme ships no CSS for them and still sees its own accent, radius and fonts (details: [docs/THEME-CONTRACT.md](docs/THEME-CONTRACT.md#core-site-stylesheet)).
 
 Core-owned launch, Membership and SaaS surfaces use the safe published identity subset described in [Shared site UI](docs/SHARED_SITE_UI.md). Their presentation consumes standalone semantic tokens and retains module/session boundaries. Default commerce account styling is scoped to its own component, supports dark identity pairs, and uses native progressive disclosure for alternative sign-in methods. Theme overrides retain precedence.
