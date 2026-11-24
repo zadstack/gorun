@@ -56,6 +56,13 @@
 
 /* GoRun additions, scoped the same way. */
 .gp-core {
+  /* Basecoat's components are written for Tailwind's preflight, which sizes
+     every box border-box. core.css carries no reset, and not every host
+     declares one (a theme without it, or the admin's components page, where
+     the section renders in a shadow root), so the scope sets it. */
+  &, & *, & *::before, & *::after {
+    box-sizing: border-box;
+  }
   /* Success and plain notices beside Basecoat's destructive alert, on the
      themes' message tokens (THEMES.md, rules that keep the layers readable). */
   .alert[data-variant='success'] {

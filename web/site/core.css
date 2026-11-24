@@ -1946,6 +1946,9 @@
   font-size: var(--text-sm);
   line-height: var(--tw-leading, var(--text-sm--line-height));
 }
+:is(.gp-core), .gp-core *, .gp-core ::before, .gp-core ::after {
+  box-sizing: border-box;
+}
 .gp-core .alert[data-variant='success'] {
   background: var(--success-bg, var(--accent-soft));
   border-color: var(--success-text, var(--primary));
