@@ -227,6 +227,20 @@ Two settings can restyle the same tokens:
 
 Precedence, per token: **site identity › builder identity › the theme's own tokens**. A token the site identity leaves empty keeps the builder value, and one neither sets keeps the theme default. For example, a builder accent of `#167252` with a site identity accent of `#c2410c` gives `#c2410c`, and the builder's background and text colors stay. Every catalog head prints `{{builderIdentity}}` before `{{identity .}}`; `TestSiteIdentityOutranksBuilderIdentity` checks this. Custom CSS comes last in the identity stylesheet, so it can override both.
 
+### The admin bar
+
+Signed-in staff (any role with `content.view`; customers never) see a strip at the top of every
+public page: the dashboard, **Edit this page** when the page is content they may edit, **Website**
+when they manage the site's appearance or settings, their name and a hide control. The renderer
+inserts it after `<body>` in the page it has executed, so every theme gets it without a template
+change, and links its own stylesheet (`/static/site/admin-bar.css`, neutral chrome, the site's
+font). It is a `div` with `role="region"`, not a `header` or `nav`, so a theme's landmarks stay
+what they are, and it is `position: sticky`, so it pushes the page down rather than covering the
+theme's header. The bar follows the staff member's admin language, not the page's. Hiding
+(`/admin/x/site-bar/hide`) lasts the browser session. A page that carries the bar is sent with
+`Cache-Control: private, no-store`; pages for visitors are unchanged, byte for byte. Theme previews
+(`?gp_preview_override=1`, sandboxed) never get it.
+
 ### Rules that keep the layers readable
 
 The core applies these rules whatever the theme, so a combination of theme, builder identity and

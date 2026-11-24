@@ -85,7 +85,11 @@ test('review previews require approval, display untrusted findings and preserve 
     expect(database.prepare('SELECT * FROM content WHERE id=?').get(pageID)).toEqual(contentBefore);
     expect(database.prepare('SELECT * FROM settings ORDER BY key').all()).toEqual(settingsBefore);
     // CSP nonces intentionally differ for every response. Compare all other HTML.
-    const stableHTML = (html: string) => html.replace(/nonce="[^"]*"/g, 'nonce="[per-request]"');
+    // Per-request nonces and the staff-only admin bar (it follows the admin
+    // language, which this test switches) are not part of the published page.
+    const stableHTML = (html: string) => html.replace(/nonce="[^"]*"/g, 'nonce="[per-request]"')
+      .replace(/<link rel="stylesheet" href="\/static\/site\/admin-bar\.css[^>]*>/g, '')
+      .replace(/<div class="gp-admin-bar"[\s\S]*?<\/div>/g, '');
     expect(stableHTML(await (await page.request.get('/' + slug)).text())).toBe(stableHTML(publicBefore));
     await page.goto('/admin/content/page/' + pageID);
     const sidebar = page.locator('[data-review-sidebar]');

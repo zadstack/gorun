@@ -234,5 +234,10 @@
   "templates.group_part": "الأجزاء والمكونات",
   "themes.details": "تفاصيل القالب",
   "editor.fallback": "المحرر النصي متاح؛ تعذّر تحميل محرر الكود.",
-  "editor.keyboard_help": "Ctrl/Cmd+F للبحث داخل الكود. Tab للتنقل بين الأدوات. Escape للخروج من المحرر."
+  "editor.keyboard_help": "Ctrl/Cmd+F للبحث داخل الكود. Tab للتنقل بين الأدوات. Escape للخروج من المحرر.",
+  "adminbar.label": "شريط المشرف",
+  "adminbar.dashboard": "لوحة GoRun",
+  "adminbar.edit": "تعديل هذه الصفحة",
+  "adminbar.website": "الموقع",
+  "adminbar.hide": "إخفاء شريط المشرف لهذه الجلسة"
 }

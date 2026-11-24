@@ -41,6 +41,7 @@ func registerAdmin(d *kernel.Deps, s *service) {
 		Permission: PermManage, Group: "appearance", Position: 420})
 	d.Admin.AddNav(kernel.NavItem{ID: "appearance.overview", LabelKey: "theme.nav.overview", Icon: "layout-grid", Href: "/admin" + adminOverviewPath,
 		Permission: PermManage, Group: "appearance", Position: 405})
+	d.Router.Admin.Get(adminBarHidePath, a.hideAdminBar)
 	r := d.Router.Admin.With(auth.RequirePerm(PermManage))
 	r.Get(adminOverviewPath, a.overview)
 	r.Get(adminThemesPath, a.themes)
