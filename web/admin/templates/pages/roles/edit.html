@@ -13,7 +13,7 @@
       <input id="r-slug" name="slug" value="{{.Form.Slug}}" dir="ltr" autocomplete="off" required {{if not .IsNew}}readonly{{end}}
              aria-describedby="r-slug-help"
              class="h-9 w-full rounded border {{if index .Fields "slug"}}border-red{{else}}border-line{{end}} bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft {{if not .IsNew}}opacity-70{{end}}">
-      <p id="r-slug-help" class="mt-1 text-xs text-muted">{{if .IsNew}}{{t "admin.roles.slug_help"}}{{else}}{{t "admin.roles.slug_locked"}}{{end}}</p>
+      <p id="r-slug-help" class="mt-1 text-xs text-muted-foreground">{{if .IsNew}}{{t "admin.roles.slug_help"}}{{else}}{{t "admin.roles.slug_locked"}}{{end}}</p>
       {{template "partials/field_errors" (index .Fields "slug")}}
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
@@ -33,17 +33,17 @@
     <fieldset>
       <legend class="font-medium mb-1">{{t "admin.roles.permissions"}}</legend>
       {{if .AdminLocked}}
-      <p class="rounded border border-line bg-bg px-3 py-2 text-sm text-muted">{{t "admin.roles.admin_locked"}}</p>
+      <p class="rounded border border-line bg-bg px-3 py-2 text-sm text-muted-foreground">{{t "admin.roles.admin_locked"}}</p>
       <input type="hidden" name="permissions" value="*">
       {{else}}
-      <p class="mb-2 text-xs text-muted">{{t "admin.roles.permissions_help"}}</p>
+      <p class="mb-2 text-xs text-muted-foreground">{{t "admin.roles.permissions_help"}}</p>
       <div class="space-y-3 max-h-80 overflow-y-auto pe-1">
         {{range .Groups}}
         <fieldset>
-          <legend class="font-mono text-[11px] uppercase tracking-wide text-muted mb-1">{{.Module}}</legend>
+          <legend class="font-mono text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{{.Module}}</legend>
           <ul class="grid gap-1 sm:grid-cols-2">
             {{range .Perms}}
-            <li><label class="flex items-start gap-2"><input type="checkbox" name="permissions" value="{{.Name}}" {{if .Checked}}checked{{end}} class="mt-0.5 accent-[var(--green)]"><span><span class="block">{{.Label}}</span><span class="block font-mono text-[11px] text-muted">{{.Name}}</span></span></label></li>
+            <li><label class="flex items-start gap-2"><input type="checkbox" name="permissions" value="{{.Name}}" {{if .Checked}}checked{{end}} class="mt-0.5 accent-[var(--green)]"><span><span class="block">{{.Label}}</span><span class="block font-mono text-[11px] text-muted-foreground">{{.Name}}</span></span></label></li>
             {{end}}
           </ul>
         </fieldset>
@@ -52,7 +52,7 @@
       {{end}}
       {{template "partials/field_errors" (index .Fields "permissions")}}
     </fieldset>
-    <section class="border border-line bg-panel-2 p-3" data-role-changes><h2 class="font-bold">{{t "operator.role_diff"}}</h2><p class="text-sm text-muted mt-1">{{t "operator.role_diff_boundary"}}</p><p class="mt-2" data-role-unchanged>{{t "operator.role_no_changes"}}</p><div class="grid gap-3 sm:grid-cols-2 mt-2"><div><h3 class="text-sm font-medium">{{t "operator.role_added"}}</h3><ul data-role-added class="text-xs font-mono break-all"></ul></div><div><h3 class="text-sm font-medium">{{t "operator.role_removed"}}</h3><ul data-role-removed class="text-xs font-mono break-all"></ul></div></div></section>
+    <section class="border border-line bg-panel-2 p-3" data-role-changes><h2 class="font-bold">{{t "operator.role_diff"}}</h2><p class="text-sm text-muted-foreground mt-1">{{t "operator.role_diff_boundary"}}</p><p class="mt-2" data-role-unchanged>{{t "operator.role_no_changes"}}</p><div class="grid gap-3 sm:grid-cols-2 mt-2"><div><h3 class="text-sm font-medium">{{t "operator.role_added"}}</h3><ul data-role-added class="text-xs font-mono break-all"></ul></div><div><h3 class="text-sm font-medium">{{t "operator.role_removed"}}</h3><ul data-role-removed class="text-xs font-mono break-all"></ul></div></div></section>
     <div class="flex gap-2">
       <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{if .IsNew}}{{t "admin.roles.create"}}{{else}}{{t "core.action.save"}}{{end}}</button>
       <a href="/admin/roles" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.action.cancel"}}</a>
@@ -63,10 +63,10 @@
     <section class="rounded border border-line bg-panel p-4">
       <h2 class="text-base font-bold mb-2">{{t "admin.roles.details"}}</h2>
       <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-        <dt class="text-muted">{{t "admin.roles.slug"}}</dt><dd class="font-mono break-all" dir="ltr">{{.Slug}}</dd>
-        <dt class="text-muted">{{t "admin.roles.kind"}}</dt>
+        <dt class="text-muted-foreground">{{t "admin.roles.slug"}}</dt><dd class="font-mono break-all" dir="ltr">{{.Slug}}</dd>
+        <dt class="text-muted-foreground">{{t "admin.roles.kind"}}</dt>
         <dd>{{if .System}}{{t "admin.roles.system"}}{{else}}{{t "admin.roles.custom"}}{{end}}</dd>
-        <dt class="text-muted">{{t "admin.roles.users"}}</dt><dd class="font-mono">{{.UserCount}}</dd>
+        <dt class="text-muted-foreground">{{t "admin.roles.users"}}</dt><dd class="font-mono">{{.UserCount}}</dd>
       </dl>
     </section>
   </aside>

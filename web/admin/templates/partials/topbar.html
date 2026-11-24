@@ -11,7 +11,7 @@
     <input id="gp-search" name="q" type="search" placeholder="{{t "core.search"}}" autocomplete="off"
            x-ref="search" @focus="open = true" aria-controls="admin-search-results" aria-expanded="false" aria-keyshortcuts="/"
            hx-get="/admin/x/search" hx-trigger="input changed delay:300ms, focus" hx-target="#admin-search-results" hx-swap="innerHTML"
-           class="w-full h-9 rounded border border-line bg-bg px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
+           class="w-full h-9 rounded border border-line bg-bg px-3 placeholder:text-muted-foreground focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     <div id="admin-search-results" role="region" aria-label="{{t "core.search"}}" aria-live="polite"
          class="absolute inset-x-0 top-full mt-1 z-40 max-h-96 overflow-y-auto rounded border border-line bg-panel [&:not(:has(li)):not(:has(p))]:hidden [&[x-cloak]]:hidden"
          x-show="open" x-cloak @click.outside="if ($event.target !== $refs.search) open = false"></div>
@@ -26,7 +26,7 @@
     </form>
     {{with user}}
     {{template "partials/notifications-bell" $}}
-    <a href="/admin/account" class="admin-account-link" title="{{t "account.link"}}" aria-label="{{t "account.link"}}: {{or .Name .Email}}" data-account-link><span class="avatar avatar-user" aria-hidden="true">{{initials (or .Name .Email)}}</span><span class="admin-account-name text-muted">{{.Name}}</span></a>
+    <a href="/admin/account" class="admin-account-link" title="{{t "account.link"}}" aria-label="{{t "account.link"}}: {{or .Name .Email}}" data-account-link><span class="avatar avatar-user" aria-hidden="true">{{initials (or .Name .Email)}}</span><span class="admin-account-name text-muted-foreground">{{.Name}}</span></a>
     <form method="post" action="/admin/logout">
       <input type="hidden" name="_csrf" value="{{csrf}}">
       <button type="submit" class="h-9 px-3 rounded border border-line hover:border-line-strong inline-flex items-center gap-1.5 focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "log-out"}}<span>{{t "core.action.logout"}}</span></button>

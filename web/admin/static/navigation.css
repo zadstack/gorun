@@ -17,7 +17,7 @@
 .navigation-order-status:not(:empty) {
   margin-block: 0 .75rem;
   font-size: .8125rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 .navigation-editor-stack {
@@ -43,9 +43,9 @@
 }
 
 .navigation-search-input:focus {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 1px;
-  border-color: var(--accent);
+  border-color: var(--primary);
 }
 
 /* Preview folds under search so the reorder list stays the main composition. */
@@ -73,13 +73,13 @@
 .navigation-preview-heading small {
   font-size: .75rem;
   font-weight: 400;
-  color: var(--muted);
+  color: var(--muted-foreground);
   line-height: 1.5;
   max-width: 65ch;
 }
 
 .navigation-preview-heading:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: -2px;
 }
 
@@ -110,7 +110,7 @@
 .navigation-preview-body h4 {
   font-size: .6875rem;
   font-weight: 550;
-  color: var(--muted);
+  color: var(--muted-foreground);
   margin: .35rem 0 .15rem;
 }
 
@@ -198,12 +198,12 @@
   margin: 0;
   margin-inline-start: auto;
   font-size: .75rem;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 .admin-navigation-form .admin-navigation-group-actions button {
   padding: .15rem 0;
-  color: var(--muted);
+  color: var(--muted-foreground);
   text-decoration: underline;
   text-underline-offset: .15rem;
   background: none;
@@ -262,7 +262,7 @@
 }
 
 .admin-navigation-form .admin-navigation-option-icon {
-  color: var(--muted);
+  color: var(--muted-foreground);
   display: inline-flex;
   width: 1rem;
   height: 1rem;
@@ -295,7 +295,7 @@
   border: 0;
   border-radius: var(--radius);
   background: transparent;
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: grab;
   opacity: 0;
   transition: opacity .12s ease, color .12s ease, background-color .12s ease;
@@ -325,7 +325,7 @@
 }
 
 .navigation-drag:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 1px;
 }
 
@@ -353,7 +353,7 @@
   border: 0;
   border-radius: var(--radius);
   background: transparent;
-  color: var(--muted);
+  color: var(--muted-foreground);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -375,7 +375,7 @@
 }
 
 .navigation-move button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 1px;
 }
 
@@ -425,6 +425,6 @@
   .navigation-row.is-dragging,
   .admin-navigation-group.is-dragging {
     opacity: 1;
-    outline: 1px dashed var(--muted);
+    outline: 1px dashed var(--muted-foreground);
   }
 }

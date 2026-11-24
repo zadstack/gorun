@@ -3,7 +3,7 @@
 <link rel="stylesheet" href="{{asset "error-inventory.css"}}">
 <div class="error-inventory">
 <header><h1>{{t "errorinventory.title"}}</h1><p>{{t "errorinventory.coverage"}}</p></header>
-<p class="mb-3 text-sm text-muted">{{t "operator.errors_help"}}</p>
+<p class="mb-3 text-sm text-muted-foreground">{{t "operator.errors_help"}}</p>
 <form method="get" action="/admin/system/errors" class="error-filters">
 <label>{{t "errorinventory.source"}}<select name="source"><option value="">{{t "errorinventory.all"}}</option>{{range .Sources}}<option value="{{.}}" {{if eq $.Filter.Source .}}selected{{end}}>{{t (printf "errorinventory.source_%s" .)}}</option>{{end}}</select></label>
 <label>{{t "errorinventory.category"}}<select name="category"><option value="">{{t "errorinventory.all"}}</option>{{range .Categories}}<option value="{{.}}" {{if eq $.Filter.Category .}}selected{{end}}>{{.}}</option>{{end}}</select></label>

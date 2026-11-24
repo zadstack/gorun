@@ -2,12 +2,12 @@
    (docs/NOTIFICATIONS.md). Builds on admin.css and account.css; logical
    properties only, so RTL needs no overrides. */
 :is([data-notify-prefs], [data-notify-settings]) .section-title { display: flex; align-items: center; gap: var(--space-2); }
-:is([data-notify-prefs], [data-notify-settings]) .section-title :is(svg,i) { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--muted); }
+:is([data-notify-prefs], [data-notify-settings]) .section-title :is(svg,i) { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--muted-foreground); }
 .notify-choices {display: grid; gap: var(--space-2); margin: 0; padding: 0; border: 0; }
 .notify-choices legend { margin-bottom: var(--space-1); font-weight: 600; }
 .notify-choice { display: flex; align-items: flex-start; gap: var(--space-2); min-height: var(--control-h); font-size: var(--fs-md); }
-.notify-choice input { flex-shrink: 0; width: 1rem; height: 1rem; margin-top: .2rem; accent-color: var(--accent); }
-.notify-choice small { display: block; color: var(--muted); font-size: var(--fs-sm); }
+.notify-choice input { flex-shrink: 0; width: 1rem; height: 1rem; margin-top: .2rem; accent-color: var(--primary); }
+.notify-choice small { display: block; color: var(--muted-foreground); font-size: var(--fs-sm); }
 .notify-hour { max-width: 12rem; }
 .notify-link-code { display: block; width: fit-content; max-width: 100%; padding: var(--space-2) var(--space-3); border: 1px dashed var(--line-strong); border-radius: var(--radius-md); background: var(--bg); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--fs-lg); letter-spacing: .04em; overflow-wrap: anywhere; user-select: all; }
 .notify-status { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }

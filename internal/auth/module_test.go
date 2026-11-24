@@ -151,6 +151,17 @@ func TestSetupCreatesFirstAdminAndLogsIn(t *testing.T) {
 	if resp.StatusCode != 200 || !strings.Contains(page, "Ahmed") || !strings.Contains(page, "/static/admin/admin.css") {
 		t.Fatalf("dashboard after setup: %d\n%s", resp.StatusCode, page)
 	}
+	// The admin stylesheet (Tailwind v4 + Basecoat) is compiled ahead of time
+	// by tools/tailwind/build.sh and loads before admin.css, whose unlayered
+	// rules override Basecoat; no in-browser Tailwind compiler runs here.
+	if i, j := strings.Index(page, "/static/admin/admin-tailwind.css?v="), strings.Index(page, "/static/admin/admin.css?v="); i < 0 || i > j {
+		t.Errorf("admin-tailwind.css must load before admin.css: %d %d", i, j)
+	}
+	for _, runtime := range []string{"tailwindcss-3.4.17.js", "tailwind.config", "cdn.tailwindcss.com"} {
+		if strings.Contains(page, runtime) {
+			t.Errorf("admin page loads the Tailwind runtime (%s)", runtime)
+		}
+	}
 	// topbar live search with the full-page form fallback
 	for _, want := range []string{`action="/admin/search"`, `hx-get="/admin/x/search"`, `hx-target="#admin-search-results"`,
 		`hx-trigger="input changed delay:300ms, focus"`, `id="admin-search-results"`, `@click.outside=`, `aria-keyshortcuts="/"`, `shortcuts.js`, `data-gp-palette`, `@keydown.escape=`} {

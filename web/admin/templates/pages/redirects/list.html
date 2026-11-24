@@ -1,7 +1,7 @@
 {{define "title"}}{{t "redirects.title"}}{{end}}
 {{define "content"}}
 <h1 class="text-[22px] font-bold">{{t "redirects.title"}}</h1>
-<p class="text-muted mb-4">{{t "redirects.intro"}}</p>
+<p class="text-muted-foreground mb-4">{{t "redirects.intro"}}</p>
 
 <form method="post" action="/admin/redirects" class="rounded border border-line bg-panel p-4 mb-4" novalidate>
   <h2 class="text-base font-bold mb-3">{{t "redirects.add.title"}}</h2>
@@ -12,7 +12,7 @@
       <input id="from_path" name="from_path" type="text" dir="ltr" required value="{{.Form.FromPath}}" placeholder="/old-page"
              aria-describedby="from-help from-error" {{with index .Fields "from_path"}}aria-invalid="true"{{end}}
              class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-      <p id="from-help" class="mt-1 text-xs text-muted">{{t "redirects.field.from_help"}}</p>
+      <p id="from-help" class="mt-1 text-xs text-muted-foreground">{{t "redirects.field.from_help"}}</p>
       <div id="from-error">{{template "partials/field_errors" (index .Fields "from_path")}}</div>
     </div>
     <div>
@@ -20,7 +20,7 @@
       <input id="to_url" name="to_url" type="text" dir="ltr" required value="{{.Form.ToURL}}" placeholder="/new-page"
              aria-describedby="to-help to-error" {{with index .Fields "to_url"}}aria-invalid="true"{{end}}
              class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-      <p id="to-help" class="mt-1 text-xs text-muted">{{t "redirects.field.to_help"}}</p>
+      <p id="to-help" class="mt-1 text-xs text-muted-foreground">{{t "redirects.field.to_help"}}</p>
       <div id="to-error">{{template "partials/field_errors" (index .Fields "to_url")}}</div>
     </div>
     <div>
@@ -37,7 +37,7 @@
 <details class="rounded border border-line bg-panel mb-4" {{if .Import}}open{{end}}>
   <summary class="px-4 py-3 cursor-pointer font-bold focus:outline-none focus:ring-[3px] focus:ring-blue-soft rounded">{{t "redirects.import.title"}}</summary>
   <div class="px-4 pb-4">
-    <p class="text-muted text-xs mb-3">{{t "redirects.import.help"}}</p>
+    <p class="text-muted-foreground text-xs mb-3">{{t "redirects.import.help"}}</p>
     {{with .Import}}
     <div role="status" class="mb-3 rounded border {{if .Errors}}border-amber bg-amber-soft text-amber-text{{else}}border-green bg-green-soft text-green{{end}} px-3 py-2">
       <p>{{t "redirects.import.done" .Imported}}{{if .Errors}} · {{t "redirects.import.rejected" (len .Errors)}}{{end}}</p>
@@ -56,26 +56,26 @@
   <form role="search" method="get" action="/admin/redirects" class="w-full sm:w-80">
     <label for="redirects-q" class="sr-only">{{t "redirects.search.label"}}</label>
     <input id="redirects-q" name="q" type="search" value="{{.Q}}" placeholder="{{t "redirects.search.placeholder"}}"
-           class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
+           class="w-full h-9 rounded border border-line bg-panel px-3 placeholder:text-muted-foreground focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   </form>
-  <span class="font-mono text-xs text-muted">{{.Page.Total}}</span>
+  <span class="font-mono text-xs text-muted-foreground">{{.Page.Total}}</span>
 </div>
 <div class="rounded border border-line bg-panel overflow-x-auto">
   {{if .Items}}
   <table class="w-full">
     <thead class="bg-panel-2">
       <tr>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.from"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.to"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.status"}}</th>
-        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.hits"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.enabled"}}</th>
-        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "redirects.col.actions"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "redirects.col.from"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "redirects.col.to"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "redirects.col.status"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "redirects.col.hits"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "redirects.col.enabled"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "redirects.col.actions"}}</th>
       </tr>
     </thead>
     <tbody>
       {{range .Items}}
-      <tr class="border-t border-line hover:bg-bg {{if not .Enabled}}text-muted{{end}}">
+      <tr class="border-t border-line hover:bg-bg {{if not .Enabled}}text-muted-foreground{{end}}">
         <td class="px-3 py-2 font-mono text-xs break-all" dir="ltr">{{.FromPath}}</td>
         <td class="px-3 py-2 font-mono text-xs break-all" dir="ltr">{{.ToURL}}</td>
         <td class="px-3 py-2"><span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-xs">{{.Status}}</span></td>
@@ -98,12 +98,12 @@
     </tbody>
   </table>
   {{else}}
-  <p class="p-6 text-center text-muted">{{if .Q}}{{t "redirects.empty_search"}}{{else}}{{t "redirects.empty"}}{{end}}</p>
+  <p class="p-6 text-center text-muted-foreground">{{if .Q}}{{t "redirects.empty_search"}}{{else}}{{t "redirects.empty"}}{{end}}</p>
   {{end}}
 </div>
 {{with .Page}}{{if gt .Pages 1}}
 <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
-  <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+  <span class="font-mono text-muted-foreground">{{t "core.pagination.summary" .Page .Pages}}</span>
   <div class="flex gap-2">
     {{if .HasPrev}}<a href="/admin/redirects?q={{$.Q}}&amp;page={{.Prev}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
     {{if .HasNext}}<a href="/admin/redirects?q={{$.Q}}&amp;page={{.Next}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}

@@ -4,10 +4,10 @@
 <h1 class="text-[22px] font-bold mb-3">{{t "admin.jobs.title"}}</h1>
 <nav class="flex flex-wrap gap-1 mb-4" aria-label="{{t "admin.jobs.status"}}">
   <a href="/admin/system/jobs" hx-get="/admin/system/jobs" hx-target="#main" hx-push-url="true" {{if eq .Status ""}}aria-current="page"{{end}}
-     class="h-8 px-3 inline-flex items-center rounded border {{if eq .Status ""}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}}">{{t "admin.jobs.all"}}</a>
+     class="h-8 px-3 inline-flex items-center rounded border {{if eq .Status ""}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted-foreground hover:text-ink{{end}}">{{t "admin.jobs.all"}}</a>
   {{range .Statuses}}
   <a href="/admin/system/jobs?status={{.}}" hx-get="/admin/system/jobs?status={{.}}" hx-target="#main" hx-push-url="true" {{if eq . $.Status}}aria-current="page"{{end}}
-     class="h-8 px-3 inline-flex items-center rounded border {{if eq . $.Status}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}}">{{t (printf "admin.jobs.status_%s" .)}}</a>
+     class="h-8 px-3 inline-flex items-center rounded border {{if eq . $.Status}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted-foreground hover:text-ink{{end}}">{{t (printf "admin.jobs.status_%s" .)}}</a>
   {{end}}
 </nav>
 {{if .Jobs}}
@@ -16,14 +16,14 @@
   <li class="rounded border border-line bg-panel" data-job="{{.ID}}">
     <details>
       <summary class="cursor-pointer list-none px-3 py-2 flex flex-wrap items-center gap-3 hover:bg-bg focus:outline-none focus:ring-[3px] focus:ring-blue-soft rounded">
-        {{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}
+        {{icon "chevron-right" "w-4 h-4 text-muted-foreground rtl:rotate-180"}}
         <span class="text-sm font-medium">{{if .LabelKey}}{{t .LabelKey}}{{else}}{{.Kind}}{{end}}</span>
         <span class="inline-flex rounded-chip border {{if eq .Status "dead"}}border-red bg-red-soft text-red{{else if .Retryable}}border-amber bg-amber-soft text-amber-text{{else if eq .Status "done"}}border-green bg-green-soft text-green{{else}}border-line bg-panel-2{{end}} px-1.5 py-0.5 text-[11px] font-mono">{{if .Retryable}}{{if eq .Status "dead"}}{{t "admin.jobs.status_dead"}}{{else}}{{t "admin.jobs.status_retrying"}}{{end}}{{else}}{{t (printf "admin.jobs.status_%s" .Status)}}{{end}}</span>
-        <span class="font-mono text-[11px] text-muted">{{t "operator.attempts" .Attempts .MaxAttempts}}</span>
-        <time class="ms-auto font-mono text-[11px] text-muted" datetime="{{.RunAt}}">{{date .RunAt}}</time>
+        <span class="font-mono text-[11px] text-muted-foreground">{{t "operator.attempts" .Attempts .MaxAttempts}}</span>
+        <time class="ms-auto font-mono text-[11px] text-muted-foreground" datetime="{{.RunAt}}">{{date .RunAt}}</time>
       </summary>
       <div class="border-t border-line p-3 space-y-2">
-        <p class="font-mono text-[11px] text-muted break-all">{{.Kind}} · {{t "admin.common.id"}} {{.ID}}</p>
+        <p class="font-mono text-[11px] text-muted-foreground break-all">{{.Kind}} · {{t "admin.common.id"}} {{.ID}}</p>
         {{if .LastError}}<p class="text-xs text-red" dir="ltr">{{.LastError}}</p>{{end}}
         <pre class="rounded bg-panel-dark text-panel-2 p-3 text-xs overflow-x-auto" dir="ltr">{{.Preview}}</pre>
         {{if .Retryable}}
@@ -42,7 +42,7 @@
 {{end}}
 {{with .Pager}}{{if gt .Pages 1}}
 <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
-  <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+  <span class="font-mono text-muted-foreground">{{t "core.pagination.summary" .Page .Pages}}</span>
   <div class="flex gap-2">
     {{if .PrevURL}}<a href="{{.PrevURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
     {{if .NextURL}}<a href="{{.NextURL}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}

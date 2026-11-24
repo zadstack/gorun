@@ -7,7 +7,7 @@
   <p role="alert" class="mt-4 mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .Error}}</p>
   <a href="/" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "auth.magic.back"}}</a>
   {{else}}
-  <p class="text-muted mt-2 mb-4">{{t "auth.magic.intro"}}</p>
+  <p class="text-muted-foreground mt-2 mb-4">{{t "auth.magic.intro"}}</p>
   <form method="post" action="/auth/magic/{{.Token}}">
     <button type="submit" class="w-full h-9 bg-blue text-white hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "auth.magic.submit"}}</button>
   </form>

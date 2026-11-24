@@ -1,0 +1,77 @@
+/* Admin stylesheet source: Tailwind v4 utilities for the admin templates plus
+   Basecoat (shadcn/ui components for plain HTML). Built by
+   tools/tailwind/build.sh with the pinned Tailwind v4 standalone CLI into
+   web/admin/static/admin-tailwind.css, which is committed: no Node at
+   runtime and no in-browser compiler. CI fails when the committed file is
+   stale (build.sh --check, make css-check).
+
+   Order matters. Tailwind's cascade layers (theme, base, components,
+   utilities) come first, Basecoat adds its components to @layer components,
+   so utilities and the unlayered rules of web/admin/static/admin.css (loaded
+   after this file) win over Basecoat, and Basecoat wins over the base reset
+   below. The Tailwind v3 Play runtime this build replaces put its reset
+   outside any layer and silenced Basecoat's borders, shadows and rings. */
+@import "tailwindcss" source(none);
+
+/* Tailwind only emits classes it finds in a source, so every place that can
+   put a utility class on an admin page is listed; nothing else is scanned.
+   admin-go-classes.txt holds the values of class="..." attributes in Go code
+   that renders admin markup, extracted by build.sh (generated, not
+   committed), so ordinary words in Go code and comments never become CSS. */
+@source "../../web/admin/templates";
+@source "../../web/admin/static/*.js";
+@source "./admin-go-classes.txt";
+
+/* Basecoat 1.3.0, the single-file source bundle (dist/basecoat.bundle.css of
+   the npm package), vendored beside the other admin dependencies with its
+   licence and recorded in web/admin/static/cdn-provenance.json. Its :root
+   defaults are overridden by the tokens in admin.css. */
+@import "../../web/admin/static/vendor/basecoat-1.3.0.bundle.css";
+
+/* GoRun colour names used by the templates, mapped to the admin.css tokens:
+   the mapping the inline tailwind.config in base.html had under v3. Basecoat
+   already defines the shadcn names (bg-primary, text-muted-foreground,
+   border-border, ...); `muted` keeps its shadcn meaning, a soft surface for
+   bg-muted, so secondary text is text-muted-foreground, not text-muted. */
+@theme {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-dark: var(--panel-dark);
+  --color-ink: var(--ink);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-green: var(--green);
+  --color-green-hover: var(--green-hover);
+  --color-green-soft: var(--green-soft);
+  --color-blue: var(--blue);
+  --color-blue-hover: var(--blue-hover);
+  --color-blue-soft: var(--blue-soft);
+  --color-amber: var(--amber);
+  --color-amber-text: var(--amber-text);
+  --color-amber-soft: var(--amber-soft);
+  --color-red: var(--red);
+  --color-red-soft: var(--red-soft);
+  --color-purple: var(--purple);
+  --radius-chip: var(--radius-chip);
+  --font-sans: 'Zad', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+}
+/* The bare `rounded` utility follows --radius, shadcn's base radius that
+   admin.css sets; `reference` keeps this build from declaring the variable
+   itself (the value is only the fallback). */
+@theme reference {
+  --radius: 0.625rem;
+}
+
+/* Tailwind v4 defaults that differ from v3, restored for the existing
+   templates. They sit in @layer base, so Basecoat's components and every
+   utility still win. */
+@layer base {
+  /* v3 gave every element a default border colour (gray-200); v4 uses
+     currentColor. Templates write `border` and expect the hairline. */
+  *, ::after, ::before, ::backdrop, ::file-selector-button { border-color: var(--border); }
+  /* v4 preflight makes buttons `cursor: default`. */
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+  /* v3 placeholders were a fixed grey; v4 uses currentColor at 50%. */
+  ::placeholder { color: var(--muted-foreground); opacity: 1; }
+}

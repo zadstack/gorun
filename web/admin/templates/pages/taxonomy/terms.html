@@ -2,7 +2,7 @@
 {{define "content"}}
 <div class="mb-4">
   <a href="/admin/taxonomies" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "arrow-left" "w-4 h-4 rtl:rotate-180"}}<span>{{t "taxonomy.list.title"}}</span></a>
-  <h1 class="text-[22px] font-bold mt-1">{{.Name}} <span class="font-mono text-base text-muted">{{.Taxonomy.Slug}}</span></h1>
+  <h1 class="text-[22px] font-bold mt-1">{{.Name}} <span class="font-mono text-base text-muted-foreground">{{.Taxonomy.Slug}}</span></h1>
 </div>
 {{with .FormError}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
 <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
@@ -11,25 +11,25 @@
       <label class="sr-only" for="term-search">{{t "taxonomy.terms.search"}}</label>
       <input id="term-search" name="q" type="search" value="{{.Search}}" placeholder="{{t "taxonomy.terms.search"}}" dir="auto"
              hx-get="{{.TermsBaseURL}}" hx-trigger="keyup changed delay:300ms, search" hx-target="#terms-list" hx-select="#terms-list" hx-swap="outerHTML" hx-push-url="true"
-             class="h-9 w-full sm:w-72 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
+             class="h-9 w-full sm:w-72 rounded border border-line bg-panel px-3 placeholder:text-muted-foreground focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     </form>
     <div id="terms-list" class="rounded border border-line bg-panel overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-panel-2">
           <tr>
-            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.terms.name"}}</th>
-            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.field.slug"}}</th>
-            {{if .Multilingual}}<th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.terms.language"}}</th>{{end}}
-            <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted">{{t "taxonomy.terms.count"}}</th>
+            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted-foreground">{{t "taxonomy.terms.name"}}</th>
+            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted-foreground">{{t "taxonomy.field.slug"}}</th>
+            {{if .Multilingual}}<th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted-foreground">{{t "taxonomy.terms.language"}}</th>{{end}}
+            <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted-foreground">{{t "taxonomy.terms.count"}}</th>
             <th scope="col" class="px-3 py-2"><span class="sr-only">{{t "taxonomy.terms.actions"}}</span></th>
           </tr>
         </thead>
         <tbody>
           {{range .Rows}}
           <tr class="border-t border-line hover:bg-bg">
-            <td class="px-3 py-2"><span class="{{.Indent}} inline-block" dir="auto">{{if .Depth}}<span class="text-muted" aria-hidden="true">└ </span>{{end}}<a href="{{.EditURL}}" class="text-blue hover:text-blue-hover font-medium">{{.Name}}</a></span></td>
+            <td class="px-3 py-2"><span class="{{.Indent}} inline-block" dir="auto">{{if .Depth}}<span class="text-muted-foreground" aria-hidden="true">└ </span>{{end}}<a href="{{.EditURL}}" class="text-blue hover:text-blue-hover font-medium">{{.Name}}</a></span></td>
             <td class="px-3 py-2 font-mono text-xs" dir="auto">{{.Slug}}</td>
-            {{if $.Multilingual}}<td class="px-3 py-2 text-xs" data-term-locale="{{.Locale}}"><span class="badge">{{localeName .Locale}}</span>{{if .TranslationGroup}} <span class="text-muted" title="{{t "taxonomy.translations.title"}}" aria-label="{{t "taxonomy.translations.title"}}">{{icon "languages" "w-3.5 h-3.5 inline"}}</span>{{end}}</td>{{end}}
+            {{if $.Multilingual}}<td class="px-3 py-2 text-xs" data-term-locale="{{.Locale}}"><span class="badge">{{localeName .Locale}}</span>{{if .TranslationGroup}} <span class="text-muted-foreground" title="{{t "taxonomy.translations.title"}}" aria-label="{{t "taxonomy.translations.title"}}">{{icon "languages" "w-3.5 h-3.5 inline"}}</span>{{end}}</td>{{end}}
             <td class="px-3 py-2 text-end font-mono">{{.Count}}</td>
             <td class="px-3 py-2 text-end">
               <form method="post" action="{{$.TermsBaseURL}}/terms/{{.ID}}/delete" data-confirm="{{t "taxonomy.terms.delete_confirm"}}">
@@ -39,7 +39,7 @@
             </td>
           </tr>
           {{else}}
-          <tr><td colspan="{{if .Multilingual}}5{{else}}4{{end}}" class="px-3 py-8 text-center text-muted">{{t "taxonomy.terms.empty"}}</td></tr>
+          <tr><td colspan="{{if .Multilingual}}5{{else}}4{{end}}" class="px-3 py-8 text-center text-muted-foreground">{{t "taxonomy.terms.empty"}}</td></tr>
           {{end}}
         </tbody>
       </table>
@@ -59,7 +59,7 @@
         <div>
           <label for="term-slug" class="block font-medium mb-1">{{t "taxonomy.field.slug"}}</label>
           <input id="term-slug" name="slug" type="text" value="{{.Edit.Slug}}" dir="auto" aria-describedby="term-slug-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
-          <p id="term-slug-help" class="mt-1 text-xs text-muted">{{t "taxonomy.terms.slug_help"}}</p>
+          <p id="term-slug-help" class="mt-1 text-xs text-muted-foreground">{{t "taxonomy.terms.slug_help"}}</p>
         </div>
         {{if .Multilingual}}
         <div class="field">
@@ -103,7 +103,7 @@
             <span class="font-medium">{{localeName .Locale}}</span>
             {{if .Current}}<span class="badge badge-info">{{t "taxonomy.translations.current"}}</span>
             {{else if .EditURL}}<a href="{{.EditURL}}" class="text-blue hover:text-blue-hover text-xs truncate max-w-[12rem]"><bdi>{{.Name}}</bdi></a>
-            {{else}}<span class="text-xs text-muted">{{t "taxonomy.translations.none"}}</span>{{end}}
+            {{else}}<span class="text-xs text-muted-foreground">{{t "taxonomy.translations.none"}}</span>{{end}}
           </div>
           {{if and (not .Current) (not .EditURL)}}
           <details class="rounded border border-line px-3 py-2">

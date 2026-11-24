@@ -12,9 +12,11 @@ test:
 run:
 	go run ./cmd/gorun serve
 
-# css rebuilds themes/default/assets/tailwind.css with the pinned Tailwind
-# standalone CLI (downloaded once, checksum verified; no Node). Commit the
-# result. css-check fails when the committed file is stale (CI runs it).
+# css rebuilds the committed Tailwind stylesheets with the pinned Tailwind
+# standalone CLIs (downloaded once, checksum verified; no Node):
+# themes/default/assets/tailwind.css and web/site/core.css (v3) and the
+# admin's web/admin/static/admin-tailwind.css (v4 with Basecoat). Commit the
+# result. css-check fails when a committed file is stale (CI runs it).
 css:
 	tools/tailwind/build.sh
 

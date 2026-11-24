@@ -5,7 +5,7 @@ import "testing"
 func TestFormatDateTimeOneOutput(t *testing.T) {
 	cases := []struct{ in, class, want string }{
 		{"2026-11-10T18:04:58.070Z", "", `<time datetime="2026-11-10T18:04:58Z" dir="ltr" title="2026-11-10 18:04:58 UTC">2026-11-10 18:04</time>`},
-		{"2026-11-10T20:04:58+02:00", "text-muted", `<time class="text-muted" datetime="2026-11-10T18:04:58Z" dir="ltr" title="2026-11-10 18:04:58 UTC">2026-11-10 18:04</time>`},
+		{"2026-11-10T20:04:58+02:00", "text-muted-foreground", `<time class="text-muted-foreground" datetime="2026-11-10T18:04:58Z" dir="ltr" title="2026-11-10 18:04:58 UTC">2026-11-10 18:04</time>`},
 		{"2026-11-10 18:04:58", "", `<time datetime="2026-11-10T18:04:58Z" dir="ltr" title="2026-11-10 18:04:58 UTC">2026-11-10 18:04</time>`},
 		{"", "", "—"},
 		{"<not a date>", "", "&lt;not a date&gt;"},

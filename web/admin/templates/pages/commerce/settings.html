@@ -3,16 +3,16 @@
 {{/* Three separate states of one mode: configured, authenticated, webhook delivery verified. */}}
 {{define "commerce/mode_status"}}{{$st := .}}
 <section class="rounded border border-line bg-panel p-3 text-sm" data-mode-status="{{$st.Mode}}" aria-labelledby="mode-{{$st.Mode}}-h">
-  <h3 id="mode-{{$st.Mode}}-h" class="font-medium mb-2 flex items-center gap-2">{{if eq $st.Mode "test"}}{{t "commerce.settings.mode_test"}}{{else}}{{t "commerce.settings.mode_live"}}{{end}}{{if .Current}} <span class="text-xs text-muted">({{t "commerce.settings.mode_active"}})</span>{{end}}</h3>
+  <h3 id="mode-{{$st.Mode}}-h" class="font-medium mb-2 flex items-center gap-2">{{if eq $st.Mode "test"}}{{t "commerce.settings.mode_test"}}{{else}}{{t "commerce.settings.mode_live"}}{{end}}{{if .Current}} <span class="text-xs text-muted-foreground">({{t "commerce.settings.mode_active"}})</span>{{end}}</h3>
   <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1">
-    <dt class="text-muted">{{t "commerce.settings.state_configured"}}</dt>
+    <dt class="text-muted-foreground">{{t "commerce.settings.state_configured"}}</dt>
     <dd data-stripe-configured="{{if and $st.KeyConfigured $st.WebhookConfigured}}yes{{else}}no{{end}}">{{if $st.KeyConfigured}}{{t "commerce.settings.key_present"}}{{if eq $st.KeySource "env"}} ({{t "commerce.settings.from_env"}}){{end}}{{if eq $st.KeyPrefix "test"}}{{if eq $st.Mode "live"}} · <span class="text-amber-text">{{t "commerce.settings.prefix_test_in_live"}}</span>{{end}}{{else if eq $st.KeyPrefix "live"}}{{if eq $st.Mode "test"}} · <span class="text-red">{{t "commerce.settings.prefix_live_in_test"}}</span>{{end}}{{end}}{{else}}{{t "commerce.settings.key_missing"}}{{end}} · {{if $st.WebhookConfigured}}{{t "commerce.settings.webhook_present"}}{{else}}{{t "commerce.settings.webhook_missing"}}{{end}}</dd>
-    <dt class="text-muted">{{t "commerce.settings.state_authenticated"}}</dt>
+    <dt class="text-muted-foreground">{{t "commerce.settings.state_authenticated"}}</dt>
     <dd data-stripe-auth="{{$st.Auth.State}}">{{if eq $st.Auth.State "authenticated"}}<span class="text-green">{{t "commerce.settings.auth_ok"}}</span>{{else if eq $st.Auth.State "mismatch"}}<span class="text-red">{{t "commerce.settings.auth_mismatch"}}</span>{{else if eq $st.Auth.State "stale"}}<span class="text-amber-text">{{t "commerce.settings.auth_stale"}}</span>{{else if eq $st.Auth.State "failed"}}<span class="text-red">{{t "commerce.settings.auth_failed"}}</span>{{with $st.Auth.Error}} · <span class="font-mono text-xs break-all" dir="ltr">{{.}}</span>{{end}}{{else}}{{t "commerce.settings.auth_unverified"}}{{end}}{{with $st.Auth.CheckedAt}} · <span class="font-mono text-xs">{{datetime .}}</span>{{end}}</dd>
-    <dt class="text-muted">{{t "commerce.settings.state_delivery"}}</dt>
+    <dt class="text-muted-foreground">{{t "commerce.settings.state_delivery"}}</dt>
     <dd data-stripe-delivery="{{if $st.Delivery.Verified}}verified{{else}}unverified{{end}}">{{if $st.Delivery.Verified}}<span class="text-green">{{t "commerce.settings.delivery_ok" $st.Delivery.Count}}</span> · <span class="font-mono text-xs">{{datetime $st.Delivery.LastAt}}</span>{{else}}{{t "commerce.settings.delivery_unverified"}}{{end}}</dd>
   </dl>
-  <code class="mt-2 block font-mono text-xs break-all text-muted" dir="ltr">{{.WebhookURL}}</code>
+  <code class="mt-2 block font-mono text-xs break-all text-muted-foreground" dir="ltr">{{.WebhookURL}}</code>
   <form method="post" action="/admin/commerce/settings/verify" class="mt-2"><input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="mode" value="{{$st.Mode}}"><button type="submit" {{if not $st.KeyConfigured}}disabled{{end}} class="h-8 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong disabled:opacity-50">{{t "commerce.settings.verify_key"}}</button></form>
 </section>{{end}}
 {{define "title"}}{{t "commerce.settings.title"}}{{end}}
@@ -20,7 +20,7 @@
 <link rel="stylesheet" href="{{asset "admin-contained.css"}}">
 <div class="admin-contained admin-commerce-settings">
 <h1 class="text-[22px] font-bold mb-1">{{t "commerce.settings.title"}}</h1>
-<p class="text-muted mb-2">{{t "commerce.settings.intro"}}</p>
+<p class="text-muted-foreground mb-2">{{t "commerce.settings.intro"}}</p>
 <p class="mb-4"><a href="/admin/commerce/setup" class="text-blue underline">{{t "commerce.setup.link_from_settings"}}</a></p>
 <section id="mode-status" class="rounded border border-line bg-panel p-4 space-y-3 max-w-3xl mb-4" aria-labelledby="mode-status-h">
   <h2 id="mode-status-h" class="font-medium flex flex-wrap items-center gap-2">{{t "commerce.settings.current_mode"}} {{template "commerce/mode_badge" .Mode}}</h2>
@@ -34,7 +34,7 @@
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <input type="hidden" name="registration_present" value="true">
   <label class="block"><input type="checkbox" name="registration_enabled" value="true" {{if .RegistrationEnabled}}checked{{end}}> {{t "commerce.settings.registration_enable"}}</label>
-  <p class="text-muted text-sm">{{t "commerce.settings.registration_help"}}</p>
+  <p class="text-muted-foreground text-sm">{{t "commerce.settings.registration_help"}}</p>
   <div id="mode" class="rounded border border-line bg-panel-2 p-3 space-y-3">
     <div class="grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
       <div>
@@ -47,7 +47,7 @@
       <label class="flex items-start gap-2 text-sm sm:pt-7"><input type="checkbox" name="confirm_live" value="1" class="mt-1 accent-[var(--green)]"> <span>{{t "commerce.settings.confirm_live"}}</span></label>
     </div>
     {{with index .Fields "stripe_mode"}}<p class="field-error text-xs text-red">{{t .}}{{with $.ModeDetail}} · <span dir="ltr">{{.}}</span>{{end}}</p>{{end}}
-    <p class="text-xs text-muted">{{t "commerce.settings.mode_help"}}</p>
+    <p class="text-xs text-muted-foreground">{{t "commerce.settings.mode_help"}}</p>
   </div>
   <div class="grid gap-3 sm:grid-cols-2">
     <div>
@@ -66,26 +66,26 @@
     <label for="c-stripe" class="block font-medium mb-1">{{t "commerce.settings.stripe_key"}}</label>
     <input id="c-stripe" name="stripe_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_live_…" aria-describedby="c-stripe-help" {{with index .Fields "stripe_secret_key"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
     {{template "partials/field_errors" (index .Fields "stripe_secret_key")}}
-    <p id="c-stripe-help" class="mt-1 text-xs text-muted">{{if .StripeSet}}{{t "commerce.settings.secret_set"}}{{else if .StripeFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
+    <p id="c-stripe-help" class="mt-1 text-xs text-muted-foreground">{{if .StripeSet}}{{t "commerce.settings.secret_set"}}{{else if .StripeFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .StripeSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_secret_key" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>
   <div id="webhook">
     <label for="c-webhook" class="block font-medium mb-1">{{t "commerce.settings.webhook_secret"}}</label>
     <input id="c-webhook" name="stripe_webhook_secret" type="password" autocomplete="new-password" dir="ltr" placeholder="whsec_…" aria-describedby="c-webhook-help" class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-    <p id="c-webhook-help" class="mt-1 text-xs text-muted">{{if .WebhookSet}}{{t "commerce.settings.secret_set"}}{{else if .WebhookFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
+    <p id="c-webhook-help" class="mt-1 text-xs text-muted-foreground">{{if .WebhookSet}}{{t "commerce.settings.secret_set"}}{{else if .WebhookFromEnv}}{{t "commerce.settings.secret_env"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .WebhookSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_webhook_secret" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>
   <div>
     <label for="c-test-key" class="block font-medium mb-1">{{t "commerce.settings.test_key"}}</label>
     <input id="c-test-key" name="stripe_test_secret_key" type="password" autocomplete="new-password" dir="ltr" placeholder="sk_test_…" {{with index .Fields "stripe_test_secret_key"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3">
     {{template "partials/field_errors" (index .Fields "stripe_test_secret_key")}}
-    <p class="mt-1 text-xs text-muted">{{if .TestKeySet}}{{t "commerce.settings.secret_set"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
+    <p class="mt-1 text-xs text-muted-foreground">{{if .TestKeySet}}{{t "commerce.settings.secret_set"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .TestKeySet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_test_secret_key" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>
   <div>
     <label for="c-test-webhook" class="block font-medium mb-1">{{t "commerce.settings.test_webhook"}}</label>
     <input id="c-test-webhook" name="stripe_test_webhook_secret" type="password" autocomplete="new-password" dir="ltr" placeholder="whsec_…" class="h-9 w-full rounded border border-line bg-panel px-3">
-    <p class="mt-1 text-xs text-muted">{{if .TestWebhookSet}}{{t "commerce.settings.secret_set"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
+    <p class="mt-1 text-xs text-muted-foreground">{{if .TestWebhookSet}}{{t "commerce.settings.secret_set"}}{{else}}{{t "commerce.settings.secret_unset"}}{{end}}</p>
     {{if .TestWebhookSet}}<label class="mt-1 inline-flex items-center gap-1.5 text-xs"><input type="checkbox" name="clear_stripe_test_webhook_secret" value="1" class="accent-[var(--green)]"> {{t "commerce.settings.clear"}}</label>{{end}}
   </div>
   <div class="rounded border border-line bg-panel-2 p-3">
@@ -95,14 +95,14 @@
     <code class="mt-1 block font-mono text-xs break-all" dir="ltr">{{.TestWebhookURL}}</code>
     <p class="mt-2 font-medium">{{t "commerce.settings.live_webhook_url"}}</p>
     <code class="mt-1 block font-mono text-xs break-all" dir="ltr">{{.LiveWebhookURL}}</code>
-    <p class="mt-1 text-xs text-muted">{{t "commerce.settings.webhook_events"}} <code class="font-mono" dir="ltr">checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, checkout.session.expired, charge.refunded, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted, customer.subscription.trial_will_end, invoice.paid, invoice.payment_failed</code></p>
+    <p class="mt-1 text-xs text-muted-foreground">{{t "commerce.settings.webhook_events"}} <code class="font-mono" dir="ltr">checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.async_payment_failed, checkout.session.expired, charge.refunded, customer.subscription.created, customer.subscription.updated, customer.subscription.deleted, customer.subscription.trial_will_end, invoice.paid, invoice.payment_failed</code></p>
   </div>
   <div><button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.save"}}</button></div>
 </form>
 <form method="post" action="/admin/commerce/settings/test-event" class="mt-4">
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <button type="submit" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "commerce.settings.send_test_event"}}</button>
-  <p class="mt-1 text-xs text-muted">{{t "commerce.settings.send_test_event_help"}}</p>
+  <p class="mt-1 text-xs text-muted-foreground">{{t "commerce.settings.send_test_event_help"}}</p>
 </form>
 </div>
 {{end}}

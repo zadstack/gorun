@@ -3,7 +3,7 @@
 <script defer src="{{asset "onboarding-language.js"}}"></script><div class="admin-auth-panel" data-onboarding-languages="{{json .Languages}}">
 <p class="admin-auth-brand">{{t "core.app.name"}}</p>
 <h1 data-onboarding-text="auth.onboarding.title">{{t "auth.onboarding.title"}}</h1>
-<p class="text-muted mt-2 mb-4" data-onboarding-text="auth.onboarding.intro">{{t "auth.onboarding.intro"}}</p>
+<p class="text-muted-foreground mt-2 mb-4" data-onboarding-text="auth.onboarding.intro">{{t "auth.onboarding.intro"}}</p>
 <form method="post" action="/admin/onboarding" class="space-y-4">
 <input type="hidden" name="_csrf" value="{{csrf}}">
 <div>

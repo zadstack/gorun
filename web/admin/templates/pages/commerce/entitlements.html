@@ -14,24 +14,24 @@
     </select>
   </div>
   <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "filter"}}<span>{{t "commerce.list.filter"}}</span></button>
-  <span class="ms-auto font-mono text-xs text-muted">{{.List.Page.Total}}</span>
+  <span class="ms-auto font-mono text-xs text-muted-foreground">{{.List.Page.Total}}</span>
 </form>
 <div class="rounded border border-line bg-panel overflow-x-auto">
   {{if .Entitlements}}
   <table class="w-full">
     <thead class="bg-panel-2"><tr>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.email"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.product"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.server"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.status"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.ends"}}</th>
-      {{if $.CanManage}}<th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.actions"}}</th>{{end}}
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.email"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.product"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.server"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.status"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.ends"}}</th>
+      {{if $.CanManage}}<th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.actions"}}</th>{{end}}
     </tr></thead>
     <tbody>
       {{range .Entitlements}}
       <tr class="border-t border-line hover:bg-bg">
-        <td class="px-3 py-2" dir="ltr">{{.Email}}<div class="font-mono text-xs text-muted"><a href="/admin/commerce/orders/{{.OrderID}}" class="text-blue hover:text-blue-hover">#{{.OrderNumber}}</a></div></td>
-        <td class="px-3 py-2">{{.ProductName}}<div class="font-mono text-xs text-muted" dir="ltr">{{.PlanCode}}</div></td>
+        <td class="px-3 py-2" dir="ltr">{{.Email}}<div class="font-mono text-xs text-muted-foreground"><a href="/admin/commerce/orders/{{.OrderID}}" class="text-blue hover:text-blue-hover">#{{.OrderNumber}}</a></div></td>
+        <td class="px-3 py-2">{{.ProductName}}<div class="font-mono text-xs text-muted-foreground" dir="ltr">{{.PlanCode}}</div></td>
         <td class="px-3 py-2">{{.ServerName}}</td>
         <td class="px-3 py-2"><span class="inline-flex rounded-chip border px-1.5 py-0.5 text-xs {{if or (eq .Status "active") (eq .Status "paid")}}border-green bg-green-soft text-green{{else if or (eq .Status "failed") (eq .Status "refunded")}}border-red bg-red-soft text-red{{else if or (eq .Status "suspended") (eq .Status "expired")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2{{end}}">{{t (print "commerce.entitlement.status." .Status)}}</span></td>
         <td class="px-3 py-2 font-mono text-xs">{{datetime .EndsAt}}</td>
@@ -50,11 +50,11 @@
       {{end}}
     </tbody>
   </table>
-  {{else}}<p class="p-6 text-center text-muted">{{t "commerce.entitlements.empty"}}</p>{{end}}
+  {{else}}<p class="p-6 text-center text-muted-foreground">{{t "commerce.entitlements.empty"}}</p>{{end}}
 </div>
 {{with .List.Page}}{{if gt .Pages 1}}
 <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
-  <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+  <span class="font-mono text-muted-foreground">{{t "core.pagination.summary" .Page .Pages}}</span>
   <div class="flex gap-2">
     {{if .HasPrev}}<a href="/admin/commerce/entitlements?q={{$.List.Q}}&amp;status={{$.List.Status}}&amp;page={{.Prev}}" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.pagination.prev"}}</a>{{end}}
     {{if .HasNext}}<a href="/admin/commerce/entitlements?q={{$.List.Q}}&amp;status={{$.List.Status}}&amp;page={{.Next}}" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.pagination.next"}}</a>{{end}}

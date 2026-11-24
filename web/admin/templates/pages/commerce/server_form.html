@@ -20,13 +20,13 @@
   <div>
     <label for="s-url" class="block font-medium mb-1">{{t "commerce.field.base_url"}}</label>
     <input id="s-url" name="base_url" value="{{.Form.BaseURL}}" dir="ltr" placeholder="https://billing.example.com" aria-describedby="s-url-help" {{with index .Fields "base_url"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono text-xs">
-    <p id="s-url-help" class="mt-1 text-xs text-muted">{{t "commerce.field.base_url_help"}}</p>
+    <p id="s-url-help" class="mt-1 text-xs text-muted-foreground">{{t "commerce.field.base_url_help"}}</p>
     {{template "partials/field_errors" (index .Fields "base_url")}}
   </div>
   <div>
     <label for="s-secret" class="block font-medium mb-1">{{t "commerce.field.secret"}}</label>
     <input id="s-secret" name="secret" type="password" autocomplete="new-password" aria-describedby="s-secret-help" {{with index .Fields "secret"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-    <p id="s-secret-help" class="mt-1 text-xs text-muted">{{if .SecretSet}}{{t "commerce.field.secret_set"}}{{else}}{{t "commerce.field.secret_unset"}}{{end}}</p>
+    <p id="s-secret-help" class="mt-1 text-xs text-muted-foreground">{{if .SecretSet}}{{t "commerce.field.secret_set"}}{{else}}{{t "commerce.field.secret_unset"}}{{end}}</p>
     {{template "partials/field_errors" (index .Fields "secret")}}
   </div>
   <div><button type="submit" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.save"}}</button></div>
@@ -34,7 +34,7 @@
 {{if .ID}}
 <section class="mt-4 rounded border border-line bg-panel p-4 max-w-3xl">
   <h2 class="text-base font-bold mb-1">{{t "commerce.servers.test_title"}}</h2>
-  <p class="text-xs text-muted mb-3">{{t "commerce.servers.test_help"}}</p>
+  <p class="text-xs text-muted-foreground mb-3">{{t "commerce.servers.test_help"}}</p>
   <form method="post" action="/admin/commerce/servers/{{.ID}}/test" hx-post="/admin/commerce/servers/{{.ID}}/test" hx-target="#server-test-result" hx-swap="innerHTML">
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "plug"}}<span>{{t "commerce.servers.test"}}</span></button>

@@ -7,6 +7,52 @@ dates look and behave the same everywhere. Direction and colours follow
 [DESIGN.md](../DESIGN.md): light surfaces, petrol (`--accent`) for actions and
 selection, green only for success, amber and red for warning and error.
 
+## Basecoat (shadcn/ui for plain HTML)
+
+The admin uses [Basecoat](https://basecoatui.com) 1.3.0, the shadcn/ui
+component library for any stack: CSS classes plus a small vanilla JavaScript
+runtime, no React. The CSS is compiled into the admin stylesheet:
+`tools/tailwind/admin.css` imports Tailwind v4 and Basecoat's source bundle
+(`web/admin/static/vendor/basecoat-1.3.0.bundle.css`, from the npm tarball),
+and `tools/tailwind/build.sh` (`make css`) builds the committed
+`web/admin/static/admin-tailwind.css` with the pinned Tailwind standalone CLI,
+which `base.html` loads before `admin.css`. The JavaScript runtime is
+`web/admin/static/vendor/basecoat-1.3.0.js`; both files sit beside their
+licence and are recorded in `web/admin/static/cdn-provenance.json`. Every
+admin and auth page can use Basecoat markup directly:
+
+- `class="btn"` with `data-variant` (`secondary`, `outline`, `ghost`, `link`,
+  `destructive`) and `data-size` (`xs`, `sm`, `lg`, `icon`, `icon-sm`).
+- `class="badge"` with `data-variant`; `.card` with `<header>`, `<section>`,
+  `<footer>`; `.alert` with `data-variant="destructive"`; `.field` wrapping a
+  `<label>` and its control (inputs, selects, textareas, checkboxes, radios and
+  `role="switch"` checkboxes are styled when they are direct children).
+- Interactive components (dropdown-menu, tabs, popover, select, combobox,
+  dialog/drawer, toast, sidebar, accordion) follow the Basecoat markup and are
+  initialised automatically by `basecoat-1.3.0.js`; HTMX swaps are picked up
+  by its mutation observer. Pilot: `pages/auth/login.html` and
+  `partials/flash`.
+
+Basecoat reads the shadcn tokens (`--background`, `--foreground`, `--card`,
+`--primary`, `--secondary`, `--muted`, `--accent`, `--destructive`,
+`--border`, `--input`, `--ring`, `--radius`, `--sidebar-*`), which `admin.css`
+sets to the GoRun palette. Two names changed meaning in that move: shadcn's
+`--accent` is a soft hover surface and `--muted` a soft background, so the old
+petrol action colour is now `--primary` (hover `--primary-hover`) and the old
+secondary text colour `--muted-foreground`. The GoRun colour utilities
+(`bg-blue`, `border-line`, `text-ink`, …) are unchanged; secondary text is
+`text-muted-foreground` (shadcn's name, which Basecoat defines; `text-muted`
+would be the soft surface colour).
+
+Basecoat's rules live in Tailwind's `components` cascade layer: utilities and
+anything `admin.css` declares outside a layer win over them, and they win over
+Tailwind's base reset. The admin has no in-browser Tailwind runtime: the
+compiled stylesheet carries only the utilities found in the admin templates,
+the admin scripts and the Go code that renders admin markup (see the
+`@source` list in `tools/tailwind/admin.css`), and `make css-check` fails in
+CI when it is stale. When a template needs a utility that is missing, run
+`make css` and commit the result.
+
 ## Tokens
 
 Defined on `:root` in `admin.css`. Older rules keep working through aliases
@@ -15,25 +61,25 @@ Defined on `:root` in `admin.css`. Older rules keep working through aliases
 | Token | Values |
 |---|---|
 | Type scale | `--fs-xs` 11px · `--fs-sm` 12px · `--fs-md` 13px · `--fs-base` 14px · `--fs-lg` 16px · `--fs-xl` 18px · `--fs-2xl` 22px (page titles) |
-| Radius | `--radius-sm` 4px (badges, chips) · `--radius-md` 7px (controls, panels) |
+| Radius | `--radius` 10px (Basecoat base) → `--radius-sm` 6px (badges, chips), `--radius-md` 8px (controls), `--radius-lg` 10px (cards, panels), `--radius-xl` 14px |
 | Spacing | `--space-1` … `--space-6` (0.25rem steps to 1.5rem) |
-| Controls | `--control-h` 36px · `--control-h-sm` 30px · `--control-h-touch` 44px (every `.btn` on phones) |
-| Colour | the existing `--ink`, `--muted`, `--line`, `--panel`, `--bg`, `--accent*`, `--green*`, `--amber*`, `--red*` |
+| Controls | `--control-h` 36px · `--control-h-sm` 32px · `--control-h-touch` 44px (every `.btn` on phones) |
+| Colour | shadcn tokens `--background`, `--foreground`, `--card`, `--primary` (+ `--primary-hover`), `--secondary`, `--muted`, `--muted-foreground`, `--accent`, `--destructive`, `--border`, `--input`, `--ring`; GoRun aliases `--ink`, `--line`, `--panel`, `--bg`, `--blue*`; semantic `--green*`, `--amber*`, `--red*` |
 
 ## Components
 
 | Class | Use |
 |---|---|
-| `.btn` + `.btn-primary` / `.btn-secondary` / `.btn-ghost` / `.btn-danger`, optional `.btn-sm` | Every button or button-like link. One `.btn-primary` per page area. |
-| `.field` with `.field-label`, `.field-help`, `.field-error`; `.field-control` for a lone input | Form controls. `.field-row` lays fields out in a wrapping row. |
+| `.btn` (Basecoat) + `data-variant` / `data-size`; legacy aliases `.btn-primary` (= plain `.btn`), `.btn-secondary` (= `data-variant="outline"`), `.btn-ghost`, `.btn-danger` (outlined destructive), `.btn-sm` | Every button or button-like link. One primary button per page area. |
+| `.field` (Basecoat) wrapping `<label>` + control, with `.field-help`, `.field-error`; `.field-control` for a lone input; `.field-label` still accepted | Form controls. `.field-row` lays fields out in a wrapping row. |
 | `partials/page-header` (`.page-header`) | Page title, subtitle, back link, muted ID disclosure, primary and secondary action. |
 | `.section-head` + `.section-title` | Headings inside a page. |
 | `.data-table-wrap` + `.data-table` | Tables. Cells: `.num`, `.actions`, `.row-link`, `.cell-sub`; `.row-actions` keeps row buttons on one line. |
-| `.badge` + `.badge-success` / `.badge-warning` / `.badge-danger` / `.badge-info` | Status labels. Neutral by default. |
+| `.badge` (Basecoat pill) + `.badge-success` / `.badge-warning` / `.badge-danger` / `.badge-info`, or `data-variant` | Status labels. Neutral by default. |
 | `.empty-state` | An empty list: say what is missing and, where useful, the next action. |
 | `.kv` | Key/value lists (`<dl class="kv"><div><dt>…</dt><dd>…</dd></div></dl>`); one column on phones. |
 | `.meta-row` + `.meta-item` | Inline "label value" metadata. Each item is a flex item, so Arabic and Latin values never reorder across items. |
-| `.card` + `.card-head` / `.card-body` / `.card-foot` | Only for a grouped unit such as a form or a request, never for every row. |
+| `.card` (Basecoat) + `.card-head` / `.card-body` / `.card-foot`, or `<header>` / `<section>` / `<footer>` | Only for a grouped unit such as a form or a request, never for every row. |
 | `.raw-detail` | A `<details>` for raw JSON or other secondary payloads. |
 | `.id-detail` | A raw identifier (ULID) that stays out of the visible text. |
 | `.avatar` (`.avatar-user`) | Initials from the `initials` template function. |

@@ -15,19 +15,19 @@
     </div>
   </div>
   <p class="p-4 whitespace-pre-wrap leading-relaxed" dir="auto">{{.Message}}</p>
-<p class="px-4 text-xs text-muted mb-4">{{t "formsources.association_help"}}</p>
+<p class="px-4 text-xs text-muted-foreground mb-4">{{t "formsources.association_help"}}</p>
   {{if .AttachmentName}}
   <div class="mx-4 mb-4 flex flex-wrap items-center justify-between gap-3 rounded border border-line bg-panel-2 p-3">
-    <span class="inline-flex items-center gap-2 min-w-0">{{icon "paperclip" "w-4 h-4 shrink-0"}}<span class="truncate" dir="auto">{{.AttachmentName}}</span><span class="font-mono text-xs text-muted">{{.SizeText}}</span></span>
+    <span class="inline-flex items-center gap-2 min-w-0">{{icon "paperclip" "w-4 h-4 shrink-0"}}<span class="truncate" dir="auto">{{.AttachmentName}}</span><span class="font-mono text-xs text-muted-foreground">{{.SizeText}}</span></span>
     <a href="/admin/system/form-submissions/{{.ID}}/attachment" class="h-8 px-3 inline-flex items-center gap-1 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "download" "w-4 h-4"}}{{t "site.submissions.download"}}</a>
   </div>
   {{end}}
   <dl class="px-4 pb-4 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_minmax(0,1fr)]">
-    <dt class="text-muted">{{t "site.submissions.received"}}</dt><dd>{{datetime .SubmittedAt}}</dd>
-    <dt class="text-muted">{{t "formsources.submitted_form"}}</dt><dd>{{t "formsources.contact"}}</dd>
-    <dt class="text-muted">{{t "formsources.source"}}</dt><dd class="form-source">{{if .Source.Path}}<a href="{{.Source.Path}}" target="_blank" rel="noopener noreferrer">{{if .Source.Title}}<span dir="auto">{{.Source.Title}}</span> · {{end}}<bdi>{{.Source.Path}}</bdi> ↗</a>{{else}}{{t "formsources.unknown"}}{{end}}</dd>
-    <dt class="text-muted">IP</dt><dd class="font-mono" dir="ltr">{{.IP}}</dd>
-    {{with .DeliveryError}}<dt class="text-muted">{{t "site.submissions.delivery_error"}}</dt><dd class="font-mono text-xs break-all text-red" dir="ltr">{{.}}</dd>{{end}}
+    <dt class="text-muted-foreground">{{t "site.submissions.received"}}</dt><dd>{{datetime .SubmittedAt}}</dd>
+    <dt class="text-muted-foreground">{{t "formsources.submitted_form"}}</dt><dd>{{t "formsources.contact"}}</dd>
+    <dt class="text-muted-foreground">{{t "formsources.source"}}</dt><dd class="form-source">{{if .Source.Path}}<a href="{{.Source.Path}}" target="_blank" rel="noopener noreferrer">{{if .Source.Title}}<span dir="auto">{{.Source.Title}}</span> · {{end}}<bdi>{{.Source.Path}}</bdi> ↗</a>{{else}}{{t "formsources.unknown"}}{{end}}</dd>
+    <dt class="text-muted-foreground">IP</dt><dd class="font-mono" dir="ltr">{{.IP}}</dd>
+    {{with .DeliveryError}}<dt class="text-muted-foreground">{{t "site.submissions.delivery_error"}}</dt><dd class="font-mono text-xs break-all text-red" dir="ltr">{{.}}</dd>{{end}}
   </dl>
   <div class="p-4 border-t border-line flex flex-wrap gap-2">
     <a href="mailto:{{.Email}}" class="h-9 px-4 inline-flex items-center gap-2 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "reply" "w-4 h-4"}}{{t "site.submissions.action.reply"}}</a>

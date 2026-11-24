@@ -181,7 +181,7 @@
       });
     });
     label.append(select); parent.append(label);
-    const help = el("p", "text-muted text-sm", text("library_blocked"));
+    const help = el("p", "text-muted-foreground text-sm", text("library_blocked"));
     help.dataset.nativeEligibility = "true";
     help.hidden = !!section.library || !nativeSwitchBlocked(section);
     parent.append(help);
@@ -218,10 +218,10 @@
     if (["hero", "product_preview"].includes(section.kind)) {
       field(options, "caption", group, section.id);
       checkbox(options, "illustration", group);
-      group.append(el("p", "text-muted text-sm", text("illustration_help")));
+      group.append(el("p", "text-muted-foreground text-sm", text("illustration_help")));
     }
     if (section.kind === "task_entry") {
-      group.append(el("p", "text-muted text-sm", text("task_entry_help")));
+      group.append(el("p", "text-muted-foreground text-sm", text("task_entry_help")));
       if (section.variant === "search_first") {
         const search = options.search || (options.search = {action: "", label: text("search_label_default"), param: "q"});
         for (const key of ["action", "label", "placeholder", "param"]) field(search, key, group, section.id, undefined, "search_" + key);
@@ -232,7 +232,7 @@
     if (section.kind === "directory") {
       if (!options.list_type) options.list_type = "post";
       field(options, "list_type", group, section.id);
-      group.append(el("p", "text-muted text-sm", text("list_type_help")));
+      group.append(el("p", "text-muted-foreground text-sm", text("list_type_help")));
     }
     parent.append(group);
   }
@@ -394,7 +394,7 @@
     group.append(el("legend", "font-medium", text("form_settings")));
     const slug = formInput(form, "slug", group, section.id, {label: "form_slug", max: 40, ltr: true});
     slug.setAttribute("aria-describedby", `builder-form-${section.id}-slug-help`);
-    const slugHelp = el("p", "text-muted text-sm", text("form_slug_help"));
+    const slugHelp = el("p", "text-muted-foreground text-sm", text("form_slug_help"));
     slugHelp.id = `builder-form-${section.id}-slug-help`;
     group.append(slugHelp);
     hint(group, "slug", slug, `builder-form-${section.id}-slug-hint`);
@@ -557,7 +557,7 @@
           } catch (error) {message.textContent = text(labels[error.message] ? error.message : "suggest_invalid");}
           finally {ai.disabled = false;}
         }); panel.append(ai);
-      } else panel.append(el("p", "text-muted text-sm", text(result.candidates.length ? "suggest_ai_unavailable" : "suggest_ai_no_candidates")));
+      } else panel.append(el("p", "text-muted-foreground text-sm", text(result.candidates.length ? "suggest_ai_unavailable" : "suggest_ai_no_candidates")));
     } catch (error) {message.textContent = text(labels[error.message] ? error.message : "suggest_invalid");}
   }
 
@@ -565,7 +565,7 @@
     imageTargets.clear();
  list.replaceChildren();
     if (!doc.sections.length) {
-      list.append(el("p", "text-muted p-4", text("empty")));
+      list.append(el("p", "text-muted-foreground p-4", text("empty")));
     }
     doc.sections.forEach((section, index) => {
       const article = el(
@@ -677,7 +677,7 @@
         sourceLabel.append(source);
         article.append(sourceLabel);
         if (section.feed === "posts") {
-          article.append(el("p", "text-muted text-sm", text("feed_help")));
+          article.append(el("p", "text-muted-foreground text-sm", text("feed_help")));
         }
       }
 

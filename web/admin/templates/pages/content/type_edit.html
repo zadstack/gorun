@@ -43,7 +43,7 @@ window.gpTypeBuilder = function (initial, errors) {
 </script>
 <div class="mb-4">
   <a href="/admin/types" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "arrow-left" "w-4 h-4 rtl:rotate-180"}}<span>{{t "content.types.title"}}</span></a>
-  <h1 class="text-[22px] font-bold mt-1">{{if .IsNew}}{{t "content.types.new"}}{{else}}{{t "content.types.edit"}} <span class="font-mono text-base text-muted">{{.Type.Slug}}</span>{{end}}</h1>
+  <h1 class="text-[22px] font-bold mt-1">{{if .IsNew}}{{t "content.types.new"}}{{else}}{{t "content.types.edit"}} <span class="font-mono text-base text-muted-foreground">{{.Type.Slug}}</span>{{end}}</h1>
 </div>
 {{with .FormError}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
 <form method="post" action="{{.Action}}" class="space-y-4" novalidate
@@ -57,7 +57,7 @@ window.gpTypeBuilder = function (initial, errors) {
         <label for="slug" class="block font-medium mb-1">{{t "content.types.slug"}}</label>
         <input id="slug" name="slug" type="text" value="{{.Type.Slug}}" dir="ltr" {{if not .IsNew}}readonly aria-readonly="true"{{end}} aria-describedby="slug-help"
                class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono {{if not .IsNew}}bg-panel-2{{end}}">
-        <p id="slug-help" class="mt-1 text-xs text-muted">{{t "content.types.slug_help"}}</p>
+        <p id="slug-help" class="mt-1 text-xs text-muted-foreground">{{t "content.types.slug_help"}}</p>
         {{template "partials/field_errors" (index .Errors "slug")}}
       </div>
       <div>
@@ -91,7 +91,7 @@ window.gpTypeBuilder = function (initial, errors) {
       <div>
         <label for="taxonomies" class="block font-medium mb-1">{{t "content.types.taxonomies"}}</label>
         <input id="taxonomies" name="taxonomies" type="text" value="{{.Taxonomies}}" dir="ltr" aria-describedby="taxonomies-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
-        <p id="taxonomies-help" class="mt-1 text-xs text-muted">{{t "content.types.comma_help"}}</p>
+        <p id="taxonomies-help" class="mt-1 text-xs text-muted-foreground">{{t "content.types.comma_help"}}</p>
       </div>
       <div>
         <label for="templates" class="block font-medium mb-1">{{t "content.types.templates"}}</label>
@@ -113,16 +113,16 @@ window.gpTypeBuilder = function (initial, errors) {
       <button type="button" @click="add(fields)" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center justify-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "plus"}}<span>{{t "content.types.add_field"}}</span></button>
     </div>
     {{template "partials/field_errors" (index .Errors "fields")}}
-    <p x-show="!fields.length" class="text-muted text-sm">{{t "content.types.no_fields"}}</p>
+    <p x-show="!fields.length" class="text-muted-foreground text-sm">{{t "content.types.no_fields"}}</p>
     <ol class="space-y-3">
       <template x-for="(f, i) in fields" :key="i">
         <li class="rounded border border-line bg-bg">
           <div class="flex items-center gap-2 px-3 py-2">
             <button type="button" @click="f.open = !f.open" :aria-expanded="f.open.toString()" class="flex-1 text-start inline-flex items-center gap-2 focus:outline-none focus:ring-[3px] focus:ring-blue-soft rounded">
-              <span class="font-mono text-xs text-muted" x-text="i + 1"></span>
+              <span class="font-mono text-xs text-muted-foreground" x-text="i + 1"></span>
               <span class="font-medium" x-text="f.label.en || f.label.ar || f.key || '…'"></span>
               <span class="font-mono text-xs rounded-chip border border-line bg-panel-2 px-1.5" x-text="f.type"></span>
-              <span class="font-mono text-xs text-muted" x-text="f.key"></span>
+              <span class="font-mono text-xs text-muted-foreground" x-text="f.key"></span>
               <span class="text-xs text-red" x-show="Object.keys(errors).some(k => k.startsWith('fields.' + i + '.'))">{{t "content.types.has_errors"}}</span>
             </button>
             <button type="button" @click="move(fields, i, -1)" class="h-8 px-2 rounded border border-line bg-panel inline-flex items-center justify-center gap-1 text-xs hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft" aria-label="{{t "content.types.move_up"}}">{{icon "arrow-up" "w-3.5 h-3.5"}}</button>
@@ -162,7 +162,7 @@ window.gpTypeBuilder = function (initial, errors) {
               <label class="block font-medium mb-1" :for="'f-' + i + '-options'">{{t "content.types.options"}}</label>
               <textarea :id="'f-' + i + '-options'" x-model="f.optionsText" rows="4" dir="auto" placeholder="value | English | العربية"
                         class="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"></textarea>
-              <p class="mt-1 text-xs text-muted">{{t "content.types.options_help"}}</p>
+              <p class="mt-1 text-xs text-muted-foreground">{{t "content.types.options_help"}}</p>
               <p class="field-error mt-1 text-xs text-red" x-show="err('fields.' + i + '.options')" x-text="err('fields.' + i + '.options')"></p>
             </div>
             <div class="grid gap-3 md:grid-cols-3" x-show="f.type === 'number'">
@@ -211,7 +211,7 @@ window.gpTypeBuilder = function (initial, errors) {
       </template>
     </ol>
     <details class="mt-4">
-      <summary class="cursor-pointer text-sm text-muted">{{t "content.types.json_preview"}}</summary>
+      <summary class="cursor-pointer text-sm text-muted-foreground">{{t "content.types.json_preview"}}</summary>
       <pre class="mt-2 rounded bg-panel-dark text-[#e9eeea] p-3 text-xs font-mono overflow-x-auto" dir="ltr" x-text="pretty"></pre>
     </details>
   </section>

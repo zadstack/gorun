@@ -1,6 +1,6 @@
 .content-filter-drawer{margin-block-end:1rem}.content-filter-drawer summary{cursor:pointer;font-weight:600;margin-block-end:.5rem}.content-selection-bar{padding:.6rem;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius)}.content-selection-bar[hidden]{display:none}.content-publish-panel{position:sticky;top:1rem}.content-secondary summary{cursor:pointer;font-weight:600}.content-secondary{margin-block:1rem}.content-page-path{max-width:75ch}@media(max-width:1023px){[data-content-editor]>aside{display:contents}.content-publish-panel{position:static;grid-row:1}}@media(max-width:639px){#content-list th,#content-list td{padding-inline:.5rem}#content-list th:last-child,#content-list td:last-child{display:none}.content-filter-drawer form{display:grid;grid-template-columns:1fr 1fr}.content-filter-drawer input[type=search]{grid-column:1/-1}.content-filter-drawer select{min-width:0;width:100%}.content-filter-drawer summary{min-height:44px;display:flex;align-items:center}}
 
-.content-tree-children{margin-inline-start:.5rem;padding-inline-start:.5rem;border-inline-start:1px solid var(--line)}.content-tree summary::marker{color:var(--muted)}.content-tree input{min-width:1rem;min-height:1rem}.content-tree a{overflow-wrap:anywhere}
+.content-tree-children{margin-inline-start:.5rem;padding-inline-start:.5rem;border-inline-start:1px solid var(--line)}.content-tree summary::marker{color:var(--muted-foreground)}.content-tree input{min-width:1rem;min-height:1rem}.content-tree a{overflow-wrap:anywhere}
 
 /* Autosave (docs/EDITING_SAFETY.md): restore banner and status line. */
 .autosave-banner{display:grid;gap:var(--space-2);padding:var(--space-3) var(--space-4);border:1px solid var(--amber);border-inline-start-width:4px;border-radius:var(--radius-md);background:var(--amber-soft);color:var(--ink)}
@@ -8,7 +8,7 @@
 .autosave-banner-note{margin:0;font-size:var(--fs-sm);color:var(--ink)}
 .autosave-banner-actions{display:flex;flex-wrap:wrap;gap:var(--space-2)}
 .autosave-banner[data-state=restored]{border-color:var(--line);background:var(--panel)}
-.autosave-status{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-1);min-height:1.25rem;margin:0;font-size:var(--fs-sm);color:var(--muted)}
+.autosave-status{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-1);min-height:1.25rem;margin:0;font-size:var(--fs-sm);color:var(--muted-foreground)}
 .autosave-status[data-state=failed],.autosave-status[data-state=conflict],.autosave-status[data-state=forbidden]{color:var(--red);font-weight:600}
 .autosave-status[data-state=off]:empty{display:none}
 @media(max-width:639px){.autosave-banner-actions .btn{flex:1 1 auto}}
@@ -21,7 +21,7 @@
 .revision-compare-switch,.revision-compare-actions{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
 .revision-compare .card-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:var(--space-2)}
 .revision-compare .empty-state{margin:var(--space-3) var(--space-4)}
-.diff-legend{margin:0;font-size:var(--fs-sm);color:var(--muted);display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center}
+.diff-legend{margin:0;font-size:var(--fs-sm);color:var(--muted-foreground);display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center}
 .revision-compare del,.revision-compare ins{padding-inline:.15em;border-radius:var(--radius-sm);text-decoration-thickness:2px}
 .revision-compare del{background:var(--red-soft);color:var(--red);text-decoration-line:line-through}
 .revision-compare ins{background:var(--green-soft);color:var(--green);text-decoration-line:underline;text-underline-offset:3px}
@@ -30,10 +30,10 @@
 .diff-body{list-style:none;margin:0;padding:0;font-size:var(--fs-base);line-height:1.6}
 .diff-line{display:grid;grid-template-columns:5.5rem minmax(0,1fr);gap:var(--space-3);padding:var(--space-2) var(--space-4);border-top:1px solid var(--line)}
 .diff-line:first-child{border-top:0}
-.diff-mark{font-size:var(--fs-xs);font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;padding-top:.2em}
+.diff-mark{font-size:var(--fs-xs);font-weight:600;color:var(--muted-foreground);text-transform:uppercase;letter-spacing:.02em;padding-top:.2em}
 :lang(ar) .diff-mark{text-transform:none;letter-spacing:normal}
 .diff-insert{border-inline-start:3px solid var(--green)}.diff-delete{border-inline-start:3px solid var(--red)}.diff-change{border-inline-start:3px solid var(--amber)}
-.diff-equal .diff-text{color:var(--muted)}
+.diff-equal .diff-text{color:var(--muted-foreground)}
 @media(max-width:639px){.diff-line{grid-template-columns:minmax(0,1fr);gap:var(--space-1)}.diff-mark:empty{display:none}.diff-fields th[scope=row]{white-space:normal}}
 
 /* Shareable preview links (docs/EDITING_SAFETY.md). */
@@ -59,7 +59,7 @@
 .bulk-result-head{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin:0;font-size:var(--fs-base)}
 .bulk-result-head :is(svg,i){width:1rem;height:1rem;color:var(--green)}
 .bulk-result[data-state=partial] .bulk-result-head :is(svg,i){color:var(--amber-text,var(--amber))}
-.bulk-result-sep{color:var(--muted)}
+.bulk-result-sep{color:var(--muted-foreground)}
 .bulk-result-list{display:grid;gap:var(--space-1);margin:0;padding:0;list-style:none;font-size:var(--fs-md)}
 .bulk-result-list li{overflow-wrap:anywhere}
 .bulk-result-reason{font-weight:600}
@@ -73,7 +73,7 @@
 .content-export>summary::-webkit-details-marker{display:none}
 .content-export-menu{position:absolute;inset-inline-end:0;top:calc(100% + var(--space-1));z-index:20;display:grid;gap:var(--space-1);width:min(18rem,calc(100vw - 2rem));padding:var(--space-2);border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel);box-shadow:0 6px 18px rgb(0 0 0/.08)}
 .content-export-menu a{display:flex;align-items:center;gap:var(--space-2);min-height:var(--control-h);padding-inline:var(--space-2);border-radius:var(--radius-sm);color:var(--ink);text-decoration:none}
-.content-export-menu a:hover,.content-export-menu a:focus-visible{background:var(--bg);outline:2px solid var(--accent);outline-offset:-2px}
+.content-export-menu a:hover,.content-export-menu a:focus-visible{background:var(--bg);outline:2px solid var(--primary);outline-offset:-2px}
 .content-export-menu :is(svg,i){width:1rem;height:1rem;flex:none}
 .content-export-menu .field-help{margin:var(--space-1) 0 0;padding-inline:var(--space-2)}
 @media(max-width:639px){.content-export-menu a{min-height:var(--control-h-touch)}}

@@ -16,7 +16,7 @@
       <div>
         <label for="alt" class="block font-medium mb-1">{{t "media.field.alt"}}</label>
         <input id="alt" name="alt" type="text" value="{{$m.Alt}}" aria-describedby="alt-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-        <p id="alt-help" class="mt-1 text-xs text-muted">{{t "media.field.alt_help"}}</p>
+        <p id="alt-help" class="mt-1 text-xs text-muted-foreground">{{t "media.field.alt_help"}}</p>
       </div>
       <div>
         <label for="title" class="block font-medium mb-1">{{t "media.field.title"}}</label>
@@ -28,7 +28,7 @@
       </div>
       {{if $m.Width}}<fieldset class="rounded border border-line p-3" aria-describedby="focal-help">
         <legend class="font-medium px-1">{{t "media.field.focal"}}</legend>
-        <p id="focal-help" class="mb-2 text-xs text-muted">{{t "media.field.focal_help"}}</p>
+        <p id="focal-help" class="mb-2 text-xs text-muted-foreground">{{t "media.field.focal_help"}}</p>
         <div class="flex flex-wrap gap-3 items-end">
           <div><label for="focal_x" class="block text-sm mb-1">{{t "media.field.focal_x"}}</label>
             <input id="focal_x" name="focal_x" type="number" min="0" max="100" step="1" dir="ltr" value="{{$.FocalX}}" class="w-24 h-9 rounded border border-line bg-panel px-3"></div>
@@ -40,13 +40,13 @@
       <button type="submit" class="h-9 px-4 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.save"}}</button>
     </form>
     <dl class="rounded border border-line bg-panel p-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2">
-      <dt class="text-muted">{{t "media.detail.file"}}</dt><dd class="font-mono break-all"><bdi>{{$m.Filename}}</bdi></dd>
-      <dt class="text-muted">{{t "media.detail.type"}}</dt><dd class="font-mono"><bdi>{{$m.Mime}}</bdi></dd>
-      <dt class="text-muted">{{t "media.detail.size"}}</dt><dd class="font-mono"><bdi>{{.Item.Size}}</bdi></dd>
-      {{if .Item.Dims}}<dt class="text-muted">{{t "media.detail.dimensions"}}</dt><dd class="font-mono"><bdi>{{.Item.Dims}}</bdi></dd>{{end}}
-      <dt class="text-muted">{{t "media.detail.uploaded"}}</dt><dd class="font-mono"><bdi>{{datetime $m.CreatedAt}}</bdi></dd>
-      {{if $m.SourceURL}}<dt class="text-muted">{{t "media.detail.source"}}</dt><dd class="font-mono break-all" dir="ltr">{{$m.SourceURL}}</dd>{{end}}
-      <dt class="text-muted">{{t "media.detail.url"}}</dt>
+      <dt class="text-muted-foreground">{{t "media.detail.file"}}</dt><dd class="font-mono break-all"><bdi>{{$m.Filename}}</bdi></dd>
+      <dt class="text-muted-foreground">{{t "media.detail.type"}}</dt><dd class="font-mono"><bdi>{{$m.Mime}}</bdi></dd>
+      <dt class="text-muted-foreground">{{t "media.detail.size"}}</dt><dd class="font-mono"><bdi>{{.Item.Size}}</bdi></dd>
+      {{if .Item.Dims}}<dt class="text-muted-foreground">{{t "media.detail.dimensions"}}</dt><dd class="font-mono"><bdi>{{.Item.Dims}}</bdi></dd>{{end}}
+      <dt class="text-muted-foreground">{{t "media.detail.uploaded"}}</dt><dd class="font-mono"><bdi>{{datetime $m.CreatedAt}}</bdi></dd>
+      {{if $m.SourceURL}}<dt class="text-muted-foreground">{{t "media.detail.source"}}</dt><dd class="font-mono break-all" dir="ltr">{{$m.SourceURL}}</dd>{{end}}
+      <dt class="text-muted-foreground">{{t "media.detail.url"}}</dt>
       <dd x-data="{ copied: false }" data-url="{{$m.URL}}">
         <code class="block font-mono text-xs break-all mb-1" dir="ltr">{{$m.URL}}</code>
         <button type="button" class="h-8 px-2 rounded border border-line hover:border-line-strong inline-flex items-center gap-1 focus:outline-none focus:ring-[3px] focus:ring-blue-soft"
@@ -59,7 +59,7 @@
     <div class="rounded border border-line bg-panel p-4">
       <h2 class="font-bold mb-2">{{t "media.detail.variants"}}</h2>
       <ul class="space-y-1">
-        {{range .Variants}}<li class="flex justify-between gap-2"><a href="{{.URL}}" class="text-blue hover:text-blue-hover">{{t (print "media.variant." .Name)}}</a><span class="font-mono text-muted"><bdi>{{.Width}}×{{.Height}}</bdi></span></li>{{end}}
+        {{range .Variants}}<li class="flex justify-between gap-2"><a href="{{.URL}}" class="text-blue hover:text-blue-hover">{{t (print "media.variant." .Name)}}</a><span class="font-mono text-muted-foreground"><bdi>{{.Width}}×{{.Height}}</bdi></span></li>{{end}}
       </ul>
     </div>
     {{end}}
