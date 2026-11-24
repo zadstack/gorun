@@ -4,15 +4,15 @@
   <h1 class="text-[22px] font-bold">{{t "commerce.servers.title"}}</h1>
   <a href="/admin/commerce/servers/new" class="h-9 px-4 inline-flex items-center gap-1.5 rounded bg-blue text-white font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "plus"}}<span>{{t "commerce.servers.new"}}</span></a>
 </div>
-<p class="text-muted mb-4">{{t "commerce.servers.intro"}}</p>
+<p class="text-muted-foreground mb-4">{{t "commerce.servers.intro"}}</p>
 <div class="rounded border border-line bg-panel overflow-x-auto">
   {{if .Servers}}
   <table class="w-full">
     <thead class="bg-panel-2"><tr>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.name"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.field.base_url"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.status"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.servers.last_check"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.name"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.field.base_url"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.status"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.servers.last_check"}}</th>
     </tr></thead>
     <tbody>
       {{range .Servers}}
@@ -25,6 +25,6 @@
       {{end}}
     </tbody>
   </table>
-  {{else}}<p class="p-6 text-center text-muted">{{t "commerce.servers.empty"}}</p>{{end}}
+  {{else}}<p class="p-6 text-center text-muted-foreground">{{t "commerce.servers.empty"}}</p>{{end}}
 </div>
 {{end}}

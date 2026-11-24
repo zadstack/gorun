@@ -9,11 +9,16 @@ selection, green only for success, amber and red for warning and error.
 
 ## Basecoat (shadcn/ui for plain HTML)
 
-The admin loads [Basecoat](https://basecoatui.com) 1.3.0, the shadcn/ui
+The admin uses [Basecoat](https://basecoatui.com) 1.3.0, the shadcn/ui
 component library for any stack: CSS classes plus a small vanilla JavaScript
-runtime, no React. Both files are vendored with their licence in
-`web/admin/static/vendor/` (`basecoat-1.3.0.css`, `basecoat-1.3.0.js`; see
-`cdn-provenance.json`) and loaded by `base.html` before `admin.css`, so every
+runtime, no React. The CSS is compiled into the admin stylesheet:
+`tools/tailwind/admin.css` imports Tailwind v4 and Basecoat's source bundle
+(`web/admin/static/vendor/basecoat-1.3.0.bundle.css`, from the npm tarball),
+and `tools/tailwind/build.sh` (`make css`) builds the committed
+`web/admin/static/admin-tailwind.css` with the pinned Tailwind standalone CLI,
+which `base.html` loads before `admin.css`. The JavaScript runtime is
+`web/admin/static/vendor/basecoat-1.3.0.js`; both files sit beside their
+licence and are recorded in `web/admin/static/cdn-provenance.json`. Every
 admin and auth page can use Basecoat markup directly:
 
 - `class="btn"` with `data-variant` (`secondary`, `outline`, `ghost`, `link`,
@@ -34,17 +39,19 @@ Basecoat reads the shadcn tokens (`--background`, `--foreground`, `--card`,
 sets to the GoRun palette. Two names changed meaning in that move: shadcn's
 `--accent` is a soft hover surface and `--muted` a soft background, so the old
 petrol action colour is now `--primary` (hover `--primary-hover`) and the old
-secondary text colour `--muted-foreground`. The Tailwind colour utilities
-(`text-muted`, `bg-blue`, `border-line`, …) are unchanged.
+secondary text colour `--muted-foreground`. The GoRun colour utilities
+(`bg-blue`, `border-line`, `text-ink`, …) are unchanged; secondary text is
+`text-muted-foreground` (shadcn's name, which Basecoat defines; `text-muted`
+would be the soft surface colour).
 
-Basecoat's own rules live in CSS cascade layers, so anything `admin.css`
-declares outside a layer wins. That also means the Tailwind v3 runtime in
-`base.html`, which resets `border-color`, `--tw-shadow` and `--tw-ring-*` on
-every element outside any layer, silences those declarations in Basecoat's
-rules; `admin.css` restates them for the component set below. When adopting a
-further Basecoat component, check its border, shadow and focus ring in the
-browser. Replacing the Tailwind runtime with a compiled Tailwind v4 build that
-includes `basecoat.bundle.css` removes that caveat.
+Basecoat's rules live in Tailwind's `components` cascade layer: utilities and
+anything `admin.css` declares outside a layer win over them, and they win over
+Tailwind's base reset. The admin has no in-browser Tailwind runtime: the
+compiled stylesheet carries only the utilities found in the admin templates,
+the admin scripts and the Go code that renders admin markup (see the
+`@source` list in `tools/tailwind/admin.css`), and `make css-check` fails in
+CI when it is stale. When a template needs a utility that is missing, run
+`make css` and commit the result.
 
 ## Tokens
 

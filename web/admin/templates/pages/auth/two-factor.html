@@ -8,7 +8,7 @@
   <p role="alert" class="mt-4 mb-4 rounded border border-amber bg-amber-soft text-amber-text px-3 py-2">{{t "twofactor.login.expired"}}</p>
   <a href="/admin/login" class="btn btn-primary w-full">{{t "twofactor.login.restart"}}</a>
   {{else}}
-  <p class="text-muted mt-2 mb-4">{{if .TOTP}}{{t "twofactor.login.lead"}}{{else}}{{t "passkeys.login.lead"}}{{end}}</p>
+  <p class="text-muted-foreground mt-2 mb-4">{{if .TOTP}}{{t "twofactor.login.lead"}}{{else}}{{t "passkeys.login.lead"}}{{end}}</p>
   {{with .Error}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
   {{if .Passkey}}
   <div class="space-y-2 mb-4" data-passkey-login data-begin="/admin/login/2fa/passkey/begin" data-finish="/admin/login/2fa/passkey/finish"
@@ -16,9 +16,9 @@
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <button type="button" class="btn btn-primary w-full" data-passkey-login-button>{{t "passkeys.login.submit"}}</button>
     <p role="alert" class="rounded border border-red bg-red-soft text-red px-3 py-2" data-passkey-error hidden></p>
-    <p class="text-muted text-sm" role="status" aria-live="polite" data-passkey-status hidden></p>
+    <p class="text-muted-foreground text-sm" role="status" aria-live="polite" data-passkey-status hidden></p>
   </div>
-  <p class="text-muted text-sm mb-3">{{if .TOTP}}{{t "passkeys.login.or_code"}}{{else}}{{t "passkeys.login.or_recovery"}}{{end}}</p>
+  <p class="text-muted-foreground text-sm mb-3">{{if .TOTP}}{{t "passkeys.login.or_code"}}{{else}}{{t "passkeys.login.or_recovery"}}{{end}}</p>
   <script defer src="{{asset "passkeys.js"}}"></script>
   {{end}}
   <form method="post" action="/admin/login/2fa" class="space-y-4" novalidate>

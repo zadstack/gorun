@@ -2,12 +2,12 @@
 {{define "title"}}{{t "wpmigrate.step.connect"}} · {{t "wpmigrate.title"}}{{end}}
 {{define "content"}}
 <h1 class="text-[22px] font-bold">{{t "wpmigrate.connect.title"}}</h1>
-<p class="text-muted mb-3">{{t "wpmigrate.connect.intro"}}</p>
+<p class="text-muted-foreground mb-3">{{t "wpmigrate.connect.intro"}}</p>
 <nav aria-label="{{t "wpmigrate.steps"}}" class="mb-4 overflow-x-auto">
   <ol class="flex gap-1 min-w-max">
     {{range .Steps}}
     <li>
-      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-blue bg-blue-soft text-blue{{else}}border-line bg-panel text-muted hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
+      <a href="{{.Href}}" {{if .Current}}aria-current="step"{{end}} class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border {{if .Current}}border-line-strong bg-panel-2 font-medium{{else if .Done}}border-blue bg-blue-soft text-blue{{else}}border-line bg-panel text-muted-foreground hover:text-ink{{end}} focus:outline-none focus:ring-[3px] focus:ring-blue-soft">
         <span class="font-mono text-[11px]">{{.N}}</span><span>{{t (print "wpmigrate.step." .Key)}}</span>
       </a>
     </li>
@@ -17,7 +17,7 @@
 <div class="grid gap-4 lg:grid-cols-2 lg:items-start">
   <form method="post" action="/admin/migrations/connect" class="rounded border border-line bg-panel p-4 space-y-3" novalidate autocomplete="off">
     <h2 class="text-base font-bold flex items-center gap-1.5">{{icon "globe"}}<span>{{t "wpmigrate.connect.rest_title"}}</span></h2>
-    <p class="text-xs text-muted">{{t "wpmigrate.connect.rest_help"}}</p>
+    <p class="text-xs text-muted-foreground">{{t "wpmigrate.connect.rest_help"}}</p>
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <div>
       <label for="mig-url" class="block font-medium mb-1">{{t "wpmigrate.connect.url"}}</label>
@@ -33,7 +33,7 @@
     </div>
     <fieldset class="rounded border border-line p-3 space-y-3">
       <legend class="px-1 font-medium">{{t "wpmigrate.connect.auth_legend"}}</legend>
-      <p class="text-xs text-muted">{{t "wpmigrate.connect.auth_help"}}</p>
+      <p class="text-xs text-muted-foreground">{{t "wpmigrate.connect.auth_help"}}</p>
       <div class="grid gap-3 sm:grid-cols-2">
         <div>
           <label for="mig-user" class="block font-medium mb-1">{{t "wpmigrate.connect.username"}}</label>
@@ -64,7 +64,7 @@
         <label for="mig-rate" class="block font-medium mb-1">{{t "wpmigrate.connect.rate"}}</label>
         <input id="mig-rate" name="rate_per_second" type="number" min="1" max="20" step="1" value="{{.Form.Rate}}" dir="ltr" placeholder="4" aria-describedby="mig-rate-help mig-rate-err" {{with index .Fields "rate_per_second"}}aria-invalid="true"{{end}}
                class="w-32 h-9 rounded border border-line bg-panel px-3 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-        <p id="mig-rate-help" class="mt-1 text-xs text-muted">{{t "wpmigrate.connect.rate_help"}}</p>
+        <p id="mig-rate-help" class="mt-1 text-xs text-muted-foreground">{{t "wpmigrate.connect.rate_help"}}</p>
         <div id="mig-rate-err">{{template "partials/field_errors" (index .Fields "rate_per_second")}}</div>
       </div>
     </div>
@@ -73,7 +73,7 @@
 
   <form hx-post="/admin/migrations/upload" hx-encoding="multipart/form-data" hx-target="#main" hx-swap="innerHTML" class="rounded border border-line bg-panel p-4 space-y-3">
     <h2 class="text-base font-bold flex items-center gap-1.5">{{icon "file-up"}}<span>{{t "wpmigrate.connect.wxr_title"}}</span></h2>
-    <p class="text-xs text-muted">{{t "wpmigrate.connect.wxr_help"}}</p>
+    <p class="text-xs text-muted-foreground">{{t "wpmigrate.connect.wxr_help"}}</p>
     <div>
       <label for="mig-wxr" class="block font-medium mb-1">{{t "wpmigrate.connect.wxr_file"}}</label>
       <input id="mig-wxr" type="file" name="wxr" accept=".xml,application/xml,text/xml" required aria-describedby="mig-wxr-err"

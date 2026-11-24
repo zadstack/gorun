@@ -18,7 +18,7 @@
     </li>
     {{end}}
   </ul>
-  {{else}}<p class="text-muted text-sm">{{t "taxonomy.picker.empty"}}</p>{{end}}
+  {{else}}<p class="text-muted-foreground text-sm">{{t "taxonomy.picker.empty"}}</p>{{end}}
   <a href="/admin/taxonomies/{{.Taxonomy.Slug}}" class="mt-2 inline-block text-xs text-blue hover:text-blue-hover">{{t "taxonomy.picker.manage"}}</a>
 </fieldset>
 {{else}}
@@ -31,7 +31,7 @@
     <template x-for="(tag, i) in tags" :key="tag">
       <li class="inline-flex items-center gap-1 rounded-chip border border-line bg-panel-2 px-2 py-0.5 text-xs">
         <span dir="auto" x-text="tag"></span>
-        <button type="button" @click="remove(i)" class="text-muted hover:text-red" data-label="{{t "taxonomy.picker.remove"}}" :aria-label="$el.dataset.label + ' ' + tag">{{icon "x" "w-3 h-3"}}</button>
+        <button type="button" @click="remove(i)" class="text-muted-foreground hover:text-red" data-label="{{t "taxonomy.picker.remove"}}" :aria-label="$el.dataset.label + ' ' + tag">{{icon "x" "w-3 h-3"}}</button>
       </li>
     </template>
   </ul>
@@ -41,7 +41,7 @@
          hx-get="/admin/x/taxonomy/{{.Taxonomy.Slug}}/terms" hx-trigger="input changed delay:250ms" hx-target="next .gp-suggest" hx-swap="innerHTML"
          class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   <div class="gp-suggest mt-1"></div>
-  <p class="mt-1 text-xs text-muted">{{t "taxonomy.picker.help"}}</p>
+  <p class="mt-1 text-xs text-muted-foreground">{{t "taxonomy.picker.help"}}</p>
 </div>
 {{end}}
 {{end}}

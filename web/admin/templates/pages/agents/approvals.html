@@ -14,7 +14,7 @@
     {{range .Pending}}
     <li class="card" data-approval="{{.ID}}">
       <div class="card-head">
-        <span class="approval-tool" dir="ltr">{{icon "wrench" "w-4 h-4 text-muted"}}<code>{{.Tool}}</code></span>
+        <span class="approval-tool" dir="ltr">{{icon "wrench" "w-4 h-4 text-muted-foreground"}}<code>{{.Tool}}</code></span>
         <span class="badge badge-warning">{{t "mcp.approvals.status_pending"}}</span>
         <div class="meta-row">
           <span class="meta-item"><span>{{t "mcp.approvals.key"}}</span> <bdi>{{.KeyName}}</bdi></span>
@@ -57,7 +57,7 @@
     <li class="card" data-approval="{{.ID}}">
       <details class="approval-recent">
         <summary>
-          {{icon "chevron-right" "w-4 h-4 text-muted rtl:rotate-180"}}
+          {{icon "chevron-right" "w-4 h-4 text-muted-foreground rtl:rotate-180"}}
           <span class="approval-tool" dir="ltr"><code>{{.Tool}}</code></span>
           <span class="badge {{if eq .Status "approved"}}badge-success{{else if or (eq .Status "denied") (eq .Status "failed")}}badge-danger{{end}}">{{t (printf "mcp.approvals.status_%s" .Status)}}</span>
           <span class="meta-row"><span class="meta-item"><bdi>{{.KeyName}}</bdi></span><span class="meta-item"><bdi>{{.Requester}}</bdi></span></span>

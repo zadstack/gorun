@@ -19,4 +19,4 @@
 
 {{/* Shared label + help + error chrome. */}}
 {{define "fields/label"}}<label for="{{.ID}}" class="block font-medium mb-1">{{.Label}}{{if .Required}} <span class="text-red" aria-hidden="true">*</span>{{end}}</label>{{end}}
-{{define "fields/help"}}{{if .Help}}<p id="{{.ID}}-help" class="mt-1 text-xs text-muted">{{.Help}}</p>{{end}}{{template "partials/field_errors" .Error}}{{end}}
+{{define "fields/help"}}{{if .Help}}<p id="{{.ID}}-help" class="mt-1 text-xs text-muted-foreground">{{.Help}}</p>{{end}}{{template "partials/field_errors" .Error}}{{end}}

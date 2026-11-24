@@ -5,17 +5,17 @@
     <h2 class="text-base font-bold">{{t "analytics.widget.title"}}</h2>
     {{if not (index workspaceTools.NavigationURLs "/admin/analytics")}}<a href="/admin/analytics" class="text-blue hover:text-blue-hover underline underline-offset-2 [@media(pointer:coarse)]:min-h-[44px] inline-flex items-center">{{t "analytics.widget.open"}}</a>{{end}}
   </div>
-  <p class="text-xs text-muted mb-2">{{t "analytics.period.7d"}}</p>
+  <p class="text-xs text-muted-foreground mb-2">{{t "analytics.period.7d"}}</p>
   <dl class="grid grid-cols-2 gap-2 mb-2">
     <div class="rounded border border-line bg-bg p-2">
-      <dt class="text-xs text-muted">{{t "analytics.card.visitors"}}</dt>
+      <dt class="text-xs text-muted-foreground">{{t "analytics.card.visitors"}}</dt>
       <dd class="font-mono text-lg" data-stat="visitors">{{.Visitors}}</dd>
-      <dd class="text-xs text-muted">{{template "analytics_change" .VisitorsChange}}</dd>
+      <dd class="text-xs text-muted-foreground">{{template "analytics_change" .VisitorsChange}}</dd>
     </div>
     <div class="rounded border border-line bg-bg p-2">
-      <dt class="text-xs text-muted">{{t "analytics.card.views"}}</dt>
+      <dt class="text-xs text-muted-foreground">{{t "analytics.card.views"}}</dt>
       <dd class="font-mono text-lg" data-stat="views">{{.Views}}</dd>
-      <dd class="text-xs text-muted">{{template "analytics_change" .ViewsChange}}</dd>
+      <dd class="text-xs text-muted-foreground">{{template "analytics_change" .ViewsChange}}</dd>
     </div>
   </dl>
   {{.Spark}}

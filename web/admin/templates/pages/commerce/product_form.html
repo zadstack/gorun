@@ -3,7 +3,7 @@
 {{define "content"}}
 <p class="mb-2"><a href="/admin/commerce/products" class="text-blue hover:text-blue-hover">{{t "commerce.products.back"}}</a></p>
 <h1 class="text-[22px] font-bold mb-4">{{if .ID}}{{.Form.Name}}{{else}}{{t "commerce.products.new"}}{{end}}</h1>
-{{with .WPProductID}}<p class="mb-4 text-xs text-muted">{{t "commerce.products.imported" .}}</p>{{end}}
+{{with .WPProductID}}<p class="mb-4 text-xs text-muted-foreground">{{t "commerce.products.imported" .}}</p>{{end}}
 <form method="post" action="/admin/commerce/products{{with .ID}}/{{.}}{{end}}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start" novalidate>
   <input type="hidden" name="_csrf" value="{{csrf}}">
   <div class="space-y-4">
@@ -15,7 +15,7 @@
         <option value="digital" {{if eq .Form.Kind "digital"}}selected{{end}}>ملف رقمي / Digital file</option>
       </select>
       {{template "partials/field_errors" (index .Fields "kind")}}
-      <p class="text-xs text-muted">الخطة والسيرفر مطلوبان للاستضافة فقط. الملف الرقمي لا يتفعّل قبل وجود ملف خاص حقيقي.</p>
+      <p class="text-xs text-muted-foreground">الخطة والسيرفر مطلوبان للاستضافة فقط. الملف الرقمي لا يتفعّل قبل وجود ملف خاص حقيقي.</p>
       <label for="p-digital" class="block font-medium">معرّف الملف الخاص / Private file ID</label>
       <input id="p-digital" name="digital_file" value="{{.Form.DigitalFile}}" dir="ltr" class="h-9 w-full rounded border border-line bg-panel px-3">
       {{template "partials/field_errors" (index .Fields "digital_file")}}
@@ -33,7 +33,7 @@
         <div>
           <label for="p-slug" class="block font-medium mb-1">{{t "commerce.field.slug"}}</label>
           <input id="p-slug" name="slug" value="{{.Form.Slug}}" dir="ltr" aria-describedby="p-slug-help" {{with index .Fields "slug"}}aria-invalid="true"{{end}} class="h-9 w-full rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono text-xs">
-          <p id="p-slug-help" class="mt-1 text-xs text-muted">{{t "commerce.field.slug_help"}}</p>
+          <p id="p-slug-help" class="mt-1 text-xs text-muted-foreground">{{t "commerce.field.slug_help"}}</p>
           {{template "partials/field_errors" (index .Fields "slug")}}
         </div>
       </div>
@@ -44,7 +44,7 @@
       <div>
         <label for="p-desc" class="block font-medium mb-1">{{t "commerce.field.description"}}</label>
         <textarea id="p-desc" name="description" rows="8" aria-describedby="p-desc-help" class="w-full rounded border border-line bg-panel px-3 py-2 font-mono text-xs focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.Form.Description}}</textarea>
-        <p id="p-desc-help" class="mt-1 text-xs text-muted">{{t "commerce.field.description_help"}}</p>
+        <p id="p-desc-help" class="mt-1 text-xs text-muted-foreground">{{t "commerce.field.description_help"}}</p>
       </div>
       <div x-data="{ items: {{json .Form.Features}} }">
         <span class="block font-medium mb-1">{{t "commerce.field.features"}}</span>
@@ -186,14 +186,14 @@
    finally { this.busy = false; }
  } }">
   <h2 id="digital-upload-title" class="font-bold">{{t "commerce.upload.title"}}</h2>
-  <p class="text-xs text-muted">{{t "commerce.upload.help"}}</p>
+  <p class="text-xs text-muted-foreground">{{t "commerce.upload.help"}}</p>
   {{with .UploadNotice}}<p role="status" class="rounded border border-green bg-green-soft text-green p-3">{{t .}}</p>{{end}}
   {{with .UploadError}}<p role="alert" class="rounded border border-red bg-red-soft text-red p-3">{{t .}}</p>{{end}}
   <p x-show="uploaded" x-cloak role="status" class="rounded border border-green bg-green-soft text-green p-3">{{t "commerce.upload.saved"}}</p>
   <p x-show="error" x-cloak x-text="error" role="alert" class="rounded border border-red bg-red-soft text-red p-3"></p>
   <form @submit.prevent="upload($el)" method="post" enctype="multipart/form-data" action="{{if .ID}}/admin/commerce/products/{{.ID}}/digital-file{{else}}/admin/commerce/digital-files{{end}}" class="flex flex-wrap items-end gap-3">
     <input type="hidden" name="_csrf" value="{{csrf}}">
-    <div class="flex-1 min-w-48"><label for="digital-upload-file" class="block font-medium mb-1">{{t "commerce.upload.file"}}</label><input id="digital-upload-file" type="file" name="file" required class="block w-full rounded border border-line bg-panel p-2" aria-describedby="digital-upload-limit"><p id="digital-upload-limit" class="mt-1 text-xs text-muted">{{t "commerce.upload.limit"}}</p></div>
+    <div class="flex-1 min-w-48"><label for="digital-upload-file" class="block font-medium mb-1">{{t "commerce.upload.file"}}</label><input id="digital-upload-file" type="file" name="file" required class="block w-full rounded border border-line bg-panel p-2" aria-describedby="digital-upload-limit"><p id="digital-upload-limit" class="mt-1 text-xs text-muted-foreground">{{t "commerce.upload.limit"}}</p></div>
     <button type="submit" :disabled="busy" :aria-busy="busy" class="h-9 px-4 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong disabled:opacity-50">{{icon "upload"}} {{t "commerce.upload.action"}}</button>
   </form>
 </section>

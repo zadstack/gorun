@@ -3,9 +3,9 @@
 {{define "content"}}
 <link rel="stylesheet" href="{{asset "admin-contained.css"}}">
 <div class="admin-contained">
-<p class="mb-4 max-w-3xl text-sm text-muted">{{t "operator.outbound"}}</p>
+<p class="mb-4 max-w-3xl text-sm text-muted-foreground">{{t "operator.outbound"}}</p>
 <h1 class="text-[22px] font-bold mb-1">{{t "webhooks.title"}}</h1>
-<p class="text-muted mb-4">{{t "webhooks.intro"}}</p>
+<p class="text-muted-foreground mb-4">{{t "webhooks.intro"}}</p>
 {{if .Secret}}
 <section role="status" class="mb-4 rounded border border-green bg-green-soft p-4" data-webhook-secret hx-history="false">
   <h2 class="text-base font-bold text-green mb-1">{{t "webhooks.created_title"}}</h2>
@@ -21,26 +21,26 @@
     {{if .Hooks}}
     <table class="w-full text-start">
       <thead class="border-b border-line"><tr>
-        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "webhooks.endpoint"}}</th>
-        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "webhooks.events"}}</th>
-        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted hidden md:table-cell">{{t "webhooks.last_delivery"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "webhooks.endpoint"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "webhooks.events"}}</th>
+        <th scope="col" class="text-start px-3 py-2 font-mono text-[11px] uppercase tracking-wide text-muted-foreground hidden md:table-cell">{{t "webhooks.last_delivery"}}</th>
       </tr></thead>
       <tbody class="divide-y divide-line">
       {{range .Hooks}}
         <tr data-webhook="{{.ID}}">
           <td class="px-3 py-2 align-top">
             <a class="font-medium text-blue underline" href="/admin/webhooks/{{.ID}}">{{.Name}}</a>
-            {{if not .Active}}<span class="ms-1 inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px]">{{t "webhooks.disabled"}}</span>{{end}}
-            <p class="font-mono text-[11px] text-muted break-all" dir="ltr">{{.URL}}</p>
+            {{if not .Active}}<span class="ms-1 inline-flex rounded-chip border border-line bg-panel-2 text-muted-foreground px-1.5 py-0.5 text-[11px]">{{t "webhooks.disabled"}}</span>{{end}}
+            <p class="font-mono text-[11px] text-muted-foreground break-all" dir="ltr">{{.URL}}</p>
           </td>
           <td class="px-3 py-2 align-top"><ul class="flex flex-wrap gap-1">{{range .Events}}<li class="rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{.}}</li>{{end}}</ul></td>
-          <td class="px-3 py-2 align-top font-mono text-xs text-muted hidden md:table-cell">{{if .LastStatus}}<span data-status="{{.LastStatus}}">{{t (print "webhooks.status_" .LastStatus)}}</span> · {{datetime .LastDeliveryAt}}{{else}}—{{end}}</td>
+          <td class="px-3 py-2 align-top font-mono text-xs text-muted-foreground hidden md:table-cell">{{if .LastStatus}}<span data-status="{{.LastStatus}}">{{t (print "webhooks.status_" .LastStatus)}}</span> · {{datetime .LastDeliveryAt}}{{else}}—{{end}}</td>
         </tr>
       {{end}}
       </tbody>
     </table>
     {{else}}
-    <p class="px-4 pb-4 text-muted">{{t "webhooks.empty"}}</p>
+    <p class="px-4 pb-4 text-muted-foreground">{{t "webhooks.empty"}}</p>
     {{end}}
   </section>
   <form method="post" action="/admin/webhooks" class="rounded border border-line bg-panel p-4 space-y-4" novalidate aria-labelledby="wh-new">

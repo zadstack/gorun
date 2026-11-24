@@ -13,7 +13,7 @@
 <fieldset>
   <legend class="font-medium mb-1">{{t "webhooks.events"}}</legend>
   <div class="grid gap-1 sm:grid-cols-2">
-  {{range .Events}}<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="events" value="{{.Name}}" {{if .Checked}}checked{{end}}><span>{{.Label}} <span class="font-mono text-[11px] text-muted" dir="ltr">{{.Name}}</span></span></label>{{end}}
+  {{range .Events}}<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="events" value="{{.Name}}" {{if .Checked}}checked{{end}}><span>{{.Label}} <span class="font-mono text-[11px] text-muted-foreground" dir="ltr">{{.Name}}</span></span></label>{{end}}
   </div>
   {{with index .Fields "events"}}<p class="mt-1 text-sm text-red" role="alert">{{t .}}</p>{{end}}
 </fieldset>

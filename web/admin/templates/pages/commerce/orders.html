@@ -14,19 +14,19 @@
     </select>
   </div>
   <button type="submit" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "filter"}}<span>{{t "commerce.list.filter"}}</span></button>
-  <span class="ms-auto font-mono text-xs text-muted">{{.List.Page.Total}}</span>
+  <span class="ms-auto font-mono text-xs text-muted-foreground">{{.List.Page.Total}}</span>
 </form>
 <div class="rounded border border-line bg-panel overflow-x-auto">
   {{if .Orders}}
   <table class="w-full">
     <thead class="bg-panel-2"><tr>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.number"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.email"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.product"}}</th>
-      <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.total"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.status"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.mode"}}</th>
-      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "commerce.col.created"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.number"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.email"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.product"}}</th>
+      <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.total"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.status"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.mode"}}</th>
+      <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "commerce.col.created"}}</th>
     </tr></thead>
     <tbody>
       {{range .Orders}}
@@ -42,11 +42,11 @@
       {{end}}
     </tbody>
   </table>
-  {{else}}<p class="p-6 text-center text-muted">{{t "commerce.orders.empty"}}</p>{{end}}
+  {{else}}<p class="p-6 text-center text-muted-foreground">{{t "commerce.orders.empty"}}</p>{{end}}
 </div>
 {{with .List.Page}}{{if gt .Pages 1}}
 <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Page .Pages}}">
-  <span class="font-mono text-muted">{{t "core.pagination.summary" .Page .Pages}}</span>
+  <span class="font-mono text-muted-foreground">{{t "core.pagination.summary" .Page .Pages}}</span>
   <div class="flex gap-2">
     {{if .HasPrev}}<a href="/admin/commerce/orders?q={{$.List.Q}}&amp;status={{$.List.Status}}&amp;page={{.Prev}}" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.pagination.prev"}}</a>{{end}}
     {{if .HasNext}}<a href="/admin/commerce/orders?q={{$.List.Q}}&amp;status={{$.List.Status}}&amp;page={{.Next}}" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.pagination.next"}}</a>{{end}}

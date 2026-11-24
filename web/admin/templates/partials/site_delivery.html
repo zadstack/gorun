@@ -2,6 +2,6 @@
 {{define "partials/site_delivery"}}
 {{if eq . "sent"}}<span class="rounded-chip border border-green bg-green-soft text-green px-2">{{t "site.submissions.delivery.sent"}}</span>
 {{else if eq . "failed"}}<span class="rounded-chip border border-amber bg-amber-soft text-amber-text px-2">{{t "site.submissions.delivery.failed"}}</span>
-{{else if eq . "off"}}<span class="rounded-chip border border-line bg-panel-2 text-muted px-2">{{t "site.submissions.delivery.off"}}</span>
-{{else}}<span class="rounded-chip border border-line bg-panel-2 text-muted px-2">{{t "site.submissions.delivery.pending"}}</span>{{end}}
+{{else if eq . "off"}}<span class="rounded-chip border border-line bg-panel-2 text-muted-foreground px-2">{{t "site.submissions.delivery.off"}}</span>
+{{else}}<span class="rounded-chip border border-line bg-panel-2 text-muted-foreground px-2">{{t "site.submissions.delivery.pending"}}</span>{{end}}
 {{end}}

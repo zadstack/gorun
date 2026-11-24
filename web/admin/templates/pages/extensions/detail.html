@@ -1,13 +1,13 @@
 {{/* Data: ext.detailData. .Reveal is set only in the install response. */}}
 {{define "title"}}{{.X.DisplayName locale}} · {{t "ext.title"}}{{end}}
-{{define "ext_status"}}{{if eq . "active"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "ext.status.active"}}</span>{{else if eq . "error"}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-xs">{{t "ext.status.error"}}</span>{{else if eq . "disabled"}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-xs">{{t "ext.status.disabled"}}</span>{{else}}<span class="inline-flex rounded-chip border border-blue bg-blue-soft text-blue px-1.5 py-0.5 text-xs">{{t "ext.status.installed"}}</span>{{end}}{{end}}
+{{define "ext_status"}}{{if eq . "active"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "ext.status.active"}}</span>{{else if eq . "error"}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-xs">{{t "ext.status.error"}}</span>{{else if eq . "disabled"}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted-foreground px-1.5 py-0.5 text-xs">{{t "ext.status.disabled"}}</span>{{else}}<span class="inline-flex rounded-chip border border-blue bg-blue-soft text-blue px-1.5 py-0.5 text-xs">{{t "ext.status.installed"}}</span>{{end}}{{end}}
 {{define "content"}}
 {{$x := .X}}
 <a href="/admin/extensions" class="inline-flex items-center gap-1 text-blue hover:text-blue-hover mb-2">{{icon "arrow-left" "rtl:rotate-180"}}{{t "ext.back"}}</a>
 <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
   <div>
     <h1 class="text-[22px] font-bold">{{$x.DisplayName locale}}</h1>
-    <p class="flex flex-wrap items-center gap-2 text-muted">
+    <p class="flex flex-wrap items-center gap-2 text-muted-foreground">
       <span class="font-mono text-xs" dir="ltr">{{$x.Slug}} · v{{$x.Version}}</span>{{template "ext_status" $x.Status}}<span class="text-xs" data-extension-source>{{t $x.InstallSourceKey}}</span>
     </p>
   </div>
@@ -39,7 +39,7 @@
         <button type="button" @click="gp.copy($refs.secret.value).then((ok) => copied = ok ? 'secret' : '')"
                 class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "copy"}}<span x-text="copied === 'secret' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
       </div>
-      <p class="mt-1 text-xs text-muted">{{t "ext.reveal.secret_help"}}</p>
+      <p class="mt-1 text-xs text-muted-foreground">{{t "ext.reveal.secret_help"}}</p>
     </div>
     {{if .APIKey}}
     <div>
@@ -50,7 +50,7 @@
         <button type="button" @click="gp.copy($refs.key.value).then((ok) => copied = ok ? 'key' : '')"
                 class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "copy"}}<span x-text="copied === 'key' ? $el.dataset.done : $el.dataset.copy" data-copy="{{t "ext.reveal.copy"}}" data-done="{{t "ext.reveal.copied"}}">{{t "ext.reveal.copy"}}</span></button>
       </div>
-      <p class="mt-1 text-xs text-muted">{{t "ext.reveal.key_help"}}</p>
+      <p class="mt-1 text-xs text-muted-foreground">{{t "ext.reveal.key_help"}}</p>
     </div>
     {{end}}
   </div>
@@ -71,19 +71,19 @@
       {{if $x.Manifest.Hooks}}
       <table class="w-full">
         <thead class="border-b border-line"><tr>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.hooks.name"}}</th>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.hooks.kind"}}</th>
-          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.hooks.timeout"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "ext.hooks.name"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "ext.hooks.kind"}}</th>
+          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "ext.hooks.timeout"}}</th>
         </tr></thead>
         <tbody class="divide-y divide-line">
           {{range $x.Manifest.Hooks}}
           <tr><td class="px-3 py-2 font-mono text-xs" dir="ltr">{{.Name}}</td>
             <td class="px-3 py-2"><span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-xs">{{t (print "ext.kind." .Kind)}}</span></td>
-            <td class="px-3 py-2 text-end text-xs">{{if eq .Kind "filter"}}<span class="font-mono" dir="ltr">{{.TimeoutMS}} ms</span>{{else}}<span class="text-muted">{{t "ext.hooks.async"}}</span>{{end}}</td></tr>
+            <td class="px-3 py-2 text-end text-xs">{{if eq .Kind "filter"}}<span class="font-mono" dir="ltr">{{.TimeoutMS}} ms</span>{{else}}<span class="text-muted-foreground">{{t "ext.hooks.async"}}</span>{{end}}</td></tr>
           {{end}}
         </tbody>
       </table>
-      {{else}}<p class="px-4 pb-4 text-muted">{{t "ext.hooks.none"}}</p>{{end}}
+      {{else}}<p class="px-4 pb-4 text-muted-foreground">{{t "ext.hooks.none"}}</p>{{end}}
     </section>
 
     {{if .Settings}}
@@ -110,7 +110,7 @@
                  class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           {{end}}
           {{end}}
-          {{with index $f.Help locale}}<p class="mt-1 text-xs text-muted">{{.}}</p>{{end}}
+          {{with index $f.Help locale}}<p class="mt-1 text-xs text-muted-foreground">{{.}}</p>{{end}}
           {{template "partials/field_errors" (index $fields $f.Key)}}
         </div>
         {{end}}
@@ -124,25 +124,25 @@
       {{if .Deliveries}}
       <table class="w-full">
         <thead class="border-b border-line"><tr>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.when"}}</th>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.hook"}}</th>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.status"}}</th>
-          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.duration"}}</th>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "ext.log.error"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "ext.log.when"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "ext.log.hook"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "ext.log.status"}}</th>
+          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "ext.log.duration"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "ext.log.error"}}</th>
         </tr></thead>
         <tbody class="divide-y divide-line">
           {{range .Deliveries}}
           <tr data-delivery-status="{{.Status}}">
             <td class="px-3 py-2 font-mono text-xs whitespace-nowrap" dir="ltr">{{datetime .CreatedAt}}</td>
-            <td class="px-3 py-2 text-xs"><span class="font-mono" dir="ltr">{{.Hook}}</span> <span class="text-muted">({{t (print "ext.kind." .Kind)}})</span></td>
+            <td class="px-3 py-2 text-xs"><span class="font-mono" dir="ltr">{{.Hook}}</span> <span class="text-muted-foreground">({{t (print "ext.kind." .Kind)}})</span></td>
             <td class="px-3 py-2">{{if eq .Status "ok"}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-xs">{{t "ext.log.ok"}}{{with .HTTPStatus}} · {{.}}{{end}}</span>{{else if eq .Status "timeout"}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-xs">{{t "ext.log.timeout"}}</span>{{else}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-xs">{{t "ext.log.failed"}}{{with .HTTPStatus}} · {{.}}{{end}}</span>{{end}}</td>
             <td class="px-3 py-2 text-end font-mono text-xs" dir="ltr">{{.DurationMS}} ms</td>
-            <td class="px-3 py-2 font-mono text-[11px] text-muted break-all" dir="ltr">{{.Error}}</td>
+            <td class="px-3 py-2 font-mono text-[11px] text-muted-foreground break-all" dir="ltr">{{.Error}}</td>
           </tr>
           {{end}}
         </tbody>
       </table>
-      {{else}}<p class="px-4 pb-4 text-muted">{{t "ext.log.empty"}}</p>{{end}}
+      {{else}}<p class="px-4 pb-4 text-muted-foreground">{{t "ext.log.empty"}}</p>{{end}}
     </section>
 
     <details class="rounded border border-line bg-panel">
@@ -156,24 +156,24 @@
       <h2 id="ext-about" class="text-base font-bold mb-2">{{t "ext.about.title"}}</h2>
       {{with index $x.Manifest.Description locale}}<p class="mb-3">{{.}}</p>{{else}}{{with index $x.Manifest.Description "en"}}<p class="mb-3">{{.}}</p>{{end}}{{end}}
       <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-xs">
-        {{with $x.Manifest.Author}}<dt class="text-muted">{{t "ext.about.author"}}</dt><dd>{{.}}</dd>{{end}}
-        <dt class="text-muted">{{t "ext.about.endpoint"}}</dt><dd class="font-mono break-all" dir="ltr">{{with $x.EndpointURL}}{{.}}{{else}}—{{end}}</dd>
-        <dt class="text-muted">{{t "ext.about.installed"}}</dt><dd class="font-mono" dir="ltr">{{datetime $x.InstalledAt}}</dd>
-        {{with $x.ActivatedAt}}<dt class="text-muted">{{t "ext.about.activated"}}</dt><dd class="font-mono" dir="ltr">{{datetime .}}</dd>{{end}}
-        <dt class="text-muted">{{t "ext.about.failures"}}</dt><dd class="font-mono" dir="ltr">{{$x.Failures}} / {{$x.TotalFailures}}</dd>
-        <dt class="text-muted">{{t "ext.about.key"}}</dt><dd class="font-mono break-all" dir="ltr">{{with $x.APIKeyID}}{{.}}{{else}}—{{end}}</dd>
+        {{with $x.Manifest.Author}}<dt class="text-muted-foreground">{{t "ext.about.author"}}</dt><dd>{{.}}</dd>{{end}}
+        <dt class="text-muted-foreground">{{t "ext.about.endpoint"}}</dt><dd class="font-mono break-all" dir="ltr">{{with $x.EndpointURL}}{{.}}{{else}}—{{end}}</dd>
+        <dt class="text-muted-foreground">{{t "ext.about.installed"}}</dt><dd class="font-mono" dir="ltr">{{datetime $x.InstalledAt}}</dd>
+        {{with $x.ActivatedAt}}<dt class="text-muted-foreground">{{t "ext.about.activated"}}</dt><dd class="font-mono" dir="ltr">{{datetime .}}</dd>{{end}}
+        <dt class="text-muted-foreground">{{t "ext.about.failures"}}</dt><dd class="font-mono" dir="ltr">{{$x.Failures}} / {{$x.TotalFailures}}</dd>
+        <dt class="text-muted-foreground">{{t "ext.about.key"}}</dt><dd class="font-mono break-all" dir="ltr">{{with $x.APIKeyID}}{{.}}{{else}}—{{end}}</dd>
       </dl>
     </section>
     <section class="rounded border border-line bg-panel p-4" aria-labelledby="ext-perms">
       <h2 id="ext-perms" class="text-base font-bold mb-2">{{t "ext.perms.title"}}</h2>
       {{if $x.Manifest.Permissions}}<ul class="flex flex-wrap gap-1.5">{{range $x.Manifest.Permissions}}<li class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-xs" dir="ltr">{{.}}</li>{{end}}</ul>
-      {{else}}<p class="text-muted text-xs">{{t "ext.perms.none"}}</p>{{end}}
-      <p class="mt-2 text-xs text-muted">{{t "ext.perms.help"}}</p>
+      {{else}}<p class="text-muted-foreground text-xs">{{t "ext.perms.none"}}</p>{{end}}
+      <p class="mt-2 text-xs text-muted-foreground">{{t "ext.perms.help"}}</p>
     </section>
     {{if $x.Manifest.ContentTypes}}
     <section class="rounded border border-line bg-panel p-4" aria-labelledby="ext-types">
       <h2 id="ext-types" class="text-base font-bold mb-2">{{t "ext.types.title"}}</h2>
-      <ul class="grid gap-1">{{range $x.Manifest.ContentTypes}}<li><span>{{with index .Name locale}}{{.}}{{else}}{{index .Name "en"}}{{end}}</span> <span class="font-mono text-xs text-muted" dir="ltr">{{.Slug}}</span></li>{{end}}</ul>
+      <ul class="grid gap-1">{{range $x.Manifest.ContentTypes}}<li><span>{{with index .Name locale}}{{.}}{{else}}{{index .Name "en"}}{{end}}</span> <span class="font-mono text-xs text-muted-foreground" dir="ltr">{{.Slug}}</span></li>{{end}}</ul>
     </section>
     {{end}}
     {{if $x.Manifest.AdminNav}}

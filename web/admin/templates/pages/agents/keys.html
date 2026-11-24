@@ -97,11 +97,11 @@
       <div class="grid gap-2 sm:grid-cols-2">
         <label class="flex items-start gap-2 rounded border border-line bg-bg px-3 py-2">
           <input type="radio" name="kind" value="agent" {{if ne .Form.Kind "api"}}checked{{end}} class="mt-0.5 accent-[var(--primary)]">
-          <span><span class="block">{{t "admin.keys.kind_agent"}}</span><span class="block text-xs text-muted">{{t "admin.keys.kind_agent_help"}}</span></span>
+          <span><span class="block">{{t "admin.keys.kind_agent"}}</span><span class="block text-xs text-muted-foreground">{{t "admin.keys.kind_agent_help"}}</span></span>
         </label>
         <label class="flex items-start gap-2 rounded border border-line bg-bg px-3 py-2">
           <input type="radio" name="kind" value="api" {{if eq .Form.Kind "api"}}checked{{end}} class="mt-0.5 accent-[var(--primary)]">
-          <span><span class="block">{{t "admin.keys.kind_api"}}</span><span class="block text-xs text-muted">{{t "admin.keys.kind_api_help"}}</span></span>
+          <span><span class="block">{{t "admin.keys.kind_api"}}</span><span class="block text-xs text-muted-foreground">{{t "admin.keys.kind_api_help"}}</span></span>
         </label>
       </div>
       {{template "partials/field_errors" (index .Fields "kind")}}
@@ -120,7 +120,7 @@
       <div>
         <label for="k-expires" class="block font-medium mb-1">{{t "admin.keys.expires"}}</label>
         <input id="k-expires" name="expires" type="date" value="{{.Form.Expires}}" dir="ltr" aria-describedby="k-expires-help" class="field-control font-mono text-xs {{if index .Fields "expires"}}border-red{{end}}">
-        <p id="k-expires-help" class="mt-1 text-xs text-muted">{{t "admin.keys.expires_help"}}</p>
+        <p id="k-expires-help" class="mt-1 text-xs text-muted-foreground">{{t "admin.keys.expires_help"}}</p>
         {{template "partials/field_errors" (index .Fields "expires")}}
       </div>
     </div>
@@ -136,10 +136,10 @@
       <div class="space-y-3 max-h-80 overflow-y-auto pe-1" :class="all && 'opacity-50'">
         {{range .Groups}}
         <fieldset :disabled="all">
-          <legend class="font-mono text-[11px] uppercase tracking-wide text-muted mb-1">{{.Module}}</legend>
+          <legend class="font-mono text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{{.Module}}</legend>
           <ul class="grid gap-1 sm:grid-cols-2">
             {{range .Perms}}
-            <li><label class="flex items-start gap-2"><input type="checkbox" name="scopes" value="{{.Name}}" {{if .Checked}}checked{{end}} class="mt-0.5 accent-[var(--primary)]"><span><span class="block">{{.Label}}</span><span class="block font-mono text-[11px] text-muted">{{.Name}}</span></span></label></li>
+            <li><label class="flex items-start gap-2"><input type="checkbox" name="scopes" value="{{.Name}}" {{if .Checked}}checked{{end}} class="mt-0.5 accent-[var(--primary)]"><span><span class="block">{{.Label}}</span><span class="block font-mono text-[11px] text-muted-foreground">{{.Name}}</span></span></label></li>
             {{end}}
           </ul>
         </fieldset>

@@ -7,11 +7,11 @@
 
 <nav class="flex flex-wrap gap-1 mb-4" aria-label="{{t "site.submissions.title"}}">
   <a href="/admin/system/form-submissions?view=inbox" {{if eq $.View "inbox"}}aria-current="page"{{end}}
-     class="h-8 px-3 inline-flex items-center gap-2 rounded border {{if eq $.View "inbox"}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}}">{{t "site.submissions.view.inbox"}}<span class="font-mono text-xs">{{index $.Counts "inbox"}}</span></a>
+     class="h-8 px-3 inline-flex items-center gap-2 rounded border {{if eq $.View "inbox"}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted-foreground hover:text-ink{{end}}">{{t "site.submissions.view.inbox"}}<span class="font-mono text-xs">{{index $.Counts "inbox"}}</span></a>
   <a href="/admin/system/form-submissions?view=new" {{if eq $.View "new"}}aria-current="page"{{end}}
-     class="h-8 px-3 inline-flex items-center gap-2 rounded border {{if eq $.View "new"}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}}">{{t "site.submissions.view.new"}}<span class="font-mono text-xs">{{index $.Counts "new"}}</span></a>
+     class="h-8 px-3 inline-flex items-center gap-2 rounded border {{if eq $.View "new"}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted-foreground hover:text-ink{{end}}">{{t "site.submissions.view.new"}}<span class="font-mono text-xs">{{index $.Counts "new"}}</span></a>
   <a href="/admin/system/form-submissions?view=spam" {{if eq $.View "spam"}}aria-current="page"{{end}}
-     class="h-8 px-3 inline-flex items-center gap-2 rounded border {{if eq $.View "spam"}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted hover:text-ink{{end}}">{{t "site.submissions.view.spam"}}<span class="font-mono text-xs">{{index $.Counts "spam"}}</span></a>
+     class="h-8 px-3 inline-flex items-center gap-2 rounded border {{if eq $.View "spam"}}border-line-strong bg-panel-2 font-medium{{else}}border-line bg-panel text-muted-foreground hover:text-ink{{end}}">{{t "site.submissions.view.spam"}}<span class="font-mono text-xs">{{index $.Counts "spam"}}</span></a>
 </nav>
 
 {{if .Items}}
@@ -23,24 +23,24 @@
         <div class="flex items-center gap-2 min-w-0">
           {{if eq .Status "new"}}<span class="h-2 w-2 shrink-0 rounded-full bg-green" aria-hidden="true"></span><span class="sr-only">{{t "site.submissions.status.new"}}</span>{{end}}
           <span class="{{if eq .Status "new"}}font-bold{{else}}font-medium{{end}} truncate">{{.Name}}</span>
-          <span dir="ltr" class="text-muted text-xs truncate">{{.Email}}</span>
+          <span dir="ltr" class="text-muted-foreground text-xs truncate">{{.Email}}</span>
         </div>
         <div class="flex items-center gap-2 text-xs">
-          {{if .AttachmentName}}<span class="inline-flex items-center gap-1 text-muted">{{icon "paperclip" "w-3.5 h-3.5"}}{{.AttachmentName}}</span>{{end}}
+          {{if .AttachmentName}}<span class="inline-flex items-center gap-1 text-muted-foreground">{{icon "paperclip" "w-3.5 h-3.5"}}{{.AttachmentName}}</span>{{end}}
           {{template "partials/site_delivery" .Delivery}}
-          {{datetime .SubmittedAt "text-muted"}}
+          {{datetime .SubmittedAt "text-muted-foreground"}}
         </div>
       </div>
-      <p class="text-muted line-clamp-2" dir="auto">{{.Message}}</p>
+      <p class="text-muted-foreground line-clamp-2" dir="auto">{{.Message}}</p>
     </a>
-    <div class="px-4"><span class="text-xs text-muted">{{t "formsources.contact"}}</span>{{template "partials/form_source" .Source}}</div>
+    <div class="px-4"><span class="text-xs text-muted-foreground">{{t "formsources.contact"}}</span>{{template "partials/form_source" .Source}}</div>
   </li>
   {{end}}
 </ul>
 {{$pages := pagination .Page .PerPage (index .Counts .View)}}
 {{if gt $pages.Pages 1}}
 <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" $pages.Page $pages.Pages}}">
-  <span class="font-mono text-muted">{{t "core.pagination.summary" $pages.Page $pages.Pages}}</span>
+  <span class="font-mono text-muted-foreground">{{t "core.pagination.summary" $pages.Page $pages.Pages}}</span>
   <div class="flex gap-2">
     {{if $pages.HasPrev}}<a href="?view={{.View}}&page={{$pages.Prev}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.prev"}}</a>{{end}}
     {{if $pages.HasNext}}<a href="?view={{.View}}&page={{$pages.Next}}" class="h-9 px-3 inline-flex items-center rounded border border-line bg-panel hover:border-line-strong">{{t "core.pagination.next"}}</a>{{end}}
@@ -48,10 +48,10 @@
 </nav>
 {{end}}
 {{else}}
-<p class="rounded border border-line bg-panel p-4 text-muted">{{t "site.submissions.empty"}} <span class="block mt-2">{{t "operator.inbox_next"}}</span></p>
+<p class="rounded border border-line bg-panel p-4 text-muted-foreground">{{t "site.submissions.empty"}} <span class="block mt-2">{{t "operator.inbox_next"}}</span></p>
 {{end}}
 <details class="mt-5 border border-line p-3"><summary class="cursor-pointer font-medium">{{t "operator.forms_settings"}}</summary>{{template "partials/form_directory" .Sources}}
-<p class="text-xs text-muted mb-4">{{t "formsources.association_help"}}</p>
+<p class="text-xs text-muted-foreground mb-4">{{t "formsources.association_help"}}</p>
 
 <details class="rounded border border-line bg-panel mb-4">
   <summary class="px-4 py-3 cursor-pointer font-bold focus:outline-none focus:ring-[3px] focus:ring-blue-soft rounded">{{t "site.submissions.settings.title"}}</summary>
@@ -60,19 +60,19 @@
     <div class="space-y-4">
       <label class="flex items-start gap-2">
         <input type="checkbox" name="notify" value="1" {{if .Settings.Notify}}checked{{end}} class="mt-1 h-4 w-4 accent-[var(--green)]">
-        <span><span class="font-medium">{{t "site.submissions.settings.notify"}}</span><span class="block text-xs text-muted">{{t "site.submissions.settings.notify_help"}}</span></span>
+        <span><span class="font-medium">{{t "site.submissions.settings.notify"}}</span><span class="block text-xs text-muted-foreground">{{t "site.submissions.settings.notify_help"}}</span></span>
       </label>
       <div>
         <label for="recipients" class="block font-medium mb-1">{{t "site.submissions.settings.recipients"}}</label>
         <input id="recipients" name="recipients" type="text" dir="ltr" value="{{.Settings.RecipientsText}}" placeholder="team@example.com, sales@example.com" aria-describedby="recipients-help"
                class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-        <p id="recipients-help" class="mt-1 text-xs text-muted">{{t "site.submissions.settings.recipients_help"}}</p>
+        <p id="recipients-help" class="mt-1 text-xs text-muted-foreground">{{t "site.submissions.settings.recipients_help"}}</p>
       </div>
     </div>
     <div class="space-y-4">
       <label class="flex items-start gap-2">
         <input type="checkbox" name="attachments" value="1" {{if .Settings.Attachments}}checked{{end}} class="mt-1 h-4 w-4 accent-[var(--green)]">
-        <span><span class="font-medium">{{t "site.submissions.settings.attachments"}}</span><span class="block text-xs text-muted">{{t "site.submissions.settings.attachments_help"}}</span></span>
+        <span><span class="font-medium">{{t "site.submissions.settings.attachments"}}</span><span class="block text-xs text-muted-foreground">{{t "site.submissions.settings.attachments_help"}}</span></span>
       </label>
       <div>
         <label for="max_mb" class="block font-medium mb-1">{{t "site.submissions.settings.max_mb"}}</label>

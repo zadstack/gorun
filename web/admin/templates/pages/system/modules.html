@@ -1,7 +1,7 @@
 {{/* Data: admin.modulesPage */}}
 {{define "title"}}{{t "admin.modules.title"}}{{end}}
-{{define "modules_state"}}{{if or (eq . "enabled") (eq . "always_on") (eq . "active")}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else if or (eq . "pending_enable") (eq . "pending_disable")}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else if eq . "error"}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{end}}{{end}}
-{{define "modules_config"}}{{if eq .Status "incomplete"}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px]" title="{{.Remediation}}">{{t "admin.modules.config.incomplete"}}</span>{{else if eq .Status "configured"}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-ink px-1.5 py-0.5 text-[11px]" title="{{.Remediation}}">{{t "admin.modules.config.configured"}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px]" title="{{.Remediation}}">{{t (print "admin.modules.config." .Status)}}</span>{{end}}{{end}}
+{{define "modules_state"}}{{if or (eq . "enabled") (eq . "always_on") (eq . "active")}}<span class="inline-flex rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else if or (eq . "pending_enable") (eq . "pending_disable")}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else if eq . "error"}}<span class="inline-flex rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted-foreground px-1.5 py-0.5 text-[11px]" data-state="{{.}}">{{t (print "admin.modules.state." .)}}</span>{{end}}{{end}}
+{{define "modules_config"}}{{if eq .Status "incomplete"}}<span class="inline-flex rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px]" title="{{.Remediation}}">{{t "admin.modules.config.incomplete"}}</span>{{else if eq .Status "configured"}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-ink px-1.5 py-0.5 text-[11px]" title="{{.Remediation}}">{{t "admin.modules.config.configured"}}</span>{{else}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted-foreground px-1.5 py-0.5 text-[11px]" title="{{.Remediation}}">{{t (print "admin.modules.config." .Status)}}</span>{{end}}{{end}}
 {{define "modules_names"}}{{range $i, $v := .}}{{if $i}}, {{end}}<span class="mod-code">{{$v}}</span>{{end}}{{end}}
 {{define "modules_row"}}
 {{$loc := locale}}{{$e := .}}
@@ -10,7 +10,7 @@
     <span class="mod-title">{{index $e.Name $loc}}</span>
     <span class="mod-id">{{$e.ID}}</span>
     <span class="mod-chips">
-      <span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-1.5 py-0.5 text-[11px]">{{t (print "admin.modules.kind." $e.Kind)}}</span>
+      <span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted-foreground px-1.5 py-0.5 text-[11px]">{{t (print "admin.modules.kind." $e.Kind)}}</span>
       {{template "modules_state" $e.State.Status}}
       {{template "modules_config" $e.Configuration}}
     </span>
@@ -20,7 +20,7 @@
         <input type="hidden" name="_csrf" value="{{csrf}}">
         {{if $e.State.Desired}}{{if deref $e.State.Desired}}<input type="hidden" name="enabled" value="false"><button type="submit" class="h-8 px-3 rounded border border-line bg-panel text-sm hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "admin.modules.action.disable"}}</button>{{else}}<input type="hidden" name="enabled" value="true"><button type="submit" class="h-8 px-3 rounded bg-blue text-white text-sm font-medium hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "admin.modules.action.enable"}}</button>{{end}}{{end}}
       </form>
-      {{else}}<span class="text-xs text-muted">{{t "admin.modules.action.forced"}}</span>{{end}}{{end}}
+      {{else}}<span class="text-xs text-muted-foreground">{{t "admin.modules.action.forced"}}</span>{{end}}{{end}}
       {{range $k, $v := $e.Links}}<a href="{{$v}}" class="mod-link text-xs">{{$k}}</a>{{end}}
     </div>
   </div>
@@ -30,7 +30,7 @@
   <div class="mod-grid">
     <dl class="mod-cell">
       <dt>{{t "admin.modules.col.depends"}}</dt>
-      <dd>{{if $e.Owner}}<span class="mod-code">{{$e.Owner}}</span>{{else if $e.Dependencies}}{{template "modules_names" $e.Dependencies}}{{else}}<span class="text-muted">—</span>{{end}}</dd>
+      <dd>{{if $e.Owner}}<span class="mod-code">{{$e.Owner}}</span>{{else if $e.Dependencies}}{{template "modules_names" $e.Dependencies}}{{else}}<span class="text-muted-foreground">—</span>{{end}}</dd>
       {{with $e.OptionalDependencies}}<dt>{{t "admin.modules.optional_deps"}}</dt><dd>{{template "modules_names" .}}</dd>{{end}}
       {{with $e.Dependents}}<dt>{{t "admin.modules.dependents"}}</dt><dd>{{template "modules_names" .}}</dd>{{end}}
     </dl>
@@ -49,11 +49,11 @@
           {{with .MCPTools}}<dt>mcp</dt><dd>{{template "modules_names" .}}</dd>{{end}}
           {{with .ThemeKinds}}<dt>theme kinds</dt><dd>{{template "modules_names" .}}</dd>{{end}}
           {{with .ThemeFuncs}}<dt>theme funcs</dt><dd>{{template "modules_names" .}}</dd>{{end}}
-        </dl></details>{{else}}<span class="text-muted">—</span>{{end}}</dd>
+        </dl></details>{{else}}<span class="text-muted-foreground">—</span>{{end}}</dd>
     </dl>
     <dl class="mod-cell">
       <dt>{{t "admin.modules.col.jobs"}}</dt>
-      <dd>{{if $e.Jobs.Kinds}}{{t "admin.modules.jobs.summary" $e.Jobs.Queued $e.Jobs.Parked}}<br>{{template "modules_names" $e.Jobs.Kinds}}{{else}}<span class="text-muted">—</span>{{end}}</dd>
+      <dd>{{if $e.Jobs.Kinds}}{{t "admin.modules.jobs.summary" $e.Jobs.Queued $e.Jobs.Parked}}<br>{{template "modules_names" $e.Jobs.Kinds}}{{else}}<span class="text-muted-foreground">—</span>{{end}}</dd>
     </dl>
   </div>
 </li>
@@ -61,7 +61,7 @@
 {{define "modules_section"}}
 <section class="mb-6" aria-labelledby="modules-{{.Section}}">
   <h2 id="modules-{{.Section}}" class="text-base font-bold mb-2">{{t (print "admin.modules.section." .Section)}}</h2>
-  {{if .Entries}}<ul class="mod-list">{{range .Entries}}{{template "modules_row" .}}{{end}}</ul>{{else}}<p class="rounded border border-line bg-panel px-4 py-3 text-sm text-muted">{{t "admin.modules.extensions.empty"}}</p>{{end}}
+  {{if .Entries}}<ul class="mod-list">{{range .Entries}}{{template "modules_row" .}}{{end}}</ul>{{else}}<p class="rounded border border-line bg-panel px-4 py-3 text-sm text-muted-foreground">{{t "admin.modules.extensions.empty"}}</p>{{end}}
 </section>
 {{end}}
 {{define "content"}}
@@ -72,10 +72,10 @@
   <h1 class="text-[22px] font-bold">{{t "admin.modules.title"}}</h1>
   {{range .Catalog.Entries}}{{if and (eq .ID "ext") .State.Enabled (can "extensions.manage")}}<a href="/admin/extensions" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "puzzle"}}<span>{{t "admin.modules.extensions.manage"}}</span></a>{{end}}{{end}}
 </div>
-<p class="mb-4 max-w-3xl text-sm text-muted">{{t "admin.modules.intro"}}</p>
+<p class="mb-4 max-w-3xl text-sm text-muted-foreground">{{t "admin.modules.intro"}}</p>
 {{with .Flash}}<p role="status" class="mb-4 rounded border border-green bg-green-soft px-3 py-2">{{t "admin.modules.saved" .}}</p>{{end}}
 {{with .Error}}<p role="alert" class="mb-4 rounded border border-red bg-red-soft px-3 py-2 text-red">{{t (print "admin.modules.error." .)}}</p>{{end}}
-<p class="mb-4 text-[11px] text-muted"><span class="mod-code">build {{.Catalog.Build}} · {{.Catalog.ObservedAt}}</span></p>
+<p class="mb-4 text-[11px] text-muted-foreground"><span class="mod-code">build {{.Catalog.Build}} · {{.Catalog.ObservedAt}}</span></p>
 {{template "modules_section" .Builtin}}
 {{template "modules_section" .Services}}
 {{template "modules_section" .Extensions}}

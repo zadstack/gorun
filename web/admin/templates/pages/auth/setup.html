@@ -21,7 +21,7 @@
     </ol>
   </div>
   {{else}}
-  <p class="text-muted mt-2 mb-4">{{t "auth.setup.intro"}}</p>
+  <p class="text-muted-foreground mt-2 mb-4">{{t "auth.setup.intro"}}</p>
   <form method="post" action="/admin/setup" class="space-y-4" novalidate>
     <input type="hidden" name="_csrf" value="{{csrf}}">
     {{if .NeedToken}}
@@ -29,7 +29,7 @@
       <label for="setup_token" class="block font-medium mb-1">{{t "auth.setup.token"}}</label>
       <input id="setup_token" name="setup_token" type="password" autocomplete="off" required dir="ltr" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
              aria-describedby="setup_token-help setup_token-error" {{with index .Fields "setup_token"}}aria-invalid="true"{{end}}>
-      <p id="setup_token-help" class="mt-1 text-xs text-muted">{{t "auth.setup.token_help"}}</p>
+      <p id="setup_token-help" class="mt-1 text-xs text-muted-foreground">{{t "auth.setup.token_help"}}</p>
       <div id="setup_token-error">{{template "partials/field_errors" (index .Fields "setup_token")}}</div>
     </div>
     {{end}}
@@ -47,7 +47,7 @@
       <label for="password" class="block font-medium mb-1">{{t "auth.field.password"}}</label>
       <input id="password" name="password" type="password" autocomplete="new-password" required minlength="10" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
              aria-describedby="password-help password-error" {{with index .Fields "password"}}aria-invalid="true"{{end}}>
-      <p id="password-help" class="mt-1 text-xs text-muted">{{t "auth.field.password_help"}}</p>
+      <p id="password-help" class="mt-1 text-xs text-muted-foreground">{{t "auth.field.password_help"}}</p>
       <div id="password-error">{{template "partials/field_errors" (index .Fields "password")}}</div>
     </div>
     <fieldset class="border border-line rounded p-3 space-y-4">
@@ -62,7 +62,7 @@
         <label for="tagline" class="block font-medium mb-1">{{t "auth.setup.tagline"}}</label>
         <input id="tagline" name="tagline" type="text" value="{{.Tagline}}" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft"
                aria-describedby="tagline-help tagline-error" {{with index .Fields "tagline"}}aria-invalid="true"{{end}}>
-        <p id="tagline-help" class="mt-1 text-xs text-muted">{{t "auth.setup.tagline_help"}}</p>
+        <p id="tagline-help" class="mt-1 text-xs text-muted-foreground">{{t "auth.setup.tagline_help"}}</p>
         <div id="tagline-error">{{template "partials/field_errors" (index .Fields "tagline")}}</div>
       </div>
       <div>

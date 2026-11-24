@@ -1,17 +1,17 @@
 {{define "title"}}{{t "menus.title"}}{{end}}
 {{define "content"}}
 <h1 class="text-[22px] font-bold">{{t "menus.title"}}</h1>
-<p class="text-muted mb-4">{{t "menus.intro"}}</p>
+<p class="text-muted-foreground mb-4">{{t "menus.intro"}}</p>
 <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
   <div class="rounded border border-line bg-panel overflow-x-auto">
     {{if .Menus}}
     <table class="w-full text-start">
       <thead class="bg-panel-2">
         <tr class="text-start">
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "menus.col.name"}}</th>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "menus.col.slug"}}</th>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted">{{t "menus.col.location"}}</th>
-          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted">{{t "menus.col.items"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "menus.col.name"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "menus.col.slug"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "menus.col.location"}}</th>
+          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "menus.col.items"}}</th>
         </tr>
       </thead>
       <tbody>
@@ -19,7 +19,7 @@
         <tr class="border-t border-line hover:bg-bg">
           <td class="px-3 py-2"><a href="/admin/menus/{{.ID}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a></td>
           <td class="px-3 py-2 font-mono text-xs">{{.Slug}}</td>
-          <td class="px-3 py-2">{{if .Location}}<span class="inline-flex items-center rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-xs">{{if eq .Location "primary"}}{{t "menus.location.primary"}}{{else if eq .Location "footer"}}{{t "menus.location.footer"}}{{else}}{{.Location}}{{end}}</span>{{else}}<span class="text-muted">{{t "menus.none"}}</span>{{end}}</td>
+          <td class="px-3 py-2">{{if .Location}}<span class="inline-flex items-center rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-xs">{{if eq .Location "primary"}}{{t "menus.location.primary"}}{{else if eq .Location "footer"}}{{t "menus.location.footer"}}{{else}}{{.Location}}{{end}}</span>{{else}}<span class="text-muted-foreground">{{t "menus.none"}}</span>{{end}}</td>
           <td class="px-3 py-2 text-end font-mono">{{.Count}}</td>
         </tr>
         {{end}}
@@ -42,7 +42,7 @@
       <label for="slug" class="block font-medium mb-1">{{t "menus.field.slug"}}</label>
       <input id="slug" name="slug" type="text" value="{{.Form.Slug}}" dir="ltr" aria-describedby="slug-help slug-error" {{with index .Fields "slug"}}aria-invalid="true"{{end}}
              class="w-full h-9 rounded border border-line bg-panel px-3 font-mono focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-      <p id="slug-help" class="mt-1 text-xs text-muted">{{t "menus.field.slug_help"}}</p>
+      <p id="slug-help" class="mt-1 text-xs text-muted-foreground">{{t "menus.field.slug_help"}}</p>
       <div id="slug-error">{{template "partials/field_errors" (index .Fields "slug")}}</div>
     </div>
     <div>

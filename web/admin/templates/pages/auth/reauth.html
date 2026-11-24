@@ -3,7 +3,7 @@
 <div class="admin-auth-panel">
   <p class="admin-auth-brand">{{t "core.app.name"}}</p>
   <h1>{{t "auth.reauth.title"}}</h1>
-  <p class="text-muted mt-2 mb-4">{{t "auth.reauth.lead"}}</p>
+  <p class="text-muted-foreground mt-2 mb-4">{{t "auth.reauth.lead"}}</p>
   {{with .Error}}<div role="alert" class="mb-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
   <form method="post" action="/admin/reauth" class="space-y-4" novalidate>
     <input type="hidden" name="_csrf" value="{{csrf}}">
@@ -14,6 +14,6 @@
     </div>
     <button type="submit" class="w-full h-9 bg-blue text-white hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "auth.reauth.submit"}}</button>
   </form>
-  <p class="text-muted text-sm mt-4">{{t "auth.reauth.no_password"}}</p>
+  <p class="text-muted-foreground text-sm mt-4">{{t "auth.reauth.no_password"}}</p>
 </div>
 {{end}}

@@ -13,7 +13,7 @@
 {{if and (not .IsNew) (eq .Type.Slug "page") .CanRequestReview}}
 <link rel="stylesheet" href="{{asset "design-reviews.css"}}"><script defer src="{{asset "design-reviews.js"}}"></script>
 <details data-review-sidebar data-page-id="{{.Item.ID}}" data-csrf="{{csrf}}" data-unavailable="{{t "workagents.review.setup"}}" data-failed="{{t "workagents.review.failure"}}" data-queued="{{t "workagents.review.queued"}}" class="border border-line bg-panel p-3 mb-4"><summary class="cursor-pointer font-medium">{{t "workagents.review.request"}}</summary>
-<aside aria-label="{{t "workagents.review.title"}}" class="mt-3 space-y-3"><p class="text-sm text-muted">{{t "workagents.review.readonly"}}</p>
+<aside aria-label="{{t "workagents.review.title"}}" class="mt-3 space-y-3"><p class="text-sm text-muted-foreground">{{t "workagents.review.readonly"}}</p>
 <label class="grid gap-1">{{t "workagents.review.orchestrator"}}<select class="border border-line p-2 bg-panel"><option value="">{{t "workagents.review.select"}}</option></select></label>
 <button type="button" data-review-preview class="border border-line px-3 py-2">{{t "workagents.review.preview"}}</button>
 <div data-review-approval hidden class="space-y-3"><p>{{t "workagents.review.destination"}}: <span data-review-destination dir="auto"></span></p><pre data-review-context class="border border-line p-3 whitespace-pre-wrap text-sm" dir="auto"></pre><label class="flex gap-2"><input type="checkbox" data-review-consent required> <span>{{t "workagents.review.consent"}}</span></label><button type="button" data-review-enqueue class="bg-blue text-white px-3 py-2">{{t "workagents.review.enqueue"}}</button></div>
@@ -50,7 +50,7 @@
         <label for="slug" class="block font-medium mb-1">{{t "content.editor.slug"}}</label>
         <input id="slug" name="slug" type="text" value="{{.Item.Slug}}" dir="auto" aria-describedby="slug-help"
                class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
-        <p id="slug-help" class="mt-1 text-xs text-muted">{{t "content.editor.slug_help"}}</p>
+        <p id="slug-help" class="mt-1 text-xs text-muted-foreground">{{t "content.editor.slug_help"}}</p>
         {{template "partials/field_errors" (index .Errors "slug")}}
       </div>
     </section>
@@ -87,7 +87,7 @@
         <label for="seo-description" class="block font-medium mb-1">{{t "content.seo.description"}}</label>
         <textarea x-ref="sd" id="seo-description" name="seo[description]" rows="2" dir="auto" @input="sd = $event.target.value"
                   class="w-full rounded border border-line bg-panel px-3 py-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">{{.SEO.Description}}</textarea>
-        <p class="mt-1 text-xs text-muted font-mono"><span x-text="sd.length"></span> / 160</p>
+        <p class="mt-1 text-xs text-muted-foreground font-mono"><span x-text="sd.length"></span> / 160</p>
       </div>
       <div class="grid gap-3 md:grid-cols-2">
         <div>
@@ -107,9 +107,9 @@
         {{template "media_picker_slot" .OGImage}}
       </div>
       <div class="rounded border border-line bg-bg p-3" aria-label="{{t "content.seo.preview"}}">
-        <p class="font-mono text-[11px] uppercase text-muted mb-1">{{t "content.seo.preview"}}</p>
+        <p class="font-mono text-[11px] uppercase text-muted-foreground mb-1">{{t "content.seo.preview"}}</p>
         <p class="text-blue text-base" dir="auto" x-text="st || $root.closest('form').querySelector('#title').value"></p>
-        <p class="text-muted text-sm" dir="auto" x-text="sd"></p>
+        <p class="text-muted-foreground text-sm" dir="auto" x-text="sd"></p>
       </div>
     </details>
     {{end}}
@@ -119,18 +119,18 @@
     <section class="content-publish-panel rounded border border-line bg-panel p-4 space-y-3">
       <h2 class="text-base font-bold mb-3">{{t "content.publish.title"}}</h2><p data-save-state role="status" data-clean="{{t "content.ux.saved_state"}}" data-dirty="{{t "content.ux.unsaved_state"}}">{{t "content.ux.saved_state"}}</p>
       <p class="autosave-status" data-autosave-status role="status" aria-live="polite" data-state="{{if .CanAutosave}}idle{{else}}off{{end}}" data-idle="{{t "content.autosave.idle"}}" data-pending="{{t "content.autosave.pending"}}" data-saving="{{t "content.autosave.saving"}}" data-saved="{{t "content.autosave.saved"}}" data-failed="{{t "content.autosave.failed"}}" data-retry="{{t "content.autosave.retry"}}" data-conflict="{{t "content.autosave.conflict"}}" data-forbidden="{{t "content.autosave.forbidden"}}">{{if .CanAutosave}}{{t "content.autosave.idle"}}{{else if .IsNew}}{{t "content.autosave.after_first_save"}}{{end}}</p>
-      <p class="text-muted text-sm">{{if eq .Item.Status "published"}}{{t "content.ux.live_help"}}{{else}}{{t "content.ux.save_help"}}{{end}}</p>
+      <p class="text-muted-foreground text-sm">{{if eq .Item.Status "published"}}{{t "content.ux.live_help"}}{{else}}{{t "content.ux.save_help"}}{{end}}</p>
       {{if .IsNew}}
       <div>
         <label for="editor-locale" class="block font-medium mb-1">{{t "content.editor.locale"}}</label>
         <select id="editor-locale" name="locale" data-content-locale class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft" {{if index .Errors "locale"}}aria-invalid="true"{{end}}>
           {{$loc := .Item.Locale}}{{range .Locales}}<option value="{{.}}" {{if eq . $loc}}selected{{end}}>{{localeName .}}</option>{{end}}
         </select>
-        <p class="mt-1 text-xs text-muted">{{t "content.editor.locale_help"}}</p>
+        <p class="mt-1 text-xs text-muted-foreground">{{t "content.editor.locale_help"}}</p>
         {{template "partials/field_errors" (index .Errors "locale")}}
       </div>
       {{else}}
-      <p class="text-sm" data-content-locale-display><span class="text-muted">{{t "content.editor.locale"}}:</span> <span class="font-medium">{{localeName .Item.Locale}}</span></p>
+      <p class="text-sm" data-content-locale-display><span class="text-muted-foreground">{{t "content.editor.locale"}}:</span> <span class="font-medium">{{localeName .Item.Locale}}</span></p>
       {{end}}
       <div>
         <label for="status" class="block font-medium mb-1">{{t "content.list.status"}}</label>
@@ -142,10 +142,10 @@
       <div>
         <label for="publish_at" class="block font-medium mb-1">{{t "content.publish.publish_at"}}</label>
         <input id="publish_at" name="publish_at" type="datetime-local" value="{{.PublishAtLocal}}" aria-describedby="publish-at-help" class="w-full h-9 rounded border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft font-mono">
-        <p id="publish-at-help" class="mt-1 text-xs text-muted">{{t "content.publish.publish_at_help"}}</p>
+        <p id="publish-at-help" class="mt-1 text-xs text-muted-foreground">{{t "content.publish.publish_at_help"}}</p>
         {{template "partials/field_errors" (index .Errors "publish_at")}}
       </div>
-      {{if not .IsNew}}<p class="text-xs text-muted">{{t "content.publish.updated"}} <span class="font-mono">{{datetime .Item.UpdatedAt}}</span>{{if .Item.PublishedAt}} · {{t "content.publish.published"}} <span class="font-mono">{{datetime .Item.PublishedAt}}</span>{{end}}</p>{{end}}
+      {{if not .IsNew}}<p class="text-xs text-muted-foreground">{{t "content.publish.updated"}} <span class="font-mono">{{datetime .Item.UpdatedAt}}</span>{{if .Item.PublishedAt}} · {{t "content.publish.published"}} <span class="font-mono">{{datetime .Item.PublishedAt}}</span>{{end}}</p>{{end}}
       <div class="flex flex-wrap gap-2 pt-1">
         <button type="submit" name="intent" value="save" data-shortcut-save aria-keyshortcuts="Control+S Meta+S" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center justify-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft flex-1">{{icon "save"}}<span data-save-label data-published="{{t "content.ux.update_live"}}" data-draft="{{t "content.ux.save_draft"}}" data-unpublish="{{t "content.ux.save_unpublish"}}" data-other="{{t "content.ux.save_status"}}">{{if eq .Item.Status "published"}}{{t "content.ux.update_live"}}{{else}}{{t "content.ux.save_status"}}{{end}}</span></button>
         {{if and .CanPublish (ne .Item.Status "published")}}<button type="submit" name="intent" value="publish" class="h-9 px-3 rounded bg-blue text-white font-medium inline-flex items-center justify-center gap-1.5 hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft flex-1">{{icon "send"}}<span>{{if eq .Item.Status "published"}}{{t "content.publish.update"}}{{else}}{{t "content.publish.publish"}}{{end}}</span></button>{{end}}
@@ -187,7 +187,7 @@
       <div>
         <label for="parent_id" class="block font-medium mb-1">{{t "content.editor.parent"}}</label>
         {{template "fields/picker" .}}
-        <p class="mt-1 text-xs text-muted">{{t "content.editor.no_parent_help"}}</p>
+        <p class="mt-1 text-xs text-muted-foreground">{{t "content.editor.no_parent_help"}}</p>
       </div>
       {{end}}
       {{template "partials/field_errors" (index .Errors "parent_id")}}
@@ -210,7 +210,7 @@
     {{range .TermErrors}}<div role="alert" class="rounded border border-red bg-red-soft px-3 py-2">{{template "partials/field_errors" .}}</div>{{end}}
     {{range .Pickers}}
     <section class="rounded border border-line bg-panel p-4" hx-get="{{.URL}}" hx-trigger="load" hx-swap="innerHTML">
-      <p class="text-muted text-sm">{{t "content.editor.loading_terms"}}</p>
+      <p class="text-muted-foreground text-sm">{{t "content.editor.loading_terms"}}</p>
     </section>
     {{end}}
 
@@ -221,10 +221,10 @@
         {{range .Translations}}
         <li class="flex items-center justify-between gap-2">
           <span class="font-medium">{{localeName .Locale}}</span>
-          {{if .Current}}<span class="text-xs text-muted">{{t "content.translations.current"}}</span>
+          {{if .Current}}<span class="text-xs text-muted-foreground">{{t "content.translations.current"}}</span>
           {{else if .EditURL}}<a href="{{.EditURL}}" class="text-blue hover:text-blue-hover text-xs truncate max-w-[10rem]" dir="auto">{{or .Title (t "content.list.untitled")}}</a>
           {{else if .CanCreate}}<button type="submit" name="locale" value="{{.Locale}}" formaction="{{$.Action}}/translations" formnovalidate class="text-blue hover:text-blue-hover text-xs">{{t "content.translations.create"}}</button>
-          {{else}}<span class="text-xs text-muted">{{t "content.translations.none"}}</span>{{end}}
+          {{else}}<span class="text-xs text-muted-foreground">{{t "content.translations.none"}}</span>{{end}}
         </li>
         {{end}}
       </ul>
@@ -267,9 +267,9 @@
       <ul class="space-y-1.5 text-sm">
         {{range $i, $r := .Revisions}}
         <li class="flex items-center justify-between gap-2">
-          <span class="font-mono text-xs text-muted">{{datetime $r.CreatedAt}}</span>
+          <span class="font-mono text-xs text-muted-foreground">{{datetime $r.CreatedAt}}</span>
           <span class="revision-actions"><a href="{{$.Action}}/revisions/{{$r.ID}}/compare" class="text-blue hover:text-blue-hover text-xs" data-revision-compare-link>{{t "content.revisions.compare"}}</a>
-          {{if $i}}<button type="submit" formaction="{{$.Action}}/revisions/{{$r.ID}}/restore" formnovalidate class="text-blue hover:text-blue-hover text-xs">{{t "content.revisions.restore"}}</button>{{else}}<span class="text-xs text-muted">{{t "content.revisions.current"}}</span>{{end}}</span>
+          {{if $i}}<button type="submit" formaction="{{$.Action}}/revisions/{{$r.ID}}/restore" formnovalidate class="text-blue hover:text-blue-hover text-xs">{{t "content.revisions.restore"}}</button>{{else}}<span class="text-xs text-muted-foreground">{{t "content.revisions.current"}}</span>{{end}}</span>
         </li>
         {{end}}
       </ul>
@@ -284,7 +284,7 @@
 
 {{/* AI suggestion button and preview for the title and excerpt (inside an x-data="gpAIField" block). */}}
 {{define "content/ai_suggest"}}
-<button type="button" @click="run()" :disabled="busy" class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border border-line text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-blue-soft disabled:opacity-50">
+<button type="button" @click="run()" :disabled="busy" class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded border border-line text-xs text-muted-foreground hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-blue-soft disabled:opacity-50">
   {{icon "sparkles"}}<span x-show="!busy">{{t .}}</span><span x-show="busy" x-cloak class="[&[x-cloak]]:hidden" role="status">{{t "content.ai.busy"}}</span>
 </button>
 {{end}}
@@ -293,6 +293,6 @@
 <div x-show="result" x-cloak class="[&[x-cloak]]:hidden mt-2 flex flex-wrap items-center gap-2 rounded border border-line bg-panel-2 px-3 py-2">
   <span x-text="result" dir="auto" class="flex-1 min-w-0"></span>
   <button type="button" @click="use()" class="h-8 px-3 rounded border border-blue text-blue text-xs font-medium hover:bg-blue-soft focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "content.ai.use"}}</button>
-  <button type="button" @click="result = ''" class="h-8 px-3 rounded border border-line bg-panel text-xs text-muted hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.cancel"}}</button>
+  <button type="button" @click="result = ''" class="h-8 px-3 rounded border border-line bg-panel text-xs text-muted-foreground hover:border-line-strong hover:text-ink focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.action.cancel"}}</button>
 </div>
 {{end}}

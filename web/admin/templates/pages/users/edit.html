@@ -40,12 +40,12 @@
         {{template "partials/field_errors" (index .Fields "status")}}
       </div>
     </div>
-    {{if .IsSelf}}<p id="u-self-help" class="text-xs text-muted">{{t "admin.users.self_help"}}</p>{{end}}
+    {{if .IsSelf}}<p id="u-self-help" class="text-xs text-muted-foreground">{{t "admin.users.self_help"}}</p>{{end}}
     <div>
       <label for="u-password" class="block font-medium mb-1">{{if .User}}{{t "admin.users.new_password"}}{{else}}{{t "admin.users.password"}}{{end}}</label>
       <input id="u-password" name="password" type="password" autocomplete="new-password" aria-describedby="u-password-help"
              class="h-9 w-full rounded border {{if index .Fields "password"}}border-red{{else}}border-line{{end}} bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-      <p id="u-password-help" class="mt-1 text-xs text-muted">{{if .User}}{{t "admin.users.password_keep"}}{{else}}{{t "auth.field.password_help"}}{{end}}</p>
+      <p id="u-password-help" class="mt-1 text-xs text-muted-foreground">{{if .User}}{{t "admin.users.password_keep"}}{{else}}{{t "auth.field.password_help"}}{{end}}</p>
       {{template "partials/field_errors" (index .Fields "password")}}
     </div>
     <div class="flex gap-2">
@@ -55,19 +55,19 @@
   </form>
   {{with .User}}
   <aside class="space-y-4">
-    <details data-user-role-summary class="rounded border border-line bg-panel p-4"><summary class="cursor-pointer font-bold">{{t "operator.saved_role_grants"}}</summary><p class="text-xs text-muted mt-2">{{t "operator.saved_role_boundary"}}</p>{{if not $.RoleSummaryAvailable}}<p class="mt-2">{{t "operator.role_unavailable"}}</p>{{else if $.RoleAll}}<p class="mt-2 font-medium">{{t "operator.all_permissions"}}</p>{{else}}<ul class="mt-2 font-mono text-xs break-all">{{range $.RolePermissions}}<li>{{.}}</li>{{else}}<li>—</li>{{end}}</ul>{{end}}</details>
+    <details data-user-role-summary class="rounded border border-line bg-panel p-4"><summary class="cursor-pointer font-bold">{{t "operator.saved_role_grants"}}</summary><p class="text-xs text-muted-foreground mt-2">{{t "operator.saved_role_boundary"}}</p>{{if not $.RoleSummaryAvailable}}<p class="mt-2">{{t "operator.role_unavailable"}}</p>{{else if $.RoleAll}}<p class="mt-2 font-medium">{{t "operator.all_permissions"}}</p>{{else}}<ul class="mt-2 font-mono text-xs break-all">{{range $.RolePermissions}}<li>{{.}}</li>{{else}}<li>—</li>{{end}}</ul>{{end}}</details>
 
     <section class="rounded border border-line bg-panel p-4">
       <h2 class="text-base font-bold mb-2">{{t "admin.users.details"}}</h2>
       <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-        <dt class="text-muted">{{t "admin.common.id"}}</dt><dd class="font-mono break-all">{{.ID}}</dd>
-        <dt class="text-muted">{{t "admin.users.created"}}</dt><dd class="font-mono">{{datetime .CreatedAt}}</dd>
-        <dt class="text-muted">{{t "admin.users.last_login"}}</dt><dd class="font-mono">{{datetime .LastLoginAt}}</dd>
+        <dt class="text-muted-foreground">{{t "admin.common.id"}}</dt><dd class="font-mono break-all">{{.ID}}</dd>
+        <dt class="text-muted-foreground">{{t "admin.users.created"}}</dt><dd class="font-mono">{{datetime .CreatedAt}}</dd>
+        <dt class="text-muted-foreground">{{t "admin.users.last_login"}}</dt><dd class="font-mono">{{datetime .LastLoginAt}}</dd>
       </dl>
     </section>
     <section class="rounded border border-line bg-panel p-4">
       <h2 class="text-base font-bold mb-2">{{t "admin.users.magic_title"}}</h2>
-      <p class="text-xs text-muted mb-3">{{t "admin.users.magic_help"}}</p>
+      <p class="text-xs text-muted-foreground mb-3">{{t "admin.users.magic_help"}}</p>
       {{if $.MagicLink}}
       <div hx-history="false" role="status" class="mb-3 rounded border border-amber bg-amber-soft p-3">
         <p class="text-xs text-amber-text mb-2">{{t "admin.users.magic_shown"}}</p>
@@ -84,7 +84,7 @@
       <h2 class="text-base font-bold mb-2">{{t "admin.users.two_factor"}}</h2>
       <p class="mb-3">{{if $.TwoFactor}}<span class="badge badge-success">{{icon "shield-check"}}{{t "admin.users.two_factor_on"}}</span>{{else}}<span class="badge">{{t "admin.users.two_factor_off"}}</span>{{end}}</p>
       {{if and $.TwoFactor (not $.IsSelf)}}
-      <p class="text-xs text-muted mb-3">{{t "admin.users.two_factor_reset_help"}}</p>
+      <p class="text-xs text-muted-foreground mb-3">{{t "admin.users.two_factor_reset_help"}}</p>
       <form method="post" action="/admin/users/{{.ID}}/two-factor/reset" data-confirm="{{t "admin.users.two_factor_reset_confirm" .Email}}">
         <input type="hidden" name="_csrf" value="{{csrf}}">
         <button type="submit" class="btn btn-danger btn-sm">{{icon "shield-off"}}<span>{{t "admin.users.two_factor_reset"}}</span></button>

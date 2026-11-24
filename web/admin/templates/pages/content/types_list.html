@@ -8,9 +8,9 @@
   <table class="w-full text-sm">
     <thead class="bg-panel-2">
       <tr>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.types.name"}}</th>
-        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.types.slug"}}</th>
-        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted">{{t "content.types.fields"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted-foreground">{{t "content.types.name"}}</th>
+        <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted-foreground">{{t "content.types.slug"}}</th>
+        <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted-foreground">{{t "content.types.fields"}}</th>
         <th scope="col" class="px-3 py-2"><span class="sr-only">{{t "content.types.flags"}}</span></th>
       </tr>
     </thead>
@@ -21,7 +21,7 @@
         <td class="px-3 py-2 font-mono text-xs">{{.Slug}}</td>
         <td class="px-3 py-2 text-end font-mono">{{.Fields}}</td>
         <td class="px-3 py-2 text-end space-x-1 rtl:space-x-reverse">
-          {{if .System}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-2 py-0.5 text-xs text-muted">{{t "content.types.system"}}</span>{{end}}
+          {{if .System}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-2 py-0.5 text-xs text-muted-foreground">{{t "content.types.system"}}</span>{{end}}
           {{if .Public}}<span class="inline-flex rounded-chip border border-green bg-green-soft px-2 py-0.5 text-xs text-green">{{t "content.types.public"}}</span>{{end}}
         </td>
       </tr>

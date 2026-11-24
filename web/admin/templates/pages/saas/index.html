@@ -1,6 +1,6 @@
 {{define "title"}}{{t "saas.ui.title"}}{{end}}
 {{define "content"}}<div class="module-workspace" x-data="{view: ['apps','subscriptions','usage'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'apps'}" @hashchange.window="view = ['apps','subscriptions','usage'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'apps'">
-<header><div class="flex items-center justify-between gap-3 flex-wrap"><h1 class="text-xl font-semibold">{{t "saas.ui.title"}}</h1><a class="btn btn-primary" href="/admin/saas/new">{{t "saas.ui.add"}}</a></div><p class="text-muted mt-2">{{t "saas.ui.help"}}</p></header><nav class="module-views" aria-label="{{t "saas.ui.title"}}">
+<header><div class="flex items-center justify-between gap-3 flex-wrap"><h1 class="text-xl font-semibold">{{t "saas.ui.title"}}</h1><a class="btn btn-primary" href="/admin/saas/new">{{t "saas.ui.add"}}</a></div><p class="text-muted-foreground mt-2">{{t "saas.ui.help"}}</p></header><nav class="module-views" aria-label="{{t "saas.ui.title"}}">
 <a href="#apps" @click="view='apps'" :aria-current="view === 'apps' ? 'page' : null">{{t "saas.ui.apps"}}</a>
 <a href="#subscriptions" @click="view='subscriptions'" :aria-current="view === 'subscriptions' ? 'page' : null">{{t "saas.ui.subs"}}</a>
 <a href="#usage" @click="view='usage'" :aria-current="view === 'usage' ? 'page' : null">{{t "saas.ui.usage"}}</a>

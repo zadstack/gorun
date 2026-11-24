@@ -24,16 +24,16 @@
 {{if .Config.Model}}<option value="{{.Config.Model}}" selected>{{.Config.Model}}</option>{{else}}<option value="">{{t "agentmodels.choose_model"}}</option>{{end}}
 </select></div>
 </div>
-<p class="text-xs text-muted mt-2" data-agent-mode-help="external">{{t "agentmodels.external_help"}}</p>
-<p class="text-xs text-muted mt-2" data-agent-mode-help="managed" hidden>{{t "agentmodels.managed_help"}}</p>
-<p class="text-xs text-muted mt-2">{{t "agentmodels.validation_help"}}</p>
+<p class="text-xs text-muted-foreground mt-2" data-agent-mode-help="external">{{t "agentmodels.external_help"}}</p>
+<p class="text-xs text-muted-foreground mt-2" data-agent-mode-help="managed" hidden>{{t "agentmodels.managed_help"}}</p>
+<p class="text-xs text-muted-foreground mt-2">{{t "agentmodels.validation_help"}}</p>
 <div class="flex flex-wrap items-center gap-2 mt-3">
 <button type="button" data-agent-model-discover class="h-9 px-3 rounded border border-line bg-panel hover:border-line-strong">{{t "connectionmodels.fetch"}}</button>
 <button type="submit" class="h-9 px-3 rounded bg-blue text-white font-medium hover:bg-blue-hover">{{t "agentmodels.save"}}</button>
 <a href="/admin/settings/connections" class="inline-flex items-center min-h-11 text-blue underline">{{t "agentmodels.manage_connections"}}</a>
-<a href="/admin/agents/keys?agent_model={{.ID}}" class="inline-flex items-center min-h-11 text-muted underline">{{t "agentmodels.reload"}}</a>
+<a href="/admin/agents/keys?agent_model={{.ID}}" class="inline-flex items-center min-h-11 text-muted-foreground underline">{{t "agentmodels.reload"}}</a>
 </div>
-<p class="text-xs mt-2 text-muted" role="status" aria-live="polite" data-agent-model-status></p>
+<p class="text-xs mt-2 text-muted-foreground" role="status" aria-live="polite" data-agent-model-status></p>
 </form>
 </section>
 {{end}}

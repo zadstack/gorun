@@ -10,23 +10,23 @@
 </form>
 {{end}}
 <div id="search-results" class="{{if .Full}}rounded border border-line bg-panel max-w-xl{{end}}" data-search-results>
-  {{if .TooShort}}<p class="px-3 py-2 text-muted">{{t "admin.search.too_short"}}</p>
-  {{else if not .Query}}{{if .Full}}<p class="px-3 py-2 text-muted">{{t "admin.search.hint"}}</p>{{end}}
-  {{else if .Empty}}<p class="px-3 py-2 text-muted">{{t "admin.search.no_results"}}</p>
+  {{if .TooShort}}<p class="px-3 py-2 text-muted-foreground">{{t "admin.search.too_short"}}</p>
+  {{else if not .Query}}{{if .Full}}<p class="px-3 py-2 text-muted-foreground">{{t "admin.search.hint"}}</p>{{end}}
+  {{else if .Empty}}<p class="px-3 py-2 text-muted-foreground">{{t "admin.search.no_results"}}</p>
   {{else}}
     {{if .Content}}
-    <p class="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.search.content"}}</p>
-    <ul>{{range .Content}}<li><a href="{{.Href}}" class="flex items-center gap-2 px-3 py-1.5 hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{icon .Icon}}<span class="truncate">{{.Title}}</span><span class="ms-auto font-mono text-[11px] text-muted">{{.Sub}}</span></a></li>{{end}}</ul>
+    <p class="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "admin.search.content"}}</p>
+    <ul>{{range .Content}}<li><a href="{{.Href}}" class="flex items-center gap-2 px-3 py-1.5 hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{icon .Icon}}<span class="truncate">{{.Title}}</span><span class="ms-auto font-mono text-[11px] text-muted-foreground">{{.Sub}}</span></a></li>{{end}}</ul>
     {{end}}
     {{if .Users}}
-    <p class="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.search.users"}}</p>
-    <ul>{{range .Users}}<li><a href="{{.Href}}" class="flex items-center gap-2 px-3 py-1.5 hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{icon .Icon}}<span class="truncate">{{or .Title .Sub}}</span><span class="ms-auto text-xs text-muted" dir="ltr">{{.Sub}}</span></a></li>{{end}}</ul>
+    <p class="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "admin.search.users"}}</p>
+    <ul>{{range .Users}}<li><a href="{{.Href}}" class="flex items-center gap-2 px-3 py-1.5 hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{icon .Icon}}<span class="truncate">{{or .Title .Sub}}</span><span class="ms-auto text-xs text-muted-foreground" dir="ltr">{{.Sub}}</span></a></li>{{end}}</ul>
     {{end}}
     {{if .Pages}}
-    <p class="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.search.pages"}}</p>
+    <p class="px-3 pt-2 pb-1 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "admin.search.pages"}}</p>
     <ul class="pb-1">{{range .Pages}}<li><a href="{{.Href}}" class="flex items-center gap-2 px-3 py-1.5 hover:bg-panel-2 focus:bg-panel-2 focus:outline-none">{{icon .Icon}}<span>{{.Title}}</span></a></li>{{end}}</ul>
     {{end}}
   {{end}}
-  {{if and .Query (not .HasContent)}}<p class="px-3 py-2 border-t border-line text-xs text-muted">{{t "admin.search.no_content_module"}}</p>{{end}}
+  {{if and .Query (not .HasContent)}}<p class="px-3 py-2 border-t border-line text-xs text-muted-foreground">{{t "admin.search.no_content_module"}}</p>{{end}}
 </div>
 {{end}}

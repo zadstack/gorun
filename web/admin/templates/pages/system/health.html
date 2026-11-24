@@ -6,18 +6,18 @@
   <a href="/admin/system/health" class="h-9 px-3 inline-flex items-center gap-1.5 rounded border border-line bg-panel hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "refresh-cw"}}<span>{{t "admin.health.refresh"}}</span></a>
 </div>
 
-<p class="mb-3 text-sm text-muted">{{t "operator.needs_attention"}}</p>
+<p class="mb-3 text-sm text-muted-foreground">{{t "operator.needs_attention"}}</p>
 <section class="mb-4 rounded border border-line bg-panel p-4" aria-labelledby="h-checks">
   <h2 id="h-checks" class="text-base font-bold mb-3">{{t "admin.health.checks"}}</h2>
   <ul class="divide-y divide-line">
     {{range .Checks}}
     <li class="py-2 flex flex-wrap items-center gap-3" data-check="{{.Name}}" data-status="{{.Status}}">
-      {{if .OptionalOff}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted px-2 py-1 text-xs">{{t "operator.disabled"}}</span>
+      {{if .OptionalOff}}<span class="inline-flex rounded-chip border border-line bg-panel-2 text-muted-foreground px-2 py-1 text-xs">{{t "operator.disabled"}}</span>
       {{else if eq .Status "ok"}}<span class="inline-flex w-14 justify-center rounded-chip border border-green bg-green-soft text-green px-1.5 py-0.5 text-[11px] font-mono uppercase">{{t "admin.health.status_ok"}}</span>
       {{else if eq .Status "warn"}}<span class="inline-flex w-14 justify-center rounded-chip border border-amber bg-amber-soft text-amber-text px-1.5 py-0.5 text-[11px] font-mono uppercase">{{t "admin.health.status_warn"}}</span>
       {{else}}<span class="inline-flex w-14 justify-center rounded-chip border border-red bg-red-soft text-red px-1.5 py-0.5 text-[11px] font-mono uppercase">{{t "admin.health.status_fail"}}</span>{{end}}
       <span class="text-sm font-medium">{{if or (eq .Name "database") (eq .Name "jobs") (eq .Name "disk") (eq .Name "mail") (eq .Name "schema") (eq .Name "backups")}}{{t (print "operator.health." .Name)}}{{else}}{{.Name}}{{end}}</span>
-      <span class="text-muted text-xs" dir="ltr">{{.Detail}}</span>
+      <span class="text-muted-foreground text-xs" dir="ltr">{{.Detail}}</span>
     </li>
     {{end}}
   </ul>
@@ -25,18 +25,18 @@
 
 <section class="mb-4 rounded border border-line bg-panel p-4" aria-labelledby="h-observations" data-observations>
   <h2 id="h-observations" class="text-base font-bold mb-1">{{t "admin.health.observations"}}</h2>
-  <p class="mb-3 text-xs text-muted">{{t "admin.health.observations_help"}}</p>
+  <p class="mb-3 text-xs text-muted-foreground">{{t "admin.health.observations_help"}}</p>
   {{if .Observations}}
   <ul class="divide-y divide-line">
     {{range .Observations}}
     <li class="py-2 flex flex-wrap items-center gap-3" data-observation="{{.Kind}}/{{.Key}}" data-status="{{.Status}}">
-      <span class="inline-flex w-16 justify-center rounded-chip border px-1.5 py-0.5 text-[11px] font-mono uppercase {{if eq .Status "fresh"}}border-green bg-green-soft text-green{{else if eq .Status "failed"}}border-red bg-red-soft text-red{{else if or (eq .Status "stale") (eq .Status "waiting") (eq .Status "running")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2 text-muted{{end}}">{{t (print "admin.health.status_" .Status)}}</span>
+      <span class="inline-flex w-16 justify-center rounded-chip border px-1.5 py-0.5 text-[11px] font-mono uppercase {{if eq .Status "fresh"}}border-green bg-green-soft text-green{{else if eq .Status "failed"}}border-red bg-red-soft text-red{{else if or (eq .Status "stale") (eq .Status "waiting") (eq .Status "running")}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-panel-2 text-muted-foreground{{end}}">{{t (print "admin.health.status_" .Status)}}</span>
       <span class="text-sm font-mono" dir="ltr">{{.Kind}} · {{.Key}}</span>
-      <span class="text-muted text-xs" dir="ltr">{{if .Saved}}{{t "admin.health.observation_saved" (age .Saved.AgeSeconds)}}{{else}}{{t "admin.health.observation_none"}}{{end}}{{if .Attempt}}{{if .Attempt.Error}} · {{t "admin.health.observation_attempt" .Attempt.Status}}: {{.Attempt.Error}}{{end}}{{end}}</span>
+      <span class="text-muted-foreground text-xs" dir="ltr">{{if .Saved}}{{t "admin.health.observation_saved" (age .Saved.AgeSeconds)}}{{else}}{{t "admin.health.observation_none"}}{{end}}{{if .Attempt}}{{if .Attempt.Error}} · {{t "admin.health.observation_attempt" .Attempt.Status}}: {{.Attempt.Error}}{{end}}{{end}}</span>
     </li>
     {{end}}
   </ul>
-  {{else}}<p class="text-muted">{{t "admin.health.no_observations"}}</p>{{end}}
+  {{else}}<p class="text-muted-foreground">{{t "admin.health.no_observations"}}</p>{{end}}
 </section>
 
 <details class="mb-4"><summary class="cursor-pointer font-medium py-2">{{t "operator.technical_details"}}</summary>
@@ -44,31 +44,31 @@
   <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-runtime">
     <h2 id="h-runtime" class="text-base font-bold mb-3">{{t "admin.health.runtime"}}</h2>
     <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-      <dt class="text-muted">{{t "admin.health.gorun_version"}}</dt>
+      <dt class="text-muted-foreground">{{t "admin.health.gorun_version"}}</dt>
       <dd class="font-mono text-xs">
         <span data-stat="gorun-version">{{.Version}}</span>
-        <span class="text-muted">·</span>
+        <span class="text-muted-foreground">·</span>
         <a href="https://github.com/zadstack/gorun/releases" class="text-blue hover:underline" dir="ltr" rel="noopener noreferrer" target="_blank">{{t "admin.health.releases_link"}}</a>
       </dd>
-      <dt class="text-muted">{{t "admin.health.go_version"}}</dt><dd class="font-mono text-xs">{{.GoVersion}} · {{.OS}}/{{.Arch}}</dd>
-      <dt class="text-muted">{{t "admin.health.cpus"}}</dt><dd class="font-mono text-xs">{{.NumCPU}}</dd>
-      <dt class="text-muted">{{t "admin.health.goroutines"}}</dt><dd class="font-mono text-xs">{{.Goroutines}}</dd>
-      <dt class="text-muted">{{t "admin.health.heap"}}</dt><dd class="font-mono text-xs">{{.HeapAlloc}}</dd>
-      <dt class="text-muted">{{t "admin.health.uptime"}}</dt><dd class="font-mono text-xs">{{.Uptime}}</dd>
-      <dt class="text-muted">{{t "admin.health.started"}}</dt><dd class="font-mono text-xs">{{datetime .StartedAt}}</dd>
-      <dt class="text-muted">{{t "admin.health.theme"}}</dt><dd class="font-mono text-xs">{{.Theme}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.go_version"}}</dt><dd class="font-mono text-xs">{{.GoVersion}} · {{.OS}}/{{.Arch}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.cpus"}}</dt><dd class="font-mono text-xs">{{.NumCPU}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.goroutines"}}</dt><dd class="font-mono text-xs">{{.Goroutines}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.heap"}}</dt><dd class="font-mono text-xs">{{.HeapAlloc}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.uptime"}}</dt><dd class="font-mono text-xs">{{.Uptime}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.started"}}</dt><dd class="font-mono text-xs">{{datetime .StartedAt}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.theme"}}</dt><dd class="font-mono text-xs">{{.Theme}}</dd>
     </dl>
   </section>
   <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-db">
     <h2 id="h-db" class="text-base font-bold mb-3">{{t "admin.health.database"}}</h2>
     <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-      <dt class="text-muted">{{t "admin.health.db_path"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.DBPath}}</dd>
-      <dt class="text-muted">{{t "admin.health.db_size"}}</dt><dd class="font-mono text-xs">{{.DBSize}}</dd>
-      <dt class="text-muted">{{t "admin.health.wal_size"}}</dt><dd class="font-mono text-xs">{{.WALSize}}</dd>
-      <dt class="text-muted">{{t "admin.health.job_rows"}}</dt><dd class="font-mono text-xs" data-stat="job-rows">{{.JobRows}}</dd>
-      <dt class="text-muted">{{t "admin.health.journal_mode"}}</dt><dd class="font-mono text-xs">{{.JournalMode}}</dd>
-      <dt class="text-muted">{{t "admin.health.last_migration"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{or .LastMigration "—"}}</dd>
-      <dt class="text-muted">{{t "admin.health.disk_free"}}</dt><dd class="font-mono text-xs">{{.DiskFree}} / {{.DiskTotal}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.db_path"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.DBPath}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.db_size"}}</dt><dd class="font-mono text-xs">{{.DBSize}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.wal_size"}}</dt><dd class="font-mono text-xs">{{.WALSize}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.job_rows"}}</dt><dd class="font-mono text-xs" data-stat="job-rows">{{.JobRows}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.journal_mode"}}</dt><dd class="font-mono text-xs">{{.JournalMode}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.last_migration"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{or .LastMigration "—"}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.disk_free"}}</dt><dd class="font-mono text-xs">{{.DiskFree}} / {{.DiskTotal}}</dd>
     </dl>
   </section>
 </div>
@@ -80,28 +80,28 @@
     <a href="/admin/system/jobs" class="text-blue hover:text-blue-hover underline underline-offset-2">{{t "admin.dashboard.view_all"}}</a>
   </div>
   <dl class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
-    <div class="rounded border border-line bg-bg p-2"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.status_queued"}}</dt><dd class="font-mono text-lg" data-stat="queued">{{.Jobs.Queued}}</dd></div>
-    <div class="rounded border border-line bg-bg p-2"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.status_running"}}</dt><dd class="font-mono text-lg" data-stat="running">{{.Jobs.Running}}</dd></div>
-    <div class="rounded border {{if .Jobs.Failed}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-bg{{end}} p-2"><dt class="font-mono text-[11px] uppercase tracking-wide {{if not .Jobs.Failed}}text-muted{{end}}">{{t "admin.jobs.status_failed"}}</dt><dd class="font-mono text-lg" data-stat="failed">{{.Jobs.Failed}}</dd></div>
-    <div class="rounded border {{if .Jobs.Dead}}border-red bg-red-soft text-red{{else}}border-line bg-bg{{end}} p-2"><dt class="font-mono text-[11px] uppercase tracking-wide {{if not .Jobs.Dead}}text-muted{{end}}">{{t "admin.jobs.status_dead"}}</dt><dd class="font-mono text-lg" data-stat="dead">{{.Jobs.Dead}}</dd></div>
-    <div class="rounded border border-line bg-bg p-2"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.status_done"}}</dt><dd class="font-mono text-lg" data-stat="done">{{.Jobs.Done}}</dd></div>
+    <div class="rounded border border-line bg-bg p-2"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "admin.jobs.status_queued"}}</dt><dd class="font-mono text-lg" data-stat="queued">{{.Jobs.Queued}}</dd></div>
+    <div class="rounded border border-line bg-bg p-2"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "admin.jobs.status_running"}}</dt><dd class="font-mono text-lg" data-stat="running">{{.Jobs.Running}}</dd></div>
+    <div class="rounded border {{if .Jobs.Failed}}border-amber bg-amber-soft text-amber-text{{else}}border-line bg-bg{{end}} p-2"><dt class="font-mono text-[11px] uppercase tracking-wide {{if not .Jobs.Failed}}text-muted-foreground{{end}}">{{t "admin.jobs.status_failed"}}</dt><dd class="font-mono text-lg" data-stat="failed">{{.Jobs.Failed}}</dd></div>
+    <div class="rounded border {{if .Jobs.Dead}}border-red bg-red-soft text-red{{else}}border-line bg-bg{{end}} p-2"><dt class="font-mono text-[11px] uppercase tracking-wide {{if not .Jobs.Dead}}text-muted-foreground{{end}}">{{t "admin.jobs.status_dead"}}</dt><dd class="font-mono text-lg" data-stat="dead">{{.Jobs.Dead}}</dd></div>
+    <div class="rounded border border-line bg-bg p-2"><dt class="font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "admin.jobs.status_done"}}</dt><dd class="font-mono text-lg" data-stat="done">{{.Jobs.Done}}</dd></div>
   </dl>
   <h3 class="font-bold mb-2">{{t "admin.health.failed_jobs"}}</h3>
   {{if .FailedJobs}}
   <div class="overflow-x-auto">
     <table class="w-full text-start">
       <thead class="border-b border-line"><tr>
-        <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.kind"}}</th>
-        <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.status"}}</th>
-        <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-muted">{{t "admin.jobs.last_error"}}</th>
+        <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "admin.jobs.kind"}}</th>
+        <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "admin.jobs.status"}}</th>
+        <th scope="col" class="text-start px-2 py-1.5 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">{{t "admin.jobs.last_error"}}</th>
         <th scope="col" class="px-2 py-1.5"><span class="sr-only">{{t "admin.jobs.retry"}}</span></th>
       </tr></thead>
       <tbody class="divide-y divide-line">
         {{range .FailedJobs}}
         <tr data-job="{{.ID}}">
-          <td class="px-2 py-1.5 font-mono text-xs">{{.Kind}}<span class="block text-[11px] text-muted">{{t "operator.attempts" .Attempts .MaxAttempts}}</span></td>
+          <td class="px-2 py-1.5 font-mono text-xs">{{.Kind}}<span class="block text-[11px] text-muted-foreground">{{t "operator.attempts" .Attempts .MaxAttempts}}</span></td>
           <td class="px-2 py-1.5"><span class="inline-flex rounded-chip border {{if eq .Status "dead"}}border-red bg-red-soft text-red{{else}}border-amber bg-amber-soft text-amber-text{{end}} px-1.5 py-0.5 text-[11px] font-mono">{{if eq .Status "dead"}}{{t "admin.jobs.status_dead"}}{{else}}{{t "admin.jobs.status_failed"}}{{end}}</span></td>
-          <td class="px-2 py-1.5 text-xs text-muted max-w-md truncate" dir="ltr" title="{{.LastError}}">{{.LastError}}</td>
+          <td class="px-2 py-1.5 text-xs text-muted-foreground max-w-md truncate" dir="ltr" title="{{.LastError}}">{{.LastError}}</td>
           <td class="px-2 py-1.5 text-end">
             <form method="post" action="/admin/system/jobs/{{.ID}}/retry">
               <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="back" value="/admin/system/health">
@@ -114,7 +114,7 @@
     </table>
   </div>
   {{else}}
-  <p class="text-muted">{{t "admin.health.no_failed_jobs"}}</p>
+  <p class="text-muted-foreground">{{t "admin.health.no_failed_jobs"}}</p>
   {{end}}
 </section>
 
@@ -126,15 +126,15 @@
   <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-hooks">
     <h2 id="h-hooks" class="text-base font-bold mb-3">{{t "admin.health.hooks"}}</h2>
     {{if .Hooks}}<ul class="flex flex-wrap gap-1.5">{{range .Hooks}}<li class="rounded-chip border border-line bg-panel-2 px-1.5 py-0.5 text-[11px] font-mono">{{.}}</li>{{end}}</ul>
-    {{else}}<p class="text-muted">{{t "admin.health.no_hooks"}}</p>{{end}}
+    {{else}}<p class="text-muted-foreground">{{t "admin.health.no_hooks"}}</p>{{end}}
   </section>
   <section class="rounded border border-line bg-panel p-4" aria-labelledby="h-config">
     <h2 id="h-config" class="text-base font-bold mb-3">{{t "admin.health.config"}}</h2>
     <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-      <dt class="text-muted">{{t "admin.health.env"}}</dt><dd class="font-mono text-xs">{{.Env}}</dd>
-      <dt class="text-muted">{{t "admin.settings.base_url"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.BaseURL}}</dd>
-      <dt class="text-muted">{{t "admin.health.data_dir"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.DataDir}}</dd>
-      <dt class="text-muted">{{t "admin.health.private_net"}}</dt><dd class="font-mono text-xs">{{if .AllowPrivate}}{{t "admin.common.yes"}}{{else}}{{t "admin.common.no"}}{{end}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.env"}}</dt><dd class="font-mono text-xs">{{.Env}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.settings.base_url"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.BaseURL}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.data_dir"}}</dt><dd class="font-mono text-xs break-all" dir="ltr">{{.DataDir}}</dd>
+      <dt class="text-muted-foreground">{{t "admin.health.private_net"}}</dt><dd class="font-mono text-xs">{{if .AllowPrivate}}{{t "admin.common.yes"}}{{else}}{{t "admin.common.no"}}{{end}}</dd>
     </dl>
   </section>
 </div>

@@ -6,9 +6,9 @@
     <table class="w-full text-sm">
       <thead class="bg-panel-2">
         <tr>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.list.name"}}</th>
-          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "taxonomy.list.types"}}</th>
-          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted">{{t "taxonomy.list.terms"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted-foreground">{{t "taxonomy.list.name"}}</th>
+          <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted-foreground">{{t "taxonomy.list.types"}}</th>
+          <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted-foreground">{{t "taxonomy.list.terms"}}</th>
         </tr>
       </thead>
       <tbody>
@@ -17,9 +17,9 @@
           <td class="px-3 py-2">
             <a href="/admin/taxonomies/{{.Slug}}" class="font-medium text-blue hover:text-blue-hover">{{.Name}}</a>
             <div class="flex flex-wrap items-center gap-1 mt-0.5">
-              <span class="font-mono text-xs text-muted">{{.Slug}}</span>
-              {{if .Hierarchical}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 text-xs text-muted">{{t "taxonomy.list.hierarchical"}}</span>{{end}}
-              {{if .System}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 text-xs text-muted">{{t "taxonomy.list.system"}}</span>{{end}}
+              <span class="font-mono text-xs text-muted-foreground">{{.Slug}}</span>
+              {{if .Hierarchical}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 text-xs text-muted-foreground">{{t "taxonomy.list.hierarchical"}}</span>{{end}}
+              {{if .System}}<span class="inline-flex rounded-chip border border-line bg-panel-2 px-1.5 text-xs text-muted-foreground">{{t "taxonomy.list.system"}}</span>{{end}}
             </div>
           </td>
           <td class="px-3 py-2 font-mono text-xs">{{range $i, $t := .Types}}{{if $i}}, {{end}}{{$t}}{{else}}—{{end}}</td>

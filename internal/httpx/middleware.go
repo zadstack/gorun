@@ -154,12 +154,14 @@ const (
 //
 // Scripts come from the site itself or carry the nonce. The admin adds
 // 'unsafe-eval' because its Alpine directives are inline expressions that only
-// the standard (eval-based) Alpine build evaluates. Public pages get no eval
-// and no CDN: the bundled themes self-host everything (the default theme's
-// Tailwind runtime included, which does not eval). publicScripts are the
-// operator's extra public script sources (config.PublicScriptSources) for
-// custom themes that still load a CDN or self-hosted Alpine. Inline styles
-// serve Tailwind's runtime and HTMX indicators; blob: images serve upload
+// the standard (eval-based) Alpine build evaluates; its stylesheet is compiled
+// ahead of time (web/admin/static/admin-tailwind.css), so no in-browser
+// compiler runs there. Public pages get no eval and no CDN: the bundled themes
+// self-host everything (the vendored Tailwind v3 runtime a child theme may opt
+// into does not eval). publicScripts are the operator's extra public script
+// sources (config.PublicScriptSources) for custom themes that still load a CDN
+// or self-hosted Alpine. Inline styles serve Alpine's x-show/x-cloak toggles,
+// HTMX indicators and that optional runtime; blob: images serve upload
 // previews.
 func SecurityHeaders(publicScripts ...string) func(http.Handler) http.Handler {
 	return SecurityHeadersWith(SecurityOptions{PublicScripts: publicScripts})

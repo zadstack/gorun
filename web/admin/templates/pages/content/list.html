@@ -39,7 +39,7 @@
     <select id="preset-locale" name="locale" class="h-9 rounded border border-line bg-panel px-3">
       <option value="">{{t "builder.preset_locale_site"}}</option><option value="ar">{{t "builder.locale_ar"}}</option><option value="en">{{t "builder.locale_en"}}</option>
     </select>
-    <p class="text-sm text-muted sm:col-span-2">{{t "builder.preset_help"}}</p>
+    <p class="text-sm text-muted-foreground sm:col-span-2">{{t "builder.preset_help"}}</p>
     <div class="sm:col-span-2"><button type="submit" class="h-9 px-3 rounded bg-blue text-white font-medium">{{t "builder.preset_create"}}</button></div>
   </form>
 </details>
@@ -50,7 +50,7 @@
   <input id="content-search" name="search" type="search" value="{{.Search}}" placeholder="{{t "content.list.search"}}" dir="auto"
          hx-get="{{.BaseURL}}" hx-trigger="keyup changed delay:300ms, search" hx-include="#content-filters"
          hx-target="#content-list" hx-select="#content-list" hx-swap="outerHTML" hx-push-url="true"
-         class="h-9 w-full sm:w-72 rounded border border-line bg-panel px-3 placeholder:text-muted focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
+         class="h-9 w-full sm:w-72 rounded border border-line bg-panel px-3 placeholder:text-muted-foreground focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
   <label class="sr-only" for="content-status">{{t "content.list.status"}}</label>
   <select id="content-status" name="status" hx-get="{{.BaseURL}}" hx-trigger="change" hx-include="#content-filters"
           hx-target="#content-list" hx-select="#content-list" hx-swap="outerHTML" hx-push-url="true"
@@ -114,9 +114,9 @@
           <tr class="text-start">
             {{if .CanBulk}}<th scope="col" class="w-10 px-3 py-2"><input type="checkbox" aria-label="{{t "content.list.select_all"}}" class="h-4 w-4 accent-[var(--green)]"
                 data-select-all></th>{{end}}
-            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.list.title"}}</th>
-            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted">{{t "content.list.status"}}</th>
-            <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted">{{t "content.list.updated"}}</th>
+            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted-foreground">{{t "content.list.title"}}</th>
+            <th scope="col" class="px-3 py-2 text-start font-mono text-[11px] uppercase text-muted-foreground">{{t "content.list.status"}}</th>
+            <th scope="col" class="px-3 py-2 text-end font-mono text-[11px] uppercase text-muted-foreground">{{t "content.list.updated"}}</th>
           </tr>
         </thead>
         <tbody>
@@ -124,12 +124,12 @@
           <tr class="border-t border-line hover:bg-bg">
             {{if $.CanBulk}}<td class="px-3 py-2"><input type="checkbox" name="ids" value="{{.ID}}" aria-label="{{t "content.list.select"}} {{.Title}}" class="h-4 w-4 accent-[var(--green)]"></td>{{end}}
             <td class="px-3 py-2"><a href="{{.EditURL}}" class="font-medium text-blue hover:text-blue-hover" dir="auto">{{if .Title}}{{.Title}}{{else}}{{t "content.list.untitled"}}{{end}}</a>
-              <div class="font-mono text-xs text-muted" dir="auto">{{.Slug}}</div>{{if .ParentTitle}}<small class="text-muted">↳ {{.ParentTitle}}</small>{{end}}</td>
-            <td class="px-3 py-2">{{template "content/status_chip" .Status}}<small class="block text-muted mt-1">{{.Locale}}{{if .AuthorName}} · {{.AuthorName}}{{end}}</small></td>
-            <td class="px-3 py-2 text-end font-mono text-xs text-muted">{{datetime .UpdatedAt}}</td>
+              <div class="font-mono text-xs text-muted-foreground" dir="auto">{{.Slug}}</div>{{if .ParentTitle}}<small class="text-muted-foreground">↳ {{.ParentTitle}}</small>{{end}}</td>
+            <td class="px-3 py-2">{{template "content/status_chip" .Status}}<small class="block text-muted-foreground mt-1">{{.Locale}}{{if .AuthorName}} · {{.AuthorName}}{{end}}</small></td>
+            <td class="px-3 py-2 text-end font-mono text-xs text-muted-foreground">{{datetime .UpdatedAt}}</td>
           </tr>
           {{else}}
-          <tr><td colspan="4" class="px-3 py-8 text-center text-muted">{{t "content.list.empty"}}</td></tr>
+          <tr><td colspan="4" class="px-3 py-8 text-center text-muted-foreground">{{t "content.list.empty"}}</td></tr>
           {{end}}
         </tbody>
       </table>
@@ -137,7 +137,7 @@
   </form>
   {{if gt .Links.Pages 1}}
   <nav class="mt-4 flex items-center justify-between" aria-label="{{t "core.pagination.summary" .Links.Page .Links.Pages}}">
-    <span class="font-mono text-muted">{{t "core.pagination.summary" .Links.Page .Links.Pages}}</span>
+    <span class="font-mono text-muted-foreground">{{t "core.pagination.summary" .Links.Page .Links.Pages}}</span>
     <div class="flex gap-2">
       {{with .Links.PrevURL}}<a href="{{.}}" hx-get="{{.}}" hx-target="#content-list" hx-select="#content-list" hx-swap="outerHTML" hx-push-url="true" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.pagination.prev"}}</a>{{end}}
       {{with .Links.NextURL}}<a href="{{.}}" hx-get="{{.}}" hx-target="#content-list" hx-select="#content-list" hx-swap="outerHTML" hx-push-url="true" class="h-9 px-3 rounded border border-line bg-panel inline-flex items-center gap-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "core.pagination.next"}}</a>{{end}}
@@ -148,8 +148,8 @@
 {{end}}
 
 {{define "content/status_chip"}}
-<span class="inline-flex items-center rounded-chip border px-2 py-0.5 text-xs {{if eq . "published"}}border-green bg-green-soft text-green{{else if eq . "scheduled"}}border-blue bg-blue-soft text-blue{{else if eq . "pending"}}border-amber bg-amber-soft text-amber-text{{else if eq . "trash"}}border-red bg-red-soft text-red{{else}}border-line bg-panel-2 text-muted{{end}}">{{t (printf "content.status.%s" .)}}</span>
+<span class="inline-flex items-center rounded-chip border px-2 py-0.5 text-xs {{if eq . "published"}}border-green bg-green-soft text-green{{else if eq . "scheduled"}}border-blue bg-blue-soft text-blue{{else if eq . "pending"}}border-amber bg-amber-soft text-amber-text{{else if eq . "trash"}}border-red bg-red-soft text-red{{else}}border-line bg-panel-2 text-muted-foreground{{end}}">{{t (printf "content.status.%s" .)}}</span>
 {{end}}
 
 {{define "content/tree_node"}}<li data-tree-row="{{.Row.ID}}" class="py-2 border-b border-line last:border-b-0">{{if .Children}}<details open><summary class="cursor-pointer">{{template "content/tree_title" .}}</summary><ul class="content-tree-children">{{range .Children}}{{template "content/tree_node" .}}{{end}}</ul></details>{{else}}{{template "content/tree_title" .}}{{end}}</li>{{end}}
-{{define "content/tree_title"}}<span class="inline-flex flex-wrap items-center gap-2 max-w-full">{{if .CanSelect}}<input type="checkbox" name="ids" value="{{.Row.ID}}" aria-label="{{t "content.list.select"}} {{.Row.Title}}">{{end}}<a class="text-blue font-medium break-words min-w-0" href="{{.Row.EditURL}}">{{or .Row.Title (t "content.list.untitled")}}</a>{{template "content/status_chip" .Row.Status}}<small class="text-muted">{{.Row.Locale}}{{if .Row.AuthorName}} · {{.Row.AuthorName}}{{end}}</small></span>{{if .Path}}<small class="block text-muted break-words">{{.Path}}</small>{{end}}{{if .ParentMissing}}<small class="block text-muted">{{t "content.ux.parent_outside"}}</small>{{end}}{{end}}
+{{define "content/tree_title"}}<span class="inline-flex flex-wrap items-center gap-2 max-w-full">{{if .CanSelect}}<input type="checkbox" name="ids" value="{{.Row.ID}}" aria-label="{{t "content.list.select"}} {{.Row.Title}}">{{end}}<a class="text-blue font-medium break-words min-w-0" href="{{.Row.EditURL}}">{{or .Row.Title (t "content.list.untitled")}}</a>{{template "content/status_chip" .Row.Status}}<small class="text-muted-foreground">{{.Row.Locale}}{{if .Row.AuthorName}} · {{.Row.AuthorName}}{{end}}</small></span>{{if .Path}}<small class="block text-muted-foreground break-words">{{.Path}}</small>{{end}}{{if .ParentMissing}}<small class="block text-muted-foreground">{{t "content.ux.parent_outside"}}</small>{{end}}{{end}}

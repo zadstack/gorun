@@ -8,7 +8,7 @@
   {{if .Blocked}}
   <p class="rounded border border-red bg-red-soft text-red px-3 py-2">{{t "site.forms.delete.blocked"}}</p>
   {{else}}
-  <p class="text-muted mb-4">{{t "site.forms.delete.warning"}}</p>
+  <p class="text-muted-foreground mb-4">{{t "site.forms.delete.warning"}}</p>
   <form method="post" action="/admin/forms/{{.Form.Slug}}/delete" class="flex gap-2">
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <button type="submit" class="h-9 px-4 inline-flex items-center gap-1 rounded border border-red text-red bg-panel hover:bg-red-soft focus:outline-none focus:ring-[3px] focus:ring-red-soft">{{icon "trash-2" "w-4 h-4"}}{{t "site.forms.delete.confirm"}}</button>

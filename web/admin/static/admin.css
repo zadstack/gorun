@@ -319,8 +319,8 @@
   display: inline-block;
   margin-bottom: .125rem;
 }
-.admin-workspace .admin-page-heading > p.text-muted,
-.admin-workspace .admin-page-heading .text-muted {
+.admin-workspace .admin-page-heading > p.text-muted-foreground,
+.admin-workspace .admin-page-heading .text-muted-foreground {
   max-width: 62ch;
   line-height: 1.65;
 }
@@ -333,7 +333,6 @@
 }
 /* Flash messages and inline alerts use Basecoat's .alert; data-kind carries
    GoRun's three kinds (partials/flash). */
-.alert { border-color: var(--border); }
 .alert[data-variant="destructive"], .admin-flash[data-kind="error"] { border-color: color-mix(in srgb, var(--destructive) 40%, var(--border)); background: var(--red-soft); color: var(--destructive); }
 .admin-flash[data-kind="success"] { border-color: color-mix(in srgb, var(--green) 40%, var(--border)); background: var(--green-soft); color: var(--green-hover); }
 .admin-flash:not([data-kind="error"], [data-kind="success"]) { border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); background: var(--accent); color: var(--accent-foreground); }
@@ -454,23 +453,18 @@
 /* Buttons are Basecoat's .btn (shadcn): .btn alone is the primary button,
    data-variant / data-size select the others. The legacy classes
    (.btn-primary, .btn-secondary = outline, .btn-ghost, .btn-danger, .btn-sm)
-   stay as aliases, so existing templates and tests keep working.
-   The Tailwind v3 runtime (base.html) resets border-color, --tw-shadow and
-   --tw-ring-* on every element outside any cascade layer, which silences the
-   same declarations in Basecoat's layered rules; the rules below restate the
-   ones that matter so buttons look the same with or without that runtime. */
-.btn { cursor: pointer; font-family: inherit; border-color: transparent; }
+   stay as aliases, so existing templates and tests keep working; an alias
+   has no data-variant, so Basecoat styles it as the primary button and the
+   rules below give it its variant's look. Borders, shadows and focus rings
+   are Basecoat's own (admin-tailwind.css); GoRun keeps its hover colour
+   (--primary-hover) and petrol ghost text. */
+.btn { cursor: pointer; }
 .btn :is(i) { width: 1rem; height: 1rem; flex-shrink: 0; }
-.btn:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent); }
-/* Tailwind v3 preflight also clears button backgrounds, so the primary
-   variant (plain .btn) is restated here. */
-.btn:not([data-variant]), .btn.btn-primary, .btn[data-variant="primary"] { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
-.btn:not([data-variant]):hover, .btn.btn-primary:hover, .btn[data-variant="primary"]:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
-.btn.btn-secondary, .btn[data-variant="outline"] { background: var(--card); border-color: var(--border); color: var(--foreground); box-shadow: 0 1px 2px rgb(0 0 0 / .05); }
-.btn.btn-secondary:hover, .btn[data-variant="outline"]:hover { background: var(--muted); color: var(--foreground); }
-.btn[data-variant="secondary"] { background: var(--secondary); color: var(--secondary-foreground); }
-.btn[data-variant="secondary"]:hover { background: color-mix(in srgb, var(--secondary) 80%, var(--border)); }
-.btn.btn-ghost, .btn[data-variant="ghost"] { background: transparent; border-color: transparent; color: var(--primary-hover); }
+.btn:not([data-variant]):hover, .btn[data-variant="primary"]:hover { background: var(--primary-hover); }
+.btn.btn-secondary { background: var(--card); border-color: var(--border); color: var(--foreground); box-shadow: 0 1px 2px rgb(0 0 0 / .05); }
+.btn.btn-secondary:hover { background: var(--muted); color: var(--foreground); }
+.btn.btn-ghost { background: transparent; border-color: transparent; }
+.btn.btn-ghost, .btn[data-variant="ghost"] { color: var(--primary-hover); }
 .btn.btn-ghost:hover, .btn[data-variant="ghost"]:hover { background: var(--accent); color: var(--accent-foreground); }
 .btn.btn-danger { background: var(--card); border-color: color-mix(in srgb, var(--destructive) 45%, var(--border)); color: var(--destructive); }
 .btn.btn-danger:hover { background: var(--red-soft); border-color: var(--destructive); }
@@ -483,7 +477,7 @@
 /* Form fields: .field wraps label + control + help + error. Basecoat owns
    the direct children (label, input, select, textarea, checkbox, radio,
    switch); the rules below give nested controls and .field-control the same
-   shadcn look and restate border and ring (see the note above .btn). */
+   shadcn look. */
 .field { gap: var(--space-2); min-width: 0; align-content: start; }
 .field-label, .field > label, .label { font-size: var(--fs-md); font-weight: 500; line-height: 1.4; color: var(--foreground); }
 .field-help { font-size: var(--fs-sm); color: var(--muted-foreground); }
@@ -495,9 +489,6 @@
   box-shadow: 0 1px 2px rgb(0 0 0 / .05); transition: border-color .15s, box-shadow .15s;
 }
 .field :is(input,select,textarea):focus-visible, .field-control:focus-visible { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 50%, transparent); }
-.field > :is(input[type=checkbox],input[type=radio]) { border: 1px solid var(--input); box-shadow: 0 1px 2px rgb(0 0 0 / .05); }
-.field > :is(input[type=checkbox],input[type=radio]):checked { border-color: var(--primary); }
-.field > input[type=checkbox][role=switch] { border-color: transparent; }
 .field textarea { min-height: 5.5rem; resize: vertical; line-height: 1.55; }
 .field select[multiple] { padding: .25rem; }
 .field.is-invalid :is(input,select,textarea), .field [aria-invalid="true"] { border-color: var(--destructive); }
@@ -550,7 +541,7 @@
 /* Badges are Basecoat's .badge (pill). Without data-variant GoRun keeps a
    neutral badge; .badge-success is the only green, .badge-warning amber,
    .badge-danger red and .badge-info petrol. data-variant works as in Basecoat. */
-.badge { gap: var(--space-1); white-space: nowrap; vertical-align: middle; border-color: transparent; font-size: var(--fs-xs); font-weight: 600; }
+.badge { gap: var(--space-1); white-space: nowrap; vertical-align: middle; font-size: var(--fs-xs); font-weight: 600; }
 .badge:not([data-variant]) { background: var(--secondary); color: var(--muted-foreground); }
 .badge :is(i) { width: .75rem; height: .75rem; }
 .badge.badge-success { background: var(--green-soft); border-color: color-mix(in srgb, var(--green) 45%, transparent); color: var(--green-hover); }
@@ -575,11 +566,12 @@
 .meta-item { display: inline-flex; align-items: baseline; gap: var(--space-1); min-width: 0; }
 .meta-item > :is(bdi,strong) { color: var(--ink); font-weight: 500; }
 
-/* Card: Basecoat's .card for a grouped, bordered unit (a form, a request).
-   GoRun's .card-head / .card-body / .card-foot keep their own padding, so the
-   card itself has none; Basecoat's <header> / <section> / <footer> children
-   work too. */
-.card { display: block; padding: 0; gap: 0; min-width: 0; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); color: var(--card-foreground); box-shadow: 0 1px 2px rgb(0 0 0 / .05); overflow: visible; }
+/* Card: Basecoat's .card for a grouped, bordered unit (a form, a request);
+   surface, hairline ring and shadow are Basecoat's. GoRun's .card-head /
+   .card-body / .card-foot keep their own padding, so the card itself has
+   none, and the radius is the panel radius; Basecoat's <header> / <section> /
+   <footer> children work too. */
+.card { display: block; padding: 0; gap: 0; min-width: 0; border-radius: var(--radius-lg); overflow: visible; }
 .card-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
 .card-body { display: grid; gap: var(--space-3); padding: var(--space-4); }
 .card-foot { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border); }
