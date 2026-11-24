@@ -140,7 +140,14 @@ func (s *service) Render(ctx context.Context, w http.ResponseWriter, req kernel.
 	// Tell a page-mark middleware (analytics injection) that this response
 	// is a theme page; the 500 page and every non-theme handler stay unmarked.
 	httpx.MarkThemePage(ctx)
-	writeHTML(w, tc.Status, buf.Bytes())
+	page := buf.Bytes()
+	if bar := s.adminBar(tc); bar != "" {
+		// A page with the staff bar is that person's page: no shared cache
+		// may keep it, and no later visitor may get it.
+		w.Header().Set("Cache-Control", "private, no-store")
+		page = injectAdminBar(page, bar)
+	}
+	writeHTML(w, tc.Status, page)
 	return nil
 }
 

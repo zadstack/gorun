@@ -60,6 +60,10 @@ func (h *handlers) nativeUICSS(w http.ResponseWriter, r *http.Request) {
 	serveSiteStylesheet(w, r, "native-ui.css", theme.NativeUICSS())
 }
 
+func (h *handlers) adminBarCSS(w http.ResponseWriter, r *http.Request) {
+	serveSiteStylesheet(w, r, "admin-bar.css", theme.AdminBarCSS())
+}
+
 func serveSiteStylesheet(w http.ResponseWriter, r *http.Request, name string, stylesheet []byte) {
 	if len(stylesheet) == 0 {
 		http.NotFound(w, r)

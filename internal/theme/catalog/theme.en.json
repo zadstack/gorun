@@ -234,5 +234,10 @@
   "templates.group_part": "Parts & components",
   "themes.details": "Theme details",
   "editor.fallback": "Code editor unavailable; plain text editing is ready.",
-  "editor.keyboard_help": "Ctrl/Cmd+F to search code. Tab moves between controls. Escape leaves the editor."
+  "editor.keyboard_help": "Ctrl/Cmd+F to search code. Tab moves between controls. Escape leaves the editor.",
+  "adminbar.label": "Site admin bar",
+  "adminbar.dashboard": "GoRun admin",
+  "adminbar.edit": "Edit this page",
+  "adminbar.website": "Website",
+  "adminbar.hide": "Hide the admin bar for this browser session"
 }
