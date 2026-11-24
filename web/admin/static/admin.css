@@ -116,6 +116,14 @@
 .admin-nav-link.is-active { background: var(--accent); color: var(--primary-hover); border-color: var(--primary); font-weight: 650; }
 .admin-sidebar-footer { padding: .625rem; border-top: 1px solid var(--line); }
 .admin-workspace :is(a,button,input,select,textarea):focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* Basecoat's base layer shrink-wraps every summary (display: inline-flex, no
+   marker), which suits its .accordion. The admin's 60-odd native disclosures
+   (page tree, dashboard sections, raw details) are full-width rows whose whole
+   line toggles, and clicking the empty part of the row must fold, not follow
+   the title link. Keep the browser default; components that want otherwise
+   (.id-detail, .accordion) set their own display. */
+details > summary:where(:not(.accordion *)) { display: list-item; }
 .admin-workspace .admin-sidebar :is(a,button):focus-visible { outline-color: var(--blue); }
 .admin-workspace #main { padding: 1.75rem 2rem; }
 .admin-workspace #main h1 { font-size: 1.375rem; font-weight: 700; line-height: 1.3; }
