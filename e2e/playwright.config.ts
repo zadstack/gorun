@@ -22,7 +22,12 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   timeout: 90_000,
-  expect: { timeout: 10_000 },
+  expect: {
+    timeout: 10_000,
+    // Pixel baselines (visual-regression.spec.ts): a tenth of a percent of
+    // the pixels may differ (antialiasing), animations stop, no caret.
+    toHaveScreenshot: { maxDiffPixelRatio: 0.001, animations: 'disabled', caret: 'hide' },
+  },
   forbidOnly: !!process.env.CI,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
