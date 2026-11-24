@@ -213,7 +213,7 @@ async function controls(page: Page): Promise<string[]> {
         problems.push(`field #${el.id || el.getAttribute('name')} has no visible border`);
       }
     }
-    for (const el of document.querySelectorAll('main button, main a.zad-button, main input[type=submit]')) {
+    for (const el of document.querySelectorAll('main button, main a.btn, main input[type=submit]')) {
       if (!visible(el)) continue;
       const [a, b] = [lum(rgba(getComputedStyle(el).color).slice(0, 3)), lum(fill(el))].sort((x, y) => y - x);
       const ratio = (a + 0.05) / (b + 0.05);

@@ -14,9 +14,10 @@ run:
 
 # css rebuilds the committed Tailwind stylesheets with the pinned Tailwind
 # standalone CLIs (downloaded once, checksum verified; no Node):
-# themes/default/assets/tailwind.css and web/site/core.css (v3) and the
-# admin's web/admin/static/admin-tailwind.css (v4 with Basecoat). Commit the
-# result. css-check fails when a committed file is stale (CI runs it).
+# themes/default/assets/tailwind.css and web/site/core.css (v3, plus a v4
+# part with Basecoat's components for the shared site pages) and the admin's
+# web/admin/static/admin-tailwind.css (v4 with Basecoat). Commit the result.
+# css-check fails when a committed file is stale (CI runs it).
 css:
 	tools/tailwind/build.sh
 

@@ -15,12 +15,14 @@ import (
 // re-polls itself every 3s (outerHTML swap); the final block has no trigger.
 var statusTmpl = template.Must(template.New("status").Parse(`<div id="gp-order-status" role="status" aria-live="polite" data-status="{{.V.Status}}"
 {{- if not .V.Final}} hx-get="/checkout/status/{{.V.ID}}" hx-trigger="every 3s" hx-swap="outerHTML"{{end}}
- class="rounded border {{if .V.Active}}border-green bg-green-soft{{else if .V.Failed}}border-red bg-red-soft{{else}}border-line bg-panel{{end}} p-4">
-<p class="font-bold">{{.Label}}</p>
-<p class="mt-1 text-muted">{{.Help}}</p>
+ class="alert"{{if .V.Active}} data-variant="success"{{else if .V.Failed}} data-variant="destructive"{{end}}>
+<strong>{{.Label}}</strong>
+<section>
+<p>{{.Help}}</p>
 {{- if .V.Active}}
-<a href="/account" class="mt-3 inline-block rounded bg-green px-4 py-2 font-medium text-white hover:bg-green-hover focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{.Open}}</a>
+<a href="/account" class="btn mt-2">{{.Open}}</a>
 {{- end}}
+</section>
 </div>`))
 
 // statusFragment renders statusTmpl in the request locale.

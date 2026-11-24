@@ -87,3 +87,48 @@ func TestCoreStylesheetIsScopedAndResetFree(t *testing.T) {
 		t.Errorf("CoreCSSURL() = %q", CoreCSSURL())
 	}
 }
+
+// The second part of core.css is Basecoat's components for the shared
+// functional pages: every rule nested under .gp-core, outside any cascade
+// layer, reading the role names of themes/_base/tokens.css through Tailwind's
+// variables (bg-primary writes var(--primary), muted and accent map to the
+// soft surfaces shadcn means, not the themes' --muted text and --accent fill).
+func TestCoreStylesheetCarriesScopedBasecoatComponents(t *testing.T) {
+	css := string(CoreCSS())
+	for _, want := range []string{
+		".gp-core .btn {", ".gp-core .btn[data-variant='outline'] {", ".gp-core .card {", ".gp-core .alert {",
+		".gp-core .alert[data-variant='destructive'] {", ".gp-core .alert[data-variant='success'] {", ".gp-core .badge {",
+		".gp-core .table {", ".gp-core .field {", ".gp-core .empty {", " .input[type='email'],", " .field > input[type='email'],",
+		"background-color: var(--primary);", "color: var(--primary-foreground);", "border-color: var(--input);",
+		"background-color: var(--panel-2);", "color: var(--muted-foreground);",
+	} {
+		if !strings.Contains(css, want) {
+			t.Errorf("core.css lacks %q", want)
+		}
+	}
+	for _, never := range []string{"@layer components {", "\n.btn {", "background-color: var(--muted);", "background-color: var(--accent);", "oklch("} {
+		if strings.Contains(css, never) {
+			t.Errorf("core.css contains %q", never)
+		}
+	}
+}
+
+// The shared functional templates and the order-status fragment use the
+// Basecoat classes, not the retired zad-button / zad-error ones.
+func TestSharedFunctionalTemplatesUseBasecoatClasses(t *testing.T) {
+	for _, name := range []string{"account", "cart", "checkout", "shop", "product", "form-result"} {
+		raw, err := os.ReadFile(filepath.Join("..", "..", "themes", "default", "templates", name+".html"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := string(raw)
+		if !strings.Contains(s, `class="btn`) {
+			t.Errorf("%s.html has no .btn", name)
+		}
+		for _, old := range []string{"zad-button", "zad-error", "zad-notice", "zad-cart-table"} {
+			if strings.Contains(s, old) {
+				t.Errorf("%s.html still uses %s", name, old)
+			}
+		}
+	}
+}

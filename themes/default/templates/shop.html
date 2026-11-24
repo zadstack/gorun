@@ -8,20 +8,22 @@
     {{if .Name}}<h2 id="group-{{.Slug}}" class="text-lg font-bold mb-3">{{.Name}}</h2>{{end}}
     <ul class="zad-shop-grid">
       {{range .Products}}
-      <li class="zad-shop-card flex flex-col rounded border border-line bg-panel p-5 hover:border-line-strong">
-        <h3 class="text-base font-bold leading-snug"><a href="{{url (print "/product/" .Slug)}}" class="hover:text-green focus:outline-none focus:ring-[3px] focus:ring-green-soft rounded">{{.Name}}</a></h3>
-        {{with .ShortDescription}}<p class="mt-2 text-muted">{{.}}</p>{{end}}
-        {{with .Features}}<ul class="mt-3 space-y-1 text-sm">{{range .}}<li class="flex gap-2"><span aria-hidden="true" class="text-green">✓</span><span>{{.}}</span></li>{{end}}</ul>{{end}}
-        <div class="mt-auto pt-4 flex items-center justify-between gap-2">
+      <li class="zad-shop-card card" data-size="sm">
+        <header>
+          <h3 class="card-title"><a href="{{url (print "/product/" .Slug)}}">{{.Name}}</a></h3>
+          {{with .ShortDescription}}<p>{{.}}</p>{{end}}
+        </header>
+        {{with .Features}}<section><ul class="space-y-1">{{range .}}<li class="flex gap-2"><span aria-hidden="true" class="text-green">✓</span><span>{{.}}</span></li>{{end}}</ul></section>{{end}}
+        <footer class="mt-auto justify-between gap-2">
           <span class="font-bold" dir="ltr"><bdi>{{money .PriceMinor .Currency}}</bdi></span>
-          <a href="{{url (print "/product/" .Slug)}}" class="rounded border border-line px-3 py-1.5 hover:border-line-strong focus:outline-none focus:ring-[3px] focus:ring-green-soft">{{t "commerce.shop.view"}}</a>
-        </div>
+          <a href="{{url (print "/product/" .Slug)}}" class="btn" data-variant="outline" data-size="sm">{{t "commerce.shop.view"}}</a>
+        </footer>
       </li>
       {{end}}
     </ul>
   </section>
   {{else}}
-  <p class="mt-8 rounded border border-line bg-panel p-6 text-center text-muted">{{t "commerce.shop.empty"}}</p>
+  <div class="empty mt-8"><header><p>{{t "commerce.shop.empty"}}</p></header></div>
   {{end}}
 </section>
 </div>{{part "footer" .}}

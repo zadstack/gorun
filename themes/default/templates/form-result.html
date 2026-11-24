@@ -3,15 +3,17 @@
 {{with .Extra.form}}
 <section class="mx-auto max-w-2xl">
   {{if .OK}}
-  <div class="rounded border border-green bg-green-soft p-6">
-    <h1 class="text-[22px] font-bold text-green">{{t "form_sent_title"}}</h1>
-    <p class="mt-2">{{with .Message}}{{.}}{{else}}{{t "form_sent_body"}}{{end}}</p>
-    <a href="{{.Back}}" class="mt-4 inline-block text-blue hover:text-blue-hover underline underline-offset-2">{{t "back"}}</a>
+  <div class="alert" data-variant="success">
+    <h1 class="text-[22px] font-bold">{{t "form_sent_title"}}</h1>
+    <section>
+      <p>{{with .Message}}{{.}}{{else}}{{t "form_sent_body"}}{{end}}</p>
+      <a href="{{.Back}}" class="btn mt-2" data-variant="outline">{{t "back"}}</a>
+    </section>
   </div>
   {{else}}
-  <div role="alert" class="mb-6 rounded border border-red bg-red-soft p-4 text-red">
+  <div role="alert" class="alert mb-6" data-variant="destructive">
     <h1 class="text-lg font-bold">{{t "form_error_title"}}</h1>
-    <ul class="mt-2 list-disc ps-5">{{range $field, $key := .Errors}}<li>{{t $key}}</li>{{end}}</ul>
+    <section><ul>{{range $field, $key := .Errors}}<li>{{t $key}}</li>{{end}}</ul></section>
   </div>
   {{if not (index .Errors "form")}}{{component "contact-form" $}}{{end}}
   <a href="{{.Back}}" class="mt-4 inline-block text-blue hover:text-blue-hover underline underline-offset-2">{{t "back"}}</a>

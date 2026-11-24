@@ -55,9 +55,21 @@ content hash. It gives new themes correct defaults without adding work to them:
   stylesheet carries the utilities those templates use, scoped under `.gp-core` and without
   Tailwind's reset, so they look right under any theme and never restyle a theme's own markup.
   Inside `.gp-core` the element defaults weigh one class, enough to beat an element reset.
-- **The store stylesheet** (`commerce.css`) is linked on every commerce page. Its buttons use the
-  `--accent`, `--on-accent`, `--accent-ink` and `--panel` tokens, so they follow the theme and the
-  site identity.
+- **Basecoat components**, scoped the same way. The second part of the file is the
+  [Basecoat](ADMIN_COMPONENTS.md#basecoat-shadcnui-for-plain-html) components the shared pages
+  use (`.btn` with `data-variant` / `data-size`, `.field` with its label, input, select and
+  textarea, `.input`, `.textarea`, `select.select`, `.card` with `header` / `section` / `footer`,
+  `.alert` with `data-variant="destructive"` or GoRun's `"success"`, `.badge`, `.table` in a
+  `.table-container`, `.empty`), nested under `.gp-core` and outside any cascade layer: two
+  classes of weight, so they beat the element defaults, and a theme restyles one with its own
+  scope (`html[data-theme="x"] .btn`). They read the [role names](#role-tokens) through
+  Tailwind's variables, so `.btn` is the identity's accent on every theme; shadcn's `muted` and
+  `accent` surfaces map to `--panel-2` and `--accent-soft`. Sources:
+  `tools/tailwind/vendor/basecoat-1.3.0` (build input only, the component list is
+  `CORE_BASECOAT_COMPONENTS` in `tools/tailwind/build.sh`).
+- **The store stylesheet** (`commerce.css`) is linked on every commerce page: the store layout
+  (`.zad-store`, `.zad-shop-grid`, `.zad-product-detail`, the account sections). Its buttons are
+  Basecoat's `.btn`, restyled for the account's identity pair under `.gp-account`.
 
 A theme keeps its character by styling its own classes and elements; it does not need to restyle
 the shared pages. Rebuild the stylesheet with `tools/tailwind/build.sh` after changing a shared

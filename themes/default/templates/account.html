@@ -10,7 +10,7 @@
     {{if .Extra.billing_portal}}
     <form method="post" action="/account/billing-portal">
       <input type="hidden" name="_csrf" value="{{csrf}}">
-      <button type="submit" class="zad-button zad-button-outline">{{t "commerce.account.billing_portal"}}</button>
+      <button type="submit" class="btn" data-variant="outline">{{t "commerce.account.billing_portal"}}</button>
     </form>
     {{end}}
   </header>
@@ -25,7 +25,7 @@
           <input type="hidden" name="next" value="{{.Extra.next}}">
           <div><label for="password-email">{{t "commerce.product.email"}}</label><input id="password-email" name="email" type="email" required autocomplete="username" dir="ltr"></div>
           <div><label for="account-password">{{t "commerce.account.password"}}</label><input id="account-password" name="password" type="password" required autocomplete="current-password"></div>
-          <button type="submit" class="zad-button">{{t "commerce.account.password_login"}}</button>
+          <button type="submit" class="btn">{{t "commerce.account.password_login"}}</button>
         </form>
       </section>
       <details class="gp-account-alternative"{{if or .Extra.sent (eq .Extra.account_error "commerce.error.email_invalid") (eq .Extra.account_error "commerce.error.rate_limited")}} open{{end}}>
@@ -36,7 +36,7 @@
           <input type="hidden" name="_csrf" value="{{csrf}}">
           <div><label for="account-email">{{t "commerce.product.email"}}</label><input id="account-email" name="email" type="email" required autocomplete="email" dir="ltr"></div>
           <div class="sr-only" aria-hidden="true"><label for="account-website">{{t "honeypot_label"}}</label><input id="account-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-          <button type="submit" class="zad-button zad-button-outline">{{t "commerce.account.send_link"}}</button>
+          <button type="submit" class="btn" data-variant="outline">{{t "commerce.account.send_link"}}</button>
         </form>
       </details>
       {{if .Extra.registration_enabled}}
@@ -48,7 +48,7 @@
           <div><label for="register-name">{{t "commerce.account.name"}}</label><input id="register-name" name="name" maxlength="200" required autocomplete="name"></div>
           <div><label for="register-email">{{t "commerce.product.email"}}</label><input id="register-email" name="email" type="email" required autocomplete="email" dir="ltr"></div>
           <div><label for="register-password">{{t "commerce.account.password"}}</label><input id="register-password" name="password" type="password" minlength="10" required autocomplete="new-password"></div>
-          <button type="submit" class="zad-button">{{t "commerce.account.register"}}</button>
+          <button type="submit" class="btn">{{t "commerce.account.register"}}</button>
         </form>
       </details>
       {{end}}
@@ -74,7 +74,7 @@
           {{if eq .Status "active"}}
           <form method="post" action="/account/open/{{.ID}}" class="gp-account-action">
             <input type="hidden" name="_csrf" value="{{csrf}}">
-            <button type="submit" class="zad-button">{{t "commerce.account.open"}}</button>
+            <button type="submit" class="btn">{{t "commerce.account.open"}}</button>
           </form>
           {{end}}
         </li>
