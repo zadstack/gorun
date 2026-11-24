@@ -60,6 +60,9 @@ type Options struct {
 	// RequireTokenSelector requires the theme's primary stylesheet to declare
 	// tokens under :where(html[data-theme="<slug>"]).
 	RequireTokenSelector bool
+	// ForbidRoleTokenOverrides fails when the theme's own stylesheets declare
+	// one of RoleTokens (--primary, --background, …) instead of its Source.
+	ForbidRoleTokenOverrides bool
 }
 
 // CatalogOptions is the shared ship-with contract.
@@ -72,6 +75,8 @@ func CatalogOptions() Options {
 		RequireHome:          true,
 		ForbidScriptHosts:    []string{"cdn.tailwindcss.com", "cdn.jsdelivr.net", "unpkg.com", "cdnjs.cloudflare.com"},
 		RequireTokenSelector: true,
+
+		ForbidRoleTokenOverrides: true,
 	}
 }
 
@@ -168,6 +173,9 @@ func ValidateDir(dir string, roots []string, opts Options) Result {
 	}
 	if len(opts.ForbidScriptHosts) > 0 {
 		res.Issues = append(res.Issues, scanForbiddenHosts(dir, opts.ForbidScriptHosts)...)
+	}
+	if opts.ForbidRoleTokenOverrides {
+		res.Issues = append(res.Issues, scanRoleTokenOverrides(dir)...)
 	}
 	// {{sections .}} links the core site stylesheet (forms, tables, the shared
 	// store and account templates) on every page and sections.css only on
@@ -333,6 +341,61 @@ func checkTokenSelector(dir, slug string) *Issue {
 		return nil
 	}
 	return &Issue{Code: "tokens", Message: "primary stylesheet must declare tokens under " + want, Path: "assets/"}
+}
+
+// sharedTokensMarker opens themes/_base/tokens.css and its served copy.
+const sharedTokensMarker = "/* GoRun shared theme tokens"
+
+// scanRoleTokenOverrides reports every declaration of a RoleTokens name in the
+// theme's own CSS (assets/ and inline <style> in parts/, templates/,
+// components/). A var(--primary) reference is fine; "--primary:" is not.
+func scanRoleTokenOverrides(dir string) []Issue {
+	var issues []Issue
+	for _, sub := range []string{"assets", "parts", "templates", "components"} {
+		_ = filepath.WalkDir(filepath.Join(dir, sub), func(path string, d os.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return nil
+			}
+			ext := strings.ToLower(filepath.Ext(path))
+			if ext != ".css" && ext != ".html" {
+				return nil
+			}
+			raw, err := os.ReadFile(path)
+			if err != nil || strings.Contains(string(raw), sharedTokensMarker) {
+				return nil // the served copy of themes/_base/tokens.css declares the aliases
+			}
+			rel, _ := filepath.Rel(dir, path)
+			for _, tok := range RoleTokens {
+				if roleTokenDeclared(string(raw), tok.Name) {
+					issues = append(issues, Issue{Code: "tokens", Path: filepath.ToSlash(rel), Message: tok.Name + " is an alias of " + tok.Source + " in the shared tokens; declare " + tok.Source + " under the theme's token selector instead"})
+				}
+			}
+			return nil
+		})
+	}
+	return issues
+}
+
+// roleTokenDeclared matches "--name:" as a declaration (start of the text or
+// after ; { or whitespace), not inside var(--name) or a longer name.
+func roleTokenDeclared(css, name string) bool {
+	for i := 0; ; {
+		j := strings.Index(css[i:], name)
+		if j < 0 {
+			return false
+		}
+		start := i + j
+		end := start + len(name)
+		before := byte(' ')
+		if start > 0 {
+			before = css[start-1]
+		}
+		rest := strings.TrimLeft(css[end:], " \t")
+		if (before == ';' || before == '{' || before == ' ' || before == '\t' || before == '\n' || before == '\r') && strings.HasPrefix(rest, ":") {
+			return true
+		}
+		i = end
+	}
 }
 
 func scanForbiddenHosts(dir string, hosts []string) []Issue {

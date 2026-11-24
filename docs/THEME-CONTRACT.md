@@ -33,7 +33,7 @@ fail the process by themselves.
 | Templates | Resolve via own files or parents: `index`, `page`, `single`, `archive`, `taxonomy`, `search`, `404`, `500`, `page-builder`, `page-contact`, `form-result`, plus `front-page` **or** `home` |
 | Screenshot | `screenshot.png` at theme root |
 | Head | Own or inherited `parts/head.html` / `head-extra.html` call `sections` (links the [core site stylesheet](#core-site-stylesheet) on every page, the store stylesheet on commerce pages and `sections.css` only on pages whose content uses `gp-s-` blocks; a head without the call must link both `sections.css` and `/static/site/core.css` itself), `builderIdentity` (or `builderStyle`) and `identity` |
-| Tokens | Primary stylesheet (`assets/site.css`, `theme.css`, or `style.css`) declares `:where(html[data-theme="<slug>"])` (default may use bare `html[data-theme="default"]`) |
+| Tokens | Primary stylesheet (`assets/site.css`, `theme.css`, or `style.css`) declares `:where(html[data-theme="<slug>"])` (default may use bare `html[data-theme="default"]`). Theme CSS and inline styles never declare a [role name](#role-tokens) (`--primary`, `--background`, `--border`, …): those are aliases of the identity tokens |
 | CSP | Theme HTML/CSS/JS must not reference known third-party script CDN hosts |
 
 Custom (non-catalog) themes checked by doctor use a lighter bar: `index.html` must resolve
@@ -150,6 +150,21 @@ them, `--accent-ink`, `--blue` and `--link` for text in the accent colour, and t
 `--success-*`, `--warning-*` and `--info-*` pairs for messages. The site identity and its dark scheme set
 these tokens (see [THEMES.md](THEMES.md#rules-that-keep-the-layers-readable)), so a theme that uses them
 stays readable under any identity. No site brand, colour or asset is hard-coded in a shipped template.
+
+<a id="role-tokens"></a>**Role names.** The shared `tokens.css` also declares the shadcn role names the
+admin, [Basecoat](ADMIN_COMPONENTS.md#basecoat-shadcnui-for-plain-html) and the site builder use, as
+aliases of the tokens above: `--background` → `--bg`, `--foreground` → `--ink`, `--card` and `--popover`
+→ `--panel`, `--primary` / `--primary-hover` / `--primary-foreground` → `--accent` / `--accent-hover` /
+`--on-accent`, `--secondary` → `--panel-2`, `--muted-foreground` → `--muted`, `--destructive` →
+`--red`, `--border` and `--input` → `--line`, `--ring` → `--accent`, `--radius-sm/md/lg/xl` →
+`--radius` and `--radius-card`, `--font-sans` → `--font` (`themekit.RoleTokens` is the table). They
+resolve on `<html>`, so a theme or the site identity that sets `--accent` under its token selector
+drives `--primary` without naming it, and a shared component styled with `var(--primary)` follows
+every theme. A theme therefore declares the source token, never the role name: `--primary: …` in
+theme CSS detaches it from the identity, and `theme doctor` reports it. Two names keep their theme
+meaning: `--accent` is the identity's main colour and `--muted` its secondary text colour, whereas
+shadcn uses both for soft surfaces; a shared stylesheet that compiles shadcn components remaps those
+two under its own scope.
 
 **Behaviour.** Core components work without JavaScript (links and forms, server-rendered). Script may
 enhance them, but not replace a link or a form. Every interactive part is reachable by keyboard and

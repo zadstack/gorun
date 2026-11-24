@@ -103,3 +103,74 @@ func TestHeadWithoutSectionsCallMustLinkTheCoreStylesheet(t *testing.T) {
 		})
 	}
 }
+
+// A theme sets the identity tokens (--accent, --bg, …) and never the shadcn
+// role names the shared tokens alias to them: a direct --primary would stop
+// following --accent and the site identity.
+func TestRoleTokenOverridesAreRejected(t *testing.T) {
+	themes, err := filepath.Abs("../../themes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, css string
+		ok        bool
+	}{
+		{"source token", `:where(html[data-theme="child"]){--accent:#0f766e;--radius:8px}`, true},
+		{"reference", `:where(html[data-theme="child"]){--accent:#0f766e}.x{color:var(--primary);border-color:var(--border)}`, true},
+		{"role declared", `:where(html[data-theme="child"]){--primary:#0f766e}`, false},
+		{"role declared later", `:where(html[data-theme="child"]){--accent:#0f766e}
+.btn{--border: red}`, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			if err := os.MkdirAll(filepath.Join(dir, "assets"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "theme.json"), []byte(`{"name":"Child","version":"1.0","parent":"default"}`), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "assets", "site.css"), []byte(tc.css), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			res := themekit.ValidateDir(dir, []string{themes}, themekit.Options{ForbidRoleTokenOverrides: true})
+			var saw []string
+			for _, issue := range res.Issues {
+				if issue.Code == "tokens" {
+					saw = append(saw, issue.Message)
+				}
+			}
+			if tc.ok && len(saw) > 0 {
+				t.Fatalf("unexpected tokens issues: %v", saw)
+			}
+			if !tc.ok && len(saw) != 1 {
+				t.Fatalf("want one tokens issue, got %v (all: %v)", saw, res.Issues)
+			}
+			if !tc.ok && tc.name == "role declared" && !strings.Contains(saw[0], "--primary is an alias of --accent") {
+				t.Fatalf("message should name the source token: %q", saw[0])
+			}
+		})
+	}
+}
+
+// The shared tokens file declares every role name as var(<source>), so the
+// table doctor reports from and the CSS themes load cannot drift apart.
+func TestRoleTokensDeclaredInSharedTokens(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "themes", "_base", "tokens.css"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	css := string(raw)
+	for _, tok := range themekit.RoleTokens {
+		want := tok.Name + ": "
+		i := strings.Index(css, want)
+		if i < 0 {
+			t.Errorf("%s not declared in themes/_base/tokens.css", tok.Name)
+			continue
+		}
+		decl := css[i : i+strings.Index(css[i:], ";")]
+		if !strings.Contains(decl, "var("+tok.Source+")") {
+			t.Errorf("%s should follow %s, got %q", tok.Name, tok.Source, decl)
+		}
+	}
+}

@@ -95,6 +95,12 @@ Use modern CSS variables and zero-specificity selectors rather than fighting the
 }
 ```
 
+Set the identity tokens (`--accent`, `--bg`, `--ink`, `--line`, `--panel`, `--muted`, `--font`,
+`--radius`), not the shadcn role names (`--primary`, `--background`, `--border`, …): the shared
+`tokens.css` declares those as aliases of the identity tokens, so `--accent` above already drives
+`--primary`, and a direct `--primary` would stop following the site identity (`theme doctor` reports
+it; see [role names](THEME-CONTRACT.md#role-tokens)). Your own CSS may read either name.
+
 If you inherit the default theme head, check how its existing styles load before overriding anything. Avoid third-party JavaScript CDNs and inline event handlers; GoRun enforces CSP. Prefer local assets and scripts with a valid nonce.
 
 ## 5. Localize and support RTL
