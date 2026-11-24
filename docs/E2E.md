@@ -137,6 +137,26 @@ the bug exists and turn red ("expected to fail but passed") once it is fixed —
 7. Pages loaded over HTMX: before typing into a freshly swapped fragment, wait until htmx has bound it
    (see the media-picker upload in `admin-setup-and-content.spec.ts`).
 
+## Visual baselines / اللقطات الأساسية
+
+`tests/visual-regression.spec.ts` compares pixel screenshots of the admin components page
+(`/admin/design/components`, both languages, desktop and a 390px phone) and of the shared site
+pages (shop, product, cart, checkout and account under the default theme; shop, account and the
+product page under Business) with the baselines committed in
+`tests/visual-regression.spec.ts-snapshots/`. A change to the tokens, to Basecoat or to
+`core.css` then fails with a diff image in the report instead of passing unnoticed.
+
+The baselines are Linux renders (the CI runner's Chromium and fonts), so the spec skips on
+macOS and Windows unless `E2E_VISUAL=1` is set. To create or update a baseline:
+
+1. Push the change. The `browser` job fails on the changed screenshots and uploads
+   `browser-failure-report`, whose `test-results/` holds `<name>-actual.png` next to the diff.
+2. Review the diff, copy the accepted `-actual.png` files into the snapshots directory under
+   their baseline names (`<name>-chromium-linux.png`) and commit them with the change. On a Linux
+   machine `npx playwright test visual-regression.spec.ts --update-snapshots` does the same.
+
+Keep the page deterministic: no dates, counters or user data in what is captured.
+
 ## Guided site acceptance
 
 `site-profile.spec.ts` uses the actual media picker to upload/select logo and hero images, checks Arabic/English custom profiles across the three Studio themes, private full-shell previews, unchanged public settings before activation, one-service offerings, invalid-input preservation and mobile overflow. `site-readiness.spec.ts` verifies real settings corrections, direct action links, read-only content/settings/layout state, honest SMTP presence versus delivery, and anonymous/contributor denial. Both restore only the mutable settings/menu assignments of the disposable test site.

@@ -1,0 +1,202 @@
+{{/* Data: struct{CoreCSS string} (internal/admin/design_components.go). Every
+     shared component in each state, in the admin palette. The last section
+     renders the site components in a declarative shadow root that loads the
+     core site stylesheet: its element defaults under :where(main) would
+     otherwise restyle the admin's own unclassed buttons and labels, while
+     inside the shadow tree only the .gp-core rules match. The admin's tokens
+     and fonts inherit into it. */}}
+{{define "title"}}{{t "design.components.title"}}{{end}}
+{{define "content"}}
+<div class="components-page grid gap-4" data-components-page>
+{{template "partials/page-header" (dict "Title" (t "design.components.title") "Subtitle" (t "design.components.subtitle"))}}
+<p class="field-help max-w-3xl">{{t "design.components.intro"}}</p>
+
+<section class="card" data-component="buttons">
+  <header><h2>{{t "design.components.buttons"}}</h2></header>
+  <section class="grid gap-3">
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" class="btn">{{t "design.sample.primary"}}</button>
+      <button type="button" class="btn" data-variant="secondary">{{t "design.sample.secondary"}}</button>
+      <button type="button" class="btn" data-variant="outline">{{t "design.sample.outline"}}</button>
+      <button type="button" class="btn" data-variant="ghost">{{t "design.sample.ghost"}}</button>
+      <button type="button" class="btn" data-variant="link">{{t "design.sample.link"}}</button>
+      <button type="button" class="btn" data-variant="destructive">{{t "design.sample.destructive"}}</button>
+      <button type="button" class="btn" disabled>{{t "design.sample.disabled"}}</button>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" class="btn" data-size="sm">{{t "design.sample.small"}}</button>
+      <button type="button" class="btn">{{icon "plus"}}<span>{{t "design.sample.add"}}</span></button>
+      <button type="button" class="btn" data-size="lg">{{t "design.sample.large"}}</button>
+      <button type="button" class="btn" data-variant="outline" data-size="icon" aria-label="{{t "design.sample.add"}}">{{icon "plus"}}</button>
+      <button type="button" class="btn btn-primary">btn-primary</button>
+      <button type="button" class="btn btn-secondary btn-sm">btn-secondary btn-sm</button>
+      <button type="button" class="btn btn-danger btn-sm">btn-danger btn-sm</button>
+      <button type="button" class="btn btn-ghost btn-sm">btn-ghost btn-sm</button>
+    </div>
+  </section>
+</section>
+
+<section class="card" data-component="badges">
+  <header><h2>{{t "design.components.badges"}}</h2></header>
+  <section class="flex flex-wrap items-center gap-2">
+    <span class="badge">{{t "design.sample.primary"}}</span>
+    <span class="badge" data-variant="secondary">{{t "design.sample.secondary"}}</span>
+    <span class="badge" data-variant="outline">{{t "design.sample.outline"}}</span>
+    <span class="badge" data-variant="destructive">{{t "design.sample.failed"}}</span>
+    <span class="badge badge-success">{{t "design.sample.active"}}</span>
+    <span class="badge badge-warning">{{t "design.sample.pending"}}</span>
+    <span class="badge badge-info">{{t "design.sample.info"}}</span>
+    <span class="badge badge-danger">{{t "design.sample.failed"}}</span>
+  </section>
+</section>
+
+<section class="card" data-component="alerts">
+  <header><h2>{{t "design.components.alerts"}}</h2></header>
+  <section class="grid gap-3">
+    <div class="alert">{{icon "database"}}<h3>{{t "design.sample.alert_title"}}</h3><section>{{t "design.sample.alert_body"}}</section></div>
+    <div class="alert" data-variant="destructive">{{icon "triangle-alert"}}<h3>{{t "design.sample.destructive"}}</h3><section>{{t "design.sample.alert_error"}}</section></div>
+    <div role="status" class="alert admin-flash" data-kind="success"><section>{{t "design.sample.flash_success"}}</section></div>
+    <div role="status" class="alert admin-flash" data-kind="error" data-variant="destructive"><section>{{t "design.sample.flash_error"}}</section></div>
+    <div role="status" class="alert admin-flash" data-kind="info"><section>{{t "design.sample.flash_info"}}</section></div>
+  </section>
+</section>
+
+<section class="card" data-component="fields">
+  <header><h2>{{t "design.components.fields"}}</h2></header>
+  <section>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div class="field">
+        <label for="dc-name">{{t "design.sample.name"}}</label>
+        <input id="dc-name" type="text" value="GoRun">
+        <p>{{t "design.sample.name_help"}}</p>
+      </div>
+      <div class="field" data-invalid="true">
+        <label for="dc-email">{{t "design.sample.email"}}</label>
+        <input id="dc-email" type="email" value="not-an-email" aria-invalid="true" aria-describedby="dc-email-error">
+        <p id="dc-email-error" role="alert">{{t "design.sample.email_error"}}</p>
+      </div>
+      <div class="field">
+        <label for="dc-role">{{t "design.sample.role"}}</label>
+        <select id="dc-role"><option>{{t "design.sample.primary"}}</option><option>{{t "design.sample.secondary"}}</option></select>
+      </div>
+      <div class="field">
+        <label for="dc-disabled">{{t "design.sample.disabled"}}</label>
+        <input id="dc-disabled" type="text" value="—" disabled>
+      </div>
+      <div class="field md:col-span-2">
+        <label for="dc-notes">{{t "design.sample.notes"}}</label>
+        <textarea id="dc-notes" rows="3" placeholder="{{t "design.sample.notes_placeholder"}}"></textarea>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" checked> <span>{{t "design.sample.notify"}}</span></label>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" role="switch" checked> <span>{{t "design.sample.two_factor"}}</span></label>
+      </div>
+      <fieldset class="field md:col-span-2" role="radiogroup" aria-labelledby="dc-visibility">
+        <h3 id="dc-visibility">{{t "design.sample.visibility"}}</h3>
+        <label><input type="radio" name="dc-visibility" checked> <span>{{t "design.sample.public"}}</span></label>
+        <label><input type="radio" name="dc-visibility"> <span>{{t "design.sample.private"}}</span></label>
+      </fieldset>
+    </div>
+  </section>
+</section>
+
+<section class="card" data-component="card">
+  <header><h2>{{t "design.components.card"}}</h2></header>
+  <section>
+    <div class="card max-w-md">
+      <header><h3>{{t "design.sample.card_title"}}</h3><p>{{t "design.sample.card_body"}}</p></header>
+      <section><span class="badge badge-success">{{t "design.sample.active"}}</span></section>
+      <footer class="gap-2"><button type="button" class="btn">{{t "design.sample.card_action"}}</button><button type="button" class="btn" data-variant="ghost">{{t "core.action.cancel"}}</button></footer>
+    </div>
+  </section>
+</section>
+
+<section class="card" data-component="table">
+  <header><h2>{{t "design.components.table"}}</h2></header>
+  <section>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th scope="col">{{t "design.sample.col_page"}}</th><th scope="col">{{t "design.sample.col_status"}}</th><th scope="col">{{t "design.sample.col_updated"}}</th><th scope="col"><span class="sr-only">{{t "design.sample.actions"}}</span></th></tr></thead>
+        <tbody>
+          <tr><td>{{t "design.sample.row_home"}}</td><td><span class="badge badge-success">{{t "core.status.published"}}</span></td><td><time datetime="2026-11-10T18:04:00Z">2026-11-10 18:04</time></td><td class="text-end"><button type="button" class="btn btn-ghost btn-sm">{{t "core.action.edit"}}</button></td></tr>
+          <tr><td>{{t "design.sample.row_about"}}</td><td><span class="badge">{{t "core.status.draft"}}</span></td><td><time datetime="2026-11-09T09:30:00Z">2026-11-09 09:30</time></td><td class="text-end"><button type="button" class="btn btn-ghost btn-sm">{{t "core.action.edit"}}</button></td></tr>
+          <tr><td>{{t "design.sample.row_pricing"}}</td><td><span class="badge badge-warning">{{t "design.sample.pending"}}</span></td><td><time datetime="2026-11-01T12:00:00Z">2026-11-01 12:00</time></td><td class="text-end"><button type="button" class="btn btn-ghost btn-sm">{{t "core.action.edit"}}</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+
+<section class="card" data-component="interactive">
+  <header><h2>{{t "design.components.interactive"}}</h2></header>
+  <section class="grid gap-4 md:grid-cols-2">
+    <div class="dropdown-menu" id="dc-menu">
+      <button type="button" class="btn" data-variant="outline" id="dc-menu-trigger" aria-haspopup="menu" aria-controls="dc-menu-menu" aria-expanded="false">{{t "design.sample.actions"}}{{icon "chevron-down"}}</button>
+      <div id="dc-menu-popover" data-popover aria-hidden="true">
+        <div role="menu" id="dc-menu-menu" aria-labelledby="dc-menu-trigger">
+          <div role="menuitem">{{t "design.sample.menu_edit"}}</div>
+          <div role="menuitem">{{t "design.sample.menu_duplicate"}}</div>
+          <hr role="separator">
+          <div role="menuitem" data-variant="destructive">{{t "design.sample.menu_delete"}}</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs" id="dc-tabs">
+      <nav role="tablist" aria-orientation="horizontal">
+        <button type="button" role="tab" id="dc-tabs-tab-1" aria-controls="dc-tabs-panel-1" aria-selected="true" tabindex="0">{{t "design.sample.tab_general"}}</button>
+        <button type="button" role="tab" id="dc-tabs-tab-2" aria-controls="dc-tabs-panel-2" aria-selected="false" tabindex="-1">{{t "design.sample.tab_advanced"}}</button>
+      </nav>
+      <div role="tabpanel" id="dc-tabs-panel-1" aria-labelledby="dc-tabs-tab-1" tabindex="-1"><p class="field-help">{{t "design.sample.tab_general_body"}}</p></div>
+      <div role="tabpanel" id="dc-tabs-panel-2" aria-labelledby="dc-tabs-tab-2" tabindex="-1" hidden><p class="field-help">{{t "design.sample.tab_advanced_body"}}</p></div>
+    </div>
+  </section>
+</section>
+
+<section class="card" data-component="empty">
+  <header><h2>{{t "design.components.empty"}}</h2></header>
+  <section>
+    <div class="empty-state"><p class="empty-state-title">{{t "design.sample.empty_title"}}</p><p>{{t "design.sample.empty_body"}}</p><button type="button" class="btn">{{t "design.sample.add"}}</button></div>
+  </section>
+</section>
+
+<section class="card" data-component="site">
+  <header><h2>{{t "design.components.site"}}</h2><p>{{t "design.components.site_help"}}</p></header>
+  <section>
+    <div data-site-components>
+    <template shadowrootmode="open">
+    <link rel="stylesheet" href="{{.CoreCSS}}">
+    <style>
+      /* The site tokens core.css reads that the admin palette names differently. */
+      :host { display: block; font: inherit; color: inherit; --radius-card: var(--radius-lg); --accent-soft: var(--accent); --success-bg: var(--green-soft); --success-text: var(--green-hover); }
+      a { color: inherit; text-decoration: none; }
+    </style>
+    <div class="gp-core">
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="card" data-size="sm">
+          <header><h3 class="card-title">{{t "design.sample.site_product"}}</h3><p>{{t "design.sample.site_product_body"}}</p></header>
+          <footer class="justify-between gap-2"><span class="font-bold" dir="ltr">120.00 AED</span><a href="#site" class="btn" data-variant="outline" data-size="sm">{{t "design.sample.site_view"}}</a></footer>
+        </div>
+        <div class="grid gap-3">
+          <div class="field"><label for="dc-site-qty">{{t "design.sample.site_quantity"}}</label><input id="dc-site-qty" type="number" value="1" min="1"></div>
+          <p class="alert">{{t "design.sample.site_notice"}}</p>
+          <button type="button" class="btn w-full" data-size="lg">{{t "design.sample.site_submit"}}</button>
+        </div>
+        <p role="alert" class="alert" data-variant="destructive">{{t "design.sample.site_error"}}</p>
+        <div class="alert" data-variant="success"><strong>{{t "design.sample.site_success"}}</strong><section><p>{{t "design.sample.site_notice"}}</p></section></div>
+        <div class="table-container md:col-span-2">
+          <table class="table">
+            <thead><tr><th scope="col">{{t "design.sample.site_col_product"}}</th><th scope="col">{{t "design.sample.site_quantity"}}</th><th scope="col">{{t "design.sample.site_col_total"}}</th></tr></thead>
+            <tbody><tr><td>{{t "design.sample.site_product"}}</td><td>1</td><td dir="ltr">120.00 AED</td></tr></tbody>
+          </table>
+        </div>
+        <div class="empty md:col-span-2"><header><p>{{t "design.sample.site_empty"}}</p></header></div>
+      </div>
+    </div>
+    </template>
+    </div>
+  </section>
+</section>
+</div>
+{{end}}

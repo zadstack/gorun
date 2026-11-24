@@ -33,6 +33,12 @@ admin and auth page can use Basecoat markup directly:
   by its mutation observer. Pilot: `pages/auth/login.html` and
   `partials/flash`.
 
+**Components page.** `/admin/design/components` (settings permission, reached by URL) renders
+every shared component in each of its states, in both languages, plus the site components the
+core stylesheet scopes under `.gp-core`. Review a change to the tokens or to Basecoat there, and
+let `e2e/tests/visual-regression.spec.ts` compare it with its pixel baselines
+([E2E.md](E2E.md#visual-baselines--اللقطات-الأساسية)).
+
 Basecoat reads the shadcn tokens (`--background`, `--foreground`, `--card`,
 `--primary`, `--secondary`, `--muted`, `--accent`, `--destructive`,
 `--border`, `--input`, `--ring`, `--radius`, `--sidebar-*`), which `admin.css`
