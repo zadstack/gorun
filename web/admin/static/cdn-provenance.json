@@ -7,7 +7,8 @@
     "Tailwind Play CDN remains a browser-side development compiler per upstream documentation. Vendoring and SRI do not remove this runtime limitation.",
     "No additional dependency network loader found in the fetched bundles; HTMX can process scripts supplied in application HTML fragments. Those scripts are outside the bundle integrity check.",
     "Quill uses existing local admin styles; no remote Quill stylesheet is loaded. Quill bundled dependency notices are preserved beside its bundle.",
-    "Upstream URLs record provenance only; browsers load the local_path assets through the existing admin asset helper."
+    "Upstream URLs record provenance only; browsers load the local_path assets through the existing admin asset helper.",
+    "Basecoat (shadcn/ui components for plain HTML, basecoat-css 1.3.0) is vendored from the npm package tarball (registry integrity sha512-N7RYvuoaKq57xQFumDYXP2bMf6JKUyzI33tCmyBAkexru64xti+oYE1BA/iUYMVW+9NjWSfhO6eT27WjF/xFMA==). basecoat-1.3.0.css is dist/basecoat.cdn.min.css (standalone build, no Tailwind at runtime); basecoat-1.3.0.js is dist/js/all.min.js (runtime plus every auto-initialised component except Chart). Both files are byte-identical to the package contents. The JavaScript injects no inline styles or scripts and needs no CSP change."
   ],
   "assets": [
     {
@@ -118,6 +119,39 @@
       "derivation": "Selected icon data and unchanged renderer from pinned local vendor; tools/admin-icons/update.mjs",
       "source_integrity": "sha384-SZUFq9Dx112fyzY/iIBEjyd2gu3jY4XVhp+LUNXSpEMB2IEm/TOoMTNH4BHtQ6Hz",
       "source_url": "https://cdn.jsdelivr.net/npm/lucide@1.55.0/dist/umd/lucide.min.js"
+    },
+    {
+      "package": "basecoat-css",
+      "version": "1.3.0",
+      "url": "https://cdn.jsdelivr.net/npm/basecoat-css@1.3.0/dist/basecoat.cdn.min.css",
+      "integrity": "sha384-saKoQNdtRL570lHfelHpMeHSLZvokVhc+VLBPicKMDUuBbLXU/jsviUGwuHcq0K7",
+      "bytes": 294923,
+      "license": "MIT",
+      "license_source": "https://raw.githubusercontent.com/hunvreus/basecoat/v1.3.0/LICENSE.md",
+      "integrity_enforced": false,
+      "integrity_note": "Stylesheet; loaded same-origin through the admin asset helper, which already versions the URL. Browsers apply SRI to stylesheets too, but the project does not set integrity on <link> elements.",
+      "local_path": "web/admin/static/vendor/basecoat-1.3.0.css",
+      "license_local_path": "web/admin/static/vendor/basecoat-1.3.0.LICENSE",
+      "license_metadata_source": "https://registry.npmjs.org/basecoat-css/1.3.0",
+      "delivery": "same-origin embedded admin static asset",
+      "source_package": "https://registry.npmjs.org/basecoat-css/-/basecoat-css-1.3.0.tgz",
+      "source_file": "dist/basecoat.cdn.min.css"
+    },
+    {
+      "package": "basecoat-css",
+      "version": "1.3.0",
+      "url": "https://cdn.jsdelivr.net/npm/basecoat-css@1.3.0/dist/js/all.min.js",
+      "integrity": "sha384-irlXzRyf3e3DSRuOveVbYqO3wrYYXofFJWIlgVIR9ylUnX4u5dGBxWdF8L/bEsZB",
+      "bytes": 56299,
+      "license": "MIT",
+      "license_source": "https://raw.githubusercontent.com/hunvreus/basecoat/v1.3.0/LICENSE.md",
+      "integrity_enforced": true,
+      "local_path": "web/admin/static/vendor/basecoat-1.3.0.js",
+      "license_local_path": "web/admin/static/vendor/basecoat-1.3.0.LICENSE",
+      "license_metadata_source": "https://registry.npmjs.org/basecoat-css/1.3.0",
+      "delivery": "same-origin embedded admin static asset",
+      "source_package": "https://registry.npmjs.org/basecoat-css/-/basecoat-css-1.3.0.tgz",
+      "source_file": "dist/js/all.min.js"
     }
   ]
 }

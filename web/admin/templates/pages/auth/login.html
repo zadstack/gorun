@@ -1,21 +1,25 @@
 {{define "title"}}{{t "auth.login.title"}}{{end}}
 {{define "content"}}
-<div class="admin-auth-panel">
-  <p class="admin-auth-brand">{{t "core.app.name"}}</p>
-  <h1>{{t "auth.login.title"}}</h1>
-  {{with .Error}}<div role="alert" class="mb-4 mt-4 rounded border border-red bg-red-soft text-red px-3 py-2">{{t .}}</div>{{end}}
-  <form method="post" action="/admin/login" class="space-y-4 mt-5" novalidate>
-    <input type="hidden" name="_csrf" value="{{csrf}}">
-    <input type="hidden" name="next" value="{{.Next}}">
-    <div>
-      <label for="email" class="block font-medium mb-1">{{t "auth.login.identity"}}</label>
-      <input id="email" name="email" type="text" autocomplete="username" required value="{{.Email}}" class="w-full h-9 border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-    </div>
-    <div>
-      <label for="password" class="block font-medium mb-1">{{t "auth.field.password"}}</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required class="w-full h-9 border border-line bg-panel px-3 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
-    </div>
-    <button type="submit" class="w-full h-9 bg-blue text-white hover:bg-blue-hover focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{t "auth.login.submit"}}</button>
-  </form>
+<div class="card admin-auth-panel">
+  <header>
+    <p class="admin-auth-brand">{{t "core.app.name"}}</p>
+    <h1>{{t "auth.login.title"}}</h1>
+  </header>
+  <section>
+    {{with .Error}}<div role="alert" class="alert mb-4" data-variant="destructive"><section>{{t .}}</section></div>{{end}}
+    <form method="post" action="/admin/login" class="grid gap-4" novalidate>
+      <input type="hidden" name="_csrf" value="{{csrf}}">
+      <input type="hidden" name="next" value="{{.Next}}">
+      <div class="field">
+        <label for="email">{{t "auth.login.identity"}}</label>
+        <input id="email" name="email" type="text" autocomplete="username" required value="{{.Email}}">
+      </div>
+      <div class="field">
+        <label for="password">{{t "auth.field.password"}}</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn w-full">{{t "auth.login.submit"}}</button>
+    </form>
+  </section>
 </div>
 {{end}}

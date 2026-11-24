@@ -96,11 +96,11 @@
       <legend class="font-medium mb-1">{{t "admin.keys.kind"}}</legend>
       <div class="grid gap-2 sm:grid-cols-2">
         <label class="flex items-start gap-2 rounded border border-line bg-bg px-3 py-2">
-          <input type="radio" name="kind" value="agent" {{if ne .Form.Kind "api"}}checked{{end}} class="mt-0.5 accent-[var(--accent)]">
+          <input type="radio" name="kind" value="agent" {{if ne .Form.Kind "api"}}checked{{end}} class="mt-0.5 accent-[var(--primary)]">
           <span><span class="block">{{t "admin.keys.kind_agent"}}</span><span class="block text-xs text-muted">{{t "admin.keys.kind_agent_help"}}</span></span>
         </label>
         <label class="flex items-start gap-2 rounded border border-line bg-bg px-3 py-2">
-          <input type="radio" name="kind" value="api" {{if eq .Form.Kind "api"}}checked{{end}} class="mt-0.5 accent-[var(--accent)]">
+          <input type="radio" name="kind" value="api" {{if eq .Form.Kind "api"}}checked{{end}} class="mt-0.5 accent-[var(--primary)]">
           <span><span class="block">{{t "admin.keys.kind_api"}}</span><span class="block text-xs text-muted">{{t "admin.keys.kind_api_help"}}</span></span>
         </label>
       </div>
@@ -130,7 +130,7 @@
     <details data-key-permissions {{if .Fields}}open{{end}}><summary>{{t "auditworkspace.advanced_permissions"}}</summary><fieldset>
       <legend class="font-medium mb-1">{{t "admin.keys.scopes"}}</legend>
       <label class="flex items-center gap-2 rounded border border-line bg-bg px-3 py-2 mb-2">
-        <input type="checkbox" name="all" value="1" x-model="all" class="accent-[var(--accent)]">
+        <input type="checkbox" name="all" value="1" x-model="all" class="accent-[var(--primary)]">
         <span><span class="font-mono text-xs">*</span> — {{t "admin.keys.all_scopes"}}</span>
       </label>
       <div class="space-y-3 max-h-80 overflow-y-auto pe-1" :class="all && 'opacity-50'">
@@ -139,7 +139,7 @@
           <legend class="font-mono text-[11px] uppercase tracking-wide text-muted mb-1">{{.Module}}</legend>
           <ul class="grid gap-1 sm:grid-cols-2">
             {{range .Perms}}
-            <li><label class="flex items-start gap-2"><input type="checkbox" name="scopes" value="{{.Name}}" {{if .Checked}}checked{{end}} class="mt-0.5 accent-[var(--accent)]"><span><span class="block">{{.Label}}</span><span class="block font-mono text-[11px] text-muted">{{.Name}}</span></span></label></li>
+            <li><label class="flex items-start gap-2"><input type="checkbox" name="scopes" value="{{.Name}}" {{if .Checked}}checked{{end}} class="mt-0.5 accent-[var(--primary)]"><span><span class="block">{{.Label}}</span><span class="block font-mono text-[11px] text-muted">{{.Name}}</span></span></label></li>
             {{end}}
           </ul>
         </fieldset>
