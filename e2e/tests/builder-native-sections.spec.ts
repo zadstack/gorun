@@ -6,7 +6,7 @@ import {
   type Frame,
 } from "@playwright/test";
 import { randomUUID, createHash } from "node:crypto";
-import { csrf, db, setLocale, submitAndLand } from "../lib/helpers.ts";
+import { csrf, db, setLocale, submitAndLand, env } from "../lib/helpers.ts";
 import { tinyPNG } from "../fixtures/wp-fixture-server.ts";
 
 test.describe.configure({ mode: "serial" });
@@ -551,6 +551,11 @@ for (const theme of themes)
         page.on("pageerror", (e) => errors.push(e.message));
         await activate(page, theme);
         await page.setViewportSize({ width, height: 900 });
+        // Staff see the admin bar on the published page; the sandboxed preview
+        // never has it, so hide it (as a person would) before comparing geometry.
+        await page.context().addCookies([
+          { name: "gp_sitebar", value: "off", url: env("E2E_BASE_URL") },
+        ]);
         const response = await page.goto(p.path);
         expect(response?.status()).toBe(200);
         await page.screenshot({
