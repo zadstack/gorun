@@ -65,6 +65,7 @@ type identityPage struct {
 	Fields       []settingView // identity_* + custom_css
 	CTA          []settingView // cta_label/cta_url when the theme declares them
 	Contrast     identityContrast
+	Variables    identityVariables
 	Draft        *IdentityDraft
 	History      []identityRevisionView
 	HistoryValid bool
@@ -232,7 +233,7 @@ func (a *admin) renderIdentity(w http.ResponseWriter, r *http.Request, status in
 	canImport := a.s.d.Settings.Get(ctx, "builder.identity", &b) == nil && brand.Validate(b) == nil
 	page := identityPage{Design: a.identityDesign(ctx), Theme: info, Supports: supports, CanDesign: a.canDesign(ctx, info), Title: snap.Site["site.title"], Tagline: snap.Site["site.tagline"],
 		Logos: a.identityLogoSlots(ctx, snap.Site, errs), Fields: a.identityViews(ctx, identityFields(), snap.Values, errs),
-		CTA: a.identityViews(ctx, a.ctaSchema(info), cta, errs), Contrast: a.identityContrastFor(ctx, snap), Draft: draft,
+		CTA: a.identityViews(ctx, a.ctaSchema(info), cta, errs), Contrast: a.identityContrastFor(ctx, snap), Variables: a.identityVariablesFor(ctx, snap), Draft: draft,
 		History: views, HistoryValid: valid, CanImport: canImport, Errors: errs, Error: message, CanPickMedia: a.canPickMedia(ctx),
 		PreviewURL: "/admin" + adminIdentityPath + "/preview", Locale: i18n.Locale(ctx), HistoryKeep: identityHistoryKeep}
 	if page.Title == "" {

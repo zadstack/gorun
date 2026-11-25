@@ -24,3 +24,14 @@
 
 /* Keep the final history action reachable above the mobile floating launcher. */
 @media(max-width:767px){.identity-history{padding-block-end:calc(5rem + env(safe-area-inset-bottom,0px))}}
+
+/* Variables panel: both schemes side by side, the selected one marked. */
+.identity-variables-table th[data-var-scheme]{white-space:nowrap}
+.identity-active-mark{display:none;font-weight:600;color:var(--primary)}
+[data-identity-variables][data-active=light] th[data-var-scheme=light] .identity-active-mark,[data-identity-variables][data-active=dark] th[data-var-scheme=dark] .identity-active-mark{display:inline}
+.identity-var-swatch{display:inline-flex;align-items:center;justify-content:center;width:36px;height:28px;flex-shrink:0;border:1px solid var(--line);border-radius:4px;font-weight:700}
+.identity-level{display:inline-block;border:1px solid var(--line);border-radius:999px;padding-inline:6px;font-size:12px;line-height:1.5}
+.identity-level[data-level=aa]{border-color:var(--green);color:var(--green)}
+.identity-level[data-level=aa_large]{border-color:var(--amber,#b26b00);color:var(--amber-text,#7a4b00)}
+.identity-level[data-level=fail]{border-color:var(--red);color:var(--red)}
+.identity-roles dt{min-width:9ch}

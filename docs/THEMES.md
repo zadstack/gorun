@@ -194,6 +194,18 @@ the head. No compiler runs in the browser and the app needs no Node.
 
 A theme opts in by listing `"identity"` in its `theme.json` `supports` (the five catalog themes `default`, `business`, `magazine`, `portfolio` and `docs` do). **Appearance → Identity** (`/admin/appearance/identity`; the page needs `settings.manage`, and colours, fonts, shape and custom CSS additionally need `themes.manage`, the permission that guards the same keys on Theme settings; without it those fields are disabled and ignored on save) is the one place that edits it, together with the site name, tagline and the four logo slots (`site.title`, `site.tagline`, `site.logo`, `site.logo_light`, `site.logo_dark`, `site.icon`); the same identity group also appears at the end of **Appearance → Theme settings** (a theme that declares one of these keys keeps its own definition). `{{identity .}}` prints the stored values. Values are stored per theme as `theme.<slug>.<key>`; empty values keep the theme's design.
 
+### The Variables panel
+
+The identity page lists the identity tokens as the light and the dark
+scheme would render them, side by side, with the role names
+(`--background`, `--primary`, …) that follow each token and the WCAG
+contrast of the pairs a reader meets: text, muted text and links on the
+page background, and text on accent fills. Both schemes are checked at
+once, so a colour that reads on the light page is not a surprise after
+switching to the dark scheme, and the column of the selected scheme is
+marked. The values update as the colours are typed; the save check keeps
+the final say on text contrast.
+
 ### Draft, preview, apply, revert
 
 Edits on the Identity page go to a per-theme draft (`theme.<slug>.identity_draft`, JSON `{snapshot, saved_at, author}`), saved on each change with JavaScript or with **Save draft** without it. The page's iframe (`GET /admin/appearance/identity/preview?view=home|single&locale=ar|en`) renders the real active theme with the draft injected for that request only: the identity stylesheet is printed inline under the CSP nonce instead of `/site/identity.css`, logos and title come from the draft, and nothing is cached or stored. **Apply** validates (hex colours, known fonts, custom CSS rules, logos that exist in the media library, text/background contrast ≥ 4.5:1 using the theme's declared colours as fallback), writes the theme keys and the site keys in one transaction, records a revision in `theme.<slug>.identity_history` (newest first, at most 10; the first apply first records the previous live state as a `baseline` revision) and clears the draft. **Revert** re-applies an earlier revision as a new `revert` revision. Neither touches content, menus or any other theme setting; a draft belongs to the theme it was made for and carries a hidden `theme` field, so a page opened for one theme is refused (409) once another theme is active. The draft also remembers the site values it started from: when another apply changed the title or a logo meanwhile, the draft takes the live value and says so. A theme's header link settings (`cta_label`, `cta_url`, when its `theme.json` declares them) are edited on the same page, kept in the draft and written in the apply transaction. A theme whose `theme.json` does not declare `identity` still gets logos, name and tagline on the page; its colour, font and custom CSS fields are disabled and apply leaves whatever it already stores untouched.
