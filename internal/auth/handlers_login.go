@@ -35,6 +35,8 @@ type authPage struct {
 	// NeedToken asks for GORUN_SETUP_TOKEN on the setup form (prod);
 	// SetupBlocked replaces the form with instructions (prod, no token).
 	NeedToken, SetupBlocked bool
+	// Recovery shows how to get back in after a failed or locked sign-in.
+	Recovery bool
 }
 
 // startSession logs u in: new session, cookie, last_login_at, audit + hook.
@@ -79,11 +81,11 @@ func (h *handlers) loginSubmit(w http.ResponseWriter, r *http.Request) {
 	u, err := h.svc.CheckPassword(r.Context(), f.Email, f.Password)
 	switch {
 	case errors.Is(err, ErrLocked):
-		page.Error = "auth.login.locked"
+		page.Error, page.Recovery = "auth.login.locked", true
 		h.tpl.RenderWith(w, r, http.StatusTooManyRequests, "auth", "pages/auth/login.html", page)
 		return
 	case errors.Is(err, ErrInvalidCredentials):
-		page.Error = "auth.login.invalid"
+		page.Error, page.Recovery = "auth.login.invalid", true
 		h.tpl.RenderWith(w, r, http.StatusUnauthorized, "auth", "pages/auth/login.html", page)
 		return
 	case err != nil:

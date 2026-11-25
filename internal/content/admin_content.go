@@ -204,6 +204,7 @@ type mediaView struct {
 
 type editorView struct {
 	Type                  *Type
+	ViewURL               string // public path of a published item; "" when not live or no theme resolves it
 	TypeName              string
 	Item                  *Item
 	IsNew                 bool
@@ -356,6 +357,9 @@ func (h *adminHandlers) renderEditor(w http.ResponseWriter, r *http.Request, sta
 	if !isNew && it.Status != "trash" {
 		v.Translations, v.CanUnlink = h.translationViews(ctx, base, it)
 	}
+	if !isNew && it.Status == "published" && status < 400 {
+		v.ViewURL = h.publicPath(ctx, it)
+	}
 	if !isNew && it.Status != "trash" && auth.Can(ctx, "content.edit") {
 		v.CanAutosave, v.CanPreviewLinks = true, true
 		v.PreviewLinks, _ = h.svc.PreviewLinks(ctx, it.ID)
@@ -377,6 +381,10 @@ func (h *adminHandlers) createItem(w http.ResponseWriter, r *http.Request) {
 	}
 	in := Input{Type: t.Slug, Fields: map[string]any{}, SEO: map[string]any{}, Terms: map[string][]string{}}
 	applyForm(r.PostForm, t, &in)
+	if err := titleToPublish(in); err != nil {
+		h.afterSave(w, r, t, nil, in, nil, err)
+		return
+	}
 	it, err := h.svc.Create(r.Context(), in)
 	h.afterSave(w, r, t, nil, in, it, err)
 }
@@ -403,6 +411,10 @@ func (h *adminHandlers) updateItem(w http.ResponseWriter, r *http.Request) {
 	applyForm(r.PostForm, t, &in)
 	if in.Status == "trash" && cur.Status != "trash" && !auth.Can(r.Context(), "content.delete") {
 		h.fail(w, r, ErrForbidden)
+		return
+	}
+	if err := titleToPublish(in); err != nil {
+		h.afterSave(w, r, t, cur, in, nil, err)
 		return
 	}
 	var it *Item
@@ -435,6 +447,31 @@ func (h *adminHandlers) afterSave(w http.ResponseWriter, r *http.Request, t *Typ
 	default:
 		h.fail(w, r, err)
 	}
+}
+
+// publicPath asks the theme (FilterPublicPath) for its public path. It
+// returns "" when no module answers, so the editor simply shows no link.
+func (h *adminHandlers) publicPath(ctx context.Context, it *Item) string {
+	if h.d == nil || h.d.Hooks == nil {
+		return ""
+	}
+	p := &PublicPath{Item: it}
+	if _, err := h.d.Hooks.Apply(ctx, FilterPublicPath, p); err != nil {
+		h.d.Log.Warn("content: public path", "id", it.ID, "err", err)
+		return ""
+	}
+	return p.Path
+}
+
+// titleToPublish refuses to take an untitled item live from the editor: an
+// empty title becomes an id-like slug, a blank browser tab and an unnamed
+// entry in menu pickers. Drafts may stay untitled; the API and imports keep
+// their own rules.
+func titleToPublish(in Input) error {
+	if isLive(in.Status) && strings.TrimSpace(in.Title) == "" {
+		return invalid(FieldErrors{"title": "content.validation.title_to_publish"})
+	}
+	return nil
 }
 
 // itemFromInput rebuilds the editor state from a rejected submission.

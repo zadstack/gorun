@@ -66,6 +66,27 @@ func TestNavigationSectionsKeepDestinationsAndRouteOwnership(t *testing.T) {
 		})
 	}
 }
+func TestNavigationSectionLandingPage(t *testing.T) {
+	items := []NavItem{{ID: "dashboard", Href: "/admin"},
+		{ID: "settings.analytics", Href: "/admin/settings/analytics", Group: "settings"},
+		{ID: "settings", Href: "/admin/settings/general", Group: "settings"},
+		{ID: "users", Href: "/admin/users", Group: "settings"}}
+	sections := navigationSections(groupNav(items), items, "/admin", nil)
+	if len(sections) != 2 || sections[1].Key != "settings" || sections[1].Href != "/admin/settings/general" {
+		t.Fatalf("settings destination: %+v", sections)
+	}
+	withoutGeneral := slices.Delete(slices.Clone(items), 2, 3)
+	sections = navigationSections(groupNav(withoutGeneral), withoutGeneral, "/admin", nil)
+	if sections[1].Href != "/admin/settings/analytics" {
+		t.Fatalf("fallback destination: %q", sections[1].Href)
+	}
+	// A personal navigation order keeps the user's own first page.
+	sections = navigationSections(groupNav(items, []string{"settings"}), items, "/admin", []string{"settings"})
+	if sections[0].Key != "settings" || sections[0].Href != "/admin/settings/analytics" {
+		t.Fatalf("personal order destination: %+v", sections[0])
+	}
+}
+
 func TestNavigationSectionsRespectVisibleSubsetAndCommerce(t *testing.T) {
 	all := []NavItem{{ID: "dashboard", Href: "/admin"}, {ID: "users", Href: "/admin/users", Group: "settings"}, {ID: "roles", Href: "/admin/roles", Group: "settings"}, {ID: "commerce.products", Href: "/admin/products", Group: "commerce"}}
 	visible := slices.Clone(all[:1])

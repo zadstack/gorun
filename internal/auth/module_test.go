@@ -264,6 +264,13 @@ func TestLoginLogoutAndAnonymousRedirect(t *testing.T) {
 	if resp.StatusCode != http.StatusUnauthorized || !strings.Contains(page, "role=\"alert\"") {
 		t.Fatalf("bad password: %d", resp.StatusCode)
 	}
+	// A failed sign-in says how to recover; the first visit does not.
+	if !strings.Contains(page, "data-login-recovery") || !strings.Contains(page, "gorun user password --data DATA-FOLDER --email YOUR-EMAIL --password-stdin") {
+		t.Fatal("failed sign-in has no recovery guidance")
+	}
+	if _, first := s.do("GET", "/admin/login", nil); strings.Contains(first, "data-login-recovery") {
+		t.Fatal("recovery guidance shown before any failed attempt")
+	}
 	resp, _ = s.do("POST", "/admin/login", url.Values{"_csrf": {token}, "email": {"ed@example.com"}, "password": {"correct horse battery"}, "next": {"//evil.example"}})
 	if resp.StatusCode != http.StatusSeeOther || resp.Header.Get("Location") != "/admin" {
 		t.Fatalf("login: %d %q (open redirect must be ignored)", resp.StatusCode, resp.Header.Get("Location"))

@@ -190,6 +190,15 @@ func (l *Linker) resolveMenuURL(ctx context.Context, v any) (any, error) {
 	return v, nil
 }
 
+// resolvePublicPath is the content.FilterPublicPath filter: the editor's
+// "View on site" link uses the same permalink as the public router.
+func (l *Linker) resolvePublicPath(ctx context.Context, v any) (any, error) {
+	if p, ok := v.(*content.PublicPath); ok && p != nil && p.Item != nil {
+		p.Path = l.Item(ctx, p.Item)
+	}
+	return v, nil
+}
+
 // sitemapEntry is the seo.FilterSitemapEntry filter: it replaces the seo
 // module's fallback Loc with the permalink of the entry's item, term or
 // type archive (posts → /post/<slug>, child pages → /parent/child, the
