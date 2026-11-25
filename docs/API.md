@@ -501,6 +501,10 @@ Example section in a version-1 document:
 {"id":"compare","kind":"comparison","library":"sections","variant":"default","title":"Choose an option","native":{"columns":["Capability","A","B"],"rows":[{"label":"Included","cells":[{"text":"Yes","status":"yes"},{"text":"No","status":"no"}]}]}}
 ```
 
+`GET /v1/builder/schema` (scope `content.view`) returns the section schema the validator and the editor share: every kind, and for the section library what each accepts (`fields`, `native_fields`, `item_fields`, `variants`, `required`), the legacy library's uniform contract, the enums (icons, backgrounds, hero scenes, feeds) and the limits. The editor builds each section's form from this table and the validator reads the same table, so a kind added to `internal/builder/schema.go` (with its template) gets its form and its checks without editor code. The `get_section_schema` MCP tool returns the same document.
+
+`POST /v1/builder/{id}/plan` with `{document}` is a dry run of the draft save: it returns `valid` and `errors`, `publishable`, the `diff` (one entry per added, removed, moved or changed section or value, matched by section id) and its text `plan`, `draft_in_sync`, and the `base_updated_at` a following save must carry. Nothing is written.
+
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->

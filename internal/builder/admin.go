@@ -26,6 +26,7 @@ type editorState struct {
 	Draft    *Draft             `json:"draft"`
 	Defaults map[string]Section `json:"defaults"`
 	Labels   map[string]string  `json:"labels"`
+	Schema   SectionSchema      `json:"schema"`
 }
 
 func registerAdmin(d *kernel.Deps, svc *service) error {
@@ -79,15 +80,37 @@ func (h *adminHandlers) editor(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
+	history := revisionViews(revisions, draft.Document)
 	h.tpl.RenderWith(w, r, http.StatusOK, "admin", "pages/builder/editor.html", struct {
 		ID              string
 		State           editorState
 		Catalog         []BlockSpec
 		CanPublish      bool
 		HasExistingBody bool
-		Revisions       []LayoutRevision
+		Revisions       []revisionView
 		CanPickMedia    bool
-	}{chi.URLParam(r, "id"), editorState{draft, defaults, labels}, Catalog(locale), auth.Can(r.Context(), "content.publish"), item.Body != "" && (!draft.HasPublished || draft.ContentChanged), revisions, auth.Can(r.Context(), "media.upload") && builderMediaAvailable(h.d)})
+	}{chi.URLParam(r, "id"), editorState{draft, defaults, labels, Schema(locale)}, Catalog(locale), auth.Can(r.Context(), "content.publish"), item.Body != "" && (!draft.HasPublished || draft.ContentChanged), history, auth.Can(r.Context(), "media.upload") && builderMediaAvailable(h.d)})
+}
+
+// revisionView is a revision in the editor's history with the changes it
+// recorded. A revision stores the document before a change, so the change
+// is the diff to the next newer revision, or to the current draft for the
+// newest.
+type revisionView struct {
+	LayoutRevision
+	Changes LayoutDiff
+}
+
+func revisionViews(revisions []LayoutRevision, current Document) []revisionView {
+	out := make([]revisionView, len(revisions))
+	for i, rev := range revisions {
+		newer := current
+		if i > 0 {
+			newer = revisions[i-1].Document
+		}
+		out[i] = revisionView{LayoutRevision: rev, Changes: Diff(rev.Document, newer)}
+	}
+	return out
 }
 
 func builderMediaAvailable(d *kernel.Deps) bool {

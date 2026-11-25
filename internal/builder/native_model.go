@@ -66,26 +66,14 @@ var nativeEntryImageKinds = []string{"features", "steps", "media_text", "switche
 var sectionIcons = []string{"", "bolt", "shield", "chart", "globe", "clock", "check", "layers"}
 var sectionBackgrounds = []string{"", "inherit", "none", "dots", "grid", "lines", "circles", "waves", "paper", "solid"}
 
-// Native layouts are a closed set per section kind; no raw classes are accepted.
+// Native layouts are a closed set per section kind (the schema's Variants);
+// no raw classes are accepted.
 func validNativeVariant(kind, variant string) bool {
 	if variant == "" || variant == "default" {
 		return true
 	}
-	switch kind {
-	case "hero":
-		return variant == "split" || variant == "centered"
-	case "faq":
-		return variant == "split"
-	case "directory":
-		return variant == "compact"
-	case "task_entry":
-		return variant == "search_first" || variant == "choice_first" || variant == "service_first"
-	case "features":
-		return variant == "compact_rows" || variant == "image_led" || variant == "featured_secondary"
-	case "media_text":
-		return variant == "image_start" || variant == "image_end"
-	}
-	return false
+	k, ok := nativeSchema(kind)
+	return ok && slices.Contains(k.Variants, variant)
 }
 
 func validateNative(s Section) error {
@@ -101,7 +89,8 @@ func validateNative(s Section) error {
 		}
 		return nil
 	}
-	if s.Library != SectionLibrary || !slices.Contains(nativeKinds, s.Kind) || s.HeroScene != "" || s.Feed != "" {
+	k, ok := nativeSchema(s.Kind)
+	if s.Library != SectionLibrary || !ok || s.HeroScene != "" || s.Feed != "" {
 		return fail()
 	}
 	if !validNativeVariant(s.Kind, s.Variant) {
@@ -113,10 +102,10 @@ func validateNative(s Section) error {
 	if s.Kind == "comparison" && strings.TrimSpace(s.Title) == "" {
 		return errors.New("builder: comparison needs an accessible title")
 	}
-	if s.Kind != "hero" && s.Kind != "product_preview" && (s.Image != "" || s.ImageAlt != "") {
+	if !k.Accepts("image") && (s.Image != "" || s.ImageAlt != "") {
 		return fail()
 	}
-	if (s.Kind == "hero" || s.Kind == "comparison" || s.Kind == "product_preview" || s.Kind == "directory") && len(s.Items) > 0 {
+	if !k.Items && len(s.Items) > 0 {
 		return fail()
 	}
 	for _, e := range s.Items {
@@ -129,15 +118,16 @@ func validateNative(s Section) error {
 		if e.Link != "" && strings.TrimSpace(e.Title) == "" {
 			return errors.New("builder: native feature link needs a title")
 		}
-		if e.Price != "" || !slices.Contains(sectionIcons, e.Icon) {
+		if !slices.Contains(sectionIcons, e.Icon) {
 			return fail()
 		}
-		// Entry images: feature cards, steps, text-and-media rows and switcher
-		// panels. Task choices may link and carry icons; featuring belongs to results.
-		if s.Kind != "features" && s.Kind != "task_entry" && (e.Link != "" || e.Icon != "" || e.Featured) {
+		// Each kind's entry fields come from the schema: feature cards link,
+		// carry icons and may be featured; task choices link and carry
+		// icons; steps, text-and-media rows and switcher panels take images.
+		if (e.Price != "" && !k.Accepts("item.price")) || (e.Link != "" && !k.Accepts("item.link")) || (e.Icon != "" && !k.Accepts("item.icon")) || (e.Featured && !k.Accepts("item.featured")) {
 			return fail()
 		}
-		if !slices.Contains(nativeEntryImageKinds, s.Kind) && (e.Image != "" || e.ImageAlt != "") {
+		if (e.Image != "" || e.ImageAlt != "") && !k.Accepts("item.image") {
 			return fail()
 		}
 	}
@@ -165,10 +155,10 @@ func validateNative(s Section) error {
 	if n.SecondaryLink != "" && strings.TrimSpace(n.SecondaryLabel) == "" {
 		return fail()
 	}
-	if s.Kind != "hero" && (n.Eyebrow != "" || n.SecondaryLink != "" || n.SecondaryLabel != "" || len(n.Facts) > 0) {
+	if (n.Eyebrow != "" && !k.Accepts("native.eyebrow")) || ((n.SecondaryLink != "" || n.SecondaryLabel != "") && !k.Accepts("native.secondary_link")) || (len(n.Facts) > 0 && !k.Accepts("native.facts")) {
 		return fail()
 	}
-	if s.Kind != "hero" && s.Kind != "product_preview" && (n.Caption != "" || n.Illustration) {
+	if (n.Caption != "" && !k.Accepts("native.caption")) || (n.Illustration && !k.Accepts("native.illustration")) {
 		return fail()
 	}
 	if n.Illustration && (s.Image != "" || strings.TrimSpace(n.Caption) == "") {
@@ -182,7 +172,7 @@ func validateNative(s Section) error {
 			return fail()
 		}
 	}
-	if s.Kind != "comparison" && (len(n.Columns) > 0 || len(n.Rows) > 0) {
+	if (len(n.Columns) > 0 || len(n.Rows) > 0) && !k.Accepts("native.columns") {
 		return fail()
 	}
 	if (s.Kind == "directory") != (n.ListType != "") || (n.ListType != "" && !listTypePattern.MatchString(n.ListType)) {

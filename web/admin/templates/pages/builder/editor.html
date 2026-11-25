@@ -22,6 +22,7 @@
     <div class="min-w-0">
      <div class="font-mono text-xs text-muted-foreground">{{datetime .CreatedAt}}</div>
      <div>{{t (printf "builder.history_kind_%s" .Kind)}} · {{.SectionCount}} {{t "builder.history_sections"}}{{if .Summary}} · {{.Summary}}{{end}}</div>
+     {{if .Changes.Empty}}<div class="text-xs text-muted-foreground" data-revision-changes>{{t "builder.history_no_changes"}}</div>{{else}}<details class="text-xs" data-revision-changes><summary class="cursor-pointer text-muted-foreground">{{t "builder.history_changes"}}: {{.Changes.Summary}}</summary><ul class="mt-1 space-y-0.5 font-mono">{{range .Changes.Changes}}<li dir="auto"><span class="text-muted-foreground">{{if eq .Op "add"}}+{{else if eq .Op "remove"}}−{{else if eq .Op "move"}}↕{{else}}~{{end}}</span> {{.Kind}}{{with .Path}} {{.}}{{end}}{{if eq .Op "add"}}{{with .To}}: <bdi>{{.}}</bdi>{{end}}{{else if eq .Op "remove"}}{{with .From}}: <bdi>{{.}}</bdi>{{end}}{{else}}: <bdi>{{.From}}</bdi> → <bdi>{{.To}}</bdi>{{end}}</li>{{end}}</ul></details>{{end}}
     </div>
     <div class="flex flex-wrap gap-2">
      <a href="/admin/builder/{{$.ID}}/revisions/{{.ID}}/preview" target="_blank" rel="noopener" class="text-blue hover:text-blue-hover text-xs">{{t "builder.history_preview"}}</a>

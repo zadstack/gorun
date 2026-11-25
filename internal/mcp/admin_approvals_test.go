@@ -1,10 +1,14 @@
 package mcp
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/zadstack/gorun/internal/kernel"
 )
 
 func TestArgListFlattensTopLevelArguments(t *testing.T) {
@@ -38,5 +42,36 @@ func TestApprovalsPageShowsArgumentsAsKeyValues(t *testing.T) {
 		if !strings.Contains(page, want) {
 			t.Fatalf("approvals page missing %q", want)
 		}
+	}
+}
+
+// A pending call whose tool can describe itself shows what it would change
+// now; a preview that fails says so instead of hiding the call.
+func TestApprovalsPageShowsToolPreview(t *testing.T) {
+	e := newEnv(t, nil)
+	e.app.Deps.MCP.AddTool(kernel.MCPTool{Name: "fake_previewed", Description: "previews", Scopes: []string{"content.view"}, Sensitive: true,
+		Input: struct {
+			Note string `json:"note,omitempty"`
+		}{},
+		Handler: func(context.Context, json.RawMessage) (any, error) { return map[string]any{}, nil },
+		Preview: func(_ context.Context, args json.RawMessage) (string, error) {
+			if strings.Contains(string(args), "boom") {
+				return "", errors.New("boom")
+			}
+			return "~ hero h1 title: Old <b> → New", nil
+		}})
+	a := e.agent("content.view")
+	a.ok("fake_previewed", map[string]any{"note": "fine"})
+	a.ok("fake_previewed", map[string]any{"note": "boom"})
+	a.ok("fake_sensitive", map[string]any{"note": "plain"})
+	e.login("admin")
+	_, page := e.do("GET", "/admin/agents/approvals", nil)
+	for _, want := range []string{`<pre class="approval-preview" dir="auto">~ hero h1 title: Old &lt;b&gt; → New</pre>`, `<p class="field-help text-red">`} {
+		if !strings.Contains(page, want) {
+			t.Fatalf("approvals page missing %q", want)
+		}
+	}
+	if strings.Count(page, "data-approval-preview") != 2 {
+		t.Fatalf("preview blocks = %d, want 2 (the plain tool has none)", strings.Count(page, "data-approval-preview"))
 	}
 }

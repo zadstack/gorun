@@ -8,6 +8,8 @@
   "approvals.empty_recent": "No decisions yet.",
   "approvals.tool": "Tool",
   "approvals.args": "Arguments",
+  "approvals.preview": "What this call would change now",
+  "approvals.preview_error": "The tool could not describe this call; review the arguments.",
   "approvals.key": "API key",
   "approvals.requester": "Requested by",
   "approvals.requested": "Requested",
