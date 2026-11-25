@@ -157,6 +157,30 @@ func (st *approvalStore) list(ctx context.Context, status string, limit, offset 
 	return out, rows.Err()
 }
 
+// listForKey returns the approvals requested by the API key keyID whose
+// effective status is status, newest first (at most limit).
+func (st *approvalStore) listForKey(ctx context.Context, keyID, status string, limit int) ([]Approval, error) {
+	if keyID == "" {
+		return []Approval{}, nil
+	}
+	rows, err := st.s.d.DB.QueryContext(ctx, `SELECT `+approvalColumns+` FROM mcp_approvals
+		WHERE api_key_id = ? AND `+effectiveStatusSQ+` = ? ORDER BY requested_at DESC, id DESC LIMIT ?`,
+		keyID, db.Now(), status, limit)
+	if err != nil {
+		return nil, fmt.Errorf("mcp: list key approvals: %w", err)
+	}
+	defer rows.Close()
+	out := []Approval{}
+	for rows.Next() {
+		a, err := scanApproval(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *a)
+	}
+	return out, rows.Err()
+}
+
 // count counts approvals whose effective status is status ("" = all).
 func (st *approvalStore) count(ctx context.Context, status string) (int, error) {
 	var n int
