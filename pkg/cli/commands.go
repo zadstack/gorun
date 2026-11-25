@@ -142,20 +142,34 @@ func backup(args []string, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if _, err := createVerifiedCLIBackup(cfg, includeSecrets, skipAnalytics, out); err != nil {
+		return err
+	}
+	if retain >= 1 {
+		removed, pruneErr := gpbackup.PruneVerifiedWith(cfg.DataDir, retain, cfg.SecretKey)
+		if pruneErr != nil {
+			return pruneErr
+		}
+		fmt.Fprintf(out, "retain:   kept %d newest verified pair(s); removed %d file(s)\n", retain, removed)
+	}
+	return nil
+}
+
+func createVerifiedCLIBackup(cfg config.Config, includeSecrets, skipAnalytics bool, out io.Writer) (gpbackup.Result, error) {
 	opts := gpbackup.Options{IncludeSecrets: includeSecrets, SecretKey: cfg.SecretKey, SkipAnalytics: skipAnalytics}
 	if !skipAnalytics {
 		opts.SkipAnalytics, opts.SkipAnalyticsReason = analyticsBackupOptions(cfg.DBPath())
 	}
 	res, err := gpbackup.CreateWith(cfg.DataDir, cfg.DBPath(), time.Now(), opts)
 	if err != nil {
-		return err
+		return gpbackup.Result{}, err
 	}
 	report, err := gpbackup.InspectWith(res.Manifest, cfg.SecretKey)
 	if err != nil {
-		return fmt.Errorf("backup: verification: %w", err)
+		return gpbackup.Result{}, fmt.Errorf("backup: verification: %w", err)
 	}
 	if report.Readiness == "blocked" || !report.IntegrityOK {
-		return fmt.Errorf("backup: local verification failed (%s); previous copies preserved", strings.Join(report.Errors, ", "))
+		return gpbackup.Result{}, fmt.Errorf("backup: local verification failed (%s); previous copies preserved", strings.Join(report.Errors, ", "))
 	}
 	fmt.Fprintf(out, "database: %s\nfiles:    %s (%d files)\n", res.DB, res.Files, res.Count)
 	switch {
@@ -176,14 +190,7 @@ func backup(args []string, out io.Writer) error {
 	} else {
 		fmt.Fprintln(out, "secrets:  not archived; keep secret.key / GORUN_SECRET_KEY separately (needed to restore encrypted settings and sessions)")
 	}
-	if retain >= 1 {
-		removed, pruneErr := gpbackup.PruneVerifiedWith(cfg.DataDir, retain, cfg.SecretKey)
-		if pruneErr != nil {
-			return pruneErr
-		}
-		fmt.Fprintf(out, "retain:   kept %d newest verified pair(s); removed %d file(s)\n", retain, removed)
-	}
-	return nil
+	return res, nil
 }
 
 // optionsKeptNote is printed when a re-run reused a migration whose stored

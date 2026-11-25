@@ -183,7 +183,20 @@ GORUN_BASE_URL=https://your-site.example \
 
 ## الترقية من وسوم الإصدار {#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار}
 
-لا يوجد محدّث تلقائي للنواة. الترقية = تثبيت ثنائي/صورة الإصدار الجديد على **نفس** مجلد البيانات والمفتاح، بعد نسخة احتياطية. **الدليل الكامل (ثنائي · GHCR · Coolify · فحص دخان · رجوع):** [UPGRADE.md](UPGRADE.md).
+لتثبيت الملف التنفيذي، عاين الترقية باستخدام `gorun upgrade --dry-run --data <data>`،
+ثم أوقف الخدمة وشغّل `gorun upgrade --data <data>` بنفس إعداداتها وأعد تشغيلها.
+يتحقق الأمر من بصمة الإصدار وينشئ نسخة احتياطية ويطبع طابعها. لتحديد الإصدار،
+أضف `--to vX.Y.Z`. تعرض المعاينة مجلد القوالب وأسماء القوالب التي ستُحدّث.
+يحدّث الأمر القوالب المرفقة المثبّتة ويحفظ نسخها السابقة في `<themes>/.previous/`،
+ويثبّت `default` إذا كان مرفقًا ومفقودًا. تبقى القوالب المحلية الأخرى وتعديلات
+القوالب من لوحة الإدارة محفوظة. إذا تعذّرت الكتابة في مجلد القوالب أو المجلد الأب،
+فاتبع [الخطوات اليدوية](UPGRADE.md#2-upgrade--release-binary) أو استخدم
+`--binary-only` لعرض تحذير بالقوالب التي ستبقى على إصدارها السابق.
+بعد إيقاف الخدمة، يعيد `gorun rollback` الملف التنفيذي والقوالب المحفوظة،
+ويزيل `default` إذا ثبّتته الترقية لأول مرة، ويطبع أمر الاستعادة.
+تبقى ترحيلات قاعدة البيانات مطبّقة. استخدم الخطوات اليدوية
+أدناه لتثبيت Docker وCoolify، أو إذا لم يتوفر الأمر في الإصدار الحالي.
+[دليل الترقية والرجوع](UPGRADE.md#automatic-upgrade).
 
 1. اقرأ قسم الإصدار في [CHANGELOG.md](../CHANGELOG.md) ووسوم [Releases](https://github.com/zadstack/gorun/releases).
 2. أنشئ نسخة: `gorun backup --data <data>` واحفظ `secret.key` / `GORUN_SECRET_KEY` و`gorun.toml` وبيئة الخدمة خارج الأرشيف الافتراضي.
@@ -300,12 +313,28 @@ for automation. See [Troubleshooting](TROUBLESHOOTING.md).
 
 ### Upgrades from release tags
 
-Full checklist (binary, GHCR, Coolify, smoke, rollback): [UPGRADE.md](UPGRADE.md).
+For a release binary, preview with `gorun upgrade --dry-run --data <data>`.
+Stop the service, run `gorun upgrade --data <data>` with the same configuration
+as the service, and start it again. GoRun verifies the release, takes a backup,
+and prints its stamp. Use `--to vX.Y.Z` to select a release.
 
-1. Read [CHANGELOG.md](../CHANGELOG.md) for the target tag; `gorun backup`; keep secrets outside the default archive.
-2. Stop the old process (release `<data>/gorun.lock`); do not overlap two containers on one volume.
-3. Install the new archive or switch the image to `ghcr.io/zadstack/gorun:X.Y.Z` with the **same** data volume and secret key. Migrations run on `serve`.
-4. Verify health, admin login, content, media. Rollback = previous binary/image + restored data dir + original key — not binary-only.
+The preview lists the resolved themes directory and the bundled slugs to refresh.
+The upgrade replaces installed bundled themes, saves their prior trees under
+`<themes>/.previous/`, and installs a missing `default` if the archive ships
+it. Other local themes and admin template overrides are preserved. If the
+themes directory or its parent is unwritable, use the manual runbook or pass
+`--binary-only` to skip themes and warn which installed bundled themes stay
+on the old release.
+
+With the service stopped, `gorun rollback` restores the previous executable
+and saved bundled themes, removes `default` if the upgrade first installed
+it, and prints the backup restore command. SQLite migrations already applied stay
+in the database. Check compatibility before restarting on the current data.
+
+For Docker and Coolify, pin the new image tag and use the same volume and
+secret key. Migrations run on `serve`. Check health, admin login, content and
+media after any upgrade. For older binaries, follow the manual binary procedure.
+[Full runbook](UPGRADE.md).
 
 ### After install
 
