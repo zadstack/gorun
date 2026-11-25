@@ -15,6 +15,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -72,7 +73,7 @@ func start(args []string, out io.Writer) error {
 	// Always bind ourselves: --local-only cannot be weakened by configuration.
 	listener, err := net.Listen("tcp4", net.JoinHostPort(host, port))
 	if err != nil {
-		return err
+		return startListenError(err, port)
 	}
 	defer listener.Close()
 	port = fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)
@@ -98,7 +99,7 @@ func start(args []string, out io.Writer) error {
 	defer stop()
 	app, err := kernel.Boot(ctx, cfg, Modules(cfg))
 	if err != nil {
-		return err
+		return startBootError(err)
 	}
 	defer app.Close()
 	password, err := bootstrapStart(ctx, app)
@@ -129,6 +130,7 @@ func start(args []string, out io.Writer) error {
 		}
 	} else {
 		fmt.Fprintln(out, "Existing accounts preserved; password is not displayed again.")
+		fmt.Fprintln(out, startRecoveryHint(cfg.DataDir))
 	}
 	if !noBrowser {
 		if err := openLocalBrowser(cfg.BaseURL + "/admin"); err != nil {
@@ -143,6 +145,36 @@ func start(args []string, out io.Writer) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 	return srv.Shutdown(shutdownCtx)
+}
+
+// startListenError explains a port that is already taken: usually GoRun is
+// already running (open it) or another program uses the port (pick another).
+func startListenError(err error, port string) error {
+	if !errors.Is(err, syscall.EADDRINUSE) {
+		return err
+	}
+	next := "8081"
+	if n, convErr := strconv.Atoi(port); convErr == nil && n > 0 && n < 65535 {
+		next = strconv.Itoa(n + 1)
+	}
+	return fmt.Errorf("port %s is already in use. If GoRun is already running, open http://127.0.0.1:%s/admin in your browser. "+
+		"Otherwise start on another port: gorun start --addr :%s (or --addr :0 to pick any free port)", port, port, next)
+}
+
+// startBootError adds the next step to a data directory held by another
+// process: for start that is nearly always an earlier start of the same site.
+func startBootError(err error) error {
+	if !errors.Is(err, kernel.ErrDataDirLocked) {
+		return err
+	}
+	return fmt.Errorf("%w\nGoRun is already running for this site. Open the Admin link it printed, "+
+		"or stop it with Ctrl+C in its terminal and run gorun start again", err)
+}
+
+// startRecoveryHint tells a returning user how to get back in when the
+// one-time password was not saved. It names the data directory in use.
+func startRecoveryHint(dataDir string) string {
+	return fmt.Sprintf("Lost your password? Reset it with: gorun user password --data %q --email YOUR-EMAIL --password-stdin", dataDir)
 }
 
 // installStartTheme installs the bundled default theme when it is missing.

@@ -2,6 +2,9 @@ package cli
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -140,5 +143,47 @@ func TestStartRejectsProd(t *testing.T) {
 	t.Setenv("GORUN_SECRET_KEY", strings.Repeat("A", 43))
 	if err := start([]string{"--data", t.TempDir()}, &strings.Builder{}); err == nil || !strings.Contains(err.Error(), "use serve") {
 		t.Fatalf("%v", err)
+	}
+}
+
+func TestStartListenErrorExplainsBusyPort(t *testing.T) {
+	busy, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer busy.Close()
+	port := fmt.Sprint(busy.Addr().(*net.TCPAddr).Port)
+	_, err = net.Listen("tcp4", net.JoinHostPort("127.0.0.1", port))
+	if err == nil {
+		t.Fatal("second listener on a busy port succeeded")
+	}
+	msg := startListenError(err, port).Error()
+	for _, want := range []string{"port " + port + " is already in use", "http://127.0.0.1:" + port + "/admin", "--addr :0"} {
+		if !strings.Contains(msg, want) {
+			t.Fatalf("message %q lacks %q", msg, want)
+		}
+	}
+	other := errors.New("permission denied")
+	if got := startListenError(other, "80"); got != other {
+		t.Fatalf("unrelated listen error was rewritten: %v", got)
+	}
+}
+
+func TestStartBootErrorNamesRunningSite(t *testing.T) {
+	locked := fmt.Errorf("kernel: %w: details", kernel.ErrDataDirLocked)
+	got := startBootError(locked)
+	if !errors.Is(got, kernel.ErrDataDirLocked) || !strings.Contains(got.Error(), "already running for this site") {
+		t.Fatalf("locked data dir: %v", got)
+	}
+	other := errors.New("migration failed")
+	if startBootError(other) != other {
+		t.Fatal("unrelated boot error was rewritten")
+	}
+}
+
+func TestStartRecoveryHintNamesDataDir(t *testing.T) {
+	hint := startRecoveryHint("/home/me/my site")
+	if !strings.Contains(hint, `gorun user password --data "/home/me/my site" --email`) || !strings.Contains(hint, "--password-stdin") {
+		t.Fatalf("hint = %q", hint)
 	}
 }

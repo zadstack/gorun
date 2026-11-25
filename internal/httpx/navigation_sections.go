@@ -129,7 +129,12 @@ func navigationSections(groups []NavGroup, authorized []NavItem, p string, prefe
 				}
 				sec := &defs[i]
 				sec.Active = section == activeSection
-				if sec.Href == "" {
+				// The first page is the destination. Without a personal order, a
+				// section's own landing page (an item whose ID is the section key,
+				// such as General settings) wins: otherwise "Settings" opened
+				// whichever settings page sorted first, e.g. Analytics. A user who
+				// arranged their navigation keeps their own first page.
+				if sec.Href == "" || (len(preferred) == 0 && it.ID == section) {
 					sec.Href = it.Href
 				}
 				if r, ok := rank[it.Group]; ok {

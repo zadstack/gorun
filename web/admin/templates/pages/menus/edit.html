@@ -89,7 +89,7 @@
         <label for="location" class="block font-medium mb-1">{{t "menus.field.location"}}</label>
         <select id="location" name="location" class="w-full h-9 rounded border border-line bg-panel px-2 focus:outline-none focus:border-blue focus:ring-[3px] focus:ring-blue-soft">
           <option value="">{{t "menus.field.location_none"}}</option>
-          {{$sel := .Form.Location}}{{range .Locations}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{.}}</option>{{end}}
+          {{$sel := .Form.Location}}{{range .Locations}}<option value="{{.}}" {{if eq . $sel}}selected{{end}}>{{if eq . "primary"}}{{t "menus.location.primary"}}{{else if eq . "footer"}}{{t "menus.location.footer"}}{{else}}{{.}}{{end}}</option>{{end}}
         </select>
         {{template "partials/field_errors" (index .Fields "location")}}
       </div>

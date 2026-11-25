@@ -20,6 +20,10 @@
       </div>
       <button type="submit" class="btn w-full">{{t "auth.login.submit"}}</button>
     </form>
+    {{if .Recovery}}<div class="mt-4 grid gap-2 text-sm text-muted-foreground" data-login-recovery>
+      <p>{{t "auth.login.recovery"}}</p>
+      <code dir="ltr" class="block rounded border border-line bg-panel-2 px-2 py-1 font-mono text-xs break-all">gorun user password --data DATA-FOLDER --email YOUR-EMAIL --password-stdin</code>
+    </div>{{end}}
   </section>
 </div>
 {{end}}

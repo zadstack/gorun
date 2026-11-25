@@ -32,6 +32,7 @@
     {{icon "upload" "w-6 h-6 text-muted-foreground"}}
     <span class="font-medium">{{t "media.upload.drop"}}</span>
     <span class="text-xs text-muted-foreground font-mono">{{t "media.upload.limits" .MaxUploadMB}}</span>
+    {{with .AcceptedTypes}}<span class="text-xs text-muted-foreground">{{t "media.upload.types" .}}</span>{{end}}
     <input id="media-file" x-ref="file" name="file" type="file" multiple class="sr-only" accept="{{.AllowedMimes}}"
            @change="$el.form.requestSubmit()">
   </label>
@@ -44,7 +45,7 @@
 <section id="media-results" data-media-view="grid" aria-live="polite">
   {{if .Uploaded}}<div role="status" class="mb-4 rounded border border-green bg-green-soft text-green px-3 py-2">{{t "media.upload.done" .Uploaded}}</div>{{end}}
   {{range .Errors}}
-  <div role="alert" class="mb-2 rounded border border-red bg-red-soft text-red px-3 py-2">{{if .Filename}}<span class="font-mono">{{.Filename}}</span> — {{end}}{{t .Key}}</div>
+  <div role="alert" class="mb-2 rounded border border-red bg-red-soft text-red px-3 py-2">{{if .Filename}}<span class="font-mono">{{.Filename}}</span> — {{end}}{{t .Key}}{{with .Accepted}} {{t "media.upload.types" .}}{{end}}</div>
   {{end}}
   {{if .Items}}
   <p class="mb-2 text-xs text-muted-foreground font-mono">{{t "media.total" .Total}}</p>

@@ -115,6 +115,17 @@ func InputFromItem(it *Item) Input {
 
 type FieldErrors map[string]string
 
+// FilterPublicPath is the filter (on *PublicPath) that fills Path with the
+// public path of Item, such as /about or /post/hello. The theme module owns
+// permalinks and registers it; content only reads the answer.
+const FilterPublicPath = "content.public_path"
+
+// PublicPath is the FilterPublicPath payload.
+type PublicPath struct {
+	Item *Item
+	Path string
+}
+
 type Filter struct {
 	Op    string `json:"op"`
 	Value any    `json:"value"`

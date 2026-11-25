@@ -28,6 +28,10 @@ func TestMenuEditorLocaleAndHierarchyControls(t *testing.T) {
 			t.Fatalf("missing editor control %q", want)
 		}
 	}
+	// Locations read as on the create form, not as theme keys.
+	if !strings.Contains(page, `value="primary" selected>تنقل الهيدر</option>`) || !strings.Contains(page, `value="footer" >التذييل</option>`) {
+		t.Fatal("menu settings show raw location keys")
+	}
 	tree := `[{"label":"B","kind":"custom","url":"/b","children":[{"label":"A","kind":"custom","url":"/a","children":[{"label":"Child","kind":"custom","url":"/child"}]}]}]`
 	if r, _ := s.form(path+"/items", url.Values{"items": {tree}}); r.StatusCode != 303 {
 		t.Fatal(r.StatusCode)

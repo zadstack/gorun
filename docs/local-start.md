@@ -174,3 +174,12 @@ gorun user password --data ./data --email admin@localhost.invalid --password-std
 Enter a new password on stdin. If you changed the account email, use that email.
 This resets its password and ends its sessions. Never delete the database to
 recover a password: that also deletes site data.
+
+`gorun start` prints this command, with the data directory in use, each time it
+restarts an existing site, and the sign-in page shows it after a failed attempt.
+
+If `start` says the port is already in use, GoRun may already be running: open
+the printed admin URL. Otherwise choose another port with `--addr :8081`, or
+`--addr :0` for any free port. If it says the data directory is in use, an
+earlier `start` of the same site is still running: use it, or stop it with
+Ctrl+C in its terminal.

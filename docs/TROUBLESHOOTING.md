@@ -12,6 +12,8 @@ Short fixes for common self-host failures. For full procedures see [installation
 | Prod refuses to start: empty or loopback `GORUN_BASE_URL` | `GORUN_ENV=prod` requires a public base URL | Set `GORUN_BASE_URL=https://your-site.example` (no trailing slash). On a container platform the value comes from the service domain: attach the public domain to the `gorun` service, then restart. `GORUN_TRIAL=1` is a disposable dev-mode site (it ignores proxy headers) and is not a production setup. |
 | Platform suggests `GORUN_TRIAL` because the container exited at boot | The platform read the trial hint in the startup error, but the real cause is the missing public base URL | Read the container log: `GORUN_BASE_URL is required in prod`. Set the public URL (domain attached, or the variable set) and redeploy. `gorun doctor` reports the same fix under `public_base_url`. |
 | Prod refuses: missing / invalid `GORUN_SECRET_KEY` | Key must decode to 32 bytes (Base64) | `openssl rand -base64 32`. Keep the same value forever for that data dir. |
+| `gorun start`: `port 8080 is already in use` | GoRun (or another program) already listens on that port | Open the printed admin URL if GoRun is running; otherwise `gorun start --addr :8081` (or `--addr :0`). |
+| Lost the one-time `admin` password | It is printed once and only its hash is stored | `gorun user password --data <data dir> --email <your email> --password-stdin`. Never delete the database to recover a password. |
 | `/admin/setup` asks for a token you never set | `gorun serve` generated one because `GORUN_SETUP_TOKEN` is unset | Find `First-run setup token` in the server logs, for example `docker logs gorun`. It changes on each restart until the first admin exists, then setup is closed. |
 | Encrypted settings unreadable after restore / redeploy | New secret key | Restore the **original** `GORUN_SECRET_KEY` / `secret.key`. Generating a new key does not decrypt old rows. |
 
@@ -36,6 +38,8 @@ Operator acceptance recipe (CIDR, cookie Secure, HSTS, outside health):
 | Symptom | Likely cause | What to do |
 | --- | --- | --- |
 | Public site looks unstyled / missing templates | Binary run without adjacent `themes/`, or wrong `GORUN_THEMES` | Run from the release extract directory, or set `GORUN_THEMES` to an absolute path. Docker images embed themes. |
+| Upload rejected: iPhone photo (`.HEIC`) | HEIC is not an accepted type | Share or export the photo as JPEG, then upload it. The library lists the accepted types under the drop zone. |
+| Publish refused: "Add a title before publishing" | Untitled items would get an id-like address and an unnamed menu entry | Type a title; drafts may stay untitled. |
 | Theme switch did not create starter pages | Activating a theme only changes rendering | Use **Appearance → Build your site** for drafts, then **Publish and activate**. See [SITE_BUILDER.md](SITE_BUILDER.md). |
 | Boot stops on theme migration conflict | Override path exists in both old and new theme with different content | Resolve the conflicting override under `<data>/overrides/` (or keep the legacy theme installed) before upgrading. |
 

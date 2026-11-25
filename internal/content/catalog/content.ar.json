@@ -1,5 +1,6 @@
 {
   "validation.page_access": "اختر وضع حماية ورسالة وكلمة مرور صالحة.",
+  "validation.title_to_publish": "أضف عنوانًا قبل النشر. العنوان هو اسم هذا العنصر في القوائم ونتائج البحث وتبويب المتصفح.",
   "comments.title": "التعليقات",
   "comments.status": "حالة التعليق",
   "comments.status_pending": "بانتظار المراجعة",
@@ -25,6 +26,7 @@
   "editor.body": "المحتوى",
   "editor.choose": "اختر…",
   "editor.edit": "تعديل %s",
+  "editor.view_live": "عرض على الموقع",
   "editor.excerpt": "المقتطف",
   "editor.featured_image": "الصورة البارزة",
   "editor.fields": "الحقول المخصصة",

@@ -34,7 +34,9 @@ func TestNavigationPreferencesPersistAndDoNotChangeAccess(t *testing.T) {
 	mustContain(t, page, `href="/admin/users"`)
 	s.signIn(u.Email)
 	s.app.Deps.Admin.AddNav(kernel.NavItem{ID: "new.module", LabelKey: "New module", Href: "/admin/new-module"})
-	_, page = s.do("GET", "/admin", nil)
+	// A new module is visible despite saved preferences: it lands in the
+	// Settings section, whose own landing page stays General settings.
+	_, page = s.do("GET", "/admin/settings/general", nil)
 	mustContain(t, page, `href="/admin/new-module"`)
 	s.post("/admin/navigation", url.Values{"intent": {"reset"}})
 	_, page = s.do("GET", "/admin/users", nil)

@@ -67,8 +67,34 @@ func humanSize(n int64) string {
 	return fmt.Sprintf("%d B", n)
 }
 
-// uploadError is one rejected file; Key is an i18n key.
-type uploadError struct{ Filename, Key string }
+// uploadError is one rejected file; Key is an i18n key. Accepted lists the
+// allowed types after a type rejection, so the message says what would work.
+type uploadError struct{ Filename, Key, Accepted string }
+
+// acceptedTypes names the allowed upload types by extension ("JPG, PNG, PDF").
+func acceptedTypes(mimes []string) string {
+	var out []string
+	for _, m := range mimes {
+		if ext, ok := mimeExts[m]; ok {
+			out = append(out, strings.ToUpper(ext))
+		}
+	}
+	return strings.Join(out, ", ")
+}
+
+// uploadErrorFor explains one rejected file. HEIC photos (the iPhone camera
+// default) get their own next step; other type rejections list what is accepted.
+func uploadErrorFor(filename string, err error, accepted string) uploadError {
+	e := uploadError{Filename: filename, Key: errorKey(err)}
+	if e.Key == "media.error.not_allowed" {
+		if ext := extOf(filename); ext == "heic" || ext == "heif" {
+			e.Key = "media.error.heic"
+		} else {
+			e.Accepted = accepted
+		}
+	}
+	return e
+}
 
 func errorKey(err error) string {
 	switch {
@@ -98,6 +124,7 @@ type listData struct {
 	CanDelete                     bool
 	MaxUploadMB                   int64
 	AllowedMimes                  string
+	AcceptedTypes                 string // AllowedMimes as extensions for people: "JPG, PNG, PDF"
 }
 
 func (h *adminHandlers) list(r *http.Request, q string, page, perPage int) (listData, error) {
@@ -132,7 +159,9 @@ func (h *adminHandlers) list(r *http.Request, q string, page, perPage int) (list
 	}
 	d := listData{Kind: kind, SizeFilter: size, FilterQuery: filters.Encode(), Q: q, Page: p.Page, Pages: p.Pages, Total: total, HasPrev: p.HasPrev, HasNext: p.HasNext,
 		Prev: p.Prev, Next: p.Next, CanDelete: auth.Can(r.Context(), "media.delete"),
-		MaxUploadMB: h.svc.maxUpload(r.Context()) >> 20, AllowedMimes: strings.Join(h.svc.allowedMimes(r.Context()), ",")}
+		MaxUploadMB: h.svc.maxUpload(r.Context()) >> 20}
+	allowed := h.svc.allowedMimes(r.Context())
+	d.AllowedMimes, d.AcceptedTypes = strings.Join(allowed, ","), acceptedTypes(allowed)
 	filters.Set("page", strconv.Itoa(p.Prev))
 	d.PrevURL = "/admin/media?" + filters.Encode()
 	filters.Set("page", strconv.Itoa(p.Next))
@@ -188,9 +217,10 @@ func (h *adminHandlers) upload(w http.ResponseWriter, r *http.Request) {
 			files = files[:maxFilesPerUpload]
 			errs = append(errs, uploadError{Key: "media.error.too_many"})
 		}
+		accepted := acceptedTypes(h.svc.allowedMimes(r.Context()))
 		for _, fh := range files {
 			if err := h.saveOne(r, fh); err != nil {
-				errs = append(errs, uploadError{Filename: fh.Filename, Key: errorKey(err)})
+				errs = append(errs, uploadErrorFor(fh.Filename, err, accepted))
 				if errorKey(err) == "media.error.upload_failed" {
 					h.log.Error("media: upload", "filename", fh.Filename, "err", err)
 				}

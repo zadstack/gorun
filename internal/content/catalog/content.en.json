@@ -1,5 +1,6 @@
 {
   "validation.page_access": "Choose a valid access mode, message and password.",
+  "validation.title_to_publish": "Add a title before publishing. The title names this item in menus, search results and the browser tab.",
   "comments.title": "Comments",
   "comments.status": "Comment status",
   "comments.status_pending": "Pending",
@@ -25,6 +26,7 @@
   "editor.body": "Body",
   "editor.choose": "Choose…",
   "editor.edit": "Edit %s",
+  "editor.view_live": "View on site",
   "editor.excerpt": "Excerpt",
   "editor.featured_image": "Featured image",
   "editor.fields": "Custom fields",

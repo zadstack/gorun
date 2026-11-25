@@ -168,6 +168,29 @@ func TestMenuResolveURLFilter(t *testing.T) {
 	}
 }
 
+func TestContentPublicPathFilter(t *testing.T) {
+	root := t.TempDir()
+	writeTheme(t, root, "default", "", baseTheme(nil))
+	e := newEnv(t, root)
+	page := e.fake.Content.Add(content.Item{Type: "page", Slug: "about", Title: "About", Status: "published"})
+	post := e.fake.Content.Add(content.Item{Type: "post", Slug: "hello", Title: "Hello", Status: "published"})
+	for _, tc := range []struct {
+		it   content.Item
+		want string
+	}{{page, "/about"}, {post, "/post/hello"}} {
+		p := &content.PublicPath{Item: &tc.it}
+		if _, err := e.app.Deps.Hooks.Apply(t.Context(), content.FilterPublicPath, p); err != nil || p.Path != tc.want {
+			t.Fatalf("%s: path %q, want %q (%v)", tc.it.Slug, p.Path, tc.want, err)
+		}
+	}
+	e.setting(SettingFront, page.ID)
+	p := &content.PublicPath{Item: &page}
+	e.app.Deps.Hooks.Apply(t.Context(), content.FilterPublicPath, p)
+	if p.Path != "/" {
+		t.Fatalf("front page path: %q", p.Path)
+	}
+}
+
 func TestSEOAppliesSiteTitleTemplateOnce(t *testing.T) {
 	root := t.TempDir()
 	writeTheme(t, root, "default", "", baseTheme(map[string]string{"templates/page.html": `{{seo .}}`, "templates/archive.html": `{{seo .}}`}))

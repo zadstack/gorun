@@ -7,7 +7,10 @@
 <script src="{{asset "vendor/quill-2.0.3.js"}}" integrity="sha384-utBUCeG4SYaCm4m7GQZYr8Hy8Fpy3V4KGjBZaf4WTKOcwhCYpt/0PfeEe3HNlwx8" crossorigin="anonymous"></script>
 <div class="mb-4">
   <a href="{{.ListURL}}" class="text-blue hover:text-blue-hover inline-flex items-center gap-1">{{icon "arrow-left" "w-4 h-4 rtl:rotate-180"}}<span>{{t "content.editor.back"}}</span></a>
-  <h1 class="text-[22px] font-bold mt-1" dir="auto">{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{t "content.editor.edit" .TypeName}}{{end}}</h1>
+  <div class="flex flex-wrap items-center justify-between gap-2 mt-1">
+    <h1 class="text-[22px] font-bold" dir="auto">{{if .IsNew}}{{t "content.editor.new" .TypeName}}{{else}}{{t "content.editor.edit" .TypeName}}{{end}}</h1>
+    {{with .ViewURL}}<a href="{{.}}" target="_blank" rel="noopener" data-view-live class="h-9 px-3 inline-flex items-center gap-2 rounded border border-line bg-panel hover:border-line-strong text-blue focus:outline-none focus:ring-[3px] focus:ring-blue-soft">{{icon "external-link"}}<span>{{t "content.editor.view_live"}}</span></a>{{end}}
+  </div>
 </div>
 {{if and (not .IsNew) (eq .Type.Slug "page")}}<p class="content-page-path border border-line p-3 mb-3">{{t "content.ux.page_paths"}}</p><a href="/admin/builder/{{.Item.ID}}" class="inline-flex border border-line px-3 py-2 mb-4 text-blue">{{t "builder.open"}}</a>{{end}}
 {{if and (not .IsNew) (eq .Type.Slug "page") .CanRequestReview}}
