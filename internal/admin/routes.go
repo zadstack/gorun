@@ -110,6 +110,7 @@ func (h *handlers) routes() {
 	keys.Post("/agents/keys", h.keyCreate)
 	keys.Post("/agents/keys/{id}/revoke", h.keyRevoke)
 	keys.Post("/agents/keys/{id}/rotate", h.keyRotate)
+	keys.Post("/agents/keys/test", h.keyTest)
 	keys.Post("/agents/keys/{id}/model", h.agentModelSave)
 	keys.Get("/agents/keys/{id}/bundle", h.agentBundleHTTP)
 	keys.With(auth.RequireRecentAuth).Post("/agents/keys/{id}/bundle", h.agentBundleHTTP)

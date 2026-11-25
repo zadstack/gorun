@@ -33,10 +33,19 @@ test('copy buttons work without the Clipboard API', async ({ page }) => {
 
   const key = await page.locator('#k-plaintext').inputValue();
   expect(key).not.toBe('');
-  const button = page.locator('[data-key-created] button:has([data-label-copy])');
+  const button = page.locator('[data-key-created] button[data-copy-key]');
   const label = button.locator('[data-label-copy]');
   await button.click();
   await expect(page.locator('html')).toHaveAttribute('data-copied', key);
   await expect(label).toHaveText((await label.getAttribute('data-label-copied'))!);
   await expect(button).toBeFocused();
+
+  // The "Connect your agent" snippets copy the same way, with the real key.
+  const snippet = page.locator('[data-key-created] [data-agent-connect="new"] .agent-connect-snippet').first();
+  const snippetButton = snippet.locator('button[data-copy-snippet]');
+  const text = await snippet.locator('textarea').inputValue();
+  expect(text).toContain(`--header "Authorization: Bearer ${key}"`);
+  await snippetButton.click();
+  await expect(page.locator('html')).toHaveAttribute('data-copied', text);
+  await expect(snippetButton).toBeFocused();
 });

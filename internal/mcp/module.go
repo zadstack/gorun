@@ -83,6 +83,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 	s := newServer(d, keys, users)
 	m.srv = s
 	registerCoreTools(d, s)
+	d.Services.Set(admin.ServiceMCPProbe, admin.MCPProbe(s))
 
 	d.Router.Public.Handle("/mcp", s.httpHandler())
 	if tpl, ok := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates); ok {

@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{{asset "audit-workspace.css"}}">
 <script defer src="{{asset "audit-workspace.js"}}"></script>
 <link rel="stylesheet" href="{{asset "admin-contained.css"}}">
+<link rel="stylesheet" href="{{asset "agent-connect.css"}}">
 <div class="admin-contained admin-key-directory">
 {{template "partials/page-header" (dict "Title" (t "admin.keys.title") "Subtitle" (t "admin.keys.subtitle") "Action" "#key-create" "ActionLabel" (t "admin.keys.new") "ActionIcon" "plus" "ActionHook" (dataAttr "key-create-open"))}}
 {{if .Plaintext}}
@@ -14,12 +15,15 @@
     <label class="sr-only" for="k-plaintext">{{t "admin.keys.plaintext"}}</label>
     <input id="k-plaintext" x-ref="key" readonly value="{{.Plaintext}}" dir="ltr" @focus="$el.select()"
            class="field-control flex-1 font-mono text-xs">
-    <button type="button" @click="gp.copy($refs.key.value).then((ok) => copied = ok)" class="btn btn-secondary">
+    <button type="button" data-copy-key @click="gp.copy($refs.key.value).then((ok) => copied = ok)" class="btn btn-secondary">
       {{icon "copy"}}<span data-label-copy="{{t "admin.keys.copy"}}" data-label-copied="{{t "admin.keys.copied"}}" x-text="copied ? $el.dataset.labelCopied : $el.dataset.labelCopy">{{t "admin.keys.copy"}}</span>
     </button>
   </div>
+  {{$test := ""}}{{if and .Test (eq .Test.KeyID .Created.ID) (eq .Test.Scope "new")}}{{$test = .Test}}{{end}}
+  {{template "agent-connect" (dict "Scope" "new" "ID" .Created.ID "Prefix" .Created.Prefix "Snippets" .Connect "Secret" .Plaintext "Test" $test)}}
 </section>
 {{end}}
+{{if and .Test (eq .Test.Code "not_found")}}<div class="alert mb-4" data-variant="destructive" role="alert" data-connect-result="not_found">{{icon "triangle-alert"}}<h2>{{t "agentconnect.fail_title"}}</h2><section>{{t "agentconnect.hint_not_found"}}</section></div>{{end}}
 {{if .AgentModel}}{{template "agent-model-editor" .AgentModel}}{{end}}
 <script defer src="{{asset "agent-models.js"}}"></script>
 <div class="audit-key-layout">
@@ -79,6 +83,16 @@
             {{end}}
           </td>
         </tr>
+        {{$test := ""}}{{if and $.Test (eq $.Test.KeyID .ID) (eq $.Test.Scope "row")}}{{$test = $.Test}}{{end}}
+        {{if or .Active $test}}
+        <tr class="key-connect-row" data-key-connect="{{.ID}}">
+          <td colspan="4">
+            <details class="key-connect" {{if $test}}open{{end}}><summary>{{icon "plug"}}<span>{{t "agentconnect.title"}}</span> <bdi class="text-muted-foreground">{{.Name}}</bdi></summary>
+            {{template "agent-connect" (dict "Scope" "row" "ID" .ID "Prefix" .Prefix "Snippets" $.Placeholder "Test" $test)}}
+            </details>
+          </td>
+        </tr>
+        {{end}}
         {{end}}
       </tbody>
     </table>
