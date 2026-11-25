@@ -75,6 +75,16 @@ func (d *Draft) InSync() bool {
 
 type service struct{ d *kernel.Deps }
 
+// Layouts is the builder service as other packages reach it:
+// kernel.Get[builder.Layouts](d, "builder").
+type Layouts interface {
+	Load(ctx context.Context, id string) (*Draft, error)
+	Save(ctx context.Context, id string, doc Document, expected string) (*Draft, error)
+	Publish(ctx context.Context, id, expected string) error
+}
+
+var _ Layouts = (*service)(nil)
+
 func (s *service) content() (content.Service, error) {
 	cs, ok := kernel.Get[content.Service](s.d, kernel.ServiceContent)
 	if !ok {

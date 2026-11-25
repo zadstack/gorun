@@ -49,6 +49,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/mailer` | infra | `db` `settings` |
 | `internal/metrics` | infra | `backup` `db` `jobs` `settings` |
 | `internal/observe` | infra | `db` `jobs` |
+| `internal/siteexport` | infra | `builder` `content` `i18n` `kernel` `media` `seo` `theme` |
 | `internal/starter` | infra | — |
 | `internal/update` | infra | `config` `db` `jobs` |
 | `internal/db` | infra | — |
@@ -85,7 +86,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `pkg/patternkit` | contract | — |
 | `pkg/themekit` | contract | — |
 | `cmd/gorun` | binary | `pkg/cli` |
-| `pkg/cli` | binary | `admin` `analytics` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `httpx` `i18n` `identityai` `identitylogo` `kernel` `launch` `mailer` `mcp` `media` `membership` `menus` `pattern` `patterns` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
+| `pkg/cli` | binary | `admin` `analytics` `api` `audit` `auth` `backup` `builder` `commerce` `config` `content` `db` `diagnostics` `ext` `httpx` `i18n` `identityai` `identitylogo` `kernel` `launch` `mailer` `mcp` `media` `membership` `menus` `pattern` `patterns` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `siteexport` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
 <!-- END GENERATED IMPORT GRAPH -->
 
 Reading the graph:

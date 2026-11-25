@@ -88,6 +88,9 @@ commands:
   content       content list [--type T] [--limit N]: items (no trash) as JSON with their public links
                 content export [--format json|csv] [--type T] [--status S] [--locale L] [--from D] [--to D]
                 [--columns c1,c2] [--out file]: every matching item, streamed (docs/CONTENT_STUDIO.md#export)
+  export        write the site to a folder to keep in Git (--dest DIR [--no-pages] [--no-media]):
+                site.json, the theme identity, every content item with its body, the builder
+                layouts, media records and local files, and the public pages as rendered
   starter       import the starter content (sample posts and pages) into a site with no content
   info          the site's facts as JSON: title, theme, users (no secrets), content counts, sizes
   ai            ai set --provider openai|anthropic --model M [--base-url URL] [--api-key-stdin] | ai off:
@@ -155,6 +158,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return mailCmd(args[1:], in, out)
 	case "doctor":
 		return doctorCmd(args[1:], out)
+	case "export":
+		return exportCmd(args[1:], out)
 	case "start":
 		return start(args[1:], out)
 	case "serve":

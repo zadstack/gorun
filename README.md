@@ -174,7 +174,7 @@ Three repetitions on one disposable host; two logical server CPUs and a 2 GiB bu
 
 ## Write, review and publish
 
-Manage posts, pages, custom content types, fields, media and navigation in one place. Give editors, authors and contributors the permissions they need, and review changes before publishing.
+Manage posts, pages, custom content types, fields, media and navigation in one place. Give editors, authors and contributors the permissions they need, hand a client the Studio editor role to change texts in place and nothing else, and review changes before publishing.
 
 <table>
   <tr>
