@@ -7,22 +7,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"net"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 
-	"github.com/zadstack/gorun/internal/audit"
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/diagnostics"
-	"github.com/zadstack/gorun/internal/jobs"
 	"github.com/zadstack/gorun/internal/kernel"
-	"github.com/zadstack/gorun/internal/observe"
 	"github.com/zadstack/gorun/internal/theme"
 	"github.com/zadstack/gorun/internal/update"
 	"github.com/zadstack/gorun/pkg/themekit"
@@ -46,22 +43,44 @@ func (r *siteDoctorReport) add(id, status, message, action string) {
 	}
 }
 
-// doctorCmd deliberately never boots the kernel, migrates, generates a secret,
-// takes the worker lock or opens the database in write mode.
+// doctorCmd inspects the installation without booting the kernel or migrating.
 func doctorCmd(args []string, out io.Writer) error {
 	asJSON, args := boolFlag(args, "json")
-	report := siteDoctorReport{OK: true, Checks: []siteDoctorCheck{}}
-	cfg, err := config.LoadReadOnly(args)
+	support, args := boolFlag(args, "support")
+	checkUpdates, args := boolFlag(args, "check-updates")
+	report := siteDoctorReport{OK: true}
+	build := version
+	if !doctorBuildPattern.MatchString(build) {
+		build = "unknown"
+	}
+	report.add("version", "ok", "GoRun "+build+".", "")
+	if support {
+		report.add("platform", "ok", "OS "+runtime.GOOS+", architecture "+runtime.GOARCH+".", "")
+	}
+	cfg, issues, err := config.LoadForDiagnostics(args)
 	if err != nil {
-		// Config errors can contain URLs or user-supplied credentials. Do not echo them.
-		if errors.Is(err, config.ErrPublicBaseURL) {
-			report.add("public_base_url", "fail", "The production public base URL is missing or unusable.", "Set GORUN_BASE_URL to the public https URL of the deployment (a container platform fills it from the service domain), then restart. GORUN_TRIAL=1 starts a disposable dev-mode site that ignores proxy headers; it is not a production setup.")
-		} else {
-			report.add("config", "fail", "Configuration is missing or invalid.", "For a new local site run gorun start. Otherwise review flags, environment, gorun.toml and the existing secret; doctor never generates or replaces it.")
-		}
+		// Configuration errors can include user-supplied credentials and paths.
+		report.add("config", "fail", "Configuration could not be resolved.", "Review flags, GORUN_* environment variables, and gorun.toml.")
 	} else {
-		report.add("config", "ok", "Configuration and existing secret are valid.", "")
-		doctorSite(cfg, &report)
+		if issues.TrustedProxies != nil || issues.HSTS != nil || (issues.PublicBaseURL == nil && issues.Secret != nil) {
+			report.add("config", "fail", "Configuration is missing or invalid.", "Review the configuration checks below.")
+		} else if issues.PublicBaseURL == nil {
+			report.add("config", "ok", "Configuration and existing secret are valid.", "")
+		}
+		doctorSite(cfg, issues, &report)
+		if checkUpdates {
+			source, err := update.ConfiguredSource(cfg)
+			switch {
+			case errors.Is(err, update.ErrNotConfigured):
+				report.add("updates", "warn", "No release index is configured.", "Set GORUN_UPDATE_SOURCE_URL to a trusted release index and retry --check-updates.")
+			case err != nil:
+				report.add("updates", "warn", "The configured release index is invalid.", "Review GORUN_UPDATE_SOURCE_URL and GORUN_UPDATE_ARTIFACT.")
+			default:
+				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				doctorUpdates(ctx, source, build, &report)
+				cancel()
+			}
+		}
 	}
 	if asJSON {
 		enc := json.NewEncoder(out)
@@ -71,42 +90,84 @@ func doctorCmd(args []string, out io.Writer) error {
 		}
 	} else {
 		for _, check := range report.Checks {
-			if _, err := fmt.Fprintf(out, "[%s] %s: %s\n", check.Status, check.ID, check.Message); err != nil {
-				return err
-			}
+			line := fmt.Sprintf("[%s] %s: %s", check.Status, check.ID, check.Message)
 			if check.Action != "" {
-				if _, err := fmt.Fprintf(out, "  Next: %s\n", check.Action); err != nil {
-					return err
-				}
+				line += " Fix: " + check.Action
+			}
+			if _, err := fmt.Fprintln(out, line); err != nil {
+				return err
 			}
 		}
 	}
 	if !report.OK {
-		return &exitError{code: 1, msg: "doctor found problems; follow the suggested actions above"}
+		return &exitError{code: 1, msg: "doctor found problems; follow the suggested fixes above"}
 	}
 	return nil
 }
 
-func doctorSite(cfg config.Config, report *siteDoctorReport) {
+func doctorSite(cfg config.Config, issues config.DiagnosticIssues, report *siteDoctorReport) {
+	if issues.Secret != nil {
+		report.add("secret_key", "fail", "The site key is missing, unreadable or does not decode to 32 bytes.", "Restore the original GORUN_SECRET_KEY, secret_key in gorun.toml, or dev secret.key. For a new site only, generate a key with openssl rand -base64 32.")
+	} else {
+		report.add("secret_key", "ok", "The configured site key decodes to 32 bytes.", "")
+	}
+	themeRoot := theme.ThemesDir(cfg)
+	themes, err := os.Stat(themeRoot)
+	themesOK := err == nil && themes.IsDir()
+	if themesOK {
+		report.add("themes_dir", "ok", "The primary themes directory resolves.", "")
+	} else {
+		report.add("themes_dir", "fail", "The primary themes directory could not be found.", "Set GORUN_THEMES to the installed themes directory or run from the release or repository root.")
+	}
+	doctorPort(cfg, report)
+	effectiveURL := cfg.BaseURL
 	st, err := os.Stat(cfg.DataDir)
 	if err != nil || !st.IsDir() {
-		report.add("data", "fail", "Data directory is missing or inaccessible.", "Check --data and directory permissions; use gorun start for a new local site.")
-		return
+		report.add("data", "fail", "Data directory is missing or inaccessible.", "Check --data and directory permissions. For a new local site run gorun start.")
+		for _, id := range []string{"permissions", "data_lock", "disk_space", "backup_age", "database"} {
+			report.add(id, "warn", "Check skipped because the data directory is unavailable.", "Fix the data directory check and rerun gorun doctor.")
+		}
+	} else {
+		report.add("data", "ok", "The data directory exists.", "")
+		doctorDataDir(cfg, st, report)
+		effectiveURL = doctorDatabase(cfg, themeRoot, report)
 	}
+	doctorWebConfig(cfg, issues, effectiveURL, report)
+}
+
+func doctorDataDir(cfg config.Config, st os.FileInfo, report *siteDoctorReport) {
 	if runtime.GOOS != "windows" && st.Mode().Perm()&0200 == 0 {
 		report.add("permissions", "fail", "Data directory has no owner write permission.", "Grant the server account write access to the data directory.")
+	} else if !doctorDirectoryWritable(cfg.DataDir, st) {
+		report.add("permissions", "fail", "The data directory is not writable or searchable by this account.", "Run doctor as the service account and grant it write and search access to the data directory.")
 	} else {
-		report.add("permissions", "ok", "Data directory exists and its permission bits allow owner writes.", "")
+		report.add("permissions", "ok", "The data directory is writable and searchable by this account.", "")
 	}
+	held, err := kernel.ProbeDataDirLock(cfg.DataDir)
+	switch {
+	case err != nil:
+		report.add("data_lock", "warn", "Could not inspect gorun.lock.", "Run doctor as the service account and check gorun.lock permissions.")
+	case held:
+		report.add("data_lock", "warn", "Another process holds gorun.lock.", "If this is your running site, no action is needed. Stop it before starting another worker on this data directory.")
+	default:
+		report.add("data_lock", "ok", "No other process holds gorun.lock.", "")
+	}
+	free, _, ok := diagnostics.DiskUsage(cfg.DataDir)
+	doctorDiskSpace(free, ok, report)
+	doctorBackup(cfg, time.Now(), report)
+}
+
+func doctorDatabase(cfg config.Config, themeRoot string, report *siteDoctorReport) (effectiveURL string) {
+	effectiveURL = cfg.BaseURL
 	if st, err := os.Stat(filepath.Join(cfg.DataDir, "secret.key")); err == nil && runtime.GOOS != "windows" && st.Mode().Perm()&0077 != 0 {
 		report.add("secret_permissions", "warn", "The local secret file is readable by other accounts.", "Restrict secret.key to its owner (chmod 600).")
 	}
-	doctorPort(cfg, report)
-	if st, err := os.Stat(cfg.DBPath()); err != nil || !st.Mode().IsRegular() {
+	st, err := os.Stat(cfg.DBPath())
+	if err != nil || !st.Mode().IsRegular() {
 		report.add("database", "fail", "SQLite database is missing or not a regular file.", "Check --data; run gorun start to initialize a new local site.")
 		return
 	}
-	if st, err := os.Stat(cfg.DBPath()); err == nil && runtime.GOOS != "windows" && st.Mode().Perm()&0600 != 0600 {
+	if runtime.GOOS != "windows" && st.Mode().Perm()&0600 != 0600 {
 		report.add("database_permissions", "fail", "SQLite permission bits do not allow owner reads and writes.", "Grant the server account read/write access to the existing database; do not replace it.")
 	}
 	uri, err := db.FileURI(cfg.DBPath())
@@ -129,7 +190,15 @@ func doctorSite(cfg config.Config, report *siteDoctorReport) {
 		return
 	}
 	report.add("database", "ok", "SQLite quick_check passed (read-only).", "")
-	doctorSchema(ctx, d, Modules(cfg), report)
+	doctorSchema(ctx, d, cfg, Modules(cfg), report)
+	var storedURL, rawURL string
+	if err := d.QueryRowContext(ctx, `SELECT value_json FROM settings WHERE key = 'site.base_url'`).Scan(&rawURL); err == nil {
+		if err := json.Unmarshal([]byte(rawURL), &storedURL); err != nil {
+			effectiveURL = ""
+		} else if storedURL = strings.TrimSpace(storedURL); storedURL != "" {
+			effectiveURL = storedURL
+		}
+	}
 	var admins int
 	if err := d.QueryRowContext(ctx, `SELECT count(*) FROM users WHERE role = 'admin' AND status = 'active'`).Scan(&admins); err != nil {
 		report.add("admin", "fail", "Cannot inspect administrator accounts.", "Review the schema check and apply required migrations with a matching binary.")
@@ -150,7 +219,11 @@ func doctorSite(cfg config.Config, report *siteDoctorReport) {
 			slug = active
 		}
 	}
-	roots := append([]string{theme.ThemesDir(cfg)}, theme.ExtraThemesDirs()...)
+	roots := append([]string{themeRoot}, theme.ExtraThemesDirs()...)
+	if slug == "" || slug == "." || slug == ".." || strings.ContainsAny(slug, `/\`) {
+		report.add("theme", "fail", "The active theme name is invalid.", "Select an installed theme in Appearance → Themes or correct GORUN_THEME.")
+		return
+	}
 	dir, err := findThemeDirForDoctor(roots, slug)
 	if err != nil {
 		report.add("theme", "fail", "The active theme cannot be found.", "Restore its files or correct GORUN_THEMES; use gorun theme doctor for details.")
@@ -162,10 +235,14 @@ func doctorSite(cfg config.Config, report *siteDoctorReport) {
 	} else {
 		report.add("theme", "ok", "Active theme files and parent contract passed.", "")
 	}
+	return
 }
 
 func doctorPort(cfg config.Config, report *siteDoctorReport) {
 	host, port, err := net.SplitHostPort(cfg.Addr)
+	if err == nil {
+		_, err = strconv.ParseUint(port, 10, 16)
+	}
 	if err != nil {
 		report.add("port", "fail", "Invalid listen address.", "Set --addr to a local host:port or :port.")
 		return
@@ -198,95 +275,51 @@ func doctorPort(cfg config.Config, report *siteDoctorReport) {
 	if err == nil {
 		response.Body.Close()
 		if response.StatusCode == 200 {
-			report.add("port", "warn", "Port is occupied; a local HTTP health endpoint responds.", "If this is your running site, no action is needed. Otherwise choose another --addr port.")
+			report.add("port", "warn", "Port is occupied; the local health endpoint responded and may be your running site.", "If this is your running site, no action is needed. Otherwise choose another --addr port.")
 			return
 		}
 	}
-	report.add("port", "fail", "Configured port is occupied or cannot be bound.", "Stop the conflicting process, check interface permissions, or choose another --addr port.")
+	report.add("port", "fail", "Configured port is occupied by another process or cannot be bound.", "Stop the conflicting process, check interface permissions, or choose another --addr port.")
 }
 
-// Read the recorded migrations directly: the existing schema inspector may
-// initialize legacy metadata, which a diagnostic must not do.
-func doctorSchema(ctx context.Context, d *sql.DB, mods []kernel.Module, report *siteDoctorReport) {
-	known := map[string]fs.FS{"audit": audit.Migrations(), "jobs": jobs.Migrations(), "diagnostics": diagnostics.Migrations(),
-		"observe": observe.Migrations(), "update": update.Migrations()}
-	enabled := map[string]bool{"audit": true, "jobs": true, "diagnostics": true, "observe": true, "update": true}
-	enabledCount, disabledCount := 0, 0
+func doctorSchema(ctx context.Context, d *sql.DB, cfg config.Config, mods []kernel.Module, report *siteDoctorReport) {
+	selected, err := kernel.SelectModules(ctx, cfg, d, mods)
+	if err != nil {
+		report.add("addons", "fail", "Startup module activation cannot be resolved.", "Check addon configuration and its required dependencies.")
+		report.add("schema", "warn", "Pending migrations could not be determined.", "Fix the addon configuration and rerun gorun doctor.")
+		return
+	}
+	disabled := make(map[string]bool, len(mods))
 	for _, m := range mods {
-		known[m.Name()] = m.Migrations()
-		on := true
-		if optional, ok := m.(kernel.OptionalModule); ok {
-			var err error
-			on, err = optional.Enabled(ctx, d)
-			if err != nil {
-				report.add("addons", "fail", "An addon's activation state cannot be resolved.", "Check addon configuration and its required dependencies.")
-				return
-			}
-		}
-		enabled[m.Name()] = on
-		if on {
-			enabledCount++
-		} else {
-			disabledCount++
-		}
+		disabled[m.Name()] = true
 	}
-	report.add("addons", "ok", fmt.Sprintf("Module activation resolved: %d enabled, %d disabled.", enabledCount, disabledCount), "")
-	rows, err := d.QueryContext(ctx, `SELECT module, name, checksum FROM schema_migrations`)
+	for _, m := range selected {
+		delete(disabled, m.Name())
+	}
+	report.add("addons", "ok", fmt.Sprintf("Module activation resolved: %d enabled, %d disabled.", len(selected), len(disabled)), "")
+
+	inspection, err := kernel.InspectSchema(ctx, d, mods)
 	if err != nil {
-		report.add("schema", "fail", "Migration metadata is missing or too old to inspect.", "Back up the site, then run gorun migrate with the matching release.")
+		report.add("schema", "fail", "Cannot inspect migration metadata.", "Check database health and retry.")
 		return
 	}
-	applied := map[string]sql.NullString{}
-	for rows.Next() {
-		var module, name string
-		var sum sql.NullString
-		if err := rows.Scan(&module, &name, &sum); err != nil {
-			rows.Close()
-			report.add("schema", "fail", "Cannot read migration metadata.", "Use a verified backup and a matching binary.")
-			return
-		}
-		applied[module+"/"+name] = sum
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		report.add("schema", "fail", "Cannot finish reading migration metadata.", "Check database health and retry.")
-		return
-	}
-	pending, changed, unknown := 0, 0, 0
-	for module, files := range known {
-		if files == nil {
-			continue
-		}
-		names, err := fs.Glob(files, "migrations/*.sql")
-		if err != nil {
-			report.add("schema", "fail", "Cannot inspect bundled migrations.", "Reinstall a complete GoRun release.")
-			return
-		}
-		for _, name := range names {
-			key := module + "/" + path.Base(name)
-			sum, ok := applied[key]
-			if !ok {
-				if enabled[module] {
-					pending++
-				}
-				continue
-			}
-			body, err := fs.ReadFile(files, name)
-			if err != nil {
-				report.add("schema", "fail", "Cannot read bundled migration files.", "Reinstall a complete GoRun release.")
-				return
-			}
-			if sum.Valid && sum.String != db.Checksum(string(body)) {
-				changed++
-			}
-			delete(applied, key)
+	pending := 0
+	for _, name := range inspection.Pending {
+		module, _, _ := strings.Cut(name, "/")
+		if !disabled[module] {
+			pending++
 		}
 	}
-	unknown = len(applied)
-	if pending+changed+unknown > 0 {
-		report.add("schema", "fail", fmt.Sprintf("Migrations: %d pending, %d changed, %d unknown.", pending, changed, unknown), "Back up first. Apply pending migrations with gorun migrate; for changed/unknown migrations restore the matching release and investigate instead of editing migration history.")
-	} else {
+	changed, unknown := len(inspection.Mismatched), len(inspection.Unknown)
+	summary := fmt.Sprintf("Migrations: %d pending, %d changed, %d unknown.", pending, changed, unknown)
+	switch {
+	case changed+unknown > 0:
+		report.add("schema", "fail", summary, "Use the release matching the database and investigate migration drift before running gorun migrate.")
+	case pending > 0:
+		report.add("schema", "fail", summary, "Back up the data directory and run gorun migrate.")
+	case inspection.LegacyMetadata:
+		report.add("schema", "warn", summary+" Migration checksum metadata is missing.", "Back up the data directory and run gorun migrate.")
+	default:
 		report.add("schema", "ok", "Recorded migrations match enabled modules and this binary.", "")
 	}
 }

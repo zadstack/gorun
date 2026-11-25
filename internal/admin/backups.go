@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/zadstack/gorun/internal/backup"
+	"github.com/zadstack/gorun/internal/diagnostics"
 	"github.com/zadstack/gorun/internal/httpx"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/settings"
@@ -71,7 +72,7 @@ func (h *handlers) backupsList(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	d.UsedSpace = humanSize(used)
-	if free, _, ok := diskUsage(h.d.Config.DataDir); ok {
+	if free, _, ok := diagnostics.DiskUsage(h.d.Config.DataDir); ok {
 		d.FreeSpace = humanBytes(free)
 	}
 	for _, e := range list {

@@ -83,6 +83,11 @@ func addonEnabled(ctx context.Context, d addonReader, name string) (bool, error)
 	return *on, nil
 }
 
+// SelectModules resolves startup module activation without booting modules.
+func SelectModules(ctx context.Context, cfg config.Config, d *sql.DB, mods []Module) ([]Module, error) {
+	return enabledModules(ctx, cfg, nil, d, mods)
+}
+
 func enabledModules(ctx context.Context, cfg config.Config, log *slog.Logger, d *sql.DB, mods []Module) ([]Module, error) {
 	selected := make([]Module, 0, len(mods))
 	for _, m := range mods {

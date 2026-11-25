@@ -38,7 +38,7 @@ func (h *handlers) buildUpdateService(d *kernel.Deps) *update.Service {
 	cfg := update.Config{RunningVersion: api.CoreVersion, AllowDowngrade: d.Config.Update.AllowDowngrade, RequireDigest: !d.Config.Update.AllowMissingDigest,
 		ActivationTimeout: d.Config.Update.ActivationTimeout, HealthLinks: d.Config.Update.HealthLinks,
 		Compatibility: h.updateCompatibility, Backup: h.updateBackup, Health: h.updateHealth, Link: h.updateLink, Schema: h.updateSchema}
-	if src, err := newReleaseSource(d.Config); err == nil {
+	if src, err := update.ConfiguredSource(d.Config); err == nil {
 		cfg.Source = src
 	} else if d.Config.Update.SourceURL != "" {
 		d.Log.Warn("update: release source ignored", "err", err)
@@ -47,21 +47,6 @@ func (h *handlers) buildUpdateService(d *kernel.Deps) *update.Service {
 		cfg.Adapter = ad
 	}
 	return update.New(d.DB, d.Jobs, d.Log, cfg)
-}
-
-// newReleaseSource validates the operator's release index URL. HTTPS is
-// required except for a loopback address, which lets a local supervisor
-// publish the index on the same host.
-func newReleaseSource(c config.Config) (update.Source, error) {
-	raw := strings.TrimSpace(c.Update.SourceURL)
-	if raw == "" {
-		return nil, update.ErrNotConfigured
-	}
-	client := &http.Client{Timeout: 20 * time.Second}
-	if strings.HasPrefix(raw, "http://127.0.0.1") || strings.HasPrefix(raw, "http://localhost") || strings.HasPrefix(raw, "http://[::1]") {
-		return update.NewLoopbackReleaseIndex(raw, c.Update.SourceToken, c.Update.Artifact, client)
-	}
-	return update.NewReleaseIndex(raw, c.Update.SourceToken, c.Update.Artifact, client)
 }
 
 // registerReleaseObservation keeps "latest" as a background observation of

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/zadstack/gorun/internal/audit"
+	"github.com/zadstack/gorun/internal/diagnostics"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/jobs"
 )
@@ -147,7 +148,7 @@ func (h *handlers) widgetSystem(ctx context.Context, r *http.Request) (template.
 	}
 	sum := systemSummary{GoVersion: goVersion(), DBSize: fileSize(h.d.Config.DBPath()), WALSize: fileSize(h.d.Config.DBPath() + "-wal"),
 		DiskFree: "—", Uptime: time.Since(h.started).Truncate(time.Second).String(), Theme: h.activeTheme(ctx)}
-	if free, _, ok := diskUsage(h.d.Config.DataDir); ok {
+	if free, _, ok := diagnostics.DiskUsage(h.d.Config.DataDir); ok {
 		sum.DiskFree = humanBytes(free)
 	}
 	return h.fragment(r, "pages/system/widgets/system_summary.html", sum)

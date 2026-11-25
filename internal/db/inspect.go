@@ -19,6 +19,10 @@ type SchemaInspection struct {
 	// Mismatched are applied migrations whose file in this binary differs
 	// from the content recorded when they ran.
 	Mismatched []string `json:"mismatched"`
+	// Pending lists bundled migrations without an applied record.
+	Pending []string `json:"-"`
+	// LegacyMetadata indicates that the table or its checksum column is missing.
+	LegacyMetadata bool `json:"-"`
 }
 
 // Ahead reports whether the database holds migrations this binary does not
@@ -29,17 +33,29 @@ func (s SchemaInspection) Ahead() bool { return len(s.Unknown) > 0 }
 // migration files of every module this binary ships (module name → FS as
 // given to Migrate; a nil FS means the module has no migrations). Rows of a
 // module missing from known are all unknown. Rows without a checksum (applied
-// before checksums, or by an older binary) are never mismatched.
+// before checksums, or by an older binary) are never mismatched. Inspection
+// does not create or upgrade the migration table.
 func InspectMigrations(ctx context.Context, d *sql.DB, known map[string]fs.FS) (SchemaInspection, error) {
 	out := SchemaInspection{Unknown: []string{}, Mismatched: []string{}}
 	sums, err := knownChecksums(known)
 	if err != nil {
 		return out, err
 	}
-	if err := ensureMigrationsTable(ctx, d); err != nil {
+	var columns, checksums int
+	err = d.QueryRowContext(ctx, `SELECT count(*), count(CASE WHEN name = 'checksum' THEN 1 END) FROM pragma_table_info('schema_migrations')`).Scan(&columns, &checksums)
+	if err != nil {
 		return out, fmt.Errorf("inspect migrations: %w", err)
 	}
-	rows, err := d.QueryContext(ctx, `SELECT module, name, checksum FROM schema_migrations ORDER BY module, name`)
+	out.LegacyMetadata = checksums == 0
+	if columns == 0 {
+		out.Pending = pendingMigrations(sums)
+		return out, nil
+	}
+	query := `SELECT module, name, checksum FROM schema_migrations ORDER BY module, name`
+	if out.LegacyMetadata {
+		query = `SELECT module, name, NULL FROM schema_migrations ORDER BY module, name`
+	}
+	rows, err := d.QueryContext(ctx, query)
 	if err != nil {
 		return out, fmt.Errorf("inspect migrations: %w", err)
 	}
@@ -58,13 +74,24 @@ func InspectMigrations(ctx context.Context, d *sql.DB, known map[string]fs.FS) (
 		case stored.Valid && stored.String != sum:
 			out.Mismatched = append(out.Mismatched, key)
 		}
+		delete(sums, key)
 	}
 	if err := rows.Err(); err != nil {
 		return out, fmt.Errorf("inspect migrations: %w", err)
 	}
 	sort.Strings(out.Unknown)
 	sort.Strings(out.Mismatched)
+	out.Pending = pendingMigrations(sums)
 	return out, nil
+}
+
+func pendingMigrations(sums map[string]string) []string {
+	names := make([]string, 0, len(sums))
+	for name := range sums {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 // knownChecksums maps "module/name" to the checksum of every known file.

@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -19,25 +20,51 @@ import (
 
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/config"
+	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/kernel"
 )
 
 func TestDoctorMissingSiteMakesNoFiles(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "missing")
 	var out bytes.Buffer
-	err := doctorCmd([]string{"--data", dir, "--json"}, &out)
+	err := doctorCmd([]string{"--data", dir, "--addr", "127.0.0.1:0", "--json"}, &out)
 	if err == nil {
 		t.Fatal("missing site must fail")
 	}
-	var report map[string]any
-	if json.Unmarshal(out.Bytes(), &report) != nil {
-		t.Fatal("doctor did not return JSON")
+	var report struct {
+		OK     *bool `json:"ok"`
+		Checks []struct {
+			ID      string `json:"id"`
+			Status  string `json:"status"`
+			Message string `json:"message"`
+			Action  string `json:"action,omitempty"`
+		} `json:"checks"`
+	}
+	decoder := json.NewDecoder(&out)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&report); err != nil {
+		t.Fatalf("decode main-compatible report: %v", err)
+	}
+	if report.OK == nil || *report.OK {
+		t.Fatal("expected ok=false for a failed check")
+	}
+	found := false
+	for _, check := range report.Checks {
+		if check.Status != "ok" && check.Status != "warn" && check.Status != "fail" {
+			t.Fatalf("unexpected status: %+v", check)
+		}
+		if check.ID == "data" {
+			found = check.Status == "fail" && check.Message != "" && strings.Contains(check.Action, "gorun start")
+		}
+		if check.Status == "ok" && check.Action != "" {
+			t.Fatalf("unexpected action on successful check: %+v", check)
+		}
+	}
+	if !found {
+		t.Fatal("missing data failure with recovery advice")
 	}
 	if _, err := os.Stat(dir); !os.IsNotExist(err) {
 		t.Fatal("doctor created data directory")
-	}
-	if !strings.Contains(out.String(), "gorun start") {
-		t.Fatal("missing recovery advice")
 	}
 }
 
@@ -67,10 +94,7 @@ func TestDoctorHealthySiteIsReadOnly(t *testing.T) {
 	if !bytes.Equal(before, after) {
 		t.Fatal("doctor modified database")
 	}
-	var report struct {
-		OK     bool                          `json:"ok"`
-		Checks []struct{ ID, Status string } `json:"checks"`
-	}
+	var report siteDoctorReport
 	if err := json.Unmarshal(out.Bytes(), &report); err != nil || !report.OK || len(report.Checks) < 6 {
 		t.Fatalf("invalid report: %v", err)
 	}
@@ -106,12 +130,12 @@ func TestDoctorReportsPortSchemaAndThemeProblems(t *testing.T) {
 		t.Fatal(err)
 	}
 	app.Close()
+	var out bytes.Buffer
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer listener.Close()
-	var out bytes.Buffer
 	err = doctorCmd([]string{"--data", cfg.DataDir, "--addr", listener.Addr().String(), "--json"}, &out)
 	if err == nil {
 		t.Fatal("broken site must fail")
@@ -163,6 +187,29 @@ func TestDoctorRunningHealthEndpointIsWarning(t *testing.T) {
 	}
 }
 
+func TestDoctorPortDoesNotProbeRemoteHostsOrFollowRedirects(t *testing.T) {
+	report := siteDoctorReport{OK: true}
+	doctorPort(config.Config{Addr: "192.0.2.1:8080"}, &report)
+	check := requireDoctorStatus(t, report.Checks, "port", "fail")
+	if !strings.Contains(check.Message, "address on this computer") {
+		t.Fatalf("unexpected remote address check: %+v", check)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/healthz" {
+			t.Errorf("unexpected probe path: %s", r.URL.Path)
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		http.Redirect(w, r, "/other", http.StatusFound)
+	}))
+	defer server.Close()
+	parsed, _ := url.Parse(server.URL)
+	report = siteDoctorReport{OK: true}
+	doctorPort(config.Config{Addr: parsed.Host}, &report)
+	requireDoctorStatus(t, report.Checks, "port", "fail")
+}
+
 func TestDoctorRedactsConfigurationSecrets(t *testing.T) {
 	t.Setenv("GORUN_ENV", "prod")
 	t.Setenv("GORUN_BASE_URL", "https://user:super-secret@example.com/path")
@@ -198,12 +245,12 @@ func TestDoctorNamesThePublicBaseURLFix(t *testing.T) {
 		}
 	}
 	if found == nil {
-		t.Fatalf("no public_base_url check: %+v", report.Checks)
+		t.Fatalf("no public_base_url check: %+v", report)
 	}
 	if found.Status != "fail" || found.Action == "" {
 		t.Fatalf("check is not actionable: %+v", found)
 	}
-	if !strings.Contains(found.Action, "GORUN_BASE_URL") || !strings.Contains(found.Action, "not a production setup") {
+	if !strings.Contains(found.Action, "GORUN_BASE_URL") {
 		t.Fatalf("action does not explain the fix: %s", found.Action)
 	}
 }
@@ -248,7 +295,7 @@ func TestDoctorDisabledAddonDoesNotRequireMigrations(t *testing.T) {
 	defer app.Close()
 	mods := append(Modules(cfg), doctorOptionalModule{})
 	report := siteDoctorReport{OK: true}
-	doctorSchema(context.Background(), app.Deps.DB, mods, &report)
+	doctorSchema(context.Background(), app.Deps.DB, cfg, mods, &report)
 	if !report.OK {
 		t.Fatalf("disabled addon reported pending migrations: %+v", report)
 	}
@@ -257,8 +304,124 @@ func TestDoctorDisabledAddonDoesNotRequireMigrations(t *testing.T) {
 	}
 	mods[len(mods)-1] = doctorOptionalModule{activationErr: errors.New("bad configuration with private data")}
 	report = siteDoctorReport{OK: true}
-	doctorSchema(context.Background(), app.Deps.DB, mods, &report)
+	doctorSchema(context.Background(), app.Deps.DB, cfg, mods, &report)
 	if report.OK || report.Checks[0].ID != "addons" || strings.Contains(report.Checks[0].Message, "private data") {
 		t.Fatal("activation error missing or private detail leaked")
+	}
+	cfg.Addons = map[string]string{"doctor-optional": kernel.AddonModeDisabled}
+	report = siteDoctorReport{OK: true}
+	doctorSchema(context.Background(), app.Deps.DB, cfg, mods, &report)
+	requireDoctorStatus(t, report.Checks, "addons", "ok")
+	requireDoctorStatus(t, report.Checks, "schema", "ok")
+}
+
+func TestDoctorPendingMigrationsAndStoredBaseURL(t *testing.T) {
+	t.Setenv("GORUN_BASE_URL", "http://localhost:8080")
+	t.Setenv("GORUN_TRUSTED_PROXIES", "")
+	cfg, err := config.Load([]string{"--data", t.TempDir()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	app, err := kernel.BootWithOptions(ctx, cfg, Modules(cfg), kernel.BootOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := auth.BootstrapAdmin(ctx, app.Deps.DB, app.Deps.Audit, "temporary secure password"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := app.Deps.DB.Exec(`DELETE FROM schema_migrations WHERE module = 'auth' AND name = '0011_onboarding.sql'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := app.Deps.Settings.Set(ctx, kernel.SettingBaseURL, "https://private.example"); err != nil {
+		t.Fatal(err)
+	}
+	app.Close()
+
+	var out bytes.Buffer
+	if err := doctorCmd([]string{"--data", cfg.DataDir, "--addr", "127.0.0.1:0", "--support", "--json"}, &out); err == nil {
+		t.Fatalf("pending migrations must fail: %s", out.String())
+	}
+	var report siteDoctorReport
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	schema := requireDoctorStatus(t, report.Checks, "schema", "fail")
+	if !strings.Contains(schema.Action, "gorun migrate") {
+		t.Fatal("pending migrations without a migrate hint")
+	}
+	requireDoctorStatus(t, report.Checks, "public_base_url", "ok")
+	requireDoctorStatus(t, report.Checks, "trusted_proxies", "warn")
+	requireDoctorStatus(t, report.Checks, "https_security", "warn")
+	if strings.Contains(out.String(), "private.example") {
+		t.Fatal("stored URL leaked")
+	}
+}
+
+func TestDoctorLegacyMigrationMetadataIsReadOnly(t *testing.T) {
+	args := []string{"--data", t.TempDir(), "--addr", "127.0.0.1:0"}
+	cfg, err := config.Load(args)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	app, err := kernel.BootWithOptions(ctx, cfg, Modules(cfg), kernel.BootOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer app.Close()
+	if _, err := auth.BootstrapAdmin(ctx, app.Deps.DB, app.Deps.Audit, "temporary secure password"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := app.Deps.DB.Exec(`ALTER TABLE schema_migrations DROP COLUMN checksum`); err != nil {
+		t.Fatal(err)
+	}
+	app.Close()
+
+	// Rollback journaling keeps SQLite's WAL coordination out of this test.
+	uri, err := db.FileURI(cfg.DBPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := sql.Open("sqlite", uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var journalMode string
+	modeErr := d.QueryRowContext(ctx, `PRAGMA journal_mode = DELETE`).Scan(&journalMode)
+	closeErr := d.Close()
+	if modeErr != nil || journalMode != "delete" || closeErr != nil {
+		t.Fatalf("could not prepare rollback-journal fixture: mode %q, query %v, close %v", journalMode, modeErr, closeErr)
+	}
+
+	databaseHash := func() [sha256.Size]byte {
+		t.Helper()
+		for _, suffix := range []string{"-wal", "-shm"} {
+			if _, err := os.Lstat(cfg.DBPath() + suffix); !errors.Is(err, os.ErrNotExist) {
+				t.Fatalf("expected no SQLite %s sidecar, got %v", suffix, err)
+			}
+		}
+		body, err := os.ReadFile(cfg.DBPath())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return sha256.Sum256(body)
+	}
+	before := databaseHash()
+	var out bytes.Buffer
+	runErr := doctorCmd(append(args, "--json"), &out)
+	if after := databaseHash(); after != before {
+		t.Fatal("doctor modified the database with legacy migration metadata")
+	}
+	if runErr != nil {
+		t.Fatalf("doctor should warn on legacy metadata: %v\n%s", runErr, out.String())
+	}
+	var report siteDoctorReport
+	if err := json.Unmarshal(out.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	check := requireDoctorStatus(t, report.Checks, "schema", "warn")
+	if !strings.Contains(check.Message, "checksum metadata is missing") {
+		t.Fatalf("missing legacy metadata warning: %+v", check)
 	}
 }

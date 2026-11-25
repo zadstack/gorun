@@ -1,11 +1,11 @@
 //go:build darwin || linux
 
-package admin
+package diagnostics
 
 import "syscall"
 
-// diskUsage returns free and total bytes of the filesystem holding path.
-func diskUsage(path string) (free, total uint64, ok bool) {
+// DiskUsage returns free and total bytes of the filesystem holding path.
+func DiskUsage(path string) (free, total uint64, ok bool) {
 	var st syscall.Statfs_t
 	if err := syscall.Statfs(path, &st); err != nil {
 		return 0, 0, false

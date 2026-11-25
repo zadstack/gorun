@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/zadstack/gorun/internal/api"
+	"github.com/zadstack/gorun/internal/diagnostics"
 	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/jobs"
 	"github.com/zadstack/gorun/internal/kernel"
@@ -97,7 +98,7 @@ func (h *handlers) healthReport(ctx context.Context) (*healthReport, error) {
 	if err := h.d.DB.QueryRowContext(ctx, `PRAGMA journal_mode`).Scan(&rep.JournalMode); err != nil {
 		return nil, fmt.Errorf("admin: journal mode: %w", err)
 	}
-	free, total, diskOK := diskUsage(cfg.DataDir)
+	free, total, diskOK := diagnostics.DiskUsage(cfg.DataDir)
 	if diskOK {
 		rep.DiskFree, rep.DiskTotal = humanBytes(free), humanBytes(total)
 	}

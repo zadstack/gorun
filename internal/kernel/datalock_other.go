@@ -9,3 +9,6 @@ import "os"
 func tryLock(*os.File) (bool, error) { return false, nil }
 
 func unlock(*os.File) error { return nil }
+
+// ProbeDataDirLock reports no holder on platforms where GoRun uses no lock.
+func ProbeDataDirLock(string) (bool, error) { return false, nil }

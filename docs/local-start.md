@@ -116,26 +116,26 @@ gorun doctor --data ./data --json
 gorun doctor --addr :9090
 ```
 
-`doctor` checks the existing configuration and secret, data-directory permissions,
-SQLite integrity, migration drift, enabled/disabled module activation, an active
-administrator, unfinished first-login setup, the active theme's filesystem
-contract, and the configured port. Every failure or warning includes a next step.
-JSON contains `ok` and a `checks` array with `id`, `status`, `message` and optional
-`action`; statuses are `ok`, `warn`, and `fail`. Exit status is 0 for healthy sites
-and warnings, 1 when a check fails.
+`doctor` checks the existing configuration and secret, data-directory permissions
+and lock, SQLite integrity and migrations, module activation, administrator
+accounts and onboarding, theme files, backup age, available disk space, and
+HTTPS/proxy configuration. Warnings and failures give a next step. JSON is an
+object with a boolean `ok` and a `checks` array. Each check has `id`, `status`,
+`message` and an optional `action`. Statuses are `ok`, `warn` and `fail`.
+A failed check sets `ok` to false and exits 1. Warnings alone exit 0.
+Add `--support` to include OS and architecture in a shareable report.
 
-It does not create a site or secret, run migrations, repair files, start workers,
-reset accounts or take the worker lock. SQLite is opened in read-only/query-only
-mode; normal SQLite WAL coordination may use its shared-memory sidecars. It can
-run beside the server. Integrity/schema checks have a bounded timeout. Permission
-checks inspect permission bits rather than writing test files; ACLs and the actual
-server account may impose additional restrictions.
+The checks do not create a site or secret, run migrations, repair files, start
+workers, reset accounts or rewrite the lock file. SQLite is opened in
+read-only/query-only mode. Normal SQLite WAL coordination may use its
+shared-memory sidecars. Run the command as the service account to check its
+directory access. The optional `--check-updates` flag contacts the configured
+release index. See [Troubleshooting](TROUBLESHOOTING.md).
 
-The port check briefly attempts a local bind. If the port is occupied, it probes
-only that local address's `/healthz` with redirects and environment proxies
-disabled. A responding health endpoint is a warning: it may be the running site
-or another service, so verify ownership. It never probes a remote configured
-address. This is a diagnostic snapshot; another process can take the port later.
+The port check verifies that the configured address is local and briefly
+attempts to bind it. If the port is occupied, doctor probes the local
+`/healthz` for up to one second with proxies and redirects disabled. A
+successful response is a warning and may indicate that your site is running.
 
 A new or misconfigured site fails with instructions to run `gorun start` or
 review its existing configuration. Diagnostics suppress configuration values,
