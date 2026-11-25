@@ -315,6 +315,15 @@ log. An approved execution is logged again with `executed: true`, `approval_id`,
 
 ## Client configuration
 
+The admin fills these in for you. Creating a key under **AI Agents → API keys** shows a **Connect your
+agent** panel with the three snippets below, ready to copy with this site's URL (the `site.base_url`
+setting, else the address you opened the admin on) and the new key. The key is shown only on that
+page; afterwards each key's row keeps the same panel with `gp_…` in place of the secret. **Test
+connection** in the panel runs MCP `initialize` and `tools/list` as the key inside the site (no HTTP
+round trip, no tool call) and reports the server version, the key's kind and scopes, and the toolsets
+and tools it can see; on failure it names the cause (revoked, expired, owner disabled, wrong secret,
+scopes that reach no tool) with the JSON-RPC code `/mcp` would answer.
+
 ### Claude Code (HTTP)
 
 ```sh

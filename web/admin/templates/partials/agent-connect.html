@@ -1,0 +1,61 @@
+{{/* "agent-connect": ready-to-copy MCP client configuration for one key and
+     a "Test connection" form. Data (dict): Scope ("new" on the created-key
+     panel, "row" in the list), ID, Prefix, Snippets (connectSnippets),
+     Secret (only on the created-key panel), Test (*connectTest or nil). */}}
+{{define "agent-connect"}}
+{{$uid := printf "connect-%s-%s" .Scope .ID}}
+<section class="agent-connect" aria-labelledby="{{$uid}}-title" data-agent-connect="{{.Scope}}">
+  <h3 id="{{$uid}}-title" class="agent-connect-title">{{t "agentconnect.title"}}</h3>
+  {{if .Secret}}<p class="agent-connect-help">{{t "agentconnect.help_created"}}</p>
+  {{else}}<p class="agent-connect-help" data-connect-placeholder>{{t "agentconnect.help_list" (printf "gp_%s…" .Prefix)}}</p>{{end}}
+  {{template "agent-connect-snippet" (dict "ID" (printf "%s-code" $uid) "Label" (t "agentconnect.claude_code") "Help" (t "agentconnect.claude_code_help") "Text" .Snippets.ClaudeCode "Rows" 3)}}
+  {{template "agent-connect-snippet" (dict "ID" (printf "%s-desktop" $uid) "Label" (t "agentconnect.desktop") "Help" (t "agentconnect.desktop_help") "Text" .Snippets.Desktop "Rows" 16)}}
+  {{template "agent-connect-snippet" (dict "ID" (printf "%s-http" $uid) "Label" (t "agentconnect.http") "Help" (t "agentconnect.http_help") "Text" .Snippets.HTTP "Rows" 10)}}
+  <form method="post" action="/admin/agents/keys/test" class="agent-connect-test" data-connect-test
+        hx-post="/admin/agents/keys/test" hx-target="#{{$uid}}-result" hx-select="#{{$uid}}-result" hx-swap="outerHTML" hx-disabled-elt="find button">
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="id" value="{{.ID}}">
+    <input type="hidden" name="scope" value="{{.Scope}}">
+    {{if .Secret}}<input type="hidden" name="secret" value="{{.Secret}}">{{end}}
+    <button type="submit" class="btn btn-secondary btn-sm">{{icon "plug"}}<span>{{t "agentconnect.test"}}</span></button>
+    <span class="agent-connect-help">{{t "agentconnect.test_help"}}</span>
+  </form>
+  <div id="{{$uid}}-result" aria-live="polite">
+  {{with .Test}}
+    {{if .OK}}
+    <div class="alert" data-variant="success" role="status" data-connect-result="ok">{{icon "circle-check"}}
+      <h4>{{t "agentconnect.ok_title"}}</h4>
+      <section>
+        <p dir="auto">{{t "agentconnect.ok_server" .Server .Version .Protocol}}</p>
+        <p>{{t "agentconnect.ok_kind" (t (printf "admin.keys.kind_%s" .Kind))}} <span dir="ltr">{{range $i, $s := .Scopes}}{{if $i}}, {{end}}<code>{{$s}}</code>{{end}}</span></p>
+        {{if eq .Kind "api"}}<p>{{t "agentconnect.api_kind_note"}}</p>{{end}}
+        <p>{{t "agentconnect.ok_tools" .ToolCount (len .Toolsets)}} <span dir="ltr">{{range $i, $s := .Toolsets}}{{if $i}}, {{end}}{{$s}}{{end}}</span></p>
+        <ul class="agent-connect-tools" dir="ltr" data-connect-tools>{{range .Preview}}<li class="badge font-mono">{{.}}</li>{{end}}{{if .More}}<li class="badge" dir="auto">{{t "agentconnect.more" .More}}</li>{{end}}</ul>
+      </section>
+    </div>
+    {{else}}
+    <div class="alert" data-variant="destructive" role="alert" data-connect-result="{{.Code}}">{{icon "triangle-alert"}}
+      <h4>{{t "agentconnect.fail_title"}}</h4>
+      <section>
+        <p>{{t (printf "agentconnect.hint_%s" .Code)}}</p>
+        <p class="agent-connect-code" dir="ltr"><code>{{.Code}}</code>{{if .RPC}} · JSON-RPC <code>{{.RPC}}</code>{{end}}</p>
+      </section>
+    </div>
+    {{end}}
+  {{end}}
+  </div>
+</section>
+{{end}}
+
+{{define "agent-connect-snippet"}}
+<div class="agent-connect-snippet" x-data="{ copied: false }">
+  <div class="agent-connect-snippet-head">
+    <h4 id="{{.ID}}-label">{{.Label}}</h4>
+    <button type="button" class="btn btn-ghost btn-sm" data-copy-snippet aria-describedby="{{.ID}}-label" @click="gp.copy($refs.text.value).then((ok) => copied = ok)">
+      {{icon "copy"}}<span data-label-copy="{{t "admin.keys.copy"}}" data-label-copied="{{t "admin.keys.copied"}}" x-text="copied ? $el.dataset.labelCopied : $el.dataset.labelCopy">{{t "admin.keys.copy"}}</span>
+    </button>
+  </div>
+  <p class="agent-connect-help">{{.Help}}</p>
+  <textarea x-ref="text" readonly dir="ltr" spellcheck="false" aria-labelledby="{{.ID}}-label" class="agent-connect-code-block" rows="{{.Rows}}" @focus="$el.select()">{{.Text}}</textarea>
+</div>
+{{end}}

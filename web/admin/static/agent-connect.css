@@ -1,0 +1,27 @@
+/* "Connect your agent" panel on AI Agents → API keys
+   (partials/agent-connect.html). */
+.agent-connect { display: grid; gap: var(--space-3); margin-top: var(--space-3); }
+[data-key-created] .agent-connect { border-top: 1px solid color-mix(in srgb, var(--green) 30%, var(--line)); padding-top: var(--space-3); }
+.agent-connect-title { font-size: var(--fs-md); font-weight: 650; color: var(--ink); }
+.agent-connect-help { color: var(--muted-foreground); font-size: var(--fs-xs); }
+.agent-connect-snippet { display: grid; gap: var(--space-1); min-width: 0; }
+.agent-connect-snippet-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.agent-connect-snippet h4 { font-weight: 600; }
+.agent-connect-code-block {
+  display: block; width: 100%; min-width: 0; resize: vertical;
+  padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--panel-2); color: var(--ink); text-align: left;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--fs-xs); line-height: 1.5;
+  white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto;
+}
+.agent-connect-code-block:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.agent-connect-test { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.agent-connect .alert[data-variant="success"] { border-color: color-mix(in srgb, var(--green) 40%, var(--border)); background: var(--green-soft); color: var(--green-hover); }
+.agent-connect .alert section { display: grid; gap: var(--space-1); }
+.agent-connect .alert section > * { margin: 0; }
+.agent-connect .alert code { font-size: var(--fs-xs); }
+.agent-connect-tools { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.key-connect-row > td { padding-top: 0; }
+.key-connect > summary { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 44px; cursor: pointer; color: var(--primary); font-size: var(--fs-sm); }
+.key-connect[open] > summary { margin-bottom: var(--space-1); }
+.key-connect > .agent-connect { margin-top: 0; max-width: 52rem; }

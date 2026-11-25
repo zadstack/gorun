@@ -55,6 +55,11 @@ type keysPage struct {
 	Plaintext  string // shown once, only in the create and rotate responses
 	Created    *auth.APIKey
 	AgentModel *agentModelPage
+	// Connect holds the client snippets for the created key (Plaintext);
+	// Placeholder the same snippets with gp_… for the list, where secrets
+	// are gone. Test is the result of the last "Test connection".
+	Connect, Placeholder connectSnippets
+	Test                 *connectTest
 }
 
 func (h *handlers) scopeGroups(r *http.Request, checked []string) []scopeGroup {
@@ -138,6 +143,11 @@ func (h *handlers) renderKeys(w http.ResponseWriter, r *http.Request, status int
 		}
 	}
 	data.Groups = h.scopeGroups(r, data.Form.Scopes)
+	base := h.mcpBase(r)
+	data.Placeholder = newConnectSnippets(base, "gp_…")
+	if data.Plaintext != "" {
+		data.Connect = newConnectSnippets(base, data.Plaintext)
+	}
 	w.Header().Set("Cache-Control", "no-store")
 	h.tpl.RenderWith(w, r, status, "admin", "pages/agents/keys.html", data)
 }

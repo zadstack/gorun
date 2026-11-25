@@ -59,6 +59,7 @@ Operator acceptance recipe (CIDR, cookie Secure, HSTS, outside health):
 | --- | --- | --- |
 | Agent key gets `403 agent_key_not_allowed` on `/api` | AI agent keys are MCP-only | Use MCP (`/mcp` or `gorun mcp`). Issue a separate REST key for `/api/v1`. |
 | Sensitive tool returns an approval id and waits | Default human-in-the-loop | Approve or deny under **AI Agents → Approvals**. Agent polls `check_approval`. |
+| Agent client cannot connect, or sees no tools | Wrong or revoked key, wrong URL, or scopes that reach no tool | Under **AI Agents → API keys**, open **Connect your agent** on the key and press **Test connection**: it runs `initialize` + `tools/list` as that key inside the site and names the cause (revoked, expired, owner disabled, no tools). Copy the client snippet from the same panel so the URL and header are right. |
 | Key cannot approve its own call | Same-owner / self-approval rules | Use a different human session, or an explicit `mcp.approve` / `mcp.approve_self` scope; `*` does not grant those. Single-operator opt-in: `GORUN_MCP_SAME_OWNER_APPROVAL=true`. See [MCP.md](MCP.md). |
 
 ## Upgrade from a release tag
