@@ -229,7 +229,7 @@ Activating a theme does not create starter pages; use the site builder for that.
 
 ## Work with agents, keep the decisions
 
-Connect an MCP client with an **AI agent** key. Its scopes are bounded by its owner's permissions; publishing, deleting and changing sensitive settings require human approval by default. REST integration keys are separate from agent keys. Every MCP tool carries annotations (read-only, destructive, idempotent); clients can narrow the list with `?toolsets=content,media` or hide writes with `?readonly=1`, and `gorun://guide` explains the workflow. In supporting browsers the admin also registers [WebMCP](docs/WEBMCP.md) tools, so an in-browser agent can search, read the open page and prepare drafts as you, without an API key.
+Connect an MCP client with an **AI agent** key. Its scopes are bounded by its owner's permissions; publishing, deleting and changing sensitive settings require human approval by default. REST integration keys are separate from agent keys. Every MCP tool carries annotations (read-only, destructive, idempotent); clients can narrow the list with `?toolsets=content,media` or hide writes with `?readonly=1`, and `gorun://guide` explains the workflow. In supporting browsers the admin also registers [WebMCP](docs/WEBMCP.md) tools, so an in-browser agent can search, read the open page and prepare drafts as you, without an API key. The API keys page gives ready-to-copy configuration for Claude Code, Claude Desktop and other clients and tests the connection; prompts, completions and resource templates help agents get the arguments right.
 
 ### How an agent action gets approved
 

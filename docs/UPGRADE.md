@@ -450,6 +450,16 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ---
 
+## 0.24 upgrade notes
+
+From 0.23.x. No migrations, no new environment variables and no new Go dependencies. Rolling back to 0.23.x on the same data is possible.
+
+**How to upgrade.** 0.23.x has no `gorun upgrade` command, so this upgrade follows the [manual runbook](#manual-upgrade-runbook) (or the image runbook for Docker and Coolify). From 0.24.0 on, release binaries can use [`gorun upgrade`](#automatic-upgrade).
+
+**Custom themes.** The shared store and account templates (`shop`, `product`, `cart`, `checkout`, `account`, `form-result` and the order-status fragment) now use Basecoat's `.btn`, `.alert`, `.table`, `.field`, `.card`, `.badge` and `.empty` inside `.gp-core`. They no longer emit `zad-button`, `zad-button-outline`, `zad-error`, `zad-notice`, `zad-cart-table` or `zad-table-scroll`. Custom CSS that restyled those classes should target the new ones under the theme's own scope, for example `html[data-theme="x"] .gp-core .btn`. The catalog themes also moved their text sizes to the shared [type scale](THEME-CONTRACT.md#type-scale), so headings change size slightly on phones and wide screens.
+
+**Caching.** Signed-in staff see an admin bar on public pages; those responses are `Cache-Control: private, no-store`. Anonymous responses are unchanged.
+
 ## 0.23 upgrade notes
 
 From 0.22.x. No new environment variables.
