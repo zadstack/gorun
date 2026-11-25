@@ -82,11 +82,56 @@ func TestAdminBarOnPublicPages(t *testing.T) {
 
 func TestInjectAdminBarKeepsBrokenPagesIntact(t *testing.T) {
 	bar := `<div data-gorun-admin-bar></div>`
-	if got := string(injectAdminBar([]byte("<p>no body tag</p>"), bar)); got != "<p>no body tag</p>" {
+	if got := string(injectAdminBar([]byte("<p>no body tag</p>"), bar, false)); got != "<p>no body tag</p>" {
 		t.Fatalf("page without <body> changed: %q", got)
 	}
-	got := string(injectAdminBar([]byte(`<html><head><title>x</title></head><BODY class="a">hi</BODY></html>`), bar))
-	if !strings.Contains(got, `data-gorun-admin-bar-css></head>`) || !strings.Contains(got, `<BODY class="a">`+bar+`hi`) {
+	got := string(injectAdminBar([]byte(`<html><head><title>x</title></head><BODY class="a">hi</BODY></html>`), bar, false))
+	if !strings.Contains(got, `data-gorun-admin-bar-css></head>`) || !strings.Contains(got, `<BODY class="a">`+bar+`hi`) || strings.Contains(got, "<script") {
 		t.Fatalf("injection = %q", got)
+	}
+	got = string(injectAdminBar([]byte(`<html><head></head><body>hi</body></html>`), bar, true))
+	if !strings.Contains(got, `<script defer src="`+AdminBarJSURL()+`" data-gorun-admin-bar-js></script></head>`) {
+		t.Fatalf("inline injection lacks the script: %q", got)
+	}
+}
+
+// A page published from the structured builder carries the in-place editor
+// for staff who may edit it: the page id and labels on the bar, the script
+// in the head. Other pages, and people who cannot edit, get the plain bar.
+func TestAdminBarInlineEditorOnBuilderPages(t *testing.T) {
+	e := newEnv(t, "../../themes")
+	page := content.Item{ID: "01HZZ0000000000000000000AC", Type: "page", Slug: "home", Title: "Home", Status: "published", Template: "builder", Body: `<section id="gp-a" class="gp-section gp-hero"><h1>Hello</h1></section>`}
+	rec, err := e.render(kernel.KindRequest{Kind: KindPage, Type: "page", Slug: "home"}, &Context{Content: &page}, adminCtx())
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		`data-admin-bar-builder="01HZZ0000000000000000000AC"`, `data-admin-bar-publish`, `data-admin-bar-labels="{`, `&#34;edit&#34;:&#34;تعديل في مكانه&#34;`,
+		`<script defer src="` + AdminBarJSURL() + `" data-gorun-admin-bar-js></script></head>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("builder page lacks %s", want)
+		}
+	}
+	if strings.Contains(body, `data-admin-bar-csrf`) {
+		t.Error("the CSRF token must not be printed into the page; draft.json hands it out")
+	}
+
+	// The same page for a contributor who did not write it: bar, no editor.
+	contributor := auth.WithUser(context.Background(), &auth.User{ID: "u2", Role: "contributor", Status: auth.StatusActive, Name: "Contributor"})
+	rec, _ = e.render(kernel.KindRequest{Kind: KindPage, Type: "page", Slug: "home"}, &Context{Content: &page}, contributor)
+	if body := rec.Body.String(); strings.Contains(body, "data-admin-bar-builder") || strings.Contains(body, "data-gorun-admin-bar-js") {
+		t.Error("contributor got the in-place editor for someone else's page")
+	}
+
+	// A plain page (no builder template) never loads the script.
+	plain := content.Item{ID: "01HZZ0000000000000000000AD", Type: "page", Slug: "about", Title: "About", Status: "published", Body: "<p>hi</p>"}
+	rec, _ = e.render(kernel.KindRequest{Kind: KindPage, Type: "page", Slug: "about"}, &Context{Content: &plain}, adminCtx())
+	if body := rec.Body.String(); strings.Contains(body, "data-admin-bar-builder") || strings.Contains(body, "data-gorun-admin-bar-js") {
+		t.Error("plain page got the in-place editor")
+	}
+	if len(AdminBarJS()) == 0 || !strings.HasPrefix(AdminBarJSURL(), AdminBarJSPath+"?v=") {
+		t.Error("inline-edit.js is not embedded")
 	}
 }

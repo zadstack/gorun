@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -24,7 +25,29 @@ type Draft struct {
 	Document       Document `json:"document"`
 	BaseUpdatedAt  string   `json:"base_updated_at" format:"-"`
 	UpdatedAt      string   `json:"updated_at" format:"-"`
+	// published is the stored published_document_json ("null" when the
+	// page was never published from the builder); InSync compares it with
+	// the draft.
+	published string
 }
+
+// InSync reports whether the private draft equals the published layout:
+// nothing is waiting in the editor, so an edit made on the public page
+// changes exactly what the visitor sees there. A page never published from
+// the builder is never in sync.
+func (d *Draft) InSync() bool {
+	if d == nil || !d.HasPublished {
+		return false
+	}
+	var published Document
+	if err := json.Unmarshal([]byte(d.published), &published); err != nil {
+		return false
+	}
+	a, errA := json.Marshal(d.Document)
+	b, errB := json.Marshal(published)
+	return errA == nil && errB == nil && bytes.Equal(a, b)
+}
+
 type service struct{ d *kernel.Deps }
 
 func (s *service) content() (content.Service, error) {
@@ -77,6 +100,7 @@ func (s *service) Load(ctx context.Context, id string) (*Draft, error) {
 		return nil, fmt.Errorf("builder: load: %w", err)
 	}
 	out.HasPublished = published != "null"
+	out.published = published
 	out.ContentChanged = out.BaseUpdatedAt != content.EditToken(it)
 	if err = json.Unmarshal([]byte(raw), &out.Document); err != nil {
 		return nil, fmt.Errorf("builder: decode: %w", err)

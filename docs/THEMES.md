@@ -241,6 +241,25 @@ theme's header. The bar follows the staff member's admin language, not the page'
 `Cache-Control: private, no-store`; pages for visitors are unchanged, byte for byte. Theme previews
 (`?gp_preview_override=1`, sandboxed) never get it.
 
+### Editing in place
+
+On a page published from the structured builder (`template` is `builder`, so
+the section ids survive in its body), the bar of a staff member who may edit
+the page also loads `/static/site/inline-edit.js` and shows **Edit in place**.
+The script asks `/admin/builder/<id>/draft.json` for the private draft, the
+CSRF token and whether that draft equals the published layout; when it does,
+it matches each section's texts (title, text, link label, item titles, texts
+and prices, hero eyebrow, caption, secondary label and facts) to the elements
+that show them, by section id and text, and makes those elements editable
+where they stand. Every change saves to the same draft the editor uses, with
+the editor's tokens, so revisions, conflicts and validation stay one system;
+**Publish** (for people with `content.publish`) is the editor's publish, and
+the page reloads. A draft that already differs from the published layout is
+not edited on the page: the bar says so and links the editor, since the
+visitor sees the published layout and the edit would land elsewhere. Layout,
+images, links and settings stay in the editor. Without script the bar is
+unchanged.
+
 ### Rules that keep the layers readable
 
 The core applies these rules whatever the theme, so a combination of theme, builder identity and

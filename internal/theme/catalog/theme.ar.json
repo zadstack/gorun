@@ -239,5 +239,18 @@
   "adminbar.dashboard": "لوحة GoRun",
   "adminbar.edit": "تعديل هذه الصفحة",
   "adminbar.website": "الموقع",
-  "adminbar.hide": "إخفاء شريط المشرف لهذه الجلسة"
+  "adminbar.hide": "إخفاء شريط المشرف لهذه الجلسة",
+  "adminbar.inline_edit": "تعديل في مكانه",
+  "adminbar.inline_done": "تم",
+  "adminbar.inline_loading": "جارٍ تحميل المسودة…",
+  "adminbar.inline_saving": "جارٍ الحفظ…",
+  "adminbar.inline_saved": "حُفظت المسودة",
+  "adminbar.inline_error": "تعذّر الحفظ؛ يبقى التغيير في هذه الصفحة حتى تعيد تحميلها.",
+  "adminbar.inline_conflict": "غيّر شخص آخر هذه الصفحة.",
+  "adminbar.inline_reload": "إعادة التحميل",
+  "adminbar.inline_pending": "لهذه الصفحة تغييرات غير منشورة في المحرر، فلا يمكن تعديلها في مكانها.",
+  "adminbar.inline_open_editor": "افتح المحرر",
+  "adminbar.inline_publish": "نشر",
+  "adminbar.inline_published": "نُشرت",
+  "adminbar.inline_hint": "اضغط على نص لتعديله. Enter ينهي السطر، وEscape ينهي التعديل."
 }

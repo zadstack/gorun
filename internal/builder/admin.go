@@ -37,6 +37,7 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	r := d.Router.Admin.With(auth.RequirePerm("content.edit"))
 	r.With(auth.RequirePerm("content.create")).Post("/builder/new", h.createPurposePage)
 	r.Get("/builder/{id}", h.editor)
+	r.Get("/builder/{id}/draft.json", h.draftJSON)
 	r.Post("/builder/{id}/save", h.save)
 	r.Post("/builder/{id}/preview", h.preview)
 	r.Post("/builder/{id}/suggest", h.suggest)
@@ -120,6 +121,28 @@ func builderJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// draftJSON is GET /admin/builder/{id}/draft.json, what the in-place editor
+// on the public page (web/site/inline-edit.js) loads before it makes the
+// section texts editable: the draft with its tokens, the CSRF token its
+// saves must carry, whether this user may publish, and whether the draft
+// equals the published layout. The script refuses to edit a page whose
+// draft holds unpublished work, since the visitor sees the published layout
+// and the edit would land elsewhere.
+func (h *adminHandlers) draftJSON(w http.ResponseWriter, r *http.Request) {
+	draft, err := h.svc.Load(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	builderJSON(w, 200, struct {
+		Draft      *Draft `json:"draft"`
+		CanPublish bool   `json:"can_publish"`
+		InSync     bool   `json:"in_sync"`
+		CSRF       string `json:"csrf"`
+	}{draft, auth.Can(r.Context(), "content.publish"), draft.InSync(), auth.CSRFToken(r.Context())})
 }
 func (h *adminHandlers) save(w http.ResponseWriter, r *http.Request) {
 	var req saveRequest

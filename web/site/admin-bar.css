@@ -33,6 +33,46 @@
 }
 .gp-admin-bar a:hover { background: rgba(255, 255, 255, .12); }
 .gp-admin-bar a:focus-visible { outline: 2px solid #9ad0d6; outline-offset: -2px; }
+/* Edit in place (inline-edit.js): the bar's buttons look like its links;
+   the status reads the save state; Publish is the one accent. */
+.gp-admin-bar button.gp-admin-bar-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  margin: 0;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gp-admin-bar button.gp-admin-bar-button:hover { background: rgba(255, 255, 255, .12); }
+.gp-admin-bar button.gp-admin-bar-button:focus-visible { outline: 2px solid #9ad0d6; outline-offset: -2px; }
+.gp-admin-bar button[aria-pressed="true"] { background: rgba(255, 255, 255, .18); }
+.gp-admin-bar [hidden] { display: none !important; }
+.gp-admin-bar button.gp-admin-bar-publish { background: #167252; font-weight: 700; }
+.gp-admin-bar button.gp-admin-bar-publish:hover { background: #1b865f; }
+.gp-admin-bar button.gp-admin-bar-publish[disabled] { opacity: .6; cursor: default; }
+.gp-admin-bar-status { padding-inline: 8px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%; }
+.gp-admin-bar-status:empty { display: none; }
+.gp-admin-bar-status.is-error { color: #ffb4a8; opacity: 1; }
+.gp-admin-bar-status.is-warn { color: #ffd98a; opacity: 1; }
+.gp-admin-bar-status.is-ok { color: #a8e6c3; opacity: 1; }
+.gp-admin-bar a.gp-admin-bar-link { text-decoration: underline; }
+/* The texts being edited, in the page's own type. */
+.gp-inline-editing .gp-inline-field {
+  outline: 1px dashed #4fa3ab;
+  outline-offset: 3px;
+  border-radius: 2px;
+  cursor: text;
+  min-width: 1ch;
+}
+.gp-inline-editing .gp-inline-field:hover { outline-style: solid; }
+.gp-inline-editing .gp-inline-field:focus { outline: 2px solid #246b73; outline-offset: 3px; }
+.gp-inline-editing .gp-inline-field:empty::before { content: "\2026"; opacity: .5; }
 .gp-admin-bar-brand { font-weight: 700; }
 .gp-admin-bar-mark {
   width: 10px;
