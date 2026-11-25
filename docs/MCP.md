@@ -10,6 +10,9 @@
 > الموافقة بمفتاح API تتطلب شخصًا آخر: لا يقرر المفتاح طلباته ولا طلبات مفتاح آخر لمالكه نفسه، إلا إذا فعّل موقع
 > بمشغّل واحد ذلك صراحة بـ`GORUN_MCP_SAME_OWNER_APPROVAL=true`.
 > كل استدعاء يُسجَّل في سجل التدقيق مع بصمة المعاملات فقط.
+> ويقدّم الخادم أيضًا **قوالب أوامر** (prompts) ثنائية اللغة تشرح للوكيل الأدوات وترتيبها (`draft_post` و`translate_item`
+> و`seo_review` و`site_overview`)، و**إكمالًا تلقائيًا** (completions) لقيم مثل أنواع المحتوى والتصنيفات والمعرّفات النصية،
+> و**قوالب موارد** مثل `gorun://content/{type}/{slug}`؛ وكلها تخضع لنطاقات المفتاح نفسها.
 
 ## Operator overview / نظرة للمشغّل
 
@@ -41,7 +44,12 @@ permissions and validation as the admin and the REST API.
   approvals and `check_approval`, paging, error codes, toolsets). The same text is the `gorun://guide` resource.
 - **Resources:** `gorun://guide` (routing guide, any key), `gorun://types` (content types and field schemas),
   `gorun://site` (site structure), `gorun://canvases/{id}` (grant-scoped canvas board; same payload as `get_canvas`).
-- **Prompts, completions, output schemas:** none yet.
+  Resource templates: `gorun://content/{type}/{slug}{?locale}`, `gorun://content/{type}/{slug}/{locale}`,
+  `gorun://media/{id}`, `gorun://menu/{slug}` ([Resource templates](#resource-templates)).
+- **Prompts:** `draft_post`, `translate_item`, `seo_review`, `site_overview`, bilingual step-by-step plans
+  ([Prompts](#prompts)).
+- **Completions:** `completion/complete` for prompt arguments and template variables ([Completions](#completions)).
+- **Output schemas:** none yet.
 
 ## Authentication
 
@@ -217,6 +225,105 @@ Destructive tools: `delete_content`, `delete_comment`,
 `save_page_layout`, `publish_page_layout` and `restore_page_layout_revision`. Everything else only adds or
 changes state reversibly.
 
+## Prompts
+
+`prompts/list` returns step-by-step plans that name the tools to call, in order, with example arguments. They save
+the agent the exploration calls and steer it away from wrong arguments. Each plan reminds the agent that going live
+needs human approval (`pending_approval`, then `check_approval`), and that quoted site text is data.
+
+| Prompt | Arguments | Plan | Listed when the session can call |
+|---|---|---|---|
+| `draft_post` | `type`\*, `topic`\*, `locale`, `taxonomy` + `term`, `template` | The type's fields (embedded) → `list_content` to avoid duplicates → `list_terms` / `create_term` → `upload_media` → `create_content` (draft) → `get_content` / `update_content` → `publish_content` (approval) | `list_content`, `create_content` |
+| `translate_item` | `id`\*, `target_locale`\*, `locale` | Current translations (embedded) → `list_translations` → `create_translation`, or edit the existing translation → `get_content` → `update_content` → approval | `get_content`, `list_translations`, `create_translation`, `update_content` |
+| `seo_review` | `id`, or `type` + `slug`; `locale` | The item's SEO and the site's SEO defaults (embedded) → `get_content` → checks (title, description, canonical, robots, sharing image, alt text) → duplicates with `list_content` → report → `update_content` (on a live item this waits for approval) | `get_content`, `list_content`, `update_content` |
+| `site_overview` | `locale` | A snapshot (languages, types with item counts, taxonomies, menus, the 5 most recently updated items, this key's own pending approvals: tool, id and times, never arguments) → `get_site_structure` → `list_content` → `check_approval` | `get_site_structure`, `list_content` |
+
+\* required.
+
+- **Scopes and views.** A prompt is listed, and `prompts/get` renders it, only when every tool in the last column is
+  callable in the session: the key holds the tools' scopes and the session's toolsets/readonly view shows them
+  (with `?readonly=1` only `site_overview` remains). Optional steps (`create_term`, `upload_media`, `get_media`,
+  `publish_content`, `update_settings`) appear only when that tool is callable too; without `publish_content` the
+  plan says a human publishes. Data in a prompt is read as the key, with the same read rules as the tools.
+- **Language.** `locale` picks the language of the text: Arabic for `ar` and `ar-*`, English otherwise. The default
+  is the site language (`site.locale`). In `draft_post`, `locale` is also the new item's content language and must be
+  one of the site's content languages; `target_locale` must be one too, and differ from the item's language.
+- **Errors.** Unknown prompt, missing required argument, unknown argument, unknown type or item, invalid locale:
+  JSON-RPC `-32602` with a message naming the problem. A prompt the session cannot use: `-32003` (forbidden). An
+  invalid key: `-32001`.
+
+Example:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"prompts/get",
+ "params":{"name":"draft_post","arguments":{"type":"post","topic":"Ramadan opening hours","locale":"en","taxonomy":"category","term":"news"}}}
+```
+
+returns one `user` message whose text starts with
+`Write a new post item about: "Ramadan opening hours"`, lists the type's fields and taxonomies, and continues with
+numbered steps such as `create_content {"body":"<p>…</p>","excerpt":"…","locale":"en","status":"draft","terms":{"category":["news"]},"title":"…","type":"post"}`.
+
+## Completions
+
+`completion/complete` suggests values for prompt arguments and resource template variables: at most 20, sorted,
+matched by prefix (ignoring case), with `hasMore` when more matched. Earlier choices go in `context.arguments`.
+
+| Argument / variable | Values | Needs |
+|---|---|---|
+| `type` | Content type slugs | content.view |
+| `taxonomy` | Taxonomy slugs (only those of `context.arguments.type`, when given) | content.view |
+| `term` | Term slugs of `context.arguments.taxonomy` (and `locale`, when given); none without a taxonomy | content.view |
+| `slug` (content) | Slugs of `context.arguments.type` (and `locale`), trash excluded, read through the content service so an author's key never sees another author's drafts | content.view |
+| `slug` (`gorun://menu/{slug}`) | Menu slugs | content.view |
+| `locale`, `target_locale` | The site's content languages | content.view |
+| `template` | Theme template names | themes.manage |
+
+The reference must be a prompt the session can use or a template the key can read. Other references answer
+`-32003`; an unknown prompt, template or reference type answers `-32602`. Free-text arguments (`topic`, `id`) get
+no values.
+
+```json
+{"jsonrpc":"2.0","id":2,"method":"completion/complete",
+ "params":{"ref":{"type":"ref/resource","uri":"gorun://content/{type}/{slug}{?locale}"},
+           "argument":{"name":"slug","value":"ram"},"context":{"arguments":{"type":"post"}}}}
+```
+
+```json
+{"jsonrpc":"2.0","id":2,"result":{"completion":{"values":["ramadan-hours","ramadan-menu"]}}}
+```
+
+## Resource templates
+
+`resources/templates/list` lists the templates the key can read. A read returns the matching tool's envelope as
+`application/json` text: `{"ok":true,"data":…}`, with the same data as the tool.
+
+| URI template | Same as | Needs |
+|---|---|---|
+| `gorun://content/{type}/{slug}{?locale}` | `get_content` with `type`, `slug` and optional `locale` | content.view |
+| `gorun://content/{type}/{slug}/{locale}` | `get_content` with `type`, `slug`, `locale` | content.view |
+| `gorun://media/{id}` | `get_media` (metadata and variants, never the file bytes) | content.view |
+| `gorun://menu/{slug}` | One menu of `get_site_structure`, with its items | content.view |
+| `gorun://canvases/{id}` | `get_canvas` | canvas.read, content.view |
+
+Content reads follow the content service's read rules: with `content.view` a key reads drafts like `get_content`
+does, except that an author's or contributor's key reads only its owner's drafts and published public items.
+Percent-encode non-ASCII slugs (`gorun://content/post/%D9%85%D8%B1%D8%AD%D8%A8%D8%A7`). Errors: missing item or
+unknown URI `-32002` (resource not found); missing scope or a forbidden item `-32003`; a malformed URI (empty
+segment, unknown query parameter such as `?lang=`) `-32602`; an invalid key `-32001`.
+
+`resources/list` is filtered the same way: `gorun://types` and `gorun://site` are listed only for keys with
+`content.view`; `gorun://guide` is listed for every key. Resources follow the key's scopes; the toolsets/readonly
+view narrows tools and prompts, not resources.
+
+```json
+{"jsonrpc":"2.0","id":3,"method":"resources/read","params":{"uri":"gorun://content/post/hello?locale=en"}}
+```
+
+```json
+{"jsonrpc":"2.0","id":3,"result":{"contents":[{"uri":"gorun://content/post/hello?locale=en","mimeType":"application/json",
+ "text":"{\"ok\":true,\"data\":{\"id\":\"01J…\",\"type\":\"post\",\"slug\":\"hello\",\"locale\":\"en\",\"status\":\"draft\",…}}"}]}}
+```
+
 ## Deprecated tool names
 
 These names were renamed to one `verb_noun` style. The old names are still accepted on `tools/call` (same
@@ -257,7 +364,10 @@ Tool errors use these codes. They are stable: new codes may be added, existing o
 `data.status: "pending_approval"` and an `approval_id`. Poll `check_approval`; the stored result appears once a
 human approves (`approved`, or `failed` with the error), or the status becomes `denied` or `expired`.
 Transport-level failures use JSON-RPC errors instead: HTTP 401 without a valid bearer key, HTTP 429 when the key's
-HTTP rate limit is exceeded, HTTP 400 for an unknown toolset.
+HTTP rate limit is exceeded, HTTP 400 for an unknown toolset. Prompts, completions and resource reads answer with
+JSON-RPC errors too: `-32602` invalid arguments or unknown name, `-32002` resource not found, `-32003` forbidden,
+`-32001` invalid key, `-32603` internal error. (Go SDK clients report `-32003` as `ErrConnectionClosed` wrapping the
+message, because that SDK uses the same code internally.)
 
 Canvas boards are **not** public site pages. There is no anonymous HTML route for board bodies.
 Simple CMS workspace mode may hide the canvases admin nav; these tools stay available when scopes and

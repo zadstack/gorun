@@ -89,8 +89,6 @@ func (c valuesCtx) Value(k any) any {
 // revoked) fails the request. limit, when set, is consulted before each
 // tool call (stdio rate limit).
 func (s *server) newSDKServer(principal principalFunc, limit func() error, view toolView) *sdk.Server {
-	srv := sdk.NewServer(&sdk.Implementation{Name: serverName, Title: "GoRun", Version: serverVersion},
-		&sdk.ServerOptions{Instructions: guide, Capabilities: &sdk.ServerCapabilities{}})
 	with := func(ctx context.Context) (context.Context, error) {
 		p, err := principal(ctx)
 		if err != nil {
@@ -98,6 +96,19 @@ func (s *server) newSDKServer(principal principalFunc, limit func() error, view 
 		}
 		return withView(valuesCtx{Context: ctx, values: p}, view), nil
 	}
+	// gates decides, per resource URI or URI template, whether the calling
+	// key may read it; resources/list and resources/templates/list show only
+	// those (gorun://guide has no gate: any key reads it).
+	gates := map[string]func(context.Context) bool{}
+	srv := sdk.NewServer(&sdk.Implementation{Name: serverName, Title: "GoRun", Version: serverVersion},
+		&sdk.ServerOptions{Instructions: guide, Capabilities: &sdk.ServerCapabilities{},
+			CompletionHandler: func(ctx context.Context, req *sdk.CompleteRequest) (*sdk.CompleteResult, error) {
+				pctx, err := with(ctx)
+				if err != nil {
+					return nil, &jsonrpc.Error{Code: rpcUnauthorized, Message: err.Error()}
+				}
+				return s.complete(pctx, req.Params, gates)
+			}})
 	for _, t := range s.tools() {
 		schema, err := schemaFor(t.Input)
 		if err != nil {
@@ -129,18 +140,40 @@ func (s *server) newSDKServer(principal principalFunc, limit func() error, view 
 	srv.AddReceivingMiddleware(func(next sdk.MethodHandler) sdk.MethodHandler {
 		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
 			res, err := next(ctx, method, req)
-			if lr, ok := res.(*sdk.ListToolsResult); ok && err == nil && method == "tools/list" {
+			if err != nil {
+				return res, err
+			}
+			switch lr := res.(type) {
+			case *sdk.ListToolsResult, *sdk.ListPromptsResult, *sdk.ListResourcesResult, *sdk.ListResourceTemplatesResult:
 				pctx, perr := with(ctx)
 				if perr != nil {
 					return nil, &jsonrpc.Error{Code: rpcUnauthorized, Message: perr.Error()}
 				}
-				lr.Tools = s.visible(pctx, lr.Tools)
+				switch lr := lr.(type) {
+				case *sdk.ListToolsResult:
+					lr.Tools = s.visible(pctx, lr.Tools)
+				case *sdk.ListPromptsResult:
+					lr.Prompts = s.visiblePrompts(pctx, lr.Prompts)
+				case *sdk.ListResourcesResult:
+					lr.Resources = slices.DeleteFunc(lr.Resources, func(r *sdk.Resource) bool { return gated(pctx, gates, r.URI) })
+				case *sdk.ListResourceTemplatesResult:
+					lr.ResourceTemplates = slices.DeleteFunc(lr.ResourceTemplates,
+						func(r *sdk.ResourceTemplate) bool { return gated(pctx, gates, r.URITemplate) })
+				}
 			}
-			return res, err
+			return res, nil
 		}
 	})
-	s.addResources(srv, with)
+	s.addResources(srv, with, gates)
+	s.addResourceTemplates(srv, with, gates)
+	s.addPrompts(srv, with)
 	return srv
+}
+
+// gated reports whether gates hides uri from ctx (no gate: always shown).
+func gated(ctx context.Context, gates map[string]func(context.Context) bool, uri string) bool {
+	g := gates[uri]
+	return g != nil && !g(ctx)
 }
 
 // visible filters list to the tools ctx may call and its view shows;
@@ -198,7 +231,7 @@ func (s *server) toolResult(tool string, data any, err error) *sdk.CallToolResul
 }
 
 // addResources registers gorun://guide, gorun://types, gorun://site, and grant-scoped canvases.
-func (s *server) addResources(srv *sdk.Server, with func(context.Context) (context.Context, error)) {
+func (s *server) addResources(srv *sdk.Server, with func(context.Context) (context.Context, error), gates map[string]func(context.Context) bool) {
 	srv.AddResource(&sdk.Resource{URI: guideURI, Name: "guide", Title: "GoRun MCP routing guide",
 		Description: "How to use these tools: bootstrap, drafts, approvals, paging, error codes, toolsets", MIMEType: "text/markdown"},
 		func(ctx context.Context, req *sdk.ReadResourceRequest) (*sdk.ReadResourceResult, error) {
@@ -207,7 +240,9 @@ func (s *server) addResources(srv *sdk.Server, with func(context.Context) (conte
 			}
 			return &sdk.ReadResourceResult{Contents: []*sdk.ResourceContents{{URI: guideURI, MIMEType: "text/markdown", Text: guide}}}, nil
 		})
+	canView := func(ctx context.Context) bool { return auth.Can(ctx, "content.view") }
 	add := func(uri, name, desc string, read func(context.Context) (any, error)) {
+		gates[uri] = canView
 		srv.AddResource(&sdk.Resource{URI: uri, Name: name, Description: desc, MIMEType: "application/json"},
 			func(ctx context.Context, req *sdk.ReadResourceRequest) (*sdk.ReadResourceResult, error) {
 				ctx, err := with(ctx)
@@ -233,6 +268,7 @@ func (s *server) addResources(srv *sdk.Server, with func(context.Context) (conte
 	})
 	add("gorun://site", "site", "Site structure: identity, types, taxonomies, menus, theme, templates", s.siteStructure)
 	if reader, ok := kernel.Get[admin.CanvasReader](s.d, admin.ServiceCanvasRead); ok {
+		gates["gorun://canvases/{id}"] = func(ctx context.Context) bool { return auth.Can(ctx, "canvas.read") && auth.Can(ctx, "content.view") }
 		srv.AddResourceTemplate(&sdk.ResourceTemplate{
 			URITemplate: "gorun://canvases/{id}",
 			Name:        "canvas",
