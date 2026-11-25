@@ -431,23 +431,25 @@ func TestResourceTemplates(t *testing.T) {
 		t.Fatalf("menu: %v", env)
 	}
 
-	// Denied and unknown reads use the documented JSON-RPC codes.
+	// Denied and unknown reads use the documented JSON-RPC codes. A missing
+	// resource is -32602 with the message "Resource not found" (SEP-2164).
 	for _, c := range []struct {
 		who  *agent
 		uri  string
 		code int64
+		msg  string
 	}{
-		{blind, "gorun://content/post/hello", rpcForbidden},
-		{blind, "gorun://media/" + str(up, "id"), rpcForbidden},
-		{blind, "gorun://menu/main", rpcForbidden},
-		{a, "gorun://content/post/missing", sdk.CodeResourceNotFound},
-		{a, "gorun://media/missing", sdk.CodeResourceNotFound},
-		{a, "gorun://menu/missing", sdk.CodeResourceNotFound},
-		{a, "gorun://nothing/here", sdk.CodeResourceNotFound},
-		{a, "gorun://content/post/hello?lang=en", jsonrpc.CodeInvalidParams},
+		{blind, "gorun://content/post/hello", rpcForbidden, "forbidden"},
+		{blind, "gorun://media/" + str(up, "id"), rpcForbidden, "forbidden"},
+		{blind, "gorun://menu/main", rpcForbidden, "forbidden"},
+		{a, "gorun://content/post/missing", jsonrpc.CodeInvalidParams, "Resource not found"},
+		{a, "gorun://media/missing", jsonrpc.CodeInvalidParams, "Resource not found"},
+		{a, "gorun://menu/missing", jsonrpc.CodeInvalidParams, "Resource not found"},
+		{a, "gorun://nothing/here", jsonrpc.CodeInvalidParams, "Resource not found"},
+		{a, "gorun://content/post/hello?lang=en", jsonrpc.CodeInvalidParams, "unknown query parameter lang"},
 	} {
-		if _, err := readResource(c.who, c.uri); err == nil || rpcCode(t, err) != c.code {
-			t.Errorf("%s: want code %d, got %v", c.uri, c.code, err)
+		if _, err := readResource(c.who, c.uri); err == nil || rpcCode(t, err) != c.code || !strings.Contains(err.Error(), c.msg) {
+			t.Errorf("%s: want code %d (%s), got %v", c.uri, c.code, c.msg, err)
 		}
 	}
 	// An author's key cannot read another author's draft through the template.

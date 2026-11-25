@@ -308,7 +308,7 @@ no values.
 Content reads follow the content service's read rules: with `content.view` a key reads drafts like `get_content`
 does, except that an author's or contributor's key reads only its owner's drafts and published public items.
 Percent-encode non-ASCII slugs (`gorun://content/post/%D9%85%D8%B1%D8%AD%D8%A8%D8%A7`). Errors: missing item or
-unknown URI `-32002` (resource not found); missing scope or a forbidden item `-32003`; a malformed URI (empty
+unknown URI `-32602` with the message `Resource not found` and `data.uri` (MCP SEP-2164); missing scope or a forbidden item `-32003`; a malformed URI (empty
 segment, unknown query parameter such as `?lang=`) `-32602`; an invalid key `-32001`.
 
 `resources/list` is filtered the same way: `gorun://types` and `gorun://site` are listed only for keys with
@@ -365,7 +365,7 @@ Tool errors use these codes. They are stable: new codes may be added, existing o
 human approves (`approved`, or `failed` with the error), or the status becomes `denied` or `expired`.
 Transport-level failures use JSON-RPC errors instead: HTTP 401 without a valid bearer key, HTTP 429 when the key's
 HTTP rate limit is exceeded, HTTP 400 for an unknown toolset. Prompts, completions and resource reads answer with
-JSON-RPC errors too: `-32602` invalid arguments or unknown name, `-32002` resource not found, `-32003` forbidden,
+JSON-RPC errors too: `-32602` invalid arguments, unknown name or resource not found (message `Resource not found`), `-32003` forbidden,
 `-32001` invalid key, `-32603` internal error. (Go SDK clients report `-32003` as `ErrConnectionClosed` wrapping the
 message, because that SDK uses the same code internally.)
 

@@ -188,7 +188,8 @@ func templateVars(tmpl string) []string {
 }
 
 // resourceError maps a reader error to the JSON-RPC error of resources/read:
-// not_found → -32002 (resource not found), forbidden → -32003, a bad
+// not_found → the SDK's resource-not-found error (-32602 "Resource not
+// found" with data.uri, per SEP-2164), forbidden → -32003, a bad
 // argument → -32602, anything else a generic -32603 (details logged).
 func (s *server) resourceError(tool, uri string, err error) error {
 	if errors.Is(err, content.ErrForbidden) {
