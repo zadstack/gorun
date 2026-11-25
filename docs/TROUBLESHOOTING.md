@@ -4,6 +4,37 @@ Short fixes for common self-host failures. For full procedures see [installation
 
 إصلاحات مختصرة لأعطال الاستضافة الشائعة. للإجراءات الكاملة راجع [التثبيت](GORUN-INSTALLATION.md) و[الإنتاج](PRODUCTION.md) و[Coolify](../deploy/coolify.md).
 
+## Start with `gorun doctor` / ابدأ بـ `gorun doctor`
+
+Run it as the GoRun service account, with the same working directory and
+environment as `gorun serve`. Use `--data` to select the installation when needed.
+
+```sh
+gorun doctor --data ./data
+gorun doctor --data ./data --support
+gorun doctor --data ./data --json
+```
+
+The report gives one line per check with an ID, status and a fix for each warning
+or failure. Exit code is 1 for any `fail` status and 0 otherwise. JSON contains
+a boolean `ok` and a `checks` array. Each check contains `id`, `status` and
+`message`, plus `action` when available. Statuses are `ok`, `warn` and `fail`.
+`--support` adds OS and architecture to the version and checks, and also works
+with `--json`. Reports omit configured URLs, paths, emails and credentials.
+
+The checks leave the installation unchanged and can run while GoRun is active.
+A held lock is a warning. Backup freshness checks complete local file sets
+without verifying their contents. Proxy and HTTPS checks use configuration only.
+Opt in to a network request to the configured release index with `--check-updates`.
+
+شغّل الأمر بحساب خدمة GoRun ومن مجلد العمل وبيئة التشغيل نفسها التي تستخدمها
+مع `gorun serve`. حدّد مجلد البيانات عند الحاجة باستخدام `--data`. يعرض التقرير
+معرّف كل فحص وحالته وخطوة الإصلاح عند التحذير أو الفشل. استخدم `--support`
+لإضافة نظام التشغيل والمعمارية إلى تقرير قابل للمشاركة دون مسارات أو بيانات
+اعتماد، و`--json` للحصول على مصفوفة JSON. رمز الخروج 1 عند وجود أي `FAIL`
+وإلا فهو 0. الأمر يفحص التثبيت دون تغييره، ويتصل بفهرس الإصدارات فقط عند طلب
+`--check-updates`.
+
 ## Boot and process
 
 | Symptom | Likely cause | What to do |

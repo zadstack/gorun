@@ -45,7 +45,7 @@ const (
 const usageHead = `usage: gorun <command> [flags]
 
 commands:
-  doctor        inspect configuration, SQLite, themes, modules and port without migrations [--json]
+  doctor        diagnose an installation [--data DIR] [--json] [--support] [--check-updates]
   start         prepare and run a local site (LAN preview; --local-only disables LAN)
   serve         run the HTTP server
   migrate       apply database migrations and exit

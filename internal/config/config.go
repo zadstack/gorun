@@ -11,6 +11,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"os"
@@ -141,13 +142,27 @@ type fileConfig struct {
 
 // Load resolves the configuration from args (flags, without the program or
 // subcommand name), the environment, the TOML file and defaults.
-func Load(args []string) (Config, error) { return load(args, true) }
+func Load(args []string) (Config, error) { return load(args, true, nil) }
 
 // LoadReadOnly validates existing configuration without generating a dev secret.
-func LoadReadOnly(args []string) (Config, error) { return load(args, false) }
+func LoadReadOnly(args []string) (Config, error) { return load(args, false, nil) }
 
-func load(args []string, allowGenerate bool) (Config, error) {
-	fl, set, err := parseFlags(args)
+// DiagnosticIssues records independent startup validation failures. The errors
+// can contain configuration values and must not be printed in support reports.
+type DiagnosticIssues struct {
+	Secret, PublicBaseURL, TrustedProxies, HSTS error
+}
+
+// LoadForDiagnostics resolves the same inputs as Load without generating a key.
+// A general error means the returned configuration may be incomplete.
+func LoadForDiagnostics(args []string) (Config, DiagnosticIssues, error) {
+	var issues DiagnosticIssues
+	c, err := load(args, false, &issues)
+	return c, issues, err
+}
+
+func load(args []string, allowGenerate bool, issues *DiagnosticIssues) (Config, error) {
+	fl, set, err := parseFlags(args, issues != nil)
 	if err != nil {
 		return Config{}, err
 	}
@@ -181,13 +196,20 @@ func load(args []string, allowGenerate bool) (Config, error) {
 		return Config{}, err
 	}
 	if _, err := c.TrustedProxyNetworks(); err != nil {
-		return Config{}, err
+		if issues == nil {
+			return Config{}, err
+		}
+		issues.TrustedProxies = err
 	}
 	if _, err := c.PublicScriptSources(); err != nil {
 		return Config{}, err
 	}
 	if c.HSTSPreload && !c.HSTSIncludeSubdomains {
-		return Config{}, errors.New("config: GORUN_HSTS_PRELOAD requires GORUN_HSTS_INCLUDE_SUBDOMAINS (hsts_preload needs hsts_include_subdomains)")
+		err := errors.New("config: GORUN_HSTS_PRELOAD requires GORUN_HSTS_INCLUDE_SUBDOMAINS (hsts_preload needs hsts_include_subdomains)")
+		if issues == nil {
+			return Config{}, err
+		}
+		issues.HSTS = err
 	}
 	if c.Env != "dev" && c.Env != "prod" {
 		return Config{}, fmt.Errorf("config: env must be dev or prod, got %q", c.Env)
@@ -216,12 +238,18 @@ func load(args []string, allowGenerate bool) (Config, error) {
 	c.BaseURL = strings.TrimRight(strings.TrimSpace(c.BaseURL), "/")
 	if c.Env == "prod" {
 		if err := checkPublicBaseURL(c.BaseURL); err != nil {
-			return Config{}, err
+			if issues == nil {
+				return Config{}, err
+			}
+			issues.PublicBaseURL = err
 		}
 	}
 	key, err := resolveSecretMode(c, secret, allowGenerate)
 	if err != nil {
-		return Config{}, err
+		if issues == nil {
+			return Config{}, err
+		}
+		issues.Secret = err
 	}
 	c.SecretKey = key
 	return c, nil
@@ -274,9 +302,12 @@ func checkPublicBaseURL(raw string) error {
 	return nil
 }
 
-func parseFlags(args []string) (Config, map[string]bool, error) {
+func parseFlags(args []string, quiet bool) (Config, map[string]bool, error) {
 	var fl Config
 	fs := flag.NewFlagSet("gorun", flag.ContinueOnError)
+	if quiet {
+		fs.SetOutput(io.Discard)
+	}
 	fs.StringVar(&fl.Env, "env", "", "environment: dev or prod")
 	fs.StringVar(&fl.DataDir, "data", "", "data directory (db, media, secret)")
 	fs.StringVar(&fl.BaseURL, "base-url", "", "public base URL")

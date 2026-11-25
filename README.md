@@ -54,6 +54,11 @@ The quick start requires **GoRun 0.4.0 or newer**. The installer refuses older r
 
 The executable lives at `~/.local/bin/gorun`; your local site lives at `~/.local/share/gorun/site`. Stop the server with **Ctrl+C**. Repeating the block uses the same site. LAN access is a public, read-only preview; administration stays on localhost. Use `--local-only` when starting manually to disable LAN access. [Local setup and recovery](docs/local-start.md).
 
+If the local site has a problem, run
+`gorun doctor --data "$HOME/.local/share/gorun/site"`.
+Add `--support` to include version and platform details in a shareable report.
+[Troubleshooting](docs/TROUBLESHOOTING.md).
+
 ### In Docker
 
 ```sh

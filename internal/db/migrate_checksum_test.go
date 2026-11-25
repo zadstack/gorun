@@ -224,3 +224,21 @@ func TestInspectMigrationsFindsUnknownAndChangedFiles(t *testing.T) {
 		t.Fatalf("clean = %+v", clean)
 	}
 }
+
+func TestInspectMigrationsKeepsLegacyMetadataReadOnly(t *testing.T) {
+	d := openTest(t)
+	ctx := context.Background()
+	oldMigrate(t, d, "m", "0001_a.sql", "CREATE TABLE t(x);")
+	if _, err := d.ExecContext(ctx, "PRAGMA query_only = ON"); err != nil {
+		t.Fatal(err)
+	}
+	got, err := InspectMigrations(ctx, d, map[string]fs.FS{
+		"m": fstest.MapFS{
+			"migrations/0001_a.sql": {Data: []byte("CREATE TABLE t(x);")},
+			"migrations/0002_b.sql": {Data: []byte("CREATE TABLE u(x);")},
+		},
+	})
+	if err != nil || !got.LegacyMetadata || !slices.Equal(got.Pending, []string{"m/0002_b.sql"}) {
+		t.Fatalf("inspection = %+v, err = %v", got, err)
+	}
+}

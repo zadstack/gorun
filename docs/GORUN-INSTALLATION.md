@@ -117,6 +117,13 @@ unset gorun_install_password
 
 استبدل البريد ببريدك. الحد الأدنى الحالي لكلمة المرور 10 محارف، ويقرأ `--password-stdin` السطر الأول. وجود `--admin` مهم: بدونه ينشئ هذا الأمر editor. لا تنشئ editor أولًا ثم تتوقع بقاء نموذج أول مدير متاحًا. لا تحتاج أمر `init` ؛ ليس أمرًا موجودًا في هذه النسخة.
 
+### تشخيص التثبيت
+
+شغّل `./bin/gorun doctor --data ./data` من مجلد العمل وببيئة تشغيل الخدمة
+نفسها لفحص الإعدادات والبيانات والقوالب وSQLite والنسخ الاحتياطية والمساحة
+المتاحة. استخدم `--support` للحصول على تقرير قابل للمشاركة يضيف نظام التشغيل
+والمعمارية، أو `--json` للمعالجة الآلية. راجع [استكشاف الأعطال](TROUBLESHOOTING.md).
+
 ## البيانات والإعدادات
 
 `--data` أو `GORUN_DATA` يحدد مجلد الموقع؛ الافتراضي `./data`. داخل المجلد توجد `gorun.db` وملفات الوسائط والتخصيصات ومفتاح dev عند إنشائه. لا تشارك مجلد البيانات أو المنفذ بين مواقع أو تجارب مستقلة.
@@ -282,6 +289,14 @@ cookie `Secure`, HSTS, health from outside the container):
 [deploy/coolify.md §9](../deploy/coolify.md#9-https-acceptance-checklist).
 Coolify deploy notes: [deploy/coolify.md](../deploy/coolify.md). Compose:
 `deploy/docker-compose.yml`.
+
+### Diagnose an installation
+
+Run `./gorun doctor --data ./data` from the service working directory with the same
+environment as `serve`. It checks configuration, data and theme directories,
+SQLite and migrations, backup age, disk space, and proxy/HTTPS configuration.
+Use `--support` for a shareable report with the OS and architecture or `--json`
+for automation. See [Troubleshooting](TROUBLESHOOTING.md).
 
 ### Upgrades from release tags
 
