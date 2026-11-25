@@ -75,6 +75,42 @@ A theme keeps its character by styling its own classes and elements; it does not
 the shared pages. Rebuild the stylesheet with `tools/tailwind/build.sh` after changing a shared
 template's classes (CI runs `--check`).
 
+<a id="type-scale"></a>## Type scale
+
+`themes/_base/tokens.css` (served as `default/assets/tokens.css`, which every catalog theme loads
+first) declares one type scale for every theme, the shared pages and the admin:
+
+| Step | Value | Meant for |
+|---|---|---|
+| `--fs-xs` | 12px | eyebrows, meta, tags |
+| `--fs-sm` | 14px | captions, navigation, buttons, help |
+| `--fs-md` | 15px | dense copy, sidebars |
+| `--fs-base` | `var(--body-size)` | body copy (the theme's knob: 15–17px in the catalog) |
+| `--fs-lg` | 17 → 18px | reading prose, lead paragraphs, h4 |
+| `--fs-xl` | 18 → 20px | h3, decks |
+| `--fs-2xl` | 20 → 24px | h2, prices |
+| `--fs-3xl` | 24 → 30px | article h2, card titles |
+| `--fs-4xl` | 28 → 38px | page h1 |
+| `--fs-5xl` | 34 → 48px | section and hero titles |
+| `--fs-display` | 40 → 64px | the one display size (hero, wordmark) |
+
+The four small steps are fixed, so captions and buttons never shrink on a phone. From `lg` up each
+step is a `clamp()` that grows between a 360px and a 1280px viewport and holds at both ends. Four
+line heights pair with them, `--leading-tight` (display, 2xl and up), `--leading-snug` (lg, xl),
+`--leading-normal` (copy) and `--leading-relaxed` (long reading); `html[dir="rtl"]` raises all four,
+because Arabic script sits taller than Latin.
+
+Theme CSS writes `var(--fs-*)` and `var(--leading-*)` instead of px, rem or its own `clamp()`. A
+theme retunes a step under its own token selector (the art-directed themes raise `--fs-display`:
+business 4.5rem, magazine 5rem, portfolio 5.5rem) and keeps the names, so the builder, the site
+identity and the shared pages speak the same steps; unlike the [role names](#role-tokens), a step
+may be redeclared. `TestCatalogThemesWriteTypeOnTheScale` fails when a catalog theme sizes an
+`h1`–`h3` in px, rem or `clamp()`. Tailwind's `text-xs` … `text-5xl` utilities compile to the steps
+with their line heights in both public builds (the default theme's `tailwind.css` and `core.css`,
+where Basecoat's components read them through `--text-*`), and the admin declares a compact
+instance of the same names in `admin.css` ([admin tokens](ADMIN_COMPONENTS.md#tokens)).
+`themekit.TypeScaleTokens` lists the names.
+
 ## Page composition helpers
 
 Template funcs every theme can use to compose complete pages from real data. Each returns nothing

@@ -151,6 +151,8 @@ macOS and Windows unless `E2E_VISUAL=1` is set. To create or update a baseline:
 
 1. Push the change. The `browser` job fails on the changed screenshots and uploads
    `browser-failure-report`, whose `test-results/` holds `<name>-actual.png` next to the diff.
+   The screenshot assertions are soft and the tests are not serial, so one run reports every
+   changed shot, not only the first.
 2. Review the diff, copy the accepted `-actual.png` files into the snapshots directory under
    their baseline names (`<name>-chromium-linux.png`) and commit them with the change. On a Linux
    machine `npx playwright test visual-regression.spec.ts --update-snapshots` does the same.

@@ -174,3 +174,31 @@ func TestRoleTokensDeclaredInSharedTokens(t *testing.T) {
 		}
 	}
 }
+
+// The shared tokens file declares every step of the type scale and its line
+// heights, so a theme or the admin can write var(--fs-*) on any page.
+func TestTypeScaleTokensDeclaredInSharedTokens(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "themes", "_base", "tokens.css"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	css := string(raw)
+	for _, tok := range themekit.TypeScaleTokens {
+		if !strings.Contains(css, "\n  "+tok+": ") {
+			t.Errorf("%s not declared in themes/_base/tokens.css", tok)
+		}
+	}
+	for _, fluid := range []string{"--fs-lg", "--fs-xl", "--fs-2xl", "--fs-3xl", "--fs-4xl", "--fs-5xl", "--fs-display"} {
+		i := strings.Index(css, "\n  "+fluid+": ")
+		if i < 0 {
+			continue
+		}
+		decl := css[i : i+strings.Index(css[i:], ";")]
+		if !strings.Contains(decl, "clamp(") || !strings.Contains(decl, "vw") {
+			t.Errorf("%s should be fluid (clamp with a vw term), got %q", fluid, strings.TrimSpace(decl))
+		}
+	}
+	if !strings.Contains(css, "--fs-base: var(--body-size);") {
+		t.Error("--fs-base should follow the theme's --body-size")
+	}
+}

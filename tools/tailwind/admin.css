@@ -63,6 +63,28 @@
   --radius: 0.625rem;
 }
 
+/* text-* utilities read the admin's instance of the shared type scale
+   (--fs-* in admin.css, docs/ADMIN_COMPONENTS.md). The admin's body is 14px,
+   Tailwind's text-sm, so the utilities map one name up by value: text-xs is
+   --fs-sm (12px), text-sm --fs-base (14), text-base --fs-lg (16), text-lg
+   --fs-xl (18), text-xl --fs-2xl (page titles, fluid 20→22) and text-2xl
+   --fs-3xl (figures, fluid 22→26). Not inline: Basecoat's components read
+   var(--text-sm) themselves, so each --text-* is declared on :root. */
+@theme {
+  --text-xs: var(--fs-sm);
+  --text-xs--line-height: var(--leading-snug);
+  --text-sm: var(--fs-base);
+  --text-sm--line-height: var(--leading-normal);
+  --text-base: var(--fs-lg);
+  --text-base--line-height: var(--leading-normal);
+  --text-lg: var(--fs-xl);
+  --text-lg--line-height: var(--leading-snug);
+  --text-xl: var(--fs-2xl);
+  --text-xl--line-height: var(--leading-tight);
+  --text-2xl: var(--fs-3xl);
+  --text-2xl--line-height: var(--leading-tight);
+}
+
 /* Tailwind v4 defaults that differ from v3, restored for the existing
    templates. They sit in @layer base, so Basecoat's components and every
    utility still win. */
