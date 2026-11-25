@@ -61,8 +61,6 @@ var nativeOnlyKinds = []string{"steps", "comparison", "product_preview", "media_
 
 var listTypePattern = regexp.MustCompile(`^[a-z][a-z0-9_-]{0,39}$`)
 
-// nativeEntryImageKinds are the native kinds whose entries may carry an image.
-var nativeEntryImageKinds = []string{"features", "steps", "media_text", "switcher"}
 var sectionIcons = []string{"", "bolt", "shield", "chart", "globe", "clock", "check", "layers"}
 var sectionBackgrounds = []string{"", "inherit", "none", "dots", "grid", "lines", "circles", "waves", "paper", "solid"}
 
