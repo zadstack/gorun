@@ -102,6 +102,16 @@
   border-radius: var(--radius, 8px);
 }
 
+/* Headings of the shared templates follow the shared type scale (fluid from
+   lg up, themes/_base/tokens.css) with its line heights, so a store or
+   account title is the same step under every theme. Only inside .gp-core:
+   under <main> a theme's headings are its own. */
+.gp-core :where(h1) { font-size: var(--fs-4xl, 2.375rem); line-height: var(--leading-tight, 1.15); }
+.gp-core :where(h2) { font-size: var(--fs-2xl, 1.5rem); line-height: var(--leading-snug, 1.3); }
+.gp-core :where(h3) { font-size: var(--fs-xl, 1.25rem); line-height: var(--leading-snug, 1.3); }
+.gp-core :where(h4, h5, h6) { font-size: var(--fs-lg, 1.125rem); line-height: var(--leading-snug, 1.3); }
+.gp-core :where(small, figcaption) { font-size: var(--fs-sm, .875rem); }
+
 /* Tables: readable cells, and a long table scrolls inside itself instead of
    widening the page. */
 :where(main) :where(table), .gp-core :where(table) {
@@ -166,7 +176,7 @@
    heading size, margins and borders by element), and a theme restyles a part
    with its own scope, e.g. html[data-theme="x"] .gp-article-toc. Outlines are
    inset box-shadows, which no element reset touches. */
-.gp-article-meta { margin-top: .5rem; color: var(--muted, #5a665f); font-size: .9rem; }
+.gp-article-meta { margin-top: .5rem; color: var(--muted, #5a665f); font-size: var(--fs-md, .9375rem); }
 .gp-article-toc {
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;
@@ -174,17 +184,17 @@
   background: var(--panel, #fff);
   box-shadow: inset 0 0 0 1px var(--line, #dde3ea);
 }
-.gp-article-toc-title { margin: 0 0 .5rem; font-size: 1rem; font-weight: 700; }
+.gp-article-toc-title { margin: 0 0 .5rem; font-size: var(--fs-base, 1rem); font-weight: 700; }
 .gp-article-toc-list { margin: 0; padding-inline-start: 1.25rem; list-style: decimal; }
 .gp-toc-item { margin: .25rem 0; }
 .gp-toc-l3 { margin-inline-start: 1rem; list-style: circle; }
 .gp-toc-link, .gp-related-link, .gp-filter-link { color: var(--blue, var(--accent-ink, inherit)); }
 .gp-toc-link, .gp-related-link { text-decoration: underline; text-underline-offset: .2em; }
 .gp-article-related { margin-top: 2rem; padding-top: 1rem; box-shadow: inset 0 1px 0 var(--line, #dde3ea); }
-.gp-article-related-title { margin: 0 0 .75rem; font-size: 1.15rem; font-weight: 700; }
+.gp-article-related-title { margin: 0 0 .75rem; font-size: var(--fs-lg, 1.125rem); font-weight: 700; }
 .gp-article-related-list { margin: 0; padding-inline-start: 1.25rem; list-style: disc; }
 .gp-related-item { margin: .35rem 0; }
-.gp-related-date { color: var(--muted, #5a665f); font-size: .85rem; }
+.gp-related-date { color: var(--muted, #5a665f); font-size: var(--fs-sm, .875rem); }
 .gp-article-adjacent { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 2rem; }
 .gp-adjacent-link {
   display: flex;
@@ -196,7 +206,7 @@
   color: var(--ink, inherit);
   text-decoration: none;
 }
-.gp-adjacent-label { color: var(--muted, #5a665f); font-size: .85rem; }
+.gp-adjacent-label { color: var(--muted, #5a665f); font-size: var(--fs-sm, .875rem); }
 .gp-adjacent-next { margin-inline-start: auto; text-align: end; }
 .gp-archive-filter-list { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; padding: 0; list-style: none; }
 .gp-filter-link {
@@ -209,11 +219,11 @@
   text-decoration: none;
 }
 .gp-filter-link[aria-current=page] { box-shadow: inset 0 0 0 2px var(--accent, currentColor); font-weight: 600; }
-.gp-filter-count { color: var(--muted, #5a665f); font-size: .8rem; }
+.gp-filter-count { color: var(--muted, #5a665f); font-size: var(--fs-sm, .875rem); }
 .gp-library-filters { margin: 1rem 0 1.5rem; }
-.gp-filter-group-label { margin: .75rem 0 .25rem; color: var(--muted, #5a665f); font-size: .85rem; font-weight: 600; }
+.gp-filter-group-label { margin: .75rem 0 .25rem; color: var(--muted, #5a665f); font-size: var(--fs-sm, .875rem); font-weight: 600; }
 .gp-filter-link[aria-current=true] { box-shadow: inset 0 0 0 2px var(--accent, currentColor); font-weight: 600; }
-.gp-library-summary { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .75rem 0 0; color: var(--muted, #5a665f); font-size: .9rem; }
+.gp-library-summary { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .75rem 0 0; color: var(--muted, #5a665f); font-size: var(--fs-md, .9375rem); }
 .gp-filter-chip {
   display: inline-flex;
   gap: .3rem;
@@ -235,7 +245,7 @@
 }
 .gp-series-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin: 0 0 .5rem; }
 .gp-series-name { color: var(--ink, inherit); font-weight: 700; text-decoration: none; }
-.gp-series-position { color: var(--muted, #5a665f); font-size: .9rem; }
+.gp-series-position { color: var(--muted, #5a665f); font-size: var(--fs-md, .9375rem); }
 .gp-series-list { margin: 0; padding-inline-start: 1.5rem; list-style: decimal; }
 .gp-series-item { margin: .25rem 0; }
 .gp-series-link { color: var(--blue, var(--accent-ink, inherit)); text-decoration: underline; text-underline-offset: .2em; }

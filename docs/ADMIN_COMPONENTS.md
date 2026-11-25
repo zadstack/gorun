@@ -66,7 +66,7 @@ Defined on `:root` in `admin.css`. Older rules keep working through aliases
 
 | Token | Values |
 |---|---|
-| Type scale | `--fs-xs` 11px · `--fs-sm` 12px · `--fs-md` 13px · `--fs-base` 14px · `--fs-lg` 16px · `--fs-xl` 18px · `--fs-2xl` 22px (page titles) |
+| Type scale | The admin's compact instance of the shared [type scale](THEME-CONTRACT.md#type-scale): `--fs-xs` 11px · `--fs-sm` 12px · `--fs-md` 13px · `--fs-base` 14px · `--fs-lg` 16px · `--fs-xl` 18px · `--fs-2xl` 20→22px (page titles, fluid) · `--fs-3xl` 22→26px (figures, fluid); line heights `--leading-tight` 1.2 · `--leading-snug` 1.35 · `--leading-normal` 1.5 · `--leading-relaxed` 1.65, raised under `[dir="rtl"]`. Tailwind's utilities map onto the steps by value, one name up because the admin's body is 14px: `text-xs` = `--fs-sm`, `text-sm` = `--fs-base`, `text-base` = `--fs-lg`, `text-lg` = `--fs-xl`, `text-xl` = `--fs-2xl`, `text-2xl` = `--fs-3xl` |
 | Radius | `--radius` 10px (Basecoat base) → `--radius-sm` 6px (badges, chips), `--radius-md` 8px (controls), `--radius-lg` 10px (cards, panels), `--radius-xl` 14px |
 | Spacing | `--space-1` … `--space-6` (0.25rem steps to 1.5rem) |
 | Controls | `--control-h` 36px · `--control-h-sm` 32px · `--control-h-touch` 44px (every `.btn` on phones) |

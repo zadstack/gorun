@@ -101,6 +101,11 @@ Set the identity tokens (`--accent`, `--bg`, `--ink`, `--line`, `--panel`, `--mu
 `--primary`, and a direct `--primary` would stop following the site identity (`theme doctor` reports
 it; see [role names](THEME-CONTRACT.md#role-tokens)). Your own CSS may read either name.
 
+Size text with the shared steps (`font-size: var(--fs-xl)`, `line-height: var(--leading-snug)`;
+see the [type scale](THEME-CONTRACT.md#type-scale)) instead of px or rem: the steps from `lg` up
+grow with the viewport and the line heights already adjust for Arabic. Raise `--fs-display` under
+your token selector if your hero needs more.
+
 If you inherit the default theme head, check how its existing styles load before overriding anything. Avoid third-party JavaScript CDNs and inline event handlers; GoRun enforces CSP. Prefer local assets and scripts with a valid nonce.
 
 ## 5. Localize and support RTL

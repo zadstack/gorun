@@ -23,7 +23,7 @@ html[data-theme] .gr-list-row-compact { display: flex; flex-wrap: wrap; justify-
 html[data-theme] .gr-list-row-compact .gr-list-title { margin: 0; font-size: 1rem; line-height: 1.4; min-width: 0; }
 html[data-theme] .gr-list-row-compact .title { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; text-decoration: none; color: var(--head, var(--ink)); overflow-wrap: anywhere; }
 html[data-theme] .gr-list-row-compact .title:hover, html[data-theme] .gr-list-row-compact .title:focus-visible { text-decoration: underline; text-underline-offset: .25em; }
-html[data-theme] .gr-list-row-compact .gr-list-meta { color: var(--muted); font-size: .8rem; }
+html[data-theme] .gr-list-row-compact .gr-list-meta { color: var(--muted); font-size: var(--fs-sm); }
 @media (forced-colors: active) {
   html[data-theme] .gr-list-row-compact { border-bottom-color: CanvasText; }
 }

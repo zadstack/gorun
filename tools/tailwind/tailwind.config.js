@@ -62,6 +62,20 @@ module.exports = {
       },
       borderRadius: { DEFAULT: 'var(--radius)' },
       fontFamily: { sans: ['var(--font)'], ui: ['var(--font-ui)'] },
+      // text-* utilities read the shared type scale of themes/_base/tokens.css
+      // (--fs-*, fluid from lg up) with its line heights, so a template's
+      // text-sm is the same step a theme's CSS writes as var(--fs-sm).
+      fontSize: {
+        xs: ['var(--fs-xs)', 'var(--leading-normal)'],
+        sm: ['var(--fs-sm)', 'var(--leading-normal)'],
+        base: ['var(--fs-base)', 'var(--leading-normal)'],
+        lg: ['var(--fs-lg)', 'var(--leading-snug)'],
+        xl: ['var(--fs-xl)', 'var(--leading-snug)'],
+        '2xl': ['var(--fs-2xl)', 'var(--leading-tight)'],
+        '3xl': ['var(--fs-3xl)', 'var(--leading-tight)'],
+        '4xl': ['var(--fs-4xl)', 'var(--leading-tight)'],
+        '5xl': ['var(--fs-5xl)', 'var(--leading-tight)'],
+      },
     },
   },
 };

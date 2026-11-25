@@ -3,13 +3,13 @@
 .gp-native-ui *, .gp-native-ui *::before, .gp-native-ui *::after{box-sizing:border-box}
 .gp-native-ui :where(a,button,input):focus-visible{outline:3px solid var(--green,var(--accent,#315f9b));outline-offset:4px}
 .gp-native-ui :where(h3,p,figure){margin:0}
-.gp-native-ui h3{font-size:1.125rem;line-height:1.5}
+.gp-native-ui h3{font-size:var(--fs-lg,1.125rem);line-height:var(--leading-snug,1.5)}
 .gp-native-ui p{line-height:1.7;max-inline-size:70ch}
 .gp-native-ui a{text-underline-offset:.2em}
 .gp-native-ui .gp-task-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));list-style:none;gap:0;margin:1.5rem 0 0;padding:0;border-block-start:1px solid var(--line,#dbe1e8)}
 .gp-native-ui .gp-task-choices li{min-width:0;padding:1.25rem;border-block-end:1px solid var(--line,#dbe1e8)}
 .gp-native-ui .gp-task-choices a{display:inline-flex;align-items:center;min-block-size:44px;font-weight:700}
-.gp-native-ui .gp-task-choices p{font-size:.9375rem;margin-block-start:.25rem}
+.gp-native-ui .gp-task-choices p{font-size:var(--fs-md,.9375rem);margin-block-start:.25rem}
 .gp-native-ui.gp-task-service-first .gp-task-choices{grid-template-columns:1fr}
 .gp-native-ui.gp-task-service-first .gp-task-choices li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);align-items:start;gap:.5rem 1.5rem;padding-inline:0}
 .gp-native-ui.gp-task-service-first .gp-task-choices li:has(.gp-s-icon){grid-template-columns:2rem minmax(0,1fr) minmax(0,2fr)}

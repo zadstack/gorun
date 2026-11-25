@@ -57,6 +57,20 @@ type RoleToken struct {
 	Name, Source string
 }
 
+// TypeScaleTokens are the steps of the shared type scale themes/_base/tokens.css
+// declares (xs < sm < md < base < lg < xl < 2xl < 3xl < 4xl < 5xl < display)
+// with the line heights that pair with them. Body copy is --body-size; the
+// small steps are fixed and the steps from lg up are fluid (clamp between a
+// 360px and a 1280px viewport). Theme CSS writes var(--fs-*) and a theme may
+// retune a step under DataThemeSelector(slug), unlike RoleTokens; the admin
+// declares a compact instance of the same names in admin.css, and Tailwind's
+// text-* utilities read the steps through --text-* in both builds.
+var TypeScaleTokens = []string{
+	"--fs-xs", "--fs-sm", "--fs-md", "--fs-base", "--fs-lg", "--fs-xl",
+	"--fs-2xl", "--fs-3xl", "--fs-4xl", "--fs-5xl", "--fs-display",
+	"--leading-tight", "--leading-snug", "--leading-normal", "--leading-relaxed",
+}
+
 // AssetPath builds the public URL path for a theme asset (no cache buster).
 // Templates use {{asset "…"}} at render time; this helper is for tooling.
 func AssetPath(slug, rel string) string {

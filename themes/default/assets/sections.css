@@ -87,13 +87,13 @@
 /* ---- Hero ---- */
 :where(.gp-s-hero, .gp-s-band, .gp-s-cta) { padding-block: clamp(32px, 6vw, 72px); }
 :where(.gp-s-hero) { border-bottom: 1px solid var(--line, #e5e5e5); }
-:where(.gp-s-hero) :where(h1) { font-size: clamp(36px, 5.2vw, 60px); line-height: 1.2; margin: 12px 0 16px; text-wrap: balance; }
+:where(.gp-s-hero) :where(h1) { font-size: var(--fs-5xl); line-height: 1.2; margin: 12px 0 16px; text-wrap: balance; }
 /* A hero used lower on a page (one h1 per page) titles itself with an h2. */
-:where(.gp-s-hero) :where(h2) { font-size: clamp(30px, 4.2vw, 48px); line-height: 1.2; margin: 12px 0 16px; text-wrap: balance; }
+:where(.gp-s-hero) :where(h2) { font-size: var(--fs-5xl); line-height: 1.2; margin: 12px 0 16px; text-wrap: balance; }
 :where(.gp-s-copy) { min-width: 0; }
-:where(.gp-s-eyebrow) { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--green, #1f6feb); }
+:where(.gp-s-eyebrow) { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 600; color: var(--green, #1f6feb); }
 :where(.gp-s-eyebrow)::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
-:where(.gp-s-lead) { font-size: clamp(18px, 1.6vw, 21px); color: var(--muted, #555); max-width: 40em; margin: 0 0 24px; }
+:where(.gp-s-lead) { font-size: var(--fs-2xl); color: var(--muted, #555); max-width: 40em; margin: 0 0 24px; }
 :where(.gp-s-actions) { display: flex; flex-wrap: wrap; gap: 12px; margin-block: 8px; }
 :where(.gp-s-btn) {
   display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px;
@@ -117,12 +117,12 @@
 /* Key figures under a hero (dl of dt/dd pairs). */
 :where(.gp-s-facts) { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, max-content)); gap: 16px 32px; margin: 28px 0 0; padding: 0; }
 :where(.gp-s-facts) > :where(div) { margin: 0; }
-:where(.gp-s-facts) :where(dt) { margin: 0; font-size: .8rem; color: var(--muted, #555); font-weight: 500; }
-:where(.gp-s-facts) :where(dd) { margin: 2px 0 0; font-size: 1.5rem; font-weight: 700; color: var(--ink, #111); font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
+:where(.gp-s-facts) :where(dt) { margin: 0; font-size: var(--fs-sm); color: var(--muted, #555); font-weight: 500; }
+:where(.gp-s-facts) :where(dd) { margin: 2px 0 0; font-size: var(--fs-2xl); font-weight: 700; color: var(--ink, #111); font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
 
 /* ---- Bands, cards, feature grids ---- */
 :where(.gp-s-band) { border-bottom: 1px solid var(--line, #e5e5e5); }
-:where(.gp-s-band) > :where(h2) { font-size: clamp(26px, 3.4vw, 40px); margin: 0 0 12px; text-wrap: balance; }
+:where(.gp-s-band) > :where(h2) { font-size: var(--fs-4xl); margin: 0 0 12px; text-wrap: balance; }
 :where(.gp-s-band) > :where(p) { color: var(--muted, #555); max-width: 44em; }
 :where(.gp-s-grid) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 16px; margin-block: 24px; }
 :where(.gp-s-card) {
@@ -131,11 +131,11 @@
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 :where(.gp-s-card):hover { transform: translateY(-2px); box-shadow: var(--gp-s-shadow-lg); border-color: var(--line-strong, var(--line, #ccc)); }
-:where(.gp-s-card) :where(h3) { font-size: 20px; margin: 0; }
+:where(.gp-s-card) :where(h3) { font-size: var(--fs-xl); margin: 0; }
 :where(.gp-s-card) :where(p) { color: var(--muted, #555); margin: 0; }
 :where(.gp-s-card) > :where(a:last-child) { margin-top: auto; padding-top: 8px; font-weight: 600; color: var(--green, #1f6feb); text-decoration: none; }
 :where(.gp-s-card-featured) { border-top: 3px solid var(--green, #1f6feb); }
-:where(.gp-s-price) { font-size: 24px; font-weight: 700; color: var(--ink, #111); }
+:where(.gp-s-price) { font-size: var(--fs-2xl); font-weight: 700; color: var(--ink, #111); }
 /* Icon tile: <span class="gp-s-icon gp-s-icon-bolt"></span> (decorative, empty). */
 :where(.gp-s-icon) {
   display: inline-grid; place-items: center; width: 44px; height: 44px; margin-bottom: 8px;
@@ -160,12 +160,12 @@
 :where(.gp-s-steps) > :where(li)::before {
   content: counter(gp-s-step); display: grid; place-items: center; position: relative; z-index: 1;
   width: 36px; height: 36px; margin-bottom: 14px; border-radius: 50%;
-  background: var(--green, #1f6feb); color: var(--on-accent, #fff); font-weight: 700; font-size: .95rem; font-variant-numeric: tabular-nums;
+  background: var(--green, #1f6feb); color: var(--on-accent, #fff); font-weight: 700; font-size: var(--fs-md); font-variant-numeric: tabular-nums;
   box-shadow: 0 0 0 4px var(--bg, #fff);
 }
 :where(.gp-s-steps) > :where(li)::after { content: ""; position: absolute; top: 17px; inset-inline-start: 36px; inset-inline-end: -24px; height: 2px; background: var(--line, #e5e5e5); }
 :where(.gp-s-steps) > :where(li:last-child)::after { display: none; }
-:where(.gp-s-steps) :where(h3) { font-size: 18px; margin: 0 0 4px; }
+:where(.gp-s-steps) :where(h3) { font-size: var(--fs-lg); margin: 0 0 4px; }
 :where(.gp-s-steps) :where(p) { color: var(--muted, #555); margin: 0; }
 
 /* ---- Flow diagram: node → node → node (ol of li) ---- */
@@ -174,7 +174,7 @@
   position: relative; flex: 1 1 10rem; min-width: 0; padding: 14px 16px; background: var(--panel, #fff); border: 1px solid var(--line, #e5e5e5);
   border-radius: var(--radius, 8px); box-shadow: var(--gp-s-shadow); font-weight: 600;
 }
-:where(.gp-s-flow) > :where(li) :where(small, p) { display: block; font-weight: 400; color: var(--muted, #555); font-size: .875rem; margin: 2px 0 0; }
+:where(.gp-s-flow) > :where(li) :where(small, p) { display: block; font-weight: 400; color: var(--muted, #555); font-size: var(--fs-sm); margin: 2px 0 0; }
 :where(.gp-s-flow) > :where(li):not(:last-child)::after {
   content: ""; position: absolute; top: 50%; inset-inline-end: -36px; width: 28px; height: 28px; translate: 0 -50%;
   background: var(--accent-ink, var(--green, #1f6feb));
@@ -192,10 +192,10 @@
 
 /* ---- Comparison table: column 2 is the highlighted plan ---- */
 :where(.gp-s-compare-wrap) { overflow-x: auto; margin-block: 24px; border: 1px solid var(--line, #e5e5e5); border-radius: var(--radius-card, var(--radius, 8px)); background: var(--panel, #fff); box-shadow: var(--gp-s-shadow); }
-:where(.gp-s-compare) { width: 100%; min-width: 34rem; border-collapse: separate; border-spacing: 0; font-size: .95rem; margin: 0; }
+:where(.gp-s-compare) { width: 100%; min-width: 34rem; border-collapse: separate; border-spacing: 0; font-size: var(--fs-md); margin: 0; }
 :where(.gp-s-compare) :where(th, td) { padding: 14px 18px; text-align: start; vertical-align: top; border: 0; border-bottom: 1px solid var(--line, #e5e5e5); }
 :where(.gp-s-compare) :where(tbody tr:last-child) :where(th, td) { border-bottom: 0; }
-:where(.gp-s-compare) :where(thead th) { font-size: .85rem; font-weight: 600; color: var(--muted, #555); background: var(--panel-2, #f3f3f3); }
+:where(.gp-s-compare) :where(thead th) { font-size: var(--fs-sm); font-weight: 600; color: var(--muted, #555); background: var(--panel-2, #f3f3f3); }
 :where(.gp-s-compare) :where(tbody th) { font-weight: 600; color: var(--ink, #111); }
 :where(.gp-s-compare):not(.gp-s-compare-plain) :where(th:nth-child(2), td:nth-child(2)) { background: var(--accent-tint, color-mix(in srgb, var(--green, #1f6feb) 7%, transparent)); }
 :where(.gp-s-compare):not(.gp-s-compare-plain) :where(thead th:nth-child(2)) { color: var(--accent-ink, var(--green, #1f6feb)); box-shadow: inset 0 3px 0 var(--green, #1f6feb); }
@@ -236,7 +236,7 @@
 :where(.gp-s-rows-image-end) > :where(.gp-s-row) > :where(.gp-s-row-media){order:2}
 :where(.gp-s-row-text){grid-template-columns:minmax(0,1fr)}
 :where(.gp-s-row-media){margin:0}
-:where(.gp-s-row-copy) :where(h3){margin:0 0 8px;font-size:22px}
+:where(.gp-s-row-copy) :where(h3){margin:0 0 8px;font-size:var(--fs-2xl)}
 :where(.gp-s-row-copy,.gp-s-switch-panel) :where(p){margin:0;color:var(--muted,#555);max-width:60ch}
 :where(.gp-s-switcher){display:grid;gap:8px;margin-block:24px}
 :where(.gp-s-switch){border-radius:var(--radius,8px);background:var(--panel,#fff);box-shadow:inset 0 0 0 1px var(--line,#e5e5e5)}
@@ -258,7 +258,7 @@
 }
 :where(html[dir="rtl"]) :where(.gp-s-preview)::after { box-shadow: -16px 0 0 var(--line-strong, #bbb), -32px 0 0 var(--line-strong, #bbb); }
 :where(.gp-s-preview) :where(img) { display: block; width: 100%; height: auto; margin: 0; border-radius: 0; }
-:where(.gp-s-preview) :where(figcaption) { padding: 10px 16px; font-size: .85rem; color: var(--muted, #555); border-top: 1px solid var(--line, #e5e5e5); }
+:where(.gp-s-preview) :where(figcaption) { padding: 10px 16px; font-size: var(--fs-sm); color: var(--muted, #555); border-top: 1px solid var(--line, #e5e5e5); }
 /* Drawn interface (clearly illustrative; empty spans with gp-s-ui-* classes). */
 :where(.gp-s-preview-ui) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 1fr auto; gap: 12px; padding: 16px; min-height: 240px; background: var(--bg, #f6f6f6); }
 :where(.gp-s-preview-ui) > :where(*) { display: block; min-width: 0; border-radius: var(--radius, 8px); background: var(--panel, #fff); border: 1px solid var(--line, #e5e5e5); }
@@ -282,7 +282,7 @@
 
 /* ---- Closing call to action ---- */
 :where(.gp-s-cta) { text-align: center; }
-:where(.gp-s-cta) :where(h2) { font-size: clamp(28px, 4vw, 48px); margin: 0 auto 12px; max-width: 16em; }
+:where(.gp-s-cta) :where(h2) { font-size: var(--fs-5xl); margin: 0 auto 12px; max-width: 16em; }
 :where(.gp-s-cta) :where(.gp-s-actions) { justify-content: center; }
 :where(.gp-s-cta-panel) { padding: clamp(32px, 6vw, 64px) clamp(16px, 4vw, 48px); border: 1px solid var(--accent-line, var(--line, #e5e5e5)); border-radius: var(--radius-card, var(--radius, 8px)); background: var(--panel, #fff); box-shadow: var(--gp-s-shadow); }
 
@@ -338,13 +338,13 @@
 
 /* Page bodies: the properties .prose-gp would otherwise take over. */
 :root .prose-gp > :is(.gp-s-hero, .gp-s-band, .gp-s-cta) { margin-top: 0; }
-:root .prose-gp .gp-s-hero h1 { font-size: clamp(36px, 5.2vw, 60px); line-height: 1.2; margin: 12px 0 16px; }
-:root .prose-gp .gp-s-hero h2 { font-size: clamp(30px, 4.2vw, 48px); line-height: 1.2; margin: 12px 0 16px; padding: 0; border: 0; }
-:root .prose-gp :is(.gp-s-band, .gp-s-faq) > h2 { font-size: clamp(26px, 3.4vw, 40px); margin: 0 0 12px; padding: 0; border: 0; }
-:root .prose-gp .gp-s-cta h2 { font-size: clamp(28px, 4vw, 48px); margin: 0 auto 12px; padding: 0; border: 0; }
-:root .prose-gp .gp-s-card h3 { font-size: 20px; margin: 0; }
+:root .prose-gp .gp-s-hero h1 { font-size: var(--fs-5xl); line-height: 1.2; margin: 12px 0 16px; }
+:root .prose-gp .gp-s-hero h2 { font-size: var(--fs-5xl); line-height: 1.2; margin: 12px 0 16px; padding: 0; border: 0; }
+:root .prose-gp :is(.gp-s-band, .gp-s-faq) > h2 { font-size: var(--fs-4xl); margin: 0 0 12px; padding: 0; border: 0; }
+:root .prose-gp .gp-s-cta h2 { font-size: var(--fs-5xl); margin: 0 auto 12px; padding: 0; border: 0; }
+:root .prose-gp .gp-s-card h3 { font-size: var(--fs-xl); margin: 0; }
 :root .prose-gp :is(.gp-s-steps, .gp-s-checks) h3 { margin: 0 0 4px; }
-:root .prose-gp .gp-s-steps h3 { font-size: 18px; }
+:root .prose-gp .gp-s-steps h3 { font-size: var(--fs-lg); }
 :root .prose-gp .gp-s-actions { margin-block: 8px; }
 :root .prose-gp .gp-s-btn, :root .prose-gp .gp-s-btn:hover { color: var(--on-accent, #fff); text-decoration: none; }
 :root .prose-gp .gp-s-btn-ghost, :root .prose-gp .gp-s-btn-ghost:hover { color: var(--ink, #111); }
@@ -379,6 +379,6 @@
 :root .gp-s-directory-compact .gp-grid :where(.gr-card,.reading-card,.sb-card):has(.gr-card-media,.gr-card-cover,.sb-card-image){display:grid;grid-template-columns:var(--gp-s-thumb) minmax(0,1fr);align-items:start;gap:16px}
 :root .gp-s-directory-compact .gp-grid :where(.gr-card-media,.gr-card-cover,.sb-card-image){width:var(--gp-s-thumb);aspect-ratio:1;min-height:0;margin:0}
 :root .gp-s-directory-compact .gp-grid :where(.gr-card-copy,.sb-card-copy){min-width:0;padding:0}
-:root .gp-s-directory-compact .gp-grid :where(h2){font-size:1.125rem;margin-block:0 .35rem}
-:root .gp-s-directory-compact .gp-grid :where(.gr-card-excerpt,.sb-card-copy p){margin-block:.35rem;font-size:.9rem}
+:root .gp-s-directory-compact .gp-grid :where(h2){font-size:var(--fs-lg);margin-block:0 .35rem}
+:root .gp-s-directory-compact .gp-grid :where(.gr-card-excerpt,.sb-card-copy p){margin-block:.35rem;font-size:var(--fs-sm)}
 @media(max-width:480px){.gp-s-directory-compact{--gp-s-thumb:64px}}

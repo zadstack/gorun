@@ -52,6 +52,32 @@
   --font-sans: var(--font);
 }
 
+/* Basecoat sizes its text with text-xs/-sm/-base/-lg. Not inline: the
+   components read var(--text-sm) and Tailwind declares each --text-* on :root
+   as the matching step of the shared type scale (themes/_base/tokens.css),
+   with the scale's line heights, so a .btn under any theme is that theme's
+   --fs-sm and grows with the fluid steps where a component uses one. */
+@theme {
+  --text-xs: var(--fs-xs);
+  --text-xs--line-height: var(--leading-normal);
+  --text-sm: var(--fs-sm);
+  --text-sm--line-height: var(--leading-normal);
+  --text-base: var(--fs-base);
+  --text-base--line-height: var(--leading-normal);
+  --text-lg: var(--fs-lg);
+  --text-lg--line-height: var(--leading-snug);
+  --text-xl: var(--fs-xl);
+  --text-xl--line-height: var(--leading-snug);
+  --text-2xl: var(--fs-2xl);
+  --text-2xl--line-height: var(--leading-tight);
+  --text-3xl: var(--fs-3xl);
+  --text-3xl--line-height: var(--leading-tight);
+  --text-4xl: var(--fs-4xl);
+  --text-4xl--line-height: var(--leading-tight);
+  --text-5xl: var(--fs-5xl);
+  --text-5xl--line-height: var(--leading-tight);
+}
+
 @import "./core-basecoat.gen.css";
 
 /* GoRun additions, scoped the same way. */
