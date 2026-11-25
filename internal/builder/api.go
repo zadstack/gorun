@@ -69,6 +69,8 @@ func layoutFailure(err error) *layoutError {
 		return &layoutError{code: "validation_failed", message: "page layout cannot be published", fields: map[string]string{"document": taken.Error()}, cause: err}
 	}
 	switch {
+	case errors.Is(err, ErrTextOnly):
+		return &layoutError{code: "forbidden", message: "this account may change texts and images only", cause: err}
 	case errors.Is(err, ErrForbidden):
 		return &layoutError{code: "forbidden", message: "page layout access forbidden", cause: err}
 	case errors.Is(err, ErrNotFound):

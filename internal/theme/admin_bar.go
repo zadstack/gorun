@@ -42,6 +42,11 @@ const (
 	adminBarMarker   = `data-gorun-admin-bar`
 	// permAdminBar is what every staff role has and customers do not.
 	permAdminBar = "content.view"
+	// permEditText and permPublishText are the Studio editor's permissions
+	// (builder.PermEditText, builder.PermPublishText; theme cannot import
+	// builder): texts and images in place, and publishing those changes.
+	permEditText    = "content.edit_text"
+	permPublishText = "content.publish_text"
 )
 
 var adminBarCSS = sync.OnceValues(func() ([]byte, string) {
@@ -111,13 +116,19 @@ func (s *service) adminBar(tc *Context) (bar string, inline bool) {
 		t = func(key string) string { return s.d.I18n.T(loc, "theme.adminbar."+key) }
 	}
 	esc := html.EscapeString
-	canEdit := tc.Content != nil && tc.Content.ID != "" && tc.Content.Type != "" && auth.Can(ctx, "content.edit") &&
-		(tc.User.Role == "admin" || tc.User.Role == "editor" || tc.Content.AuthorID == tc.User.ID)
+	// Authors and contributors edit their own pages; every other staff role
+	// (admin, editor, the Studio editor, custom roles) edits any page its
+	// permissions allow, as the builder's own ownership rule has it.
+	owns := tc.Content != nil && tc.Content.ID != "" && tc.Content.Type != "" &&
+		((tc.User.Role != "author" && tc.User.Role != "contributor") || tc.Content.AuthorID == tc.User.ID)
+	canEdit := owns && auth.Can(ctx, "content.edit")
 	// In-place editing: a published builder page (Template "builder", the
-	// section ids survive in its body) that this user may edit. The script
-	// posts to the builder's own save and publish routes with the CSRF token
-	// draft.json hands it; the page is already private and uncacheable.
-	inline = canEdit && tc.Content.Type == "page" && tc.Content.Template == "builder"
+	// section ids survive in its body) that this user may edit, with the
+	// full editor (content.edit) or texts only (content.edit_text, the
+	// Studio editor). The script posts to the builder's own save and publish
+	// routes with the CSRF token draft.json hands it; the page is already
+	// private and uncacheable.
+	inline = owns && (canEdit || auth.Can(ctx, permEditText)) && tc.Content.Type == "page" && tc.Content.Template == "builder"
 	var b strings.Builder
 	b.WriteString(`<div class="gp-admin-bar" ` + adminBarMarker + ` role="region" aria-label="` + esc(t("label")) + `" lang="` + esc(loc) + `" dir="` + dir + `"`)
 	if inline {
@@ -127,7 +138,7 @@ func (s *service) adminBar(tc *Context) (bar string, inline bool) {
 		}
 		lj, _ := json.Marshal(labels)
 		b.WriteString(` data-admin-bar-builder="` + esc(tc.Content.ID) + `" data-admin-bar-labels="` + esc(string(lj)) + `"`)
-		if auth.Can(ctx, "content.publish") {
+		if auth.Can(ctx, "content.publish") || auth.Can(ctx, permPublishText) {
 			b.WriteString(` data-admin-bar-publish`)
 		}
 	}

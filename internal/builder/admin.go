@@ -36,10 +36,13 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	}
 	h := &adminHandlers{svc: svc, tpl: tpl, d: d}
 	r := d.Router.Admin.With(auth.RequirePerm("content.edit"))
+	// The in-place editor's routes also serve the Studio editor
+	// (content.edit_text); the store applies the text-only rules.
+	text := d.Router.Admin.With(auth.RequireAnyPerm("content.edit", PermEditText))
 	r.With(auth.RequirePerm("content.create")).Post("/builder/new", h.createPurposePage)
 	r.Get("/builder/{id}", h.editor)
-	r.Get("/builder/{id}/draft.json", h.draftJSON)
-	r.Post("/builder/{id}/save", h.save)
+	text.Get("/builder/{id}/draft.json", h.draftJSON)
+	text.Post("/builder/{id}/save", h.save)
 	r.Post("/builder/{id}/preview", h.preview)
 	r.Post("/builder/{id}/suggest", h.suggest)
 	r.Post("/builder/{id}/reset", h.reset)
@@ -47,7 +50,7 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	restore := r.With(auth.RequireRecentAuth)
 	restore.Get("/builder/{id}/revisions/{rev}/restore", h.restoreForm)
 	restore.Post("/builder/{id}/revisions/{rev}/restore", h.restoreSubmit)
-	r.With(auth.RequirePerm("content.publish")).Post("/builder/{id}/publish", h.publish)
+	text.With(auth.RequireAnyPerm("content.publish", PermPublishText)).Post("/builder/{id}/publish", h.publish)
 	return nil
 }
 func (h *adminHandlers) editor(w http.ResponseWriter, r *http.Request) {
@@ -163,9 +166,10 @@ func (h *adminHandlers) draftJSON(w http.ResponseWriter, r *http.Request) {
 	builderJSON(w, 200, struct {
 		Draft      *Draft `json:"draft"`
 		CanPublish bool   `json:"can_publish"`
+		CanLayout  bool   `json:"can_layout"`
 		InSync     bool   `json:"in_sync"`
 		CSRF       string `json:"csrf"`
-	}{draft, auth.Can(r.Context(), "content.publish"), draft.InSync(), auth.CSRFToken(r.Context())})
+	}{draft, auth.Can(r.Context(), "content.publish") || auth.Can(r.Context(), PermPublishText), auth.Can(r.Context(), "content.edit"), draft.InSync(), auth.CSRFToken(r.Context())})
 }
 func (h *adminHandlers) save(w http.ResponseWriter, r *http.Request) {
 	var req saveRequest
@@ -280,6 +284,10 @@ func (h *adminHandlers) fail(w http.ResponseWriter, r *http.Request, err error) 
 	var taken *FormSlugTakenError
 	if errors.As(err, &taken) {
 		builderJSON(w, status, map[string]string{"error": "builder.form_slug_taken", "slug": taken.Slug})
+		return
+	}
+	if errors.Is(err, ErrTextOnly) {
+		builderJSON(w, 403, map[string]string{"error": "builder.text_only"})
 		return
 	}
 	builderJSON(w, status, map[string]string{"error": "builder.error"})

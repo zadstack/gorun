@@ -64,13 +64,13 @@
       .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
       .then(function (res) {
         state.loading = false;
-        if (!res.in_sync) { sayLink(t('pending'), base, 'warn'); return; }
+        if (!res.in_sync) { if (res.can_layout) sayLink(t('pending'), base, 'warn'); else say(t('pending'), 'warn'); return; }
         csrf = res.csrf || '';
         state.doc = res.draft.document;
         state.token = res.draft.updated_at;
         canPublish = canPublish && !!res.can_publish;
         bind();
-        if (!state.bindings.length) { sayLink(t('pending'), base, 'warn'); state.doc = null; return; }
+        if (!state.bindings.length) { if (res.can_layout) sayLink(t('pending'), base, 'warn'); else say(t('pending'), 'warn'); state.doc = null; return; }
         state.active = true;
         document.documentElement.classList.add('gp-inline-editing');
         toggle.textContent = t('done');

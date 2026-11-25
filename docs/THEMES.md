@@ -272,6 +272,17 @@ visitor sees the published layout and the edit would land elsewhere. Layout,
 images, links and settings stay in the editor. Without script the bar is
 unchanged.
 
+**The Studio editor** is the role for a client or content editor who should
+change texts where they stand and nothing else. It holds `content.view`,
+`content.edit_text` and `content.publish_text` (auth migration 0015 seeds
+it; custom roles may hold the same permissions). Such an account gets the
+in-place editor on builder pages but not the full editor, and the builder
+enforces the limit on the server: a save that does more than change texts
+and images in place (sections, order, kind, layout, links, visibility,
+native structure, forms) is refused with `builder.text_only`, and a publish
+is accepted only when the draft differs from the published layout in texts
+and images alone.
+
 ### Rules that keep the layers readable
 
 The core applies these rules whatever the theme, so a combination of theme, builder identity and

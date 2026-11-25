@@ -98,6 +98,9 @@ func Can(ctx context.Context, perm string) bool {
 	if p == nil || p.user == nil || p.user.Status != StatusActive || p.user.onboardingRequired {
 		return false
 	}
+	if p.granted[perm] {
+		return true
+	}
 	if !roleAllows(p.user.Role, perm) {
 		return false
 	}
@@ -113,6 +116,19 @@ func RequirePerm(perm string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !Can(r.Context(), perm) {
+				deny(w, r, http.StatusForbidden, "forbidden", "missing permission")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// RequireAnyPerm answers 403 unless Can(ctx, perm) for at least one perm.
+func RequireAnyPerm(perms ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !slices.ContainsFunc(perms, func(p string) bool { return Can(r.Context(), p) }) {
 				deny(w, r, http.StatusForbidden, "forbidden", "missing permission")
 				return
 			}

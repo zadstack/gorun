@@ -125,6 +125,18 @@ func TestAdminBarInlineEditorOnBuilderPages(t *testing.T) {
 		t.Error("contributor got the in-place editor for someone else's page")
 	}
 
+	// The Studio editor (texts only) gets the in-place editor and Publish
+	// but not the full editor link.
+	studio := auth.WithUser(context.Background(), &auth.User{ID: "u3", Role: "studio", Status: auth.StatusActive, Name: "Client"})
+	rec, _ = e.render(kernel.KindRequest{Kind: KindPage, Type: "page", Slug: "home"}, &Context{Content: &page}, studio)
+	body = rec.Body.String()
+	if !strings.Contains(body, `data-admin-bar-builder="01HZZ0000000000000000000AC"`) || !strings.Contains(body, "data-gorun-admin-bar-js") || !strings.Contains(body, "data-admin-bar-publish") {
+		t.Error("studio editor lacks the in-place editor")
+	}
+	if strings.Contains(body, "data-admin-bar-edit") || strings.Contains(body, `href="/admin/website"`) {
+		t.Error("studio editor offered the full editor or the website overview")
+	}
+
 	// A plain page (no builder template) never loads the script.
 	plain := content.Item{ID: "01HZZ0000000000000000000AD", Type: "page", Slug: "about", Title: "About", Status: "published", Body: "<p>hi</p>"}
 	rec, _ = e.render(kernel.KindRequest{Kind: KindPage, Type: "page", Slug: "about"}, &Context{Content: &plain}, adminCtx())

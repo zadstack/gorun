@@ -40,6 +40,32 @@ type LayoutDiff struct {
 // Empty reports whether nothing changed.
 func (d LayoutDiff) Empty() bool { return len(d.Changes) == 0 }
 
+// textPaths are the values a text-only editor (content.edit_text) may
+// change: the texts and images of a section and of its entries, and the
+// native texts. Everything else (sections, order, kind, layout, links,
+// visibility, structure, forms) is layout.
+var textPaths = map[string]bool{"title": true, "text": true, "link_label": true, "image": true, "image_alt": true, "price": true,
+	"native.eyebrow": true, "native.caption": true, "native.secondary_label": true, "native.empty_text": true}
+
+// TextOnly reports whether every change edits a text or image in place.
+func (d LayoutDiff) TextOnly() bool {
+	for _, c := range d.Changes {
+		if c.Op != "change" {
+			return false
+		}
+		path := c.Path
+		if strings.HasPrefix(path, "items[") {
+			if i := strings.Index(path, "]."); i >= 0 {
+				path = path[i+2:]
+			}
+		}
+		if !textPaths[path] {
+			return false
+		}
+	}
+	return true
+}
+
 const diffValueMax = 80
 
 // Diff compares before with after.
