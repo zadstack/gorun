@@ -34,18 +34,18 @@ async function ensureProduct(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/admin\/commerce\/products(\/[0-9A-Z]{26})?$/);
 }
 
-test.describe.serial('visual baselines', () => {
+test.describe('visual baselines', () => {
   test('admin components page in both languages and on a phone', async ({ page }) => {
     for (const locale of ['en', 'ar'] as const) {
       await page.goto('/admin/design/components');
       await setLocale(page, locale);
       await page.goto('/admin/design/components');
       await expectNoServerError(page);
-      await expect(page.locator('#main')).toHaveScreenshot(`components-${locale}.png`);
+      await expect.soft(page.locator('#main')).toHaveScreenshot(`components-${locale}.png`);
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/admin/design/components');
-    await expect(page.locator('#main')).toHaveScreenshot('components-ar-390.png');
+    await expect.soft(page.locator('#main')).toHaveScreenshot('components-ar-390.png');
     await page.setViewportSize({ width: 1280, height: 720 });
     await setLocale(page, 'en');
   });
@@ -57,7 +57,7 @@ test.describe.serial('visual baselines', () => {
     const shot = async (path: string, name: string) => {
       await site.goto(path);
       await expectNoServerError(site);
-      await expect(site).toHaveScreenshot(`${name}.png`, { fullPage: true });
+      await expect.soft(site).toHaveScreenshot(`${name}.png`, { fullPage: true });
     };
     try {
       await shot('/shop', 'shop-default');
