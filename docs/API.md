@@ -508,7 +508,7 @@ Example section in a version-1 document:
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **220 operations** in 25 tags.
+Generated from the current locally booted OpenAPI document: **222 operations** in 25 tags.
 
 ### analytics
 
@@ -520,10 +520,12 @@ Generated from the current locally booted OpenAPI document: **220 operations** i
 
 | Method | Path | Summary | Scopes |
 |---|---|---|---|
+| GET | `/api/v1/builder/schema` | Read the section schema: what each section kind accepts in each library, the enums and the limits | `content.view` |
 | GET | `/api/v1/builder/{id}/revisions/{revision}` | Read one page-builder layout revision | `content.edit` |
 | GET | `/api/v1/builder/{id}/revisions` | List page-builder layout revisions (newest first) | `content.edit` |
 | GET | `/api/v1/builder/{id}` | Read a private structured page layout and optimistic draft token | `content.edit` |
 | POST | `/api/v1/builder/pages` | Create a private draft page from a purpose preset (about, service, methodology, contact) | `content.create`, `content.edit` |
+| POST | `/api/v1/builder/{id}/plan` | Dry run of a draft save: validate a layout document and list what it would change in the private draft | `content.edit` |
 | POST | `/api/v1/builder/{id}/publish` | Publish a saved layout using its current opaque draft token | `content.edit`, `content.publish` |
 | POST | `/api/v1/builder/{id}/revisions/{revision}/restore` | Restore a layout revision into the private draft | `content.edit` |
 | PUT | `/api/v1/builder/{id}/draft` | Save a validated page layout as a separate private draft | `content.edit` |

@@ -1,11 +1,12 @@
-// Package siteexport writes a site to a folder the owner can keep in Git:
-// the site's facts, the active theme's identity, every content item, the
-// builder layouts, the media records and files, and the public pages as
-// rendered. gorun export runs it (docs/BACKUPS.md#site-export). It is a
-// readable record of the site, not a backup format: backup keeps the
-// database and media for restore; this keeps what a person or a diff
-// can read.
-package siteexport
+package cli
+
+// Site export (gorun export): the site as a folder the owner can keep in
+// Git: the site's facts, the active theme's identity, every content item,
+// the builder layouts, the media records and files, and the public pages
+// as rendered (docs/BACKUPS.md#site-export). It is a readable record of
+// the site, not a backup format: backup keeps the database and media for
+// restore; this keeps what a person or a diff can read. It lives in the
+// binary layer because it reads every module.
 
 import (
 	"bytes"
@@ -34,17 +35,17 @@ import (
 	"github.com/zadstack/gorun/internal/theme"
 )
 
-// Options select what to write. Dest is created when missing; files are
+// ExportOptions select what to write. Dest is created when missing; files are
 // overwritten, and files from an earlier export that no longer apply are
 // left where they are (a Git diff shows them).
-type Options struct {
+type ExportOptions struct {
 	Dest  string
 	Pages bool // render every public page into pages/
 	Media bool // copy local media files into media/files/
 }
 
-// Report counts what was written.
-type Report struct {
+// ExportReport counts what was written.
+type ExportReport struct {
 	Dest    string   `json:"dest"`
 	Items   int      `json:"items"`
 	Layouts int      `json:"layouts"`
@@ -73,17 +74,17 @@ type identityReader interface {
 
 var unsafeName = regexp.MustCompile(`[^A-Za-z0-9._-]+`)
 
-// Run writes the export. app is the booted application (its handler renders
-// the pages); version labels site.json.
-func Run(ctx context.Context, app *kernel.App, version string, opts Options) (Report, error) {
+// exportSite writes the export. app is the booted application (its handler
+// renders the pages); version labels site.json.
+func exportSite(ctx context.Context, app *kernel.App, version string, opts ExportOptions) (ExportReport, error) {
 	if opts.Dest == "" {
-		return Report{}, errors.New("export: a destination directory is required")
+		return ExportReport{}, errors.New("export: a destination directory is required")
 	}
 	if err := os.MkdirAll(opts.Dest, 0o755); err != nil {
-		return Report{}, err
+		return ExportReport{}, err
 	}
 	d := app.Deps
-	rep := Report{Dest: opts.Dest}
+	rep := ExportReport{Dest: opts.Dest}
 	base := kernel.BaseURL(ctx, d)
 
 	// site.json and the identity.

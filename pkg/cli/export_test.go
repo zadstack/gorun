@@ -16,7 +16,6 @@ import (
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/media"
-	"github.com/zadstack/gorun/internal/siteexport"
 )
 
 // gorun export writes the site as a folder a person or a diff can read:
@@ -69,7 +68,7 @@ func TestSiteExportWritesAReadableFolder(t *testing.T) {
 	}
 
 	dest := filepath.Join(t.TempDir(), "site")
-	rep, err := siteexport.Run(context.Background(), app, "test", siteexport.Options{Dest: dest, Pages: true, Media: true})
+	rep, err := exportSite(context.Background(), app, "test", ExportOptions{Dest: dest, Pages: true, Media: true})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -7,11 +7,10 @@ import (
 
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/kernel"
-	"github.com/zadstack/gorun/internal/siteexport"
 )
 
 // exportCmd is gorun export --dest DIR [--no-pages] [--no-media]: the site
-// as a folder to keep in Git (internal/siteexport).
+// as a folder to keep in Git (siteexport.go).
 func exportCmd(args []string, out io.Writer) error {
 	dest, args, err := stringFlag(args, "dest")
 	if err != nil {
@@ -32,7 +31,7 @@ func exportCmd(args []string, out io.Writer) error {
 		return err
 	}
 	defer app.Close()
-	rep, err := siteexport.Run(ctx, app, version, siteexport.Options{Dest: dest, Pages: !noPages, Media: !noMedia})
+	rep, err := exportSite(ctx, app, version, ExportOptions{Dest: dest, Pages: !noPages, Media: !noMedia})
 	if err != nil {
 		return err
 	}
