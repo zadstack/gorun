@@ -81,3 +81,17 @@ func (l *DataLock) Release() error {
 	errClose := f.Close()
 	return errors.Join(errUnlock, errClose)
 }
+
+// DataDirLockHeld probes the server lock without creating or writing any files.
+// It is a snapshot. Call LockDataDir to keep a server from starting.
+func DataDirLockHeld(dir string) (bool, error) {
+	f, err := os.Open(filepath.Join(dir, DataLockFile))
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+	return tryLock(f)
+}

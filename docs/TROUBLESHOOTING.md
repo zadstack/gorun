@@ -63,11 +63,17 @@ Operator acceptance recipe (CIDR, cookie Secure, HSTS, outside health):
 
 ## Upgrade from a release tag
 
-If the new binary/image fails after a tag bump:
+For a release binary, use `gorun upgrade --dry-run --data <data>` to preview
+the upgrade. If the data directory is locked, stop the running service and
+retry with its usual configuration.
 
-1. Stop the new process (release the data-dir lock).
-2. Run the **previous** release binary/image against a **restored** data directory (or the pre-upgrade copy you kept), with the **same** secret key.
-3. Do not expect rolling back the binary alone to undo SQLite migrations already applied.
+If the new release fails, stop the new process. On a binary install,
+`gorun rollback` restores the previous executable and prints a restore command
+for the pre-upgrade backup. On an image install, return to the previous pinned
+image. Applied SQLite migrations may be irreversible. Preserve the current data
+and verify compatibility before restarting with the original secret key. If
+you need the backup, restore it into a separate directory and reconcile newer
+writes before switching the service to it.
 
 Full runbook (smoke + rollback drill): [UPGRADE.md](UPGRADE.md). Summaries:
 [installation — upgrades](GORUN-INSTALLATION.md#upgrades-from-release-tags--الترقية-من-وسوم-الإصدار),
@@ -79,6 +85,7 @@ Full runbook (smoke + rollback drill): [UPGRADE.md](UPGRADE.md). Summaries:
 - حدود الدخول المشتركة خلف الوكيل / غياب HSTS → اضبط `GORUN_TRUSTED_PROXIES` ونفّذ [قائمة قبول HTTPS](../deploy/coolify.md#9-https-acceptance-checklist).
 - الصحة خضراء داخل الحاوية والموقع غير متاح → افحص `https://…/healthz` من الخارج.
 - الاستعادة → مجلد جديد فقط؛ انقل `restores/<stamp>/` خارج المجلد الحي قبل `serve`.
+- فشل الترقية → أوقف الخدمة. يعيد `gorun rollback` الملف التنفيذي السابق ويطبع أمر الاستعادة لمجلد منفصل. تبقى ترحيلات SQLite مطبّقة؛ تحقّق من توافق الإصدار مع البيانات الحالية قبل تشغيله.
 - المفتاح الجديد بعد الاستعادة → استخدم المفتاح الأصلي دائمًا.
 
 ### Verified backup / preview checks

@@ -49,6 +49,8 @@ commands:
   start         prepare and run a local site (LAN preview; --local-only disables LAN)
   serve         run the HTTP server
   migrate       apply database migrations and exit
+  upgrade       update a release binary and bundled themes ([--to vX.Y.Z] [--yes] [--dry-run] [--binary-only] [--data DIR])
+  rollback      restore the previous release binary and saved bundled themes
   user create   create a staff user (--email (--password | --password-stdin) [--name] [--admin])
   user login-link  print a single-use sign-in link (--email [--ttl 2m], at most 15m)
   user status   turn a user off or on (--email --status active|disabled; not the last active admin)
@@ -192,6 +194,10 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 		return backupRestore(args[1:], out)
 	case "backup-decrypt":
 		return backupDecrypt(args[1:])
+	case "upgrade":
+		return upgradeCmd(args[1:], out)
+	case "rollback":
+		return rollbackCmd(args[1:], out)
 	case "backup":
 		return backup(args[1:], out)
 	case "staging":

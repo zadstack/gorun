@@ -1,5 +1,60 @@
 # GoRun: upgrade and rollback runbook
 
+## Automatic upgrade
+
+For an existing macOS or Linux release binary with an initialized site, run
+the command from the installed executable with the same configuration as the
+service. Replace the sample data directory with the site's actual directory.
+`--data` overrides `GORUN_DATA`. Keep the original `GORUN_SECRET_KEY` and
+`GORUN_THEMES` settings when you restart.
+
+```sh
+gorun upgrade --data /var/lib/gorun --dry-run
+sudo systemctl stop gorun
+gorun upgrade --data /var/lib/gorun
+sudo systemctl start gorun
+```
+
+For a foreground server, stop it with Ctrl+C and rerun its original start
+command after the upgrade. The command uses the latest stable GitHub release
+by default. Use `--to vX.Y.Z` to pin a version or deliberately downgrade
+after checking compatibility. A dry run downloads and verifies the release
+archive to list the themes directory and the bundled slugs it would refresh,
+without writing files.
+
+GoRun verifies the archive against its published SHA-256 checksum, creates
+and verifies a normal `gorun backup`, prints its stamp, and atomically replaces
+the executable. It leaves the prior executable and its metadata beside it as
+`gorun.previous` and `gorun.previous.json`. The command needs permission to
+write there and to back up the site. Use the service's working directory or
+set `GORUN_THEMES` to its themes directory. Before replacing the executable,
+GoRun refreshes installed bundled themes and saves their prior trees under
+`<themes>/.previous/`. It installs `default` if the archive ships it and it
+is missing. Other local themes and admin template overrides are preserved.
+The themes directory and its parent need to be writable. If staging is blocked,
+follow the [manual runbook](#2-upgrade--release-binary) or use `--binary-only`.
+That flag warns which installed bundled themes it skips. Their older templates
+may be incompatible with the new executable's stylesheet.
+
+`--yes` allows replacement even if the data lock is held. The running process
+still uses the old executable until you stop and start it. Prefer a stopped
+service so writes are quiescent during the backup and the theme swap. After restarting, run the
+[smoke checks](#4-smoke-after-upgrade).
+
+Stop GoRun and run `gorun rollback` to restore the previous executable and
+the bundled themes saved for that upgrade. Rollback removes `default` if
+the upgrade installed it for the first time.
+The command prints a `backup-restore` command for the recorded stamp with a
+separate destination. SQLite migrations stay applied and may be irreversible.
+Check the older binary's compatibility with the current data before restarting,
+and follow [the recovery procedure](#6-rollback) if a restore is needed. Use
+the manual runbook if the installed release predates these commands or the
+new binary cannot run.
+
+For image installs, follow [Docker / GHCR and Coolify](#3-upgrade--docker--ghcr-and-coolify).
+
+## Manual upgrade runbook
+
 Operator checklist for moving a live site from one **release tag** to another.
 Operators replace the binary or container image, keep the same data directory
 and secret key, let migrations run, and smoke-test. The optional in-app staged
@@ -45,7 +100,7 @@ Schema rules: [ARCHITECTURE.md](ARCHITECTURE.md#migrations-must-be-additive).
    - Admin: **Operations → System health** shows the same build string under
      **GoRun version** (and `/api/v1/system/health` → `version`).
    - Compare to the Releases page (or `gh release view`) — this check is
-     read-only; there is no auto-updater.
+     read-only.
 3. Take a **local backup pair** and copy it off the host:
 
 ```sh
@@ -464,6 +519,19 @@ auto-approve read-only tools may now ask for confirmation.
 ---
 
 ## العربية — ملخص سريع
+
+لتثبيت الملف التنفيذي، عاين الخطوات باستخدام `gorun upgrade --dry-run --data <data>`،
+ثم أوقف الخدمة وشغّل `gorun upgrade --data <data>` بنفس إعداداتها. يتحقق الأمر
+من بصمة الإصدار، وينشئ نسخة احتياطية ويطبع طابعها، ويحفظ الملف التنفيذي السابق.
+تعرض المعاينة مجلد القوالب وأسماء القوالب المرفقة التي ستُحدّث. يحدّث الأمر
+القوالب المرفقة المثبّتة ويحفظ نسخها السابقة في `<themes>/.previous/`، ويثبّت
+`default` إذا كان مرفقًا ومفقودًا. تبقى القوالب المحلية الأخرى وتعديلات القوالب
+من لوحة الإدارة محفوظة. إذا تعذّرت الكتابة في مجلد القوالب أو المجلد الأب،
+فاتبع [الخطوات اليدوية](#2-upgrade--release-binary) أو استخدم `--binary-only`
+مع الانتباه إلى تحذير القوالب التي ستبقى على إصدارها السابق.
+أعد تشغيل الخدمة وافحص الموقع. بعد إيقاف الخدمة، يعيد `gorun rollback` الملف
+التنفيذي والقوالب المحفوظة، ويزيل `default` إذا ثبّتته الترقية لأول مرة،
+ويطبع أمر الاستعادة لمجلد منفصل. تبقى ترحيلات SQLite مطبّقة وقد يتعذر عكسها. لتثبيت الصور، اتبع [خطوات Docker وCoolify](#3-upgrade--docker--ghcr-and-coolify).
 
 يفحص GoRun الإصدارات الرسمية في الخلفية افتراضيًا، ولا ينشرها تلقائيًا. طلب
 التحديث المرحلي في الأدمن يتحقق من الإصدار وينشئ نسخة احتياطية موثّقة، ثم يطلب
