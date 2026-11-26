@@ -5,8 +5,14 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-26
+
 ### Upgrade notes
 
+Details: [docs/UPGRADE.md](docs/UPGRADE.md#025-upgrade-notes).
+
+- From 0.24.x, release binaries upgrade with `gorun upgrade` (it refreshes the bundled themes and keeps the previous binary for `gorun rollback`); images follow the image runbook. From 0.23.x, follow the [0.24 upgrade notes](docs/UPGRADE.md#024-upgrade-notes) first.
+- No new environment variables and no new Go dependencies.
 - `auth/0015_studio_role` seeds the **Studio editor** role (`studio`) with `content.view`, `content.edit_text` and `content.publish_text`; the builder module declares the two permissions. Nothing changes for existing roles, and rolling back leaves the role unused.
 
 ### Added
@@ -1476,7 +1482,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.24.1...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.25.0...HEAD
+[0.25.0]: https://github.com/zadstack/gorun/compare/v0.24.1...v0.25.0
 [0.24.1]: https://github.com/zadstack/gorun/compare/v0.24.0...v0.24.1
 [0.24.0]: https://github.com/zadstack/gorun/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/zadstack/gorun/compare/v0.22.0...v0.23.0

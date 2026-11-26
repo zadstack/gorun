@@ -450,7 +450,22 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ---
 
-## 0.24 upgrade notes
+## 0.25 upgrade notes
+
+From 0.24.x. No new environment variables and no new Go dependencies.
+
+**How to upgrade.** Release binaries: `gorun upgrade --data <data> --dry-run`, stop the service, `gorun upgrade --data <data>`, start it again ([Automatic upgrade](#automatic-upgrade)). Images: the [Docker / GHCR and Coolify](#3-upgrade--docker--ghcr-and-coolify) runbook. From 0.23.x, apply the 0.24 notes below first.
+
+**Migration.** One forward-only, additive migration runs on the first start:
+
+| Migration | Does |
+| --- | --- |
+| `auth/0015_studio_role` | seeds the **Studio editor** role (`studio`) with `content.view`, `content.edit_text` and `content.publish_text` |
+
+Existing roles and users are unchanged.
+
+**Rollback to 0.24.x** is possible on the same data (`gorun rollback` for release binaries). 0.24 does not know the two new permissions, so users with the `studio` role cannot edit or publish anything while it runs, and the admin bar has no edit-in-place. As before, the in-app updater cannot roll back automatically once a migration has run (see [Rollback semantics](#rollback-semantics)).
+
 
 From 0.23.x. No migrations, no new environment variables and no new Go dependencies. Rolling back to 0.23.x on the same data is possible.
 
