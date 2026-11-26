@@ -210,7 +210,13 @@ func stageReleaseContents(dir, themeStage string, archive io.Reader, bundle stri
 		case strings.HasPrefix(name, bundle+"/themes/"):
 			relative := strings.TrimPrefix(name, bundle+"/themes/")
 			slug, _, nested := strings.Cut(relative, "/")
-			if !upgradeThemeSlug.MatchString(slug) || filepath.Clean(relative) != relative ||
+			// Archives up to 0.24.0 also carry themes/_base (the source of the
+			// tokens default/assets serves) and Go files at the themes root.
+			// Neither is a theme: skip them, the safety checks above still ran.
+			if !upgradeThemeSlug.MatchString(slug) {
+				continue
+			}
+			if filepath.Clean(relative) != relative ||
 				(!nested && h.Typeflag != tar.TypeDir) || (h.Typeflag == tar.TypeReg && h.Name != name) {
 				return "", nil, fmt.Errorf("invalid theme member %q", h.Name)
 			}
