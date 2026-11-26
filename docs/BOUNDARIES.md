@@ -50,7 +50,6 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/mailer` | infra | `db` `settings` |
 | `internal/metrics` | infra | `backup` `db` `jobs` `settings` |
 | `internal/observe` | infra | `db` `jobs` |
-| `internal/services` | infra | `chat` `db` `kernel` |
 | `internal/starter` | infra | — |
 | `internal/update` | infra | `config` `db` `jobs` |
 | `internal/db` | infra | — |
@@ -73,6 +72,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `metrics` `observe` `redirects` `seo` `settings` `theme` `update` |
 | `internal/webhooks` | core | `audit` `auth` `db` `httpx` `i18n` `jobs` `kernel` |
 | `internal/analytics` | feature | `audit` `auth` `db` `httpx` `i18n` `kernel` `settings` |
+| `internal/services` | feature | `admin` `analytics` `chat` `db` `kernel` `mailer` `media` `settings` |
 | `internal/commerce` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `redirects` `seo` `settings` `theme` |
 | `internal/saas` | feature | `admin` `api` `audit` `auth` `commerce` `db` `httpx` `kernel` `theme` |
 | `internal/membership` | feature | `api` `audit` `auth` `content` `db` `httpx` `kernel` `theme` |

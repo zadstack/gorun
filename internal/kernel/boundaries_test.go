@@ -52,6 +52,9 @@ var featureEdges = map[string][]string{
 	// mcp consumes the exported agent-channels bridge (Channels) and its
 	// sentinel errors from workagents.channels for the channels_* tools.
 	"mcp": {"workagents"},
+	// services describes analytics as a connectable service: it reads the
+	// module's setting names (analytics.enabled, analytics.exclude).
+	"services": {"analytics"},
 }
 
 func isCoreModule(m string) bool { return slices.Contains(coreModules, m) }
