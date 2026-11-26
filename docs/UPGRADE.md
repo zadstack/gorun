@@ -450,6 +450,16 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ---
 
+## 0.27 upgrade notes
+
+From 0.26.x. No migrations, no new environment variables and no new Go dependencies.
+
+**How to upgrade.** Release binaries: `gorun upgrade --data <data> --dry-run`, stop the service, `gorun upgrade --data <data>`, start it again ([Automatic upgrade](#automatic-upgrade)). Images and Coolify: pin `ghcr.io/zadstack/gorun:0.27.0` and redeploy.
+
+**What changes.** `gorun mail set` stores Settings → Mail from the shell, the secret from stdin only ([MAIL-OPERATIONS.md](MAIL-OPERATIONS.md#configure-mail-from-the-shell)). Settings → Mail validation moved into `admin.MailConfig`, unchanged in behaviour.
+
+**Rollback to 0.26.x** is possible on the same data; mail stored with `gorun mail set` keeps working, only the command is gone.
+
 ## 0.26 upgrade notes
 
 From 0.25.x. No migrations, no new environment variables and no new Go dependencies.

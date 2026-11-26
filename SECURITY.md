@@ -1,6 +1,6 @@
 # Security policy
 
-> **بالعربية.** الدعم الأمني للإصدار المستقر الحالي فقط: 0.26.x؛ الإصدارات الأقدم غير مدعومة.
+> **بالعربية.** الدعم الأمني للإصدار المستقر الحالي فقط: 0.27.x؛ الإصدارات الأقدم غير مدعومة.
 > للإبلاغ عن ثغرة لا تفتح بلاغًا عامًا: استخدم
 > الإبلاغ الخاص عن الثغرات في GitHub (Security → Report a vulnerability) في مستودع المشروع، مع خطوات
 > إعادة الإنتاج والإصدار المتأثر. نؤكد الاستلام ونعمل على إصلاح وننسق موعد النشر معك.
@@ -8,12 +8,12 @@
 ## Supported versions
 
 Only the current stable minor release line receives security support. Currently
-that is **0.26.x**.
+that is **0.27.x**.
 
 | Version | Supported |
 |---|---|
-| 0.26.x | yes |
-| 0.25.x and older | no |
+| 0.27.x | yes |
+| 0.26.x and older | no |
 
 ## Reporting a vulnerability
 
