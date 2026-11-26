@@ -5,6 +5,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-11-26
+
+### Upgrade notes
+
+Details: [docs/UPGRADE.md](docs/UPGRADE.md#027-upgrade-notes).
+
+- From 0.26.x, release binaries upgrade with `gorun upgrade`; images follow the image runbook. From 0.25.x, follow the [0.26 upgrade notes](docs/UPGRADE.md#026-upgrade-notes) first.
+- No migrations, no new environment variables and no new Go dependencies.
+
 ### Added
 
 - `gorun mail set` stores Settings → Mail from the shell with the admin's own validation (`admin.MailConfig`). The SMTP password or Resend API key comes from stdin only (`--secret-stdin`), is stored encrypted and is never printed. A manager can now configure a site's mail without its admin session ([docs/MAIL-OPERATIONS.md](docs/MAIL-OPERATIONS.md#configure-mail-from-the-shell)).
@@ -1499,7 +1508,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.26.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.27.0...HEAD
+[0.27.0]: https://github.com/zadstack/gorun/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/zadstack/gorun/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/zadstack/gorun/compare/v0.24.1...v0.25.0
 [0.24.1]: https://github.com/zadstack/gorun/compare/v0.24.0...v0.24.1
