@@ -72,7 +72,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/admin` | core | `api` `audit` `auth` `backup` `config` `content` `db` `diagnostics` `edgeprovision` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `menus` `metrics` `observe` `redirects` `seo` `settings` `theme` `update` |
 | `internal/webhooks` | core | `audit` `auth` `db` `httpx` `i18n` `jobs` `kernel` |
 | `internal/analytics` | feature | `audit` `auth` `db` `httpx` `i18n` `kernel` `settings` |
-| `internal/services` | feature | `admin` `analytics` `chat` `db` `kernel` `mailer` `media` `settings` |
+| `internal/services` | feature | `admin` `analytics` `auth` `chat` `db` `httpx` `kernel` `mailer` `media` `settings` |
 | `internal/commerce` | feature | `admin` `api` `audit` `auth` `content` `db` `httpx` `i18n` `jobs` `kernel` `mailer` `media` `observe` `redirects` `seo` `settings` `theme` |
 | `internal/saas` | feature | `admin` `api` `audit` `auth` `commerce` `db` `httpx` `kernel` `theme` |
 | `internal/membership` | feature | `api` `audit` `auth` `content` `db` `httpx` `kernel` `theme` |
@@ -87,7 +87,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `pkg/patternkit` | contract | — |
 | `pkg/themekit` | contract | — |
 | `cmd/gorun` | binary | `pkg/cli` |
-| `pkg/cli` | binary | `admin` `analytics` `api` `audit` `auth` `backup` `builder` `chat` `commerce` `config` `content` `db` `diagnostics` `ext` `httpx` `i18n` `identityai` `identitylogo` `kernel` `launch` `mailer` `mcp` `media` `membership` `menus` `pattern` `patterns` `pkg/themekit` `redirects` `saas` `seo` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
+| `pkg/cli` | binary | `admin` `analytics` `api` `audit` `auth` `backup` `builder` `chat` `commerce` `config` `content` `db` `diagnostics` `ext` `httpx` `i18n` `identityai` `identitylogo` `kernel` `launch` `mailer` `mcp` `media` `membership` `menus` `pattern` `patterns` `pkg/themekit` `redirects` `saas` `seo` `services` `settings` `site` `starter` `taxonomy` `theme` `themes` `update` `webhooks` `workagents` `wpmigrate` |
 <!-- END GENERATED IMPORT GRAPH -->
 
 Reading the graph:

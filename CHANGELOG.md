@@ -8,6 +8,7 @@ All notable changes to GoRun are recorded here. The format follows
 ### Added
 
 - `gorun mail set` stores Settings → Mail from the shell with the admin's own validation (`admin.MailConfig`). The SMTP password or Resend API key comes from stdin only (`--secret-stdin`), is stored encrypted and is never printed. A manager can now configure a site's mail without its admin session ([docs/MAIL-OPERATIONS.md](docs/MAIL-OPERATIONS.md#configure-mail-from-the-shell)).
+- One-time secret link: `/admin/services/<name>/secret?t=…` lets a signed-in person with `settings.manage` type a service's secret into GoRun itself, once, within 15 minutes, for that one service; only the token's hash is stored and the link is deleted with the save ([docs/MCP.md](docs/MCP.md#one-time-secret-link)).
 
 ## [0.26.0] - 2026-11-26
 

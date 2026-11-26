@@ -78,11 +78,12 @@ type Registry struct {
 	d    *kernel.Deps
 	list []Service
 	by   map[string]Service
+	now  func() time.Time // the clock of secret links; tests set it with setNow
 }
 
 // NewRegistry registers svcs over d.
 func NewRegistry(d *kernel.Deps, svcs ...Service) *Registry {
-	r := &Registry{d: d, list: svcs, by: map[string]Service{}}
+	r := &Registry{d: d, list: svcs, by: map[string]Service{}, now: time.Now}
 	for _, s := range svcs {
 		r.by[s.Name()] = s
 	}
@@ -115,12 +116,25 @@ var errRefused = errors.New("services: refused")
 // transaction, audits the change by field names only, and returns its new
 // status. Field errors leave everything as it was.
 func (r *Registry) Set(ctx context.Context, name string, values map[string]string, secret *string, via string) (Status, map[string]string, error) {
+	return r.set(ctx, name, values, secret, via, nil, nil)
+}
+
+// set is Set with before, when not nil, run first in the same transaction
+// (an error from it rolls everything back), and extra, when not nil, adding
+// to the audit metadata after the commit.
+func (r *Registry) set(ctx context.Context, name string, values map[string]string, secret *string, via string,
+	before func(tx *sql.Tx) error, extra func() map[string]any) (Status, map[string]string, error) {
 	s, ok := r.by[name]
 	if !ok {
 		return Status{}, nil, ErrUnknownService
 	}
 	var fields map[string]string
 	err := db.InTx(ctx, r.d.DB, func(tx *sql.Tx) error {
+		if before != nil {
+			if err := before(tx); err != nil {
+				return err
+			}
+		}
 		f, err := s.Apply(ctx, tx, values, secret)
 		if err != nil {
 			return err
@@ -136,6 +150,7 @@ func (r *Registry) Set(ctx context.Context, name string, values map[string]strin
 		return Status{}, fields, nil
 	}
 	if err != nil {
+		r.d.Settings.Invalidate()
 		return Status{}, nil, err
 	}
 	keys := make([]string, 0, len(values)+1)
@@ -148,7 +163,13 @@ func (r *Registry) Set(ctx context.Context, name string, values map[string]strin
 		}
 	}
 	sort.Strings(keys)
-	r.d.Audit.Record(ctx, "service.update", "service", name, map[string]any{"service": name, "keys": keys, "via": via})
+	meta := map[string]any{"service": name, "keys": keys, "via": via}
+	if extra != nil {
+		for k, v := range extra() {
+			meta[k] = v
+		}
+	}
+	r.d.Audit.Record(ctx, "service.update", "service", name, meta)
 	st, err := s.Status(ctx)
 	return st, nil, err
 }
