@@ -71,28 +71,28 @@ func (c chatService) Status(ctx context.Context) (Status, error) {
 func (c chatService) Apply(ctx context.Context, tx *sql.Tx, values map[string]string, secret *string) (map[string]string, error) {
 	errs := map[string]string{}
 	if secret != nil {
-		errs["secret"] = "unsupported"
+		errs["secret"] = "services.error.no_secret"
 	}
 	v := c.stored(ctx)
 	for f, val := range values {
 		if _, ok := chatKeys[f]; !ok {
-			errs[f] = "unknown"
+			errs[f] = "services.error.unknown_field"
 			continue
 		}
 		v[f] = val
 	}
 	if p := v["provider"]; p != "" && !slices.Contains(chat.Providers, p) {
-		errs["provider"] = "invalid"
+		errs["provider"] = "services.error.invalid"
 	}
 	if b := v["base_url"]; b != "" {
 		if n, ok := chat.NormalizeBaseURL(b); ok {
 			v["base_url"] = n
 		} else {
-			errs["base_url"] = "invalid"
+			errs["base_url"] = "services.error.invalid"
 		}
 	}
 	if t := v["website_token"]; t != "" && !chat.ValidToken(t) {
-		errs["website_token"] = "invalid"
+		errs["website_token"] = "services.error.invalid"
 	}
 	if len(errs) > 0 {
 		return errs, nil

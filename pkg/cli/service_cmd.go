@@ -208,7 +208,7 @@ func setService(ctx context.Context, r *services.Registry, name string, values m
 		}
 		takesSecret = true
 		if _, ok := values[sk]; ok {
-			fields[sk] = "services.error_secret_value"
+			fields[sk] = "services.error.secret_value"
 		}
 	}
 	if len(fields) > 0 {

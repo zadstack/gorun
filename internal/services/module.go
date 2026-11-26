@@ -44,11 +44,6 @@ func (*Module) Migrations() fs.FS { return nil }
 // Catalogs implements kernel.CatalogProvider (the services.* strings).
 func (*Module) Catalogs() fs.FS { return catalogs }
 
-// defaultRegistry is the site's five services.
-func defaultRegistry(d *kernel.Deps) *Registry {
-	return NewRegistry(d, Mail(d), Storage(d), Chat(d), Analytics(d), Backups(d))
-}
-
 // Register adds GET and POST /admin/services/{name}/secret behind sign-in
 // and settings.manage (CSRF comes with the admin router). Without the admin
 // renderer it does nothing.
@@ -57,7 +52,7 @@ func (m *Module) Register(d *kernel.Deps) error {
 	if !ok {
 		return nil
 	}
-	m.d, m.tpl, m.reg = d, tpl, defaultRegistry(d)
+	m.d, m.tpl, m.reg = d, tpl, Default(d)
 	s := d.Router.Admin.With(auth.RequirePerm(permManage))
 	s.Get(secretPath, m.secretPage)
 	s.Post(secretPath, m.saveSecret)

@@ -18,8 +18,8 @@ const providerGoRun = "gorun"
 
 // Field error keys shared by the services in this package.
 const (
-	errInvalid  = "services.invalid"
-	errRequired = "services.required"
+	errInvalid  = "services.error.invalid"
+	errRequired = "services.error.required"
 )
 
 // Limits of the analytics settings page (internal/analytics/settings.go).

@@ -128,9 +128,9 @@ func (m mailService) Apply(ctx context.Context, tx *sql.Tx, values map[string]st
 		case "reply_to":
 			in.ReplyTo = v
 		case "password", "api_key":
-			fields[k] = "services.error_secret_value" // a secret never comes as a value
+			fields[k] = "services.error.secret_value" // a secret never comes as a value
 		default:
-			fields[k] = "services.error_unknown_field"
+			fields[k] = "services.error.unknown_field"
 		}
 	}
 	if len(fields) > 0 {

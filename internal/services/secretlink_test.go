@@ -32,7 +32,7 @@ func (s secretFake) Apply(ctx context.Context, tx *sql.Tx, _ map[string]string, 
 		return nil, err
 	}
 	if *secret == "bad" {
-		return map[string]string{"token": "services.invalid"}, nil
+		return map[string]string{"token": "services.error.invalid"}, nil
 	}
 	return nil, nil
 }
