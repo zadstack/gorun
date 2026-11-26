@@ -10,7 +10,9 @@ import (
 	"strings"
 
 	"github.com/zadstack/gorun/internal/db"
+	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/media"
+	"github.com/zadstack/gorun/internal/observe"
 	"github.com/zadstack/gorun/internal/settings"
 )
 
@@ -60,12 +62,87 @@ func r2Endpoint(accountID string) string {
 	return "https://" + accountID + ".r2.cloudflarestorage.com"
 }
 
-// bindStorage validates in, saves (or updates) the S3 profile and
-// activates a destination per purpose in one transaction. Field errors are
-// i18n keys; nothing is written when any field fails.
+// StorageBindInput is the storage bind body, for callers outside admin
+// (the services layer).
+type StorageBindInput = storageBindInput
+
+// storageBind is a validated bind, ready to write: the profile (rewritten
+// or kept), the destinations per purpose and the Cloudflare snapshot an
+// R2 binding was validated against.
+type storageBind struct {
+	h        *handlers
+	c        connectionRecord
+	expected string
+	rewrite  bool
+	dests    map[string]media.Destination
+	cf       *cfSnapshot
+}
+
+// storageHandlers is the part of handlers the bind path needs, built from
+// d: the admin's observe service when it is published (a server), else an
+// empty one (a CLI boot), in which an R2 inventory lookup finds nothing.
+func storageHandlers(d *kernel.Deps) *handlers {
+	obs, ok := kernel.Get[*observe.Service](d, observe.ServiceName)
+	if !ok {
+		obs = observe.New(d.DB, d.Jobs, d.Log)
+	}
+	return &handlers{d: d, observe: obs}
+}
+
+// BindStorage is the Integrations bind path over d: it validates in,
+// saves (or updates) the S3 profile and activates a destination per
+// purpose in one transaction, then queues the read-only bucket check when
+// the admin's checks are registered. It returns purpose → destination id
+// and field errors (i18n keys); nothing is written when any field fails.
+func BindStorage(ctx context.Context, d *kernel.Deps, in StorageBindInput) (map[string]string, map[string]string, error) {
+	h := storageHandlers(d)
+	b, fields, err := h.prepareStorageBind(ctx, in)
+	if err != nil || len(fields) > 0 {
+		return nil, fields, err
+	}
+	var ids map[string]string
+	if err := db.InTx(ctx, d.DB, func(tx *sql.Tx) (err error) { ids, err = b.writeTx(ctx, tx); return err }); err != nil {
+		return nil, nil, err
+	}
+	b.queueCheck(ctx)
+	return ids, nil, nil
+}
+
+// BindStorageTx is BindStorage inside the caller's transaction, for a
+// caller that commits more with it. It queues no bucket check: that
+// writes outside tx and would wait on tx's own lock.
+func BindStorageTx(ctx context.Context, d *kernel.Deps, tx *sql.Tx, in StorageBindInput) (map[string]string, map[string]string, error) {
+	b, fields, err := storageHandlers(d).prepareStorageBind(ctx, in)
+	if err != nil || len(fields) > 0 {
+		return nil, fields, err
+	}
+	ids, err := b.writeTx(ctx, tx)
+	return ids, nil, err
+}
+
+// bindStorage is BindStorage for the admin form and API: same validation
+// and transaction, plus the result's profile id and object prefixes.
 func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storageBindResult, map[string]string, error) {
-	fields := map[string]string{}
 	var res storageBindResult
+	b, fields, err := h.prepareStorageBind(ctx, in)
+	if err != nil || len(fields) > 0 {
+		return res, fields, err
+	}
+	var ids map[string]string
+	if err := db.InTx(ctx, h.d.DB, func(tx *sql.Tx) (err error) { ids, err = b.writeTx(ctx, tx); return err }); err != nil {
+		return res, nil, err
+	}
+	res.ConnectionID, res.Destinations = b.c.ID, ids
+	site, _ := media.StorageSiteID(ctx, h.d.DB)
+	res.Prefixes = storagePrefixes(site)
+	b.queueCheck(ctx)
+	return res, nil, nil
+}
+
+// prepareStorageBind validates in and builds the writes, reading only
+// committed state. Field errors are i18n keys.
+func (h *handlers) prepareStorageBind(ctx context.Context, in storageBindInput) (*storageBind, map[string]string, error) {
+	fields := map[string]string{}
 	purposes := map[string]bool{}
 	for _, p := range in.Purposes {
 		switch p {
@@ -90,7 +167,7 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 	case "r2":
 		snapshot, err := h.cloudflareSnapshot(ctx)
 		if err != nil {
-			return res, nil, err
+			return nil, nil, err
 		}
 		if snapshot.AccountID == "" {
 			fields["source"] = "admin.integrations.storage.error.account"
@@ -141,7 +218,7 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 		fields["access_key"] = "admin.integrations.storage.error.credentials"
 	}
 	if len(fields) > 0 {
-		return res, fields, nil
+		return nil, fields, nil
 	}
 	if previous.ID != "" && (previous.Endpoint != c.Endpoint || previous.Bucket != c.Bucket || previous.Region != c.Region) {
 		previous = connectionRecord{} // a different location becomes a new profile
@@ -151,7 +228,7 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 		// (credential rotation keeps the destination identity), never duplicated.
 		existing, err := h.listConnections(ctx)
 		if err != nil {
-			return res, nil, err
+			return nil, nil, err
 		}
 		for _, p := range existing {
 			if p.Kind == "s3" && p.Endpoint == c.Endpoint && p.Bucket == c.Bucket && p.Region == c.Region {
@@ -179,7 +256,7 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 	if rewrite {
 		var err error
 		if c.Secret, err = h.encryptConnectionSecrets(secrets); err != nil {
-			return res, nil, err
+			return nil, nil, err
 		}
 		c = changedConnection(c)
 	}
@@ -189,66 +266,71 @@ func (h *handlers) bindStorage(ctx context.Context, in storageBindInput) (storag
 		d, err := media.PrepareDestination(c.Name, p, cfg, h.d.Config.SecretKey)
 		if err != nil {
 			fields["bucket"] = "admin.integrations.storage.error.bucket"
-			return res, fields, nil
+			return nil, fields, nil
 		}
 		dests[p] = d
 	}
-	res.ConnectionID, res.Destinations = c.ID, map[string]string{}
-	// Profile and destinations commit together: a failure leaves neither.
-	err := db.InTx(ctx, h.d.DB, func(tx *sql.Tx) error {
-		if cfBindingSnapshot != nil {
-			current := map[string]string{}
-			rows, err := tx.QueryContext(ctx, `SELECT key,value_json FROM settings WHERE key IN (?,?)`, settingCFToken, settingCFAccount)
-			if err != nil {
-				return err
-			}
-			for rows.Next() {
-				var key, value string
-				if err := rows.Scan(&key, &value); err != nil {
-					rows.Close()
-					return err
-				}
-				var valid any
-				if json.Unmarshal([]byte(value), &valid) != nil {
-					rows.Close()
-					return errConnectionConflict
-				}
-				current[key] = value
-			}
-			err = rows.Err()
-			rows.Close()
-			if err != nil {
-				return err
-			}
-			if !maps.Equal(cfBindingSnapshot.raw, current) {
-				return errConnectionConflict
-			}
+	return &storageBind{h: h, c: c, expected: expected, rewrite: rewrite, dests: dests, cf: cfBindingSnapshot}, nil, nil
+}
+
+// writeTx writes the profile and destinations in tx: a failure leaves
+// neither. It returns purpose → destination id.
+func (b *storageBind) writeTx(ctx context.Context, tx *sql.Tx) (map[string]string, error) {
+	h, c := b.h, b.c
+	if b.cf != nil {
+		current := map[string]string{}
+		rows, err := tx.QueryContext(ctx, `SELECT key,value_json FROM settings WHERE key IN (?,?)`, settingCFToken, settingCFAccount)
+		if err != nil {
+			return nil, err
 		}
-		if rewrite {
-			if err := h.writeConnectionTx(ctx, tx, c, expected, "connections.save", false); err != nil {
-				return err
+		for rows.Next() {
+			var key, value string
+			if err := rows.Scan(&key, &value); err != nil {
+				rows.Close()
+				return nil, err
 			}
-		}
-		for p, d := range dests {
-			if err := media.SaveDestinationTx(ctx, tx, h.d.Settings, d); err != nil {
-				return err
+			var valid any
+			if json.Unmarshal([]byte(value), &valid) != nil {
+				rows.Close()
+				return nil, errConnectionConflict
 			}
-			h.d.Audit.RecordTx(ctx, tx, "storage.activate", "destination", d.ID, map[string]string{"purpose": d.Purpose, "connection": c.ID, "via": "integrations"})
-			res.Destinations[p] = d.ID
+			current[key] = value
 		}
-		return nil
-	})
-	if err != nil {
-		return res, nil, err
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return nil, err
+		}
+		if !maps.Equal(b.cf.raw, current) {
+			return nil, errConnectionConflict
+		}
 	}
-	site, _ := media.StorageSiteID(ctx, h.d.DB)
-	res.Prefixes = storagePrefixes(site)
-	// Read-only reachability first; the write/read/delete probe is a
-	// separate explicit request under system.capability_test.
-	if _, err := h.observe.Refresh(ctx, kindConnection, c.ID); err != nil {
-		h.d.Log.Warn("integrations: queue bucket check", "err", err)
+	if b.rewrite {
+		if err := h.writeConnectionTx(ctx, tx, c, b.expected, "connections.save", false); err != nil {
+			return nil, err
+		}
 	}
-	return res, nil, nil
+	ids := map[string]string{}
+	for p, d := range b.dests {
+		if err := media.SaveDestinationTx(ctx, tx, h.d.Settings, d); err != nil {
+			return nil, err
+		}
+		h.d.Audit.RecordTx(ctx, tx, "storage.activate", "destination", d.ID, map[string]string{"purpose": d.Purpose, "connection": c.ID, "via": "integrations"})
+		ids[p] = d.ID
+	}
+	return ids, nil
+}
+
+// queueCheck queues the read-only reachability check of the profile; the
+// write/read/delete probe is a separate explicit request under
+// system.capability_test. Without the admin's checks (a CLI boot) there
+// is nothing to queue.
+func (b *storageBind) queueCheck(ctx context.Context) {
+	if _, err := b.h.observe.Refresh(ctx, kindConnection, b.c.ID); errors.Is(err, observe.ErrUnknownKind) {
+		return // no admin checks registered here (a CLI boot)
+	} else if err != nil {
+		b.h.d.Log.Warn("integrations: queue bucket check", "err", err)
+	}
 }
 
 // storageBinding describes one purpose's resolved destination and where
