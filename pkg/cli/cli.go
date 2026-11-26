@@ -96,6 +96,7 @@ commands:
   ai            ai set --provider openai|anthropic --model M [--base-url URL] [--api-key-stdin] | ai off:
                 AI writing in the editor, validated like Settings → AI (the key only from stdin)
   mail send     send one message from JSON stdin using saved mail settings (--message-stdin)
+  mail set      store Settings → Mail, validated like the admin; the secret only from stdin (--secret-stdin)
   settings      recovery: settings get <key> | set <key> <json-or-string> | unset <key>
                 (validated like the admin, audited as system; no workers or themes needed)
 `

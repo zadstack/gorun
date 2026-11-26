@@ -162,8 +162,20 @@ func (h *handlers) sendTestMail(r *http.Request, u *auth.User) error {
 	return nil
 }
 
+// MailInput is Settings → Mail as plain fields, for `gorun mail set`.
+type MailInput = mailInput
+
 // validateMail returns the settings to store and field errors.
 func (h *handlers) validateMail(in mailInput) (map[string]any, map[string]string) {
+	return MailConfig(in, h.d.Config.SecretKey)
+}
+
+// MailConfig validates Settings → Mail and returns the settings to store,
+// with the provider secret encrypted under secretKey, and field errors. A
+// blank Password or ResendAPIKey keeps the stored one. The admin and
+// `gorun mail set` both use it, so the shell cannot store what the form
+// would refuse.
+func MailConfig(in MailInput, secretKey []byte) (map[string]any, map[string]string) {
 	fields := map[string]string{}
 	vals := map[string]any{}
 	provider := strings.TrimSpace(in.Provider)
@@ -179,7 +191,7 @@ func (h *handlers) validateMail(in mailInput) (map[string]any, map[string]string
 	} else if in.ClearResendAPIKey {
 		vals["mail.resend_api_key"] = ""
 	} else if in.ResendAPIKey != "" {
-		enc, err := mailer.EncryptSecret(h.d.Config.SecretKey, in.ResendAPIKey)
+		enc, err := mailer.EncryptSecret(secretKey, in.ResendAPIKey)
 		if err != nil {
 			fields["resend_api_key"] = "admin.settings.error_encrypt"
 		} else {
@@ -232,7 +244,7 @@ func (h *handlers) validateMail(in mailInput) (map[string]any, map[string]string
 	case in.ClearPassword:
 		vals["mail.password"] = ""
 	case in.Password != "":
-		enc, err := mailer.EncryptSecret(h.d.Config.SecretKey, in.Password)
+		enc, err := mailer.EncryptSecret(secretKey, in.Password)
 		if err != nil {
 			fields["password"] = "admin.settings.error_encrypt"
 		} else {

@@ -36,8 +36,11 @@ type cliMailMessage struct {
 // mailCmd uses the site's encrypted settings even when the HTTP process is down.
 // It starts no workers: an operational alert must not replay unrelated jobs.
 func mailCmd(args []string, in io.Reader, out io.Writer) error {
+	if len(args) > 0 && args[0] == "set" {
+		return mailSetCmd(args[1:], in, out)
+	}
 	if len(args) == 0 || args[0] != "send" {
-		return errors.New(mailSendUsage)
+		return errors.New(mailSendUsage + "\n" + mailSetUsage)
 	}
 	fs := flag.NewFlagSet("mail send", flag.ContinueOnError)
 	messageStdin := fs.Bool("message-stdin", false, "read one to/subject/text JSON object from stdin")
