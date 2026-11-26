@@ -299,6 +299,22 @@ func testBinaryReleases(t *testing.T, target, platform string, badSum, traversal
 	if _, err := tr.Write(body); err != nil {
 		t.Fatal(err)
 	}
+	// The layout of a real release archive: directory entries, the
+	// documents beside the binary, the shared token sources in themes/_base
+	// and Go files at the themes root, none of which is a theme.
+	for _, dir := range []string{"docs/", "themes/", "themes/_base/", "themes/default/"} {
+		if err := tr.WriteHeader(&tar.Header{Name: bundle + "/" + dir, Typeflag: tar.TypeDir, Mode: 0o755}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, file := range []string{"README.md", "docs/UPGRADE.md", "themes/_base/tokens.css", "themes/bundled.go"} {
+		if err := tr.WriteHeader(&tar.Header{Name: bundle + "/" + file, Mode: 0o644, Size: 3}); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := tr.Write([]byte("doc")); err != nil {
+			t.Fatal(err)
+		}
+	}
 	members := []string{"default/templates/page.html", "business/templates/page.html", "portfolio/templates/page.html"}
 	if traversal {
 		members = append(members, "default/../../escape")

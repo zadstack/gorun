@@ -42,7 +42,14 @@ def main():
                 "go", "build", "-trimpath", "-ldflags",
                 f"-s -w -X main.version={args.version}", "-o", str(package / "gorun"), "./cmd/gorun",
             ], cwd=root, env={**os.environ, "CGO_ENABLED": "0", "GOOS": goos, "GOARCH": goarch}, check=True)
-            shutil.copytree(root / "themes", package / "themes")
+            # Only theme folders (a theme.json at their root). themes/_base is
+            # the source of the tokens default/assets already serves, and the
+            # Go files embed the default theme into the binary; neither belongs
+            # in the archive, and gorun upgrade in 0.24.0 refuses them.
+            (package / "themes").mkdir()
+            for theme in sorted((root / "themes").iterdir()):
+                if theme.is_dir() and (theme / "theme.json").is_file():
+                    shutil.copytree(theme, package / "themes" / theme.name)
             for document in ["README.md", "README.ar.md", "LICENSE", "NOTICE", "SECURITY.md", "CHANGELOG.md"]:
                 shutil.copy2(root / document, package / document)
             shutil.copytree(root / "docs", package / "docs")
