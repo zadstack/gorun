@@ -450,6 +450,16 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ---
 
+## 0.28 upgrade notes
+
+From 0.27.x. No migrations, no new environment variables and no new Go dependencies.
+
+**How to upgrade.** Release binaries: `gorun upgrade --data <data> --dry-run`, stop the service, `gorun upgrade --data <data>`, start it again ([Automatic upgrade](#automatic-upgrade)). Images and Coolify: pin `ghcr.io/zadstack/gorun:0.28.0` and redeploy.
+
+**What changes.** Two new core modules, `chat` and `services`, boot with the site ([SERVICES.md](SERVICES.md)): `gorun service`, the MCP toolset `services`, `/api/v1/site/services`, the one-time secret link, and the Chatwoot widget as a typed service. They read and write the settings that already exist (`mail.*`, storage destinations, `analytics.*`, `backup.*`) plus new `chat.*` keys; nothing is moved. `gorun mail set` now changes only the fields given and audits `service.update`.
+
+**Rollback to 0.27.x** is possible on the same data. A chat widget configured on 0.28 stops showing (0.27 has no `chat` module; its `chat.*` keys stay unused), and the services CLI, MCP tools, REST operations and secret links are gone.
+
 ## 0.27 upgrade notes
 
 From 0.26.x. No migrations, no new environment variables and no new Go dependencies.
