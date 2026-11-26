@@ -19,6 +19,9 @@ import (
 // ErrMailNotConfigured is a mail test on a site whose mail is not set up.
 var ErrMailNotConfigured = errors.New("services: mail is not configured")
 
+// ErrMailTestAddress is a mail test without a valid address to send to.
+var ErrMailTestAddress = errors.New("services: mail test needs an email address")
+
 // mailFields are the mail service's settings, each stored as mail.<name>.
 var mailFields = []Field{
 	{Name: "provider", Type: "enum", Required: true, Values: []string{"smtp", "resend"}},
@@ -128,7 +131,7 @@ func (m mailService) Apply(ctx context.Context, tx *sql.Tx, values map[string]st
 		case "reply_to":
 			in.ReplyTo = v
 		case "password", "api_key":
-			fields[k] = "services.error.secret_value" // a secret never comes as a value
+			fields[k] = ErrKeySecretValue // a secret never comes as a value
 		default:
 			fields[k] = "services.error.unknown_field"
 		}
@@ -175,7 +178,7 @@ func (m mailService) Apply(ctx context.Context, tx *sql.Tx, values map[string]st
 func (m mailService) Test(ctx context.Context, actor string) (TestResult, error) {
 	a, err := mail.ParseAddress(actor)
 	if err != nil || a.Address != actor {
-		return TestResult{}, errors.New("services: mail test needs an email address")
+		return TestResult{}, ErrMailTestAddress
 	}
 	ml := mailer.New(m.d.Settings, m.d.Log).WithKey(m.d.Config.SecretKey).WithEnv(m.d.Config.Env)
 	if !ml.Configured(ctx) {

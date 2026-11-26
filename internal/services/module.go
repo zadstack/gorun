@@ -44,15 +44,20 @@ func (*Module) Migrations() fs.FS { return nil }
 // Catalogs implements kernel.CatalogProvider (the services.* strings).
 func (*Module) Catalogs() fs.FS { return catalogs }
 
-// Register adds GET and POST /admin/services/{name}/secret behind sign-in
-// and settings.manage (CSRF comes with the admin router). Without the admin
-// renderer it does nothing.
+// Register publishes the registry (ServiceRegistry) for the MCP toolset,
+// adds the REST operations under /site/services, and GET and POST
+// /admin/services/{name}/secret behind sign-in and settings.manage (CSRF
+// comes with the admin router). Without the admin renderer there is no
+// secret page.
 func (m *Module) Register(d *kernel.Deps) error {
+	m.d, m.reg = d, Default(d)
+	d.Services.Set(ServiceRegistry, m.reg)
+	registerAPI(d, m.reg)
 	tpl, ok := kernel.Get[*httpx.Templates](d, kernel.ServiceAdminTemplates)
 	if !ok {
 		return nil
 	}
-	m.d, m.tpl, m.reg = d, tpl, Default(d)
+	m.tpl = tpl
 	s := d.Router.Admin.With(auth.RequirePerm(permManage))
 	s.Get(secretPath, m.secretPage)
 	s.Post(secretPath, m.saveSecret)

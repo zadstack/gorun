@@ -1,6 +1,7 @@
 {
   "error.invalid": "هذه القيمة غير صالحة.",
   "error.no_secret": "الخدمة دي مالهاش سر",
+  "error.not_configured": "الخدمة غير مُعدّة بعد، فلا يمكن تجربتها.",
   "error.required": "هذا الحقل مطلوب.",
   "error.secret_value": "لا يمكن إرسال السر كقيمة. استخدم الرابط الذي يعمل مرة واحدة أو --secret-stdin.",
   "error.unknown_field": "لا يوجد حقل بهذا الاسم في هذه الخدمة.",

@@ -1,6 +1,7 @@
 {
   "error.invalid": "This value is not valid.",
   "error.no_secret": "This service takes no secret",
+  "error.not_configured": "The service is not configured yet, so it cannot be tested.",
   "error.required": "This field is required.",
   "error.secret_value": "A secret cannot be sent as a value. Use the one-time link or --secret-stdin.",
   "error.unknown_field": "This service has no such field.",

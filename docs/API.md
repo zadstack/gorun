@@ -508,7 +508,7 @@ Example section in a version-1 document:
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **222 operations** in 25 tags.
+Generated from the current locally booted OpenAPI document: **227 operations** in 26 tags.
 
 ### analytics
 
@@ -703,6 +703,16 @@ Generated from the current locally booted OpenAPI document: **222 operations** i
 | POST | `/api/v1/saas/entitlements/{id}/consume` | Consume owned subscription quota atomically | any key or session |
 | POST | `/api/v1/saas/entitlements` | Create owned subscription and quotas | `saas.manage` |
 | PUT | `/api/v1/saas/entitlements/{id}` | Update owned plan quotas with expected version; retain usage | `saas.manage` |
+
+### services
+
+| Method | Path | Summary | Scopes |
+|---|---|---|---|
+| DELETE | `/api/v1/site/services/{name}` | Turn a service off | `settings.manage` |
+| GET | `/api/v1/site/services/{name}` | One service's status, without its secret | `settings.manage` |
+| GET | `/api/v1/site/services` | Every service (mail, storage, chat, analytics, backups) and its status; never a secret, only secret_set | `settings.manage` |
+| PATCH | `/api/v1/site/services/{name}` | Change only the given fields of a service; a secret is never accepted here: when one is missing the answer carries needs_secret (a one-time admin link and the CLI line) | `settings.manage` |
+| POST | `/api/v1/site/services/{name}/test` | Run the service's safe test; mail sends one test message to the caller's own address | `system.capability_test` |
 
 ### settings
 

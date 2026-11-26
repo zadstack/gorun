@@ -4,6 +4,7 @@ import (
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/media"
+	"github.com/zadstack/gorun/internal/services"
 	"github.com/zadstack/gorun/internal/taxonomy"
 	"github.com/zadstack/gorun/internal/theme"
 	"github.com/zadstack/gorun/internal/workagents"
@@ -84,6 +85,9 @@ func registerCoreTools(d *kernel.Deps, s *server) {
 		tools = append(tools, channelTools(ch)...)
 	}
 	tools = append(tools, logTools(d), settingsTool(d))
+	if reg, ok := kernel.Get[*services.Registry](d, services.ServiceRegistry); ok {
+		tools = append(tools, s.serviceTools(reg)...)
+	}
 	tools = append(tools, migrationTools(d, s)...)
 	tools = append(tools, commerceTools(d, s)...)
 	for _, t := range tools {

@@ -181,6 +181,11 @@ func withServices(dataDir string, fn func(context.Context, *services.Registry) e
 	if err != nil {
 		return err
 	}
+	return withServicesConfig(cfg, fn)
+}
+
+// withServicesConfig is withServices for a loaded configuration.
+func withServicesConfig(cfg config.Config, fn func(context.Context, *services.Registry) error) error {
 	ctx, cancel := context.WithTimeout(context.Background(), serviceTimeout)
 	defer cancel()
 	app, err := kernel.BootWithOptions(ctx, cfg, serviceModules(), kernel.BootOptions{StartJobs: false})
@@ -199,22 +204,10 @@ func setService(ctx context.Context, r *services.Registry, name string, values m
 		return unknownService(name)
 	}
 	// A secret never comes as a value, whichever provider it belongs to.
-	fields := map[string]string{}
-	takesSecret := false
-	for _, p := range s.Providers() {
-		sk := s.Secret(p)
-		if sk == "" {
-			continue
-		}
-		takesSecret = true
-		if _, ok := values[sk]; ok {
-			fields[sk] = "services.error.secret_value"
-		}
-	}
-	if len(fields) > 0 {
+	if fields := services.SecretValueFields(s, values); len(fields) > 0 {
 		return invalidFields(fields)
 	}
-	if secret != nil && !takesSecret {
+	if secret != nil && !services.TakesSecret(s) {
 		return fmt.Errorf("service: %s takes no secret", name)
 	}
 	st, fields, err := r.Set(ctx, name, values, secret, "cli")

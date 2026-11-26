@@ -98,7 +98,8 @@ public `Host` header.
 | `themes.manage` | List and read templates, save template **drafts** |
 | `audit.read` | `get_logs` (own audit rows only; IPs omitted) |
 | `system.health` | Admin health screens and REST job/audit listings (not `get_logs`) |
-| `settings.manage` | `update_settings` (sensitive; site identity and SEO keys only, see below) |
+| `settings.manage` | `update_settings` (sensitive; site identity and SEO keys only, see below); `list_services`, `get_service`, `set_service` (sensitive) |
+| `system.capability_test` | `test_service` |
 | `migrations.run` | Migration preview and status (when the WordPress migrator is installed) |
 | `commerce.manage` | `list_products` (when commerce is installed) |
 | `mcp.approve_self` | Sensitive tools run immediately, with no human approval. It must be listed explicitly in the key's scopes: `*` does **not** imply it. |
@@ -140,6 +141,7 @@ command exits with an error). Example: `claude mcp add --transport http gorun "h
 | `templates` | `list_templates`, `get_template`, `create_template_draft` |
 | `site` | `get_site_structure`, `get_logs` |
 | `settings` | `update_settings` |
+| `services` | `list_services`, `get_service`, `set_service`, `test_service` |
 | `migration` | `preview_migration`, `get_migration_status` (WordPress migrator installed) |
 | `commerce` | `list_products` (commerce installed) |
 | `canvas` | `list_canvases`, `get_canvas`, `list_canvas_pending_runs`, `get_canvas_context`, `get_canvas_source`, `request_canvas_run`, `append_canvas_result` |
@@ -199,6 +201,10 @@ and comment statuses, filter operators, order direction, field types, builder pu
 | `create_template_draft` | themes.manage | **yes** | Approval saves an override **as a draft only**. A human previews and publishes it in Appearance → Templates. Use the authenticated admin preview to render Go template instructions before publication. |
 | `get_logs` | audit.read | | Own audit tail only (`limit` ≤ 200, optional `action`; IPs stripped). Site-wide failed/dead jobs stay on `system.health` (admin / `GET /api/v1/jobs`). |
 | `update_settings` | settings.manage | **yes** | `{"settings":{"site.title":"…"}}`. Allowed keys: `site.title`, `site.tagline`, `site.locale`, `site.timezone`, `site.logo`, `site.logo_dark`, `site.logo_light` and `site.icon` (each an existing media id or empty), `contact.email`, `site.posts_per_page` (1–100; a number or numeric string, stored as a number), `seo.title_template`, `seo.default_description`, `seo.default_og_image`, `seo.robots_txt`. String values, validated with the same rules as the admin pages. All keys are saved in one transaction, or none are. `site.content_locales`, `site.base_url`, `site.theme` and `site.front_page` stay admin-only. A `site.locale` update must select an already configured public content language and is checked inside the write transaction. |
+| `list_services` | settings.manage | | The five services (mail, storage, chat, analytics, backups) with their status: `state` (`off`, `configured`, `incomplete`), `missing`, `fields`, `secret_set`. Never a secret's value ([SERVICES.md](SERVICES.md)) |
+| `get_service` | settings.manage | | One service's status by `name` |
+| `set_service` | settings.manage | **yes** | `{"name":"mail","values":{"host":"…","port":465}}`: changes only the given fields (strings, numbers or booleans), validated like the admin; nothing is saved if one is invalid. A key naming a secret (`password`, `api_key`, `keys`) is refused with `validation_failed` before the call is parked, so no secret is ever stored with an approval. Answers `{"status":…}`, plus `needs_secret` (`link`, `expires_at`, `cli`) when the service is `incomplete` for want of its secret: the [one-time link](#one-time-secret-link) is made for the key's owner and is absolute on the site's base URL. The approvals page shows the fields and their new values. Audited `service.update` with `via: mcp` |
+| `test_service` | system.capability_test | | The service's safe test by `name`: mail sends one test message to the key owner's own address; chat and storage say `no test` |
 | `preview_migration` | migrations.run | | Dry-run report of a WordPress migration (only if wpmigrate is installed) |
 | `get_migration_status` | migrations.run | | Migration progress (only if wpmigrate is installed) |
 | `list_products` | commerce.manage | | Store products (only if commerce is installed) |
@@ -221,14 +227,15 @@ non-agent card for `request_canvas_run` or a malformed request return `validatio
 Read-only tools: every `list_*` and `get_*` tool, `read_channel_messages` and `check_approval`
 (`preview_migration` is a dry run for content but records its preview plan, so it is not read-only).
 Destructive tools: `delete_content`, `delete_comment`,
-`update_content`, `update_content_type_fields`, `update_settings`, `update_media`, `create_template_draft`,
+`update_content`, `update_content_type_fields`, `update_settings`, `set_service`, `update_media`, `create_template_draft`,
 `save_page_layout`, `publish_page_layout` and `restore_page_layout_revision`. Everything else only adds or
 changes state reversibly.
 
 ### One-time secret link
 
 A service secret (the SMTP password, the Resend API key, the storage `ACCESS_KEY:SECRET_KEY`) never passes
-through an MCP argument or a REST field. When a service needs one, GoRun answers with a one-time link,
+through an MCP argument or a REST field. When a service needs one, `set_service` and
+`PATCH /api/v1/site/services/{name}` answer with `needs_secret` and a one-time link,
 `/admin/services/<name>/secret?t=<token>`, for a person to open:
 
 - It works **once**, for **one** service, and stops **15 minutes** after it was made. A used, expired or

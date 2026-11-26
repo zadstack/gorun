@@ -1,6 +1,6 @@
 # Services
 
-A site connects five services: `mail`, `storage`, `chat`, `analytics` and `backups`. Each one has the same shape on every surface (`gorun service`, and in 0.28 the MCP `services` toolset and the REST API): a list of fields, at most one secret, and a status.
+A site connects five services: `mail`, `storage`, `chat`, `analytics` and `backups`. Each one has the same shape on every surface (`gorun service`, the MCP `services` toolset, the REST API under `/api/v1/site/services` and `gorun info`): a list of fields, at most one secret, and a status.
 
 A status never contains a secret, only `secret_set` (true or false). Every change is audited as `service.update` with the field names only and `via` (`cli`, `mcp`, `api` or `admin`).
 
@@ -109,3 +109,34 @@ printf '%s\n' "$ACCESS_KEY:$SECRET_KEY" | gorun service set storage provider=r2 
 `set` prints `service <name>: <state>` (with the missing items when `incomplete`). A wrong value exits non-zero with `service: invalid <field names>`, and nothing is saved. A secret given as `key=value` (`password=…`, `api_key=…`, `keys=…`) is refused the same way. `test` prints the result as JSON and exits non-zero when it did not pass (storage has no synchronous test and says `no test`).
 
 `gorun mail set --provider … [--secret-stdin | --clear-secret]` stays as an alias of `gorun service set mail` ([docs/MAIL-OPERATIONS.md](MAIL-OPERATIONS.md#configure-mail-from-the-shell)).
+
+## From an agent or a script
+
+The MCP toolset `services` and the REST operations call the same registry as the shell, with the same validation and the same statuses. Neither ever takes a secret: a key that names one (`password`, `api_key`, `keys`) is refused as `validation_failed` with `services.error.secret_value`, and nothing is saved.
+
+| MCP tool | REST | Scope | Notes |
+|---|---|---|---|
+| `list_services` | `GET /api/v1/site/services` | `settings.manage` | every status |
+| `get_service` | `GET /api/v1/site/services/{name}` | `settings.manage` | one status |
+| `set_service` | `PATCH /api/v1/site/services/{name}` | `settings.manage` | `{"values":{…}}` (MCP adds `"name"`); only the fields given change. On MCP it needs human approval (sensitive) |
+| — | `DELETE /api/v1/site/services/{name}` | `settings.manage` | `off`; answers the new status |
+| `test_service` | `POST /api/v1/site/services/{name}/test` | `system.capability_test` | mail sends one test message to the caller's own address |
+
+Values may be strings, numbers or booleans (`"port": 465` is `port=465`). A set answers the new status, and when the service is `incomplete` because its secret is missing, `needs_secret`:
+
+```json
+{
+  "status": {"name": "mail", "state": "incomplete", "missing": ["password"], "secret_set": false, "…": "…"},
+  "needs_secret": {
+    "link": "https://example.com/admin/services/mail/secret?t=…",
+    "expires_at": "2026-11-26T12:15:00Z",
+    "cli": "printf '%s\\n' \"$SECRET\" | gorun service set mail --secret-stdin"
+  }
+}
+```
+
+The link is the [one-time secret page](MCP.md#one-time-secret-link): a person signed in with `settings.manage` opens it within 15 minutes and types the secret once. It is made for the calling user (audited as `link_actor` when used) and is absolute when the site's base URL is known. Changes are audited as `service.update` with `via: mcp` or `via: api`. An unknown service name is `not_found` (HTTP 404).
+
+## In `gorun info`
+
+`gorun info` adds `services`, the same list as `gorun service list`. Its `mail` block stays as it was.
