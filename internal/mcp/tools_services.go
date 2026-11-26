@@ -20,7 +20,7 @@ type serviceNameInput struct {
 
 type setServiceInput struct {
 	Name   string         `json:"name" enum:"mail,storage,chat,analytics,backups" jsonschema:"the service"`
-	Values map[string]any `json:"values" jsonschema:"field name → new value (string, number or boolean); only these fields change, the others and the stored secret stay. Never a secret (password, api_key, keys): it is refused"`
+	Values map[string]any `json:"values" jsonschema:"field name → new value (string, number or boolean); only these fields change, the others and the stored secret stay. Only the service's declared fields; never a secret (password, api_key, keys): it is refused"`
 }
 
 type listServicesOut struct {
@@ -37,6 +37,12 @@ func (s *server) serviceTools(reg *services.Registry) []kernel.MCPTool {
 		}
 		_, err := serviceValues(reg, in)
 		return err
+	}
+	s.storedResults["set_service"] = func(data any) any {
+		if res, ok := data.(services.SetResult); ok {
+			return res.Redacted(storedLinkNote)
+		}
+		return data
 	}
 	return []kernel.MCPTool{
 		{Name: "list_services", Title: "List services", Toolset: kernel.MCPToolsetServices, ReadOnly: true, Idempotent: true, Scopes: []string{scopeSettings}, Input: struct{}{},
@@ -59,7 +65,8 @@ func (s *server) serviceTools(reg *services.Registry) []kernel.MCPTool {
 			})},
 		{Name: "set_service", Title: "Set service", Toolset: kernel.MCPToolsetServices, Destructive: true, Sensitive: true, Scopes: []string{scopeSettings}, Input: setServiceInput{},
 			Description: "Change only the given fields of a service, validated like the admin; nothing is saved if one is invalid. A secret is never an argument: " +
-				"when the service still lacks it the answer carries needs_secret, a one-time admin link (15 minutes, once) for a person to type it, and the CLI line. Needs human approval.",
+				"when the service still lacks it the answer carries needs_secret, a one-time admin link (15 minutes, once) for a person to type it, and the CLI line; " +
+				"values that need the secret to be saved (a new storage bucket) are held with the link and applied with the secret (pending). A key that is not a field of the service is refused. Needs human approval.",
 			Handler: bind(func(ctx context.Context, in setServiceInput) (any, error) {
 				values, err := serviceValues(reg, in)
 				if err != nil {
@@ -108,9 +115,15 @@ func (s *server) serviceTools(reg *services.Registry) []kernel.MCPTool {
 	}
 }
 
+// storedLinkNote is the needs_secret note of an approved set_service
+// result as stored (and returned by check_approval): its link is redacted.
+const storedLinkNote = "The one-time link is redacted in a stored result. Call set_service again for a fresh link " +
+	"(a key with mcp.approve_self gets it in the answer), or run the CLI line on the site."
+
 // serviceValues checks a set_service call before it is parked or run: a
-// known service, at least one value, scalar values only, and no key that
-// names a secret (so a secret is never stored with a parked call).
+// known service, at least one value, scalar values only, and only keys the
+// service declares as fields (so a secret, under its own name or any other,
+// is never stored with a parked call).
 func serviceValues(reg *services.Registry, in setServiceInput) (map[string]string, error) {
 	svc, ok := reg.Get(in.Name)
 	if !ok {
@@ -124,7 +137,7 @@ func serviceValues(reg *services.Registry, in setServiceInput) (map[string]strin
 	for k := range in.Values {
 		keys[k] = ""
 	}
-	for k, v := range services.SecretValueFields(svc, keys) {
+	for k, v := range services.RemoteFields(svc, keys) {
 		bad[k] = v // whatever its value's type
 	}
 	if len(bad) > 0 {

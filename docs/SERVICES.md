@@ -112,7 +112,7 @@ printf '%s\n' "$ACCESS_KEY:$SECRET_KEY" | gorun service set storage provider=r2 
 
 ## From an agent or a script
 
-The MCP toolset `services` and the REST operations call the same registry as the shell, with the same validation and the same statuses. Neither ever takes a secret: a key that names one (`password`, `api_key`, `keys`) is refused as `validation_failed` with `services.error.secret_value`, and nothing is saved.
+The MCP toolset `services` and the REST operations call the same registry as the shell, with the same validation and the same statuses. Neither ever takes a secret: a key that names one (`password`, `api_key`, `keys`) is refused as `validation_failed` with `services.error.secret_value`, any other key that is not one of the service's fields above (`secret_key`, `resend_api_key`, …) with `services.error.unknown_field`, and nothing is saved. On MCP both are refused before the call is parked, so no such value is stored with an approval or shown in its preview.
 
 | MCP tool | REST | Scope | Notes |
 |---|---|---|---|
@@ -135,7 +135,23 @@ Values may be strings, numbers or booleans (`"port": 465` is `port=465`). A set 
 }
 ```
 
-The link is the [one-time secret page](MCP.md#one-time-secret-link): a person signed in with `settings.manage` opens it within 15 minutes and types the secret once. It is made for the calling user (audited as `link_actor` when used) and is absolute when the site's base URL is known. Changes are audited as `service.update` with `via: mcp` or `via: api`. An unknown service name is `not_found` (HTTP 404).
+The link is the [one-time secret page](MCP.md#one-time-secret-link): a person signed in with `settings.manage` opens it within 15 minutes and types the secret once. It is made for the calling user (audited as `link_actor` when used), is bound to the provider it was made for (after a provider change it is gone and saves nothing) and is absolute when the site's base URL is known.
+
+When the values can only be saved together with the secret (storage on a site with no bucket bound yet, or on a new endpoint), nothing is saved by the set: the values are checked as they would be with a secret, held with the link (never the secret, and only the token's hash), and applied in the same transaction as the secret when the link is used. The answer then has `"pending": true` and a `cli` line that carries the values:
+
+```json
+{
+  "status": {"name": "storage", "state": "off", "…": "…"},
+  "needs_secret": {
+    "link": "https://example.com/admin/services/storage/secret?t=…",
+    "expires_at": "2026-11-26T12:15:00Z",
+    "cli": "printf '%s\\n' \"$SECRET\" | gorun service set storage 'account=…' 'bucket=site-media' 'provider=r2' 'purpose=media' --secret-stdin",
+    "pending": true
+  }
+}
+```
+
+An approved MCP call stores its result (read back with `check_approval`) with the link redacted (`?t=…redacted`) and a `note`: only the live answer of a call that runs at once carries the token. Call `set_service` again for a fresh link, or run the CLI line on the site. Changes are audited as `service.update` with `via: mcp` or `via: api`. An unknown service name is `not_found` (HTTP 404).
 
 ## In `gorun info`
 

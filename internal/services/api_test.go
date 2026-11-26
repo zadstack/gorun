@@ -106,3 +106,29 @@ func TestServicesRESTUnknownName(t *testing.T) {
 		}
 	}
 }
+
+// PATCH refuses a key the service does not declare (whatever its name),
+// and a new storage bucket answers needs_secret with the values held.
+func TestServicesRESTUnknownKeyAndPendingStorage(t *testing.T) {
+	e := bootPage(t)
+	ctx := context.Background()
+	c := apitest.NewClient(t, e.app, "settings.manage")
+	status, body := c.Patch("/v1/site/services/mail", map[string]any{"values": map[string]any{"from": "a@example.com", "resend_api_key": "re_hunter2"}})
+	errObj, _ := body["error"].(map[string]any)
+	fields, _ := errObj["fields"].(map[string]any)
+	if status != http.StatusUnprocessableEntity || fields["resend_api_key"] != "services.error.unknown_field" {
+		t.Fatalf("PATCH with an undeclared key: %d %v", status, body)
+	}
+	status, body = c.Patch("/v1/site/services/storage", map[string]any{"values": map[string]any{
+		"provider": "r2", "account": "0123456789abcdef0123456789abcdef", "bucket": "site-media", "purpose": "media"}})
+	data, _ := body["data"].(map[string]any)
+	ns, _ := data["needs_secret"].(map[string]any)
+	if status != http.StatusOK || ns["pending"] != true || !strings.Contains(str(ns["cli"]), "'bucket=site-media'") {
+		t.Fatalf("PATCH storage: %d %v", status, body)
+	}
+	if v := e.app.Deps.Settings.GetString(ctx, "storage.active.media", ""); v != "" {
+		t.Fatalf("bound before the keys came: %q", v)
+	}
+}
+
+func str(v any) string { s, _ := v.(string); return s }

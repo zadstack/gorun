@@ -224,6 +224,9 @@ func (st *approvalStore) Approve(ctx context.Context, id string) (a *Approval, w
 	if runErr != nil {
 		status = StatusFailed
 	}
+	if rewrite := st.s.storedResults[a.Tool]; rewrite != nil && runErr == nil {
+		data = rewrite(data)
+	}
 	result, mErr := json.Marshal(st.s.envelope(a.Tool, data, runErr))
 	if mErr != nil {
 		status = StatusFailed

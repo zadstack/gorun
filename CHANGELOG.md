@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `set_service` and `PATCH /api/v1/site/services/{name}` refuse any key that is not one of the service's fields (`services.error.unknown_field`) before the MCP call is parked, so a secret under another name (`secret_key`, `resend_api_key`) is never stored in `mcp_approvals` or shown in the approval preview ([docs/SERVICES.md](docs/SERVICES.md#from-an-agent-or-a-script)).
+- An approved `set_service` stores its result with the one-time link redacted, so the raw token no longer rests in `mcp_approvals` or comes back from `check_approval`; only the live answer carries it ([docs/MCP.md](docs/MCP.md#one-time-secret-link)).
+- Storage can be connected over MCP and REST: a set that needs the keys to be saved answers `needs_secret` with the values held with the link (`pending: true`) and applied together with the keys, and a link is bound to the provider it was made for ([docs/SERVICES.md](docs/SERVICES.md#from-an-agent-or-a-script)).
+
 ## [0.28.0] - 2026-11-26
 
 ### Upgrade notes

@@ -203,7 +203,7 @@ and comment statuses, filter operators, order direction, field types, builder pu
 | `update_settings` | settings.manage | **yes** | `{"settings":{"site.title":"…"}}`. Allowed keys: `site.title`, `site.tagline`, `site.locale`, `site.timezone`, `site.logo`, `site.logo_dark`, `site.logo_light` and `site.icon` (each an existing media id or empty), `contact.email`, `site.posts_per_page` (1–100; a number or numeric string, stored as a number), `seo.title_template`, `seo.default_description`, `seo.default_og_image`, `seo.robots_txt`. String values, validated with the same rules as the admin pages. All keys are saved in one transaction, or none are. `site.content_locales`, `site.base_url`, `site.theme` and `site.front_page` stay admin-only. A `site.locale` update must select an already configured public content language and is checked inside the write transaction. |
 | `list_services` | settings.manage | | The five services (mail, storage, chat, analytics, backups) with their status: `state` (`off`, `configured`, `incomplete`), `missing`, `fields`, `secret_set`. Never a secret's value ([SERVICES.md](SERVICES.md)) |
 | `get_service` | settings.manage | | One service's status by `name` |
-| `set_service` | settings.manage | **yes** | `{"name":"mail","values":{"host":"…","port":465}}`: changes only the given fields (strings, numbers or booleans), validated like the admin; nothing is saved if one is invalid. A key naming a secret (`password`, `api_key`, `keys`) is refused with `validation_failed` before the call is parked, so no secret is ever stored with an approval. Answers `{"status":…}`, plus `needs_secret` (`link`, `expires_at`, `cli`) when the service is `incomplete` for want of its secret: the [one-time link](#one-time-secret-link) is made for the key's owner and is absolute on the site's base URL. The approvals page shows the fields and their new values. Audited `service.update` with `via: mcp` |
+| `set_service` | settings.manage | **yes** | `{"name":"mail","values":{"host":"…","port":465}}`: changes only the given fields (strings, numbers or booleans), validated like the admin; nothing is saved if one is invalid. A key naming a secret (`password`, `api_key`, `keys`), or any key that is not one of the service's fields (`secret_key`, `resend_api_key`, …), is refused with `validation_failed` before the call is parked, so no secret is ever stored with an approval or shown in its preview. Answers `{"status":…}`, plus `needs_secret` (`link`, `expires_at`, `cli`) when the service is `incomplete` for want of its secret: the [one-time link](#one-time-secret-link) is made for the key's owner and is absolute on the site's base URL. Values that can only be saved with the secret (storage on a new bucket) are not saved: they are held with the link and applied with the secret (`pending: true`). An approved call's stored result (and `check_approval`) has the link redacted, with a `note` to call `set_service` again for a fresh one. The approvals page shows the fields and their new values. Audited `service.update` with `via: mcp` |
 | `test_service` | system.capability_test | | The service's safe test by `name`: mail sends one test message to the key owner's own address; chat and storage say `no test` |
 | `preview_migration` | migrations.run | | Dry-run report of a WordPress migration (only if wpmigrate is installed) |
 | `get_migration_status` | migrations.run | | Migration progress (only if wpmigrate is installed) |
@@ -238,8 +238,13 @@ through an MCP argument or a REST field. When a service needs one, `set_service`
 `PATCH /api/v1/site/services/{name}` answer with `needs_secret` and a one-time link,
 `/admin/services/<name>/secret?t=<token>`, for a person to open:
 
-- It works **once**, for **one** service, and stops **15 minutes** after it was made. A used, expired or
-  other-service link says so and saves nothing; ask for a new one by setting the service again.
+- It works **once**, for **one** service and the provider it was made for, and stops **15 minutes** after it
+  was made. A used, expired, other-service or other-provider link says so and saves nothing; ask for a new one
+  by setting the service again.
+- Values a set could only save with the secret (storage on a new bucket) are held with the link and applied
+  in the same transaction as the secret; a link is only made for values that would be accepted with one.
+- The raw token is only in the live answer: an approved call's result stored in `mcp_approvals` has the link
+  redacted (`?t=…redacted`).
 - The person must be signed in with `settings.manage`. The page has one password field
   (`autocomplete="off"`), is CSRF-protected, is sent with `Cache-Control: no-store` and `Referrer-Policy:
   no-referrer`, and never shows the secret again.

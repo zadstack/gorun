@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -152,5 +153,65 @@ func TestSetServiceReturnsSecretLink(t *testing.T) {
 	chat := a.ok("set_service", map[string]any{"name": "chat", "values": map[string]any{"provider": "chatwoot", "base_url": "https://chat.example.com", "website_token": "tok12345"}})
 	if _, ok := chat["needs_secret"]; ok {
 		t.Fatalf("chat needs no secret: %v", chat)
+	}
+}
+
+// A key that is not one of the service's declared fields is refused before
+// the call is parked, so a secret under any other name (secret_key,
+// resend_api_key) never lands in mcp_approvals; the error names the key.
+func TestSetServiceRefusesUnknownKeyBeforeParking(t *testing.T) {
+	e := newServicesEnv(t)
+	a := e.agent("settings.manage")
+	for _, c := range []struct{ name, key string }{
+		{"storage", "secret_key"},
+		{"mail", "resend_api_key"},
+		{"chat", "api_token"},
+	} {
+		errObj := a.fails("set_service", map[string]any{"name": c.name, "values": map[string]any{"provider": "r2", c.key: "hunter2-undeclared"}})
+		fields, _ := errObj["fields"].(map[string]any)
+		if str(errObj, "code") != "validation_failed" || fields[c.key] != "services.error.unknown_field" {
+			t.Fatalf("%s %s: %v", c.name, c.key, errObj)
+		}
+	}
+	if n := e.count(`SELECT COUNT(*) FROM mcp_approvals WHERE args_json LIKE '%hunter2%'`); n != 0 {
+		t.Fatalf("an undeclared key's value was parked for approval (%d rows)", n)
+	}
+	if n := e.count(`SELECT COUNT(*) FROM mcp_approvals`); n != 0 {
+		t.Fatalf("approvals = %d, want 0", n)
+	}
+}
+
+// tokenInLink matches a raw one-time token in a secret link.
+var tokenInLink = regexp.MustCompile(`secret\?t=[A-Za-z0-9_-]{43}`)
+
+// An approved set_service that ends in needs_secret stores its result with
+// the link redacted: the raw one-time token never rests in mcp_approvals,
+// and check_approval says how to get a fresh link.
+func TestSetServiceLinkNotStoredInApprovals(t *testing.T) {
+	e := newServicesEnv(t)
+	a := e.agent("settings.manage")
+	res := a.ok("set_service", map[string]any{"name": "mail", "values": map[string]any{
+		"provider": "smtp", "host": "smtp.example.com", "port": 465, "tls": "tls", "username": "mailer", "from": "site@example.com"}})
+	aid := str(res, "approval_id")
+	if str(res, "status") != "pending_approval" || aid == "" {
+		t.Fatalf("set_service must park: %v", res)
+	}
+	if status, _ := apitest.NewClient(t, e.app, "mcp.approve").Post("/v1/mcp/approvals/"+aid+"/approve", nil); status != http.StatusOK {
+		t.Fatalf("approve: %d", status)
+	}
+	if n := e.count(`SELECT COUNT(*) FROM settings WHERE key LIKE 'services.secret_link.%'`); n != 1 {
+		t.Fatalf("links = %d, want 1", n)
+	}
+	var stored string
+	if err := e.app.Deps.DB.QueryRow(`SELECT result_json FROM mcp_approvals WHERE id = ?`, aid).Scan(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if tokenInLink.MatchString(stored) || !strings.Contains(stored, "redacted") || !strings.Contains(stored, "needs_secret") {
+		t.Fatalf("stored result carries the raw link or no redacted one: %s", stored)
+	}
+	got := a.ok("check_approval", map[string]any{"approval_id": aid})
+	raw, _ := json.Marshal(got)
+	if tokenInLink.Match(raw) || !strings.Contains(string(raw), "set_service again") {
+		t.Fatalf("check_approval = %s", raw)
 	}
 }
