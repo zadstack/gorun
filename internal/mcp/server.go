@@ -45,6 +45,11 @@ type server struct {
 	// is parked (tool name → check), so arguments that must never be
 	// stored (a secret) are refused up front; set during Register.
 	parkChecks map[string]func(ctx context.Context, args json.RawMessage) error
+	// storedResults rewrite a tool's result before an approved call stores
+	// it in mcp_approvals (tool name → rewrite), so a credential that only
+	// the live answer may carry (a one-time link) never rests there; set
+	// during Register.
+	storedResults map[string]func(data any) any
 }
 
 // principalFunc returns the acting context for one request or call: the
@@ -53,7 +58,7 @@ type principalFunc func(ctx context.Context) (context.Context, error)
 
 func newServer(d *kernel.Deps, keys auth.KeyService, users auth.Service) *server {
 	s := &server{d: d, keys: keys, users: users, log: logger(d), dynamic: map[string]func(context.Context, json.RawMessage) bool{},
-		parkChecks: map[string]func(context.Context, json.RawMessage) error{}}
+		parkChecks: map[string]func(context.Context, json.RawMessage) error{}, storedResults: map[string]func(any) any{}}
 	s.approvals = &approvalStore{s: s}
 	d.Services.Set(serviceName, s)
 	return s
