@@ -450,6 +450,16 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ---
 
+## 0.26 upgrade notes
+
+From 0.25.x. No migrations, no new environment variables and no new Go dependencies.
+
+**How to upgrade.** Release binaries: `gorun upgrade --data <data> --dry-run`, stop the service, `gorun upgrade --data <data>`, start it again ([Automatic upgrade](#automatic-upgrade)). Images and Coolify: pin `ghcr.io/zadstack/gorun:0.26.0` and redeploy.
+
+**What changes.** `gorun info` adds a `mail` object (provider, SMTP host, sender, `configured`, `secret_set`; never a secret). Nothing else changes.
+
+**Rollback to 0.25.x** is possible on the same data; `gorun info` then prints no `mail` object.
+
 ## 0.25 upgrade notes
 
 From 0.24.x. No new environment variables and no new Go dependencies.
