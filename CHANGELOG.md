@@ -5,6 +5,39 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-11-26
+
+### Upgrade notes
+
+Details: [docs/UPGRADE.md](docs/UPGRADE.md#024-upgrade-notes).
+
+- No migrations, no new environment variables and no new Go dependencies (version bumps only: `golang.org/x/*`, `modernc.org/sqlite` v1.62.0, `pb33f/libopenapi` v0.43.2, `maxminddb-golang` v2.9.1). Rolling back to 0.23.x on the same data is possible.
+- **Custom themes that restyle the shared store pages.** The shared `shop`, `product`, `cart`, `checkout`, `account` and `form-result` templates (and the order-status fragment) now use the Basecoat classes `.btn`, `.alert`, `.table`, `.field`, `.card`, `.badge` and `.empty` inside `.gp-core`, so they no longer emit `zad-button`, `zad-button-outline`, `zad-error`, `zad-notice`, `zad-cart-table` or `zad-table-scroll`. A theme or custom CSS that targeted those classes should target the new ones under its own scope (`html[data-theme="x"] .gp-core .btn`). The five catalog themes need nothing.
+- **Theme CSS sizes.** The catalog themes now size text with the shared type scale (`--fs-*`, fluid from `lg` up) and `--leading-*` line heights from `tokens.css`. Headings change size slightly on phones and wide screens; a theme that copied a catalog stylesheet keeps its own values until it adopts the steps ([docs/THEME-CONTRACT.md](docs/THEME-CONTRACT.md#type-scale)).
+- Signed-in staff now see an admin bar on public pages, sent with `Cache-Control: private, no-store`. Each person can hide it for the session; a reverse proxy that caches HTML should already skip responses for signed-in users.
+- From this release on, release binaries can upgrade themselves with `gorun upgrade` (see Added). Upgrading **to** 0.24.0 from 0.23.x still follows the manual runbook, because 0.23.x has no `upgrade` command.
+
+### Added
+
+- `gorun upgrade [--to vX.Y.Z] [--dry-run] [--yes] [--binary-only]` and `gorun rollback` for macOS and Linux release binaries. Upgrade resolves the latest stable release (or the pinned one), verifies the archive against the release's SHA-256 list with the same asset names as `install.sh`, runs the new binary's `version`, takes and verifies a backup and prints its stamp, refreshes the bundled themes the site already has in its themes directory (custom themes and admin overrides untouched, `default` installed if missing), then atomically replaces the executable and keeps the previous one with its version, backup stamp and replaced themes. A failure part-way restores every moved theme before the binary is touched. Rollback restores the binary and themes and prints the `backup-restore` command for the recorded stamp; migrations stay applied. Containers and Coolify are sent to the image runbook; `--dry-run` writes nothing ([docs/UPGRADE.md](docs/UPGRADE.md#automatic-upgrade)).
+- `gorun doctor` checks the whole installation: themes directory, site key, `gorun.lock` held by another process, free disk space (warns under 1 GiB), age of the last verified backup (warns when missing or older than seven days), trusted-proxy and HSTS settings, alongside the existing data, permissions, port, database, schema, admin, onboarding and theme checks. Configuration problems are reported one by one instead of stopping at the first. `--support` adds version, OS and architecture with nothing secret; `--check-updates` asks the configured release index for a newer build. The `--json` object and the check IDs are unchanged, and doctor still never writes to the database ([docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)).
+- **Connect your agent** on AI Agents → API keys: right after a key is created, ready-to-copy configuration for Claude Code, Claude Desktop (stdio) and any streamable-HTTP client, filled with the site URL and the new key; every key in the list offers the same snippets with a placeholder (secrets are never shown again). **Test connection** runs MCP `initialize` and `tools/list` in process as that key and shows the server version, key kind and scopes, toolsets and the tools it can see, or the reason it fails (revoked, expired, wrong secret, scopes that reach no tool) ([docs/MCP.md](docs/MCP.md#client-configuration)).
+- MCP prompts (`draft_post`, `translate_item`, `seo_review`, `site_overview`, in Arabic or English, listed only when the key can call every tool they use), completions for types, taxonomies, terms, content slugs, locales, menus and templates, and resource templates `gorun://content/{type}/{slug}`, `gorun://media/{id}` and `gorun://menu/{slug}`. All follow the key's scopes; `resources/list` is now filtered by scope like `tools/list` ([docs/MCP.md](docs/MCP.md)).
+- Admin bar on public pages for signed-in staff: dashboard, **Edit this page** when the person may edit it, website settings and their name, first in the page in their own admin language and direction, without JavaScript or theme changes. A hide link turns it off for the session ([docs/THEMES.md](docs/THEMES.md#the-admin-bar)).
+- One fluid type scale for every layer: `--fs-xs` … `--fs-display` and `--leading-*` in `themes/_base/tokens.css`, fixed small steps and fluid steps from `lg` up, taller Arabic line heights under `dir="rtl"`. Tailwind's `text-*` utilities in both public builds, Basecoat's components and the admin (a compact instance of the same names) read it ([docs/THEME-CONTRACT.md](docs/THEME-CONTRACT.md#type-scale)).
+- The admin is built on [Basecoat](https://basecoatui.com) (shadcn/ui for plain HTML) with a compiled Tailwind v4 stylesheet; the in-browser Tailwind runtime is gone. **Design → Components** (`/admin/design/components`) shows every shared component in each state and the site components, and a visual regression suite compares them and the shared store pages with committed baselines ([docs/ADMIN_COMPONENTS.md](docs/ADMIN_COMPONENTS.md), [docs/E2E.md](docs/E2E.md#visual-baselines--اللقطات-الأساسية)).
+- The shared store, cart, checkout, account and form-result pages use Basecoat's components, compiled into `core.css` under `.gp-core`, so they look consistent under every theme. Themes get shadcn's role names (`--primary`, `--background`, `--border`, …) as aliases of their identity tokens; `theme doctor` reports a theme that overrides a role name directly ([docs/THEME-CONTRACT.md](docs/THEME-CONTRACT.md#role-tokens)).
+
+### Changed
+
+- Clearer first run: a busy port says GoRun may already be running and suggests `--addr :8081`; starting the same site twice says so; a restart prints the exact `gorun user password` command for a lost first password. After a wrong or locked sign-in the page explains how to recover.
+- Publishing from the editor with an empty title is refused with a field error (drafts may stay untitled); published items get **View on site**. Media upload lists the accepted types and suggests JPEG for iPhone HEIC photos. The sidebar's **Settings** opens General settings, and menu locations show translated names. The audit behind these changes is in [docs/reports/ease-of-use-audit.md](docs/reports/ease-of-use-audit.md).
+
+### Fixed
+
+- Basecoat's `details summary { display: inline-flex }` shrank the page tree's disclosure rows so a click landed on the title link; summaries outside Basecoat accordions are list items again.
+- The shared checkout's honeypot field pushed Arabic pages to over 11 000 px wide; it is hidden with `clip-path` instead of a negative offset.
+
 ## [0.23.0] - 2026-11-12
 
 ### Upgrade notes
@@ -1420,7 +1453,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/zadstack/gorun/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/zadstack/gorun/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/zadstack/gorun/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/zadstack/gorun/compare/v0.20.0...v0.21.0
