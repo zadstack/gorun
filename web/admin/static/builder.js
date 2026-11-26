@@ -123,28 +123,34 @@
  if(key==="image"&&root.dataset.canPickMedia==="true") {const id=`builder-image-${sectionID}-${entryIndex??"section"}`;imageTargets.set(id,input);const choose=button("choose_image",()=>window.dispatchEvent(new CustomEvent("media:open",{detail:{target:id}})));wrap.append(choose);}
  parent.append(wrap);
   }
-  const nativeKinds = ["hero", "features", "steps", "comparison", "faq", "product_preview", "media_text", "switcher", "directory", "task_entry"];
-  const nativeOnlyKinds = ["steps", "comparison", "product_preview", "media_text", "switcher", "directory", "task_entry"];
-  // Entry images stay on these kinds; task choices use text, links and icons.
-  const entryImageKinds = ["features", "steps", "media_text", "switcher"];
-  function nativeVariants(kind) {
-    if (kind === "hero") return ["default", "split", "centered"];
-    if (kind === "faq") return ["default", "split"];
-    if (kind === "task_entry") return ["default", "search_first", "choice_first", "service_first"];
-    if (kind === "features") return ["default", "compact_rows", "image_led", "featured_secondary"];
-    if (kind === "directory") return ["default", "compact"];
-    if (kind === "media_text") return ["default", "image_start", "image_end"];
-    return ["default"];
+  // The section schema (internal/builder/schema.go, served in the editor
+  // state) is the one table of what each kind accepts: the form below is
+  // built from it, so a kind added to the schema gets its form here without
+  // a matching branch in this file.
+  const schema = config.schema || {legacy: {variants: ["split", "centered"], fields: ["title", "text", "image", "image_alt", "link", "link_label"], items: true, item_fields: ["title", "text", "image", "image_alt", "link", "price"]}, native: [], native_only: [], icons: [""], backgrounds: [""]};
+  const kindSchema = kind => schema.native.find(k => k.kind === kind);
+  const nativeKinds = schema.native.map(k => k.kind);
+  const nativeOnlyKinds = schema.native_only || [];
+  // accepts(kind, "image" | "item.link" | "native.eyebrow") under the section library.
+  function accepts(kind, field) {
+    const k = kindSchema(kind);
+    if (!k) return false;
+    if (field.startsWith("item.")) return !!k.items && (k.item_fields || []).includes(field.slice(5));
+    if (field.startsWith("native.")) return (k.native_fields || []).includes(field.slice(7));
+    return (k.fields || []).includes(field);
   }
+  const requires = (kind, what) => ((kindSchema(kind) || {}).required || []).includes(what);
+  function nativeVariants(kind) { return ["default", ...((kindSchema(kind) || {}).variants || [])]; }
   function nativeSwitchBlocked(section) {
+    const kind = section.kind;
     if (section.hero_scene || section.feed) return true;
     if (section.link && !section.link_label?.trim()) return true;
-    if (["faq", "switcher"].includes(section.kind) && (section.items || []).some(entry => !entry.title?.trim())) return true;
-    if (section.kind === "features" && (section.items || []).some(entry => entry.link && !entry.title?.trim())) return true;
-    if (!["hero", "product_preview"].includes(section.kind) && (section.image || section.image_alt)) return true;
-    if (["hero", "comparison", "product_preview", "directory"].includes(section.kind) && section.items?.length) return true;
-    if (!nativeVariants(section.kind).includes(section.variant || "default")) return true;
-    return (section.items || []).some(entry => entry.price || (section.kind !== "features" && entry.link) || (!entryImageKinds.includes(section.kind) && (entry.image || entry.image_alt)));
+    if (requires(kind, "item.title") && (section.items || []).some(entry => !entry.title?.trim())) return true;
+    if ((section.items || []).some(entry => entry.link && !entry.title?.trim())) return true;
+    if (!accepts(kind, "image") && (section.image || section.image_alt)) return true;
+    if (!(kindSchema(kind) || {}).items && section.items?.length) return true;
+    if (!nativeVariants(kind).includes(section.variant || "default")) return true;
+    return (section.items || []).some(entry => (entry.price && !accepts(kind, "item.price")) || (entry.link && !accepts(kind, "item.link")) || ((entry.image || entry.image_alt) && !accepts(kind, "item.image")));
   }
   // Field edits do not re-render the editor, preserving focus and selection.
   // Recompute the native option from the current section instead of leaving a
@@ -205,9 +211,10 @@
     const options = section.native || (section.native = {});
     const group = el("fieldset", "border border-line p-3 space-y-2");
     group.append(el("legend", "font-medium", text("library_native")));
-    selectField(options, "background", ["", "inherit", "none", "dots", "grid", "lines", "circles", "waves", "paper", "solid"], group);
-    if (section.kind === "hero") {
-      for (const key of ["eyebrow", "secondary_link", "secondary_label"]) field(options, key, group, section.id);
+    if (accepts(section.kind, "native.background")) selectField(options, "background", schema.backgrounds, group);
+    if (accepts(section.kind, "native.eyebrow")) field(options, "eyebrow", group, section.id);
+    if (accepts(section.kind, "native.secondary_link")) for (const key of ["secondary_link", "secondary_label"]) field(options, key, group, section.id);
+    if (accepts(section.kind, "native.facts")) {
       (options.facts || []).forEach((fact, index) => {
         const row = el("fieldset", "border border-line p-2"); row.append(el("legend", "", text("fact")));
         field(fact, "label", row, section.id, index); field(fact, "value", row, section.id, index);
@@ -215,21 +222,21 @@
       });
       group.append(button("add_fact", () => mutate(() => { options.facts = options.facts || []; options.facts.push({label: text("fact"), value: "0"}); }), (options.facts || []).length >= 8));
     }
-    if (["hero", "product_preview"].includes(section.kind)) {
-      field(options, "caption", group, section.id);
+    if (accepts(section.kind, "native.caption")) field(options, "caption", group, section.id);
+    if (accepts(section.kind, "native.illustration")) {
       checkbox(options, "illustration", group);
       group.append(el("p", "text-muted-foreground text-sm", text("illustration_help")));
     }
-    if (section.kind === "task_entry") {
+    if (accepts(section.kind, "native.search")) {
       group.append(el("p", "text-muted-foreground text-sm", text("task_entry_help")));
       if (section.variant === "search_first") {
         const search = options.search || (options.search = {action: "", label: text("search_label_default"), param: "q"});
         for (const key of ["action", "label", "placeholder", "param"]) field(search, key, group, section.id, undefined, "search_" + key);
       }
     }
-    if (section.kind === "features" && ["compact_rows", "image_led", "featured_secondary"].includes(section.variant)) field(options, "empty_text", group, section.id);
-    if (section.kind === "comparison") comparisonFields(section, options, group);
-    if (section.kind === "directory") {
+    if (accepts(section.kind, "native.empty_text") && section.variant && section.variant !== "default") field(options, "empty_text", group, section.id);
+    if (accepts(section.kind, "native.columns")) comparisonFields(section, options, group);
+    if (accepts(section.kind, "native.list_type")) {
       if (!options.list_type) options.list_type = "post";
       field(options, "list_type", group, section.id);
       group.append(el("p", "text-muted-foreground text-sm", text("list_type_help")));
@@ -627,7 +634,7 @@
       const advanced=el("details","border border-line p-3 space-y-2");advanced.append(el("summary","cursor-pointer font-medium",text("advanced")));advanced.open=advancedSections.has(section.id);advanced.addEventListener("toggle",()=>{if(!advanced.isConnected)return;if(advanced.open)advancedSections.add(section.id);else advancedSections.delete(section.id);});
  const variantLabel = el("label", "block text-sm", text("variant")),
         variant = el("select", "bg-panel border border-line p-2");
-      (native ? nativeVariants(section.kind) : ["default", "split", "centered"]).forEach((value) => {
+      (native ? nativeVariants(section.kind) : ["default", ...(schema.legacy.variants || [])]).forEach((value) => {
         const option = el("option", "", text("layout_" + value));
         option.value = value;
         variant.append(option);
@@ -681,7 +688,7 @@
         }
       }
 
-      ["title", "text", ...(!native || ["hero", "product_preview"].includes(section.kind) ? ["image", "image_alt"] : []), "link", "link_label"].forEach(
+      (native ? (kindSchema(section.kind) || schema.legacy).fields : schema.legacy.fields).forEach(
         (key) => field(section, key, article, section.id),
       );
       if (native) nativeFields(section, article);
@@ -697,17 +704,16 @@
       );
       hideLabel.prepend(hide);
       article.append(hideLabel);
-      if (section.kind !== "form" && (!native || ["features", "steps", "faq", "media_text", "switcher", "task_entry"].includes(section.kind))) {
+      const itemFields = native ? (kindSchema(section.kind) || {}).item_fields || [] : schema.legacy.item_fields;
+      if (section.kind !== "form" && (!native || (kindSchema(section.kind) || {}).items)) {
       (section.items || []).forEach((entry, itemIndex) => {
         const group = el("fieldset", "border border-line p-3 space-y-2");
         group.append(el("legend", "", `${text("item")} ${itemIndex + 1}`));
-        (native ? section.kind === "features" ? ["title", "text", "image", "image_alt", "link"] : section.kind === "task_entry" ? ["title", "text", "link"] : entryImageKinds.includes(section.kind) ? ["title", "text", "image", "image_alt"] : ["title", "text"] : ["title", "text", "image", "image_alt", "link", "price"]).forEach(
+        itemFields.filter(key => key !== "icon" && key !== "featured").forEach(
           (key) => field(entry, key, group, section.id, itemIndex),
         );
-        if (native && ["features", "task_entry"].includes(section.kind)) {
-          selectField(entry, "icon", ["", "bolt", "shield", "chart", "globe", "clock", "check", "layers"], group);
-          if (section.kind === "features") checkbox(entry, "featured", group);
-        }
+        if (itemFields.includes("icon")) selectField(entry, "icon", schema.icons, group);
+        if (itemFields.includes("featured")) checkbox(entry, "featured", group);
         group.append(
           button(
             "remove_item",

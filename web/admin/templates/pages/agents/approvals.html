@@ -28,6 +28,10 @@
           <h3 class="field-label">{{t "mcp.approvals.args"}}</h3>
           {{template "approval-args" .}}
         </div>
+        {{if or .Preview .PreviewError}}<div data-approval-preview>
+          <h3 class="field-label">{{t "mcp.approvals.preview"}}</h3>
+          {{if .PreviewError}}<p class="field-help text-red">{{t "mcp.approvals.preview_error"}}</p>{{else}}<pre class="approval-preview" dir="auto">{{.Preview}}</pre>{{end}}
+        </div>{{end}}
         <div class="flex flex-wrap gap-2">
           <form method="post" action="/admin/agents/approvals/{{.ID}}/approve" hx-post="/admin/agents/approvals/{{.ID}}/approve" hx-target="#main" hx-swap="innerHTML"
                 hx-confirm="{{t "mcp.approvals.approve_confirm" .Tool}}">

@@ -19,6 +19,9 @@ func (*Module) Migrations() fs.FS { return files }
 func (*Module) Catalogs() fs.FS   { return files }
 func (*Module) Register(d *kernel.Deps) error {
 	svc := &service{d: d}
+	for _, p := range textPermissions {
+		d.Perms.Declare(p.name, map[string]string{"en": p.en, "ar": p.ar})
+	}
 	registerLayoutAPI(d, svc)
 	d.Services.Set("builder", svc)
 	d.Router.Public.Get("/static/builder/builder.css", func(w http.ResponseWriter, r *http.Request) {

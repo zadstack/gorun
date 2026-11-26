@@ -260,3 +260,60 @@ func TestAdminPreviewRendersPendingStarterWithProposedTheme(t *testing.T) {
 		t.Fatalf("corrupt starter run preview HTTP %d", rec.Code)
 	}
 }
+
+// draft.json feeds the in-place editor on the public page: the draft, the
+// CSRF token, the publish permission and whether the draft equals what was
+// published. A page never published, or with unpublished work, is out of
+// sync, and the editor on the page refuses it.
+func TestAdminDraftJSONReportsSync(t *testing.T) {
+	h, cs, ctx := adminFixture(t)
+	it, err := cs.Create(ctx, content.Input{Type: "page", Title: "Page", Status: "draft"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	type response struct {
+		Draft      Draft  `json:"draft"`
+		CanPublish bool   `json:"can_publish"`
+		InSync     bool   `json:"in_sync"`
+		CSRF       string `json:"csrf"`
+	}
+	read := func() response {
+		rec := adminCall(ctx, h.draftJSON, it.ID, "")
+		if rec.Code != 200 {
+			t.Fatalf("draft.json HTTP %d %s", rec.Code, rec.Body.String())
+		}
+		if cc := rec.Header().Get("Cache-Control"); cc != "private, no-store" {
+			t.Fatalf("draft.json Cache-Control = %q", cc)
+		}
+		var res response
+		if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {
+			t.Fatal(err)
+		}
+		return res
+	}
+	if res := read(); res.InSync || !res.CanPublish {
+		t.Fatalf("never-published page: %+v", res)
+	}
+	saveBody := `{"document":` + heroDocJSON(t, "First") + `,"base_updated_at":"` + content.EditToken(it) + `"}`
+	saved := decodeDraft(t, adminCall(ctx, h.save, it.ID, saveBody))
+	if res := read(); res.InSync {
+		t.Fatal("unpublished draft reported in sync")
+	}
+	if rec := adminCall(ctx, h.publish, it.ID, `{"updated_at":"`+saved.UpdatedAt+`"}`); rec.Code != 200 {
+		t.Fatalf("publish HTTP %d %s", rec.Code, rec.Body.String())
+	}
+	res := read()
+	if !res.InSync || res.Draft.Document.Sections[0].Title != "First" {
+		t.Fatalf("published page not in sync: %+v", res)
+	}
+	saveBody = `{"document":` + heroDocJSON(t, "Second") + `,"base_updated_at":"` + res.Draft.UpdatedAt + `"}`
+	if rec := adminCall(ctx, h.save, it.ID, saveBody); rec.Code != 200 {
+		t.Fatalf("second save HTTP %d %s", rec.Code, rec.Body.String())
+	}
+	if res := read(); res.InSync {
+		t.Fatal("draft with new work reported in sync")
+	}
+	if rec := adminCall(contributorCtx(), h.draftJSON, it.ID, ""); rec.Code != 403 {
+		t.Fatalf("foreign draft.json HTTP %d", rec.Code)
+	}
+}

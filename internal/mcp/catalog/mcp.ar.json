@@ -8,6 +8,8 @@
   "approvals.empty_recent": "لا توجد قرارات بعد.",
   "approvals.tool": "الأداة",
   "approvals.args": "المعاملات",
+  "approvals.preview": "ما سيغيّره هذا الاستدعاء الآن",
+  "approvals.preview_error": "تعذّر على الأداة وصف هذا الاستدعاء؛ راجع المعاملات.",
   "approvals.key": "مفتاح API",
   "approvals.requester": "مقدّم الطلب",
   "approvals.requested": "تاريخ الطلب",

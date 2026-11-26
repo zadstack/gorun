@@ -78,6 +78,7 @@ func (*Module) Register(d *kernel.Deps) error {
 	get(pub, theme.CoreCSSPath, h.coreCSS)
 	get(pub, theme.NativeUICSSPath, h.nativeUICSS)
 	get(pub, theme.AdminBarCSSPath, h.adminBarCSS)
+	get(pub, theme.AdminBarJSPath, h.adminBarJS)
 	// Shareable preview links; other /preview/... paths fall through to pages.
 	get(pub.With(h.siteLocale), content.PreviewPathPrefix+"{token:"+content.PreviewTokenPattern+"}", h.preview)
 

@@ -63,7 +63,7 @@ asset FS (`web/embed.go`); `themes` and `patterns` are the bundled embeds (`them
 | `internal/menus` | core | `audit` `auth` `content` `db` `hooks` `httpx` `i18n` `kernel` `settings` `taxonomy` |
 | `internal/redirects` | core | `audit` `auth` `db` `hooks` `httpx` `kernel` |
 | `internal/seo` | core | `auth` `content` `db` `hooks` `httpx` `i18n` `kernel` `menus` `redirects` `settings` `taxonomy` |
-| `internal/theme` | core | `auth` `brand` `config` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `redirects` `seo` `settings` `taxonomy` `web` |
+| `internal/theme` | core | `auth` `brand` `config` `content` `db` `httpx` `i18n` `kernel` `media` `menus` `pkg/themekit` `redirects` `seo` `settings` `taxonomy` `web` |
 | `internal/pattern` | core | `auth` `config` `httpx` `i18n` `kernel` `pkg/patternkit` `settings` `theme` |
 | `internal/builder` | core | `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `mailer` `media` `menus` `settings` `theme` |
 | `internal/site` | core | `audit` `auth` `brand` `content` `db` `httpx` `i18n` `kernel` `mailer` `redirects` `seo` `settings` `taxonomy` `theme` |

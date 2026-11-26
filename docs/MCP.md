@@ -143,7 +143,7 @@ command exits with an error). Example: `claude mcp add --transport http gorun "h
 | `migration` | `preview_migration`, `get_migration_status` (WordPress migrator installed) |
 | `commerce` | `list_products` (commerce installed) |
 | `canvas` | `list_canvases`, `get_canvas`, `list_canvas_pending_runs`, `get_canvas_context`, `get_canvas_source`, `request_canvas_run`, `append_canvas_result` |
-| `builder` | `create_purpose_page`, `get_page_layout`, `save_page_layout`, `publish_page_layout`, `list_page_layout_revisions`, `get_page_layout_revision`, `restore_page_layout_revision` |
+| `builder` | `get_section_schema`, `create_purpose_page`, `get_page_layout`, `plan_page_layout`, `save_page_layout`, `publish_page_layout`, `list_page_layout_revisions`, `get_page_layout_revision`, `restore_page_layout_revision` |
 | `channels` | `list_channels`, `read_channel_messages`, `post_channel_message` (agent channels installed) |
 | `approvals` | `check_approval` |
 | `other` | tools that modules or extensions register without a toolset |
@@ -485,13 +485,17 @@ ignores `Mcp-Session-Id`. `GET /mcp` and `DELETE /mcp` return 405.
 
 ## Structured page builder tools
 
+- `get_section_schema`: `{locale?}`; read-only; returns every section kind with the fields, native options, entry fields, layouts and required values it accepts under each library, plus enums and limits; scope `content.view`. Read it before composing a document.
 - `create_purpose_page`: `{purpose, title, locale?}`; creates a private draft page for `about`, `service`, `methodology` or `contact` with its preset section structure (the hero takes the title; other sections start empty and hidden) and returns `{id, edit_url, draft}`; scopes `content.create` and `content.edit`. Nothing is published.
 - `get_page_layout`: `{id}`; returns the private draft, last-published flags and opaque version token; scope `content.edit`, with owner checks.
+- `plan_page_layout`: `{id, document}`; read-only dry run of a save: validates the document, returns what it would change in the current draft as a readable list (`plan`, with the structured `diff`), whether the result could be published, whether the draft is in sync with the published layout, and the `base_updated_at` a following save must carry. Nothing is written. Call it before `save_page_layout` and show the plan to the person; scope `content.edit`.
 - `save_page_layout`: `{id, document, base_updated_at}`; imports or updates a private draft without changing the public site; scope `content.edit`.
 - `publish_page_layout`: `{id, updated_at}`; scopes `content.edit` and `content.publish`; **sensitive**, so it waits for human approval before replacing public HTML.
 - `list_page_layout_revisions`: `{id}`; lists private layout history newest first; scope `content.edit`.
 - `get_page_layout_revision`: `{id, revision_id}`; reads one revision document for preview/comparison; scope `content.edit`.
 - `restore_page_layout_revision`: `{id, revision_id, updated_at}`; restores a revision into the private draft only; scope `content.edit`; **sensitive** (human approval). Public HTML stays unchanged until `publish_page_layout`.
+
+`publish_page_layout` and `restore_page_layout_revision` also describe themselves: a pending approval of either shows, on `/admin/agents/approvals`, what the call would change right now (the published layout against the draft, or the draft against the revision, section by section), and warns when the parked token no longer matches or the draft cannot be published. The description is computed when the page is viewed, as the person viewing, so it is current and respects their permissions.
 
 Pass the latest draft `updated_at` from get/save to the next operation. A conflict requires reloading the layout and reviewing the newer work. A portable document uses `version: 1` and ordered sections; copied media URLs still need their corresponding assets.
 

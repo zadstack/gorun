@@ -78,6 +78,8 @@
   "history_kind_restore": "Before restore",
   "history_kind_reset": "Before revert",
   "history_sections": "sections",
+  "history_changes": "Changes",
+  "history_no_changes": "No changes",
   "history_restored": "Draft restored from layout history. Public content is unchanged.",
   "history_conflict": "The draft changed. Reload the builder, then try restore again.",
   "history_missing": "That layout revision is no longer available.",

@@ -210,6 +210,29 @@ automatically deleted.
 See [storage](STORAGE.md), [production recovery](PRODUCTION.md) and
 [staging/cutover](STAGING.md).
 
+## Site export
+
+A backup is for restoring. `gorun export` is for reading and for keeping
+the site in Git:
+
+```sh
+gorun export --dest ~/sites/example --data /var/lib/gorun
+```
+
+writes a folder a person or a diff can read: `site.json` (title, tagline,
+base URL, theme, locale, version, exported at), `identity/<theme>.json`
+(the live site identity), `content/<type>/<slug>[.<locale>].json` next to
+the body as `.html` (or `.md`), `layouts/<page>.json` for every page built
+with the section builder (the published layout; `<page>.draft.json` only
+when the private draft differs), `media/media.json` with the media records
+and, under `media/files/`, the local files, and `pages/<path>/index.html`,
+every public page as the site renders it now, from the sitemap. Remote media
+and pages that do not render are listed in `export.json` as skipped.
+`--no-pages` and `--no-media` leave those parts out. Files are overwritten
+in place; what an earlier export wrote and no longer applies stays, so a
+Git diff shows it. Nothing is imported from this folder: it is a record
+and a way to review changes, not a restore format.
+
 ## بالعربية
 
 من **تشغيل النظام ← النسخ الاحتياطية** اختر يوميًا أو أسبوعيًا وحدد عدد النسخ

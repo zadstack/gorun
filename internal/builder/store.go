@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -14,6 +15,31 @@ import (
 )
 
 var ErrConflict = errors.New("builder: document changed; reload before saving")
+
+// ErrTextOnly: the account may change texts and images only (the Studio
+// editor), and the change does more than that.
+var ErrTextOnly = errors.New("builder: this account may change texts and images only")
+
+// The Studio editor's permissions (auth migration 0015 seeds the role):
+// PermEditText lets a user change the texts and images of a builder page
+// where they stand, with the admin bar's in-place editor; PermPublishText
+// lets them publish such changes. Both leave the layout to content.edit.
+const (
+	PermEditText    = "content.edit_text"
+	PermPublishText = "content.publish_text"
+)
+
+var textPermissions = []struct{ name, en, ar string }{
+	{PermEditText, "Edit texts and images in place", "تعديل النصوص والصور في مكانها"},
+	{PermPublishText, "Publish text and image changes", "نشر تغييرات النصوص والصور"},
+}
+
+// textOnly reports whether the principal may edit texts and images only:
+// content.edit_text without content.edit.
+func textOnly(ctx context.Context) bool {
+	return !auth.Can(ctx, "content.edit") && auth.Can(ctx, PermEditText)
+}
+
 var ErrForbidden = content.ErrForbidden
 var ErrNotFound = content.ErrNotFound
 
@@ -24,8 +50,40 @@ type Draft struct {
 	Document       Document `json:"document"`
 	BaseUpdatedAt  string   `json:"base_updated_at" format:"-"`
 	UpdatedAt      string   `json:"updated_at" format:"-"`
+	// published is the stored published_document_json ("null" when the
+	// page was never published from the builder); InSync compares it with
+	// the draft.
+	published string
 }
+
+// InSync reports whether the private draft equals the published layout:
+// nothing is waiting in the editor, so an edit made on the public page
+// changes exactly what the visitor sees there. A page never published from
+// the builder is never in sync.
+func (d *Draft) InSync() bool {
+	if d == nil || !d.HasPublished {
+		return false
+	}
+	var published Document
+	if err := json.Unmarshal([]byte(d.published), &published); err != nil {
+		return false
+	}
+	a, errA := json.Marshal(d.Document)
+	b, errB := json.Marshal(published)
+	return errA == nil && errB == nil && bytes.Equal(a, b)
+}
+
 type service struct{ d *kernel.Deps }
+
+// Layouts is the builder service as other packages reach it:
+// kernel.Get[builder.Layouts](d, "builder").
+type Layouts interface {
+	Load(ctx context.Context, id string) (*Draft, error)
+	Save(ctx context.Context, id string, doc Document, expected string) (*Draft, error)
+	Publish(ctx context.Context, id, expected string) error
+}
+
+var _ Layouts = (*service)(nil)
 
 func (s *service) content() (content.Service, error) {
 	cs, ok := kernel.Get[content.Service](s.d, kernel.ServiceContent)
@@ -34,10 +92,25 @@ func (s *service) content() (content.Service, error) {
 	}
 	return cs, nil
 }
+
+// editable returns the page when the principal may edit its layout.
 func (s *service) editable(ctx context.Context, id string) (*content.Item, error) {
 	if !auth.Can(ctx, "content.edit") {
 		return nil, ErrForbidden
 	}
+	return s.editableBy(ctx, id)
+}
+
+// editableText returns the page when the principal may edit its layout or
+// its texts (Load, Save and Publish; the text-only rules apply there).
+func (s *service) editableText(ctx context.Context, id string) (*content.Item, error) {
+	if !auth.Can(ctx, "content.edit") && !auth.Can(ctx, PermEditText) {
+		return nil, ErrForbidden
+	}
+	return s.editableBy(ctx, id)
+}
+
+func (s *service) editableBy(ctx context.Context, id string) (*content.Item, error) {
 	cs, err := s.content()
 	if err != nil {
 		return nil, err
@@ -63,7 +136,7 @@ func (s *service) editable(ctx context.Context, id string) (*content.Item, error
 	return it, nil
 }
 func (s *service) Load(ctx context.Context, id string) (*Draft, error) {
-	it, err := s.editable(ctx, id)
+	it, err := s.editableText(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +150,7 @@ func (s *service) Load(ctx context.Context, id string) (*Draft, error) {
 		return nil, fmt.Errorf("builder: load: %w", err)
 	}
 	out.HasPublished = published != "null"
+	out.published = published
 	out.ContentChanged = out.BaseUpdatedAt != content.EditToken(it)
 	if err = json.Unmarshal([]byte(raw), &out.Document); err != nil {
 		return nil, fmt.Errorf("builder: decode: %w", err)
@@ -87,12 +161,21 @@ func (s *service) Load(ctx context.Context, id string) (*Draft, error) {
 	return out, nil
 }
 func (s *service) Save(ctx context.Context, id string, doc Document, expected string) (*Draft, error) {
-	it, err := s.editable(ctx, id)
+	it, err := s.editableText(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	if err = Validate(doc); err != nil {
 		return nil, err
+	}
+	if textOnly(ctx) {
+		current, err := s.Load(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if !Diff(current.Document, doc).TextOnly() {
+			return nil, ErrTextOnly
+		}
 	}
 	raw, err := json.Marshal(doc)
 	if err != nil {
@@ -152,10 +235,11 @@ func (s *service) Save(ctx context.Context, id string, doc Document, expected st
 	return out, nil
 }
 func (s *service) Publish(ctx context.Context, id, expected string) error {
-	if !auth.Can(ctx, "content.publish") {
+	full := auth.Can(ctx, "content.publish")
+	if !full && !auth.Can(ctx, PermPublishText) {
 		return ErrForbidden
 	}
-	it, err := s.editable(ctx, id)
+	it, err := s.editableText(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -165,6 +249,14 @@ func (s *service) Publish(ctx context.Context, id, expected string) error {
 	}
 	if draft.UpdatedAt != expected {
 		return ErrConflict
+	}
+	if !full {
+		// content.publish_text publishes text and image changes only: the
+		// draft may differ from the published layout in nothing else.
+		var published Document
+		if !draft.HasPublished || json.Unmarshal([]byte(draft.published), &published) != nil || !Diff(published, draft.Document).TextOnly() {
+			return ErrTextOnly
+		}
 	}
 	if err := ValidatePublication(draft.Document); err != nil {
 		return err
@@ -190,7 +282,13 @@ func (s *service) Publish(ctx context.Context, id, expected string) error {
 	in.Template = "builder"
 	in.Status = "published"
 	in.PublishAt = ""
-	_, err = atomic.UpdateAtomic(ctx, id, in, draft.BaseUpdatedAt, func(tx *sql.Tx, saved *content.Item) error {
+	writeCtx := ctx
+	if !full {
+		// Authorized above under the text-only rule; the content service
+		// asks for the layout permissions, lent for this one write.
+		writeCtx = auth.WithGrant(ctx, "content.edit", "content.publish")
+	}
+	_, err = atomic.UpdateAtomic(writeCtx, id, in, draft.BaseUpdatedAt, func(tx *sql.Tx, saved *content.Item) error {
 		if err := s.addRevision(ctx, tx, id, RevisionKindPublish, draft.Document); err != nil {
 			return err
 		}

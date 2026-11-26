@@ -194,6 +194,18 @@ the head. No compiler runs in the browser and the app needs no Node.
 
 A theme opts in by listing `"identity"` in its `theme.json` `supports` (the five catalog themes `default`, `business`, `magazine`, `portfolio` and `docs` do). **Appearance → Identity** (`/admin/appearance/identity`; the page needs `settings.manage`, and colours, fonts, shape and custom CSS additionally need `themes.manage`, the permission that guards the same keys on Theme settings; without it those fields are disabled and ignored on save) is the one place that edits it, together with the site name, tagline and the four logo slots (`site.title`, `site.tagline`, `site.logo`, `site.logo_light`, `site.logo_dark`, `site.icon`); the same identity group also appears at the end of **Appearance → Theme settings** (a theme that declares one of these keys keeps its own definition). `{{identity .}}` prints the stored values. Values are stored per theme as `theme.<slug>.<key>`; empty values keep the theme's design.
 
+### The Variables panel
+
+The identity page lists the identity tokens as the light and the dark
+scheme would render them, side by side, with the role names
+(`--background`, `--primary`, …) that follow each token and the WCAG
+contrast of the pairs a reader meets: text, muted text and links on the
+page background, and text on accent fills. Both schemes are checked at
+once, so a colour that reads on the light page is not a surprise after
+switching to the dark scheme, and the column of the selected scheme is
+marked. The values update as the colours are typed; the save check keeps
+the final say on text contrast.
+
 ### Draft, preview, apply, revert
 
 Edits on the Identity page go to a per-theme draft (`theme.<slug>.identity_draft`, JSON `{snapshot, saved_at, author}`), saved on each change with JavaScript or with **Save draft** without it. The page's iframe (`GET /admin/appearance/identity/preview?view=home|single&locale=ar|en`) renders the real active theme with the draft injected for that request only: the identity stylesheet is printed inline under the CSP nonce instead of `/site/identity.css`, logos and title come from the draft, and nothing is cached or stored. **Apply** validates (hex colours, known fonts, custom CSS rules, logos that exist in the media library, text/background contrast ≥ 4.5:1 using the theme's declared colours as fallback), writes the theme keys and the site keys in one transaction, records a revision in `theme.<slug>.identity_history` (newest first, at most 10; the first apply first records the previous live state as a `baseline` revision) and clears the draft. **Revert** re-applies an earlier revision as a new `revert` revision. Neither touches content, menus or any other theme setting; a draft belongs to the theme it was made for and carries a hidden `theme` field, so a page opened for one theme is refused (409) once another theme is active. The draft also remembers the site values it started from: when another apply changed the title or a logo meanwhile, the draft takes the live value and says so. A theme's header link settings (`cta_label`, `cta_url`, when its `theme.json` declares them) are edited on the same page, kept in the draft and written in the apply transaction. A theme whose `theme.json` does not declare `identity` still gets logos, name and tagline on the page; its colour, font and custom CSS fields are disabled and apply leaves whatever it already stores untouched.
@@ -240,6 +252,36 @@ theme's header. The bar follows the staff member's admin language, not the page'
 (`/admin/x/site-bar/hide`) lasts the browser session. A page that carries the bar is sent with
 `Cache-Control: private, no-store`; pages for visitors are unchanged, byte for byte. Theme previews
 (`?gp_preview_override=1`, sandboxed) never get it.
+
+### Editing in place
+
+On a page published from the structured builder (`template` is `builder`, so
+the section ids survive in its body), the bar of a staff member who may edit
+the page also loads `/static/site/inline-edit.js` and shows **Edit in place**.
+The script asks `/admin/builder/<id>/draft.json` for the private draft, the
+CSRF token and whether that draft equals the published layout; when it does,
+it matches each section's texts (title, text, link label, item titles, texts
+and prices, hero eyebrow, caption, secondary label and facts) to the elements
+that show them, by section id and text, and makes those elements editable
+where they stand. Every change saves to the same draft the editor uses, with
+the editor's tokens, so revisions, conflicts and validation stay one system;
+**Publish** (for people with `content.publish`) is the editor's publish, and
+the page reloads. A draft that already differs from the published layout is
+not edited on the page: the bar says so and links the editor, since the
+visitor sees the published layout and the edit would land elsewhere. Layout,
+images, links and settings stay in the editor. Without script the bar is
+unchanged.
+
+**The Studio editor** is the role for a client or content editor who should
+change texts where they stand and nothing else. It holds `content.view`,
+`content.edit_text` and `content.publish_text` (auth migration 0015 seeds
+it; custom roles may hold the same permissions). Such an account gets the
+in-place editor on builder pages but not the full editor, and the builder
+enforces the limit on the server: a save that does more than change texts
+and images in place (sections, order, kind, layout, links, visibility,
+native structure, forms) is refused with `builder.text_only`, and a publish
+is accepted only when the draft differs from the published layout in texts
+and images alone.
 
 ### Rules that keep the layers readable
 
@@ -341,7 +383,7 @@ The starter content's About page (`gorun starter`) is built from these blocks as
 
 `/admin/builder/<page-id>` edits 15 section kinds: the existing hero, text, features, services, projects, testimonials, pricing, FAQ, statistics, logos, contact and call to action, plus native steps, comparison and product preview. Existing sections keep their legacy layout by default; hero/features/FAQ can explicitly opt into the theme section library. Native blocks use the existing `gp-s-*` markup and theme-resolved `sections.css`, including structured facts, feature icons, comparison cells and labeled CSS illustrations. See [the structured API contract](API.md#structured-theme-section-layouts) for supported fields and limits. Layouts support default, split and centered variants; the preview reflects page language, not admin language. For starter pages it renders the proposed theme, title and menu; for existing pages it renders the active installed theme. Both paths preserve the theme shell and stylesheet order without changing live content or identity. This works for custom themes as well as the Studio designs. Fields are plain text and safe URLs; the builder does not execute arbitrary user HTML. Up/down buttons complement drag ordering, and undo/redo operate within the open editor session.
 
-Autosave persists a separate structured draft in `builder_documents`, leaving public HTML untouched. Publishing joins rendered HTML, indexes, content revisions and the published JSON snapshot in one transaction. Each save that changes the JSON, each publish, reset and restore also appends a row to `builder_revisions` (capped by `builder.revisions_keep`, default 25). Editors can preview a prior revision or restore it into the private draft; restore requires a recent password confirmation in admin and does not change public HTML until the next publish. Reset still restores the last published JSON snapshot if present; a legacy draft without that snapshot resets to an empty editor. Converting an existing HTML body requires acknowledgement. An external HTML change causes a conflict and explicit reconciliation.
+Autosave persists a separate structured draft in `builder_documents`, leaving public HTML untouched. Publishing joins rendered HTML, indexes, content revisions and the published JSON snapshot in one transaction. The history lists, under each revision, the changes it recorded (the diff to the next newer revision, or to the current draft), section by section. Each save that changes the JSON, each publish, reset and restore also appends a row to `builder_revisions` (capped by `builder.revisions_keep`, default 25). Editors can preview a prior revision or restore it into the private draft; restore requires a recent password confirmation in admin and does not change public HTML until the next publish. Reset still restores the last published JSON snapshot if present; a legacy draft without that snapshot resets to an empty editor. Converting an existing HTML body requires acknowledgement. An external HTML change causes a conflict and explicit reconciliation.
 
 The default theme and all three Studio designs use `{{builderBody .Content}}` in `page-builder.html`, `{{builderStyle}}` for validated identity tokens, and `/static/builder/builder.css`. Custom themes can integrate those helpers and provide `components/contact-form.html` and `components/card.html`; merely selecting a custom theme does not guarantee builder styling. `builderBody` inserts real contact forms and public-only post feeds inside their section, preserving ordering. Sandbox previews show those components but block script execution and form submission. Stylesheets from the selected installed theme and its parents are embedded at their original cascade positions; bounded theme-local fonts and CSS images are embedded too, so they work inside the isolated preview. Asset reads reject traversal and escaping symlinks, with a 2 MiB per-file and 8 MiB total limit. External stylesheets and fonts are not loaded. JavaScript-only controls and enhancements must be tested on a staging site; the editor intentionally remains an inert preview.
 

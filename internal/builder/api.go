@@ -12,6 +12,7 @@ import (
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/content"
 	"github.com/zadstack/gorun/internal/httpx"
+	"github.com/zadstack/gorun/internal/i18n"
 	"github.com/zadstack/gorun/internal/kernel"
 )
 
@@ -68,6 +69,8 @@ func layoutFailure(err error) *layoutError {
 		return &layoutError{code: "validation_failed", message: "page layout cannot be published", fields: map[string]string{"document": taken.Error()}, cause: err}
 	}
 	switch {
+	case errors.Is(err, ErrTextOnly):
+		return &layoutError{code: "forbidden", message: "this account may change texts and images only", cause: err}
 	case errors.Is(err, ErrForbidden):
 		return &layoutError{code: "forbidden", message: "page layout access forbidden", cause: err}
 	case errors.Is(err, ErrNotFound):
@@ -102,7 +105,9 @@ func registerLayoutAPI(d *kernel.Deps, svc *service) {
 	}}
 	id := []kernel.APIParam{{Name: "id", In: "path", Type: "string", Required: true, Description: "page content ID"}}
 	rev := []kernel.APIParam{{Name: "id", In: "path", Type: "string", Required: true, Description: "page content ID"}, {Name: "revision", In: "path", Type: "string", Required: true, Description: "layout revision ID"}}
+	d.API.Add(kernel.APIOperation{Method: "GET", Path: "/v1/builder/schema", Summary: "Read the section schema: what each section kind accepts in each library, the enums and the limits", Tags: []string{"builder"}, Scopes: []string{"content.view"}, Response: SectionSchema{}, Handler: a.schema})
 	d.API.Add(kernel.APIOperation{Method: "GET", Path: "/v1/builder/{id}", Summary: "Read a private structured page layout and optimistic draft token", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: id, Response: Draft{}, Handler: a.get})
+	d.API.Add(kernel.APIOperation{Method: "POST", Path: "/v1/builder/{id}/plan", Summary: "Dry run of a draft save: validate a layout document and list what it would change in the private draft", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: id, Request: layoutPlanRequest{}, Response: LayoutPlan{}, Handler: a.planHTTP, Contract: contract})
 	d.API.Add(kernel.APIOperation{Method: "PUT", Path: "/v1/builder/{id}/draft", Summary: "Save a validated page layout as a separate private draft", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: id, Request: saveRequest{}, Response: Draft{}, Handler: a.save, Contract: contract})
 	d.API.Add(kernel.APIOperation{Method: "POST", Path: "/v1/builder/{id}/publish", Summary: "Publish a saved layout using its current opaque draft token", Tags: []string{"builder"}, Scopes: []string{"content.edit", "content.publish"}, Params: id, Request: layoutPublishRequest{}, Response: Draft{}, Handler: a.publish, Contract: contract})
 	d.API.Add(kernel.APIOperation{Method: "GET", Path: "/v1/builder/{id}/revisions", Summary: "List page-builder layout revisions (newest first)", Tags: []string{"builder"}, Scopes: []string{"content.edit"}, Params: id, Response: []LayoutRevision{}, Handler: a.listRevisions})
@@ -112,12 +117,20 @@ func registerLayoutAPI(d *kernel.Deps, svc *service) {
 	d.MCP.AddTool(kernel.MCPTool{Name: "create_purpose_page", Title: "Create purpose page draft", Toolset: kernel.MCPToolsetBuilder, Description: "Create a private draft page for a purpose (about, service, methodology or contact) with its editable section structure. The hero takes the title; other sections start empty and hidden. Nothing is published.", Input: PurposePageInput{}, Scopes: []string{"content.create", "content.edit"}, Handler: bindLayout(func(ctx context.Context, in PurposePageInput) (any, error) {
 		return a.createPurpose(ctx, in)
 	})})
+	d.MCP.AddTool(kernel.MCPTool{Name: "get_section_schema", Title: "Get section schema", Toolset: kernel.MCPToolsetBuilder, ReadOnly: true, Idempotent: true, Description: "Read the page-builder section schema: every section kind, the fields, native options, entry fields, layouts and required values each accepts under the legacy and the section library, plus enums and limits. Read it before composing a layout document.", Input: schemaInput{}, Scopes: []string{"content.view"}, Handler: bindLayout(func(ctx context.Context, in schemaInput) (any, error) {
+		return Schema(in.Locale), nil
+	})})
 	d.MCP.AddTool(kernel.MCPTool{Name: "get_page_layout", Title: "Get page layout", Toolset: kernel.MCPToolsetBuilder, ReadOnly: true, Description: "Read a private page-builder layout with its current opaque updated_at token. Requires ownership where applicable.", Input: layoutIDInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutIDInput) (any, error) { return a.load(ctx, in.ID) })})
+	d.MCP.AddTool(kernel.MCPTool{Name: "plan_page_layout", Title: "Plan page layout changes", Toolset: kernel.MCPToolsetBuilder, ReadOnly: true, Idempotent: true, Description: "Dry run of save_page_layout: validates a layout document against the schema and returns what it would change in the current private draft (a readable list, section by section), whether it could be published, and the base_updated_at a following save must carry. Nothing is written. Call it before save_page_layout and show the plan to the person.", Input: layoutPlanInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutPlanInput) (any, error) {
+		return a.plan(ctx, in.ID, in.Document)
+	})})
 	d.MCP.AddTool(kernel.MCPTool{Name: "save_page_layout", Title: "Save page layout draft", Toolset: kernel.MCPToolsetBuilder, Destructive: true, Description: "Import or update validated structured sections as a private page-builder draft; public content stays unchanged. Pass updated_at from get_page_layout as base_updated_at.", Input: layoutSaveInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutSaveInput) (any, error) {
 		return a.saveLayout(ctx, in.ID, in.Document, in.BaseUpdatedAt)
 	})})
 	d.MCP.AddTool(kernel.MCPTool{Name: "publish_page_layout", Title: "Publish page layout", Toolset: kernel.MCPToolsetBuilder, Destructive: true, Description: "Publish a saved page-builder draft, replacing public page content. Requires human approval and the current draft updated_at token.", Input: layoutPublishInput{}, Scopes: []string{"content.edit", "content.publish"}, Sensitive: true, Handler: bindLayout(func(ctx context.Context, in layoutPublishInput) (any, error) {
 		return a.publishLayout(ctx, in.ID, in.UpdatedAt)
+	}), Preview: layoutPreview(func(ctx context.Context, in layoutPublishInput) (string, error) {
+		return a.publishPreview(ctx, in.ID, in.UpdatedAt)
 	})})
 	d.MCP.AddTool(kernel.MCPTool{Name: "list_page_layout_revisions", Title: "List page layout revisions", Toolset: kernel.MCPToolsetBuilder, ReadOnly: true, Description: "List private page-builder layout revisions for a page, newest first. Does not change the draft or public page.", Input: layoutIDInput{}, Scopes: []string{"content.edit"}, Handler: bindLayout(func(ctx context.Context, in layoutIDInput) (any, error) {
 		return a.revisions(ctx, in.ID)
@@ -127,8 +140,134 @@ func registerLayoutAPI(d *kernel.Deps, svc *service) {
 	})})
 	d.MCP.AddTool(kernel.MCPTool{Name: "restore_page_layout_revision", Title: "Restore page layout revision", Toolset: kernel.MCPToolsetBuilder, Destructive: true, Description: "Restore a prior page-builder layout revision into the private draft. Public HTML is unchanged until publish. Requires human approval and the current draft updated_at token.", Input: layoutRestoreInput{}, Scopes: []string{"content.edit"}, Sensitive: true, Handler: bindLayout(func(ctx context.Context, in layoutRestoreInput) (any, error) {
 		return a.restore(ctx, in.ID, in.RevisionID, in.UpdatedAt)
+	}), Preview: layoutPreview(func(ctx context.Context, in layoutRestoreInput) (string, error) {
+		return a.restorePreview(ctx, in.ID, in.RevisionID, in.UpdatedAt)
 	})})
 }
+
+type layoutPlanInput struct {
+	ID       string   `json:"id"`
+	Document Document `json:"document"`
+}
+type layoutPlanRequest struct {
+	Document Document `json:"document"`
+}
+
+// LayoutPlan is what a save would do, without doing it.
+type LayoutPlan struct {
+	// Valid reports whether the document passes validation; Errors says why
+	// not. Publishable reports whether, once saved, it could be published.
+	Valid       bool              `json:"valid"`
+	Errors      map[string]string `json:"errors,omitempty"`
+	Publishable bool              `json:"publishable"`
+	// Diff lists what the document changes against the current draft.
+	Diff LayoutDiff `json:"diff"`
+	// Plan is Diff as text.
+	Plan string `json:"plan"`
+	// BaseUpdatedAt is the token a following save_page_layout must pass.
+	BaseUpdatedAt string `json:"base_updated_at" format:"-"`
+	// DraftInSync reports whether the current draft equals the published
+	// layout, so this change is the only unpublished work once saved.
+	DraftInSync bool `json:"draft_in_sync"`
+}
+
+// layoutPreview adapts a typed preview to kernel.MCPTool.Preview, decoding
+// the parked arguments the way the handler would.
+func layoutPreview[T any](fn func(ctx context.Context, in T) (string, error)) func(context.Context, json.RawMessage) (string, error) {
+	return func(ctx context.Context, raw json.RawMessage) (string, error) {
+		var in T
+		dec := json.NewDecoder(bytes.NewReader(raw))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&in); err != nil {
+			return "", err
+		}
+		return fn(ctx, in)
+	}
+}
+
+// plan is the dry run behind plan_page_layout and POST /v1/builder/{id}/plan.
+func (a *layoutAPI) plan(ctx context.Context, id string, doc Document) (*LayoutPlan, error) {
+	draft, err := a.load(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	out := &LayoutPlan{Valid: true, BaseUpdatedAt: draft.UpdatedAt, DraftInSync: draft.InSync()}
+	if err := Validate(doc); err != nil {
+		out.Valid, out.Errors = false, map[string]string{"document": err.Error()}
+	} else if err := ValidatePublication(doc); err == nil {
+		out.Publishable = true
+	}
+	out.Diff = Diff(draft.Document, doc)
+	out.Plan = out.Diff.Text()
+	return out, nil
+}
+
+func (a *layoutAPI) planHTTP(w http.ResponseWriter, r *http.Request) {
+	var req layoutPlanRequest
+	if err := decodeBuilder(w, r, &req); err != nil {
+		httpx.Error(w, 400, "validation_failed", "invalid JSON body", map[string]string{"body": err.Error()})
+		return
+	}
+	plan, err := a.plan(r.Context(), chi.URLParam(r, "id"), req.Document)
+	if err != nil {
+		a.writeError(w, err)
+		return
+	}
+	httpx.JSON(w, 200, plan, nil)
+}
+
+// publishPreview says what publishing the draft now would change on the
+// public page: the published layout against the draft, and whether the
+// parked token still matches.
+func (a *layoutAPI) publishPreview(ctx context.Context, id, token string) (string, error) {
+	draft, err := a.load(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	var published Document
+	if draft.HasPublished {
+		if err := json.Unmarshal([]byte(draft.published), &published); err != nil {
+			return "", err
+		}
+	}
+	text := Diff(published, draft.Document).Text()
+	if !draft.HasPublished {
+		text = "first publication from the builder: " + text
+	}
+	if draft.UpdatedAt != token {
+		text += "\n! the draft changed since this was requested; the call will be refused (conflict)"
+	}
+	if err := ValidatePublication(draft.Document); err != nil {
+		text += "\n! the draft cannot be published: " + err.Error()
+	}
+	return text, nil
+}
+
+// restorePreview says what restoring a revision into the draft would change.
+func (a *layoutAPI) restorePreview(ctx context.Context, id, revisionID, token string) (string, error) {
+	draft, err := a.load(ctx, id)
+	if err != nil {
+		return "", err
+	}
+	rev, err := a.revision(ctx, id, revisionID)
+	if err != nil {
+		return "", err
+	}
+	text := Diff(draft.Document, rev.Document).Text()
+	if draft.UpdatedAt != token {
+		text += "\n! the draft changed since this was requested; the call will be refused (conflict)"
+	}
+	return text, nil
+}
+
+type schemaInput struct {
+	Locale string `json:"locale,omitempty" enum:",ar,en" doc:"Locale of the kind labels; empty for English."`
+}
+
+func (a *layoutAPI) schema(w http.ResponseWriter, r *http.Request) {
+	httpx.JSON(w, 200, Schema(i18n.Locale(r.Context())), nil)
+}
+
 func (a *layoutAPI) load(ctx context.Context, id string) (*Draft, error) {
 	if err := layoutPermission(ctx, false); err != nil {
 		return nil, err

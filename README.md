@@ -137,6 +137,8 @@ GoRun Edge is a separate, experimental Workers-based edition with its own D1/R2 
 - **Arabic and English from the start.** A bilingual dashboard with native RTL support and responsive site themes.
 - **A complete editorial workflow.** Structured content, drafts, reviews, scheduled publishing, revision history and explicit staff permissions.
 - **Agents with boundaries.** MCP tools, scoped agent keys, human approvals for sensitive changes and an audit trail. Separate REST keys serve other integrations. Canvas boards stay private; agents and REST keys read only what they are granted.
+- **See what an agent built, then refine it where it stands.** An agent plans a layout change and shows the diff before it writes; a pending publish shows exactly what it would change on the page. Staff edit the texts of a built page on the live site from the admin bar, and a client's Studio account can change texts and images there and nothing else.
+- **Your site stays yours.** `gorun export` writes the whole site, content, layouts, identity, media and rendered pages, to a folder you can keep in Git.
 
 ## How GoRun works
 
@@ -174,7 +176,7 @@ Three repetitions on one disposable host; two logical server CPUs and a 2 GiB bu
 
 ## Write, review and publish
 
-Manage posts, pages, custom content types, fields, media and navigation in one place. Give editors, authors and contributors the permissions they need, and review changes before publishing.
+Manage posts, pages, custom content types, fields, media and navigation in one place. Give editors, authors and contributors the permissions they need, hand a client the Studio editor role to change texts in place and nothing else, and review changes before publishing.
 
 <table>
   <tr>
@@ -211,6 +213,8 @@ The editor autosaves to a private copy and never overwrites a newer save. Compar
 Activating a theme does not create starter pages; use the site builder for that. Patterns live under `patterns/` (not HTTP extensions). [Themes](docs/THEMES.md) · [Pattern plugins](docs/PATTERN-PLUGINS.md) · [Default-theme demo](assets/branding/screenshots/theme-home-en.png) · [Arabic article on mobile](assets/branding/screenshots/theme-post-ar-mobile.png).
 
 **Website → Design → Site design** brings **Build site** and **Visual identity** into one workspace. Prepare pages as drafts, review activation separately, and preview colors and typography locally before explicitly saving identity. Existing site content and theme settings remain yours. [Site design guide](docs/SITE-DESIGN-WORKSPACE.md).
+
+Once a page is published from the section builder, signed-in staff see **Edit in place** on the admin bar: click a text on the live page, type, and the change saves to the same draft the editor uses; **Publish** is the editor's publish. The identity page's **Variables** panel shows every identity token as the light and the dark scheme render it, the role names that follow it, and the WCAG contrast of each pair, updated as you type. The section editor builds its forms from one section schema that the validator and the `get_section_schema` tool share, so a new section kind is one row plus a template. [Editing in place and the Variables panel](docs/THEMES.md#editing-in-place).
 
 <table>
   <tr>

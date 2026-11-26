@@ -35,6 +35,10 @@ type approvalView struct {
 	ArgList      []approvalArg
 	ArgsPretty   string
 	ResultPretty string
+	// Preview is what the tool says the call would change now (tools with
+	// a Preview, pending approvals only); PreviewError when it could not say.
+	Preview      string
+	PreviewError bool
 }
 
 // approvalArg is one argument row. Code marks values that are JSON
@@ -93,6 +97,26 @@ func views(list []Approval) []approvalView {
 	return out
 }
 
+// previews asks each pending approval's tool what the call would change
+// now, as the person viewing the page. A tool without a Preview leaves the
+// view as it is; a Preview that fails is reported, never hidden.
+func (s *server) previews(ctx context.Context, list []approvalView) []approvalView {
+	for i, v := range list {
+		t, ok := s.d.MCP.Tool(v.Tool)
+		if !ok || t.Preview == nil {
+			continue
+		}
+		text, err := t.Preview(ctx, v.Args)
+		if err != nil {
+			s.log.Warn("mcp: approval preview", "tool", v.Tool, "approval", v.ID, "err", err)
+			list[i].PreviewError = true
+			continue
+		}
+		list[i].Preview = text
+	}
+	return list
+}
+
 func (s *server) registerAdmin(tpl *httpx.Templates) {
 	s.d.Admin.AddNav(kernel.NavItem{ID: "agents.approvals", LabelKey: approvalsLabel, Icon: "shield-check", Href: approvalsPath,
 		Permission: PermApprove, Group: "agents", Position: 10})
@@ -122,7 +146,7 @@ func (s *server) renderApprovals(w http.ResponseWriter, r *http.Request, tpl *ht
 			recent = append(recent, a)
 		}
 	}
-	tpl.Render(w, r, approvalsPage, approvalsData{Pending: views(pending), Recent: views(recent), Notice: notice})
+	tpl.Render(w, r, approvalsPage, approvalsData{Pending: s.previews(r.Context(), views(pending)), Recent: views(recent), Notice: notice})
 }
 
 type decideFunc func(ctx context.Context, id string) (*Approval, bool, error)

@@ -26,6 +26,7 @@ type editorState struct {
 	Draft    *Draft             `json:"draft"`
 	Defaults map[string]Section `json:"defaults"`
 	Labels   map[string]string  `json:"labels"`
+	Schema   SectionSchema      `json:"schema"`
 }
 
 func registerAdmin(d *kernel.Deps, svc *service) error {
@@ -35,9 +36,13 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	}
 	h := &adminHandlers{svc: svc, tpl: tpl, d: d}
 	r := d.Router.Admin.With(auth.RequirePerm("content.edit"))
+	// The in-place editor's routes also serve the Studio editor
+	// (content.edit_text); the store applies the text-only rules.
+	text := d.Router.Admin.With(auth.RequireAnyPerm("content.edit", PermEditText))
 	r.With(auth.RequirePerm("content.create")).Post("/builder/new", h.createPurposePage)
 	r.Get("/builder/{id}", h.editor)
-	r.Post("/builder/{id}/save", h.save)
+	text.Get("/builder/{id}/draft.json", h.draftJSON)
+	text.Post("/builder/{id}/save", h.save)
 	r.Post("/builder/{id}/preview", h.preview)
 	r.Post("/builder/{id}/suggest", h.suggest)
 	r.Post("/builder/{id}/reset", h.reset)
@@ -45,7 +50,7 @@ func registerAdmin(d *kernel.Deps, svc *service) error {
 	restore := r.With(auth.RequireRecentAuth)
 	restore.Get("/builder/{id}/revisions/{rev}/restore", h.restoreForm)
 	restore.Post("/builder/{id}/revisions/{rev}/restore", h.restoreSubmit)
-	r.With(auth.RequirePerm("content.publish")).Post("/builder/{id}/publish", h.publish)
+	text.With(auth.RequireAnyPerm("content.publish", PermPublishText)).Post("/builder/{id}/publish", h.publish)
 	return nil
 }
 func (h *adminHandlers) editor(w http.ResponseWriter, r *http.Request) {
@@ -78,15 +83,37 @@ func (h *adminHandlers) editor(w http.ResponseWriter, r *http.Request) {
 		h.fail(w, r, err)
 		return
 	}
+	history := revisionViews(revisions, draft.Document)
 	h.tpl.RenderWith(w, r, http.StatusOK, "admin", "pages/builder/editor.html", struct {
 		ID              string
 		State           editorState
 		Catalog         []BlockSpec
 		CanPublish      bool
 		HasExistingBody bool
-		Revisions       []LayoutRevision
+		Revisions       []revisionView
 		CanPickMedia    bool
-	}{chi.URLParam(r, "id"), editorState{draft, defaults, labels}, Catalog(locale), auth.Can(r.Context(), "content.publish"), item.Body != "" && (!draft.HasPublished || draft.ContentChanged), revisions, auth.Can(r.Context(), "media.upload") && builderMediaAvailable(h.d)})
+	}{chi.URLParam(r, "id"), editorState{draft, defaults, labels, Schema(locale)}, Catalog(locale), auth.Can(r.Context(), "content.publish"), item.Body != "" && (!draft.HasPublished || draft.ContentChanged), history, auth.Can(r.Context(), "media.upload") && builderMediaAvailable(h.d)})
+}
+
+// revisionView is a revision in the editor's history with the changes it
+// recorded. A revision stores the document before a change, so the change
+// is the diff to the next newer revision, or to the current draft for the
+// newest.
+type revisionView struct {
+	LayoutRevision
+	Changes LayoutDiff
+}
+
+func revisionViews(revisions []LayoutRevision, current Document) []revisionView {
+	out := make([]revisionView, len(revisions))
+	for i, rev := range revisions {
+		newer := current
+		if i > 0 {
+			newer = revisions[i-1].Document
+		}
+		out[i] = revisionView{LayoutRevision: rev, Changes: Diff(rev.Document, newer)}
+	}
+	return out
 }
 
 func builderMediaAvailable(d *kernel.Deps) bool {
@@ -120,6 +147,29 @@ func builderJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// draftJSON is GET /admin/builder/{id}/draft.json, what the in-place editor
+// on the public page (web/site/inline-edit.js) loads before it makes the
+// section texts editable: the draft with its tokens, the CSRF token its
+// saves must carry, whether this user may publish, and whether the draft
+// equals the published layout. The script refuses to edit a page whose
+// draft holds unpublished work, since the visitor sees the published layout
+// and the edit would land elsewhere.
+func (h *adminHandlers) draftJSON(w http.ResponseWriter, r *http.Request) {
+	draft, err := h.svc.Load(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "private, no-store")
+	builderJSON(w, 200, struct {
+		Draft      *Draft `json:"draft"`
+		CanPublish bool   `json:"can_publish"`
+		CanLayout  bool   `json:"can_layout"`
+		InSync     bool   `json:"in_sync"`
+		CSRF       string `json:"csrf"`
+	}{draft, auth.Can(r.Context(), "content.publish") || auth.Can(r.Context(), PermPublishText), auth.Can(r.Context(), "content.edit"), draft.InSync(), auth.CSRFToken(r.Context())})
 }
 func (h *adminHandlers) save(w http.ResponseWriter, r *http.Request) {
 	var req saveRequest
@@ -234,6 +284,10 @@ func (h *adminHandlers) fail(w http.ResponseWriter, r *http.Request, err error) 
 	var taken *FormSlugTakenError
 	if errors.As(err, &taken) {
 		builderJSON(w, status, map[string]string{"error": "builder.form_slug_taken", "slug": taken.Slug})
+		return
+	}
+	if errors.Is(err, ErrTextOnly) {
+		builderJSON(w, 403, map[string]string{"error": "builder.text_only"})
 		return
 	}
 	builderJSON(w, status, map[string]string{"error": "builder.error"})

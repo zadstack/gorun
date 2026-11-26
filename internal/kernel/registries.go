@@ -310,6 +310,12 @@ type MCPTool struct {
 	// Aliases are deprecated earlier names: still callable, never listed.
 	Aliases []string
 	Handler func(ctx context.Context, args json.RawMessage) (any, error)
+	// Preview, when set, describes in plain text what a call with args
+	// would change right now, without changing anything: the approvals
+	// page shows it to the person deciding on a parked sensitive call, and
+	// a tool may also offer it as a plan. It runs as the person viewing,
+	// so it must apply that person's permissions.
+	Preview func(ctx context.Context, args json.RawMessage) (string, error)
 }
 
 // MCP toolsets: the groups a client may select with ?toolsets= on /mcp.
@@ -368,6 +374,21 @@ func (r *MCPRegistry) AddTool(t MCPTool) {
 }
 
 // Tools returns the tools in registration order.
+// Tool returns the registered tool named name (aliases included).
+func (r *MCPRegistry) Tool(name string) (MCPTool, bool) {
+	for _, t := range r.Tools() {
+		if t.Name == name {
+			return t, true
+		}
+		for _, alias := range t.Aliases {
+			if alias == name {
+				return t, true
+			}
+		}
+	}
+	return MCPTool{}, false
+}
+
 func (r *MCPRegistry) Tools() []MCPTool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

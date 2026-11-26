@@ -5,6 +5,19 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Upgrade notes
+
+- `auth/0015_studio_role` seeds the **Studio editor** role (`studio`) with `content.view`, `content.edit_text` and `content.publish_text`; the builder module declares the two permissions. Nothing changes for existing roles, and rolling back leaves the role unused.
+
+### Added
+
+- **Edit in place** on the admin bar: on a page published from the section builder, staff who may edit it click a text on the live page and type; the change saves to the same private draft the editor uses, with the editor's tokens, revisions and validation, and **Publish** is the editor's publish. A draft that already holds unpublished layout work is refused on the page and the bar links the editor instead. Served by `GET /admin/builder/{id}/draft.json` and `web/site/inline-edit.js`, linked only into those pages ([docs/THEMES.md](docs/THEMES.md#editing-in-place)).
+- The **Studio editor** role and the `content.edit_text` / `content.publish_text` permissions: a client or content editor changes the texts and images of built pages where they stand and publishes those changes, and nothing else. The builder enforces it on the server: a save that does more is refused with `builder.text_only`, and a publish is accepted only when the draft differs from the published layout in texts and images alone. `auth.WithGrant` lends a context permissions for one operation a module has authorized under its own rule, keeping the person as the audit actor.
+- A **Variables** panel on Appearance → Identity: the identity tokens as the light and the dark scheme render them, the role names aliased to each (`--background`, `--primary`, …) and the WCAG level of text, muted text and links on the background and of text on accent fills, in both schemes at once, recomputed as the colours are typed ([docs/THEMES.md](docs/THEMES.md#the-variables-panel)).
+- One **section schema** (`internal/builder/schema.go`) says what each section kind accepts under each library; the validator reads it, the section editor builds every section's form from it, and `GET /v1/builder/schema` and the `get_section_schema` tool return it with enums and limits. A new kind is one row plus its template.
+- **Layout diffs and a plan step**: `plan_page_layout` and `POST /v1/builder/{id}/plan` dry-run a draft save (validity, what would change section by section, whether it could be published, the save token). MCP tools gain an optional `Preview`; a pending approval of `publish_page_layout` or `restore_page_layout_revision` shows on `/admin/agents/approvals` what the call would change right now, with a warning when the parked token is stale. The editor's layout history lists the changes each revision recorded ([docs/MCP.md](docs/MCP.md#structured-page-builder-tools)).
+- `gorun export --dest DIR` writes the site to a folder to keep in Git: `site.json`, the live identity, every content item next to its body, the builder layouts (published, and the draft when it differs), media records and local files, and every public page as rendered ([docs/BACKUPS.md](docs/BACKUPS.md#site-export)).
+
 ## [0.24.1] - 2026-11-26
 
 ### Upgrade notes

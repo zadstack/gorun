@@ -16,6 +16,10 @@ type principal struct {
 	csrf   string
 	token  string // session cookie token, for logout
 	reauth string // session reauth_at: last sign-in or password confirmation
+	// granted are permissions a module lent this principal for one
+	// operation it has already authorized itself (WithGrant). The role and
+	// the key's scopes are not consulted for them.
+	granted map[string]bool
 }
 
 type principalKey struct{}
@@ -33,6 +37,29 @@ func principalFrom(ctx context.Context) *principal {
 // CLI and jobs that act on behalf of a user.
 func WithUser(ctx context.Context, u *User) context.Context {
 	return withPrincipal(ctx, &principal{kind: "user", user: u})
+}
+
+// WithGrant returns ctx with perms added to the acting principal, for the
+// calls a module makes on that person's behalf after it has authorized the
+// operation under its own, narrower rule: the builder publishes a Studio
+// editor's text changes through the content service, which asks for
+// content.edit and content.publish, once it has checked that the draft
+// changes texts only. The audit actor stays the person; a context without
+// a principal is returned unchanged.
+func WithGrant(ctx context.Context, perms ...string) context.Context {
+	p := principalFrom(ctx)
+	if p == nil {
+		return ctx
+	}
+	copied := *p
+	copied.granted = make(map[string]bool, len(p.granted)+len(perms))
+	for k := range p.granted {
+		copied.granted[k] = true
+	}
+	for _, perm := range perms {
+		copied.granted[perm] = true
+	}
+	return withPrincipal(ctx, &copied)
 }
 
 // UserFromContext returns the acting user (an API key's owner for key

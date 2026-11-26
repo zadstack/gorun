@@ -78,6 +78,8 @@
   "history_kind_restore": "قبل الاستعادة",
   "history_kind_reset": "قبل التراجع",
   "history_sections": "أقسام",
+  "history_changes": "التغييرات",
+  "history_no_changes": "لا تغييرات",
   "history_restored": "أُعيدت المسودة من سجل التخطيط. المحتوى المنشور لم يتغير.",
   "history_conflict": "تغيّرت المسودة. أعد تحميل المحرر ثم حاول الاستعادة مرة أخرى.",
   "history_missing": "مراجعة التخطيط هذه لم تعد متاحة.",

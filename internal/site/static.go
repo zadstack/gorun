@@ -64,6 +64,19 @@ func (h *handlers) adminBarCSS(w http.ResponseWriter, r *http.Request) {
 	serveSiteStylesheet(w, r, "admin-bar.css", theme.AdminBarCSS())
 }
 
+// adminBarJS serves the in-place editing script the admin bar links on
+// editable builder pages (theme.AdminBarJSURL carries a content hash).
+func (h *handlers) adminBarJS(w http.ResponseWriter, r *http.Request) {
+	script := theme.AdminBarJS()
+	if len(script) == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", httpx.AssetCacheControl(r, "inline-edit.js"))
+	_, _ = w.Write(script)
+}
+
 func serveSiteStylesheet(w http.ResponseWriter, r *http.Request, name string, stylesheet []byte) {
 	if len(stylesheet) == 0 {
 		http.NotFound(w, r)
