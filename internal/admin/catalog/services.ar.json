@@ -1,0 +1,12 @@
+{
+  "error.required": "هذا الحقل مطلوب.",
+  "error.unknown_field": "لا يوجد حقل بهذا الاسم في هذه الخدمة.",
+  "error_secret_value": "لا يُرسل السر أبدًا كحقل. استخدم الرابط الذي يعمل مرة واحدة أو gorun service set مع --secret-stdin.",
+  "error_unknown_field": "لا يوجد حقل بهذا الاسم في هذه الخدمة.",
+  "invalid": "هذه القيمة غير صالحة.",
+  "required": "هذا الحقل مطلوب.",
+  "storage.error.account": "أدخل معرّف حساب Cloudflare: 32 حرفًا ست عشريًا صغيرًا.",
+  "storage.error.keys": "أدخل مفاتيح الحاوية في سطر واحد: ACCESS_KEY:SECRET_KEY.",
+  "storage.error.provider": "اختر r2 أو s3.",
+  "storage.error.public_url": "الحاوية المُدارة تعرض الوسائط عبر مسار ‎/media/‎ في الموقع، ولا تأخذ رابطًا عامًا."
+}

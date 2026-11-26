@@ -7,6 +7,7 @@ All notable changes to GoRun are recorded here. The format follows
 
 ### Added
 
+- `gorun service list | get | set | test | off` reaches the site's five services (mail, storage, chat, analytics, backups) in one shape: `list` and `get` print JSON statuses without any secret (`secret_set` only), `set <name> key=value…` changes only the fields given and keeps the stored secret, which comes only from the first line of stdin (`--secret-stdin`); a wrong value exits non-zero naming the fields. Changes are audited as `service.update` with `via: cli`. `gorun mail set` is now its alias for mail ([docs/SERVICES.md](docs/SERVICES.md)).
 - `gorun mail set` stores Settings → Mail from the shell with the admin's own validation (`admin.MailConfig`). The SMTP password or Resend API key comes from stdin only (`--secret-stdin`), is stored encrypted and is never printed. A manager can now configure a site's mail without its admin session ([docs/MAIL-OPERATIONS.md](docs/MAIL-OPERATIONS.md#configure-mail-from-the-shell)).
 
 ## [0.26.0] - 2026-11-26

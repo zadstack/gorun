@@ -2,19 +2,19 @@
 
 `gorun mail send` sends one message using the site's saved SMTP or Resend settings, including its encrypted provider secret. It works when `gorun serve` is stopped. It starts only the settings module, with no job workers, scheduler, HTTP listener or API key.
 
-Configure mail through Settings → Mail, `PATCH /api/v1/settings` with `settings.manage`, or `gorun mail set` from the shell. The API and the command validate the values like the native form and encrypt secrets with the site's secret key. `gorun settings set` deliberately refuses secret values; do not put passwords or provider keys in process arguments.
+Configure mail through Settings → Mail, `PATCH /api/v1/settings` with `settings.manage`, or `gorun service set mail` (alias `gorun mail set`) from the shell. The API and the command validate the values like the native form and encrypt secrets with the site's secret key. `gorun settings set` deliberately refuses secret values; do not put passwords or provider keys in process arguments.
 
 ## Configure mail from the shell
 
-`gorun mail set` stores Settings → Mail with the form's own validation. The SMTP password or Resend API key is read from the first line of stdin with `--secret-stdin`, never from an argument, stored encrypted and never printed. Like saving the form, every field is replaced; the stored secret is kept unless `--secret-stdin` or `--clear-secret` is given. In a container image, run the binary directly:
+`gorun mail set` is an alias of `gorun service set mail` (see [docs/SERVICES.md](SERVICES.md), which covers every service and the `key=value` form). It validates with the form's own rules. The SMTP password or Resend API key is read from the first line of stdin with `--secret-stdin`, never from an argument, stored encrypted and never printed. Only the flags given change; the other fields and the stored secret are kept unless `--secret-stdin` or `--clear-secret` is given. In a container image, run the binary directly:
 
 ```sh
 printf '%s\n' "$SMTP_TOKEN" |
-  docker exec -i <container> /app/gorun mail set --provider smtp --host smtp.mx.cloudflare.net --port 465 --tls tls \
-    --username api_token --from noreply@example.com --secret-stdin
+  docker exec -i <container> /app/gorun service set mail provider=smtp host=smtp.mx.cloudflare.net port=465 tls=tls \
+    username=api_token from=noreply@example.com --secret-stdin
 ```
 
-`--tls` is `starttls` (default), `tls` (implicit, port 465) or `none`. For Resend use `--provider resend --from <address> --secret-stdin` with the API key on stdin. The command records `settings.update` (keys only, `via: cli`) in the audit log and prints `mail: <provider> [host]`. Then `gorun info` reports the result under `mail`.
+The 0.27 flag form (`gorun mail set --provider smtp --host … --secret-stdin`) still works. `tls` is `starttls` (default), `tls` (implicit, port 465) or `none`. For Resend use `provider=resend from=<address> --secret-stdin` with the API key on stdin. The command records `service.update` (field names only, `via: cli`) in the audit log and prints `service mail: <state>`. Then `gorun service get mail` (and `gorun info`, under `mail`) reports the result.
 
 Send a reviewed, non-sensitive operational message to an authorized recipient:
 
