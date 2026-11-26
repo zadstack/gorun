@@ -15,7 +15,7 @@ test('capture current README product screens with synthetic campaign data', asyn
   mkdirSync(output,{recursive:true});
   const captured=new Set<string>(),secrets:string[]=[];
   // researcher-*.png come from tests/agent-recipes.spec.ts (see the screenshots README).
-  const expectedImages=[...readdirSync(output).filter(name=>name.endsWith('.png')&&!name.startsWith('researcher-')),'canvas-ai-suggestions-en.png','canvas-ai-suggestions-ar-mobile.png','extensions-methods-en.png','extensions-methods-ar-mobile.png','canvas-lanes-en.png','canvas-schedules-en.png','forms-en.png','forms-ar.png','builder-form-en.png','dashboard-en.png','agent-channels-en.png','agent-channels-ar.png'];
+  const expectedImages=[...readdirSync(output).filter(name=>name.endsWith('.png')&&!name.startsWith('researcher-')),'canvas-ai-suggestions-en.png','canvas-ai-suggestions-ar-mobile.png','extensions-methods-en.png','extensions-methods-ar-mobile.png','canvas-lanes-en.png','canvas-schedules-en.png','forms-en.png','forms-ar.png','builder-form-en.png','dashboard-en.png','agent-channels-en.png','agent-channels-ar.png','services-secret-en.png','services-secret-ar.png'];
   const database = db();
   database.prepare("UPDATE users SET name='Amira Hassan' WHERE email='admin@e2e.test'").run();
   database.prepare("INSERT INTO settings(key,value_json,updated_at) VALUES('site.title',?,?) ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json").run(JSON.stringify('Atlas Studio'),new Date().toISOString());
@@ -390,6 +390,25 @@ test('capture current README product screens with synthetic campaign data', asyn
   await setLocale(page,'ar');
   await page.goto('/admin/agents/approvals');
   await shot('approvals-ar.png');
+  // Connecting a service (0.28): a REST call names the provider and sender, never the secret;
+  // GoRun answers needs_secret with a one-time admin link where a person types the key.
+  const connector=await key('api','Service connector',['settings.manage']);
+  async function secretLink():Promise<string>{
+    const res=await request.patch('/api/v1/site/services/mail',{headers:{Authorization:`Bearer ${connector}`},data:{values:{provider:'resend',from:'hello@atlas-studio.example'}}});
+    expect(res.status()).toBe(200);
+    const link:string=(await res.json()).data.needs_secret.link;
+    // The token stays in the page's hidden form field (the form needs it); it is never drawn.
+    const url=new URL(link);
+    return url.pathname+url.search;
+  }
+  await setLocale(page,'en');
+  await page.goto(await secretLink());
+  await expect(page.locator('input[name="secret"][type="password"]')).toBeVisible();
+  await shot('services-secret-en.png');
+  await setLocale(page,'ar');
+  await page.goto(await secretLink());
+  await expect(page.locator('input[name="secret"][type="password"]')).toBeVisible();
+  await shot('services-secret-ar.png');
   // The compact dashboard with the same personal pins as the navigation shots.
   await setLocale(page,'en');
   await page.setViewportSize({width:1440,height:900});
