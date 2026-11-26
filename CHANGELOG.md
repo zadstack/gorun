@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.28.1] - 2026-11-26
+
+### Upgrade notes
+
+- No migrations, no new environment variables and no new dependencies. Upgrade from 0.28.0 with `gorun upgrade` (release binaries) or the image runbook; from 0.27.x follow the [0.28 upgrade notes](docs/UPGRADE.md#028-upgrade-notes).
+
 ### Fixed
 
 - `set_service` and `PATCH /api/v1/site/services/{name}` refuse any key that is not one of the service's fields (`services.error.unknown_field`) before the MCP call is parked, so a secret under another name (`secret_key`, `resend_api_key`) is never stored in `mcp_approvals` or shown in the approval preview ([docs/SERVICES.md](docs/SERVICES.md#from-an-agent-or-a-script)).
@@ -1530,7 +1536,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.28.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.28.1...HEAD
+[0.28.1]: https://github.com/zadstack/gorun/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/zadstack/gorun/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/zadstack/gorun/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/zadstack/gorun/compare/v0.25.0...v0.26.0
