@@ -5,6 +5,12 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.28.2] - 2026-11-26
+
+### Upgrade notes
+
+- No migrations, no new environment variables and no new dependencies. Upgrade from 0.28.x with `gorun upgrade` (release binaries) or the image runbook; from 0.27.x follow the [0.28 upgrade notes](docs/UPGRADE.md#028-upgrade-notes).
+
 ### Fixed
 
 - An SMTP relay without login (a `host`, no `username`) counts as `configured` without a password, so `set_service` and `PATCH /api/v1/site/services/mail` no longer hand out a one-time secret link for a setup that already sends ([docs/SERVICES.md](docs/SERVICES.md#mail)).
@@ -1540,7 +1546,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.28.1...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.28.2...HEAD
+[0.28.2]: https://github.com/zadstack/gorun/compare/v0.28.1...v0.28.2
 [0.28.1]: https://github.com/zadstack/gorun/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/zadstack/gorun/compare/v0.27.0...v0.28.0
 [0.27.0]: https://github.com/zadstack/gorun/compare/v0.26.0...v0.27.0
