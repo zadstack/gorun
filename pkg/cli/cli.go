@@ -96,7 +96,11 @@ commands:
   ai            ai set --provider openai|anthropic --model M [--base-url URL] [--api-key-stdin] | ai off:
                 AI writing in the editor, validated like Settings → AI (the key only from stdin)
   mail send     send one message from JSON stdin using saved mail settings (--message-stdin)
-  mail set      store Settings → Mail, validated like the admin; the secret only from stdin (--secret-stdin)
+  mail set      alias of service set mail (--provider --host --port --tls --username --from --from-name
+                --reply-to [--secret-stdin | --clear-secret]); the secret only from stdin
+  service       list | get <name> | set <name> key=value… [--secret-stdin] | test <name> [--to ADDR] |
+                off <name>: mail, storage, chat, analytics, backups as JSON; the secret only from the
+                first line of stdin, never printed (docs/SERVICES.md)
   settings      recovery: settings get <key> | set <key> <json-or-string> | unset <key>
                 (validated like the admin, audited as system; no workers or themes needed)
 `
@@ -157,6 +161,8 @@ func runIO(args []string, in io.Reader, out io.Writer) error {
 	switch args[0] {
 	case "mail":
 		return mailCmd(args[1:], in, out)
+	case "service":
+		return serviceCmd(args[1:], in, out)
 	case "doctor":
 		return doctorCmd(args[1:], out)
 	case "export":

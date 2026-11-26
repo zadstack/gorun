@@ -329,6 +329,7 @@ const (
 	MCPToolsetTemplates    = "templates"
 	MCPToolsetSite         = "site"
 	MCPToolsetSettings     = "settings"
+	MCPToolsetServices     = "services"
 	MCPToolsetMigration    = "migration"
 	MCPToolsetCommerce     = "commerce"
 	MCPToolsetCanvas       = "canvas"
@@ -341,7 +342,7 @@ const (
 
 // MCPToolsets lists every toolset name.
 var MCPToolsets = []string{MCPToolsetContent, MCPToolsetTypes, MCPToolsetTranslations, MCPToolsetComments,
-	MCPToolsetMedia, MCPToolsetTaxonomy, MCPToolsetTemplates, MCPToolsetSite, MCPToolsetSettings, MCPToolsetMigration,
+	MCPToolsetMedia, MCPToolsetTaxonomy, MCPToolsetTemplates, MCPToolsetSite, MCPToolsetSettings, MCPToolsetServices, MCPToolsetMigration,
 	MCPToolsetCommerce, MCPToolsetCanvas, MCPToolsetBuilder, MCPToolsetChannels, MCPToolsetApprovals, MCPToolsetOther}
 
 // ToolsetName returns t's toolset, MCPToolsetOther when unset.

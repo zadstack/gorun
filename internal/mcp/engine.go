@@ -222,6 +222,11 @@ func (s *server) dispatch(ctx context.Context, t kernel.MCPTool, args json.RawMe
 		if err := validateParked(t, args); err != nil {
 			return nil, err
 		}
+		if check := s.parkChecks[t.Name]; check != nil {
+			if err := check(ctx, args); err != nil {
+				return nil, err
+			}
+		}
 		ap, err := s.approvals.create(ctx, t.Name, args)
 		if err != nil {
 			return nil, err

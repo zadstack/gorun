@@ -11,6 +11,7 @@ import (
 
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/kernel"
+	"github.com/zadstack/gorun/internal/services"
 )
 
 // siteInfo is what `gorun info` prints (JSON): enough for a manager to
@@ -51,6 +52,9 @@ type siteInfo struct {
 	// Mail is how the site sends mail (Settings → Mail), without any secret,
 	// so a manager can tell whether it sends without reading the admin.
 	Mail infoMail `json:"mail"`
+	// Services are the five services as gorun service list reports them
+	// (no secret, only secret_set); empty when they cannot be read.
+	Services []services.Status `json:"services"`
 }
 
 // infoMail is Settings → Mail as facts. Configured is the mailer's own test:
@@ -203,6 +207,19 @@ func infoCmd(args []string, out io.Writer) error {
 		info.UnknownMigrations, info.ChangedMigrations = schema.Unknown, schema.Mismatched
 	} else {
 		fmt.Fprintln(os.Stderr, "info: schema inspection:", err)
+	}
+	// The services read the settings store like gorun service list does
+	// (the settings module booted without job workers); a failure degrades
+	// to an empty list, like the counts above.
+	info.Services = []services.Status{}
+	if err := withServicesConfig(cfg, func(ctx context.Context, r *services.Registry) error {
+		list, err := r.List(ctx)
+		if err == nil {
+			info.Services = list
+		}
+		return err
+	}); err != nil {
+		fmt.Fprintln(os.Stderr, "info: services:", err)
 	}
 	if st, err := os.Stat(cfg.DBPath()); err == nil {
 		info.DBBytes = st.Size()

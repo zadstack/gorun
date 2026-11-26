@@ -1027,6 +1027,7 @@
   "modules.desc.webhooks": "Outgoing webhooks: subscriptions, signed deliveries and retries.",
   "modules.name.analytics": "Site analytics",
   "modules.desc.analytics": "Cookieless page views, visitors, referrers and form submits, stored in analytics.db.",
+  "modules.desc.services": "Connectable services (mail, storage, chat, analytics, backups) in one shape, and the one-time secret page.",
   "modules.name.commerce": "Store",
   "modules.desc.commerce": "Products, cart and checkout, orders, entitlements, Stripe and billing servers.",
   "modules.name.saas": "SaaS",

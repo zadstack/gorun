@@ -154,3 +154,42 @@ func TestInfoCmdReportsMail(t *testing.T) {
 		t.Fatalf("Resend with a key and a sender: %+v", m)
 	}
 }
+
+// gorun info lists the five services from the same registry as gorun
+// service list, without any secret, and keeps its mail block.
+func TestInfoReportsServices(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("GORUN_ENV", "dev")
+	data := []string{"--data", dir}
+	in := strings.NewReader("very-secret-value\n")
+	if err := serviceCmd([]string{"set", "mail", "provider=smtp", "host=smtp.example.com", "from=site@example.com", "--secret-stdin", "--data", dir}, in, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := infoCmd(data, &out); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out.String(), "very-secret-value") {
+		t.Fatal("info leaks a service secret")
+	}
+	var info struct {
+		Mail     map[string]any   `json:"mail"`
+		Services []map[string]any `json:"services"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &info); err != nil {
+		t.Fatalf("%v: %s", err, out.String())
+	}
+	names := []string{}
+	for _, s := range info.Services {
+		names = append(names, s["name"].(string))
+	}
+	if strings.Join(names, ",") != "mail,storage,chat,analytics,backups" {
+		t.Fatalf("services = %v", names)
+	}
+	if m := info.Services[0]; m["state"] != "configured" || m["secret_set"] != true {
+		t.Fatalf("mail service = %v", m)
+	}
+	if info.Mail["provider"] != "smtp" || info.Mail["host"] != "smtp.example.com" || info.Mail["secret_set"] != true {
+		t.Fatalf("mail block = %v", info.Mail)
+	}
+}

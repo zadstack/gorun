@@ -41,6 +41,10 @@ type server struct {
 	// dynamic holds per-call sensitivity rules (tool name → rule), set
 	// during Register.
 	dynamic map[string]func(ctx context.Context, args json.RawMessage) bool
+	// parkChecks hold per-tool argument checks run before a sensitive call
+	// is parked (tool name → check), so arguments that must never be
+	// stored (a secret) are refused up front; set during Register.
+	parkChecks map[string]func(ctx context.Context, args json.RawMessage) error
 }
 
 // principalFunc returns the acting context for one request or call: the
@@ -48,7 +52,8 @@ type server struct {
 type principalFunc func(ctx context.Context) (context.Context, error)
 
 func newServer(d *kernel.Deps, keys auth.KeyService, users auth.Service) *server {
-	s := &server{d: d, keys: keys, users: users, log: logger(d), dynamic: map[string]func(context.Context, json.RawMessage) bool{}}
+	s := &server{d: d, keys: keys, users: users, log: logger(d), dynamic: map[string]func(context.Context, json.RawMessage) bool{},
+		parkChecks: map[string]func(context.Context, json.RawMessage) error{}}
 	s.approvals = &approvalStore{s: s}
 	d.Services.Set(serviceName, s)
 	return s

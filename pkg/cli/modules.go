@@ -8,6 +8,7 @@ import (
 	"github.com/zadstack/gorun/internal/api"
 	"github.com/zadstack/gorun/internal/auth"
 	"github.com/zadstack/gorun/internal/builder"
+	"github.com/zadstack/gorun/internal/chat"
 	"github.com/zadstack/gorun/internal/commerce"
 	"github.com/zadstack/gorun/internal/config"
 	"github.com/zadstack/gorun/internal/content"
@@ -24,6 +25,7 @@ import (
 	"github.com/zadstack/gorun/internal/redirects"
 	"github.com/zadstack/gorun/internal/saas"
 	"github.com/zadstack/gorun/internal/seo"
+	"github.com/zadstack/gorun/internal/services"
 	"github.com/zadstack/gorun/internal/settings/settingsmod"
 	"github.com/zadstack/gorun/internal/site"
 	"github.com/zadstack/gorun/internal/taxonomy"
@@ -53,6 +55,8 @@ func CoreModules() []kernel.Module {
 		admin.New(),
 		webhooks.New(),
 		analytics.New(),
+		chat.New(),
+		services.New(),
 		commerce.New(),
 		saas.New(),
 		membership.New(),

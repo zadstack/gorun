@@ -50,8 +50,12 @@ var featureEdges = map[string][]string{
 	"saas":      {"commerce"}, // subscription hook names and event type
 	"wpmigrate": {"commerce"}, // product importer adapter (adapter_commerce.go)
 	// mcp consumes the exported agent-channels bridge (Channels) and its
-	// sentinel errors from workagents.channels for the channels_* tools.
-	"mcp": {"workagents"},
+	// sentinel errors from workagents.channels for the channels_* tools,
+	// and the services Registry (services.registry) for the services toolset.
+	"mcp": {"workagents", "services"},
+	// services describes analytics as a connectable service: it reads the
+	// module's setting names (analytics.enabled, analytics.exclude).
+	"services": {"analytics"},
 }
 
 func isCoreModule(m string) bool { return slices.Contains(coreModules, m) }
