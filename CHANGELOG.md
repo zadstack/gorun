@@ -5,6 +5,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-11-26
+
+### Upgrade notes
+
+Details: [docs/UPGRADE.md](docs/UPGRADE.md#027-upgrade-notes).
+
+- From 0.26.x, release binaries upgrade with `gorun upgrade`; images follow the image runbook. From 0.25.x, follow the [0.26 upgrade notes](docs/UPGRADE.md#026-upgrade-notes) first.
+- No migrations, no new environment variables and no new Go dependencies.
+
 ### Added
 
 - `gorun service list | get | set | test | off` reaches the site's five services (mail, storage, chat, analytics, backups) in one shape: `list` and `get` print JSON statuses without any secret (`secret_set` only), `set <name> key=value…` changes only the fields given and keeps the stored secret, which comes only from the first line of stdin (`--secret-stdin`); a wrong value exits non-zero naming the fields. Changes are audited as `service.update` with `via: cli`. `gorun mail set` is now its alias for mail ([docs/SERVICES.md](docs/SERVICES.md)).
@@ -1502,7 +1511,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.26.0...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.27.0...HEAD
+[0.27.0]: https://github.com/zadstack/gorun/compare/v0.26.0...v0.27.0
 [0.26.0]: https://github.com/zadstack/gorun/compare/v0.25.0...v0.26.0
 [0.25.0]: https://github.com/zadstack/gorun/compare/v0.24.1...v0.25.0
 [0.24.1]: https://github.com/zadstack/gorun/compare/v0.24.0...v0.24.1
