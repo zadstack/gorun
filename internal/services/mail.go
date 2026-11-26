@@ -95,7 +95,10 @@ func (m mailService) Status(ctx context.Context) (Status, error) {
 	if stored.Provider == "resend" && stored.From == "" {
 		st.Missing = append(st.Missing, "from")
 	}
-	if !st.SecretSet {
+	// An SMTP relay without a login sends with no password: the password
+	// is missing only once a username is set.
+	needsSecret := stored.Provider != "smtp" || stored.Username != ""
+	if needsSecret && !st.SecretSet {
 		st.Missing = append(st.Missing, sec.name)
 	}
 	st.State = StateIncomplete

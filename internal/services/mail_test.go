@@ -115,3 +115,24 @@ func TestMailRefusesWhatTheAdminRefuses(t *testing.T) {
 		t.Fatalf("status after a refused set = %+v, %v", st, err)
 	}
 }
+
+// An SMTP relay that needs no login (a host, no username, no password)
+// already sends, so it is configured with nothing missing.
+func TestMailRelayWithoutLoginIsConfigured(t *testing.T) {
+	d := testDeps(t)
+	r := NewRegistry(d, Mail(d))
+	st := setMail(t, r, map[string]string{"provider": "smtp", "host": "relay.example.com", "port": "25", "tls": "none", "from": "site@example.com"}, nil)
+	if st.State != StateConfigured || len(st.Missing) != 0 || st.SecretSet {
+		t.Fatalf("relay without login: %+v", st)
+	}
+}
+
+// With a username set, the SMTP password is still needed.
+func TestMailWithUsernameNeedsPassword(t *testing.T) {
+	d := testDeps(t)
+	r := NewRegistry(d, Mail(d))
+	st := setMail(t, r, smtpValues(), nil)
+	if st.State != StateIncomplete || !slices.Contains(st.Missing, "password") {
+		t.Fatalf("username without password: %+v", st)
+	}
+}
