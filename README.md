@@ -350,6 +350,26 @@ Every form on the site can store its submissions. **Inbox → Forms** lists your
   </tr>
 </table>
 
+## Connect your site's services
+
+Mail, media storage, chat, analytics and backups are five **services** with one shape. A person, an agent or a script connects them the same way: `gorun service list | get | set | test | off` from the shell, the MCP `services` toolset, or `/api/v1/site/services`. Each answers with the service's state and what is still missing, and never with a secret.
+
+A secret (an SMTP password, a Resend key, S3 keys) never travels through MCP or REST. The shell takes it on stdin with `--secret-stdin`. Otherwise the answer carries a one-time admin link, valid for 15 minutes, once, for that service, where a person with `settings.manage` types it into GoRun itself. Chat is a typed service too: set a Chatwoot server and inbox token and GoRun prints the widget on theme pages and opens its CSP for that host only.
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/services-secret-en.png"><img src="assets/branding/screenshots/services-secret-en.png" alt="One-time admin page where a person types the Resend key that an API call asked for; the key never passed through the API" /></a><br /><sub>The one-time link: the secret is typed here, not sent by the caller</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/services-secret-ar.png"><img src="assets/branding/screenshots/services-secret-ar.png" alt="The same one-time secret page in Arabic" /></a><br /><sub>The same page in Arabic</sub></td>
+  </tr>
+</table>
+
+```sh
+printf '%s\n' "$RESEND_KEY" | gorun service set mail provider=resend from=hello@example.com --secret-stdin
+gorun service list
+```
+
+[Site services](docs/SERVICES.md) · [MCP services toolset](docs/MCP.md)
+
 ## Operate with confidence
 
 Schedule daily or weekly local backups, track verified success and storage, and inspect failure alerts. Preview a disposable, read-only restore on localhost before restoring into a new directory. `gorun doctor` diagnoses an existing site without migrating or repairing it.

@@ -239,6 +239,21 @@ If a tool requests approval, report its request ID and wait for the decision.
   </tr>
 </table>
 
+### ربط خدمات الموقع
+
+البريد وتخزين الوسائط والدردشة والإحصائيات والنسخ الاحتياطي خمس **خدمات** بشكل واحد. يربطها الشخص أو الوكيل أو السكربت بالطريقة نفسها: `gorun service list | get | set | test | off` من الطرفية، أو مجموعة أدوات `services` في MCP، أو `/api/v1/site/services`. يرد كل منها بحالة الخدمة وما ينقصها، ولا يرد بسر أبدًا.
+
+لا يمر السر (كلمة مرور SMTP أو مفتاح Resend أو مفاتيح S3) عبر MCP أو REST. تأخذه الطرفية من الإدخال القياسي مع `--secret-stdin`، وإلا فيحمل الرد رابط إدارة يُستخدم مرة واحدة، صالحًا 15 دقيقة ولخدمة واحدة، يكتب فيه شخص يملك `settings.manage` السر داخل GoRun نفسه. والدردشة خدمة لها نوع أيضًا: حدّد خادم Chatwoot ورمز صندوق الوارد، فيعرض GoRun الأداة في صفحات القالب ويفتح سياسة CSP لذلك المضيف وحده.
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/services-secret-ar.png"><img src="assets/branding/screenshots/services-secret-ar.png" alt="صفحة إدارة تُستخدم مرة واحدة يكتب فيها شخص مفتاح Resend الذي طلبه استدعاء API، دون أن يمر المفتاح عبر الـ API" /></a><br /><sub>الرابط المؤقت: يُكتب السر هنا ولا يرسله المستدعي</sub></td>
+    <td width="50%" valign="top"><a href="assets/branding/screenshots/services-secret-en.png"><img src="assets/branding/screenshots/services-secret-en.png" alt="صفحة السر نفسها بالإنجليزية" /></a><br /><sub>الصفحة نفسها بالإنجليزية</sub></td>
+  </tr>
+</table>
+
+[خدمات الموقع](docs/SERVICES.md) · [أدوات services في MCP](docs/MCP.md)
+
 ### وأيضًا
 
 | المجال | ما تحصل عليه |

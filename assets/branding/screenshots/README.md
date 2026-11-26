@@ -1,10 +1,10 @@
 # GoRun product screenshots
 
-The canonical PNGs were last refreshed for 0.23 (from main after #241) from the actual GoRun
+The canonical PNGs were last refreshed for 0.28.1 (from main after #269) from the actual GoRun
 application, using fictional Atlas Studio content and the sample
 editor Amira Hassan. One fresh local fixture supplies the editor, content list,
 site design, role catalog, canvas story, navigation, agent drawer, approvals,
-public theme, AI-suggestion/extension-method views, the canvas Lanes and schedules views, and site forms. Existing user or
+public theme, AI-suggestion/extension-method views, the canvas Lanes and schedules views, site forms, and the one-time service secret page (EN/AR). Existing user or
 production data is never opened or changed. These local images do not establish
 which application version runs on GoCloud or any other hosted site.
 
