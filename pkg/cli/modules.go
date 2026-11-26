@@ -25,6 +25,7 @@ import (
 	"github.com/zadstack/gorun/internal/redirects"
 	"github.com/zadstack/gorun/internal/saas"
 	"github.com/zadstack/gorun/internal/seo"
+	"github.com/zadstack/gorun/internal/services"
 	"github.com/zadstack/gorun/internal/settings/settingsmod"
 	"github.com/zadstack/gorun/internal/site"
 	"github.com/zadstack/gorun/internal/taxonomy"
@@ -55,6 +56,7 @@ func CoreModules() []kernel.Module {
 		webhooks.New(),
 		analytics.New(),
 		chat.New(),
+		services.New(),
 		commerce.New(),
 		saas.New(),
 		membership.New(),

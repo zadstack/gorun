@@ -225,6 +225,25 @@ Destructive tools: `delete_content`, `delete_comment`,
 `save_page_layout`, `publish_page_layout` and `restore_page_layout_revision`. Everything else only adds or
 changes state reversibly.
 
+### One-time secret link
+
+A service secret (the SMTP password, the Resend API key, the storage `ACCESS_KEY:SECRET_KEY`) never passes
+through an MCP argument or a REST field. When a service needs one, GoRun answers with a one-time link,
+`/admin/services/<name>/secret?t=<token>`, for a person to open:
+
+- It works **once**, for **one** service, and stops **15 minutes** after it was made. A used, expired or
+  other-service link says so and saves nothing; ask for a new one by setting the service again.
+- The person must be signed in with `settings.manage`. The page has one password field
+  (`autocomplete="off"`), is CSRF-protected, is sent with `Cache-Control: no-store` and `Referrer-Policy:
+  no-referrer`, and never shows the secret again.
+- Only the token's SHA-256 is stored (setting `services.secret_link.<hash>`). The link is deleted in the same
+  transaction that saves the secret; a refused secret (for example storage keys without `:`) saves nothing
+  and leaves the link usable until it expires.
+- The save is audited as `service.update` with the secret's name only, `via` = `admin`, `secret_link: true`
+  and `link_actor` (who asked for the link).
+
+From the shell, `printf '%s\n' "$SECRET" | gorun service set <name> --secret-stdin` does the same without a link.
+
 ## Prompts
 
 `prompts/list` returns step-by-step plans that name the tools to call, in order, with example arguments. They save
