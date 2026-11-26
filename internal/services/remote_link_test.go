@@ -156,3 +156,21 @@ func TestDescribeHidesUndeclaredKeys(t *testing.T) {
 		}
 	}
 }
+
+// An SMTP relay without login set remotely is configured and gets no
+// one-time link: there is no secret to send.
+func TestMailRelayViaRemoteNeedsNoSecret(t *testing.T) {
+	d := testDeps(t)
+	ctx := context.Background()
+	r := NewRegistry(d, Mail(d))
+	res, fields, err := r.SetRemote(ctx, "mail", map[string]string{"provider": "smtp", "host": "relay.example.com", "port": "25", "tls": "none", "from": "site@example.com"}, "mcp")
+	if err != nil || len(fields) > 0 {
+		t.Fatalf("set remote: %v %v", fields, err)
+	}
+	if res.NeedsSecret != nil || res.Status.State != StateConfigured {
+		t.Fatalf("relay via remote: %+v", res)
+	}
+	if links := storedLinks(t, r); len(links) != 0 {
+		t.Fatalf("a link was made for a relay: %v", links)
+	}
+}

@@ -5,6 +5,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- An SMTP relay without login (a `host`, no `username`) counts as `configured` without a password, so `set_service` and `PATCH /api/v1/site/services/mail` no longer hand out a one-time secret link for a setup that already sends ([docs/SERVICES.md](docs/SERVICES.md#mail)).
+
 ## [0.28.1] - 2026-11-26
 
 ### Upgrade notes

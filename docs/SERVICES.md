@@ -32,7 +32,7 @@ Settings → Mail, validated like the admin form. Each provider keeps its own se
 | `from` | string | required for Resend |
 | `from_name`, `reply_to` | string | |
 
-Secret: `password` (SMTP) or `api_key` (Resend). Test: `gorun service test mail --to ADDR` sends the admin's test message.
+Secret: `password` (SMTP) or `api_key` (Resend). The SMTP password is needed only when a `username` is set: a relay with a `host` and no login is `configured` without one, and a remote set of it answers no `needs_secret`. Test: `gorun service test mail --to ADDR` sends the admin's test message.
 
 ### storage
 
