@@ -48,6 +48,21 @@ type siteInfo struct {
 	// content changed since they ran ("module/name"). Empty when healthy.
 	UnknownMigrations []string `json:"unknown_migrations"`
 	ChangedMigrations []string `json:"changed_migrations"`
+	// Mail is how the site sends mail (Settings → Mail), without any secret,
+	// so a manager can tell whether it sends without reading the admin.
+	Mail infoMail `json:"mail"`
+}
+
+// infoMail is Settings → Mail as facts. Configured is the mailer's own test:
+// a host for SMTP, a key and a sender for Resend. SecretSet says the selected
+// provider's credential (SMTP password or Resend key) is stored; its value
+// is never read here.
+type infoMail struct {
+	Provider   string `json:"provider"`
+	Host       string `json:"host"`
+	From       string `json:"from"`
+	Configured bool   `json:"configured"`
+	SecretSet  bool   `json:"secret_set"`
 }
 
 type infoUser struct {
@@ -128,6 +143,15 @@ func infoCmd(args []string, out io.Writer) error {
 	info.Attachments = boolOf("contact.attachments", false)
 	info.AttachmentMaxMB = intOf("contact.attachment_max_mb", 5)
 	info.Maintenance = boolOf("site.maintenance", false)
+	info.Mail = infoMail{Provider: setting("mail.provider", "smtp"), Host: strings.TrimSpace(setting("mail.host", "")), From: strings.TrimSpace(setting("mail.from", ""))}
+	if info.Mail.Provider == "resend" {
+		info.Mail.Host = ""
+		info.Mail.SecretSet = setting("mail.resend_api_key", "") != ""
+		info.Mail.Configured = info.Mail.SecretSet && info.Mail.From != ""
+	} else {
+		info.Mail.SecretSet = setting("mail.password", "") != ""
+		info.Mail.Configured = info.Mail.Provider == "smtp" && info.Mail.Host != ""
+	}
 	info.HiddenFromSearch = strings.Contains(setting("seo.robots_txt", ""), "Disallow: /\n") || strings.HasSuffix(strings.TrimSpace(setting("seo.robots_txt", "")), "Disallow: /")
 	rows, err := d.QueryContext(ctx, `SELECT email, name, role, status, last_login_at FROM users ORDER BY created_at`)
 	if err != nil {

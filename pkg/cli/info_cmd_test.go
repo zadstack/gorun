@@ -101,3 +101,56 @@ func TestInfoCmdReportsSchemaAhead(t *testing.T) {
 		t.Fatalf("unknown_migrations = %v", info.UnknownMigrations)
 	}
 }
+
+// gorun info says how the site sends mail, with no secret in its output.
+func TestInfoCmdReportsMail(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("GORUN_ENV", "dev")
+	data := []string{"--data", dir}
+	read := func() infoMail {
+		t.Helper()
+		var out bytes.Buffer
+		if err := infoCmd(data, &out); err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(out.String(), "very-secret-value") {
+			t.Fatal("info leaks a mail secret")
+		}
+		var info siteInfo
+		if err := json.Unmarshal(out.Bytes(), &info); err != nil {
+			t.Fatal(err)
+		}
+		return info.Mail
+	}
+	// Secrets are stored encrypted and cannot be set from the CLI; their stored
+	// form is all info looks at, so a placeholder stands in for one.
+	set := func(k, v string) {
+		t.Helper()
+		d, err := openDB(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer d.Close()
+		raw, _ := json.Marshal(v)
+		if _, err := d.Exec(`INSERT INTO settings (key, value_json, updated_at) VALUES (?, ?, '2026-11-26T00:00:00Z') ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json`, k, string(raw)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if m := read(); m.Provider != "smtp" || m.Configured || m.SecretSet {
+		t.Fatalf("a site with no mail settings: %+v", m)
+	}
+	for k, v := range map[string]string{"mail.host": "smtp.example.test", "mail.from": "noreply@example.test", "mail.password": "very-secret-value"} {
+		set(k, v)
+	}
+	if m := read(); m.Host != "smtp.example.test" || m.From != "noreply@example.test" || !m.Configured || !m.SecretSet {
+		t.Fatalf("SMTP settings: %+v", m)
+	}
+	set("mail.provider", "resend")
+	if m := read(); m.Provider != "resend" || m.Host != "" || m.Configured || m.SecretSet {
+		t.Fatalf("Resend without a key: %+v", m)
+	}
+	set("mail.resend_api_key", "very-secret-value")
+	if m := read(); !m.Configured || !m.SecretSet {
+		t.Fatalf("Resend with a key and a sender: %+v", m)
+	}
+}

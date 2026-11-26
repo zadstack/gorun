@@ -5,6 +5,10 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `gorun info` reports `mail`: the provider, SMTP host and sender from Settings → Mail, whether the mailer counts it as configured, and whether the provider's credential is stored (`secret_set`), never its value. A manager can tell whether a site sends mail without signing in to its admin.
+
 ## [0.25.0] - 2026-11-26
 
 ### Upgrade notes
