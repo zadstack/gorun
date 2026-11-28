@@ -450,6 +450,16 @@ Related: [STORAGE.md](STORAGE.md) (backup schedule / retain-N),
 
 ---
 
+## 0.29 upgrade notes
+
+From 0.28.x. No migrations, no new environment variables and no new Go dependencies.
+
+**How to upgrade.** Release binaries: `gorun upgrade --data <data> --dry-run`, stop the service, `gorun upgrade --data <data>`, start it again ([Automatic upgrade](#automatic-upgrade)). Images and Coolify: pin `ghcr.io/zadstack/gorun:0.29.0` and redeploy.
+
+**What changes.** `metricool` joins the services ([SERVICES.md](SERVICES.md#metricool)) over the existing `metricool.config` setting, which gains an optional `tracker_hash`; with one set, public theme pages carry the Metricool tracker and allow `https://tracker.metricool.com` in their CSP. `gorun service run backups` (MCP `run_service`, `POST /api/v1/site/services/{name}/run`) takes a backup now, and `gorun service test storage` does a real put, read and delete round trip. Service tests are recorded as `last_test` under `services.last_test.<name>`. A key that uses `run_service` or the run operation needs the `system.backup` scope.
+
+**Rollback to 0.28.x** is possible on the same data. The Metricool tracker stops showing (0.28 ignores `tracker_hash`, and an admin save of Settings → Metricool on 0.28 drops it), the `services.last_test.*` keys stay unused, and `run`, the storage round trip and the `metricool` service are gone.
+
 ## 0.28 upgrade notes
 
 From 0.27.x. No migrations, no new environment variables and no new Go dependencies.
