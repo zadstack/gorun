@@ -6,6 +6,8 @@
 <form method="post" action="/admin/settings/metricool" class="space-y-4 border border-line p-4">
 <input type="hidden" name="_csrf" value="{{csrf}}"><input type="hidden" name="version" value="{{.Version}}">
 <div class="grid gap-4 sm:grid-cols-2"><label>{{t "admin.metricool.user_id"}}<input name="user_id" inputmode="numeric" pattern="[1-9][0-9]{0,9}" maxlength="10" value="{{.UserID}}" required dir="ltr" class="block w-full border border-line bg-panel p-2 mt-1"></label><label>{{t "admin.metricool.blog_id"}}<input name="blog_id" inputmode="numeric" pattern="[1-9][0-9]{0,9}" maxlength="10" value="{{.BlogID}}" required dir="ltr" class="block w-full border border-line bg-panel p-2 mt-1"></label></div>
+<label class="block">{{t "admin.metricool.tracker_hash"}}<input name="tracker_hash" pattern="[A-Za-z0-9]{8,64}" maxlength="64" value="{{.TrackerHash}}" dir="ltr" class="block w-full border border-line bg-panel p-2 mt-1"></label>
+<p class="text-sm text-muted-foreground">{{t "admin.metricool.tracker_help"}}</p>
 <label class="block">{{t "admin.metricool.token"}}<input name="token" type="password" autocomplete="new-password" maxlength="2048" dir="ltr" class="block w-full border border-line bg-panel p-2 mt-1"></label>
 <p class="text-sm text-muted-foreground">{{t "admin.connections.secret_help"}}</p>
 {{if .SecretSet}}<p class="text-sm">{{t "admin.connections.secret_set"}}</p><label class="flex items-center gap-2"><input type="checkbox" name="clear_secret">{{t "admin.connections.clear_secret"}}</label>{{else}}<p>{{t "admin.connections.secret_unset"}}</p>{{end}}

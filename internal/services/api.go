@@ -14,12 +14,15 @@ import (
 // capability tests use the same one).
 const permTest = "system.capability_test"
 
+// permBackup is the permission of a service's run action (backups).
+const permBackup = "system.backup"
+
 // patchRequest is the body of PATCH /site/services/{name}.
 type patchRequest struct {
 	Values map[string]any `json:"values" doc:"Field name → new value (string, number or boolean). Only the fields given change; a secret is refused here"`
 }
 
-var nameParam = []kernel.APIParam{{Name: "name", In: "path", Type: "string", Required: true, Description: "mail, storage, chat, analytics or backups"}}
+var nameParam = []kernel.APIParam{{Name: "name", In: "path", Type: "string", Required: true, Description: "mail, storage, chat, analytics, backups or metricool"}}
 
 var serviceErrors = []kernel.APIErrorResponse{
 	{Status: 404, Code: api.CodeNotFound, Description: "No service has this name"},
@@ -32,18 +35,22 @@ func registerAPI(d *kernel.Deps, reg *Registry) {
 	h := apiHandlers{reg: reg}
 	tags := []string{"services"}
 	manage := []string{permManage}
-	list := api.Op("GET", "/site/services", "Every service (mail, storage, chat, analytics, backups) and its status; never a secret, only secret_set", tags, manage, nil, []Status{}, h.list)
+	list := api.Op("GET", "/site/services", "Every service (mail, storage, chat, analytics, backups, metricool) and its status; never a secret, only secret_set", tags, manage, nil, []Status{}, h.list)
 	get := api.Op("GET", "/site/services/{name}", "One service's status, without its secret", tags, manage, nil, Status{}, h.get)
 	patch := api.Op("PATCH", "/site/services/{name}", "Change only the given fields of a service; a secret is never accepted here: when one is missing the answer carries needs_secret (a one-time admin link and the CLI line)", tags, manage, patchRequest{}, SetResult{}, h.patch)
 	off := api.Op("DELETE", "/site/services/{name}", "Turn a service off", tags, manage, nil, Status{}, h.off)
-	test := api.Op("POST", "/site/services/{name}/test", "Run the service's safe test; mail sends one test message to the caller's own address", tags, []string{permTest}, nil, TestResult{}, h.test)
-	for _, op := range []*kernel.APIOperation{&get, &patch, &off, &test} {
+	test := api.Op("POST", "/site/services/{name}/test", "Run the service's safe test and record it as last_test: mail sends one test message to the caller's own address, storage does a put, read and delete round trip on each bound bucket, metricool reads the brand list", tags, []string{permTest}, nil, TestResult{}, h.test)
+	run := api.Op("POST", "/site/services/{name}/run", "Take the service's action now: backups takes a verified backup, uploads it to the configured destination and keeps retain pairs. A failed upload answers ok false (the local backup stays)", tags, []string{permBackup}, nil, RunResult{}, h.run)
+	for _, op := range []*kernel.APIOperation{&get, &patch, &off, &test, &run} {
 		op.Params = nameParam
 		op.Contract = &kernel.APIContract{Errors: serviceErrors}
 	}
 	get.Contract = &kernel.APIContract{Errors: serviceErrors[:1]}
 	off.Contract = &kernel.APIContract{Errors: serviceErrors[:1]}
-	for _, op := range []kernel.APIOperation{list, get, patch, off, test} {
+	run.Contract = &kernel.APIContract{Errors: []kernel.APIErrorResponse{serviceErrors[0],
+		{Status: 409, Code: "operation_in_progress", Description: "The data directory is busy (an update, a restore or another backup)"},
+		{Status: 422, Code: api.CodeValidation, Description: "The service has no run action"}}}
+	for _, op := range []kernel.APIOperation{list, get, patch, off, test, run} {
 		d.API.Add(op)
 	}
 }
@@ -73,7 +80,7 @@ func (h apiHandlers) get(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	st, err := s.Status(r.Context())
+	st, err := h.reg.Status(r.Context(), s.Name())
 	if err != nil {
 		api.Fail(w, r, err)
 		return
@@ -129,6 +136,24 @@ func (h apiHandlers) test(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.As(ClassifyTestError(err), &te):
 		api.WriteError(w, http.StatusUnprocessableEntity, api.CodeValidation, te.Error(), map[string]string{te.Field: te.Key})
+	case err != nil:
+		api.Fail(w, r, err)
+	default:
+		api.WriteItem(w, res)
+	}
+}
+
+func (h apiHandlers) run(w http.ResponseWriter, r *http.Request) {
+	s, ok := h.service(w, r)
+	if !ok {
+		return
+	}
+	res, err := h.reg.Run(r.Context(), s.Name(), "api")
+	switch {
+	case errors.Is(err, ErrNoRun):
+		api.WriteError(w, http.StatusUnprocessableEntity, api.CodeValidation, err.Error(), map[string]string{"name": errNoRunKey})
+	case errors.Is(err, ErrBackupBusy):
+		api.WriteError(w, http.StatusConflict, "operation_in_progress", err.Error(), nil)
 	case err != nil:
 		api.Fail(w, r, err)
 	default:

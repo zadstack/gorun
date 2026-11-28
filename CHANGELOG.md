@@ -5,6 +5,22 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `gorun service run backups` (MCP `run_service`, `POST /api/v1/site/services/{name}/run`, permission `system.backup`) takes a verified backup now and uploads it to the configured destination, honouring `retain` and recording `last_success` as a scheduled run does; it prints the stamp, size, duration, destination, upload status and object keys, and exits non-zero when the upload fails ([docs/SERVICES.md](docs/SERVICES.md#run-a-backup-now), [#274](https://github.com/zadstack/gorun/issues/274)).
+- `gorun service test storage` does a real round trip on each bound bucket (check, put under `0000/00/gorun-service-test-`, read back, delete) and names the failing `step` (`auth`, `bucket_missing`, `unreachable`, `write`, `read`, `delete`) on every surface ([docs/SERVICES.md](docs/SERVICES.md#storage), [#275](https://github.com/zadstack/gorun/issues/275)).
+- `metricool` is the sixth service: `get` shows `user_id`, `blog_id`, `tracker_hash`, `drafts_ready` and `secret_set` (never the token), `set` takes the token only from `--secret-stdin` or the one-time link and keeps it on a brand change, and `test` checks the token and that the brand is the user's (`step` `credential` or `brand`) ([docs/SERVICES.md](docs/SERVICES.md#metricool), [#276](https://github.com/zadstack/gorun/issues/276)).
+- Metricool web tracker: with a `tracker_hash` (Settings → Metricool or `service set metricool tracker_hash=…`) public theme pages carry the tracker in a nonced script, and only those responses allow `https://tracker.metricool.com` in `script-src` and `connect-src`; theme overrides stay untouched ([docs/SERVICES.md](docs/SERVICES.md#web-tracker), [#277](https://github.com/zadstack/gorun/issues/277)).
+- A service status's `last_test` is now recorded: every `test` from any surface stores its result (with `step` when it failed), and a `set` or `off` of the service clears it.
+
+### Changed
+
+- `service set storage purpose=backup` is taken as `purpose=backups`, the admin form's spelling ([#273](https://github.com/zadstack/gorun/issues/273)).
+
+### Documentation
+
+- docs/SERVICES.md documents the storage status fields: `destinations` maps each bound purpose (`media`, `backups`) to its destination id as a string, with the mapping to the admin's `purposes=media,backup` and the `storage.active.*` settings; a test pins the JSON shape of `service get storage` ([#273](https://github.com/zadstack/gorun/issues/273)).
+
 ## [0.28.2] - 2026-11-26
 
 ### Upgrade notes

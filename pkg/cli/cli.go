@@ -99,8 +99,8 @@ commands:
   mail set      alias of service set mail (--provider --host --port --tls --username --from --from-name
                 --reply-to [--secret-stdin | --clear-secret]); the secret only from stdin
   service       list | get <name> | set <name> key=value… [--secret-stdin] | test <name> [--to ADDR] |
-                off <name>: mail, storage, chat, analytics, backups as JSON; the secret only from the
-                first line of stdin, never printed (docs/SERVICES.md)
+                run backups | off <name>: mail, storage, chat, analytics, backups, metricool as JSON;
+                the secret only from the first line of stdin, never printed (docs/SERVICES.md)
   settings      recovery: settings get <key> | set <key> <json-or-string> | unset <key>
                 (validated like the admin, audited as system; no workers or themes needed)
 `

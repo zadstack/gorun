@@ -99,6 +99,15 @@ func saveScheduledWarning(ctx context.Context, d *kernel.Deps, state backupSched
 }
 
 func scheduledRemoteUpload(ctx context.Context, d *kernel.Deps, res backup.Result, id string, client *http.Client) error {
+	_, err := remoteUpload(ctx, d, res, id, client, "system.backup_remote_scheduled", nil)
+	return err
+}
+
+// remoteUpload uploads the verified pair res to the destination id, which
+// must still be the active backup one (else the state is paused), stores
+// the receipt beside the pair, saves storage.backup.last (and last_success
+// on success) and audits action with meta added. It returns the state saved.
+func remoteUpload(ctx context.Context, d *kernel.Deps, res backup.Result, id string, client *http.Client, action string, meta map[string]string) (remoteBackupState, error) {
 	state := remoteBackupState{At: time.Now().UTC().Format(time.RFC3339), Stamp: res.Stamp, Status: "failed", DestinationID: id}
 	dest, err := scheduledBackupDestination(ctx, d, id)
 	if errors.Is(err, errScheduledDestination) {
@@ -128,8 +137,12 @@ func scheduledRemoteUpload(ctx context.Context, d *kernel.Deps, res backup.Resul
 	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancel()
 	saveErr := saveRemoteBackupState(saveCtx, d, state)
-	d.Audit.Record(saveCtx, "system.backup_remote_scheduled", "backup", res.Stamp, map[string]string{"status": state.Status, "destination": id})
-	return errors.Join(err, saveErr)
+	audit := map[string]string{"status": state.Status, "destination": id}
+	for k, v := range meta {
+		audit[k] = v
+	}
+	d.Audit.Record(saveCtx, action, "backup", res.Stamp, audit)
+	return state, errors.Join(err, saveErr)
 }
 
 func scheduledBackupDestination(ctx context.Context, d *kernel.Deps, id string) (media.Destination, error) {

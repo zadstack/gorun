@@ -4,12 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/zadstack/gorun/internal/admin"
+	"github.com/zadstack/gorun/internal/db"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/media"
 	"github.com/zadstack/gorun/internal/settings"
@@ -21,9 +25,15 @@ import (
 // config section) stays the media source "config" while no destination
 // is bound; a bound media destination wins over it. The secret is the
 // bucket's key pair as one line ACCESS_KEY:SECRET_KEY.
-func Storage(d *kernel.Deps) Service { return storageService{d} }
+func Storage(d *kernel.Deps) Service { return storageService{d: d} }
 
-type storageService struct{ d *kernel.Deps }
+// storageService reaches buckets with client (nil: the guarded storage
+// client); insecure allows a plain http endpoint (tests only).
+type storageService struct {
+	d        *kernel.Deps
+	client   *http.Client
+	insecure bool
+}
 
 // The admin's purposes are media and backup; the service says backups.
 var storagePurposes = map[string][]string{"media": {"media"}, "backups": {"backup"}, "both": {"media", "backup"}}
@@ -246,6 +256,9 @@ func (s storageService) Apply(ctx context.Context, tx *sql.Tx, values map[string
 	region := get("region", cur.Region)
 	bucket := get("bucket", cur.Bucket)
 	purpose := get("purpose", curPurpose)
+	if purpose == "backup" { // the admin form's spelling of backups
+		purpose = "backups"
+	}
 	var endpoint string
 	switch provider {
 	case "r2":
@@ -331,10 +344,162 @@ func (s storageService) Apply(ctx context.Context, tx *sql.Tx, values map[string
 	return fields, nil
 }
 
-// Test has no synchronous safe test here: the bucket checks are the
-// admin's queued observations (Integrations → Storage).
-func (storageService) Test(context.Context, string) (TestResult, error) {
-	return TestResult{OK: false, At: time.Now().UTC(), Message: "no test"}, nil
+// storageTestPrefix is where a round-trip test writes: the month 0000/00
+// is never one an upload is stored under, so the object cannot collide
+// with media, and it is deleted again at once.
+const storageTestPrefix = "0000/00/gorun-service-test-"
+
+// ErrStorageNotConfigured is a test asked while no bucket is bound or
+// configured.
+var ErrStorageNotConfigured = errors.New("services: storage has no bucket to test")
+
+// storageTarget is one bucket a test reaches, for a purpose (media or
+// backups).
+type storageTarget struct {
+	purpose  string
+	cfg      media.S3Config
+	readable bool
+}
+
+// targets are the buckets of the bound purposes (media, then backups), and
+// GORUN_S3_* for media while no media destination is bound.
+func (s storageService) targets(ctx context.Context) ([]storageTarget, error) {
+	act, err := s.active(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var out []storageTarget
+	if m, ok := act["media"]; ok {
+		out = append(out, storageTarget{purpose: "media", cfg: m.cfg, readable: m.readable})
+	} else if conf := s.configS3(); conf.Enabled() {
+		out = append(out, storageTarget{purpose: "media", cfg: conf, readable: true})
+	}
+	if b, ok := act["backup"]; ok {
+		out = append(out, storageTarget{purpose: "backups", cfg: b.cfg, readable: b.readable})
+	}
+	return out, nil
+}
+
+// storageStepError is a failed step of a round trip; Status is the
+// provider's HTTP status when it answered.
+type storageStepError struct {
+	step   string
+	status int
+}
+
+func (e storageStepError) Error() string {
+	msg := map[string]string{
+		"auth":           "the keys were refused",
+		"bucket_missing": "the bucket does not exist",
+		"unreachable":    "the endpoint could not be reached",
+		"write":          "cannot write",
+		"read":           "cannot read back",
+		"delete":         "cannot delete",
+		"keys":           "the stored keys cannot be opened with this site's key",
+	}[e.step]
+	if e.status != 0 {
+		msg += fmt.Sprintf(" (HTTP %d)", e.status)
+	}
+	return msg
+}
+
+// stepError classifies err from step: a provider status of 401 or 403 on
+// the bucket probe is auth, 404 there is bucket_missing, and no answer at
+// all is unreachable.
+func stepError(step string, err error) storageStepError {
+	var se *media.S3StatusError
+	if !errors.As(err, &se) {
+		if step == "probe" {
+			return storageStepError{step: "unreachable"}
+		}
+		return storageStepError{step: step}
+	}
+	if step == "probe" {
+		switch se.Status {
+		case 401, 403:
+			return storageStepError{step: "auth", status: se.Status}
+		case 404:
+			return storageStepError{step: "bucket_missing", status: se.Status}
+		}
+		return storageStepError{step: "unreachable", status: se.Status}
+	}
+	return storageStepError{step: step, status: se.Status}
+}
+
+// roundTrip probes the bucket, puts a small object under
+// storageTestPrefix, reads it back and deletes it.
+func (s storageService) roundTrip(ctx context.Context, cfg media.S3Config) error {
+	cfg.PublicURL = ""
+	driver, err := media.NewS3Storage(cfg, nil, s.insecure)
+	if err != nil {
+		return storageStepError{step: "unreachable"}
+	}
+	client := s.client
+	if client == nil {
+		client = media.SafeStorageClient()
+	}
+	driver.SetClient(client)
+	if err := driver.ProbeBucket(ctx, client); err != nil {
+		return stepError("probe", err)
+	}
+	key := storageTestPrefix + strings.ToLower(db.NewID()) + ".txt"
+	body := "gorun service test " + key + "\n"
+	if err := driver.Put(ctx, key, strings.NewReader(body), "text/plain"); err != nil {
+		return stepError("write", err)
+	}
+	rc, err := driver.Open(ctx, key)
+	if err != nil {
+		_ = driver.Delete(ctx, key)
+		return stepError("read", err)
+	}
+	got, err := io.ReadAll(io.LimitReader(rc, int64(len(body))+1))
+	rc.Close()
+	if err != nil || string(got) != body {
+		_ = driver.Delete(ctx, key)
+		return storageStepError{step: "read"}
+	}
+	if err := driver.Delete(ctx, key); err != nil {
+		return stepError("delete", err)
+	}
+	return nil
+}
+
+// Test does a real round trip against the bucket of each bound purpose:
+// probe, put a small object under storageTestPrefix, read it back, delete
+// it. The message names each purpose's outcome; Step is the first failing
+// step. Nothing bound is ErrStorageNotConfigured.
+func (s storageService) Test(ctx context.Context, _ string) (TestResult, error) {
+	targets, err := s.targets(ctx)
+	if err != nil {
+		return TestResult{}, err
+	}
+	if len(targets) == 0 {
+		return TestResult{}, ErrStorageNotConfigured
+	}
+	res := TestResult{OK: true}
+	parts := make([]string, 0, len(targets))
+	for _, t := range targets {
+		var err error
+		if !t.readable {
+			err = storageStepError{step: "keys"}
+		} else {
+			err = s.roundTrip(ctx, t.cfg)
+		}
+		if err == nil {
+			parts = append(parts, t.purpose+": ok")
+			continue
+		}
+		parts = append(parts, t.purpose+": "+err.Error())
+		if res.OK {
+			res.OK = false
+			var se storageStepError
+			if errors.As(err, &se) {
+				res.Step = se.step
+			}
+		}
+	}
+	res.At, res.Message = time.Now().UTC(), strings.Join(parts, "; ")
+	return res, nil
 }
 
 // Off stops using the bound destinations (media goes back to GORUN_S3_*

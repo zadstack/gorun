@@ -26,9 +26,9 @@ func (h *handlers) metricoolRoutes() {
 }
 
 type metricoolPage struct {
-	Version, UserID, BlogID, TestStatus, TestedAt, Nonce, Message, ProviderID string
-	SecretSet, Ready, CanManageSetup                                          bool
-	Input                                                                     metricoolInput
+	Version, UserID, BlogID, TestStatus, TestedAt, Nonce, Message, ProviderID, TrackerHash string
+	SecretSet, Ready, CanManageSetup                                                       bool
+	Input                                                                                  metricoolInput
 }
 
 func (h *handlers) metricoolRender(w http.ResponseWriter, r *http.Request, status int, template string, data metricoolPage) {
@@ -37,7 +37,7 @@ func (h *handlers) metricoolRender(w http.ResponseWriter, r *http.Request, statu
 	h.tpl.RenderWith(w, r, status, "admin", template, data)
 }
 func metricoolView(c metricoolConfig) metricoolPage {
-	return metricoolPage{Version: c.Version, UserID: c.UserID, BlogID: c.BlogID, SecretSet: c.Secret != "", TestStatus: c.TestStatus, TestedAt: c.TestedAt, Ready: c.Secret != "" && c.TestStatus == "pass"}
+	return metricoolPage{Version: c.Version, UserID: c.UserID, BlogID: c.BlogID, TrackerHash: c.TrackerHash, SecretSet: c.Secret != "", TestStatus: c.TestStatus, TestedAt: c.TestedAt, Ready: c.Secret != "" && c.TestStatus == "pass"}
 }
 func (h *handlers) metricoolSettings(w http.ResponseWriter, r *http.Request) {
 	c, err := h.metricoolConfig(r.Context())
@@ -72,7 +72,9 @@ func (h *handlers) metricoolSave(w http.ResponseWriter, r *http.Request) {
 	c.UserID = strings.TrimSpace(r.PostForm.Get("user_id"))
 	c.BlogID = strings.TrimSpace(r.PostForm.Get("blog_id"))
 	token := r.PostForm.Get("token")
-	if !metricoolID.MatchString(c.UserID) || !metricoolID.MatchString(c.BlogID) || !validConnectionSecret(token) {
+	c.TrackerHash = strings.TrimSpace(r.PostForm.Get("tracker_hash"))
+	if !metricoolID.MatchString(c.UserID) || !metricoolID.MatchString(c.BlogID) || !validConnectionSecret(token) ||
+		(c.TrackerHash != "" && !metricoolTrackerHash.MatchString(c.TrackerHash)) {
 		h.metricoolError(w, r, errMetricoolInvalid)
 		return
 	}

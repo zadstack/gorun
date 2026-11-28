@@ -17,15 +17,18 @@ import (
 	"github.com/zadstack/gorun/internal/settings/settingsmod"
 )
 
-const serviceUsage = "usage: gorun service list | get <name> | set <name> key=value… [--secret-stdin] | test <name> [--to ADDR] | off <name>  [--data dir]"
+const serviceUsage = "usage: gorun service list | get <name> | set <name> key=value… [--secret-stdin] | test <name> [--to ADDR] | run <name> | off <name>  [--data dir]"
 
 // serviceTimeout bounds one command; a mail test talks to the provider.
 const serviceTimeout = 45 * time.Second
 
-// serviceModules are the modules a service command boots. The five
-// services (mail, storage, chat, analytics, backups) keep their state in
-// settings only: mail.*, the storage.active.* destinations and the
-// Connections profiles, chat.*, analytics.*, backup.*. The settings module
+// serviceRunTimeout bounds a run: a backup, then its upload.
+const serviceRunTimeout = 15 * time.Minute
+
+// serviceModules are the modules a service command boots. The six
+// services (mail, storage, chat, analytics, backups, metricool) keep their
+// state in settings only: mail.*, the storage.active.* destinations and the
+// Connections profiles, chat.*, analytics.*, backup.*, metricool.config. The settings module
 // opens that store; the kernel runs every core migration, so audit and the
 // settings table are there. No workers start: a CLI change must not replay
 // unrelated jobs.
@@ -104,7 +107,7 @@ func serviceCmd(args []string, in io.Reader, out io.Writer) error {
 	}
 	sub := args[0]
 	switch sub {
-	case "list", "get", "set", "test", "off":
+	case "list", "get", "set", "test", "run", "off":
 	default:
 		return errors.New(serviceUsage)
 	}
@@ -120,7 +123,11 @@ func serviceCmd(args []string, in io.Reader, out io.Writer) error {
 		}
 		secret = &s
 	}
-	return withServices(a.dataDir, func(ctx context.Context, r *services.Registry) error {
+	timeout := serviceTimeout
+	if sub == "run" {
+		timeout = serviceRunTimeout
+	}
+	return withServices(a.dataDir, timeout, func(ctx context.Context, r *services.Registry) error {
 		switch sub {
 		case "list":
 			list, err := r.List(ctx)
@@ -131,15 +138,16 @@ func serviceCmd(args []string, in io.Reader, out io.Writer) error {
 				Services []services.Status `json:"services"`
 			}{list})
 		case "get":
-			s, ok := r.Get(a.name)
-			if !ok {
+			st, err := r.Status(ctx, a.name)
+			if errors.Is(err, services.ErrUnknownService) {
 				return unknownService(a.name)
 			}
-			st, err := s.Status(ctx)
 			if err != nil {
 				return err
 			}
 			return writeServiceJSON(out, st)
+		case "run":
+			return runService(ctx, r, a.name, out)
 		case "set":
 			return setService(ctx, r, a.name, a.values, secret, out)
 		case "test":
@@ -171,8 +179,8 @@ func readServiceSecret(in io.Reader) (string, error) {
 }
 
 // withServices boots the service modules on dataDir and runs fn over the
-// five services.
-func withServices(dataDir string, fn func(context.Context, *services.Registry) error) error {
+// six services within timeout.
+func withServices(dataDir string, timeout time.Duration, fn func(context.Context, *services.Registry) error) error {
 	var cfgArgs []string
 	if dataDir != "" {
 		cfgArgs = []string{"--data", dataDir}
@@ -181,12 +189,12 @@ func withServices(dataDir string, fn func(context.Context, *services.Registry) e
 	if err != nil {
 		return err
 	}
-	return withServicesConfig(cfg, fn)
+	return withServicesConfig(cfg, timeout, fn)
 }
 
 // withServicesConfig is withServices for a loaded configuration.
-func withServicesConfig(cfg config.Config, fn func(context.Context, *services.Registry) error) error {
-	ctx, cancel := context.WithTimeout(context.Background(), serviceTimeout)
+func withServicesConfig(cfg config.Config, timeout time.Duration, fn func(context.Context, *services.Registry) error) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	app, err := kernel.BootWithOptions(ctx, cfg, serviceModules(), kernel.BootOptions{StartJobs: false})
 	if err != nil {
@@ -235,7 +243,7 @@ func testService(ctx context.Context, r *services.Registry, name, to string, out
 	if name == "mail" && to == "" {
 		return errors.New("service: test mail needs --to ADDR")
 	}
-	res, err := s.Test(ctx, to)
+	res, err := r.Test(ctx, s.Name(), to)
 	if err != nil {
 		return fmt.Errorf("service: test %s: %w", name, err)
 	}
@@ -244,6 +252,27 @@ func testService(ctx context.Context, r *services.Registry, name, to string, out
 	}
 	if !res.OK {
 		return fmt.Errorf("service: test %s did not pass: %s", name, res.Message)
+	}
+	return nil
+}
+
+// runService takes the service's run action now and prints the result as
+// JSON; a run that did not pass (a failed upload) exits non-zero.
+func runService(ctx context.Context, r *services.Registry, name string, out io.Writer) error {
+	res, err := r.Run(ctx, name, "cli")
+	switch {
+	case errors.Is(err, services.ErrUnknownService):
+		return unknownService(name)
+	case errors.Is(err, services.ErrNoRun):
+		return fmt.Errorf("service: %s has no run action (backups has one)", name)
+	case err != nil:
+		return fmt.Errorf("service: run %s: %w", name, err)
+	}
+	if err := writeServiceJSON(out, res); err != nil {
+		return err
+	}
+	if !res.OK {
+		return fmt.Errorf("service: run %s did not pass: %s", name, res.Message)
 	}
 	return nil
 }
@@ -258,7 +287,7 @@ func invalidFields(fields map[string]string) error {
 }
 
 func unknownService(name string) error {
-	return fmt.Errorf("service: unknown service %q (mail, storage, chat, analytics, backups)", name)
+	return fmt.Errorf("service: unknown service %q (mail, storage, chat, analytics, backups, metricool)", name)
 }
 
 func writeServiceJSON(out io.Writer, v any) error {

@@ -15,13 +15,20 @@ import (
 const scopeCapabilityTest = "system.capability_test"
 
 type serviceNameInput struct {
-	Name string `json:"name" enum:"mail,storage,chat,analytics,backups" jsonschema:"the service"`
+	Name string `json:"name" enum:"mail,storage,chat,analytics,backups,metricool" jsonschema:"the service"`
 }
 
 type setServiceInput struct {
-	Name   string         `json:"name" enum:"mail,storage,chat,analytics,backups" jsonschema:"the service"`
+	Name   string         `json:"name" enum:"mail,storage,chat,analytics,backups,metricool" jsonschema:"the service"`
 	Values map[string]any `json:"values" jsonschema:"field name → new value (string, number or boolean); only these fields change, the others and the stored secret stay. Only the service's declared fields; never a secret (password, api_key, keys): it is refused"`
 }
+
+type runServiceInput struct {
+	Name string `json:"name" enum:"backups" jsonschema:"the service with a run action"`
+}
+
+// scopeBackup is the scope of run_service (backups).
+const scopeBackup = "system.backup"
 
 type listServicesOut struct {
 	Services []services.Status `json:"services"`
@@ -46,7 +53,7 @@ func (s *server) serviceTools(reg *services.Registry) []kernel.MCPTool {
 	}
 	return []kernel.MCPTool{
 		{Name: "list_services", Title: "List services", Toolset: kernel.MCPToolsetServices, ReadOnly: true, Idempotent: true, Scopes: []string{scopeSettings}, Input: struct{}{},
-			Description: "The site's services (mail, storage, chat, analytics, backups) and their status: state off, configured or incomplete, what is missing, the fields, and secret_set. Never a secret's value.",
+			Description: "The site's services (mail, storage, chat, analytics, backups, metricool) and their status: state off, configured or incomplete, what is missing, the fields, and secret_set. Never a secret's value.",
 			Handler: bind(func(ctx context.Context, _ struct{}) (any, error) {
 				list, err := reg.List(ctx)
 				if err != nil {
@@ -57,11 +64,11 @@ func (s *server) serviceTools(reg *services.Registry) []kernel.MCPTool {
 		{Name: "get_service", Title: "Get service", Toolset: kernel.MCPToolsetServices, ReadOnly: true, Idempotent: true, Scopes: []string{scopeSettings}, Input: serviceNameInput{},
 			Description: "One service's status (fields, state, missing, secret_set), without its secret.",
 			Handler: bind(func(ctx context.Context, in serviceNameInput) (any, error) {
-				svc, ok := reg.Get(in.Name)
-				if !ok {
+				st, err := reg.Status(ctx, in.Name)
+				if errors.Is(err, services.ErrUnknownService) {
 					return nil, notFound("service " + in.Name)
 				}
-				return svc.Status(ctx)
+				return st, err
 			})},
 		{Name: "set_service", Title: "Set service", Toolset: kernel.MCPToolsetServices, Destructive: true, Sensitive: true, Scopes: []string{scopeSettings}, Input: setServiceInput{},
 			Description: "Change only the given fields of a service, validated like the admin; nothing is saved if one is invalid. A secret is never an argument: " +
@@ -98,7 +105,7 @@ func (s *server) serviceTools(reg *services.Registry) []kernel.MCPTool {
 				return reg.Describe(ctx, in.Name, values)
 			}},
 		{Name: "test_service", Title: "Test service", Toolset: kernel.MCPToolsetServices, OpenWorld: true, Scopes: []string{scopeCapabilityTest}, Input: serviceNameInput{},
-			Description: "Run the service's safe test: mail sends one test message to the key owner's own address; chat and storage have no server-side test and say so.",
+			Description: "Run the service's safe test and record it as last_test: mail sends one test message to the key owner's own address; storage puts, reads back and deletes a small object on each bound bucket and names the failing step (auth, bucket_missing, unreachable, write, read, delete); metricool reads the brand list (step credential or brand). chat, analytics and backups have no server-side test and say so.",
 			Handler: bind(func(ctx context.Context, in serviceNameInput) (any, error) {
 				res, err := reg.TestFor(ctx, in.Name)
 				var te *services.TestError
@@ -107,6 +114,21 @@ func (s *server) serviceTools(reg *services.Registry) []kernel.MCPTool {
 					return nil, notFound("service " + in.Name)
 				case errors.As(services.ClassifyTestError(err), &te):
 					return nil, invalid(te.Error(), map[string]string{te.Field: te.Key})
+				case err != nil:
+					return nil, err
+				}
+				return res, nil
+			})},
+		{Name: "run_service", Title: "Run service", Toolset: kernel.MCPToolsetServices, OpenWorld: true, Scopes: []string{scopeBackup}, Input: runServiceInput{},
+			Description: "Take a service's action now. backups: take a verified backup, upload it to the configured destination (honouring retain) and record last_success, as a scheduled run does. " +
+				"The answer has ok, stamp, bytes, duration_ms, destination, remote (the upload's status) and objects; a failed upload is ok false with the local backup kept.",
+			Handler: bind(func(ctx context.Context, in runServiceInput) (any, error) {
+				res, err := reg.Run(ctx, in.Name, "mcp")
+				switch {
+				case errors.Is(err, services.ErrUnknownService):
+					return nil, notFound("service " + in.Name)
+				case errors.Is(err, services.ErrNoRun):
+					return nil, invalid(err.Error(), map[string]string{"name": services.ErrNoRunKey})
 				case err != nil:
 					return nil, err
 				}

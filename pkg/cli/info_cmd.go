@@ -52,7 +52,7 @@ type siteInfo struct {
 	// Mail is how the site sends mail (Settings → Mail), without any secret,
 	// so a manager can tell whether it sends without reading the admin.
 	Mail infoMail `json:"mail"`
-	// Services are the five services as gorun service list reports them
+	// Services are the six services as gorun service list reports them
 	// (no secret, only secret_set); empty when they cannot be read.
 	Services []services.Status `json:"services"`
 }
@@ -212,7 +212,7 @@ func infoCmd(args []string, out io.Writer) error {
 	// (the settings module booted without job workers); a failure degrades
 	// to an empty list, like the counts above.
 	info.Services = []services.Status{}
-	if err := withServicesConfig(cfg, func(ctx context.Context, r *services.Registry) error {
+	if err := withServicesConfig(cfg, serviceTimeout, func(ctx context.Context, r *services.Registry) error {
 		list, err := r.List(ctx)
 		if err == nil {
 			info.Services = list

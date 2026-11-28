@@ -508,7 +508,7 @@ Example section in a version-1 document:
 Use the same private draft GET/PUT and explicit publish endpoints below, with current `base_updated_at`/`updated_at` tokens. Saving or importing does not publish. Existing `content.edit`, ownership and `content.publish` checks still apply; unsupported options return validation errors, stale tokens return 409. Current builder preview/public visual acceptance is a separate browser check; the structured contract does not establish that matrix by itself.
 
 <!-- BEGIN GENERATED API OPERATIONS -->
-Generated from the current locally booted OpenAPI document: **227 operations** in 26 tags.
+Generated from the current locally booted OpenAPI document: **228 operations** in 26 tags.
 
 ### analytics
 
@@ -710,9 +710,10 @@ Generated from the current locally booted OpenAPI document: **227 operations** i
 |---|---|---|---|
 | DELETE | `/api/v1/site/services/{name}` | Turn a service off | `settings.manage` |
 | GET | `/api/v1/site/services/{name}` | One service's status, without its secret | `settings.manage` |
-| GET | `/api/v1/site/services` | Every service (mail, storage, chat, analytics, backups) and its status; never a secret, only secret_set | `settings.manage` |
+| GET | `/api/v1/site/services` | Every service (mail, storage, chat, analytics, backups, metricool) and its status; never a secret, only secret_set | `settings.manage` |
 | PATCH | `/api/v1/site/services/{name}` | Change only the given fields of a service; a secret is never accepted here: when one is missing the answer carries needs_secret (a one-time admin link and the CLI line) | `settings.manage` |
-| POST | `/api/v1/site/services/{name}/test` | Run the service's safe test; mail sends one test message to the caller's own address | `system.capability_test` |
+| POST | `/api/v1/site/services/{name}/run` | Take the service's action now: backups takes a verified backup, uploads it to the configured destination and keeps retain pairs. A failed upload answers ok false (the local backup stays) | `system.backup` |
+| POST | `/api/v1/site/services/{name}/test` | Run the service's safe test and record it as last_test: mail sends one test message to the caller's own address, storage does a put, read and delete round trip on each bound bucket, metricool reads the brand list | `system.capability_test` |
 
 ### settings
 

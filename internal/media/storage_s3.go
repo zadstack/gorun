@@ -110,7 +110,7 @@ func (s *S3Storage) Put(ctx context.Context, key string, r io.Reader, mime strin
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode/100 != 2 {
-		return fmt.Errorf("media: s3 put %s: %s", key, s3Error(resp))
+		return s3Error("put", key, resp)
 	}
 	return nil
 }
@@ -135,7 +135,7 @@ func (s *S3Storage) Open(ctx context.Context, key string) (io.ReadCloser, error)
 		return s.local.Open(ctx, key)
 	}
 	defer resp.Body.Close()
-	return nil, fmt.Errorf("media: s3 get %s: %s", key, s3Error(resp))
+	return nil, s3Error("get", key, resp)
 }
 
 // Delete removes key from the bucket and from disk; a missing object is not an error.
@@ -149,7 +149,7 @@ func (s *S3Storage) Delete(ctx context.Context, key string) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode/100 != 2 && resp.StatusCode != http.StatusNotFound {
-		return fmt.Errorf("media: s3 delete %s: %s", key, s3Error(resp))
+		return s3Error("delete", key, resp)
 	}
 	if s.local == nil {
 		return nil
@@ -169,8 +169,25 @@ func (s *S3Storage) URL(key string) string {
 	return URLPrefix + key
 }
 
-// Provider response bodies are untrusted and can echo signed request credentials.
-func s3Error(resp *http.Response) string { return fmt.Sprintf("HTTP %d", resp.StatusCode) }
+// S3StatusError is a provider answer that was not a success: Op is the
+// request (put, get, delete or probe), Key the object (empty for a probe)
+// and Status the HTTP status. The response body is never kept: provider
+// bodies are untrusted and can echo signed request credentials.
+type S3StatusError struct {
+	Op, Key string
+	Status  int
+}
+
+func (e *S3StatusError) Error() string {
+	if e.Op == "probe" {
+		return fmt.Sprintf("media: bucket returned HTTP %d", e.Status)
+	}
+	return fmt.Sprintf("media: s3 %s %s: HTTP %d", e.Op, e.Key, e.Status)
+}
+
+func s3Error(op, key string, resp *http.Response) error {
+	return &S3StatusError{Op: op, Key: key, Status: resp.StatusCode}
+}
 
 // ProbeBucket verifies signed read-only bucket access with the caller's guarded client.
 // It does not change the active media driver or upload, list, or delete objects.
@@ -189,7 +206,7 @@ func (s *S3Storage) ProbeBucket(ctx context.Context, client *http.Client) error 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode/100 != 2 {
-		return fmt.Errorf("media: bucket returned HTTP %d", resp.StatusCode)
+		return s3Error("probe", "", resp)
 	}
 	return nil
 }

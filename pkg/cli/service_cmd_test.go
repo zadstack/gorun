@@ -108,7 +108,7 @@ func TestServiceListNoSecretInOutput(t *testing.T) {
 			t.Errorf("%s: secret_set false: %+v", st.Name, st)
 		}
 	}
-	if strings.Join(names, ",") != "mail,storage,chat,analytics,backups" {
+	if strings.Join(names, ",") != "mail,storage,chat,analytics,backups,metricool" {
 		t.Fatalf("services %v", names)
 	}
 }
@@ -169,5 +169,48 @@ func TestServiceFieldErrorsNameFields(t *testing.T) {
 	}
 	if st := serviceGet(t, dir, "analytics"); st.State != services.StateOff {
 		t.Fatalf("analytics after off: %+v", st)
+	}
+}
+
+// gorun service run backups takes a verified backup now and prints the
+// result as JSON; a service without a run action is refused.
+func TestServiceRunBackups(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("GORUN_ENV", "dev")
+	out, err := serviceRun(t, "", "run", "backups", "--data", dir)
+	if err != nil {
+		t.Fatalf("%v: %s", err, out)
+	}
+	var res services.RunResult
+	if err := json.Unmarshal([]byte(out), &res); err != nil {
+		t.Fatalf("%v: %s", err, out)
+	}
+	if !res.OK || res.Destination != "local" || res.Stamp == "" || res.Bytes <= 0 {
+		t.Fatalf("run: %+v", res)
+	}
+	if st := serviceGet(t, dir, "backups"); st.Fields["last_success"] == nil {
+		t.Fatalf("last_success not recorded: %+v", st)
+	}
+	if _, err := serviceRun(t, "", "run", "chat", "--data", dir); err == nil || !strings.Contains(err.Error(), "no run action") {
+		t.Fatalf("run chat: %v", err)
+	}
+}
+
+// gorun service set metricool takes the token only from stdin, and get
+// never prints it.
+func TestServiceSetMetricoolTokenFromStdin(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("GORUN_ENV", "dev")
+	const token = "metricool-cli-token-0001"
+	out, err := serviceRun(t, token+"\n", "set", "metricool", "user_id=12", "blog_id=34", "--secret-stdin", "--data", dir)
+	if err != nil || strings.TrimSpace(out) != "service metricool: configured" {
+		t.Fatalf("set: %q %v", out, err)
+	}
+	if _, err := serviceRun(t, "", "set", "metricool", "token="+token, "--data", dir); err == nil {
+		t.Fatal("token accepted as a value")
+	}
+	raw, err := serviceRun(t, "", "get", "metricool", "--data", dir)
+	if err != nil || strings.Contains(raw, token) || !strings.Contains(raw, `"blog_id": "34"`) || !strings.Contains(raw, `"secret_set": true`) {
+		t.Fatalf("get: %s %v", raw, err)
 	}
 }
