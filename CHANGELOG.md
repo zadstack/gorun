@@ -5,6 +5,15 @@ All notable changes to GoRun are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-11-28
+
+### Upgrade notes
+
+Details: [docs/UPGRADE.md](docs/UPGRADE.md#029-upgrade-notes).
+
+- From 0.28.x, release binaries upgrade with `gorun upgrade`; images follow the image runbook. From 0.27.x, follow the [0.28 upgrade notes](docs/UPGRADE.md#028-upgrade-notes) first.
+- No migrations, no new environment variables and no new Go dependencies. New settings keys: `services.last_test.<name>`, and `tracker_hash` inside `metricool.config`.
+
 ### Added
 
 - `gorun service run backups` (MCP `run_service`, `POST /api/v1/site/services/{name}/run`, permission `system.backup`) takes a verified backup now and uploads it to the configured destination, honouring `retain` and recording `last_success` as a scheduled run does; it prints the stamp, size, duration, destination, upload status and object keys, and exits non-zero when the upload fails ([docs/SERVICES.md](docs/SERVICES.md#run-a-backup-now), [#274](https://github.com/zadstack/gorun/issues/274)).
@@ -1562,7 +1571,8 @@ linux and darwin (amd64, arm64) with checksums.
 - Hosting-platform add-ons, brand themes and the commands that served them (`tenant-init`,
   `addon-install`, `page-catalog`) are no longer part of the core.
 
-[Unreleased]: https://github.com/zadstack/gorun/compare/v0.28.2...HEAD
+[Unreleased]: https://github.com/zadstack/gorun/compare/v0.29.0...HEAD
+[0.29.0]: https://github.com/zadstack/gorun/compare/v0.28.2...v0.29.0
 [0.28.2]: https://github.com/zadstack/gorun/compare/v0.28.1...v0.28.2
 [0.28.1]: https://github.com/zadstack/gorun/compare/v0.28.0...v0.28.1
 [0.28.0]: https://github.com/zadstack/gorun/compare/v0.27.0...v0.28.0
