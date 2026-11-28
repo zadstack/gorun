@@ -43,7 +43,7 @@ func TestSetServiceNeedsApprovalAndNoSecret(t *testing.T) {
 	}
 	list := a.ok("list_services", map[string]any{})
 	items, _ := list["services"].([]any)
-	if len(items) != 5 {
+	if len(items) != 6 {
 		t.Fatalf("list_services = %v", list)
 	}
 
@@ -99,6 +99,23 @@ func TestSetServiceNeedsApprovalAndNoSecret(t *testing.T) {
 	}
 	if tr := a.ok("test_service", map[string]any{"name": "chat"}); tr["ok"] != true {
 		t.Fatalf("test_service chat = %v", tr)
+	}
+}
+
+// run_service takes a backup now, without approval, for a key with
+// system.backup; the tool is not listed without that scope.
+func TestRunServiceBackups(t *testing.T) {
+	e := newServicesEnv(t)
+	if a := e.agent("settings.manage"); contains(a.toolNames(), "run_service") {
+		t.Fatal("run_service listed without system.backup")
+	}
+	a := e.agent("settings.manage", "system.backup")
+	res := a.ok("run_service", map[string]any{"name": "backups"})
+	if res["ok"] != true || res["destination"] != "local" || str(res, "stamp") == "" {
+		t.Fatalf("run_service backups = %v", res)
+	}
+	if errObj := a.fails("run_service", map[string]any{"name": "chat"}); str(errObj, "code") == "" {
+		t.Fatalf("run_service chat: %v", errObj)
 	}
 }
 

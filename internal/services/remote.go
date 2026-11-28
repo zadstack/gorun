@@ -239,18 +239,15 @@ func callerID(ctx context.Context) string {
 	return auth.ActorFromContext(ctx).ID
 }
 
-// TestFor runs the service's safe test for a remote caller: mail sends one
-// test message to the calling user's own address, never to another one.
+// TestFor runs the service's safe test for a remote caller and records it:
+// mail sends one test message to the calling user's own address, never to
+// another one.
 func (r *Registry) TestFor(ctx context.Context, name string) (TestResult, error) {
-	s, ok := r.by[name]
-	if !ok {
-		return TestResult{}, ErrUnknownService
-	}
 	to := ""
 	if u := auth.UserFromContext(ctx); u != nil {
 		to = u.Email
 	}
-	return s.Test(ctx, to)
+	return r.Test(ctx, name, to)
 }
 
 // TestError is a test that could not run for a reason the caller can fix
@@ -269,7 +266,7 @@ func ClassifyTestError(err error) error {
 	switch {
 	case errors.Is(err, ErrMailTestAddress):
 		return &TestError{Field: "to", Key: errInvalid, Err: err}
-	case errors.Is(err, ErrMailNotConfigured):
+	case errors.Is(err, ErrMailNotConfigured), errors.Is(err, ErrStorageNotConfigured), errors.Is(err, ErrMetricoolNotConfigured):
 		return &TestError{Field: "name", Key: errNotConfigured, Err: err}
 	}
 	return err

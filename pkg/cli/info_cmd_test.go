@@ -155,7 +155,7 @@ func TestInfoCmdReportsMail(t *testing.T) {
 	}
 }
 
-// gorun info lists the five services from the same registry as gorun
+// gorun info lists the six services from the same registry as gorun
 // service list, without any secret, and keeps its mail block.
 func TestInfoReportsServices(t *testing.T) {
 	dir := t.TempDir()
@@ -183,7 +183,7 @@ func TestInfoReportsServices(t *testing.T) {
 	for _, s := range info.Services {
 		names = append(names, s["name"].(string))
 	}
-	if strings.Join(names, ",") != "mail,storage,chat,analytics,backups" {
+	if strings.Join(names, ",") != "mail,storage,chat,analytics,backups,metricool" {
 		t.Fatalf("services = %v", names)
 	}
 	if m := info.Services[0]; m["state"] != "configured" || m["secret_set"] != true {

@@ -33,21 +33,29 @@ func excluded(path string) bool {
 // before the last </body> of GET 200 text/html responses that the theme
 // rendered (the analytics rule: a module's own HTML page is never touched),
 // and widens that response's Content-Security-Policy for the configured
-// host. Nothing happens when chat is off or its settings are incomplete.
+// host. The Metricool tracker, when its hash is set, goes in the same way.
+// Nothing happens when neither is configured.
 func (m *Module) inject(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || excluded(r.URL.Path) {
 			next.ServeHTTP(w, r)
 			return
 		}
-		wg, ok := Load(r.Context(), m.settings)
-		if !ok {
+		wg, chatOK := Load(r.Context(), m.settings)
+		hash, trackerOK := LoadTracker(r.Context(), m.settings)
+		if !chatOK && !trackerOK {
 			next.ServeHTTP(w, r)
 			return
 		}
 		ctx, mark := httpx.WithPageMark(r.Context())
 		r = r.WithContext(ctx)
-		iw := &injectWriter{ResponseWriter: w, widget: wg, nonce: httpx.Nonce(ctx), want: mark.Themed}
+		iw := &injectWriter{ResponseWriter: w, nonce: httpx.Nonce(ctx), want: mark.Themed}
+		if chatOK {
+			iw.widget = &wg
+		}
+		if trackerOK {
+			iw.tracker = hash
+		}
 		next.ServeHTTP(iw, r)
 		iw.finish()
 	})
@@ -59,7 +67,8 @@ func (m *Module) inject(next http.Handler) http.Handler {
 // outgrows maxInjectBody, passes through untouched.
 type injectWriter struct {
 	http.ResponseWriter
-	widget    Widget
+	widget    *Widget // nil: no chat widget
+	tracker   string  // the Metricool tracker hash, "" for none
 	nonce     string
 	want      func() bool
 	decided   bool
@@ -132,11 +141,24 @@ func (iw *injectWriter) finish() {
 		return
 	}
 	iw.buffering = false
-	body, ok := insertLoader(iw.buf.Bytes(), loaderTag(iw.widget, iw.nonce))
+	var tags []byte
+	if iw.widget != nil {
+		tags = append(tags, loaderTag(*iw.widget, iw.nonce)...)
+	}
+	if iw.tracker != "" {
+		tags = append(tags, trackerTag(iw.tracker, iw.nonce)...)
+	}
+	body, ok := insertLoader(iw.buf.Bytes(), tags)
 	h := iw.Header()
 	if ok {
 		if csp := h.Get("Content-Security-Policy"); csp != "" {
-			h.Set("Content-Security-Policy", WidenCSP(csp, iw.widget.BaseURL))
+			if iw.widget != nil {
+				csp = WidenCSP(csp, iw.widget.BaseURL)
+			}
+			if iw.tracker != "" {
+				csp = WidenCSPForTracker(csp)
+			}
+			h.Set("Content-Security-Policy", csp)
 		}
 		h.Del("ETag") // the body differs from what the handler tagged
 	}
@@ -198,33 +220,11 @@ func lastIndexFold(s, sep []byte) int {
 // back to default-src 'self'). Other directives are kept as they are.
 func WidenCSP(csp, base string) string {
 	wss := "wss://" + strings.TrimPrefix(base, "https://")
-	add := map[string][]string{
+	return widen(csp, map[string][]string{
 		"script-src":  {base},
 		"connect-src": {base, wss},
 		"frame-src":   {base},
-	}
-	var parts []string
-	seen := map[string]bool{}
-	for _, d := range strings.Split(csp, ";") {
-		d = strings.TrimSpace(d)
-		if d == "" {
-			continue
-		}
-		name := strings.ToLower(strings.Fields(d)[0])
-		if srcs, ok := add[name]; ok && !seen[name] {
-			for _, s := range srcs {
-				if !hasSource(d, s) {
-					d += " " + s
-				}
-			}
-		}
-		seen[name] = true
-		parts = append(parts, d)
-	}
-	if !seen["frame-src"] {
-		parts = append(parts, "frame-src 'self' "+base)
-	}
-	return strings.Join(parts, "; ")
+	})
 }
 
 func hasSource(directive, src string) bool {

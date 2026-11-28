@@ -141,7 +141,7 @@ func cleanAnalyticsExclude(raw string) (string, bool) {
 }
 
 func (analyticsService) Test(context.Context, string) (TestResult, error) {
-	return TestResult{OK: true, Message: "no test"}, nil
+	return TestResult{OK: true, Message: NoTest}, nil
 }
 
 // Off stops tracking and keeps the exclusions and the collected data.

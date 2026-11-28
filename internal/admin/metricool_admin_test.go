@@ -211,3 +211,24 @@ func TestMetricoolNonceOwnerRateLimitAndConfigValidation(t *testing.T) {
 		t.Fatal("rate limited request sent")
 	}
 }
+
+func TestMetricoolSettingsTrackerHash(t *testing.T) {
+	s := boot(t)
+	s.login("admin@example.com", "admin", "en")
+	configureMetricool(t, s)
+	c := metricoolConfigValue(t, s)
+	form := url.Values{"version": {c["version"].(string)}, "user_id": {"12"}, "blog_id": {"23"}, "tracker_hash": {"bad hash!"}}
+	if r, _ := s.post("/admin/settings/metricool", form); r.StatusCode != 422 {
+		t.Fatalf("invalid tracker hash accepted: %d", r.StatusCode)
+	}
+	form.Set("tracker_hash", "a1b2c3d4e5f60718")
+	if r, _ := s.post("/admin/settings/metricool", form); r.StatusCode != 303 {
+		t.Fatal(r.StatusCode)
+	}
+	if got := metricoolConfigValue(t, s)["tracker_hash"]; got != "a1b2c3d4e5f60718" {
+		t.Fatalf("tracker_hash %v", got)
+	}
+	if r, b := s.do("GET", "/admin/settings/metricool", nil); r.StatusCode != 200 || !strings.Contains(b, `value="a1b2c3d4e5f60718"`) {
+		t.Fatal("tracker hash not shown in the form")
+	}
+}

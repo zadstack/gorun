@@ -1,5 +1,6 @@
 {
   "error.invalid": "هذه القيمة غير صالحة.",
+  "error.no_run": "لا تملك هذه الخدمة إجراء تشغيل؛ النسخ الاحتياطي وحده يملكه.",
   "error.no_secret": "الخدمة دي مالهاش سر",
   "error.not_configured": "الخدمة غير مُعدّة بعد، فلا يمكن تجربتها.",
   "error.required": "هذا الحقل مطلوب.",
@@ -9,6 +10,7 @@
   "name.backups": "النسخ الاحتياطية",
   "name.chat": "المحادثة",
   "name.mail": "البريد",
+  "name.metricool": "Metricool",
   "name.storage": "التخزين",
   "secret.back": "العودة إلى لوحة التحكم",
   "secret.done": "تم حفظ السر ولم يعد هذا الرابط يعمل.",
@@ -22,6 +24,7 @@
   "secret_name.api_key": "مفتاح Resend API",
   "secret_name.keys": "مفتاح الوصول والمفتاح السري",
   "secret_name.password": "كلمة مرور SMTP",
+  "secret_name.token": "رمز API لـMetricool",
   "storage.error.account": "معرّف حساب R2 مكوّن من 32 خانة ست عشرية (0-9 وa-f).",
   "storage.error.keys": "اكتب المفتاحين في سطر واحد: ACCESS_KEY:SECRET_KEY.",
   "storage.error.provider": "اختر r2 أو s3.",

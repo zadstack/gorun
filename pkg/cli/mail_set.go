@@ -66,7 +66,7 @@ func mailSetCmd(args []string, in io.Reader, out io.Writer) error {
 		empty := ""
 		secret = &empty
 	}
-	return withServices(*dataDir, func(ctx context.Context, r *services.Registry) error {
+	return withServices(*dataDir, serviceTimeout, func(ctx context.Context, r *services.Registry) error {
 		return setService(ctx, r, "mail", values, secret, out)
 	})
 }

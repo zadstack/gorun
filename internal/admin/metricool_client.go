@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -13,6 +14,13 @@ import (
 )
 
 var errMetricoolProvider = errors.New("metricool: response could not be verified")
+
+// ErrMetricoolRefused is a token Metricool refused (HTTP 401 or 403).
+var ErrMetricoolRefused = fmt.Errorf("%w: token refused", errMetricoolProvider)
+
+// ErrMetricoolBrand is a brand list without the configured brand (or with
+// it deleted).
+var ErrMetricoolBrand = fmt.Errorf("%w: brand not found", errMetricoolProvider)
 
 type metricoolClient struct{ transport http.RoundTripper }
 
@@ -49,8 +57,11 @@ func (c metricoolClient) request(ctx context.Context, method, path string, cfg m
 	return raw, resp.StatusCode, nil
 }
 func (c metricoolClient) test(ctx context.Context, cfg metricoolConfig, token string) error {
-	raw, _, err := c.request(ctx, "GET", "/admin/simpleProfiles", cfg, token, nil)
+	raw, status, err := c.request(ctx, "GET", "/admin/simpleProfiles", cfg, token, nil)
 	if err != nil {
+		if status == http.StatusUnauthorized || status == http.StatusForbidden {
+			return ErrMetricoolRefused
+		}
 		return err
 	}
 	var rows []struct {
@@ -65,7 +76,7 @@ func (c metricoolClient) test(ctx context.Context, cfg metricoolConfig, token st
 			return nil
 		}
 	}
-	return errMetricoolProvider
+	return ErrMetricoolBrand
 }
 func (c metricoolClient) create(ctx context.Context, cfg metricoolConfig, token string, in metricoolInput) (string, error) {
 	payload := struct {

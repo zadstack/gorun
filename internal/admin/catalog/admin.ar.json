@@ -538,6 +538,8 @@
   "metricool.user_id": "معرّف حساب المستخدم",
   "metricool.blog_id": "معرّف العلامة (blogId)",
   "metricool.token": "رمز API",
+  "metricool.tracker_hash": "رمز hash لمتتبّع الويب (اختياري)",
+  "metricool.tracker_help": "قيمة hash من شيفرة متتبّع Metricool (beTracker.t({hash: …})). عند ضبطها يضيف GoRun المتتبّع إلى الصفحات العامة ويسمح بـtracker.metricool.com في سياسة أمان المحتوى. اتركها فارغة لعدم استخدام المتتبّع.",
   "metricool.connection": "حالة الاتصال",
   "metricool.test": "اختبار الوصول للعلامة · قراءة فقط",
   "metricool.test_pass": "العلامة متاحة في آخر اختبار. لم يُختبر إنشاء مسودة.",

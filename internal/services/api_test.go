@@ -19,14 +19,14 @@ func TestServicesRESTPatchAndList(t *testing.T) {
 
 	status, body := c.Get("/v1/site/services")
 	items, _ := body["data"].([]any)
-	if status != http.StatusOK || len(items) != 5 {
+	if status != http.StatusOK || len(items) != 6 {
 		t.Fatalf("GET /site/services: %d %v", status, body)
 	}
 	names := []string{}
 	for _, it := range items {
 		names = append(names, it.(map[string]any)["name"].(string))
 	}
-	if strings.Join(names, ",") != "mail,storage,chat,analytics,backups" {
+	if strings.Join(names, ",") != "mail,storage,chat,analytics,backups,metricool" {
 		t.Fatalf("names = %v", names)
 	}
 
@@ -91,7 +91,7 @@ func TestServicesRESTPatchAndList(t *testing.T) {
 
 func TestServicesRESTUnknownName(t *testing.T) {
 	e := bootPage(t)
-	c := apitest.NewClient(t, e.app, "settings.manage", "system.capability_test")
+	c := apitest.NewClient(t, e.app, "settings.manage", "system.capability_test", "system.backup")
 	for _, req := range []struct {
 		method, path string
 		body         any
@@ -100,6 +100,7 @@ func TestServicesRESTUnknownName(t *testing.T) {
 		{"PATCH", "/v1/site/services/nope", map[string]any{"values": map[string]any{"a": "b"}}},
 		{"DELETE", "/v1/site/services/nope", nil},
 		{"POST", "/v1/site/services/nope/test", nil},
+		{"POST", "/v1/site/services/nope/run", nil},
 	} {
 		if rec := c.Do(req.method, req.path, req.body, nil); rec.Code != http.StatusNotFound {
 			t.Fatalf("%s %s: %d %s", req.method, req.path, rec.Code, rec.Body.String())
@@ -132,3 +133,29 @@ func TestServicesRESTUnknownKeyAndPendingStorage(t *testing.T) {
 }
 
 func str(v any) string { s, _ := v.(string); return s }
+
+// POST /site/services/backups/run takes a backup now (system.backup); a
+// service without a run action is 422.
+func TestServicesRESTRun(t *testing.T) {
+	e := bootPage(t)
+	c := apitest.NewClient(t, e.app, "settings.manage", "system.backup")
+	status, body := c.Post("/v1/site/services/backups/run", nil)
+	data, _ := body["data"].(map[string]any)
+	if status != http.StatusOK || data["ok"] != true || data["destination"] != "local" || str(data["stamp"]) == "" {
+		t.Fatalf("POST backups run: %d %v", status, body)
+	}
+	status, body = c.Post("/v1/site/services/chat/run", nil)
+	errObj, _ := body["error"].(map[string]any)
+	fields, _ := errObj["fields"].(map[string]any)
+	if status != http.StatusUnprocessableEntity || fields["name"] != "services.error.no_run" {
+		t.Fatalf("POST chat run: %d %v", status, body)
+	}
+	var n int
+	e.app.Deps.DB.QueryRow(`SELECT count(*) FROM audit_log WHERE action = 'service.run' AND meta_json LIKE '%"via":"api"%'`).Scan(&n)
+	if n != 1 {
+		t.Fatalf("service.run via api rows = %d, want 1", n)
+	}
+	if status, _ = apitest.NewClient(t, e.app, "settings.manage").Post("/v1/site/services/backups/run", nil); status != http.StatusForbidden {
+		t.Fatalf("run without system.backup: %d", status)
+	}
+}

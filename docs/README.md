@@ -17,7 +17,7 @@ Operator and product docs for self-hosting GoRun. Start with install, then first
 | [ANALYTICS.md](ANALYTICS.md) | Built-in cookieless site analytics: what is counted, GeoIP, settings, dashboard, CSV, API, backups, privacy |
 | [BACKUPS.md](BACKUPS.md) | Scheduled local backups, verification, failure alerts, read-only restore preview, restore into a new directory |
 | [MAIL-OPERATIONS.md](MAIL-OPERATIONS.md) | Operational mail from JSON stdin using saved SMTP or Resend settings; provider acceptance and inbox verification |
-| [SERVICES.md](SERVICES.md) | Connect a site's services (mail, storage, chat, analytics, backups) the same way from the CLI (`gorun service`), MCP (`services` toolset), REST and the one-time secret link |
+| [SERVICES.md](SERVICES.md) | Connect a site's services (mail, storage, chat, analytics, backups, metricool) the same way from the CLI (`gorun service`), MCP (`services` toolset), REST and the one-time secret link |
 | [STAGING.md](STAGING.md) | Staging site (second data dir) + promote-to-live via `gorun staging seed\|promote` |
 | [OBSERVABILITY.md](OBSERVABILITY.md) | Optional `GET /metrics` (Prometheus text) + JSON log shipping notes |
 | [ERROR-INVENTORY.md](ERROR-INVENTORY.md) | System → Errors: read-only owner view of recent application errors by category |

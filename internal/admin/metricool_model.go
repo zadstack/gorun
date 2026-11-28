@@ -14,6 +14,10 @@ var errMetricoolInvalid = errors.New("invalid Metricool input")
 var errMetricoolConflict = errors.New("metricool: request changed")
 var metricoolID = regexp.MustCompile(`^[1-9][0-9]{0,9}$`)
 
+// metricoolTrackerHash is a tracker hash: 8 to 64 ASCII letters and digits,
+// the same rule the chat module checks again before printing it.
+var metricoolTrackerHash = regexp.MustCompile(`^[A-Za-z0-9]{8,64}$`)
+
 type metricoolConfig struct {
 	Version    string `json:"version"`
 	UserID     string `json:"user_id"`
@@ -21,6 +25,9 @@ type metricoolConfig struct {
 	Secret     string `json:"secret"`
 	TestedAt   string `json:"tested_at"`
 	TestStatus string `json:"test_status"`
+	// TrackerHash is the brand's web tracker hash: when set, the chat
+	// module prints Metricool's tracker on public pages. It is public.
+	TrackerHash string `json:"tracker_hash,omitempty"`
 }
 type metricoolInput struct{ Text, Network, DateTime, Timezone string }
 type metricoolDraft struct {

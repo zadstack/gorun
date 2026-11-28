@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/zadstack/gorun/internal/admin"
 	"github.com/zadstack/gorun/internal/kernel"
 	"github.com/zadstack/gorun/internal/media"
 )
@@ -32,7 +34,11 @@ const destinationLocal = "local"
 
 const errBackupRange = "admin.backups.schedule_invalid"
 
-type backupsService struct{ d *kernel.Deps }
+// backupsService uploads with client (nil: the guarded storage client).
+type backupsService struct {
+	d      *kernel.Deps
+	client *http.Client
+}
 
 // Backups is the scheduled local backup over the System → Backups
 // settings: enabled and every_hours over backup.schedule_hours (the
@@ -201,8 +207,37 @@ func backupDestinationOK(ctx context.Context, tx *sql.Tx, d *kernel.Deps, id str
 }
 
 func (backupsService) Test(context.Context, string) (TestResult, error) {
-	return TestResult{OK: true, Message: "no test"}, nil
+	return TestResult{OK: true, Message: NoTest}, nil
 }
+
+// Run takes a verified backup now and uploads it to the configured
+// destination (as a scheduled run does, honouring retain and recording
+// last_success); the schedule's own clock is untouched. A failed upload
+// is a result that did not pass, the local pair kept.
+func (s backupsService) Run(ctx context.Context, via string) (RunResult, error) {
+	run, err := admin.RunBackupNow(ctx, s.d, s.client, via)
+	res := RunResult{At: run.At, Stamp: run.Stamp, Bytes: run.Bytes, DurationMS: run.Duration.Milliseconds(),
+		Destination: run.Destination, Remote: run.Remote, Objects: run.Objects, Pruned: run.Pruned, Warning: run.Warning}
+	switch {
+	case errors.Is(err, admin.ErrBackupRemote):
+		res.Message = "backup " + run.Stamp + " saved locally; the upload to " + run.Destination + " ended " + run.Remote
+		return res, nil
+	case errors.Is(err, admin.ErrBackupBusy):
+		return RunResult{}, ErrBackupBusy
+	case err != nil:
+		return RunResult{}, err
+	}
+	res.OK = true
+	res.Message = "backup " + run.Stamp + " saved locally"
+	if run.Remote != "" {
+		res.Message += " and uploaded to " + run.Destination
+	}
+	return res, nil
+}
+
+// ErrBackupBusy is a run refused because the data directory is busy (an
+// update, a restore or another backup).
+var ErrBackupBusy = admin.ErrBackupBusy
 
 // Off stops the schedule; the retention, the destination and every backup
 // already made stay.

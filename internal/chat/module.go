@@ -1,8 +1,10 @@
 // Package chat prints a live-chat widget (Chatwoot first) on the pages the
 // theme renders, from three settings the services layer writes:
-// chat.provider, chat.base_url and chat.website_token. The site's CSP is
-// widened for the configured host only, and only on the responses that
-// carry the widget. The website token is public: it is in every page.
+// chat.provider, chat.base_url and chat.website_token. It also prints the
+// Metricool web tracker when Settings → Metricool has a tracker hash
+// (tracker.go). The site's CSP is widened for the configured hosts only,
+// and only on the responses that carry them. The website token and the
+// tracker hash are public: they are in every page.
 package chat
 
 import (

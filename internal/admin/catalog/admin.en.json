@@ -538,6 +538,8 @@
   "metricool.user_id": "Account user ID",
   "metricool.blog_id": "Brand ID (blogId)",
   "metricool.token": "API token",
+  "metricool.tracker_hash": "Web tracker hash (optional)",
+  "metricool.tracker_help": "The hash from Metricool's web tracker snippet (beTracker.t({hash: …})). When set, GoRun prints the tracker on public pages and allows tracker.metricool.com in their Content-Security-Policy. Leave empty for no tracker.",
   "metricool.connection": "Connection status",
   "metricool.test": "Test brand access · read only",
   "metricool.test_pass": "Brand accessible at last test. Draft creation has not been tested.",

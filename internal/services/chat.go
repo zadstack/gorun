@@ -108,7 +108,7 @@ func (c chatService) Apply(ctx context.Context, tx *sql.Tx, values map[string]st
 // Test has nothing safe to try from the server: the widget runs in the
 // visitor's browser.
 func (chatService) Test(context.Context, string) (TestResult, error) {
-	return TestResult{OK: true, Message: "no test"}, nil
+	return TestResult{OK: true, Message: NoTest}, nil
 }
 
 // Off removes every chat setting; the widget and its CSP sources go with it.
